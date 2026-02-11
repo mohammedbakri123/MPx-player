@@ -42,7 +42,7 @@ class VideoScanner {
       
       if (!persistentCacheExpired) {
         final cachedFolders = await PersistentCacheService.loadFromCache();
-        if (cachedFolders != null) {
+        if (cachedFolders != null && cachedFolders.isNotEmpty) {
           AppLogger.i('Returning persistent cached results (${cachedFolders.length} folders)');
           
           // Also update in-memory cache
@@ -57,7 +57,7 @@ class VideoScanner {
     // Return in-memory cached results if available and not forced to refresh
     if (!forceRefresh && _cachedFolders != null && _lastScanTime != null) {
       final timeSinceLastScan = DateTime.now().difference(_lastScanTime!);
-      if (timeSinceLastScan < _minScanInterval) {
+      if (timeSinceLastScan < _minScanInterval && _cachedFolders!.isNotEmpty) {
         AppLogger.i(
             'Returning in-memory cached results (${_cachedFolders!.length} folders)');
         return _cachedFolders!;
@@ -109,8 +109,12 @@ class VideoScanner {
         if (await dir.exists()) {
           AppLogger.i('Scanning: ${dir.path}');
           
-          // Create a closure that captures the current directory for progress reporting
-          futures.add(_scanDirectoryIncremental(dir, allVideos, currentFileMetadata, previousFileMetadata, onProgress, i, totalDirectories));
+          // Use incremental scanning if we have previous metadata, otherwise use full scan
+          if (previousFileMetadata != null) {
+            futures.add(_scanDirectoryIncremental(dir, allVideos, currentFileMetadata, previousFileMetadata, onProgress, i, totalDirectories));
+          } else {
+            futures.add(_scanDirectoryWithProgressFallback(dir, allVideos, onProgress, i, totalDirectories));
+          }
         }
       }
       
@@ -127,10 +131,13 @@ class VideoScanner {
       _cachedFolders = _groupVideosByFolder(allVideos);
       _lastScanTime = DateTime.now();
 
-      // Save to persistent cache
-      await PersistentCacheService.saveToCache(_cachedFolders!);
-      await PersistentCacheService.saveFileMetadata(currentFileMetadata); // Save file metadata for next incremental scan
-      
+      // Only save to persistent cache if we found videos
+      // This prevents saving empty results that would cause "no videos found" to persist
+      if (allVideos.isNotEmpty) {
+        await PersistentCacheService.saveToCache(_cachedFolders!);
+        await PersistentCacheService.saveFileMetadata(currentFileMetadata); // Save file metadata for next incremental scan
+      }
+
       onProgress?.call(1.0, 'Scan completed! Found ${allVideos.length} videos');
 
       _isScanning = false;
@@ -204,22 +211,21 @@ class VideoScanner {
             }
           }
 
-          // Only scan Pictures and Music if they're not already covered by other folders
-          // and only if they contain video files
+          // Add Pictures and Music directories if they exist
           final picturesDir = Directory('$rootPath/Pictures');
-          if (await picturesDir.exists() && await _hasVideoFiles(picturesDir)) {
+          if (await picturesDir.exists()) {
             directories.add(picturesDir);
           }
 
           final musicDir = Directory('$rootPath/Music');
-          if (await musicDir.exists() && await _hasVideoFiles(musicDir)) {
+          if (await musicDir.exists()) {
             directories.add(musicDir);
           }
 
-          // Only scan root if it has a reasonable number of video files
-          // (to avoid scanning entire device storage)
+          // Add root directory to scan for any loose video files
+          // Don't scan it if it has too many files to avoid performance issues
           final rootDir = Directory(rootPath);
-          if (await _hasReasonableVideoCount(rootDir)) {
+          if (await rootDir.exists()) {
             directories.add(rootDir);
           }
         }
@@ -231,48 +237,6 @@ class VideoScanner {
     return directories;
   }
   
-  /// Checks if a directory contains video files
-  Future<bool> _hasVideoFiles(Directory dir) async {
-    try {
-      final entities = await dir.list().take(50).toList(); // Only check first 50 files
-      for (final entity in entities) {
-        if (entity is File) {
-          final ext = path.extension(entity.path).toLowerCase();
-          if (_videoExtensions.contains(ext)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }
-  
-  /// Checks if a directory has a reasonable number of video files to justify scanning
-  Future<bool> _hasReasonableVideoCount(Directory dir) async {
-    try {
-      // Only check first 100 files to avoid long delays
-      final entities = await dir.list().take(100).toList();
-      var videoCount = 0;
-      for (final entity in entities) {
-        if (entity is File) {
-          final ext = path.extension(entity.path).toLowerCase();
-          if (_videoExtensions.contains(ext)) {
-            videoCount++;
-            // If we find at least 5 videos in the first 100 files, it's worth scanning
-            if (videoCount >= 5) {
-              return true;
-            }
-          }
-        }
-      }
-      // If we went through all 100 files and found fewer than 5 videos, skip scanning
-      return videoCount > 0;
-    } catch (e) {
-      return false;
-    }
-  }
 
   Future<void> _scanDirectory(
       Directory directory, List<VideoFile> videos) async {
@@ -495,6 +459,95 @@ class VideoScanner {
       }
     } catch (e) {
       // Directory not accessible
+    }
+  }
+  
+  Future<void> _scanDirectoryWithProgressFallback(
+      Directory directory, 
+      List<VideoFile> videos, 
+      Function(double progress, String status)? onProgress,
+      int currentDirIndex,
+      int totalDirs) async {
+    try {
+      final List<FileSystemEntity> entities;
+      try {
+        entities = await directory.list(recursive: false).toList();
+      } catch (e) {
+        AppLogger.e('Cannot access ${directory.path}');
+        return;
+      }
+
+      int videoCount = 0;
+
+      for (final entity in entities) {
+        try {
+          if (entity is File) {
+            final filePath = entity.path;
+            final ext = path.extension(filePath).toLowerCase();
+
+            if (_videoExtensions.contains(ext)) {
+              // Quick check without stat first
+              final folderPath = entity.parent.path;
+              final folderName = path.basename(folderPath);
+
+              // Try to get file size, but don't fail if we can't
+              int fileSize = 0;
+              DateTime modifiedDate = DateTime.now();
+              try {
+                final stat = await entity.stat();
+                fileSize = stat.size;
+                modifiedDate = stat.modified;
+              } catch (e) {
+                // If we can't stat, use defaults
+              }
+
+              final video = VideoFile(
+                id: filePath.hashCode.toString(),
+                path: filePath,
+                title: path.basenameWithoutExtension(filePath),
+                folderPath: folderPath,
+                folderName: folderName,
+                size: fileSize,
+                duration: 0,
+                dateAdded: modifiedDate,
+              );
+
+              videos.add(video);
+              videoCount++;
+            }
+          } else if (entity is Directory) {
+            // Scan subdirectories but be selective
+            final dirName = path.basename(entity.path);
+            final lowerName = dirName.toLowerCase();
+
+            // Skip system folders
+            if (lowerName.startsWith('.') ||
+                ['thumbnails', 'cache', 'temp', 'tmp', 'trash']
+                    .contains(lowerName)) {
+              continue;
+            }
+
+            // Limit recursion depth
+            await _scanSubdirectory(entity, videos, depth: 1);
+          }
+        } catch (e) {
+          // Skip problematic files
+        }
+      }
+
+      if (videoCount > 0) {
+        AppLogger.i(
+            'Found $videoCount videos in ${path.basename(directory.path)}');
+      }
+      
+      // Update progress - distribute progress across directories
+      if (totalDirs > 0) {
+        final progressPerDir = 0.8 / totalDirs; // Use 80% of progress for scanning
+        final currentProgress = 0.1 + (currentDirIndex * progressPerDir); // Start after initialization
+        onProgress?.call(currentProgress, 'Scanning ${path.basename(directory.path)} ($videoCount videos found)');
+      }
+    } catch (e) {
+      AppLogger.e('Error scanning ${directory.path}: $e');
     }
   }
   

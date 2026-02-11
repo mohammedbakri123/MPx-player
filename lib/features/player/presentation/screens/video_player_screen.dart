@@ -35,10 +35,22 @@ class VideoPlayerScreen extends StatelessWidget {
 }
 
 /// The actual screen content that consumes PlayerController from Provider.
-class _VideoPlayerScreenContent extends StatelessWidget {
+class _VideoPlayerScreenContent extends StatefulWidget {
   final VideoFile video;
 
   const _VideoPlayerScreenContent({required this.video});
+
+  @override
+  State<_VideoPlayerScreenContent> createState() => _VideoPlayerScreenContentState();
+}
+
+class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with portrait orientation
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,14 +69,35 @@ class _VideoPlayerScreenContent extends StatelessWidget {
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: PlayerView(
-        controller: controller,
-        videoTitle: video.title,
-        onBack: () => Navigator.pop(context),
-        onSubtitleSettings: () => _showSubtitleSettings(context, controller),
-        onSettings: () => _showSettings(context, controller),
+    return PopScope(
+      canPop: false, // Disable default pop behavior to handle it ourselves
+      onPopInvokedWithResult: (didPop, Object? result) async {
+        if (didPop) return; // If already popped, do nothing
+        
+        // Store the navigator reference before the async operations
+        final navigator = Navigator.of(context);
+        
+        // Reset system UI settings when leaving the player
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+        
+        // Perform the navigation pop
+        navigator.pop();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: PlayerView(
+          controller: controller,
+          videoTitle: widget.video.title,
+          onBack: () {
+            // Reset system UI settings when leaving the player via back button
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+            SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+            Navigator.pop(context);
+          },
+          onSubtitleSettings: () => _showSubtitleSettings(context, controller),
+          onSettings: () => _showSettings(context, controller),
+        ),
       ),
     );
   }
@@ -85,6 +118,14 @@ class _VideoPlayerScreenContent extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (context) => _SettingsSheet(controller: controller),
     );
+  }
+
+  @override
+  void dispose() {
+    // Ensure system UI settings are reset when widget is disposed
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    super.dispose();
   }
 }
 

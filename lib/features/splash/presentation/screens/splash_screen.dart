@@ -76,11 +76,11 @@ class _SplashScreenState extends State<SplashScreen>
           ),
           // Dark Overlay
           Container(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
           ),
           // Blur effect overlay
           Container(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
           ),
           // Content
           AnimatedBuilder(
@@ -103,15 +103,15 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 96,
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withOpacity(0.3),
+                        color: primaryColor.withValues(alpha: 0.3),
                         blurRadius: 40,
                         spreadRadius: -10,
                       ),
@@ -158,7 +158,7 @@ class _SplashScreenState extends State<SplashScreen>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     letterSpacing: 3,
                   ),
                 ),
@@ -178,7 +178,7 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 192,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(2),
                     ),
                     child: Align(
@@ -191,7 +191,7 @@ class _SplashScreenState extends State<SplashScreen>
                           borderRadius: BorderRadius.circular(2),
                           boxShadow: [
                             BoxShadow(
-                              color: primaryColor.withOpacity(0.5),
+                              color: primaryColor.withValues(alpha: 0.5),
                               blurRadius: 10,
                             ),
                           ],

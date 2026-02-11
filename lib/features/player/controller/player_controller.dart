@@ -43,7 +43,7 @@ class PlayerController extends ChangeNotifier {
   bool isPlaying = true;
   bool showControls = true;
   bool isBuffering = false;
-  bool isFullscreen = true;
+  bool isFullscreen = false;
   Duration position = Duration.zero;
   Duration duration = Duration.zero;
   double volume = 100;
