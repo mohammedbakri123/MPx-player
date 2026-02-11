@@ -33,10 +33,10 @@ class ControlsLayer extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withOpacity(0.7),
+                Colors.black.withValues(alpha: 0.7),
                 Colors.transparent,
                 Colors.transparent,
-                Colors.black.withOpacity(0.8),
+                Colors.black.withValues(alpha: 0.8),
               ],
               stops: const [0.0, 0.2, 0.7, 1.0],
             ),

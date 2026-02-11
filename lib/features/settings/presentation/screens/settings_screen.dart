@@ -28,7 +28,7 @@ class SettingsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.grey.shade200),
                 ),
@@ -46,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.3),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -147,21 +147,19 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 32),
 
               // Logout Button
-              Container(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.logout, size: 20),
-                  label: const Text('Log Out'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    backgroundColor: Colors.red.shade50,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: Colors.red.shade200),
-                    ),
+              ElevatedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.logout, size: 20),
+                label: const Text('Log Out'),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  backgroundColor: Colors.red.shade50,
+                  elevation: 0,
+                  minimumSize: const Size(double.infinity, 0), // Makes the button full width
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: Colors.red.shade200),
                   ),
                 ),
               ),
@@ -202,7 +200,7 @@ class SettingsScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -239,7 +237,7 @@ class SettingsScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -248,7 +246,7 @@ class SettingsScreen extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, size: 20, color: iconColor),
@@ -279,7 +277,7 @@ class SettingsScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -287,7 +285,7 @@ class SettingsScreen extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, size: 20, color: iconColor),
@@ -299,7 +297,8 @@ class SettingsScreen extends StatelessWidget {
         trailing: Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFF6366F1),
+          activeThumbColor: const Color(0xFF6366F1),
+          activeTrackColor: const Color(0xFF6366F1).withValues(alpha: 0.5),
         ),
       ),
     );

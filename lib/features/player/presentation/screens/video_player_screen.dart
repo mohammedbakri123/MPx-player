@@ -237,7 +237,7 @@ class _SubtitleSettingsSheetState extends State<_SubtitleSettingsSheet> {
   }
 
   Widget _colorOption(Color color, String name) {
-    final isSelected = widget.controller.subtitleColor.value == color.value;
+    final isSelected = widget.controller.subtitleColor == color;
     return GestureDetector(
       onTap: () => setState(() => widget.controller.setSubtitleColor(color)),
       child: Container(
@@ -289,7 +289,7 @@ class _SubtitleSettingsSheetState extends State<_SubtitleSettingsSheet> {
           color: widget.controller.subtitleColor,
           fontSize: widget.controller.subtitleFontSize,
           backgroundColor: widget.controller.subtitleHasBackground
-              ? Colors.black.withOpacity(0.7)
+              ? Colors.black.withValues(alpha: 0.7)
               : Colors.transparent,
         ),
       ),

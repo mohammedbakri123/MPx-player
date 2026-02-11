@@ -219,7 +219,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -255,7 +255,7 @@ class VideoCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
@@ -290,10 +290,10 @@ class VideoCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(8),
                           border:
-                              Border.all(color: Colors.white.withOpacity(0.2)),
+                              Border.all(color: Colors.white.withValues(alpha: 0.2)),
                         ),
                         child: Text(
                           video.resolution,
@@ -314,10 +314,10 @@ class VideoCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(8),
                           border:
-                              Border.all(color: Colors.white.withOpacity(0.2)),
+                              Border.all(color: Colors.white.withValues(alpha: 0.2)),
                         ),
                         child: Text(
                           video.formattedSize,
@@ -332,16 +332,16 @@ class VideoCard extends StatelessWidget {
                     // Play Button Overlay
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         child: Center(
                           child: Container(
                             width: 64,
                             height: 64,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                                 width: 2,
                               ),
                             ),

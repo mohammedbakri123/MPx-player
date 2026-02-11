@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import '../../../../../core/services/logger_service.dart';
 import '../../domain/entities/video_file.dart';
 import '../../domain/entities/video_folder.dart';
 
@@ -38,15 +39,15 @@ class VideoScanner {
     if (!forceRefresh && _cachedFolders != null && _lastScanTime != null) {
       final timeSinceLastScan = DateTime.now().difference(_lastScanTime!);
       if (timeSinceLastScan < _minScanInterval) {
-        print(
-            '📦 Returning cached results (${_cachedFolders!.length} folders)');
+        AppLogger.i(
+            'Returning cached results (${_cachedFolders!.length} folders)');
         return _cachedFolders!;
       }
     }
 
     // Prevent multiple simultaneous scans
     if (_isScanning) {
-      print('⏳ Scan already in progress, waiting...');
+      AppLogger.i('Scan already in progress, waiting...');
       // Wait for current scan to complete
       while (_isScanning) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -55,7 +56,7 @@ class VideoScanner {
     }
 
     _isScanning = true;
-    print('🔍 Starting video scan...');
+    AppLogger.i('Starting video scan...');
 
     final stopwatch = Stopwatch()..start();
     final List<VideoFile> allVideos = [];
@@ -63,10 +64,10 @@ class VideoScanner {
     try {
       // Get directories to scan
       final directoriesToScan = await _getDirectoriesToScan();
-      print('📁 Found ${directoriesToScan.length} directories to scan');
+      AppLogger.i('Found ${directoriesToScan.length} directories to scan');
 
       if (directoriesToScan.isEmpty) {
-        print('⚠️ No directories found to scan');
+        AppLogger.w('No directories found to scan');
         _isScanning = false;
         return [];
       }
@@ -74,14 +75,14 @@ class VideoScanner {
       // Scan each directory
       for (final dir in directoriesToScan) {
         if (await dir.exists()) {
-          print('🔎 Scanning: ${dir.path}');
+          AppLogger.i('Scanning: ${dir.path}');
           await _scanDirectory(dir, allVideos);
         }
       }
 
       stopwatch.stop();
-      print(
-          '✅ Scan complete in ${stopwatch.elapsedMilliseconds}ms. Found ${allVideos.length} videos');
+      AppLogger.i(
+          'Scan complete in ${stopwatch.elapsedMilliseconds}ms. Found ${allVideos.length} videos');
 
       // Cache results
       _cachedFolders = _groupVideosByFolder(allVideos);
@@ -90,8 +91,7 @@ class VideoScanner {
       _isScanning = false;
       return _cachedFolders!;
     } catch (e, stackTrace) {
-      print('❌ Error scanning videos: $e');
-      print(stackTrace);
+      AppLogger.e('Error scanning videos: $e', e, stackTrace);
       _isScanning = false;
       return _cachedFolders ?? [];
     }
@@ -115,7 +115,7 @@ class VideoScanner {
           }
         }
 
-        print('📱 Root storage: $rootPath');
+        AppLogger.i('Root storage: $rootPath');
 
         // Check if we can access the root
         if (await Directory(rootPath).exists()) {
@@ -135,7 +135,7 @@ class VideoScanner {
           for (final dirName in commonDirs) {
             final dir = Directory('$rootPath/$dirName');
             if (await dir.exists()) {
-              print('  ✅ Directory: $dirName');
+              AppLogger.i('Directory: $dirName');
               directories.add(dir);
             }
           }
@@ -163,7 +163,7 @@ class VideoScanner {
           for (final appDir in appDirs) {
             final dir = Directory('$rootPath/$appDir');
             if (await dir.exists()) {
-              print('  ✅ App directory: $appDir');
+              AppLogger.i('App directory: $appDir');
               directories.add(dir);
             }
           }
@@ -173,7 +173,7 @@ class VideoScanner {
         }
       }
     } catch (e) {
-      print('❌ Error getting directories: $e');
+      AppLogger.e('Error getting directories: $e');
     }
 
     return directories;
@@ -186,7 +186,7 @@ class VideoScanner {
       try {
         entities = await directory.list(recursive: false).toList();
       } catch (e) {
-        print('  ❌ Cannot access ${directory.path}');
+        AppLogger.e('Cannot access ${directory.path}');
         return;
       }
 
@@ -249,11 +249,11 @@ class VideoScanner {
       }
 
       if (videoCount > 0) {
-        print(
-            '  ✅ Found $videoCount videos in ${path.basename(directory.path)}');
+        AppLogger.i(
+            'Found $videoCount videos in ${path.basename(directory.path)}');
       }
     } catch (e) {
-      print('  ❌ Error scanning ${directory.path}: $e');
+      AppLogger.e('Error scanning ${directory.path}: $e');
     }
   }
 
@@ -394,6 +394,6 @@ class VideoScanner {
   void clearCache() {
     _cachedFolders = null;
     _lastScanTime = null;
-    print('🗑️ Cache cleared');
+    AppLogger.i('Cache cleared');
   }
 }

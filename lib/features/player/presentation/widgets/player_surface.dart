@@ -29,7 +29,7 @@ class PlayerSurface extends StatelessWidget {
               color: subtitleColor,
               fontWeight: FontWeight.w500,
               backgroundColor: subtitleHasBackground
-                  ? Colors.black.withOpacity(0.7)
+                  ? Colors.black.withValues(alpha: 0.7)
                   : Colors.transparent,
               shadows: !subtitleHasBackground
                   ? const [
