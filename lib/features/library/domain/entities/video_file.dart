@@ -25,6 +25,39 @@ class VideoFile {
     this.thumbnailPath,
   });
 
+  // JSON serialization methods
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'path': path,
+      'title': title,
+      'folderPath': folderPath,
+      'folderName': folderName,
+      'size': size,
+      'duration': duration,
+      'dateAdded': dateAdded.millisecondsSinceEpoch,
+      'width': width,
+      'height': height,
+      'thumbnailPath': thumbnailPath,
+    };
+  }
+
+  factory VideoFile.fromJson(Map<String, dynamic> json) {
+    return VideoFile(
+      id: json['id'] as String,
+      path: json['path'] as String,
+      title: json['title'] as String,
+      folderPath: json['folderPath'] as String,
+      folderName: json['folderName'] as String,
+      size: json['size'] as int,
+      duration: json['duration'] as int,
+      dateAdded: DateTime.fromMillisecondsSinceEpoch(json['dateAdded'] as int),
+      width: json['width'] as int?,
+      height: json['height'] as int?,
+      thumbnailPath: json['thumbnailPath'] as String?,
+    );
+  }
+
   String get formattedSize {
     if (size < 1024) return '$size B';
     if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)} KB';

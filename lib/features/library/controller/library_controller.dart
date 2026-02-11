@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/services/logger_service.dart';
 import '../domain/entities/video_folder.dart';
 import '../data/datasources/local_video_scanner.dart';
 
@@ -84,7 +85,13 @@ class LibraryController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final folders = await _scanner.scanForVideos(forceRefresh: forceRefresh);
+      final folders = await _scanner.scanForVideos(
+        forceRefresh: forceRefresh,
+        onProgress: (progress, status) {
+          // Update progress if needed - for now we just log it
+          AppLogger.i('Scan progress: ${(progress * 100).round()}% - $status');
+        },
+      );
       _folders = folders;
       _isLoading = false;
       _errorMessage = null;

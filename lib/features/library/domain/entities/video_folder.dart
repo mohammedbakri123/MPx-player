@@ -11,6 +11,25 @@ class VideoFolder {
     required this.videos,
   });
 
+  // JSON serialization methods
+  Map<String, dynamic> toJson() {
+    return {
+      'path': path,
+      'name': name,
+      'videos': videos.map((video) => video.toJson()).toList(),
+    };
+  }
+
+  factory VideoFolder.fromJson(Map<String, dynamic> json) {
+    return VideoFolder(
+      path: json['path'] as String,
+      name: json['name'] as String,
+      videos: (json['videos'] as List)
+          .map((videoJson) => VideoFile.fromJson(videoJson as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
   int get videoCount => videos.length;
 
   int get totalSize {
