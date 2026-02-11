@@ -4,6 +4,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 import 'features/library/controller/library_controller.dart';
 import 'features/library/data/datasources/local_video_scanner.dart';
+import 'features/splash/presentation/screens/splash_screen.dart';
 import 'core/widgets/permission_wrapper.dart';
 
 void main() {
@@ -13,19 +14,31 @@ void main() {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
     ),
   );
 
   runApp(const MPxPlayer());
 }
 
-class MPxPlayer extends StatelessWidget {
+class MPxPlayer extends StatefulWidget {
   const MPxPlayer({super.key});
 
   @override
+  State<MPxPlayer> createState() => _MPxPlayerState();
+}
+
+class _MPxPlayerState extends State<MPxPlayer> {
+  bool _showSplash = true;
+
+  void _onSplashComplete() {
+    setState(() {
+      _showSplash = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Provide LibraryController at the app level so it persists across navigation
     return ChangeNotifierProvider(
       create: (_) => LibraryController(VideoScanner()),
       child: MaterialApp(
@@ -39,7 +52,9 @@ class MPxPlayer extends StatelessWidget {
           useMaterial3: true,
           scaffoldBackgroundColor: const Color(0xFFF8FAFC),
         ),
-        home: const PermissionWrapper(),
+        home: _showSplash
+            ? SplashScreen(onComplete: _onSplashComplete)
+            : const PermissionWrapper(),
       ),
     );
   }
