@@ -23,32 +23,35 @@ class PlayerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Video surface
-        PlayerSurface(
-          controller: controller.videoController,
-          subtitleFontSize: controller.subtitleFontSize,
-          subtitleColor: controller.subtitleColor,
-          subtitleHasBackground: controller.subtitleHasBackground,
-        ),
+    return Semantics(
+      label: 'Video player for $videoTitle',
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Video surface
+          PlayerSurface(
+            controller: controller.videoController,
+            subtitleFontSize: controller.subtitleFontSize,
+            subtitleColor: controller.subtitleColor,
+            subtitleHasBackground: controller.subtitleHasBackground,
+          ),
 
-        // Gesture layer
-        GestureLayer(controller: controller),
+          // Gesture layer
+          GestureLayer(controller: controller),
 
-        // Overlay indicators
-        OverlayLayer(controller: controller),
+          // Overlay indicators
+          OverlayLayer(controller: controller),
 
-        // Controls layer
-        ControlsLayer(
-          controller: controller,
-          title: videoTitle,
-          onBack: onBack,
-          onSubtitleSettings: onSubtitleSettings,
-          onSettings: onSettings,
-        ),
-      ],
+          // Controls layer
+          ControlsLayer(
+            controller: controller,
+            title: videoTitle,
+            onBack: onBack,
+            onSubtitleSettings: onSubtitleSettings,
+            onSettings: onSettings,
+          ),
+        ],
+      ),
     );
   }
 }

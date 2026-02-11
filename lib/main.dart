@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
+import 'core/services/subtitle_settings_service.dart';
 import 'features/library/controller/library_controller.dart';
 import 'features/library/data/datasources/local_video_scanner.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'core/widgets/permission_wrapper.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SubtitleSettingsService.init(); // Initialize subtitle settings service
   MediaKit.ensureInitialized();
 
   SystemChrome.setSystemUIOverlayStyle(

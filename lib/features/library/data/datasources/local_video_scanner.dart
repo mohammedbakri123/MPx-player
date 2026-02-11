@@ -102,15 +102,18 @@ class VideoScanner {
 
       // Scan each directory concurrently for better performance
       final totalDirectories = directoriesToScan.length;
-      
+
       final futures = <Future<void>>[];
       for (int i = 0; i < directoriesToScan.length; i++) {
         final dir = directoriesToScan[i];
         if (await dir.exists()) {
           AppLogger.i('Scanning: ${dir.path}');
-          
-          // Use incremental scanning if we have previous metadata, otherwise use full scan
-          if (previousFileMetadata != null) {
+
+          // For forced refresh, always use full scan to ensure all videos are found
+          // Otherwise, use incremental scanning if we have previous metadata
+          if (forceRefresh) {
+            futures.add(_scanDirectoryWithProgressFallback(dir, allVideos, onProgress, i, totalDirectories));
+          } else if (previousFileMetadata != null) {
             futures.add(_scanDirectoryIncremental(dir, allVideos, currentFileMetadata, previousFileMetadata, onProgress, i, totalDirectories));
           } else {
             futures.add(_scanDirectoryWithProgressFallback(dir, allVideos, onProgress, i, totalDirectories));

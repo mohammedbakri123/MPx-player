@@ -82,6 +82,7 @@ class LibraryController extends ChangeNotifier {
   Future<void> _loadVideos({required bool forceRefresh}) async {
     _isLoading = true;
     _errorMessage = null;
+    // Don't notify listeners immediately to preserve current UI during refresh
     notifyListeners();
 
     try {

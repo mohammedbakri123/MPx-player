@@ -4,6 +4,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../domain/repositories/player_repository.dart';
 import '../data/repositories/media_kit_player_repository.dart';
+import '../../../core/services/subtitle_settings_service.dart';
 
 /// Controller for managing video player state and user interactions.
 ///
@@ -51,10 +52,10 @@ class PlayerController extends ChangeNotifier {
   bool isLongPressing = false;
 
   // Subtitle state (UI-only, no subtitle track management here)
-  bool subtitlesEnabled = true;
-  double subtitleFontSize = 24.0;
-  Color subtitleColor = const Color(0xFFFFFFFF);
-  bool subtitleHasBackground = true;
+  late bool subtitlesEnabled;
+  late double subtitleFontSize;
+  late Color subtitleColor;
+  late bool subtitleHasBackground;
 
   // Gesture state
   double dragStartX = 0;
@@ -74,6 +75,12 @@ class PlayerController extends ChangeNotifier {
   ///
   /// [repository] - The player engine abstraction for playback control.
   PlayerController(this._repository) {
+    // Initialize subtitle settings from persistent storage
+    subtitlesEnabled = SubtitleSettingsService.isEnabled;
+    subtitleFontSize = SubtitleSettingsService.fontSize;
+    subtitleColor = SubtitleSettingsService.color;
+    subtitleHasBackground = SubtitleSettingsService.hasBackground;
+    
     _setupListeners();
   }
 
@@ -263,6 +270,7 @@ class PlayerController extends ChangeNotifier {
   // Subtitle methods
   void toggleSubtitles(bool value) {
     subtitlesEnabled = value;
+    SubtitleSettingsService.setEnabled(value);
     if (value) {
       _repository.enableSubtitles();
     } else {
@@ -273,16 +281,19 @@ class PlayerController extends ChangeNotifier {
 
   void setSubtitleFontSize(double size) {
     subtitleFontSize = size;
+    SubtitleSettingsService.setFontSize(size);
     notifyListeners();
   }
 
   void setSubtitleColor(Color color) {
     subtitleColor = color;
+    SubtitleSettingsService.setColor(color);
     notifyListeners();
   }
 
   void setSubtitleBackground(bool hasBackground) {
     subtitleHasBackground = hasBackground;
+    SubtitleSettingsService.setHasBackground(hasBackground);
     notifyListeners();
   }
 
