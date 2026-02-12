@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../../../core/services/last_played_service.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/media_kit_player_repository.dart';
@@ -53,6 +54,8 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     super.initState();
     // Initialize with portrait orientation
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    // Save as last played video
+    LastPlayedService.saveLastPlayedVideo(widget.video);
   }
 
   @override
