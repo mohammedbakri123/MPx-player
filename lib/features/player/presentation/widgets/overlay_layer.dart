@@ -23,7 +23,8 @@ class OverlayLayer extends StatelessWidget {
               ? Center(
                   key: const ValueKey<bool>(true),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(20),
@@ -53,7 +54,9 @@ class OverlayLayer extends StatelessWidget {
                   right: 30,
                   top: MediaQuery.of(context).size.height / 2 - 60,
                   child: _buildVerticalIndicator(
-                    icon: controller.volume == 0 ? Icons.volume_off : Icons.volume_up,
+                    icon: controller.volume == 0
+                        ? Icons.volume_off
+                        : Icons.volume_up,
                     value: controller.volume / 100,
                     color: Colors.blue,
                     label: '${controller.volume.toInt()}',
@@ -93,7 +96,8 @@ class OverlayLayer extends StatelessWidget {
               ? Center(
                   key: const ValueKey<bool>(true),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(8),
@@ -110,7 +114,7 @@ class OverlayLayer extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          controller.formatTime(controller.position),
+                          controller.formatDuration(controller.position),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,

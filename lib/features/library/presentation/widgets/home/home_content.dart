@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/video_folder.dart';
-import '../../controller/library_controller.dart';
+import '../../../domain/entities/video_folder.dart';
+import '../../../controller/library_controller.dart';
 import 'folder_list_card.dart';
 import 'folder_grid_card.dart';
 import 'home_error_state.dart';

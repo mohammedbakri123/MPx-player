@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 import '../../domain/entities/video_folder.dart';
 import '../../controller/library_controller.dart';
 import 'folder_detail_screen.dart';
-import '../widgets/home_header.dart';
-import '../widgets/home_section_header.dart';
-import '../widgets/home_content.dart';
-import '../widgets/home_fab.dart';
+import '../widgets/home/home_header.dart';
+import '../widgets/home/home_section_header.dart';
+import '../widgets/home/home_content.dart';
+import '../widgets/home/home_fab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

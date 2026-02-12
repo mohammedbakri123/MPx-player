@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:google_fonts/google_fonts.dart';
+import '../widgets/splash_background.dart';
+import '../widgets/splash_logo.dart';
+import '../widgets/splash_title.dart';
+import '../widgets/splash_subtitle.dart';
+import '../widgets/splash_progress_bar.dart';
 
 class SplashScreen extends StatefulWidget {
   final VoidCallback onComplete;
@@ -63,26 +67,11 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background Image
-          Image.asset(
-            'assets/images/splash-bg.png',
-            fit: BoxFit.cover,
-          ),
-          // Dark Overlay
-          Container(
-            color: Colors.black.withValues(alpha: 0.6),
-          ),
-          // Blur effect overlay
-          Container(
-            color: Colors.black.withValues(alpha: 0.1),
-          ),
-          // Content
+          const SplashBackground(),
           AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
@@ -94,115 +83,17 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               );
             },
-            child: Column(
+            child: const Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo Container
-                Container(
-                  width: 96,
-                  height: 96,
-                  margin: const EdgeInsets.only(bottom: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withValues(alpha: 0.3),
-                        blurRadius: 40,
-                        spreadRadius: -10,
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      width: 64,
-                      height: 64,
-                    ),
-                  ),
-                ),
-                // Title
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'MP',
-                        style: GoogleFonts.inter(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: -1,
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'x',
-                        style: GoogleFonts.inter(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
-                          letterSpacing: -1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Subtitle
-                Text(
-                  'CINEMATIC EXPERIENCE',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.5),
-                    letterSpacing: 3,
-                  ),
-                ),
+                SplashLogo(),
+                SplashTitle(),
+                SizedBox(height: 8),
+                SplashSubtitle(),
               ],
             ),
           ),
-          // Loading Progress Bar
-          Positioned(
-            bottom: 48,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: AnimatedBuilder(
-                animation: _progressAnimation,
-                builder: (context, child) {
-                  return Container(
-                    width: 192,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        width: 192 * _progressAnimation.value,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: primaryColor,
-                          borderRadius: BorderRadius.circular(2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: primaryColor.withValues(alpha: 0.5),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
+          SplashProgressBar(animation: _progressAnimation),
         ],
       ),
     );

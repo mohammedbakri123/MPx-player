@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../controller/library_controller.dart';
+import '../../../controller/library_controller.dart';
 
 class HomeSectionHeader extends StatelessWidget {
   final LibraryController controller;

@@ -68,10 +68,9 @@ class ControlsLayer extends StatelessWidget {
                     duration: controller.duration,
                     playbackSpeed: controller.playbackSpeed,
                     isPlaying: controller.isPlaying,
-                    formatTime: controller.formatTime,
+                    formatTime: controller.formatDuration,
                     onSeekChanged: (value) {
-                      controller.position =
-                          Duration(milliseconds: value.toInt());
+                      controller.seek(Duration(milliseconds: value.toInt()));
                     },
                     onSeekEnd: (value) {
                       controller.seek(Duration(milliseconds: value.toInt()));

@@ -6,6 +6,8 @@ import '../../../library/domain/entities/video_file.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/media_kit_player_repository.dart';
 import '../widgets/player_view.dart';
+import '../widgets/subtitle_settings_sheet.dart';
+import '../widgets/settings_sheet.dart';
 
 /// Wrapper widget that provides PlayerController using Provider.
 ///
@@ -41,7 +43,8 @@ class _VideoPlayerScreenContent extends StatefulWidget {
   const _VideoPlayerScreenContent({required this.video});
 
   @override
-  State<_VideoPlayerScreenContent> createState() => _VideoPlayerScreenContentState();
+  State<_VideoPlayerScreenContent> createState() =>
+      _VideoPlayerScreenContentState();
 }
 
 class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
@@ -73,14 +76,15 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
       canPop: false, // Disable default pop behavior to handle it ourselves
       onPopInvokedWithResult: (didPop, Object? result) async {
         if (didPop) return; // If already popped, do nothing
-        
+
         // Store the navigator reference before the async operations
         final navigator = Navigator.of(context);
-        
+
         // Reset system UI settings when leaving the player
         await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-        
+        await SystemChrome.setPreferredOrientations(
+            [DeviceOrientation.portraitUp]);
+
         // Perform the navigation pop
         navigator.pop();
       },
@@ -92,7 +96,8 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
           onBack: () {
             // Reset system UI settings when leaving the player via back button
             SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-            SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+            SystemChrome.setPreferredOrientations(
+                [DeviceOrientation.portraitUp]);
             Navigator.pop(context);
           },
           onSubtitleSettings: () => _showSubtitleSettings(context, controller),
@@ -108,7 +113,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => _SubtitleSettingsSheet(controller: controller),
+      builder: (context) => SubtitleSettingsSheet(controller: controller),
     );
   }
 
@@ -116,7 +121,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => _SettingsSheet(controller: controller),
+      builder: (context) => SettingsSheet(controller: controller),
     );
   }
 
@@ -126,268 +131,5 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
-  }
-}
-
-// Subtitle Settings Bottom Sheet
-class _SubtitleSettingsSheet extends StatefulWidget {
-  final PlayerController controller;
-
-  const _SubtitleSettingsSheet({required this.controller});
-
-  @override
-  State<_SubtitleSettingsSheet> createState() => _SubtitleSettingsSheetState();
-}
-
-class _SubtitleSettingsSheetState extends State<_SubtitleSettingsSheet> {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade900,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildHandle(),
-              _buildTitle('Subtitle Settings'),
-              _buildSubtitleToggle(),
-              if (widget.controller.subtitlesEnabled) ...[
-                const Divider(color: Colors.grey),
-                _buildFontSizeControl(),
-                _buildColorSelection(),
-                _buildBackgroundToggle(),
-                _buildPreview(),
-              ],
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHandle() {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      width: 40,
-      height: 4,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade600,
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
-
-  Widget _buildTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubtitleToggle() {
-    return SwitchListTile(
-      title:
-          const Text('Enable Subtitles', style: TextStyle(color: Colors.white)),
-      subtitle: const Text(
-        'Subtitles will auto-detect',
-        style: TextStyle(color: Colors.grey, fontSize: 12),
-      ),
-      value: widget.controller.subtitlesEnabled,
-      onChanged: (value) {
-        setState(() => widget.controller.toggleSubtitles(value));
-      },
-    );
-  }
-
-  Widget _buildFontSizeControl() {
-    return Column(
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('Font Size',
-              style: TextStyle(color: Colors.white, fontSize: 16)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              const Text('A',
-                  style: TextStyle(color: Colors.grey, fontSize: 12)),
-              Expanded(
-                child: Slider(
-                  value: widget.controller.subtitleFontSize,
-                  min: 12,
-                  max: 48,
-                  divisions: 12,
-                  onChanged: (value) {
-                    setState(
-                        () => widget.controller.setSubtitleFontSize(value));
-                  },
-                ),
-              ),
-              const Text('A',
-                  style: TextStyle(color: Colors.grey, fontSize: 20)),
-            ],
-          ),
-        ),
-        Center(
-          child: Text(
-            '${widget.controller.subtitleFontSize.toInt()}pt',
-            style: const TextStyle(color: Colors.grey),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildColorSelection() {
-    return Column(
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text('Text Color',
-              style: TextStyle(color: Colors.white, fontSize: 16)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(
-            spacing: 12,
-            children: [
-              _colorOption(Colors.white, 'White'),
-              _colorOption(Colors.yellow, 'Yellow'),
-              _colorOption(Colors.cyan, 'Cyan'),
-              _colorOption(Colors.green, 'Green'),
-              _colorOption(Colors.red, 'Red'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _colorOption(Color color, String name) {
-    final isSelected = widget.controller.subtitleColor == color;
-    return GestureDetector(
-      onTap: () => setState(() => widget.controller.setSubtitleColor(color)),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : Colors.grey.shade800,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 6),
-            Text(name,
-                style:
-                    TextStyle(color: isSelected ? Colors.white : Colors.grey)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackgroundToggle() {
-    return SwitchListTile(
-      title:
-          const Text('Text Background', style: TextStyle(color: Colors.white)),
-      value: widget.controller.subtitleHasBackground,
-      onChanged: (value) {
-        setState(() => widget.controller.setSubtitleBackground(value));
-      },
-    );
-  }
-
-  Widget _buildPreview() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'This is a subtitle preview',
-        style: TextStyle(
-          color: widget.controller.subtitleColor,
-          fontSize: widget.controller.subtitleFontSize,
-          backgroundColor: widget.controller.subtitleHasBackground
-              ? Colors.black.withValues(alpha: 0.7)
-              : Colors.transparent,
-        ),
-      ),
-    );
-  }
-}
-
-// Settings Bottom Sheet
-class _SettingsSheet extends StatelessWidget {
-  final PlayerController controller;
-
-  const _SettingsSheet({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade900,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade600,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Settings',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.speed, color: Colors.white),
-              title: const Text('Speed', style: TextStyle(color: Colors.white)),
-              trailing: Text('${controller.playbackSpeed}x',
-                  style: const TextStyle(color: Colors.blue)),
-              onTap: () {
-                Navigator.pop(context);
-                controller.changeSpeed();
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
   }
 }
