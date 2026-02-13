@@ -22,14 +22,28 @@ class VideoMetadataService {
       // Create a temporary player to extract metadata
       final player = Player();
 
-      // Open the video file
-      await player.open(Media(videoPath));
+      // Open the video file without playing
+      await player.open(Media(videoPath), play: false);
 
       // Wait for the video to load and get dimensions
       final completer = Completer<VideoMetadata?>();
       int? width;
       int? height;
       Duration? duration;
+
+      // First check if values are already available
+      final currentWidth = player.state.width;
+      final currentHeight = player.state.height;
+      if (currentWidth != null && currentHeight != null) {
+        final metadata = VideoMetadata(
+          width: currentWidth,
+          height: currentHeight,
+          duration: player.state.duration,
+        );
+        _metadataCache[videoPath] = metadata;
+        player.dispose();
+        return metadata;
+      }
 
       // Listen for width and height streams
       final widthSubscription = player.stream.width.listen((w) {
@@ -48,8 +62,8 @@ class VideoMetadataService {
         }
       });
 
-      // Timeout after 3 seconds
-      final timer = Timer(const Duration(seconds: 3), () {
+      // Timeout after 5 seconds
+      final timer = Timer(const Duration(seconds: 5), () {
         if (!completer.isCompleted) {
           completer.complete(null);
         }
