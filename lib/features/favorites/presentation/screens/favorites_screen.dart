@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../library/domain/entities/video_file.dart';
-import '../../data/repositories/favorites_repository.dart';
+import '../../../../core/services/favorites_service.dart';
 import '../widgets/favorites_header.dart';
 import '../widgets/favorites_content.dart';
 import '../../../player/presentation/screens/video_player_screen.dart';
@@ -13,26 +13,25 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   List<VideoFile> _videos = [];
-  bool _isLoading = true, _isScanning = false, _isNavigating = false;
+  bool _isLoading = true, _isNavigating = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAllVideos();
+    _loadFavorites();
   }
 
-  Future<void> _loadAllVideos() async {
-    if (_isScanning) return;
-    setState(() => _isLoading = _isScanning = true);
+  Future<void> _loadFavorites() async {
+    setState(() => _isLoading = true);
     try {
-      final videos = await FavoritesRepository.loadVideos();
+      final videos = await FavoritesService.getFavorites();
       if (mounted)
         setState(() {
           _videos = videos;
-          _isLoading = _isScanning = false;
+          _isLoading = false;
         });
     } catch (e) {
-      if (mounted) setState(() => _isLoading = _isScanning = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -44,9 +43,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     setState(() => _isNavigating = false);
   }
 
-  void _loadDemoData() =>
-      setState(() => _videos = FavoritesRepository.loadDemoVideos());
-
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
@@ -57,10 +53,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               child: FavoritesContent(
                   videos: _videos,
                   isLoading: _isLoading,
-                  onRefresh: _loadAllVideos,
+                  onRefresh: _loadFavorites,
                   onVideoTap: _openVideoPlayer,
                   isNavigating: _isNavigating,
-                  onTryDemo: _loadDemoData)),
+                  onTryDemo: null)),
         ])),
       );
 }

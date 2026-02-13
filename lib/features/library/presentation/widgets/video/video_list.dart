@@ -6,6 +6,8 @@ class VideoList extends StatelessWidget {
   final List<VideoFile> videos;
   final VoidCallback onRefresh;
   final Function(VideoFile) onVideoTap;
+  final Function(VideoFile) onAddToFavorites;
+  final Set<String> favoriteIds;
   final bool isNavigating;
 
   const VideoList({
@@ -13,6 +15,8 @@ class VideoList extends StatelessWidget {
     required this.videos,
     required this.onRefresh,
     required this.onVideoTap,
+    required this.onAddToFavorites,
+    required this.favoriteIds,
     required this.isNavigating,
   });
 
@@ -24,10 +28,13 @@ class VideoList extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         itemCount: videos.length,
         itemBuilder: (context, index) {
+          final video = videos[index];
           return VideoListItem(
-            video: videos[index],
-            onTap: () => onVideoTap(videos[index]),
+            video: video,
+            onTap: () => onVideoTap(video),
+            onAddToFavorites: () => onAddToFavorites(video),
             isLoading: isNavigating,
+            isFavorite: favoriteIds.contains(video.id),
           );
         },
       ),

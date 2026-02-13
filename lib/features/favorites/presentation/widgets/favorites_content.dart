@@ -10,7 +10,7 @@ class FavoritesContent extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final void Function(VideoFile) onVideoTap;
   final bool isNavigating;
-  final VoidCallback onTryDemo;
+  final VoidCallback? onTryDemo;
 
   const FavoritesContent({
     super.key,
@@ -19,7 +19,7 @@ class FavoritesContent extends StatelessWidget {
     required this.onRefresh,
     required this.onVideoTap,
     required this.isNavigating,
-    required this.onTryDemo,
+    this.onTryDemo,
   });
 
   @override
