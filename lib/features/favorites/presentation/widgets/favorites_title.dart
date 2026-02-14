@@ -11,7 +11,7 @@ class FavoritesTitle extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'All Videos',
+          'Favorites',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/video_file.dart';
 import 'video_thumbnail.dart';
 import 'video_info.dart';
-import 'video_action_button.dart';
+// import 'video_action_button.dart';
 
 class VideoListItem extends StatelessWidget {
   final VideoFile video;
@@ -50,7 +50,7 @@ class VideoListItem extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             VideoInfo(video: video),
-            VideoActionButton(isLoading: isLoading),
+            // VideoActionButton(isLoading: isLoading),
           ],
         ),
       ),
