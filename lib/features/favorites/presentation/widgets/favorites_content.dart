@@ -9,6 +9,7 @@ class FavoritesContent extends StatelessWidget {
   final bool isLoading;
   final Future<void> Function() onRefresh;
   final void Function(VideoFile) onVideoTap;
+  final void Function(VideoFile) onRemove;
   final bool isNavigating;
   final VoidCallback? onTryDemo;
 
@@ -18,6 +19,7 @@ class FavoritesContent extends StatelessWidget {
     required this.isLoading,
     required this.onRefresh,
     required this.onVideoTap,
+    required this.onRemove,
     required this.isNavigating,
     this.onTryDemo,
   });
@@ -30,6 +32,7 @@ class FavoritesContent extends StatelessWidget {
       videos: videos,
       onRefresh: onRefresh,
       onVideoTap: onVideoTap,
+      onRemove: onRemove,
       isNavigating: isNavigating,
     );
   }

@@ -25,11 +25,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     setState(() => _isLoading = true);
     try {
       final videos = await FavoritesService.getFavorites();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _videos = videos;
           _isLoading = false;
         });
+      }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -41,6 +42,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     await Navigator.push(context,
         MaterialPageRoute(builder: (c) => VideoPlayerScreen(video: video)));
     setState(() => _isNavigating = false);
+  }
+
+  Future<void> _removeFromFavorites(VideoFile video) async {
+    await FavoritesService.toggleFavorite(video);
+    _loadFavorites();
   }
 
   @override
@@ -56,6 +62,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   onRefresh: _loadFavorites,
                   onVideoTap: _openVideoPlayer,
                   isNavigating: _isNavigating,
+                  onRemove: _removeFromFavorites,
                   onTryDemo: null)),
         ])),
       );

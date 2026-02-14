@@ -6,6 +6,7 @@ class FavoritesVideoList extends StatelessWidget {
   final List<VideoFile> videos;
   final Future<void> Function() onRefresh;
   final void Function(VideoFile) onVideoTap;
+  final void Function(VideoFile) onRemove;
   final bool isNavigating;
 
   const FavoritesVideoList({
@@ -13,6 +14,7 @@ class FavoritesVideoList extends StatelessWidget {
     required this.videos,
     required this.onRefresh,
     required this.onVideoTap,
+    required this.onRemove,
     required this.isNavigating,
   });
 
@@ -27,6 +29,7 @@ class FavoritesVideoList extends StatelessWidget {
           return VideoCard(
             video: videos[index],
             onTap: () => onVideoTap(videos[index]),
+            onRemove: () => onRemove(videos[index]),
             isLoading: isNavigating,
           );
         },
