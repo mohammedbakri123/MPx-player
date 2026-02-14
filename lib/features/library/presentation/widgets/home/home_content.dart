@@ -33,65 +33,18 @@ class HomeContent extends StatelessWidget {
       );
     }
 
-    // Content (list or grid) - show existing folders even while loading
-    return Stack(
-      children: [
-        RefreshIndicator(
-          onRefresh: controller.refresh,
-          child: controller.isGridView
-              ? _buildGridView(controller.folders)
-              : _buildListView(controller.folders),
-        ),
-        // Show loading overlay only when refreshing and we have existing data
-        if (controller.isLoading && controller.folders.isNotEmpty)
-          Positioned(
-            top: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Color(0xFF6366F1),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      'Updating...',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF6366F1),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        // Show full loading indicator only when we have no data
-        if (controller.isLoading && controller.folders.isEmpty)
-          const Center(child: CircularProgressIndicator()),
-      ],
+    // Show full loading indicator only when we have no data at all
+    if (controller.isLoading && controller.folders.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Content (list or grid) - show existing folders
+    // RefreshIndicator will show its own spinner during pull-to-refresh
+    return RefreshIndicator(
+      onRefresh: controller.refresh,
+      child: controller.isGridView
+          ? _buildGridView(controller.folders)
+          : _buildListView(controller.folders),
     );
   }
 
