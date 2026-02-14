@@ -16,10 +16,10 @@ class FolderGridCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -31,50 +31,34 @@ class FolderGridCard extends StatelessWidget {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.folder,
-                color: Color(0xFF6366F1),
-                size: 32,
-              ),
+            const Icon(
+              Icons.folder,
+              color: Color(0xFF6366F1),
+              size: 40,
             ),
-            const SizedBox(height: 16),
-            Expanded(
+            const SizedBox(height: 8),
+            Flexible(
               child: Text(
                 folder.name,
                 style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                   color: Color(0xFF1E293B),
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${folder.videoCount} videos',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade500,
               ),
             ),
             const SizedBox(height: 2),
             Text(
-              folder.formattedSize,
+              '${folder.videoCount} videos',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey.shade400,
+                color: Colors.grey.shade500,
               ),
             ),
           ],
