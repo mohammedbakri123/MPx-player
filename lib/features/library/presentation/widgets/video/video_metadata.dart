@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../../../domain/entities/video_file.dart';
 import '../../../../../core/services/video_metadata_service.dart';
@@ -21,12 +22,20 @@ class _VideoMetadataState extends State<VideoMetadata> {
   @override
   void initState() {
     super.initState();
+    developer.log('VideoMetadata initState for: ${widget.video.path}',
+        name: 'VideoMetadata');
     _loadResolution();
   }
 
   Future<void> _loadResolution() async {
+    developer.log('Loading resolution for: ${widget.video.path}',
+        name: 'VideoMetadata');
+
     // If video already has resolution data, use it
     final existingResolution = widget.video.resolution;
+    developer.log('Existing resolution: $existingResolution',
+        name: 'VideoMetadata');
+
     if (existingResolution != 'Unknown') {
       setState(() {
         _resolution = existingResolution;
@@ -39,19 +48,38 @@ class _VideoMetadataState extends State<VideoMetadata> {
       _isLoading = true;
     });
 
-    final metadata =
-        await VideoMetadataService().extractMetadata(widget.video.path);
+    try {
+      developer.log('Calling extractMetadata...', name: 'VideoMetadata');
+      final metadata =
+          await VideoMetadataService().extractMetadata(widget.video.path);
+      developer.log('Metadata result: ${metadata?.width}x${metadata?.height}',
+          name: 'VideoMetadata');
 
-    if (mounted && metadata != null && metadata.height != null) {
-      setState(() {
-        _resolution = _formatResolution(metadata.height!);
-        _isLoading = false;
-      });
-    } else if (mounted) {
-      setState(() {
-        _resolution = 'Unknown';
-        _isLoading = false;
-      });
+      if (mounted && metadata != null && metadata.height != null) {
+        final formatted = _formatResolution(metadata.height!);
+        developer.log('Formatted resolution: $formatted',
+            name: 'VideoMetadata');
+        setState(() {
+          _resolution = formatted;
+          _isLoading = false;
+        });
+      } else if (mounted) {
+        developer.log('Setting resolution to Unknown (no metadata)',
+            name: 'VideoMetadata');
+        setState(() {
+          _resolution = 'Unknown';
+          _isLoading = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      developer.log('Error loading resolution: $e',
+          name: 'VideoMetadata', error: e, stackTrace: stackTrace);
+      if (mounted) {
+        setState(() {
+          _resolution = 'Unknown';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -65,6 +93,10 @@ class _VideoMetadataState extends State<VideoMetadata> {
 
   @override
   Widget build(BuildContext context) {
+    developer.log(
+        'Building VideoMetadata - resolution: $_resolution, loading: $_isLoading',
+        name: 'VideoMetadata');
+
     return Wrap(
       spacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,

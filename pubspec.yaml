@@ -31,6 +31,10 @@ dependencies:
   wakelock_plus: ^1.2.4
   provider: ^6.1.5+1
   
+  # Video Thumbnails & Metadata
+  video_thumbnail: ^0.5.6
+  media_data_extractor: ^0.0.8
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

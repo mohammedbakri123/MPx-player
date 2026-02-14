@@ -1,91 +1,81 @@
-import 'dart:async';
-import 'package:media_kit/media_kit.dart';
+import 'dart:io';
+import 'package:media_data_extractor/media_data_extractor.dart';
+import 'logger_service.dart';
 
 /// Service for extracting video metadata (width, height, duration)
+/// Uses media_data_extractor for reliable cross-platform metadata extraction
 class VideoMetadataService {
   static final VideoMetadataService _instance =
       VideoMetadataService._internal();
   factory VideoMetadataService() => _instance;
   VideoMetadataService._internal();
 
+  final _extractor = MediaDataExtractor();
+
   // Cache for metadata to avoid re-extracting
   final Map<String, VideoMetadata> _metadataCache = {};
 
   /// Extract metadata from a video file
   Future<VideoMetadata?> extractMetadata(String videoPath) async {
+    AppLogger.i('Extracting metadata for: $videoPath');
+
     // Check cache first
     if (_metadataCache.containsKey(videoPath)) {
+      AppLogger.i('Returning cached metadata for: $videoPath');
       return _metadataCache[videoPath];
     }
 
-    try {
-      // Create a temporary player to extract metadata
-      final player = Player();
-
-      // Open the video file without playing
-      await player.open(Media(videoPath), play: false);
-
-      // Wait for the video to load and get dimensions
-      final completer = Completer<VideoMetadata?>();
-      int? width;
-      int? height;
-      Duration? duration;
-
-      // First check if values are already available
-      final currentWidth = player.state.width;
-      final currentHeight = player.state.height;
-      if (currentWidth != null && currentHeight != null) {
-        final metadata = VideoMetadata(
-          width: currentWidth,
-          height: currentHeight,
-          duration: player.state.duration,
-        );
-        _metadataCache[videoPath] = metadata;
-        player.dispose();
-        return metadata;
-      }
-
-      // Listen for width and height streams
-      final widthSubscription = player.stream.width.listen((w) {
-        width = w;
-        if (width != null && height != null && !completer.isCompleted) {
-          completer.complete(
-              VideoMetadata(width: width, height: height, duration: duration));
-        }
-      });
-
-      final heightSubscription = player.stream.height.listen((h) {
-        height = h;
-        if (width != null && height != null && !completer.isCompleted) {
-          completer.complete(
-              VideoMetadata(width: width, height: height, duration: duration));
-        }
-      });
-
-      // Timeout after 5 seconds
-      final timer = Timer(const Duration(seconds: 5), () {
-        if (!completer.isCompleted) {
-          completer.complete(null);
-        }
-      });
-
-      // Wait for metadata or timeout
-      final metadata = await completer.future;
-
-      // Cancel subscriptions and dispose
-      await widthSubscription.cancel();
-      await heightSubscription.cancel();
-      timer.cancel();
-      player.dispose();
-
-      if (metadata != null) {
-        _metadataCache[videoPath] = metadata;
-      }
-
-      return metadata;
-    } catch (e) {
+    // Verify file exists
+    if (!File(videoPath).existsSync()) {
+      AppLogger.w('Video file does not exist: $videoPath');
       return null;
     }
+
+    try {
+      AppLogger.i('Calling media_data_extractor for: $videoPath');
+
+      final videoData = await _extractor.getVideoData(
+        MediaDataSource(
+          type: MediaDataSourceType.file,
+          url: videoPath,
+        ),
+      );
+
+      if (videoData.tracks.isEmpty) {
+        AppLogger.w('media_data_extractor returned no tracks for: $videoPath');
+        return null;
+      }
+
+      // Get the first video track
+      final track = videoData.tracks.first;
+      if (track == null) {
+        AppLogger.w('First track is null for: $videoPath');
+        return null;
+      }
+
+      AppLogger.i(
+          'Extracted metadata - width: ${track.width}, height: ${track.height}, duration: ${track.duration}');
+
+      final result = VideoMetadata(
+        width: track.width?.toInt(),
+        height: track.height?.toInt(),
+        duration: track.duration != null
+            ? Duration(milliseconds: track.duration!.toInt())
+            : null,
+      );
+
+      _metadataCache[videoPath] = result;
+      return result;
+    } catch (e, stackTrace) {
+      AppLogger.e('Error extracting metadata: $e');
+      AppLogger.e('Stack trace: $stackTrace');
+      return null;
+    }
+  }
+
+  /// Clear the metadata cache
+  void clearCache() {
+    _metadataCache.clear();
   }
 }
 

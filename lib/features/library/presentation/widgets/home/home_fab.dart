@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../../core/services/last_played_service.dart';
+import '../../../../../core/services/video_thumbnail_generator_service.dart';
 import '../../../../player/presentation/screens/video_player_screen.dart';
 import '../../../domain/entities/video_file.dart';
 
@@ -13,6 +14,8 @@ class HomeFAB extends StatefulWidget {
 
 class _HomeFABState extends State<HomeFAB> {
   VideoFile? _lastVideo;
+  String? _thumbnailPath;
+  bool _isLoadingThumbnail = false;
 
   @override
   void initState() {
@@ -26,6 +29,35 @@ class _HomeFABState extends State<HomeFAB> {
       setState(() {
         _lastVideo = video;
       });
+      _loadThumbnail();
+    }
+  }
+
+  Future<void> _loadThumbnail() async {
+    if (_lastVideo == null) return;
+
+    // Use existing thumbnail if available
+    if (_lastVideo!.thumbnailPath != null &&
+        File(_lastVideo!.thumbnailPath!).existsSync()) {
+      setState(() {
+        _thumbnailPath = _lastVideo!.thumbnailPath;
+      });
+      return;
+    }
+
+    // Generate thumbnail on-demand
+    setState(() {
+      _isLoadingThumbnail = true;
+    });
+
+    final thumbnailPath = await VideoThumbnailGeneratorService()
+        .generateThumbnail(_lastVideo!.path);
+
+    if (mounted) {
+      setState(() {
+        _thumbnailPath = thumbnailPath;
+        _isLoadingThumbnail = false;
+      });
     }
   }
 
@@ -38,6 +70,41 @@ class _HomeFABState extends State<HomeFAB> {
         ),
       );
     }
+  }
+
+  Widget _buildThumbnail() {
+    if (_isLoadingThumbnail) {
+      return const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Colors.white70,
+          ),
+        ),
+      );
+    }
+
+    if (_thumbnailPath != null && File(_thumbnailPath!).existsSync()) {
+      return Image.file(
+        File(_thumbnailPath!),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(
+            Icons.video_file,
+            color: Colors.white70,
+            size: 28,
+          );
+        },
+      );
+    }
+
+    return const Icon(
+      Icons.video_file,
+      color: Colors.white70,
+      size: 28,
+    );
   }
 
   @override
@@ -77,24 +144,7 @@ class _HomeFABState extends State<HomeFAB> {
                       width: 64,
                       height: 64,
                       color: Colors.black26,
-                      child: _lastVideo!.thumbnailPath != null &&
-                              File(_lastVideo!.thumbnailPath!).existsSync()
-                          ? Image.file(
-                              File(_lastVideo!.thumbnailPath!),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.video_file,
-                                  color: Colors.white70,
-                                  size: 28,
-                                );
-                              },
-                            )
-                          : const Icon(
-                              Icons.video_file,
-                              color: Colors.white70,
-                              size: 28,
-                            ),
+                      child: _buildThumbnail(),
                     ),
                   ),
                   // Title and play icon

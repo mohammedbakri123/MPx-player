@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../library/domain/entities/video_file.dart';
+import '../../../library/presentation/widgets/video/video_metadata.dart';
 
 class VideoInfo extends StatelessWidget {
   final VideoFile video;
@@ -15,7 +16,7 @@ class VideoInfo extends StatelessWidget {
         children: [
           _buildTitle(),
           const SizedBox(height: 8),
-          _buildMetaRow(),
+          VideoMetadata(video: video),
         ],
       ),
     );
@@ -31,34 +32,6 @@ class VideoInfo extends StatelessWidget {
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildMetaRow() {
-    return Row(
-      children: [
-        Icon(Icons.folder_outlined, size: 14, color: Colors.grey.shade500),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            video.folderName,
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade500),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '• ${video.formattedDate}',
-          style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade500),
-        ),
-      ],
     );
   }
 }
