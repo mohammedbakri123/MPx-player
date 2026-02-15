@@ -9,11 +9,13 @@ import 'home_empty_state.dart';
 class HomeContent extends StatelessWidget {
   final LibraryController controller;
   final void Function(VideoFolder folder) onFolderTap;
+  final ScrollController? scrollController;
 
   const HomeContent({
     super.key,
     required this.controller,
     required this.onFolderTap,
+    this.scrollController,
   });
 
   @override
@@ -53,6 +55,7 @@ class HomeContent extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return ListView.builder(
+      controller: scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       itemCount: folders.length,
       itemBuilder: (context, index) {
@@ -70,6 +73,7 @@ class HomeContent extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return GridView.builder(
+      controller: scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
