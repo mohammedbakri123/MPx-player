@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/services/last_played_service.dart';
+import '../../../../core/services/play_history_service.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/media_kit_player_repository.dart';
@@ -83,6 +84,70 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     // Save as last played video
     LastPlayedService.saveLastPlayedVideo(widget.video);
+    // Check for auto-resume after a short delay to ensure video is loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndResumePlayback();
+    });
+  }
+
+  Future<void> _checkAndResumePlayback() async {
+    final controller = context.read<PlayerController>();
+    final video = widget.video;
+
+    // Wait for duration to be loaded
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Check if we should resume
+    final shouldResume = await PlayHistoryService.shouldResume(
+      video.id,
+      controller.duration,
+    );
+
+    if (!shouldResume) return;
+
+    // Get the saved position
+    final savedPosition = await PlayHistoryService.getPosition(video.id);
+    if (savedPosition == null) return;
+
+    // Seek to the saved position
+    controller.seek(savedPosition);
+
+    // Show resume snackbar
+    if (mounted) {
+      final formattedTime = formatTime(savedPosition);
+      _showResumeSnackbar(controller, formattedTime);
+    }
+  }
+
+  void _showResumeSnackbar(PlayerController controller, String timeStr) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    // Hide any existing snackbars
+    scaffoldMessenger.hideCurrentSnackBar();
+
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          'Resumed from $timeStr',
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+        ),
+        duration: const Duration(seconds: 5),
+        backgroundColor: Colors.black.withValues(alpha: 0.8),
+        action: SnackBarAction(
+          label: 'Restart',
+          textColor: Colors.white,
+          onPressed: () {
+            // Seek to beginning
+            controller.seek(Duration.zero);
+            // Hide the snackbar
+            scaffoldMessenger.hideCurrentSnackBar();
+          },
+        ),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
   }
 
   @override
@@ -157,6 +222,10 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
 
   @override
   void dispose() {
+    // Save current position before leaving
+    final controller = context.read<PlayerController>();
+    controller.saveCurrentPosition();
+
     // Ensure system UI settings are reset when widget is disposed
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
