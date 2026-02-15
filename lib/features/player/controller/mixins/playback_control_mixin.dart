@@ -14,11 +14,16 @@ mixin PlaybackControlMixin on ChangeNotifier {
 
   void togglePlayPause() {
     if (state.isPlaying) {
+      // User is pausing - save position
       repository.pause();
+      onPause();
     } else {
       repository.play();
     }
   }
+
+  /// Called when user pauses the video - override to save position
+  void onPause() {}
 
   void seek(Duration position) {
     repository.seek(position);

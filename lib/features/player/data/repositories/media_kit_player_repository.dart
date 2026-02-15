@@ -112,6 +112,12 @@ class MediaKitPlayerRepository implements PlayerRepository {
   }
 
   @override
+  Stream<bool> get completedStream {
+    _ensureNotDisposed();
+    return _player.stream.completed;
+  }
+
+  @override
   void dispose() {
     if (_isDisposed) return;
     _isDisposed = true;

@@ -14,10 +14,37 @@ import '../widgets/settings_sheet.dart';
 ///
 /// This widget creates a PlayerController with proper dependency injection
 /// and automatically handles disposal when the widget is removed.
-class VideoPlayerScreen extends StatelessWidget {
+class VideoPlayerScreen extends StatefulWidget {
   final VideoFile video;
 
   const VideoPlayerScreen({super.key, required this.video});
+
+  @override
+  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
+}
+
+class _VideoPlayerScreenState extends State<VideoPlayerScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // App going to background - save position
+      final controller = context.read<PlayerController>();
+      controller.savePositionOnBackground();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +54,12 @@ class VideoPlayerScreen extends StatelessWidget {
       create: (_) {
         final repository = MediaKitPlayerRepository();
         final controller = PlayerController(repository);
-        controller.loadVideo(video.path);
+        controller.loadVideoFile(widget.video);
         WakelockPlus.enable();
         controller.startHideTimer();
         return controller;
       },
-      child: _VideoPlayerScreenContent(video: video),
+      child: _VideoPlayerScreenContent(video: widget.video),
     );
   }
 }

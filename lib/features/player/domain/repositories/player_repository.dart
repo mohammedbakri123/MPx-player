@@ -58,6 +58,11 @@ abstract class PlayerRepository {
   /// Emits `true` when video is buffering, `false` otherwise.
   Stream<bool> get bufferingStream;
 
+  /// Stream of playback completion state.
+  ///
+  /// Emits `true` when video playback has completed.
+  Stream<bool> get completedStream;
+
   /// Disposes of all resources used by the player.
   ///
   /// Should be called when the player is no longer needed.

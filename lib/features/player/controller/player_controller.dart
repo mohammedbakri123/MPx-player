@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:ui' show Color;
 import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../../core/services/play_history_service.dart';
+import '../../library/domain/entities/video_file.dart';
 import '../domain/repositories/player_repository.dart';
 import '../data/repositories/media_kit_player_repository.dart';
 import 'player_state.dart';
@@ -23,6 +26,21 @@ class PlayerController extends ChangeNotifier
     with GestureHandlerMixin, SubtitleManagerMixin, PlaybackControlMixin {
   final PlayerRepository _repository;
   final PlayerState _state = PlayerState();
+
+  // Current video being played
+  VideoFile? _currentVideo;
+
+  // Auto-save timer for periodic position saves
+  Timer? _autoSaveTimer;
+
+  // Last save timestamp for throttling
+  DateTime? _lastSaveTime;
+
+  // Throttle duration (minimum time between saves)
+  static const Duration _saveThrottleDuration = Duration(seconds: 5);
+
+  // Auto-save interval
+  static const Duration _autoSaveInterval = Duration(seconds: 30);
 
   // Getters for state access
   @override
@@ -55,6 +73,9 @@ class PlayerController extends ChangeNotifier
   bool get showVolumeIndicator => _state.showVolumeIndicator;
   bool get showBrightnessIndicator => _state.showBrightnessIndicator;
   double get brightnessValue => _state.brightnessValue;
+
+  /// Returns the current video being played
+  VideoFile? get currentVideo => _currentVideo;
 
   /// Returns the underlying Player instance for VideoController creation.
   dynamic get player => (_repository as MediaKitPlayerRepository).player;
@@ -91,6 +112,21 @@ class PlayerController extends ChangeNotifier
       _state.isBuffering = buffering;
       notifyListeners();
     });
+
+    _repository.completedStream.listen((completed) {
+      if (completed) {
+        // Video playback completed - reset position to 0
+        resetPositionOnVideoEnd();
+      }
+    });
+  }
+
+  /// Load a video file and start auto-save timer
+  Future<void> loadVideoFile(VideoFile video) async {
+    _currentVideo = video;
+    await super.loadVideo(video.path);
+    await applySubtitleSettings();
+    _startAutoSaveTimer();
   }
 
   @override
@@ -108,8 +144,81 @@ class PlayerController extends ChangeNotifier
     super.seek(position);
   }
 
+  /// Start the auto-save timer that saves position every 30 seconds
+  void _startAutoSaveTimer() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer.periodic(_autoSaveInterval, (_) {
+      if (_state.isPlaying) {
+        saveCurrentPosition();
+      }
+    });
+  }
+
+  /// Save current playback position to history
+  /// Returns true if save was performed, false if throttled
+  Future<bool> saveCurrentPosition() async {
+    // Check if we have a current video
+    if (_currentVideo == null) {
+      return false;
+    }
+
+    // Check if position is greater than 5 seconds (don't save at very beginning)
+    if (_state.position.inSeconds < 5) {
+      return false;
+    }
+
+    // Check throttling - don't save more than once every 5 seconds
+    if (_lastSaveTime != null) {
+      final timeSinceLastSave = DateTime.now().difference(_lastSaveTime!);
+      if (timeSinceLastSave < _saveThrottleDuration) {
+        return false;
+      }
+    }
+
+    // Perform the save
+    _lastSaveTime = DateTime.now();
+    return await PlayHistoryService.savePosition(
+      _currentVideo!,
+      _state.position,
+      _state.duration,
+    );
+  }
+
+  /// Save position when user pauses
+  void savePositionOnPause() {
+    saveCurrentPosition();
+  }
+
+  /// Save position when app goes to background
+  void savePositionOnBackground() {
+    saveCurrentPosition();
+  }
+
+  @override
+  void onPause() {
+    savePositionOnPause();
+  }
+
+  /// Reset position to 0 when video ends (video finished)
+  Future<void> resetPositionOnVideoEnd() async {
+    if (_currentVideo == null) return;
+
+    await PlayHistoryService.savePosition(
+      _currentVideo!,
+      Duration.zero,
+      _state.duration,
+    );
+  }
+
   @override
   void dispose() {
+    // Cancel auto-save timer
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = null;
+
+    // Save final position before disposing
+    saveCurrentPosition();
+
     WakelockPlus.disable();
     _repository.dispose();
     super.dispose();
