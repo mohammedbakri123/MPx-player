@@ -41,9 +41,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      // App going to background - save position
+      // App going to background - save position and pause
       final controller = context.read<PlayerController>();
       controller.savePositionOnBackground();
+      controller.pauseVideo();
     }
   }
 
@@ -77,6 +78,9 @@ class _VideoPlayerScreenContent extends StatefulWidget {
 }
 
 class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
+      _resumeSnackBarController;
+
   @override
   void initState() {
     super.initState();
@@ -94,20 +98,29 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     final controller = context.read<PlayerController>();
     final video = widget.video;
 
-    // Wait for duration to be loaded
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Wait for duration to be loaded (max 3 seconds)
+    var attempts = 0;
+    while (controller.duration.inSeconds == 0 && attempts < 30) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      attempts++;
+    }
 
-    // Check if we should resume
-    final shouldResume = await PlayHistoryService.shouldResume(
-      video.id,
-      controller.duration,
-    );
-
-    if (!shouldResume) return;
+    // If duration is still 0, video failed to load
+    if (controller.duration.inSeconds == 0) return;
 
     // Get the saved position
     final savedPosition = await PlayHistoryService.getPosition(video.id);
     if (savedPosition == null) return;
+
+    // Check if we should resume (position > 5s from start and > 30s from end)
+    final totalSeconds = controller.duration.inSeconds;
+    final positionSeconds = savedPosition.inSeconds;
+    final remainingSeconds = totalSeconds - positionSeconds;
+
+    // Don't resume if at the beginning or near the end
+    if (positionSeconds < 5 || remainingSeconds <= 30) {
+      return;
+    }
 
     // Seek to the saved position
     controller.seek(savedPosition);
@@ -125,7 +138,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     // Hide any existing snackbars
     scaffoldMessenger.hideCurrentSnackBar();
 
-    scaffoldMessenger.showSnackBar(
+    _resumeSnackBarController = scaffoldMessenger.showSnackBar(
       SnackBar(
         content: Text(
           'Resumed from $timeStr',
@@ -140,7 +153,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
             // Seek to beginning
             controller.seek(Duration.zero);
             // Hide the snackbar
-            scaffoldMessenger.hideCurrentSnackBar();
+            _resumeSnackBarController?.close();
           },
         ),
         behavior: SnackBarBehavior.floating,
@@ -172,6 +185,10 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
       onPopInvokedWithResult: (didPop, Object? result) async {
         if (didPop) return; // If already popped, do nothing
 
+        // Pause video and save position before leaving (force save)
+        controller.saveCurrentPosition(force: true);
+        controller.pauseVideo();
+
         // Store the navigator reference before the async operations
         final navigator = Navigator.of(context);
 
@@ -189,6 +206,10 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
           controller: controller,
           videoTitle: widget.video.title,
           onBack: () {
+            // Pause video and save position before leaving via back button (force save)
+            controller.saveCurrentPosition(force: true);
+            controller.pauseVideo();
+
             // Reset system UI settings when leaving the player via back button
             SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
             SystemChrome.setPreferredOrientations(
@@ -222,13 +243,8 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
 
   @override
   void dispose() {
-    // Save current position before leaving
-    final controller = context.read<PlayerController>();
-    controller.saveCurrentPosition();
-
-    // Ensure system UI settings are reset when widget is disposed
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    // Close the resume snackbar when leaving the player
+    _resumeSnackBarController?.close();
     super.dispose();
   }
 }

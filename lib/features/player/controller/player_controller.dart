@@ -156,7 +156,7 @@ class PlayerController extends ChangeNotifier
 
   /// Save current playback position to history
   /// Returns true if save was performed, false if throttled
-  Future<bool> saveCurrentPosition() async {
+  Future<bool> saveCurrentPosition({bool force = false}) async {
     // Check if we have a current video
     if (_currentVideo == null) {
       return false;
@@ -167,8 +167,8 @@ class PlayerController extends ChangeNotifier
       return false;
     }
 
-    // Check throttling - don't save more than once every 5 seconds
-    if (_lastSaveTime != null) {
+    // Check throttling - don't save more than once every 5 seconds (unless forced)
+    if (!force && _lastSaveTime != null) {
       final timeSinceLastSave = DateTime.now().difference(_lastSaveTime!);
       if (timeSinceLastSave < _saveThrottleDuration) {
         return false;
@@ -199,6 +199,13 @@ class PlayerController extends ChangeNotifier
     savePositionOnPause();
   }
 
+  /// Pause the video playback
+  void pauseVideo() {
+    _repository.pause();
+    _state.isPlaying = false;
+    notifyListeners();
+  }
+
   /// Reset position to 0 when video ends (video finished)
   Future<void> resetPositionOnVideoEnd() async {
     if (_currentVideo == null) return;
@@ -216,8 +223,8 @@ class PlayerController extends ChangeNotifier
     _autoSaveTimer?.cancel();
     _autoSaveTimer = null;
 
-    // Save final position before disposing
-    saveCurrentPosition();
+    // Save final position before disposing (force save)
+    saveCurrentPosition(force: true);
 
     WakelockPlus.disable();
     _repository.dispose();
