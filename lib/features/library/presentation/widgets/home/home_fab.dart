@@ -23,13 +23,29 @@ class _HomeFABState extends State<HomeFAB> {
     _loadLastVideo();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload when widget becomes visible again (e.g., returning from video player)
+    // This gets called when we navigate back from another screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadLastVideo();
+    });
+  }
+
   void _loadLastVideo() {
     final video = LastPlayedService.getLastPlayedVideo();
-    if (mounted && video != null) {
+    if (mounted) {
       setState(() {
         _lastVideo = video;
+        // Reset thumbnail if video changed
+        if (_lastVideo?.id != video?.id) {
+          _thumbnailPath = null;
+        }
       });
-      _loadThumbnail();
+      if (video != null) {
+        _loadThumbnail();
+      }
     }
   }
 
@@ -61,14 +77,16 @@ class _HomeFABState extends State<HomeFAB> {
     }
   }
 
-  void _openLastVideo() {
+  void _openLastVideo() async {
     if (_lastVideo != null) {
-      Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => VideoPlayerScreen(video: _lastVideo!),
         ),
       );
+      // Reload the last video after returning from player
+      _loadLastVideo();
     }
   }
 

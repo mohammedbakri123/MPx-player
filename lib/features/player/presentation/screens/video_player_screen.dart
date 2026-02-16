@@ -43,8 +43,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (state == AppLifecycleState.paused) {
       // App going to background - save position and pause
       final controller = context.read<PlayerController>();
-      controller.savePositionOnBackground();
       controller.pauseVideo();
+      // Fire-and-forget is OK here — OS gives us a brief window,
+      // and SharedPreferences writes are fast. Force ensures no throttle.
+      controller.savePositionOnBackground();
     }
   }
 
@@ -98,9 +100,9 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     final controller = context.read<PlayerController>();
     final video = widget.video;
 
-    // Wait for duration to be loaded (max 3 seconds)
+    // Wait for duration to be loaded (max 10 seconds — large files need more time)
     var attempts = 0;
-    while (controller.duration.inSeconds == 0 && attempts < 30) {
+    while (controller.duration.inSeconds == 0 && attempts < 100) {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
     }
@@ -135,7 +137,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
   void _showResumeSnackbar(PlayerController controller, String timeStr) {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    // Hide any existing snackbars
+    // Hide any existing snackbars first
     scaffoldMessenger.hideCurrentSnackBar();
 
     _resumeSnackBarController = scaffoldMessenger.showSnackBar(
@@ -159,8 +161,17 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        dismissDirection: DismissDirection.down, // Allow swipe to dismiss
       ),
     );
+
+    // Ensure snackbar closes after duration even if controller is null
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted && _resumeSnackBarController != null) {
+        _resumeSnackBarController!.close();
+        _resumeSnackBarController = null;
+      }
+    });
   }
 
   @override
@@ -185,9 +196,11 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
       onPopInvokedWithResult: (didPop, Object? result) async {
         if (didPop) return; // If already popped, do nothing
 
-        // Pause video and save position before leaving (force save)
-        controller.saveCurrentPosition(force: true);
+        // Pause video first so position stops advancing
         controller.pauseVideo();
+
+        // Await the position save — this is the critical fix!
+        await controller.saveAndCleanup();
 
         // Store the navigator reference before the async operations
         final navigator = Navigator.of(context);
@@ -205,10 +218,12 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
         body: PlayerView(
           controller: controller,
           videoTitle: widget.video.title,
-          onBack: () {
-            // Pause video and save position before leaving via back button (force save)
-            controller.saveCurrentPosition(force: true);
+          onBack: () async {
+            // Pause video first so position stops advancing
             controller.pauseVideo();
+
+            // Await the position save before navigating away
+            await controller.saveAndCleanup();
 
             // Reset system UI settings when leaving the player via back button
             SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 import 'core/services/last_played_service.dart';
+import 'core/services/play_history_service.dart';
 import 'core/services/subtitle_settings_service.dart';
 import 'features/library/controller/library_controller.dart';
 import 'features/library/data/datasources/local_video_scanner.dart';
@@ -12,6 +13,7 @@ import 'core/widgets/permission_wrapper.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LastPlayedService.init(); // Initialize last played service
+  await PlayHistoryService.init(); // Initialize play history service early to avoid races
   await SubtitleSettingsService.init(); // Initialize subtitle settings service
   MediaKit.ensureInitialized();
 

@@ -35,20 +35,28 @@ class VideoScanner {
     '.m2ts'
   ];
 
-  Future<List<VideoFolder>> scanForVideos({bool forceRefresh = false, Function(double progress, String status)? onProgress}) async {
+  Future<List<VideoFolder>> scanForVideos(
+      {bool forceRefresh = false,
+      Function(double progress, String status)? onProgress}) async {
     // Check persistent cache first if not forcing refresh
+    //check if it mandetory to refresh, if not it go to load folders from cache
     if (!forceRefresh) {
-      final persistentCacheExpired = await PersistentCacheService.isCacheExpired(const Duration(hours: 1)); // Expire after 1 hour
-      
+      //this check if cache has actully something
+      final persistentCacheExpired =
+          await PersistentCacheService.isCacheExpired(
+              const Duration(hours: 1)); // Expire after 1 hour
+
+      //if yes it just load it
       if (!persistentCacheExpired) {
         final cachedFolders = await PersistentCacheService.loadFromCache();
         if (cachedFolders != null && cachedFolders.isNotEmpty) {
-          AppLogger.i('Returning persistent cached results (${cachedFolders.length} folders)');
-          
+          AppLogger.i(
+              'Returning persistent cached results (${cachedFolders.length} folders)');
+
           // Also update in-memory cache
           _cachedFolders = cachedFolders;
           _lastScanTime = await PersistentCacheService.getLastCacheTimestamp();
-          
+
           return cachedFolders;
         }
       }
@@ -76,7 +84,7 @@ class VideoScanner {
 
     _isScanning = true;
     AppLogger.i('Starting video scan...');
-    
+
     // Notify initial progress
     onProgress?.call(0.0, 'Initializing scan...');
 
@@ -87,8 +95,9 @@ class VideoScanner {
       // Get directories to scan
       final directoriesToScan = await _getDirectoriesToScan();
       AppLogger.i('Found ${directoriesToScan.length} directories to scan');
-      
-      onProgress?.call(0.1, 'Found ${directoriesToScan.length} directories to scan');
+
+      onProgress?.call(
+          0.1, 'Found ${directoriesToScan.length} directories to scan');
 
       if (directoriesToScan.isEmpty) {
         AppLogger.w('No directories found to scan');
@@ -97,7 +106,8 @@ class VideoScanner {
       }
 
       // Load previous file metadata for incremental scanning
-      final previousFileMetadata = await PersistentCacheService.loadFileMetadata();
+      final previousFileMetadata =
+          await PersistentCacheService.loadFileMetadata();
       final currentFileMetadata = <String, DateTime>{};
 
       // Scan each directory concurrently for better performance
@@ -112,20 +122,29 @@ class VideoScanner {
           // For forced refresh, always use full scan to ensure all videos are found
           // Otherwise, use incremental scanning if we have previous metadata
           if (forceRefresh) {
-            futures.add(_scanDirectoryWithProgressFallback(dir, allVideos, onProgress, i, totalDirectories));
+            futures.add(_scanDirectoryWithProgressFallback(
+                dir, allVideos, onProgress, i, totalDirectories));
           } else if (previousFileMetadata != null) {
-            futures.add(_scanDirectoryIncremental(dir, allVideos, currentFileMetadata, previousFileMetadata, onProgress, i, totalDirectories));
+            futures.add(_scanDirectoryIncremental(
+                dir,
+                allVideos,
+                currentFileMetadata,
+                previousFileMetadata,
+                onProgress,
+                i,
+                totalDirectories));
           } else {
-            futures.add(_scanDirectoryWithProgressFallback(dir, allVideos, onProgress, i, totalDirectories));
+            futures.add(_scanDirectoryWithProgressFallback(
+                dir, allVideos, onProgress, i, totalDirectories));
           }
         }
       }
-      
+
       // Wait for all scans to complete
       await Future.wait(futures);
-      
+
       onProgress?.call(0.95, 'Processing results...');
-      
+
       stopwatch.stop();
       AppLogger.i(
           'Scan complete in ${stopwatch.elapsedMilliseconds}ms. Found ${allVideos.length} videos');
@@ -138,7 +157,8 @@ class VideoScanner {
       // This prevents saving empty results that would cause "no videos found" to persist
       if (allVideos.isNotEmpty) {
         await PersistentCacheService.saveToCache(_cachedFolders!);
-        await PersistentCacheService.saveFileMetadata(currentFileMetadata); // Save file metadata for next incremental scan
+        await PersistentCacheService.saveFileMetadata(
+            currentFileMetadata); // Save file metadata for next incremental scan
       }
 
       onProgress?.call(1.0, 'Scan completed! Found ${allVideos.length} videos');
@@ -176,12 +196,12 @@ class VideoScanner {
         if (await Directory(rootPath).exists()) {
           // Common video directories - prioritize most likely locations
           final commonDirs = [
-            'DCIM/Camera',      // Most common camera location
-            'DCIM',             // General DCIM folder
-            'Movies',           // Standard movies location
-            'Videos',           // General videos location
-            'Download',         // Downloads often contain videos
-            'Downloads',        // Alternative download location
+            'DCIM/Camera', // Most common camera location
+            'DCIM', // General DCIM folder
+            'Movies', // Standard movies location
+            'Videos', // General videos location
+            'Download', // Downloads often contain videos
+            'Downloads', // Alternative download location
           ];
 
           for (final dirName in commonDirs) {
@@ -239,7 +259,6 @@ class VideoScanner {
 
     return directories;
   }
-  
 
   Future<void> _scanDirectory(
       Directory directory, List<VideoFile> videos) async {
@@ -318,11 +337,10 @@ class VideoScanner {
       AppLogger.e('Error scanning ${directory.path}: $e');
     }
   }
-  
-  
+
   Future<void> _scanDirectoryIncremental(
-      Directory directory, 
-      List<VideoFile> videos, 
+      Directory directory,
+      List<VideoFile> videos,
       Map<String, DateTime> currentFileMetadata,
       Map<String, DateTime>? previousFileMetadata,
       Function(double progress, String status)? onProgress,
@@ -359,7 +377,8 @@ class VideoScanner {
               final currentModifiedTime = fileStat.modified;
 
               // Only process the file if it's new or has been modified since last scan
-              if (previousModifiedTime == null || currentModifiedTime.isAfter(previousModifiedTime)) {
+              if (previousModifiedTime == null ||
+                  currentModifiedTime.isAfter(previousModifiedTime)) {
                 // Quick check without stat first
                 final folderPath = entity.parent.path;
                 final folderName = path.basename(folderPath);
@@ -395,7 +414,9 @@ class VideoScanner {
             }
 
             // Limit recursion depth
-            await _scanSubdirectoryIncremental(entity, videos, currentFileMetadata, previousFileMetadata, depth: 1);
+            await _scanSubdirectoryIncremental(
+                entity, videos, currentFileMetadata, previousFileMetadata,
+                depth: 1);
           }
         } catch (e) {
           // Skip problematic files
@@ -406,12 +427,15 @@ class VideoScanner {
         AppLogger.i(
             'Found $videoCount videos in ${path.basename(directory.path)}');
       }
-      
+
       // Update progress - distribute progress across directories
       if (totalDirs > 0) {
-        final progressPerDir = 0.8 / totalDirs; // Use 80% of progress for scanning
-        final currentProgress = 0.1 + (currentDirIndex * progressPerDir); // Start after initialization
-        onProgress?.call(currentProgress, 'Scanning ${path.basename(directory.path)} ($videoCount videos found)');
+        final progressPerDir =
+            0.8 / totalDirs; // Use 80% of progress for scanning
+        final currentProgress = 0.1 +
+            (currentDirIndex * progressPerDir); // Start after initialization
+        onProgress?.call(currentProgress,
+            'Scanning ${path.basename(directory.path)} ($videoCount videos found)');
       }
     } catch (e) {
       AppLogger.e('Error scanning ${directory.path}: $e');
@@ -464,10 +488,10 @@ class VideoScanner {
       // Directory not accessible
     }
   }
-  
+
   Future<void> _scanDirectoryWithProgressFallback(
-      Directory directory, 
-      List<VideoFile> videos, 
+      Directory directory,
+      List<VideoFile> videos,
       Function(double progress, String status)? onProgress,
       int currentDirIndex,
       int totalDirs) async {
@@ -542,19 +566,24 @@ class VideoScanner {
         AppLogger.i(
             'Found $videoCount videos in ${path.basename(directory.path)}');
       }
-      
+
       // Update progress - distribute progress across directories
       if (totalDirs > 0) {
-        final progressPerDir = 0.8 / totalDirs; // Use 80% of progress for scanning
-        final currentProgress = 0.1 + (currentDirIndex * progressPerDir); // Start after initialization
-        onProgress?.call(currentProgress, 'Scanning ${path.basename(directory.path)} ($videoCount videos found)');
+        final progressPerDir =
+            0.8 / totalDirs; // Use 80% of progress for scanning
+        final currentProgress = 0.1 +
+            (currentDirIndex * progressPerDir); // Start after initialization
+        onProgress?.call(currentProgress,
+            'Scanning ${path.basename(directory.path)} ($videoCount videos found)');
       }
     } catch (e) {
       AppLogger.e('Error scanning ${directory.path}: $e');
     }
   }
-  
-  Future<void> _scanSubdirectoryIncremental(Directory directory, List<VideoFile> videos,
+
+  Future<void> _scanSubdirectoryIncremental(
+      Directory directory,
+      List<VideoFile> videos,
       Map<String, DateTime> currentFileMetadata,
       Map<String, DateTime>? previousFileMetadata,
       {required int depth}) async {
@@ -568,13 +597,14 @@ class VideoScanner {
             if (_videoExtensions.contains(ext)) {
               try {
                 final stat = await entity.stat();
-                
+
                 // Check if this file existed in the previous scan and if it's been modified
                 final previousModifiedTime = previousFileMetadata?[entity.path];
                 final currentModifiedTime = stat.modified;
 
                 // Only process the file if it's new or has been modified since last scan
-                if (previousModifiedTime == null || currentModifiedTime.isAfter(previousModifiedTime)) {
+                if (previousModifiedTime == null ||
+                    currentModifiedTime.isAfter(previousModifiedTime)) {
                   final folderPath = entity.parent.path;
                   final folderName = path.basename(folderPath);
 
@@ -602,7 +632,9 @@ class VideoScanner {
             final dirName = path.basename(entity.path).toLowerCase();
             if (!dirName.startsWith('.') &&
                 !['thumbnails', 'cache', 'temp', 'tmp'].contains(dirName)) {
-              await _scanSubdirectoryIncremental(entity, videos, currentFileMetadata, previousFileMetadata, depth: depth + 1);
+              await _scanSubdirectoryIncremental(
+                  entity, videos, currentFileMetadata, previousFileMetadata,
+                  depth: depth + 1);
             }
           }
         } catch (e) {

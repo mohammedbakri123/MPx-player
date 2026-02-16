@@ -184,14 +184,14 @@ class PlayerController extends ChangeNotifier
     );
   }
 
-  /// Save position when user pauses
-  void savePositionOnPause() {
-    saveCurrentPosition();
+  /// Save position when user pauses (always force — user explicitly paused)
+  Future<void> savePositionOnPause() {
+    return saveCurrentPosition(force: true);
   }
 
-  /// Save position when app goes to background
-  void savePositionOnBackground() {
-    saveCurrentPosition();
+  /// Save position when app goes to background (always force — may not get another chance)
+  Future<void> savePositionOnBackground() {
+    return saveCurrentPosition(force: true);
   }
 
   @override
@@ -217,14 +217,20 @@ class PlayerController extends ChangeNotifier
     );
   }
 
-  @override
-  void dispose() {
-    // Cancel auto-save timer
+  /// Pre-dispose: await the final position save BEFORE the controller is disposed.
+  /// Call this from the UI layer before Navigator.pop() triggers dispose().
+  Future<void> saveAndCleanup() async {
     _autoSaveTimer?.cancel();
     _autoSaveTimer = null;
+    await saveCurrentPosition(force: true);
+  }
 
-    // Save final position before disposing (force save)
-    saveCurrentPosition(force: true);
+  @override
+  void dispose() {
+    // Timer should already be cancelled by saveAndCleanup(),
+    // but cancel again as a safety net.
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = null;
 
     WakelockPlus.disable();
     _repository.dispose();
