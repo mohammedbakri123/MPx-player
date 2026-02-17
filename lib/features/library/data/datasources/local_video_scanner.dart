@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:pool/pool.dart';
+import 'package:photo_manager/photo_manager.dart';
 import '../../../../../core/services/logger_service.dart';
 import '../../../../../core/services/persistent_cache_service.dart';
 import '../../domain/entities/video_file.dart';
@@ -92,6 +95,37 @@ class VideoScanner {
     final List<VideoFile> allVideos = [];
 
     try {
+      // Try MediaStore first on Android for faster scanning
+      if (defaultTargetPlatform == TargetPlatform.android && !forceRefresh) {
+        onProgress?.call(0.05, 'Scanning with MediaStore...');
+        final mediaStoreVideos = await _scanWithMediaStore(onProgress);
+
+        if (mediaStoreVideos.isNotEmpty) {
+          AppLogger.i(
+              'MediaStore scan found ${mediaStoreVideos.length} videos');
+          allVideos.addAll(mediaStoreVideos);
+
+          // Process MediaStore results
+          _cachedFolders = _groupVideosByFolder(allVideos);
+          _lastScanTime = DateTime.now();
+
+          if (allVideos.isNotEmpty) {
+            await PersistentCacheService.saveToCache(_cachedFolders!);
+          }
+
+          onProgress?.call(
+              1.0, 'Scan completed! Found ${allVideos.length} videos');
+          _isScanning = false;
+          stopwatch.stop();
+          AppLogger.i(
+              'MediaStore scan complete in ${stopwatch.elapsedMilliseconds}ms');
+          return _cachedFolders!;
+        } else {
+          AppLogger.w(
+              'MediaStore returned no videos, falling back to file system scan');
+        }
+      }
+
       // Get directories to scan
       final directoriesToScan = await _getDirectoriesToScan();
       AppLogger.i('Found ${directoriesToScan.length} directories to scan');
@@ -110,38 +144,49 @@ class VideoScanner {
           await PersistentCacheService.loadFileMetadata();
       final currentFileMetadata = <String, DateTime>{};
 
-      // Scan each directory concurrently for better performance
+      // Scan each directory concurrently with limited concurrency for better performance
       final totalDirectories = directoriesToScan.length;
 
-      final futures = <Future<void>>[];
+      // Create a pool to limit concurrent scans to 3 at a time
+      final pool = Pool(3);
+      final scanFutures = <Future<void>>[];
+      int scanIndex = 0;
+
       for (int i = 0; i < directoriesToScan.length; i++) {
         final dir = directoriesToScan[i];
         if (await dir.exists()) {
           AppLogger.i('Scanning: ${dir.path}');
+          final currentIndex = scanIndex++;
 
-          // For forced refresh, always use full scan to ensure all videos are found
-          // Otherwise, use incremental scanning if we have previous metadata
-          if (forceRefresh) {
-            futures.add(_scanDirectoryWithProgressFallback(
-                dir, allVideos, onProgress, i, totalDirectories));
-          } else if (previousFileMetadata != null) {
-            futures.add(_scanDirectoryIncremental(
-                dir,
-                allVideos,
-                currentFileMetadata,
-                previousFileMetadata,
-                onProgress,
-                i,
-                totalDirectories));
-          } else {
-            futures.add(_scanDirectoryWithProgressFallback(
-                dir, allVideos, onProgress, i, totalDirectories));
-          }
+          // Schedule scan with limited concurrency using pool
+          final scanFuture = pool.withResource(() async {
+            // For forced refresh, always use full scan to ensure all videos are found
+            // Otherwise, use incremental scanning if we have previous metadata
+            if (forceRefresh) {
+              await _scanDirectoryWithProgressFallback(
+                  dir, allVideos, onProgress, currentIndex, totalDirectories);
+            } else if (previousFileMetadata != null) {
+              await _scanDirectoryIncremental(
+                  dir,
+                  allVideos,
+                  currentFileMetadata,
+                  previousFileMetadata,
+                  onProgress,
+                  currentIndex,
+                  totalDirectories);
+            } else {
+              await _scanDirectoryWithProgressFallback(
+                  dir, allVideos, onProgress, currentIndex, totalDirectories);
+            }
+          });
+
+          scanFutures.add(scanFuture);
         }
       }
 
       // Wait for all scans to complete
-      await Future.wait(futures);
+      await Future.wait(scanFutures);
+      await pool.close();
 
       onProgress?.call(0.95, 'Processing results...');
 
@@ -258,6 +303,123 @@ class VideoScanner {
     }
 
     return directories;
+  }
+
+  /// Scan videos using Android MediaStore (much faster than file system traversal)
+  Future<List<VideoFile>> _scanWithMediaStore(
+      Function(double progress, String status)? onProgress) async {
+    final videos = <VideoFile>[];
+
+    try {
+      // Request permission if needed
+      final PermissionState permissionState =
+          await PhotoManager.requestPermissionExtend();
+      if (!permissionState.isAuth) {
+        AppLogger.w('MediaStore permission denied');
+        return videos;
+      }
+
+      AppLogger.i('Fetching videos from MediaStore...');
+
+      // Fetch all video assets from MediaStore
+      final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
+        type: RequestType.video,
+        filterOption: FilterOptionGroup(
+          videoOption: const FilterOption(
+            durationConstraint: DurationConstraint(
+                min:
+                    Duration.zero), // Include all videos regardless of duration
+          ),
+        ),
+      );
+
+      AppLogger.i('Found ${albums.length} video albums in MediaStore');
+
+      if (albums.isEmpty) {
+        return videos;
+      }
+
+      int totalVideos = 0;
+      for (final album in albums) {
+        totalVideos += await album.assetCountAsync;
+      }
+
+      AppLogger.i('Total videos in MediaStore: $totalVideos');
+
+      if (totalVideos == 0) {
+        return videos;
+      }
+
+      int processedCount = 0;
+
+      // Process each album
+      for (final album in albums) {
+        try {
+          final List<AssetEntity> assets = await album.getAssetListPaged(
+            page: 0,
+            size: await album.assetCountAsync,
+          );
+
+          for (final asset in assets) {
+            try {
+              // Get the file path
+              final String? filePath =
+                  await asset.originFile.then((file) => file?.path);
+
+              if (filePath == null || filePath.isEmpty) {
+                continue;
+              }
+
+              // Check if it's a valid video file
+              final ext = path.extension(filePath).toLowerCase();
+              if (!_videoExtensions.contains(ext)) {
+                continue;
+              }
+
+              final folderPath = path.dirname(filePath);
+              final folderName = path.basename(folderPath);
+
+              final video = VideoFile(
+                id: asset.id,
+                path: filePath,
+                title: asset.title ?? path.basenameWithoutExtension(filePath),
+                folderPath: folderPath,
+                folderName: folderName,
+                size: (await asset.originFile
+                        .then((file) => file?.lengthSync())) ??
+                    0,
+                duration:
+                    asset.duration * 1000, // Convert seconds to milliseconds
+                dateAdded: asset.createDateTime ?? DateTime.now(),
+              );
+
+              videos.add(video);
+              processedCount++;
+
+              // Update progress every 10 videos
+              if (processedCount % 10 == 0 && totalVideos > 0) {
+                final progress = 0.05 + (0.85 * (processedCount / totalVideos));
+                onProgress?.call(progress,
+                    'Loading videos from MediaStore ($processedCount/$totalVideos)...');
+              }
+            } catch (e) {
+              AppLogger.e('Error processing MediaStore asset: $e');
+              continue;
+            }
+          }
+        } catch (e) {
+          AppLogger.e('Error processing album ${album.name}: $e');
+          continue;
+        }
+      }
+
+      AppLogger.i(
+          'MediaStore scan complete. Found ${videos.length} valid videos');
+    } catch (e, stackTrace) {
+      AppLogger.e('Error scanning MediaStore: $e', e, stackTrace);
+    }
+
+    return videos;
   }
 
   Future<void> _scanDirectory(

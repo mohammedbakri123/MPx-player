@@ -31,7 +31,7 @@ class HomeContent extends StatelessWidget {
     // Empty state - only show if not loading and no folders
     if (controller.isEmpty && !controller.isLoading) {
       return HomeEmptyState(
-        onTryDemo: controller.loadDemoData,
+        onTryRefresh: controller.refresh,
       );
     }
 

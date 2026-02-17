@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 class HomeEmptyState extends StatelessWidget {
-  final VoidCallback onTryDemo;
+  final VoidCallback onTryRefresh;
 
   const HomeEmptyState({
     super.key,
-    required this.onTryDemo,
+    required this.onTryRefresh,
   });
 
   @override
@@ -38,9 +38,9 @@ class HomeEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: onTryDemo,
+            onPressed: onTryRefresh,
             icon: const Icon(Icons.play_circle_outline),
-            label: const Text('Try Demo Mode'),
+            label: const Text('Try refresh Page'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6366F1),
               foregroundColor: Colors.white,

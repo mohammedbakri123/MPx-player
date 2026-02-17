@@ -41,7 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     // Watch controller for reactive updates
     final controller = context.watch<LibraryController>();
@@ -58,12 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
             HomeSectionHeader(controller: controller),
 
             const SizedBox(height: 16),
-
-            // Continue Watching Section
-            // if (_continueWatchingList.isNotEmpty) ...[
-            //   _buildContinueWatchingSection(),
-            //   const SizedBox(height: 16),
-            // ],
 
             // Folder List/Grid
             Expanded(
