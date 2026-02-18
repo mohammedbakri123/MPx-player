@@ -23,17 +23,19 @@ class FileScannerHelper {
   static const int _minFileSize = 100 * 1024;
   static const int _maxDepth = 3;
 
-  /// Scan directory with optional incremental mode
+  /// Scan directory with optional incremental mode and deduplication
   static Future<int> scanDirectory(
     Directory directory,
     List<VideoFile> videos, {
     Map<String, DateTime>? currentFileMetadata,
     Map<String, DateTime>? previousFileMetadata,
+    Set<String>? processedPaths,
     Function(double progress, String status)? onProgress,
     int currentDirIndex = 0,
     int totalDirs = 0,
   }) async {
     final isIncremental = currentFileMetadata != null;
+    final seenPaths = processedPaths ?? <String>{};
     var videoCount = 0;
 
     try {
@@ -46,9 +48,13 @@ class FileScannerHelper {
 
       for (final entity in entities) {
         if (entity is File && _isVideoFile(entity.path)) {
+          // Skip if already processed (duplicate)
+          if (seenPaths.contains(entity.path)) continue;
+
           final count = await _processFile(
             entity,
             videos,
+            seenPaths,
             isIncremental: isIncremental,
             currentFileMetadata: currentFileMetadata,
             previousFileMetadata: previousFileMetadata,
@@ -58,6 +64,7 @@ class FileScannerHelper {
           await _scanSubdirectory(
             entity,
             videos,
+            seenPaths,
             currentFileMetadata: currentFileMetadata,
             previousFileMetadata: previousFileMetadata,
             depth: 1,
@@ -66,12 +73,7 @@ class FileScannerHelper {
       }
 
       _reportProgress(
-        onProgress,
-        currentDirIndex,
-        totalDirs,
-        directory,
-        videoCount,
-      );
+          onProgress, currentDirIndex, totalDirs, directory, videoCount);
     } catch (e) {
       AppLogger.e('Error scanning ${directory.path}: $e');
     }
@@ -84,7 +86,8 @@ class FileScannerHelper {
 
   static Future<int> _processFile(
     File file,
-    List<VideoFile> videos, {
+    List<VideoFile> videos,
+    Set<String> seenPaths, {
     required bool isIncremental,
     Map<String, DateTime>? currentFileMetadata,
     Map<String, DateTime>? previousFileMetadata,
@@ -92,6 +95,9 @@ class FileScannerHelper {
     try {
       final stat = await file.stat();
       if (stat.size < _minFileSize) return 0;
+
+      // Mark as processed to prevent duplicates
+      seenPaths.add(file.path);
 
       if (isIncremental) {
         final previousTime = previousFileMetadata?[file.path];
@@ -113,7 +119,8 @@ class FileScannerHelper {
 
   static Future<void> _scanSubdirectory(
     Directory directory,
-    List<VideoFile> videos, {
+    List<VideoFile> videos,
+    Set<String> seenPaths, {
     Map<String, DateTime>? currentFileMetadata,
     Map<String, DateTime>? previousFileMetadata,
     required int depth,
@@ -125,9 +132,13 @@ class FileScannerHelper {
     try {
       await for (final entity in directory.list(recursive: false)) {
         if (entity is File && _isVideoFile(entity.path)) {
+          // Skip if already processed
+          if (seenPaths.contains(entity.path)) continue;
+
           await _processFile(
             entity,
             videos,
+            seenPaths,
             isIncremental: isIncremental,
             currentFileMetadata: currentFileMetadata,
             previousFileMetadata: previousFileMetadata,
@@ -136,6 +147,7 @@ class FileScannerHelper {
           await _scanSubdirectory(
             entity,
             videos,
+            seenPaths,
             currentFileMetadata: currentFileMetadata,
             previousFileMetadata: previousFileMetadata,
             depth: depth + 1,
@@ -147,8 +159,8 @@ class FileScannerHelper {
     }
   }
 
-  static bool _shouldSkipDirectory(String path) {
-    final name = path.toLowerCase();
+  static bool _shouldSkipDirectory(String dirPath) {
+    final name = path.basename(dirPath).toLowerCase();
     return name.startsWith('.') ||
         ['thumbnails', 'cache', 'temp', 'tmp'].contains(name);
   }

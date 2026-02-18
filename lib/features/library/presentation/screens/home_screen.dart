@@ -73,7 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
         opacity: _isFabVisible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        child: const HomeFAB(),
+        child: IgnorePointer(
+          ignoring: !_isFabVisible,
+          child: const HomeFAB(),
+        ),
       ),
     );
   }

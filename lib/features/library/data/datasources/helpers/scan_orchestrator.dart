@@ -77,6 +77,7 @@ class ScanOrchestrator {
   }) async {
     final pool = Pool(3);
     final futures = <Future<void>>[];
+    final processedPaths = <String>{}; // Shared set for deduplication
     var scanIndex = 0;
 
     for (var i = 0; i < directories.length; i++) {
@@ -90,6 +91,7 @@ class ScanOrchestrator {
             videos,
             currentFileMetadata: !forceRefresh ? currentMetadata : null,
             previousFileMetadata: !forceRefresh ? previousMetadata : null,
+            processedPaths: processedPaths,
             onProgress: onProgress,
             currentDirIndex: currentIndex,
             totalDirs: directories.length,
@@ -100,6 +102,8 @@ class ScanOrchestrator {
 
     await Future.wait(futures);
     await pool.close();
+    AppLogger.i(
+        'Scanned ${videos.length} unique videos from ${directories.length} directories');
     onProgress?.call(0.95, 'Processing results...');
   }
 }

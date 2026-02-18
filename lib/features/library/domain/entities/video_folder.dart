@@ -25,7 +25,8 @@ class VideoFolder {
       path: json['path'] as String,
       name: json['name'] as String,
       videos: (json['videos'] as List)
-          .map((videoJson) => VideoFile.fromJson(videoJson as Map<String, dynamic>))
+          .map((videoJson) =>
+              VideoFile.fromJson(videoJson as Map<String, dynamic>))
           .toList(),
     );
   }
@@ -57,5 +58,25 @@ class VideoFolder {
     if (diff.inDays < 7) return '${diff.inDays} days ago';
     if (diff.inDays < 30) return '${(diff.inDays / 7).floor()} weeks ago';
     return '${(diff.inDays / 30).floor()} months ago';
+  }
+
+  int get totalDuration {
+    return videos.fold(0, (sum, video) => sum + video.duration);
+  }
+
+  String get formattedDuration {
+    if (videos.isEmpty) return '0:00';
+    final durationMs = totalDuration;
+    final hours = durationMs ~/ 3600000;
+    final minutes = (durationMs % 3600000) ~/ 60000;
+    final seconds = (durationMs % 60000) ~/ 1000;
+
+    if (hours > 0) {
+      return '${hours}h ${minutes.toString().padLeft(2, '0')}m';
+    } else if (minutes > 0) {
+      return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
+    } else {
+      return '${seconds}s';
+    }
   }
 }
