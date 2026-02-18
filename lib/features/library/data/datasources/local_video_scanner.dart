@@ -38,6 +38,9 @@ class VideoScanner {
     '.m2ts'
   ];
 
+  // Minimum file size in bytes (100KB) to filter out thumbnails and corrupt files
+  static const int _minFileSize = 100 * 1024;
+
   Future<List<VideoFolder>> scanForVideos(
       {bool forceRefresh = false,
       Function(double progress, String status)? onProgress}) async {
@@ -379,15 +382,22 @@ class VideoScanner {
               final folderPath = path.dirname(filePath);
               final folderName = path.basename(folderPath);
 
+              // Get file size and skip if too small
+              final fileSize =
+                  (await asset.originFile.then((file) => file?.lengthSync())) ??
+                      0;
+
+              if (fileSize < _minFileSize) {
+                continue; // Skip thumbnails and tiny files
+              }
+
               final video = VideoFile(
                 id: asset.id,
                 path: filePath,
                 title: asset.title ?? path.basenameWithoutExtension(filePath),
                 folderPath: folderPath,
                 folderName: folderName,
-                size: (await asset.originFile
-                        .then((file) => file?.lengthSync())) ??
-                    0,
+                size: fileSize,
                 duration:
                     asset.duration * 1000, // Convert seconds to milliseconds
                 dateAdded: asset.createDateTime ?? DateTime.now(),
@@ -442,11 +452,7 @@ class VideoScanner {
             final ext = path.extension(filePath).toLowerCase();
 
             if (_videoExtensions.contains(ext)) {
-              // Quick check without stat first
-              final folderPath = entity.parent.path;
-              final folderName = path.basename(folderPath);
-
-              // Try to get file size, but don't fail if we can't
+              // Try to get file size first
               int fileSize = 0;
               DateTime modifiedDate = DateTime.now();
               try {
@@ -456,6 +462,15 @@ class VideoScanner {
               } catch (e) {
                 // If we can't stat, use defaults
               }
+
+              // Skip files smaller than minimum size (thumbnails, corrupt files)
+              if (fileSize < _minFileSize) {
+                continue;
+              }
+
+              // Quick check without stat first
+              final folderPath = entity.parent.path;
+              final folderName = path.basename(folderPath);
 
               final video = VideoFile(
                 id: filePath.hashCode.toString(),
@@ -532,6 +547,11 @@ class VideoScanner {
                 fileStat = await entity.stat();
               } catch (e) {
                 continue; // Skip files we can't access
+              }
+
+              // Skip files smaller than minimum size (thumbnails, corrupt files)
+              if (fileStat.size < _minFileSize) {
+                continue;
               }
 
               // Check if this file existed in the previous scan and if it's been modified
@@ -616,6 +636,12 @@ class VideoScanner {
             if (_videoExtensions.contains(ext)) {
               try {
                 final stat = await entity.stat();
+
+                // Skip files smaller than minimum size (thumbnails, corrupt files)
+                if (stat.size < _minFileSize) {
+                  continue;
+                }
+
                 final folderPath = entity.parent.path;
                 final folderName = path.basename(folderPath);
 
@@ -675,11 +701,7 @@ class VideoScanner {
             final ext = path.extension(filePath).toLowerCase();
 
             if (_videoExtensions.contains(ext)) {
-              // Quick check without stat first
-              final folderPath = entity.parent.path;
-              final folderName = path.basename(folderPath);
-
-              // Try to get file size, but don't fail if we can't
+              // Try to get file size first
               int fileSize = 0;
               DateTime modifiedDate = DateTime.now();
               try {
@@ -689,6 +711,15 @@ class VideoScanner {
               } catch (e) {
                 // If we can't stat, use defaults
               }
+
+              // Skip files smaller than minimum size (thumbnails, corrupt files)
+              if (fileSize < _minFileSize) {
+                continue;
+              }
+
+              // Quick check without stat first
+              final folderPath = entity.parent.path;
+              final folderName = path.basename(folderPath);
 
               final video = VideoFile(
                 id: filePath.hashCode.toString(),
@@ -759,6 +790,11 @@ class VideoScanner {
             if (_videoExtensions.contains(ext)) {
               try {
                 final stat = await entity.stat();
+
+                // Skip files smaller than minimum size (thumbnails, corrupt files)
+                if (stat.size < _minFileSize) {
+                  continue;
+                }
 
                 // Check if this file existed in the previous scan and if it's been modified
                 final previousModifiedTime = previousFileMetadata?[entity.path];

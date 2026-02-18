@@ -17,6 +17,7 @@ class VideoMetadata extends StatefulWidget {
 
 class _VideoMetadataState extends State<VideoMetadata> {
   String? _resolution;
+  String? _duration;
   bool _isLoading = false;
 
   @override
@@ -24,11 +25,11 @@ class _VideoMetadataState extends State<VideoMetadata> {
     super.initState();
     developer.log('VideoMetadata initState for: ${widget.video.path}',
         name: 'VideoMetadata');
-    _loadResolution();
+    _loadMetadata();
   }
 
-  Future<void> _loadResolution() async {
-    developer.log('Loading resolution for: ${widget.video.path}',
+  Future<void> _loadMetadata() async {
+    developer.log('Loading metadata for: ${widget.video.path}',
         name: 'VideoMetadata');
 
     // If video already has resolution data, use it
@@ -36,9 +37,14 @@ class _VideoMetadataState extends State<VideoMetadata> {
     developer.log('Existing resolution: $existingResolution',
         name: 'VideoMetadata');
 
-    if (existingResolution != 'Unknown') {
+    // Check if we need to extract metadata
+    final needsResolution = existingResolution == 'Unknown';
+    final needsDuration = widget.video.duration == 0;
+
+    if (!needsResolution && !needsDuration) {
       setState(() {
         _resolution = existingResolution;
+        _duration = widget.video.formattedDuration;
       });
       return;
     }
@@ -52,31 +58,56 @@ class _VideoMetadataState extends State<VideoMetadata> {
       developer.log('Calling extractMetadata...', name: 'VideoMetadata');
       final metadata =
           await VideoMetadataService().extractMetadata(widget.video.path);
-      developer.log('Metadata result: ${metadata?.width}x${metadata?.height}',
+      developer.log(
+          'Metadata result: ${metadata?.width}x${metadata?.height}, duration: ${metadata?.duration}',
           name: 'VideoMetadata');
 
-      if (mounted && metadata != null && metadata.height != null) {
-        final formatted = _formatResolution(metadata.height!);
-        developer.log('Formatted resolution: $formatted',
-            name: 'VideoMetadata');
+      if (mounted) {
+        if (metadata != null) {
+          // Set resolution
+          if (metadata.height != null) {
+            final formatted = _formatResolution(metadata.height!);
+            developer.log('Formatted resolution: $formatted',
+                name: 'VideoMetadata');
+            setState(() {
+              _resolution = formatted;
+            });
+          } else {
+            setState(() {
+              _resolution = 'Unknown';
+            });
+          }
+
+          // Set duration
+          if (metadata.duration != null) {
+            final formattedDuration = _formatDuration(metadata.duration!);
+            developer.log('Formatted duration: $formattedDuration',
+                name: 'VideoMetadata');
+            setState(() {
+              _duration = formattedDuration;
+            });
+          } else {
+            setState(() {
+              _duration = widget.video.formattedDuration;
+            });
+          }
+        } else {
+          setState(() {
+            _resolution = 'Unknown';
+            _duration = widget.video.formattedDuration;
+          });
+        }
         setState(() {
-          _resolution = formatted;
-          _isLoading = false;
-        });
-      } else if (mounted) {
-        developer.log('Setting resolution to Unknown (no metadata)',
-            name: 'VideoMetadata');
-        setState(() {
-          _resolution = 'Unknown';
           _isLoading = false;
         });
       }
     } catch (e, stackTrace) {
-      developer.log('Error loading resolution: $e',
+      developer.log('Error loading metadata: $e',
           name: 'VideoMetadata', error: e, stackTrace: stackTrace);
       if (mounted) {
         setState(() {
           _resolution = 'Unknown';
+          _duration = widget.video.formattedDuration;
           _isLoading = false;
         });
       }
@@ -89,6 +120,18 @@ class _VideoMetadataState extends State<VideoMetadata> {
     if (height >= 720) return '720P';
     if (height >= 480) return '480P';
     return '${height}P';
+  }
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    } else {
+      return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    }
   }
 
   @override
@@ -130,6 +173,14 @@ class _VideoMetadataState extends State<VideoMetadata> {
         ),
         Text(
           widget.video.formattedSize,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade500,
+          ),
+        ),
+        Text(
+          '• ${_duration ?? widget.video.formattedDuration}',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
