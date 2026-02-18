@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path_provider/path_provider.dart';
+import '../utils/lru_cache.dart';
+import 'logger_service.dart';
 
 /// Service for generating video thumbnails using native platform APIs
 /// Android: MediaMetadataRetriever
@@ -11,40 +13,58 @@ class VideoThumbnailGeneratorService {
   factory VideoThumbnailGeneratorService() => _instance;
   VideoThumbnailGeneratorService._internal();
 
-  // Cache for thumbnail file paths
-  final Map<String, String> _thumbnailPathCache = {};
+  // LRU Cache with 200 item limit
+  final LRUCache<String, String> _thumbnailPathCache =
+      LRUCache<String, String>(200);
+  final Set<String> _pendingRequests = {};
 
   /// Generate a thumbnail for a video file
   /// Returns the file path to the generated thumbnail
   Future<String?> generateThumbnail(String videoPath,
       {int seekMs = 1000}) async {
     // Check cache first
-    if (_thumbnailPathCache.containsKey(videoPath)) {
-      final cachedPath = _thumbnailPathCache[videoPath]!;
-      if (File(cachedPath).existsSync()) {
+    final cachedPath = _thumbnailPathCache.get(videoPath);
+    if (cachedPath != null) {
+      final exists = await File(cachedPath).exists();
+      if (exists) {
         return cachedPath;
       }
     }
 
-    try {
-      // Get thumbnail directory
-      final thumbnailDir = await _getThumbnailDirectory();
-      final thumbnailPath = '$thumbnailDir/${videoPath.hashCode}.jpg';
+    // Check if already being generated
+    if (_pendingRequests.contains(videoPath)) {
+      AppLogger.i('Thumbnail request already pending for: $videoPath');
+      // Wait a bit and check cache again
+      await Future.delayed(const Duration(milliseconds: 200));
+      final retryPath = _thumbnailPathCache.get(videoPath);
+      if (retryPath != null) {
+        final exists = await File(retryPath).exists();
+        if (exists) return retryPath;
+      }
+      return null;
+    }
 
-      // Check if already cached on disk
-      if (File(thumbnailPath).existsSync()) {
-        _thumbnailPathCache[videoPath] = thumbnailPath;
+    try {
+      _pendingRequests.add(videoPath);
+
+      // Check disk cache
+      final thumbnailPath = await _getThumbnailPath(videoPath);
+      if (await File(thumbnailPath).exists()) {
+        _thumbnailPathCache.put(videoPath, thumbnailPath);
+        _pendingRequests.remove(videoPath);
         return thumbnailPath;
       }
 
-      // Generate thumbnail using video_thumbnail package
+      AppLogger.i('Generating thumbnail for: $videoPath');
+
+      // Generate thumbnail using video_thumbnail package (on main thread but non-blocking)
       final thumbnailData = await VideoThumbnail.thumbnailData(
         video: videoPath,
         imageFormat: ImageFormat.JPEG,
         maxHeight: 200,
         maxWidth: 300,
         timeMs: seekMs,
-        quality: 75,
+        quality: 60, // Reduced from 75 for better performance
       );
 
       if (thumbnailData != null && thumbnailData.isNotEmpty) {
@@ -52,29 +72,51 @@ class VideoThumbnailGeneratorService {
         final file = File(thumbnailPath);
         await file.writeAsBytes(thumbnailData);
 
-        _thumbnailPathCache[videoPath] = thumbnailPath;
+        _thumbnailPathCache.put(videoPath, thumbnailPath);
+        _pendingRequests.remove(videoPath);
         return thumbnailPath;
       }
 
+      _pendingRequests.remove(videoPath);
       return null;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.e(
+          'Error generating thumbnail for $videoPath: $e', e, stackTrace);
+      _pendingRequests.remove(videoPath);
       return null;
     }
   }
 
+  /// Get thumbnail file path (without generating)
+  Future<String> _getThumbnailPath(String videoPath) async {
+    final thumbnailDir = await _getThumbnailDirectory();
+    return '$thumbnailDir/${videoPath.hashCode}.jpg';
+  }
+
   /// Get the thumbnail directory
   Future<String> _getThumbnailDirectory() async {
-    final directory = await getApplicationDocumentsDirectory();
+    final directory = await getTemporaryDirectory();
     final thumbnailDir = Directory('${directory.path}/thumbnails');
-    if (!thumbnailDir.existsSync()) {
-      thumbnailDir.createSync(recursive: true);
+    if (!await thumbnailDir.exists()) {
+      await thumbnailDir.create(recursive: true);
     }
     return thumbnailDir.path;
+  }
+
+  /// Get cached thumbnail path if available
+  String? getCachedThumbnail(String videoPath) {
+    return _thumbnailPathCache.get(videoPath);
+  }
+
+  /// Check if thumbnail is cached
+  bool isThumbnailCached(String videoPath) {
+    return _thumbnailPathCache.containsKey(videoPath);
   }
 
   /// Clear all cached thumbnails
   Future<void> clearCache() async {
     _thumbnailPathCache.clear();
+    _pendingRequests.clear();
 
     try {
       final thumbnailDir = await _getThumbnailDirectory();
@@ -86,8 +128,9 @@ class VideoThumbnailGeneratorService {
           }
         }
       }
+      AppLogger.i('Thumbnail cache cleared');
     } catch (e) {
-      // Ignore cleanup errors
+      AppLogger.e('Error clearing thumbnail cache: $e');
     }
   }
 }

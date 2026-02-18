@@ -29,58 +29,92 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
   }
 
   Future<void> _loadThumbnail() async {
-    // Use existing thumbnail if available
-    if (widget.existingThumbnailPath != null &&
-        File(widget.existingThumbnailPath!).existsSync()) {
-      setState(() {
-        _thumbnailPath = widget.existingThumbnailPath;
-      });
-      return;
-    }
+    try {
+      // Use existing thumbnail if available
+      if (widget.existingThumbnailPath != null) {
+        final exists = await File(widget.existingThumbnailPath!).exists();
+        if (exists) {
+          if (mounted) {
+            setState(() {
+              _thumbnailPath = widget.existingThumbnailPath;
+            });
+          }
+          return;
+        }
+      }
 
-    // Generate thumbnail on-demand
-    setState(() {
-      _isLoading = true;
-    });
+      // Check if already cached in service
+      final cachedPath =
+          VideoThumbnailGeneratorService().getCachedThumbnail(widget.videoPath);
+      if (cachedPath != null) {
+        final exists = await File(cachedPath).exists();
+        if (exists) {
+          if (mounted) {
+            setState(() {
+              _thumbnailPath = cachedPath;
+            });
+          }
+          return;
+        }
+      }
 
-    final thumbnailPath = await VideoThumbnailGeneratorService()
-        .generateThumbnail(widget.videoPath);
+      // Generate thumbnail on-demand
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
 
-    if (mounted) {
-      setState(() {
-        _thumbnailPath = thumbnailPath;
-        _isLoading = false;
-      });
+      final thumbnailPath = await VideoThumbnailGeneratorService()
+          .generateThumbnail(widget.videoPath);
+
+      if (mounted) {
+        setState(() {
+          _thumbnailPath = thumbnailPath;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      // Silently handle errors - show default icon
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _thumbnailPath = null;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            width: 100,
-            height: 70,
-            color: Colors.grey.shade200,
-            child: _buildThumbnailContent(),
-          ),
-        ),
-        if (widget.isFavorite)
-          Positioned(
-            top: 4,
-            right: 4,
+    return RepaintBoundary(
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
             child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.favorite, size: 12, color: Colors.white),
+              width: 100,
+              height: 70,
+              color: Colors.grey.shade200,
+              child: _buildThumbnailContent(),
             ),
           ),
-      ],
+          if (widget.isFavorite)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child:
+                    const Icon(Icons.favorite, size: 12, color: Colors.white),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -98,7 +132,7 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
       );
     }
 
-    if (_thumbnailPath != null && File(_thumbnailPath!).existsSync()) {
+    if (_thumbnailPath != null) {
       return Image.file(
         File(_thumbnailPath!),
         fit: BoxFit.cover,

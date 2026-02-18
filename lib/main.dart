@@ -13,7 +13,8 @@ import 'core/widgets/permission_wrapper.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LastPlayedService.init(); // Initialize last played service
-  await PlayHistoryService.init(); // Initialize play history service early to avoid races
+  await PlayHistoryService
+      .init(); // Initialize play history service early to avoid races
   await SubtitleSettingsService.init(); // Initialize subtitle settings service
   MediaKit.ensureInitialized();
 
