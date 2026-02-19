@@ -43,6 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-PRODUCTION_STATUS_REPORT.md
-PRODUCTION_ROADMAP.md
-APP_UNDERSTANDING_GUIDE.md
+# PRODUCTION_STATUS_REPORT.md
+# PRODUCTION_ROADMAP.md
+# APP_UNDERSTANDING_GUIDE.md
