@@ -21,11 +21,13 @@ class ScanOrchestrator {
     onProgress?.call(0.0, 'Initializing...');
     final stopwatch = Stopwatch()..start();
 
-    // ALWAYS use MediaStore on Android - it's instant!
+    // ALWAYS use MediaStore on Android - with thumbnails!
     if (defaultTargetPlatform == TargetPlatform.android) {
       try {
+        // Generate thumbnails during scan for first 20 videos
         final videos = await MediaStoreScanner.scan(
           onProgress: onProgress,
+          generateThumbnails: true,
         );
 
         if (videos.isNotEmpty) {
@@ -36,13 +38,13 @@ class ScanOrchestrator {
           );
 
           final folders = VideoGroupingHelper.groupByFolder(videos);
-          
+
           // Cache the results
           await PersistentCacheService.saveToCache(folders);
-          
+
           // End performance tracking
           performanceMonitor.endScan(videos.length);
-          
+
           return folders;
         }
       } catch (e, stackTrace) {
