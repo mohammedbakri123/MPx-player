@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:media_data_extractor/media_data_extractor.dart';
-import 'logger_service.dart';
+import '../../../core/services/logger_service.dart';
 
 /// Service for extracting video metadata (width, height, duration)
 /// Uses media_data_extractor for reliable cross-platform metadata extraction

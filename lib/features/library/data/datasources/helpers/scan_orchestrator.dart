@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../../../../../core/services/logger_service.dart';
 import '../../../../../../core/services/performance_monitor.dart';
-import '../../../../../../core/services/persistent_cache_service.dart';
+import '../../../../library/services/persistent_cache_service.dart';
 import '../../../domain/entities/video_folder.dart';
 import 'media_store_scanner.dart';
 import 'video_grouping_helper.dart';

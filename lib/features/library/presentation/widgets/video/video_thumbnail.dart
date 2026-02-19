@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../../../../core/services/video_thumbnail_generator_service.dart';
+import '../../../services/video_thumbnail_generator_service.dart';
 import '../../../../../core/utils/cancellation_token.dart';
 
 class VideoThumbnail extends StatefulWidget {

@@ -3,7 +3,7 @@ import '../../domain/entities/video_file.dart';
 import '../../domain/entities/video_folder.dart';
 import '../../data/datasources/local_video_scanner.dart';
 import '../../../player/presentation/screens/video_player_screen.dart';
-import '../../../../core/services/favorites_service.dart';
+import '../../../favorites/services/favorites_service.dart';
 import '../widgets/video/folder_detail_header.dart';
 import '../widgets/video/empty_video_state.dart';
 import '../widgets/video/video_list.dart';

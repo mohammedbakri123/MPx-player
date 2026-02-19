@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../library/domain/entities/video_file.dart';
-import '../../../../core/services/favorites_service.dart';
+import '../../services/favorites_service.dart';
 import '../widgets/favorites_header.dart';
 import '../widgets/favorites_content.dart';
 import '../../../player/presentation/screens/video_player_screen.dart';

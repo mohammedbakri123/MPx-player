@@ -1,7 +1,7 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../../../domain/entities/video_file.dart';
-import '../../../../../core/services/video_metadata_service.dart';
+import '../../../services/video_metadata_service.dart';
 
 class VideoMetadata extends StatefulWidget {
   final VideoFile video;

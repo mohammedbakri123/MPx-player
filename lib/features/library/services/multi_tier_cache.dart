@@ -3,9 +3,9 @@ import 'dart:collection';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import '../../features/library/domain/entities/video_file.dart';
-import '../../features/library/domain/entities/video_folder.dart';
-import 'logger_service.dart';
+import '../../../features/library/domain/entities/video_file.dart';
+import '../../../features/library/domain/entities/video_folder.dart';
+import '../../../core/services/logger_service.dart';
 
 /// Multi-tier caching strategy for optimal performance
 /// 

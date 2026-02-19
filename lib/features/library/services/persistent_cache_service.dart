@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../features/library/domain/entities/video_folder.dart';
-import '../database/app_database.dart';
-import 'logger_service.dart';
+import '../../../features/library/domain/entities/video_folder.dart';
+import '../../../core/database/app_database.dart';
+import '../../../core/services/logger_service.dart';
 
 /// Persistent cache service with SQLite database support
 /// Falls back to SharedPreferences if database fails

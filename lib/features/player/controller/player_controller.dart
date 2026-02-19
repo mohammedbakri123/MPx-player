@@ -3,7 +3,7 @@ import 'dart:ui' show Color;
 import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../../../core/services/play_history_service.dart';
+import '../../player/services/play_history_service.dart';
 import '../../library/domain/entities/video_file.dart';
 import '../domain/repositories/player_repository.dart';
 import '../data/repositories/media_kit_player_repository.dart';

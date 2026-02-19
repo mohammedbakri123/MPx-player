@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../library/domain/entities/video_file.dart';
-import '../../../../core/services/video_thumbnail_generator_service.dart';
+import '../../../library/services/video_thumbnail_generator_service.dart';
 import 'video_thumbnail_placeholder.dart';
 import 'video_thumbnail_overlay.dart';
 

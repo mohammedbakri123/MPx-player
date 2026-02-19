@@ -3,9 +3,9 @@ import 'dart:collection';
 import 'dart:io';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path_provider/path_provider.dart';
-import '../utils/lru_cache.dart';
-import '../utils/cancellation_token.dart';
-import 'logger_service.dart';
+import '../../../core/utils/lru_cache.dart';
+import '../../../core/utils/cancellation_token.dart';
+import '../../../core/services/logger_service.dart';
 
 /// Priority levels for thumbnail generation
 enum ThumbnailPriority { high, normal, low }

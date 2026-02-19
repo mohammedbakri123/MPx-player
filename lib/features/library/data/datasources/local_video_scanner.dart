@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import '../../../../../core/services/logger_service.dart';
-import '../../../../../core/services/persistent_cache_service.dart';
+import '../../services/persistent_cache_service.dart';
 import '../../../../../core/utils/debouncer.dart';
 import '../../domain/entities/video_file.dart';
 import '../../domain/entities/video_folder.dart';

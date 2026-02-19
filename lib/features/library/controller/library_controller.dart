@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../../../../core/services/logger_service.dart';
 import '../../../../core/database/app_database.dart';
-import '../../../../core/services/video_thumbnail_generator_service.dart';
-import '../../../../core/services/video_metadata_service.dart';
+import '../services/video_thumbnail_generator_service.dart';
+import '../services/video_metadata_service.dart';
 import '../domain/entities/video_folder.dart';
 import '../domain/entities/video_file.dart';
 import '../data/datasources/local_video_scanner.dart';

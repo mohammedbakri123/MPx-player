@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/services/video_metadata_service.dart';
+import '../../../services/video_metadata_service.dart';
 import '../../../domain/entities/video_folder.dart';
 
 class FolderDetailHeader extends StatefulWidget {

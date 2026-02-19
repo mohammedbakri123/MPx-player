@@ -3,7 +3,7 @@ import 'dart:isolate';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
-import 'logger_service.dart';
+import '../../../core/services/logger_service.dart';
 
 /// Worker pool for concurrent thumbnail generation using isolates
 class ThumbnailWorkerPool {

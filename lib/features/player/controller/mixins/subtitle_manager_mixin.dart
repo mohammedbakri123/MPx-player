@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/subtitle_settings_service.dart';
+import '../../../settings/services/subtitle_settings_service.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
 

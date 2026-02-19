@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../../../../core/services/last_played_service.dart';
-import '../../../../../core/services/video_thumbnail_generator_service.dart';
+import 'package:mpx/features/library/services/video_thumbnail_generator_service.dart';
+import '../../../../player/services/last_played_service.dart';
+// import '../../../library/services/video_thumbnail_generator_service.dart';
 import '../../../../player/presentation/screens/video_player_screen.dart';
 import '../../../domain/entities/video_file.dart';
 

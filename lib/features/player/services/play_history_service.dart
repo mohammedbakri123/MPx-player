@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../features/library/domain/entities/video_file.dart';
-import 'logger_service.dart';
+import '../../../features/library/domain/entities/video_file.dart';
+import '../../../core/services/logger_service.dart';
 
 /// Simple service for saving and restoring video playback positions
 /// Uses singleton pattern with static methods
