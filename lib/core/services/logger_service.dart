@@ -6,6 +6,11 @@ import 'dart:developer' as developer;
 /// and can be easily replaced with a more sophisticated logging solution
 /// if needed in the future.
 class AppLogger {
+  /// Logs a debug message.
+  static void d(String message, [Object? error, StackTrace? stackTrace]) {
+    _log('DEBUG', message, error, stackTrace);
+  }
+
   /// Logs an informational message.
   static void i(String message, [Object? error, StackTrace? stackTrace]) {
     _log('INFO', message, error, stackTrace);
@@ -25,7 +30,7 @@ class AppLogger {
   static void _log(String level, String message, [Object? error, StackTrace? stackTrace]) {
     final timestamp = DateTime.now().toString().split('.')[0]; // Remove milliseconds
     final logMessage = '[$level] [$timestamp] $message';
-    
+
     // Log to the console
     developer.log(
       logMessage,

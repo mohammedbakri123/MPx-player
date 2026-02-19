@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/logger_service.dart';
+import '../../../library/controller/library_controller.dart';
 import '../widgets/splash_background.dart';
 import '../widgets/splash_logo.dart';
 import '../widgets/splash_title.dart';
@@ -20,6 +23,8 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _progressAnimation;
+  
+  bool _dataLoaded = false;
 
   @override
   void initState() {
@@ -51,14 +56,53 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Listen for animation completion instead of using fixed timer
+    // Pre-load data in background
+    _preloadData();
+
+    // Listen for animation completion
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        widget.onComplete();
+        // Wait for data if not ready yet
+        if (_dataLoaded) {
+          widget.onComplete();
+        } else {
+          // Data still loading, wait then complete
+          Future.delayed(const Duration(milliseconds: 500), () {
+            widget.onComplete();
+          });
+        }
       }
     });
 
     _controller.forward();
+  }
+
+  /// Pre-load video data in background - OPTIMIZED
+  Future<void> _preloadData() async {
+    try {
+      final stopwatch = Stopwatch()..start();
+      
+      final controller = context.read<LibraryController>();
+      
+      // Check if we already have data in memory (app resume, not cold start)
+      if (controller.folders.isNotEmpty) {
+        AppLogger.i('⚡ Using existing in-memory data - instant!');
+        _dataLoaded = true;
+        return;
+      }
+      
+      // Load from cache ONLY - no scanning!
+      // Cache will be populated from previous session
+      await controller.load();
+      
+      stopwatch.stop();
+      _dataLoaded = true;
+      
+      AppLogger.i('⚡ Preload complete in ${stopwatch.elapsedMilliseconds}ms');
+    } catch (e) {
+      AppLogger.e('Error preloading data: $e');
+      _dataLoaded = true; // Continue anyway
+    }
   }
 
   @override

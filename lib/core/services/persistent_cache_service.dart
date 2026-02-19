@@ -74,16 +74,18 @@ class PersistentCacheService {
     AppLogger.i('Saved ${folders.length} folders to SharedPreferences');
   }
 
-  // Load video folders from persistent cache
+  // Load video folders from persistent cache - OPTIMIZED for speed
   static Future<List<VideoFolder>?> loadFromCache() async {
-    // Try database first
+    final stopwatch = Stopwatch()..start();
+    
+    // Try database first - using FAST query
     if (await _isDatabaseAvailable()) {
       try {
         final db = AppDatabase();
-        final folders = await db.getAllFolders();
+        final folders = await db.getAllFoldersFast();
 
         if (folders.isNotEmpty) {
-          AppLogger.i('Loaded ${folders.length} folders from database');
+          AppLogger.i('⚡ Loaded ${folders.length} folders from database in ${stopwatch.elapsedMilliseconds}ms');
           return folders;
         }
       } catch (e) {
@@ -94,7 +96,11 @@ class PersistentCacheService {
     }
 
     // Fallback to SharedPreferences
-    return await _loadFromSharedPreferences();
+    final result = await _loadFromSharedPreferences();
+    if (result != null) {
+      AppLogger.i('⚡ Loaded ${result.length} folders from SharedPreferences in ${stopwatch.elapsedMilliseconds}ms');
+    }
+    return result;
   }
 
   /// Load from SharedPreferences (fallback)
@@ -181,9 +187,20 @@ class PersistentCacheService {
     return now.difference(timestamp) > maxAge;
   }
 
+  // Save file metadata for incremental scanning (int milliseconds format)
+  static Future<void> saveFileMetadataInt(Map<String, int> fileModifiedTimes) async {
+    final prefs = await SharedPreferences.getInstance();
+    final metadataJson = <String, int>{};
+
+    fileModifiedTimes.forEach((path, modifiedTimeMs) {
+      metadataJson[path] = modifiedTimeMs;
+    });
+
+    await prefs.setString(_fileMetadataKey, jsonEncode(metadataJson));
+  }
+
   // Save file metadata for incremental scanning
-  static Future<void> saveFileMetadata(
-      Map<String, DateTime> fileModifiedTimes) async {
+  static Future<void> saveFileMetadata(Map<String, DateTime> fileModifiedTimes) async {
     final prefs = await SharedPreferences.getInstance();
     final metadataJson = <String, int>{};
 
@@ -192,6 +209,30 @@ class PersistentCacheService {
     });
 
     await prefs.setString(_fileMetadataKey, jsonEncode(metadataJson));
+  }
+
+  // Load file metadata for incremental scanning (returns int milliseconds)
+  static Future<Map<String, int>?> loadFileMetadataInt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final metadataJsonString = prefs.getString(_fileMetadataKey);
+
+    if (metadataJsonString == null) {
+      return null;
+    }
+
+    try {
+      final metadataJson =
+          jsonDecode(metadataJsonString) as Map<String, dynamic>;
+      final metadata = <String, int>{};
+
+      metadataJson.forEach((path, modifiedTimeMs) {
+        metadata[path] = modifiedTimeMs as int;
+      });
+
+      return metadata;
+    } catch (e) {
+      return null;
+    }
   }
 
   // Load file metadata for incremental scanning

@@ -1,7 +1,12 @@
 import 'package:flutter/foundation.dart';
 import '../../../../core/services/logger_service.dart';
+import '../../../../core/database/app_database.dart';
+import '../../../../core/services/video_thumbnail_generator_service.dart';
+import '../../../../core/services/video_metadata_service.dart';
 import '../domain/entities/video_folder.dart';
+import '../domain/entities/video_file.dart';
 import '../data/datasources/local_video_scanner.dart';
+import '../data/workers/video_metadata_worker.dart';
 
 /// Controller for managing library state and business logic.
 ///
@@ -10,12 +15,14 @@ import '../data/datasources/local_video_scanner.dart';
 /// - Coordinates data fetching from VideoScanner
 /// - Handles folder grouping and filtering
 /// - Provides ChangeNotifier for UI updates
+/// - Implements lazy loading for folder contents
 ///
 /// **Responsibilities:**
 /// - Loading and refreshing video library
 /// - View mode state (list/grid)
 /// - Demo mode handling
 /// - State management (ChangeNotifier)
+/// - Lazy loading of folder videos
 ///
 /// **Does NOT:**
 /// - Directly perform file system operations (delegates to scanner)
@@ -28,6 +35,10 @@ class LibraryController extends ChangeNotifier {
   bool _isLoading = true;
   bool _isGridView = false;
   String? _errorMessage;
+  
+  // Lazy loading state
+  final Map<String, bool> _loadedFolders = {};
+  final Map<String, List<VideoFile>> _folderVideoCache = {};
 
   // Getters
   List<VideoFolder> get folders => _folders;
@@ -56,7 +67,7 @@ class LibraryController extends ChangeNotifier {
     await _loadVideos(forceRefresh: true);
   }
 
-  /// Toggles between list and grid view modes.
+  /// Toggle between list and grid view modes.
   void toggleViewMode() {
     _isGridView = !_isGridView;
     notifyListeners();
@@ -78,6 +89,58 @@ class LibraryController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Check if folder videos are loaded
+  bool isFolderLoaded(String folderPath) {
+    return _loadedFolders[folderPath] ?? false;
+  }
+
+  /// Lazily load videos for a specific folder
+  Future<List<VideoFile>> loadFolderVideos(String folderPath) async {
+    // Check cache first
+    if (_folderVideoCache.containsKey(folderPath)) {
+      AppLogger.d('Returning cached videos for folder: $folderPath');
+      return _folderVideoCache[folderPath]!;
+    }
+
+    try {
+      AppLogger.i('Lazy loading videos for folder: $folderPath');
+      final videos = await _scanner.getVideosInFolder(folderPath);
+      
+      // Cache the videos
+      _folderVideoCache[folderPath] = videos;
+      _loadedFolders[folderPath] = true;
+      
+      AppLogger.i('Loaded ${videos.length} videos for folder: $folderPath');
+      return videos;
+    } catch (e) {
+      AppLogger.e('Error loading folder videos: $e');
+      return [];
+    }
+  }
+
+  /// Invalidate cached videos for a folder
+  void invalidateFolder(String folderPath) {
+    _folderVideoCache.remove(folderPath);
+    _loadedFolders.remove(folderPath);
+    AppLogger.d('Invalidated cache for folder: $folderPath');
+  }
+
+  /// Clear all folder video caches
+  void clearFolderCaches() {
+    _folderVideoCache.clear();
+    _loadedFolders.clear();
+    AppLogger.i('Cleared all folder caches');
+  }
+
+  /// Get cache stats
+  Map<String, dynamic> get cacheStats {
+    return {
+      'loadedFolders': _loadedFolders.length,
+      'folderVideoCacheSize': _folderVideoCache.length,
+      'totalFolders': _folders.length,
+    };
+  }
+
   /// Internal method to load videos from scanner.
   Future<void> _loadVideos({required bool forceRefresh}) async {
     _isLoading = true;
@@ -88,14 +151,29 @@ class LibraryController extends ChangeNotifier {
     try {
       final folders = await _scanner.scanForVideos(
         forceRefresh: forceRefresh,
+        enableWatching: true,
         onProgress: (progress, status) {
           // Update progress if needed - for now we just log it
           AppLogger.i('Scan progress: ${(progress * 100).round()}% - $status');
         },
       );
-      _folders = folders;
+      
+      // Only update if we got new data
+      if (folders.isNotEmpty) {
+        _folders = folders;
+        _errorMessage = null;
+        
+        // Clear lazy loading caches on full refresh
+        if (forceRefresh) {
+          clearFolderCaches();
+          VideoMetadataWorker().clearCache();
+        }
+        
+        // Start background processing for thumbnails and metadata
+        _startBackgroundProcessing();
+      }
+      
       _isLoading = false;
-      _errorMessage = null;
     } catch (e) {
       _folders = [];
       _isLoading = false;
@@ -106,9 +184,68 @@ class LibraryController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Start background processing for thumbnails and metadata
+  Future<void> _startBackgroundProcessing() async {
+    // Collect all videos from all folders
+    final allVideos = <VideoFile>[];
+    for (final folder in _folders) {
+      allVideos.addAll(folder.videos);
+    }
+    
+    if (allVideos.isEmpty) return;
+    
+    AppLogger.i('Starting background processing for ${allVideos.length} videos...');
+    
+    // Process first batch immediately (synchronous) to get quick results
+    final firstBatch = allVideos.take(20).toList();
+    AppLogger.i('Processing first 20 videos immediately...');
+    
+    // Process first batch right away
+    for (final video in firstBatch) {
+      await _processVideoImmediately(video);
+    }
+    
+    // Save first batch to database
+    if (firstBatch.any((v) => v.thumbnailPath != null)) {
+      await AppDatabase().updateVideosBatch(firstBatch.where((v) => v.thumbnailPath != null).toList());
+      AppLogger.i('Saved first batch to database');
+    }
+    
+    // Continue with rest in background
+    final remainingVideos = allVideos.skip(20).toList();
+    if (remainingVideos.isNotEmpty) {
+      VideoMetadataWorker().processVideos(remainingVideos);
+    }
+  }
+
+  /// Process a single video immediately (synchronous)
+  Future<void> _processVideoImmediately(VideoFile video) async {
+    try {
+      // Generate thumbnail
+      if (video.thumbnailPath == null) {
+        final thumbnailPath = await VideoThumbnailGeneratorService()
+            .generateThumbnail(video.path, priority: ThumbnailPriority.high);
+        if (thumbnailPath != null) {
+          video.thumbnailPath = thumbnailPath;
+        }
+      }
+      
+      // Extract metadata if missing
+      if (video.width == null || video.height == null) {
+        final metadata = await VideoMetadataService().extractMetadata(video.path);
+        if (metadata != null && metadata.width != null && metadata.height != null) {
+          // Can't update immutable VideoFile, but database will get it
+        }
+      }
+    } catch (e) {
+      AppLogger.e('Error processing video immediately: $e');
+    }
+  }
+
   @override
   void dispose() {
-    // Clean up if needed
+    // Clean up caches
+    clearFolderCaches();
     super.dispose();
   }
 }

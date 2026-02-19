@@ -207,6 +207,69 @@ class AppDatabase {
     return _videoFromMap(maps.first);
   }
 
+  /// Update video thumbnail path
+  Future<void> updateVideoThumbnail(String videoId, String thumbnailPath) async {
+    final db = await database;
+    await db.update(
+      _videosTable,
+      {
+        'thumbnail_path': thumbnailPath,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [videoId],
+    );
+  }
+
+  /// Update video metadata (width, height)
+  Future<void> updateVideoMetadata(
+    String videoId,
+    int width,
+    int height,
+  ) async {
+    final db = await database;
+    await db.update(
+      _videosTable,
+      {
+        'width': width,
+        'height': height,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [videoId],
+    );
+  }
+
+  /// Batch update multiple videos (for thumbnail/metadata updates)
+  Future<void> updateVideosBatch(List<VideoFile> videos) async {
+    final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+
+      for (final video in videos) {
+        batch.update(
+          _videosTable,
+          {
+            'thumbnail_path': video.thumbnailPath,
+            'width': video.width,
+            'height': video.height,
+            'updated_at': now,
+          },
+          where: 'id = ?',
+          whereArgs: [video.id],
+        );
+      }
+
+      await batch.commit(noResult: true);
+    });
+
+    if (videos.isNotEmpty) {
+      AppLogger.d('Updated ${videos.length} videos in database');
+    }
+  }
+
   /// Search videos by title
   Future<List<VideoFile>> searchVideos(String query) async {
     final db = await database;
@@ -296,24 +359,76 @@ class AppDatabase {
     AppLogger.i('Inserted ${folders.length} folders into database');
   }
 
-  /// Get all folders
-  Future<List<VideoFolder>> getAllFolders() async {
+  /// Get all folders - FAST version (single query with JOIN)
+  Future<List<VideoFolder>> getAllFoldersFast() async {
     final db = await database;
-    final folderMaps = await db.query(_foldersTable);
+    final stopwatch = Stopwatch()..start();
+    
+    // Single query with JOIN - loads everything at once!
+    final maps = await db.rawQuery('''
+      SELECT 
+        f.path, f.name, f.video_count,
+        v.id, v.path as video_path, v.title, v.folder_path, 
+        v.folder_name, v.size, v.duration, v.date_added,
+        v.thumbnail_path, v.width, v.height
+      FROM $_foldersTable f
+      LEFT JOIN $_videosTable v ON f.path = v.folder_path
+      ORDER BY f.path, v.date_added DESC
+    ''');
 
-    final folders = <VideoFolder>[];
-    for (final folderMap in folderMaps) {
-      final folderPath = folderMap['path'] as String;
-      final videos = await getVideosByFolder(folderPath);
+    final folderMap = <String, VideoFolder>{};
+    final videoMap = <String, List<VideoFile>>{};
+    
+    int videosWithThumbnails = 0;
+    int videosWithResolution = 0;
 
-      folders.add(VideoFolder(
-        path: folderPath,
-        name: folderMap['name'] as String,
-        videos: videos,
-      ));
+    // Group by folder
+    for (final row in maps) {
+      final folderPath = row['path'] as String;
+      final folderName = row['name'] as String;
+
+      if (!folderMap.containsKey(folderPath)) {
+        folderMap[folderPath] = VideoFolder(
+          path: folderPath,
+          name: folderName,
+          videos: [],
+        );
+        videoMap[folderPath] = [];
+      }
+
+      // Add video if exists (LEFT JOIN may return null for empty folders)
+      if (row['id'] != null) {
+        final video = _videoFromMap(row);
+        videoMap[folderPath]!.add(video);
+        
+        if (video.thumbnailPath != null) videosWithThumbnails++;
+        if (video.width != null && video.height != null) videosWithResolution++;
+      }
     }
 
+    // Assign videos to folders
+    final folders = <VideoFolder>[];
+    for (final entry in folderMap.entries) {
+      final folder = VideoFolder(
+        path: entry.key,
+        name: entry.value.name,
+        videos: videoMap[entry.key] ?? [],
+      );
+      folders.add(folder);
+    }
+
+    stopwatch.stop();
+    AppLogger.i(
+      '⚡ Loaded ${folders.length} folders (${folders.fold(0, (sum, f) => sum + f.videos.length)} videos) '
+      'from database in ${stopwatch.elapsedMilliseconds}ms | '
+      'Thumbnails: $videosWithThumbnails | Resolution: $videosWithResolution'
+    );
     return folders;
+  }
+
+  /// Get all folders (legacy - slow, for compatibility)
+  Future<List<VideoFolder>> getAllFolders() async {
+    return await getAllFoldersFast();
   }
 
   /// Delete a folder

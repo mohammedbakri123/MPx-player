@@ -15,14 +15,18 @@ class VideoMetadataService {
   // Cache for metadata to avoid re-extracting
   final Map<String, VideoMetadata> _metadataCache = {};
 
+  /// Maximum cache size to prevent memory issues
+  static const int _maxCacheSize = 1000;
+
   /// Extract metadata from a video file
   Future<VideoMetadata?> extractMetadata(String videoPath) async {
-    AppLogger.i('Extracting metadata for: $videoPath');
-
     // Check cache first
     if (_metadataCache.containsKey(videoPath)) {
       AppLogger.i('Returning cached metadata for: $videoPath');
-      return _metadataCache[videoPath];
+      // Move to end (mark as recently used)
+      final metadata = _metadataCache.remove(videoPath);
+      _metadataCache[videoPath] = metadata!;
+      return metadata;
     }
 
     // Verify file exists
@@ -64,6 +68,14 @@ class VideoMetadataService {
             : null,
       );
 
+      // Add to cache with eviction
+      if (_metadataCache.length >= _maxCacheSize) {
+        // Remove oldest entry (first item)
+        final oldestKey = _metadataCache.keys.first;
+        _metadataCache.remove(oldestKey);
+        AppLogger.d('Evicted metadata cache entry: $oldestKey');
+      }
+
       _metadataCache[videoPath] = result;
       return result;
     } catch (e, stackTrace) {
@@ -76,7 +88,17 @@ class VideoMetadataService {
   /// Clear the metadata cache
   void clearCache() {
     _metadataCache.clear();
+    AppLogger.i('Metadata cache cleared');
   }
+
+  /// Get cache size
+  int get cacheSize => _metadataCache.length;
+
+  /// Get cache stats
+  Map<String, dynamic> get stats => {
+    'cacheSize': _metadataCache.length,
+    'maxCacheSize': _maxCacheSize,
+  };
 }
 
 class VideoMetadata {

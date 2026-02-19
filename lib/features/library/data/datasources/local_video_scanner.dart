@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import '../../../../../core/services/logger_service.dart';
 import '../../../../../core/services/persistent_cache_service.dart';
+import '../../../../../core/utils/debouncer.dart';
 import '../../domain/entities/video_file.dart';
 import '../../domain/entities/video_folder.dart';
 import 'helpers/scan_orchestrator.dart';
@@ -22,6 +23,12 @@ class VideoScanner {
   bool _isWatching = false;
   static const _minScanInterval = Duration(seconds: 5);
 
+  // Debouncer for scan requests (prevent rapid re-scans)
+  final Debouncer _scanDebouncer = Debouncer(delay: Duration(milliseconds: 500));
+  
+  // Cooldown manager for refreshes (max 1 refresh per 3 seconds)
+  final CooldownManager _refreshCooldown = CooldownManager(cooldown: Duration(seconds: 3));
+
   final DirectoryWatcherHelper _watcher = DirectoryWatcherHelper();
   StreamSubscription<VideoFile>? _addedSub;
   StreamSubscription<String>? _removedSub;
@@ -39,26 +46,45 @@ class VideoScanner {
   /// Whether directory watching is active
   bool get isWatching => _isWatching;
 
+  /// Get current cache stats for debugging
+  Map<String, dynamic> get cacheStats => {
+    'cachedFolders': _cachedFolders?.length ?? 0,
+    'totalVideos': _countVideos(_cachedFolders ?? []),
+    'lastScanTime': _lastScanTime?.toIso8601String(),
+    'isScanning': _isScanning,
+  };
+
   Future<List<VideoFolder>> scanForVideos({
     bool forceRefresh = false,
     bool enableWatching = true,
     Function(double progress, String status)? onProgress,
   }) async {
-    // Check caches
+    // Check cooldown for refreshes
+    if (forceRefresh && _refreshCooldown.isOnCooldown) {
+      AppLogger.w('Scan on cooldown, ignoring refresh request');
+      return _cachedFolders ?? [];
+    }
+
+    // Check memory cache FIRST - instant!
+    if (!forceRefresh && _checkMemoryCache()) {
+      AppLogger.i('⚡ Using memory cache - instant!');
+      if (enableWatching) await startWatching();
+      return _cachedFolders!;
+    }
+
+    // Check persistent cache - very fast!
     if (!forceRefresh) {
       final cached = await _checkPersistentCache();
       if (cached != null) {
+        AppLogger.i('⚡ Using persistent cache - fast!');
         if (enableWatching) await startWatching();
         return cached;
-      }
-      if (_checkMemoryCache()) {
-        if (enableWatching) await startWatching();
-        return _cachedFolders!;
       }
     }
 
     // Prevent concurrent scans
     if (_isScanning) {
+      AppLogger.i('Scan already in progress, waiting...');
       await _waitForScan();
       return _cachedFolders ?? [];
     }
@@ -71,17 +97,23 @@ class VideoScanner {
         onProgress: onProgress,
       );
 
-      _cachedFolders = folders.isNotEmpty ? folders : _cachedFolders;
-      _lastScanTime = DateTime.now();
-      onProgress?.call(
-          1.0, 'Scan completed! Found ${_countVideos(folders)} videos');
+      if (folders.isNotEmpty) {
+        _cachedFolders = folders;
+        _lastScanTime = DateTime.now();
+        
+        // Mark cooldown as complete
+        _refreshCooldown.forceExecute(() {});
+        
+        onProgress?.call(
+            1.0, 'Complete! Found ${_countVideos(folders)} videos');
 
-      // Start watching for real-time updates
-      if (enableWatching) {
-        await startWatching();
+        // Start watching for real-time updates
+        if (enableWatching) {
+          await startWatching();
+        }
       }
 
-      return folders;
+      return folders.isNotEmpty ? folders : (_cachedFolders ?? []);
     } catch (e, stack) {
       AppLogger.e('Error scanning videos: $e', e, stack);
       return _cachedFolders ?? [];
@@ -91,22 +123,63 @@ class VideoScanner {
   }
 
   Future<List<VideoFolder>?> _checkPersistentCache() async {
-    if (await PersistentCacheService.isCacheExpired(const Duration(hours: 1))) {
-      return null;
-    }
-
+    // Check if cache exists (don't validate files - too slow!)
     final cached = await PersistentCacheService.loadFromCache();
     if (cached != null && cached.isNotEmpty) {
       _cachedFolders = cached;
       _lastScanTime = await PersistentCacheService.getLastCacheTimestamp();
+      AppLogger.i('⚡ Loaded ${cached.length} folders from cache');
       return cached;
     }
     return null;
   }
 
+  /// Get smart cache expiration based on library size
+  Future<Duration> _getSmartCacheExpiration() async {
+    final cached = await PersistentCacheService.loadFromCache();
+    if (cached == null) return Duration.zero;
+    
+    final totalVideos = _countVideos(cached);
+    
+    // Small library (< 100 videos) - shorter cache (30 min)
+    // Medium library (100-500 videos) - medium cache (2 hours)
+    // Large library (> 500 videos) - longer cache (24 hours)
+    if (totalVideos < 100) {
+      return Duration(minutes: 30);
+    } else if (totalVideos < 500) {
+      return Duration(hours: 2);
+    } else {
+      return Duration(hours: 24);
+    }
+  }
+
+  /// Validate cache by checking if key files still exist
+  Future<bool> _validateCache(List<VideoFolder> folders) async {
+    if (folders.isEmpty) return false;
+    
+    // Check first folder's first video as a sample
+    for (final folder in folders.take(3)) {
+      if (folder.videos.isNotEmpty) {
+        final sampleVideo = folder.videos.first;
+        final file = File(sampleVideo.path);
+        if (!await file.exists()) {
+          AppLogger.w('Cache validation failed: ${sampleVideo.path} not found');
+          return false;
+        }
+      }
+    }
+    
+    AppLogger.i('Cache validation passed');
+    return true;
+  }
+
   bool _checkMemoryCache() {
-    if (_cachedFolders == null || _lastScanTime == null) return false;
-    return DateTime.now().difference(_lastScanTime!) < _minScanInterval;
+    // Memory cache is ALWAYS valid during app lifetime
+    // Only invalidate if explicitly cleared or app restarts
+    if (_cachedFolders == null || _cachedFolders!.isEmpty) return false;
+    
+    AppLogger.i('Memory cache hit: ${_cachedFolders!.length} folders');
+    return true;
   }
 
   Future<void> _waitForScan() async {
@@ -151,10 +224,13 @@ class VideoScanner {
     // Setup watchers
     await _watcher.startWatching(directories);
 
-    // Listen to changes
-    _addedSub = _watcher.onVideoAdded.listen(_handleVideoAdded);
-    _removedSub = _watcher.onVideoRemoved.listen(_handleVideoRemoved);
-    _modifiedSub = _watcher.onVideoModified.listen(_handleVideoModified);
+    // Listen to changes with debouncing
+    _addedSub = _watcher.onVideoAdded
+        .listen(_debouncedHandleVideoAdded);
+    _removedSub = _watcher.onVideoRemoved
+        .listen(_debouncedHandleVideoRemoved);
+    _modifiedSub = _watcher.onVideoModified
+        .listen(_debouncedHandleVideoModified);
 
     _isWatching = true;
     AppLogger.i('Directory watching started');
@@ -166,13 +242,73 @@ class VideoScanner {
 
     AppLogger.i('Stopping directory watching...');
 
+    // Cancel all subscriptions
     await _addedSub?.cancel();
     await _removedSub?.cancel();
     await _modifiedSub?.cancel();
+    
+    // Clear references
+    _addedSub = null;
+    _removedSub = null;
+    _modifiedSub = null;
+    
     await _watcher.stopWatching();
 
     _isWatching = false;
     AppLogger.i('Directory watching stopped');
+  }
+
+  // Debounced handlers to prevent rapid UI updates
+  final List<VideoFile> _pendingAddedVideos = [];
+  final List<String> _pendingRemovedPaths = [];
+  final List<VideoFile> _pendingModifiedVideos = [];
+  Timer? _batchUpdateTimer;
+
+  void _debouncedHandleVideoAdded(VideoFile video) {
+    _pendingAddedVideos.add(video);
+    _scheduleBatchUpdate();
+  }
+
+  void _debouncedHandleVideoRemoved(String filePath) {
+    _pendingRemovedPaths.add(filePath);
+    _scheduleBatchUpdate();
+  }
+
+  void _debouncedHandleVideoModified(VideoFile video) {
+    _pendingModifiedVideos.add(video);
+    _scheduleBatchUpdate();
+  }
+
+  void _scheduleBatchUpdate() {
+    _batchUpdateTimer?.cancel();
+    _batchUpdateTimer = Timer(Duration(milliseconds: 500), _processBatchUpdates);
+  }
+
+  void _processBatchUpdates() {
+    if (_pendingAddedVideos.isEmpty && 
+        _pendingRemovedPaths.isEmpty && 
+        _pendingModifiedVideos.isEmpty) {
+      return;
+    }
+
+    AppLogger.i('Processing batch updates: ${_pendingAddedVideos.length} added, '
+        '${_pendingRemovedPaths.length} removed, ${_pendingModifiedVideos.length} modified');
+
+    // Process all pending updates
+    for (final video in _pendingAddedVideos) {
+      _handleVideoAdded(video);
+    }
+    for (final path in _pendingRemovedPaths) {
+      _handleVideoRemoved(path);
+    }
+    for (final video in _pendingModifiedVideos) {
+      _handleVideoModified(video);
+    }
+
+    // Clear pending lists
+    _pendingAddedVideos.clear();
+    _pendingRemovedPaths.clear();
+    _pendingModifiedVideos.clear();
   }
 
   /// Handle video added event
@@ -228,7 +364,12 @@ class VideoScanner {
     }
   }
 
+  /// Clear cache
   void clearCache() {
+    _batchUpdateTimer?.cancel();
+    _pendingAddedVideos.clear();
+    _pendingRemovedPaths.clear();
+    _pendingModifiedVideos.clear();
     _cachedFolders = null;
     _lastScanTime = null;
     AppLogger.i('Cache cleared');
@@ -236,7 +377,14 @@ class VideoScanner {
 
   /// Dispose resources
   void dispose() {
+    AppLogger.i('Disposing VideoScanner...');
     stopWatching();
+    _batchUpdateTimer?.cancel();
+    _pendingAddedVideos.clear();
+    _pendingRemovedPaths.clear();
+    _pendingModifiedVideos.clear();
     _watcher.dispose();
+    _scanDebouncer.cancel();
+    AppLogger.i('VideoScanner disposed');
   }
 }

@@ -47,6 +47,12 @@ class VideoThumbnailGeneratorService {
   static const int _maxConcurrent = 2;
   int _currentConcurrent = 0;
 
+  /// Maximum queue size to prevent memory issues
+  static const int _maxQueueSize = 100;
+
+  /// Maximum cache size on disk (500MB)
+  static const int _maxCacheSizeBytes = 500 * 1024 * 1024;
+
   /// Generate a thumbnail with priority and optional cancellation
   Future<String?> generateThumbnail(
     String videoPath, {
@@ -65,6 +71,9 @@ class VideoThumbnailGeneratorService {
       final exists = await File(cachedPath).exists();
       if (exists) {
         return cachedPath;
+      } else {
+        // File doesn't exist, remove from cache
+        _thumbnailPathCache.remove(videoPath);
       }
     }
 
@@ -73,6 +82,12 @@ class VideoThumbnailGeneratorService {
     if (await File(thumbnailPath).exists()) {
       _thumbnailPathCache.put(videoPath, thumbnailPath);
       return thumbnailPath;
+    }
+
+    // Check if queue is full
+    if (_requestQueue.length >= _maxQueueSize) {
+      AppLogger.w('Thumbnail queue full, dropping request: $videoPath');
+      return null;
     }
 
     // Check if already in queue
@@ -298,4 +313,123 @@ class VideoThumbnailGeneratorService {
       'cacheSize': _thumbnailPathCache.length,
     };
   }
+
+  /// Get total cache size on disk
+  Future<int> getCacheSizeBytes() async {
+    try {
+      final thumbnailDir = await _getThumbnailDirectory();
+      final dir = Directory(thumbnailDir);
+      int totalSize = 0;
+
+      if (await dir.exists()) {
+        await for (final entity in dir.list()) {
+          if (entity is File) {
+            totalSize += await entity.length();
+          }
+        }
+      }
+
+      return totalSize;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Get cache size in human-readable format
+  Future<String> getCacheSizeFormatted() async {
+    final sizeBytes = await getCacheSizeBytes();
+    if (sizeBytes < 1024) {
+      return '$sizeBytes B';
+    } else if (sizeBytes < 1024 * 1024) {
+      return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
+    } else if (sizeBytes < 1024 * 1024 * 1024) {
+      return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    } else {
+      return '${(sizeBytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+    }
+  }
+
+  /// Cleanup cache if it exceeds size limit
+  Future<void> cleanupCacheIfNeeded() async {
+    try {
+      final currentSize = await getCacheSizeBytes();
+      if (currentSize <= _maxCacheSizeBytes) {
+        return; // Cache is within limits
+      }
+
+      AppLogger.i('Thumbnail cache exceeds limit (${_formatBytes(currentSize)} > ${_formatBytes(_maxCacheSizeBytes)}), cleaning up...');
+
+      final thumbnailDir = await _getThumbnailDirectory();
+      final dir = Directory(thumbnailDir);
+      
+      if (!await dir.exists()) return;
+
+      // Get all cache files with their last modified times
+      final files = <_CacheFile>[];
+      await for (final entity in dir.list()) {
+        if (entity is File) {
+          final stat = await entity.stat();
+          files.add(_CacheFile(
+            path: entity.path,
+            lastModified: stat.modified,
+            size: stat.size,
+          ));
+        }
+      }
+
+      // Sort by last modified (oldest first)
+      files.sort((a, b) => a.lastModified.compareTo(b.lastModified));
+
+      // Delete oldest files until we're under the limit
+      var deletedCount = 0;
+      var deletedSize = 0;
+      
+      for (final file in files) {
+        if (currentSize - deletedSize <= _maxCacheSizeBytes * 0.8) {
+          break; // Stop when we're at 80% of limit
+        }
+
+        try {
+          await File(file.path).delete();
+          deletedSize += file.size;
+          deletedCount++;
+          
+          // Also remove from LRU cache
+          _thumbnailPathCache.remove(file.path);
+        } catch (e) {
+          AppLogger.e('Error deleting cache file: ${file.path}');
+        }
+      }
+
+      AppLogger.i('Cache cleanup complete: deleted $deletedCount files (${_formatBytes(deletedSize)})');
+    } catch (e) {
+      AppLogger.e('Error during cache cleanup: $e');
+    }
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+  }
+
+  /// Background cache cleanup (call periodically)
+  static Future<void> performBackgroundCleanup() async {
+    final service = VideoThumbnailGeneratorService();
+    await service.cleanupCacheIfNeeded();
+  }
+}
+
+/// Helper class for cache file management
+class _CacheFile {
+  final String path;
+  final DateTime lastModified;
+  final int size;
+
+  _CacheFile({
+    required this.path,
+    required this.lastModified,
+    required this.size,
+  });
 }
