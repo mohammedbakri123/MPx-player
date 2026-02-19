@@ -16,13 +16,16 @@ class VideoScanner {
   VideoScanner._internal();
 
   List<VideoFolder>? _cachedFolders;
+  // ignore: unused_field
   DateTime? _lastScanTime;
   bool _isScanning = false;
   bool _isWatching = false;
 
   // Debouncer and cooldown
-  final Debouncer _scanDebouncer = Debouncer(delay: const Duration(milliseconds: 500));
-  final CooldownManager _refreshCooldown = CooldownManager(cooldown: const Duration(seconds: 3));
+  final Debouncer _scanDebouncer =
+      Debouncer(delay: const Duration(milliseconds: 500));
+  final CooldownManager _refreshCooldown =
+      CooldownManager(cooldown: const Duration(seconds: 3));
 
   final DirectoryWatcherHelper _watcher = DirectoryWatcherHelper();
   StreamSubscription<VideoFile>? _addedSub;
@@ -83,7 +86,8 @@ class VideoScanner {
         _cachedFolders = folders;
         _lastScanTime = DateTime.now();
         _refreshCooldown.forceExecute(() {});
-        onProgress?.call(1.0, 'Complete! Found ${_countVideos(folders)} videos');
+        onProgress?.call(
+            1.0, 'Complete! Found ${_countVideos(folders)} videos');
 
         if (enableWatching) await startWatching();
       }
@@ -114,15 +118,27 @@ class VideoScanner {
   }
 
   /// Simple directory scan for single folder
-  Future<void> _scanDirectorySimple(Directory directory, List<VideoFile> videos) async {
-    final videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.3gp'];
+  Future<void> _scanDirectorySimple(
+      Directory directory, List<VideoFile> videos) async {
+    final videoExtensions = [
+      '.mp4',
+      '.mkv',
+      '.avi',
+      '.mov',
+      '.wmv',
+      '.flv',
+      '.webm',
+      '.m4v',
+      '.3gp'
+    ];
     try {
       await for (final entity in directory.list(recursive: false)) {
         if (entity is File) {
           final ext = entity.path.toLowerCase();
           if (videoExtensions.any((e) => ext.endsWith(e))) {
             final stat = await entity.stat();
-            if (stat.size > 100 * 1024) { // Min 100KB
+            if (stat.size > 100 * 1024) {
+              // Min 100KB
               videos.add(VideoFile(
                 id: entity.path.hashCode.toString(),
                 path: entity.path,
@@ -180,7 +196,8 @@ class VideoScanner {
 
     _addedSub = _watcher.onVideoAdded.listen(_debouncedHandleVideoAdded);
     _removedSub = _watcher.onVideoRemoved.listen(_debouncedHandleVideoRemoved);
-    _modifiedSub = _watcher.onVideoModified.listen(_debouncedHandleVideoModified);
+    _modifiedSub =
+        _watcher.onVideoModified.listen(_debouncedHandleVideoModified);
 
     _isWatching = true;
     AppLogger.i('Directory watching started');
@@ -225,20 +242,30 @@ class VideoScanner {
 
   void _scheduleBatchUpdate() {
     _batchUpdateTimer?.cancel();
-    _batchUpdateTimer = Timer(const Duration(milliseconds: 500), _processBatchUpdates);
+    _batchUpdateTimer =
+        Timer(const Duration(milliseconds: 500), _processBatchUpdates);
   }
 
   void _processBatchUpdates() {
-    if (_pendingAddedVideos.isEmpty && _pendingRemovedPaths.isEmpty && _pendingModifiedVideos.isEmpty) {
+    if (_pendingAddedVideos.isEmpty &&
+        _pendingRemovedPaths.isEmpty &&
+        _pendingModifiedVideos.isEmpty) {
       return;
     }
 
-    AppLogger.i('Processing batch updates: ${_pendingAddedVideos.length} added, '
+    AppLogger.i(
+        'Processing batch updates: ${_pendingAddedVideos.length} added, '
         '${_pendingRemovedPaths.length} removed, ${_pendingModifiedVideos.length} modified');
 
-    for (final video in _pendingAddedVideos) _handleVideoAdded(video);
-    for (final path in _pendingRemovedPaths) _handleVideoRemoved(path);
-    for (final video in _pendingModifiedVideos) _handleVideoModified(video);
+    for (final video in _pendingAddedVideos) {
+      _handleVideoAdded(video);
+    }
+    for (final path in _pendingRemovedPaths) {
+      _handleVideoRemoved(path);
+    }
+    for (final video in _pendingModifiedVideos) {
+      _handleVideoModified(video);
+    }
 
     _pendingAddedVideos.clear();
     _pendingRemovedPaths.clear();
@@ -251,7 +278,8 @@ class VideoScanner {
     var folder = _cachedFolders!.firstWhere(
       (f) => f.path == video.folderPath,
       orElse: () {
-        final newFolder = VideoFolder(path: video.folderPath, name: video.folderName, videos: []);
+        final newFolder = VideoFolder(
+            path: video.folderPath, name: video.folderName, videos: []);
         _cachedFolders!.add(newFolder);
         return newFolder;
       },

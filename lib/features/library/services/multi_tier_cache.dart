@@ -8,7 +8,7 @@ import '../../../features/library/domain/entities/video_folder.dart';
 import '../../../core/services/logger_service.dart';
 
 /// Multi-tier caching strategy for optimal performance
-/// 
+///
 /// L1: Memory Cache (LRU, fast access, limited size)
 /// L2: SQLite Database (persistent, structured)
 /// L3: Disk Cache (file-based, for thumbnails and large data)
@@ -20,15 +20,15 @@ class MultiTierCache {
   // L1 Cache configuration
   static const int _l1MaxFolders = 50;
   static const int _l1MaxVideosPerFolder = 100;
-  
+
   // L1: Memory cache for folders (LRU)
-  final LinkedHashMap<String, VideoFolder> _folderCache = 
+  final LinkedHashMap<String, VideoFolder> _folderCache =
       LinkedHashMap<String, VideoFolder>();
-  
+
   // L1: Video metadata cache (LRU)
-  final LinkedHashMap<String, VideoFile> _videoCache = 
+  final LinkedHashMap<String, VideoFile> _videoCache =
       LinkedHashMap<String, VideoFile>();
-  
+
   // Cache statistics
   int _cacheHits = 0;
   int _cacheMisses = 0;
@@ -38,17 +38,17 @@ class MultiTierCache {
 
   /// Get cache statistics
   Map<String, dynamic> get stats => {
-    'l1_folder_cache_size': _folderCache.length,
-    'l1_video_cache_size': _videoCache.length,
-    'cache_hits': _cacheHits,
-    'cache_misses': _cacheMisses,
-    'l1_hits': _l1Hits,
-    'l2_hits': _l2Hits,
-    'l3_hits': _l3Hits,
-    'hit_rate': _cacheHits > 0 
-        ? ((_cacheHits / (_cacheHits + _cacheMisses)) * 100).toStringAsFixed(2) + '%'
-        : '0%',
-  };
+        'l1_folder_cache_size': _folderCache.length,
+        'l1_video_cache_size': _videoCache.length,
+        'cache_hits': _cacheHits,
+        'cache_misses': _cacheMisses,
+        'l1_hits': _l1Hits,
+        'l2_hits': _l2Hits,
+        'l3_hits': _l3Hits,
+        'hit_rate': _cacheHits > 0
+            ? '${((_cacheHits / (_cacheHits + _cacheMisses)) * 100).toStringAsFixed(2)}%'
+            : '0%',
+      };
 
   // ==================== FOLDER CACHE (L1) ====================
 
@@ -83,7 +83,8 @@ class MultiTierCache {
     );
 
     _folderCache[folder.path] = limitedFolder;
-    AppLogger.d('Stored folder in L1 cache: ${folder.path} (${limitedFolder.videos.length} videos)');
+    AppLogger.d(
+        'Stored folder in L1 cache: ${folder.path} (${limitedFolder.videos.length} videos)');
   }
 
   /// Invalidate folder from cache

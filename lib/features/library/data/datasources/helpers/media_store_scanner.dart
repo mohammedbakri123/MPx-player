@@ -6,7 +6,7 @@ import '../../../services/video_thumbnail_generator_service.dart';
 import '../../../domain/entities/video_file.dart';
 
 /// ULTRA-FAST MediaStore scanner with INSTANT thumbnails
-/// 
+///
 /// Generates thumbnails WHILE scanning MediaStore for maximum speed
 class MediaStoreScanner {
   /// Scan videos using Android MediaStore - with thumbnails!
@@ -99,7 +99,7 @@ class MediaStoreScanner {
     final videos = <VideoFile>[];
 
     try {
-      final String albumName = album.name ?? 'Unknown';
+      final String albumName = album.name;
       final int assetCount = await album.assetCountAsync;
 
       if (assetCount == 0) return videos;
@@ -113,21 +113,23 @@ class MediaStoreScanner {
       for (final asset in assets) {
         try {
           // Get file path
-          final String filePath = await asset.originFile.then((file) => file!.path);
+          final String filePath =
+              await asset.originFile.then((file) => file!.path);
 
           // Quick extension check
           final String ext = path.extension(filePath).toLowerCase();
           if (!_isValidVideoExtension(ext)) continue;
 
           // Get file size
-          final int fileSize = await asset.originFile.then((file) => file!.lengthSync());
+          final int fileSize =
+              await asset.originFile.then((file) => file!.lengthSync());
 
           // Skip tiny files (< 100KB)
           if (fileSize < 100 * 1024) continue;
 
           // Get resolution from MediaStore
-          final int? width = asset.width;
-          final int? height = asset.height;
+          final int width = asset.width;
+          final int height = asset.height;
 
           // Generate thumbnail immediately (synchronous for first 10)
           String? thumbnailPath;
@@ -167,9 +169,18 @@ class MediaStoreScanner {
 
   static bool _isValidVideoExtension(String ext) {
     return const {
-      '.mp4', '.mkv', '.avi', '.mov', '.wmv',
-      '.flv', '.webm', '.m4v', '.3gp', '.ts',
-      '.mts', '.m2ts'
+      '.mp4',
+      '.mkv',
+      '.avi',
+      '.mov',
+      '.wmv',
+      '.flv',
+      '.webm',
+      '.m4v',
+      '.3gp',
+      '.ts',
+      '.mts',
+      '.m2ts'
     }.contains(ext);
   }
 }

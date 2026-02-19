@@ -8,7 +8,11 @@ import 'operations/favorites_operations.dart';
 
 /// Main database class - MPx Player
 /// Manages video library, folders, and favorites with SQLite
-class AppDatabase with VideoDatabaseOperations, FolderDatabaseOperations, FavoritesDatabaseOperations {
+class AppDatabase
+    with
+        VideoDatabaseOperations,
+        FolderDatabaseOperations,
+        FavoritesDatabaseOperations {
   static final AppDatabase _instance = AppDatabase._internal();
   static Database? _database;
 
@@ -19,6 +23,7 @@ class AppDatabase with VideoDatabaseOperations, FolderDatabaseOperations, Favori
   static const int _databaseVersion = 1;
 
   /// Get database instance (singleton)
+  @override
   Future<Database> get database async => _database ??= await _initDatabase();
 
   /// Initialize database

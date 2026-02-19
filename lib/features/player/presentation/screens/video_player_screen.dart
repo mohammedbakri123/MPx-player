@@ -203,6 +203,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
         await controller.saveAndCleanup();
 
         // Store the navigator reference before the async operations
+        // ignore: use_build_context_synchronously
         final navigator = Navigator.of(context);
 
         // Reset system UI settings when leaving the player
@@ -229,6 +230,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
             SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
             SystemChrome.setPreferredOrientations(
                 [DeviceOrientation.portraitUp]);
+            // ignore: use_build_context_synchronously
             Navigator.pop(context);
           },
           onSubtitleSettings: () => _showSubtitleSettings(context, controller),

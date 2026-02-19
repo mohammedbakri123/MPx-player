@@ -1,7 +1,7 @@
 import 'logger_service.dart';
 
 /// Performance monitoring service for tracking scanner and cache performance
-/// 
+///
 /// Provides real-time metrics and statistics for:
 /// - Scan times
 /// - Cache hit rates
@@ -16,7 +16,7 @@ class PerformanceMonitor {
   int _totalScans = 0;
   Duration _totalScanTime = Duration.zero;
   Duration _lastScanTime = Duration.zero;
-  Duration _minScanTime = Duration(milliseconds: 999999999);
+  Duration _minScanTime = const Duration(milliseconds: 999999999);
   Duration _maxScanTime = Duration.zero;
 
   // Cache metrics
@@ -60,7 +60,8 @@ class PerformanceMonitor {
 
     _lastVideoCount = videoCount;
 
-    AppLogger.i('📊 Scan completed: $videoCount videos in ${_formatDuration(elapsed)}');
+    AppLogger.i(
+        '📊 Scan completed: $videoCount videos in ${_formatDuration(elapsed)}');
     _currentStopwatch = null;
   }
 
@@ -103,9 +104,8 @@ class PerformanceMonitor {
         ? Duration(microseconds: _totalScanTime.inMicroseconds ~/ _totalScans)
         : Duration.zero;
 
-    final cacheHitRate = _cacheRequests > 0
-        ? (_cacheHits / _cacheRequests * 100)
-        : 0.0;
+    final cacheHitRate =
+        _cacheRequests > 0 ? (_cacheHits / _cacheRequests * 100) : 0.0;
 
     final avgDbTime = _dbOperations > 0
         ? Duration(microseconds: _totalDbTime.inMicroseconds ~/ _dbOperations)
@@ -135,9 +135,18 @@ class PerformanceMonitor {
         'avg_operation_time': _formatDuration(avgDbTime),
       },
       'summary': {
-        'performance_score': _calculatePerformanceScore(cacheHitRate, avgScanTime),
-        'cache_efficiency': cacheHitRate > 80 ? 'Excellent' : cacheHitRate > 60 ? 'Good' : 'Needs Improvement',
-        'scan_speed': _lastScanTime.inSeconds < 3 ? 'Fast' : _lastScanTime.inSeconds < 10 ? 'Moderate' : 'Slow',
+        'performance_score':
+            _calculatePerformanceScore(cacheHitRate, avgScanTime),
+        'cache_efficiency': cacheHitRate > 80
+            ? 'Excellent'
+            : cacheHitRate > 60
+                ? 'Good'
+                : 'Needs Improvement',
+        'scan_speed': _lastScanTime.inSeconds < 3
+            ? 'Fast'
+            : _lastScanTime.inSeconds < 10
+                ? 'Moderate'
+                : 'Slow',
       },
     };
   }
@@ -194,7 +203,7 @@ class PerformanceMonitor {
     _totalScans = 0;
     _totalScanTime = Duration.zero;
     _lastScanTime = Duration.zero;
-    _minScanTime = Duration(milliseconds: 999999999);
+    _minScanTime = const Duration(milliseconds: 999999999);
     _maxScanTime = Duration.zero;
     _cacheRequests = 0;
     _cacheHits = 0;
@@ -217,7 +226,8 @@ class PerformanceMonitor {
     AppLogger.i('  Total Scans: ${scanMetrics['total_scans']}');
     AppLogger.i('  Last Scan: ${scanMetrics['last_scan_time']}');
     AppLogger.i('  Average: ${scanMetrics['avg_scan_time']}');
-    AppLogger.i('  Min/Max: ${scanMetrics['min_scan_time']} / ${scanMetrics['max_scan_time']}');
+    AppLogger.i(
+        '  Min/Max: ${scanMetrics['min_scan_time']} / ${scanMetrics['max_scan_time']}');
     AppLogger.i('  Videos/sec: ${scanMetrics['videos_per_second']}');
 
     final cacheMetrics = report['cache_metrics'] as Map<String, dynamic>;
