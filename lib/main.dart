@@ -15,14 +15,14 @@ import 'core/widgets/permission_wrapper.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize all services
-  await LastPlayedService.init();
-  await PlayHistoryService.init();
-  await SubtitleSettingsService.init();
-  await FavoritesService.init();
-
-  // Run database migration (safe, has fallback)
-  await DatabaseMigration.migrateIfNeeded();
+  // Initialize all services in parallel
+  await Future.wait([
+    LastPlayedService.init(),
+    PlayHistoryService.init(),
+    SubtitleSettingsService.init(),
+    FavoritesService.init(),
+    DatabaseMigration.migrateIfNeeded(),
+  ]);
 
   MediaKit.ensureInitialized();
 

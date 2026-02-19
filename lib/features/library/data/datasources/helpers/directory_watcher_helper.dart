@@ -44,7 +44,7 @@ class DirectoryWatcherHelper {
     try {
       final watcher = pkg_watcher.DirectoryWatcher(
         directory.path,
-        pollingDelay: const Duration(seconds: 2),
+        pollingDelay: const Duration(seconds: 30),
       );
 
       final sub = watcher.events.listen(

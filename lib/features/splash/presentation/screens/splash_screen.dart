@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import '../widgets/splash_background.dart';
 import '../widgets/splash_logo.dart';
 import '../widgets/splash_title.dart';
@@ -27,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
 
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 2500),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
@@ -52,11 +51,14 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    _controller.forward();
-
-    Timer(const Duration(milliseconds: 2500), () {
-      widget.onComplete();
+    // Listen for animation completion instead of using fixed timer
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        widget.onComplete();
+      }
     });
+
+    _controller.forward();
   }
 
   @override
