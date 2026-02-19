@@ -442,15 +442,3 @@ VideoFolder {
 - **provider**: State management
 - **go_router**: Navigation
 
----
-
-## 🎯 Next Steps
-
-Now that you understand the app:
-
-1. **Implement Search**: Add search to LibraryController
-2. **Add Watch History**: "Continue watching" section
-3. **Add Sorting**: Sort folders/videos by name/date/size
-4. **Improve Player**: Add PiP, playlists (later)
-
-Ready to implement search? I can walk you through it step-by-step.
