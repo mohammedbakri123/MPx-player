@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'core/services/last_played_service.dart';
 import 'core/services/play_history_service.dart';
 import 'core/services/subtitle_settings_service.dart';
+import 'core/services/favorites_service.dart';
+import 'core/database/database_migration.dart';
 import 'features/library/controller/library_controller.dart';
 import 'features/library/data/datasources/local_video_scanner.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
@@ -12,10 +14,16 @@ import 'core/widgets/permission_wrapper.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await LastPlayedService.init(); // Initialize last played service
-  await PlayHistoryService
-      .init(); // Initialize play history service early to avoid races
-  await SubtitleSettingsService.init(); // Initialize subtitle settings service
+
+  // Initialize all services
+  await LastPlayedService.init();
+  await PlayHistoryService.init();
+  await SubtitleSettingsService.init();
+  await FavoritesService.init();
+
+  // Run database migration (safe, has fallback)
+  await DatabaseMigration.migrateIfNeeded();
+
   MediaKit.ensureInitialized();
 
   SystemChrome.setSystemUIOverlayStyle(

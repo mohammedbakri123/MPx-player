@@ -1,17 +1,20 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../../core/services/video_thumbnail_generator_service.dart';
+import '../../../../../core/utils/cancellation_token.dart';
 
 class VideoThumbnail extends StatefulWidget {
   final String videoPath;
   final String? existingThumbnailPath;
   final bool isFavorite;
+  final ThumbnailPriority priority;
 
   const VideoThumbnail({
     super.key,
     required this.videoPath,
     this.existingThumbnailPath,
     this.isFavorite = false,
+    this.priority = ThumbnailPriority.normal,
   });
 
   @override
@@ -21,6 +24,7 @@ class VideoThumbnail extends StatefulWidget {
 class _VideoThumbnailState extends State<VideoThumbnail> {
   String? _thumbnailPath;
   bool _isLoading = false;
+  CancellationToken? _cancellationToken;
 
   @override
   void initState() {
@@ -28,7 +32,17 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
     _loadThumbnail();
   }
 
+  @override
+  void dispose() {
+    // Cancel pending thumbnail generation when widget is disposed
+    _cancellationToken?.cancel();
+    super.dispose();
+  }
+
   Future<void> _loadThumbnail() async {
+    // Create cancellation token for this request
+    _cancellationToken = CancellationToken();
+
     try {
       // Use existing thumbnail if available
       if (widget.existingThumbnailPath != null) {
@@ -58,17 +72,21 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
         }
       }
 
-      // Generate thumbnail on-demand
+      // Generate thumbnail on-demand with priority
       if (mounted) {
         setState(() {
           _isLoading = true;
         });
       }
 
-      final thumbnailPath = await VideoThumbnailGeneratorService()
-          .generateThumbnail(widget.videoPath);
+      final thumbnailPath =
+          await VideoThumbnailGeneratorService().generateThumbnail(
+        widget.videoPath,
+        priority: widget.priority,
+        cancellationToken: _cancellationToken,
+      );
 
-      if (mounted) {
+      if (mounted && !_cancellationToken!.isCancelled) {
         setState(() {
           _thumbnailPath = thumbnailPath;
           _isLoading = false;
@@ -76,7 +94,7 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
       }
     } catch (e) {
       // Silently handle errors - show default icon
-      if (mounted) {
+      if (mounted && !(_cancellationToken?.isCancelled ?? false)) {
         setState(() {
           _isLoading = false;
           _thumbnailPath = null;
