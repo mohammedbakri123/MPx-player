@@ -45,3 +45,4 @@ app.*.map.json
 /android/app/release
 PRODUCTION_STATUS_REPORT.md
 PRODUCTION_ROADMAP.md
+APP_UNDERSTANDING_GUIDE.md
