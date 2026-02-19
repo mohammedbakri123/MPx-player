@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import '../../features/library/domain/entities/video_file.dart';
-import '../../features/library/domain/entities/video_folder.dart';
 import '../services/logger_service.dart';
+import 'operations/video_operations.dart';
+import 'operations/folder_operations.dart';
+import 'operations/favorites_operations.dart';
 
-/// Database service for MPx Player
+/// Main database class - MPx Player
 /// Manages video library, folders, and favorites with SQLite
-class AppDatabase {
+class AppDatabase with VideoDatabaseOperations, FolderDatabaseOperations, FavoritesDatabaseOperations {
   static final AppDatabase _instance = AppDatabase._internal();
   static Database? _database;
 
@@ -17,16 +18,8 @@ class AppDatabase {
   static const String _databaseName = 'mpx_player.db';
   static const int _databaseVersion = 1;
 
-  // Table names
-  static const String _videosTable = 'videos';
-  static const String _foldersTable = 'folders';
-  static const String _favoritesTable = 'favorites';
-
   /// Get database instance (singleton)
-  Future<Database> get database async {
-    _database ??= await _initDatabase();
-    return _database!;
-  }
+  Future<Database> get database async => _database ??= await _initDatabase();
 
   /// Initialize database
   Future<Database> _initDatabase() async {
@@ -49,7 +42,7 @@ class AppDatabase {
 
     // Videos table
     await db.execute('''
-      CREATE TABLE $_videosTable (
+      CREATE TABLE videos (
         id TEXT PRIMARY KEY,
         path TEXT UNIQUE NOT NULL,
         title TEXT NOT NULL,
@@ -65,9 +58,9 @@ class AppDatabase {
       )
     ''');
 
-    // Folders table (denormalized for performance)
+    // Folders table
     await db.execute('''
-      CREATE TABLE $_foldersTable (
+      CREATE TABLE folders (
         path TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         video_count INTEGER NOT NULL DEFAULT 0,
@@ -78,19 +71,17 @@ class AppDatabase {
 
     // Favorites table
     await db.execute('''
-      CREATE TABLE $_favoritesTable (
+      CREATE TABLE favorites (
         video_id TEXT PRIMARY KEY,
         added_at INTEGER NOT NULL,
-        FOREIGN KEY (video_id) REFERENCES $_videosTable(id) ON DELETE CASCADE
+        FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
       )
     ''');
 
     // Create indexes for performance
-    await db.execute(
-        'CREATE INDEX idx_videos_folder ON $_videosTable(folder_path)');
-    await db.execute(
-        'CREATE INDEX idx_videos_date ON $_videosTable(date_added DESC)');
-    await db.execute('CREATE INDEX idx_videos_title ON $_videosTable(title)');
+    await db.execute('CREATE INDEX idx_videos_folder ON videos(folder_path)');
+    await db.execute('CREATE INDEX idx_videos_date ON videos(date_added DESC)');
+    await db.execute('CREATE INDEX idx_videos_title ON videos(title)');
 
     AppLogger.i('Database tables created successfully');
   }
@@ -110,464 +101,13 @@ class AppDatabase {
     }
   }
 
-  // ==================== VIDEO OPERATIONS ====================
-
-  /// Insert or update a video
-  Future<void> insertVideo(VideoFile video) async {
-    final db = await database;
-    final now = DateTime.now().millisecondsSinceEpoch;
-
-    await db.insert(
-      _videosTable,
-      {
-        'id': video.id,
-        'path': video.path,
-        'title': video.title,
-        'folder_path': video.folderPath,
-        'folder_name': video.folderName,
-        'size': video.size,
-        'duration': video.duration,
-        'date_added': video.dateAdded.millisecondsSinceEpoch,
-        'width': video.width,
-        'height': video.height,
-        'thumbnail_path': video.thumbnailPath,
-        'updated_at': now,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  /// Insert multiple videos in a transaction
-  Future<void> insertVideos(List<VideoFile> videos) async {
-    final db = await database;
-    final now = DateTime.now().millisecondsSinceEpoch;
-
-    await db.transaction((txn) async {
-      final batch = txn.batch();
-
-      for (final video in videos) {
-        batch.insert(
-          _videosTable,
-          {
-            'id': video.id,
-            'path': video.path,
-            'title': video.title,
-            'folder_path': video.folderPath,
-            'folder_name': video.folderName,
-            'size': video.size,
-            'duration': video.duration,
-            'date_added': video.dateAdded.millisecondsSinceEpoch,
-            'width': video.width,
-            'height': video.height,
-            'thumbnail_path': video.thumbnailPath,
-            'updated_at': now,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-
-      await batch.commit(noResult: true);
-    });
-
-    AppLogger.i('Inserted ${videos.length} videos into database');
-  }
-
-  /// Get all videos
-  Future<List<VideoFile>> getAllVideos() async {
-    final db = await database;
-    final maps = await db.query(_videosTable);
-
-    return maps.map((map) => _videoFromMap(map)).toList();
-  }
-
-  /// Get videos by folder path
-  Future<List<VideoFile>> getVideosByFolder(String folderPath) async {
-    final db = await database;
-    final maps = await db.query(
-      _videosTable,
-      where: 'folder_path = ?',
-      whereArgs: [folderPath],
-      orderBy: 'date_added DESC',
-    );
-
-    return maps.map((map) => _videoFromMap(map)).toList();
-  }
-
-  /// Get video by ID
-  Future<VideoFile?> getVideoById(String id) async {
-    final db = await database;
-    final maps = await db.query(
-      _videosTable,
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-
-    if (maps.isEmpty) return null;
-    return _videoFromMap(maps.first);
-  }
-
-  /// Update video thumbnail path
-  Future<void> updateVideoThumbnail(String videoId, String thumbnailPath) async {
-    final db = await database;
-    await db.update(
-      _videosTable,
-      {
-        'thumbnail_path': thumbnailPath,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-      },
-      where: 'id = ?',
-      whereArgs: [videoId],
-    );
-  }
-
-  /// Update video metadata (width, height)
-  Future<void> updateVideoMetadata(
-    String videoId,
-    int width,
-    int height,
-  ) async {
-    final db = await database;
-    await db.update(
-      _videosTable,
-      {
-        'width': width,
-        'height': height,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-      },
-      where: 'id = ?',
-      whereArgs: [videoId],
-    );
-  }
-
-  /// Batch update multiple videos (for thumbnail/metadata updates)
-  Future<void> updateVideosBatch(List<VideoFile> videos) async {
-    final db = await database;
-    final now = DateTime.now().millisecondsSinceEpoch;
-
-    await db.transaction((txn) async {
-      final batch = txn.batch();
-
-      for (final video in videos) {
-        batch.update(
-          _videosTable,
-          {
-            'thumbnail_path': video.thumbnailPath,
-            'width': video.width,
-            'height': video.height,
-            'updated_at': now,
-          },
-          where: 'id = ?',
-          whereArgs: [video.id],
-        );
-      }
-
-      await batch.commit(noResult: true);
-    });
-
-    if (videos.isNotEmpty) {
-      AppLogger.d('Updated ${videos.length} videos in database');
-    }
-  }
-
-  /// Search videos by title
-  Future<List<VideoFile>> searchVideos(String query) async {
-    final db = await database;
-    final maps = await db.query(
-      _videosTable,
-      where: 'title LIKE ?',
-      whereArgs: ['%$query%'],
-      orderBy: 'title ASC',
-    );
-
-    return maps.map((map) => _videoFromMap(map)).toList();
-  }
-
-  /// Delete a video
-  Future<void> deleteVideo(String id) async {
-    final db = await database;
-    await db.delete(
-      _videosTable,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  /// Delete all videos
-  Future<void> deleteAllVideos() async {
-    final db = await database;
-    await db.delete(_videosTable);
-    AppLogger.i('All videos deleted from database');
-  }
-
-  /// Get video count
-  Future<int> getVideoCount() async {
-    final db = await database;
-    final result =
-        await db.rawQuery('SELECT COUNT(*) as count FROM $_videosTable');
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
-
-  // ==================== FOLDER OPERATIONS ====================
-
-  /// Insert or update a folder
-  Future<void> insertFolder(VideoFolder folder) async {
-    final db = await database;
-    final now = DateTime.now().millisecondsSinceEpoch;
-
-    await db.insert(
-      _foldersTable,
-      {
-        'path': folder.path,
-        'name': folder.name,
-        'video_count': folder.videoCount,
-        'thumbnail_path':
-            folder.videos.isNotEmpty ? folder.videos.first.thumbnailPath : null,
-        'updated_at': now,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  /// Insert multiple folders in a transaction
-  Future<void> insertFolders(List<VideoFolder> folders) async {
-    final db = await database;
-    final now = DateTime.now().millisecondsSinceEpoch;
-
-    await db.transaction((txn) async {
-      final batch = txn.batch();
-
-      for (final folder in folders) {
-        batch.insert(
-          _foldersTable,
-          {
-            'path': folder.path,
-            'name': folder.name,
-            'video_count': folder.videoCount,
-            'thumbnail_path': folder.videos.isNotEmpty
-                ? folder.videos.first.thumbnailPath
-                : null,
-            'updated_at': now,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-
-      await batch.commit(noResult: true);
-    });
-
-    AppLogger.i('Inserted ${folders.length} folders into database');
-  }
-
-  /// Get all folders - FAST version (single query with JOIN)
-  Future<List<VideoFolder>> getAllFoldersFast() async {
-    final db = await database;
-    final stopwatch = Stopwatch()..start();
-    
-    // Single query with JOIN - loads everything at once!
-    final maps = await db.rawQuery('''
-      SELECT 
-        f.path, f.name, f.video_count,
-        v.id, v.path as video_path, v.title, v.folder_path, 
-        v.folder_name, v.size, v.duration, v.date_added,
-        v.thumbnail_path, v.width, v.height
-      FROM $_foldersTable f
-      LEFT JOIN $_videosTable v ON f.path = v.folder_path
-      ORDER BY f.path, v.date_added DESC
-    ''');
-
-    final folderMap = <String, VideoFolder>{};
-    final videoMap = <String, List<VideoFile>>{};
-    
-    int videosWithThumbnails = 0;
-    int videosWithResolution = 0;
-
-    // Group by folder
-    for (final row in maps) {
-      final folderPath = row['path'] as String;
-      final folderName = row['name'] as String;
-
-      if (!folderMap.containsKey(folderPath)) {
-        folderMap[folderPath] = VideoFolder(
-          path: folderPath,
-          name: folderName,
-          videos: [],
-        );
-        videoMap[folderPath] = [];
-      }
-
-      // Add video if exists (LEFT JOIN may return null for empty folders)
-      if (row['id'] != null) {
-        final video = _videoFromMap(row);
-        videoMap[folderPath]!.add(video);
-        
-        if (video.thumbnailPath != null) videosWithThumbnails++;
-        if (video.width != null && video.height != null) videosWithResolution++;
-      }
-    }
-
-    // Assign videos to folders
-    final folders = <VideoFolder>[];
-    for (final entry in folderMap.entries) {
-      final folder = VideoFolder(
-        path: entry.key,
-        name: entry.value.name,
-        videos: videoMap[entry.key] ?? [],
-      );
-      folders.add(folder);
-    }
-
-    stopwatch.stop();
-    AppLogger.i(
-      '⚡ Loaded ${folders.length} folders (${folders.fold(0, (sum, f) => sum + f.videos.length)} videos) '
-      'from database in ${stopwatch.elapsedMilliseconds}ms | '
-      'Thumbnails: $videosWithThumbnails | Resolution: $videosWithResolution'
-    );
-    return folders;
-  }
-
-  /// Get all folders (legacy - slow, for compatibility)
-  Future<List<VideoFolder>> getAllFolders() async {
-    return await getAllFoldersFast();
-  }
-
-  /// Delete a folder
-  Future<void> deleteFolder(String path) async {
-    final db = await database;
-    await db.delete(
-      _foldersTable,
-      where: 'path = ?',
-      whereArgs: [path],
-    );
-  }
-
-  /// Delete all folders
-  Future<void> deleteAllFolders() async {
-    final db = await database;
-    await db.delete(_foldersTable);
-  }
-
-  /// Get folder count
-  Future<int> getFolderCount() async {
-    final db = await database;
-    final result =
-        await db.rawQuery('SELECT COUNT(*) as count FROM $_foldersTable');
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
-
-  // ==================== FAVORITES OPERATIONS ====================
-
-  /// Add video to favorites
-  Future<bool> addFavorite(String videoId) async {
-    try {
-      final db = await database;
-      final now = DateTime.now().millisecondsSinceEpoch;
-
-      await db.insert(
-        _favoritesTable,
-        {
-          'video_id': videoId,
-          'added_at': now,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-
-      return true;
-    } catch (e) {
-      AppLogger.e('Error adding favorite: $e');
-      return false;
-    }
-  }
-
-  /// Remove video from favorites
-  Future<bool> removeFavorite(String videoId) async {
-    try {
-      final db = await database;
-      await db.delete(
-        _favoritesTable,
-        where: 'video_id = ?',
-        whereArgs: [videoId],
-      );
-      return true;
-    } catch (e) {
-      AppLogger.e('Error removing favorite: $e');
-      return false;
-    }
-  }
-
-  /// Toggle favorite status
-  Future<bool> toggleFavorite(String videoId) async {
-    final isFav = await isFavorite(videoId);
-    if (isFav) {
-      return await removeFavorite(videoId);
-    } else {
-      return await addFavorite(videoId);
-    }
-  }
-
-  /// Get all favorite videos
-  Future<List<VideoFile>> getFavorites() async {
-    final db = await database;
-    final maps = await db.rawQuery('''
-      SELECT v.* FROM $_videosTable v
-      INNER JOIN $_favoritesTable f ON v.id = f.video_id
-      ORDER BY f.added_at DESC
-    ''');
-
-    return maps.map((map) => _videoFromMap(map)).toList();
-  }
-
-  /// Check if video is favorite
-  Future<bool> isFavorite(String videoId) async {
-    final db = await database;
-    final maps = await db.query(
-      _favoritesTable,
-      where: 'video_id = ?',
-      whereArgs: [videoId],
-      limit: 1,
-    );
-    return maps.isNotEmpty;
-  }
-
-  /// Clear all favorites
-  Future<void> clearFavorites() async {
-    final db = await database;
-    await db.delete(_favoritesTable);
-  }
-
-  /// Get favorite count
-  Future<int> getFavoriteCount() async {
-    final db = await database;
-    final result =
-        await db.rawQuery('SELECT COUNT(*) as count FROM $_favoritesTable');
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
-
-  // ==================== HELPER METHODS ====================
-
-  VideoFile _videoFromMap(Map<String, dynamic> map) {
-    return VideoFile(
-      id: map['id'] as String,
-      path: map['path'] as String,
-      title: map['title'] as String,
-      folderPath: map['folder_path'] as String,
-      folderName: map['folder_name'] as String,
-      size: map['size'] as int,
-      duration: map['duration'] as int,
-      dateAdded: DateTime.fromMillisecondsSinceEpoch(map['date_added'] as int),
-      width: map['width'] as int?,
-      height: map['height'] as int?,
-      thumbnailPath: map['thumbnail_path'] as String?,
-    );
-  }
-
   /// Delete all data (for testing/debugging)
   Future<void> deleteAllData() async {
     final db = await database;
     await db.transaction((txn) async {
-      await txn.delete(_favoritesTable);
-      await txn.delete(_videosTable);
-      await txn.delete(_foldersTable);
+      await txn.delete('favorites');
+      await txn.delete('videos');
+      await txn.delete('folders');
     });
     AppLogger.i('All database data deleted');
   }
