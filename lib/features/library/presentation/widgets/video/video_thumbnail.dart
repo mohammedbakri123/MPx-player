@@ -33,6 +33,17 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
   }
 
   @override
+  void didUpdateWidget(VideoThumbnail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.videoPath != widget.videoPath) {
+      _thumbnailPath = null;
+      _isLoading = false;
+      _cancellationToken?.cancel();
+      _loadThumbnail();
+    }
+  }
+
+  @override
   void dispose() {
     // Cancel pending thumbnail generation when widget is disposed
     _cancellationToken?.cancel();
@@ -154,6 +165,16 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
       return Image.file(
         File(_thumbnailPath!),
         fit: BoxFit.cover,
+        key: ValueKey(_thumbnailPath),
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded) return child;
+          return AnimatedOpacity(
+            opacity: frame == null ? 0 : 1,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            child: child,
+          );
+        },
         errorBuilder: (context, error, stackTrace) {
           return const Icon(Icons.video_file, size: 32, color: Colors.grey);
         },

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path_provider/path_provider.dart';
@@ -250,7 +251,11 @@ class VideoThumbnailGeneratorService {
   /// Get thumbnail file path (without generating)
   Future<String> _getThumbnailPath(String videoPath) async {
     final thumbnailDir = await _getThumbnailDirectory();
-    return '$thumbnailDir/${videoPath.hashCode}.jpg';
+    final safeName = base64Url
+        .encode(utf8.encode(videoPath))
+        .replaceAll('/', '_')
+        .replaceAll('+', '-');
+    return '$thumbnailDir/$safeName.jpg';
   }
 
   /// Get the thumbnail directory
@@ -357,11 +362,12 @@ class VideoThumbnailGeneratorService {
         return; // Cache is within limits
       }
 
-      AppLogger.i('Thumbnail cache exceeds limit (${_formatBytes(currentSize)} > ${_formatBytes(_maxCacheSizeBytes)}), cleaning up...');
+      AppLogger.i(
+          'Thumbnail cache exceeds limit (${_formatBytes(currentSize)} > ${_formatBytes(_maxCacheSizeBytes)}), cleaning up...');
 
       final thumbnailDir = await _getThumbnailDirectory();
       final dir = Directory(thumbnailDir);
-      
+
       if (!await dir.exists()) return;
 
       // Get all cache files with their last modified times
@@ -383,7 +389,7 @@ class VideoThumbnailGeneratorService {
       // Delete oldest files until we're under the limit
       var deletedCount = 0;
       var deletedSize = 0;
-      
+
       for (final file in files) {
         if (currentSize - deletedSize <= _maxCacheSizeBytes * 0.8) {
           break; // Stop when we're at 80% of limit
@@ -393,7 +399,7 @@ class VideoThumbnailGeneratorService {
           await File(file.path).delete();
           deletedSize += file.size;
           deletedCount++;
-          
+
           // Also remove from LRU cache
           _thumbnailPathCache.remove(file.path);
         } catch (e) {
@@ -401,7 +407,8 @@ class VideoThumbnailGeneratorService {
         }
       }
 
-      AppLogger.i('Cache cleanup complete: deleted $deletedCount files (${_formatBytes(deletedSize)})');
+      AppLogger.i(
+          'Cache cleanup complete: deleted $deletedCount files (${_formatBytes(deletedSize)})');
     } catch (e) {
       AppLogger.e('Error during cache cleanup: $e');
     }
@@ -410,7 +417,9 @@ class VideoThumbnailGeneratorService {
   String _formatBytes(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
 

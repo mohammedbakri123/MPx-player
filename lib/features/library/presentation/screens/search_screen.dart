@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controller/library_controller.dart';
+import '../../domain/entities/video_file.dart';
+import '../../../player/presentation/screens/video_player_screen.dart';
+import '../../../favorites/services/favorites_service.dart';
 import '../widgets/video/video_list_item.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -13,13 +16,40 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  Set<String> _favoriteIds = {};
+  bool _isNavigating = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
+      _loadFavorites();
     });
+  }
+
+  Future<void> _loadFavorites() async {
+    final favorites = await FavoritesService.getFavorites();
+    if (mounted) {
+      setState(() {
+        _favoriteIds = favorites.map((v) => v.id).toSet();
+      });
+    }
+  }
+
+  Future<void> _toggleFavorite(VideoFile video) async {
+    await FavoritesService.toggleFavorite(video);
+    _loadFavorites();
+  }
+
+  void _openVideoPlayer(VideoFile video) async {
+    if (_isNavigating) return;
+    setState(() => _isNavigating = true);
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => VideoPlayerScreen(video: video)),
+    );
+    setState(() => _isNavigating = false);
   }
 
   @override
@@ -137,12 +167,10 @@ class _SearchScreenState extends State<SearchScreen> {
         final video = controller.searchResults[index];
         return VideoListItem(
           video: video,
-          onTap: () {
-            // TODO: Navigate to video player
-          },
-          onAddToFavorites: () {
-            // TODO: Implement favorites
-          },
+          onTap: () => _openVideoPlayer(video),
+          onAddToFavorites: () => _toggleFavorite(video),
+          isFavorite: _favoriteIds.contains(video.id),
+          isLoading: _isNavigating,
         );
       },
     );
