@@ -13,6 +13,8 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   List<VideoFile> _videos = [];
+  List<VideoFile> _filteredVideos = [];
+  String _searchQuery = '';
   bool _isLoading = true, _isNavigating = false;
 
   @override
@@ -28,12 +30,39 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       if (mounted) {
         setState(() {
           _videos = videos;
+          _applySearch();
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _applySearch() {
+    if (_searchQuery.isEmpty) {
+      _filteredVideos = _videos;
+    } else {
+      final query = _searchQuery.toLowerCase();
+      _filteredVideos = _videos.where((video) {
+        return video.title.toLowerCase().contains(query) ||
+            video.folderName.toLowerCase().contains(query);
+      }).toList();
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+      _applySearch();
+    });
+  }
+
+  void _clearSearch() {
+    setState(() {
+      _searchQuery = '';
+      _filteredVideos = _videos;
+    });
   }
 
   Future<void> _openVideoPlayer(VideoFile video) async {
@@ -54,10 +83,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         backgroundColor: const Color(0xFFF8FAFC),
         body: SafeArea(
             child: Column(children: [
-          FavoritesHeader(videoCount: _videos.length, onFilterTap: () {}),
+          FavoritesHeader(
+            videoCount: _filteredVideos.length,
+            searchQuery: _searchQuery,
+            onSearchChanged: _onSearchChanged,
+            onClearSearch: _clearSearch,
+          ),
           Expanded(
               child: FavoritesContent(
-                  videos: _videos,
+                  videos: _filteredVideos,
                   isLoading: _isLoading,
                   onRefresh: _loadFavorites,
                   onVideoTap: _openVideoPlayer,

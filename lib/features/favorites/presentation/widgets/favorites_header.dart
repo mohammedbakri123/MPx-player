@@ -1,28 +1,35 @@
 import 'package:flutter/material.dart';
 import 'favorites_title.dart';
-import 'favorites_icon_button.dart';
 
 class FavoritesHeader extends StatelessWidget {
   final int videoCount;
-  final VoidCallback? onFilterTap;
+  final ValueChanged<String>? onSearchChanged;
+  final String searchQuery;
+  final VoidCallback? onClearSearch;
 
   const FavoritesHeader({
     super.key,
     required this.videoCount,
-    this.onFilterTap,
+    this.onSearchChanged,
+    this.searchQuery = '',
+    this.onClearSearch,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+      child: Column(
         children: [
-          _buildIcon(),
-          const SizedBox(width: 16),
-          Expanded(child: FavoritesTitle(videoCount: videoCount)),
-          FavoritesIconButton(
-              icon: Icons.filter_list, onTap: onFilterTap ?? () {}),
+          Row(
+            children: [
+              _buildIcon(),
+              const SizedBox(width: 16),
+              Expanded(child: FavoritesTitle(videoCount: videoCount)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildSearchField(),
         ],
       ),
     );
@@ -37,6 +44,44 @@ class FavoritesHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Icon(Icons.favorite, color: Colors.red.shade500, size: 24),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        onChanged: onSearchChanged,
+        style: const TextStyle(fontSize: 16),
+        decoration: InputDecoration(
+          hintText: 'Search favorites...',
+          hintStyle: TextStyle(color: Colors.grey.shade400),
+          prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+          suffixIcon: searchQuery.isNotEmpty
+              ? GestureDetector(
+                  onTap: onClearSearch,
+                  child: Icon(Icons.clear, color: Colors.grey.shade400),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 15,
+          ),
+        ),
+      ),
     );
   }
 }
