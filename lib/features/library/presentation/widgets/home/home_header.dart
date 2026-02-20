@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({super.key});
+  final VoidCallback? onSearchTap;
+  final VoidCallback? onFilterTap;
+
+  const HomeHeader({
+    super.key,
+    this.onSearchTap,
+    this.onFilterTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +27,9 @@ class HomeHeader extends StatelessWidget {
               ),
             ),
           ),
-          _IconButton(icon: Icons.search, onTap: () {}),
+          _IconButton(icon: Icons.search, onTap: onSearchTap ?? () {}),
           const SizedBox(width: 12),
-          _IconButton(icon: Icons.filter_list, onTap: () {}),
+          _IconButton(icon: Icons.filter_list, onTap: onFilterTap ?? () {}),
           const SizedBox(width: 12),
         ],
       ),

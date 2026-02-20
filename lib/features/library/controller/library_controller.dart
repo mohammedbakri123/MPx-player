@@ -34,6 +34,10 @@ class LibraryController extends ChangeNotifier {
   bool _isGridView = false;
   String? _errorMessage;
 
+  // Search state
+  String _searchQuery = '';
+  List<VideoFile> _searchResults = [];
+
   // Lazy loading state
   final Map<String, bool> _loadedFolders = {};
   final Map<String, List<VideoFile>> _folderVideoCache = {};
@@ -45,6 +49,11 @@ class LibraryController extends ChangeNotifier {
   bool get hasError => _errorMessage != null;
   String? get errorMessage => _errorMessage;
   bool get isEmpty => _folders.isEmpty && !_isLoading;
+
+  // Search getters
+  String get searchQuery => _searchQuery;
+  List<VideoFile> get searchResults => _searchResults;
+  bool get isSearching => _searchQuery.isNotEmpty;
 
   /// Creates a LibraryController with dependency injection.
   ///
@@ -77,6 +86,40 @@ class LibraryController extends ChangeNotifier {
       _isGridView = isGrid;
       notifyListeners();
     }
+  }
+
+  /// Search videos by query
+  void search(String query) {
+    _searchQuery = query.trim().toLowerCase();
+
+    if (_searchQuery.isEmpty) {
+      _searchResults = [];
+      notifyListeners();
+      return;
+    }
+
+    _searchResults = _getAllVideos().where((video) {
+      return video.title.toLowerCase().contains(_searchQuery) ||
+          video.folderName.toLowerCase().contains(_searchQuery);
+    }).toList();
+
+    notifyListeners();
+  }
+
+  /// Clear search and show all videos
+  void clearSearch() {
+    _searchQuery = '';
+    _searchResults = [];
+    notifyListeners();
+  }
+
+  /// Get all videos from all folders
+  List<VideoFile> _getAllVideos() {
+    final allVideos = <VideoFile>[];
+    for (final folder in _folders) {
+      allVideos.addAll(folder.videos);
+    }
+    return allVideos;
   }
 
   /// Loads demo data for testing/preview purposes.

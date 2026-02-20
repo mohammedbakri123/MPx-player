@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../domain/entities/video_folder.dart';
 import '../../controller/library_controller.dart';
 import 'folder_detail_screen.dart';
+import 'search_screen.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/home_section_header.dart';
 import '../widgets/home/home_content.dart';
@@ -51,7 +52,16 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             // Header
-            const HomeHeader(),
+            HomeHeader(
+              onSearchTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SearchScreen(),
+                  ),
+                );
+              },
+            ),
 
             // Section Header
             HomeSectionHeader(controller: controller),
