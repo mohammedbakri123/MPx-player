@@ -1,20 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../domain/entities/video_file.dart';
 import '../../../services/video_thumbnail_generator_service.dart';
-import '../../../../../core/utils/cancellation_token.dart';
 
 class VideoThumbnail extends StatefulWidget {
-  final String videoPath;
-  final String? existingThumbnailPath;
+  final VideoFile video;
   final bool isFavorite;
-  final ThumbnailPriority priority;
 
   const VideoThumbnail({
     super.key,
-    required this.videoPath,
-    this.existingThumbnailPath,
+    required this.video,
     this.isFavorite = false,
-    this.priority = ThumbnailPriority.normal,
   });
 
   @override
@@ -24,7 +20,6 @@ class VideoThumbnail extends StatefulWidget {
 class _VideoThumbnailState extends State<VideoThumbnail> {
   String? _thumbnailPath;
   bool _isLoading = false;
-  CancellationToken? _cancellationToken;
 
   @override
   void initState() {
@@ -32,85 +27,29 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
     _loadThumbnail();
   }
 
-  @override
-  void didUpdateWidget(VideoThumbnail oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.videoPath != widget.videoPath) {
-      _thumbnailPath = null;
-      _isLoading = false;
-      _cancellationToken?.cancel();
-      _loadThumbnail();
-    }
-  }
-
-  @override
-  void dispose() {
-    // Cancel pending thumbnail generation when widget is disposed
-    _cancellationToken?.cancel();
-    super.dispose();
-  }
-
   Future<void> _loadThumbnail() async {
-    // Create cancellation token for this request
-    _cancellationToken = CancellationToken();
+    // Check if thumbnail exists
+    if (widget.video.thumbnailPath != null &&
+        await File(widget.video.thumbnailPath!).exists()) {
+      setState(() {
+        _thumbnailPath = widget.video.thumbnailPath;
+      });
+      return;
+    }
 
-    try {
-      // Use existing thumbnail if available
-      if (widget.existingThumbnailPath != null) {
-        final exists = await File(widget.existingThumbnailPath!).exists();
-        if (exists) {
-          if (mounted) {
-            setState(() {
-              _thumbnailPath = widget.existingThumbnailPath;
-            });
-          }
-          return;
-        }
-      }
+    // Generate thumbnail
+    setState(() {
+      _isLoading = true;
+    });
 
-      // Check if already cached in service
-      final cachedPath =
-          VideoThumbnailGeneratorService().getCachedThumbnail(widget.videoPath);
-      if (cachedPath != null) {
-        final exists = await File(cachedPath).exists();
-        if (exists) {
-          if (mounted) {
-            setState(() {
-              _thumbnailPath = cachedPath;
-            });
-          }
-          return;
-        }
-      }
+    final path =
+        await VideoThumbnailService().generateThumbnail(widget.video.path);
 
-      // Generate thumbnail on-demand with priority
-      if (mounted) {
-        setState(() {
-          _isLoading = true;
-        });
-      }
-
-      final thumbnailPath =
-          await VideoThumbnailGeneratorService().generateThumbnail(
-        widget.videoPath,
-        priority: widget.priority,
-        cancellationToken: _cancellationToken,
-      );
-
-      if (mounted && !_cancellationToken!.isCancelled) {
-        setState(() {
-          _thumbnailPath = thumbnailPath;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      // Silently handle errors - show default icon
-      if (mounted && !(_cancellationToken?.isCancelled ?? false)) {
-        setState(() {
-          _isLoading = false;
-          _thumbnailPath = null;
-        });
-      }
+    if (mounted) {
+      setState(() {
+        _thumbnailPath = path;
+        _isLoading = false;
+      });
     }
   }
 
@@ -153,10 +92,7 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
         child: SizedBox(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.grey,
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey),
         ),
       );
     }
@@ -166,15 +102,8 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
         File(_thumbnailPath!),
         fit: BoxFit.cover,
         key: ValueKey(_thumbnailPath),
-        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-          if (wasSynchronouslyLoaded) return child;
-          return AnimatedOpacity(
-            opacity: frame == null ? 0 : 1,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            child: child,
-          );
-        },
+        cacheWidth: 150,
+        cacheHeight: 105,
         errorBuilder: (context, error, stackTrace) {
           return const Icon(Icons.video_file, size: 32, color: Colors.grey);
         },

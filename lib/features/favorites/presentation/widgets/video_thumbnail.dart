@@ -25,26 +25,24 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
   }
 
   Future<void> _loadThumbnail() async {
-    // Use existing thumbnail if available
     if (widget.video.thumbnailPath != null &&
-        File(widget.video.thumbnailPath!).existsSync()) {
+        await File(widget.video.thumbnailPath!).exists()) {
       setState(() {
         _thumbnailPath = widget.video.thumbnailPath;
       });
       return;
     }
 
-    // Generate thumbnail on-demand
     setState(() {
       _isLoading = true;
     });
 
-    final thumbnailPath = await VideoThumbnailGeneratorService()
-        .generateThumbnail(widget.video.path);
+    final path =
+        await VideoThumbnailService().generateThumbnail(widget.video.path);
 
     if (mounted) {
       setState(() {
-        _thumbnailPath = thumbnailPath;
+        _thumbnailPath = path;
         _isLoading = false;
       });
     }

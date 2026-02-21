@@ -44,4 +44,25 @@ class LRUCache<K, V> {
 
   /// Remove specific key
   V? remove(K key) => _cache.remove(key);
+
+  /// Get all values
+  Iterable<V> get values => _cache.values;
+
+  /// Find key by value and remove it
+  K? findKeyByValue(V value) {
+    for (final entry in _cache.entries) {
+      if (entry.value == value) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
+  /// Remove entry by value
+  void removeByValue(V value) {
+    final key = findKeyByValue(value);
+    if (key != null) {
+      _cache.remove(key);
+    }
+  }
 }

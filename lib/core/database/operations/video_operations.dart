@@ -64,6 +64,21 @@ mixin VideoDatabaseOperations {
     AppLogger.i('Inserted ${videos.length} videos into database');
   }
 
+  /// Update thumbnail path for a video
+  Future<void> updateVideoThumbnail(
+      String videoPath, String thumbnailPath) async {
+    final db = await database;
+    await db.update(
+      'videos',
+      {
+        'thumbnail_path': thumbnailPath,
+        'updated_at': DateTime.now().millisecondsSinceEpoch
+      },
+      where: 'path = ?',
+      whereArgs: [videoPath],
+    );
+  }
+
   /// Get all videos
   Future<List<VideoFile>> getAllVideos() async {
     final db = await database;
@@ -108,22 +123,9 @@ mixin VideoDatabaseOperations {
     return maps.map((map) => _videoFromMap(map)).toList();
   }
 
-  /// Update video thumbnail path
-  Future<void> updateVideoThumbnail(String videoId, String thumbnailPath) async {
-    final db = await database;
-    await db.update(
-      'videos',
-      {
-        'thumbnail_path': thumbnailPath,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-      },
-      where: 'id = ?',
-      whereArgs: [videoId],
-    );
-  }
-
   /// Update video metadata (width, height)
-  Future<void> updateVideoMetadata(String videoId, int width, int height) async {
+  Future<void> updateVideoMetadata(
+      String videoId, int width, int height) async {
     final db = await database;
     await db.update(
       'videos',
@@ -140,7 +142,7 @@ mixin VideoDatabaseOperations {
   /// Batch update multiple videos
   Future<void> updateVideosBatch(List<VideoFile> videos) async {
     if (videos.isEmpty) return;
-    
+
     final db = await database;
     final now = DateTime.now().millisecondsSinceEpoch;
 

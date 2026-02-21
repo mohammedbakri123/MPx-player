@@ -44,8 +44,7 @@ class VideoListItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             VideoThumbnail(
-              videoPath: video.path,
-              existingThumbnailPath: video.thumbnailPath,
+              video: video,
               isFavorite: isFavorite,
             ),
             const SizedBox(width: 16),

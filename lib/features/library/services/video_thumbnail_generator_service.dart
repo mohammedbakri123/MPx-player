@@ -1,264 +1,47 @@
-import 'dart:async';
-import 'dart:collection';
-import 'dart:convert';
 import 'dart:io';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path_provider/path_provider.dart';
-import '../../../core/utils/lru_cache.dart';
-import '../../../core/utils/cancellation_token.dart';
-import '../../../core/services/logger_service.dart';
+import 'package:path/path.dart' as path;
 
-/// Priority levels for thumbnail generation
-enum ThumbnailPriority { high, normal, low }
+/// Simple thumbnail service - generates and caches thumbnails on disk
+class VideoThumbnailService {
+  static final VideoThumbnailService _instance =
+      VideoThumbnailService._internal();
+  factory VideoThumbnailService() => _instance;
+  VideoThumbnailService._internal();
 
-/// Request object for thumbnail generation
-class _ThumbnailRequest {
-  final String videoPath;
-  final int seekMs;
-  final ThumbnailPriority priority;
-  final CancellationToken? cancellationToken;
-  final Completer<String?> completer;
-
-  _ThumbnailRequest({
-    required this.videoPath,
-    required this.seekMs,
-    required this.priority,
-    this.cancellationToken,
-    required this.completer,
-  });
-}
-
-/// Service for generating video thumbnails with priority queue and cancellation
-class VideoThumbnailGeneratorService {
-  static final VideoThumbnailGeneratorService _instance =
-      VideoThumbnailGeneratorService._internal();
-  factory VideoThumbnailGeneratorService() => _instance;
-  VideoThumbnailGeneratorService._internal();
-
-  // LRU Cache with 200 item limit
-  final LRUCache<String, String> _thumbnailPathCache =
-      LRUCache<String, String>(200);
-
-  // Priority queue: high priority first, then normal, then low
-  final Queue<_ThumbnailRequest> _requestQueue = Queue<_ThumbnailRequest>();
-  final Set<String> _pendingPaths = {};
-  bool _isProcessing = false;
-
-  /// Maximum concurrent generations
-  static const int _maxConcurrent = 2;
-  int _currentConcurrent = 0;
-
-  /// Maximum queue size to prevent memory issues
-  static const int _maxQueueSize = 100;
-
-  /// Maximum cache size on disk (500MB)
-  static const int _maxCacheSizeBytes = 500 * 1024 * 1024;
-
-  /// Generate a thumbnail with priority and optional cancellation
-  Future<String?> generateThumbnail(
-    String videoPath, {
-    int seekMs = 1000,
-    ThumbnailPriority priority = ThumbnailPriority.normal,
-    CancellationToken? cancellationToken,
-  }) async {
-    // Check if cancelled before starting
-    if (cancellationToken?.isCancelled ?? false) {
-      return null;
-    }
-
-    // Check cache first
-    final cachedPath = _thumbnailPathCache.get(videoPath);
-    if (cachedPath != null) {
-      final exists = await File(cachedPath).exists();
-      if (exists) {
-        return cachedPath;
-      } else {
-        // File doesn't exist, remove from cache
-        _thumbnailPathCache.remove(videoPath);
-      }
-    }
-
-    // Check disk cache
-    final thumbnailPath = await _getThumbnailPath(videoPath);
-    if (await File(thumbnailPath).exists()) {
-      _thumbnailPathCache.put(videoPath, thumbnailPath);
-      return thumbnailPath;
-    }
-
-    // Check if queue is full
-    if (_requestQueue.length >= _maxQueueSize) {
-      AppLogger.w('Thumbnail queue full, dropping request: $videoPath');
-      return null;
-    }
-
-    // Check if already in queue
-    if (_pendingPaths.contains(videoPath)) {
-      // Wait for existing request to complete
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (cancellationToken?.isCancelled ?? false) return null;
-
-      final cached = _thumbnailPathCache.get(videoPath);
-      if (cached != null && await File(cached).exists()) {
-        return cached;
-      }
-    }
-
-    // Create request
-    final completer = Completer<String?>();
-    final request = _ThumbnailRequest(
-      videoPath: videoPath,
-      seekMs: seekMs,
-      priority: priority,
-      cancellationToken: cancellationToken,
-      completer: completer,
-    );
-
-    // Add to queue based on priority
-    _addToQueue(request);
-
-    // Start processing if not already
-    _processQueue();
-
-    return completer.future;
-  }
-
-  void _addToQueue(_ThumbnailRequest request) {
-    _pendingPaths.add(request.videoPath);
-
-    // Insert based on priority (high -> front, low -> back)
-    if (request.priority == ThumbnailPriority.high) {
-      // Find first non-high priority item and insert before it
-      final insertIndex = _requestQueue.toList().indexWhere(
-            (r) => r.priority != ThumbnailPriority.high,
-          );
-      if (insertIndex == -1) {
-        _requestQueue.add(request);
-      } else {
-        final list = _requestQueue.toList();
-        list.insert(insertIndex, request);
-        _requestQueue.clear();
-        _requestQueue.addAll(list);
-      }
-    } else if (request.priority == ThumbnailPriority.normal) {
-      // Insert after all high priority, before low
-      final insertIndex = _requestQueue.toList().indexWhere(
-            (r) => r.priority == ThumbnailPriority.low,
-          );
-      if (insertIndex == -1) {
-        _requestQueue.add(request);
-      } else {
-        final list = _requestQueue.toList();
-        list.insert(insertIndex, request);
-        _requestQueue.clear();
-        _requestQueue.addAll(list);
-      }
-    } else {
-      // Low priority -> add to end
-      _requestQueue.add(request);
-    }
-
-    AppLogger.i(
-        'Added to thumbnail queue: ${request.videoPath} (priority: ${request.priority})');
-  }
-
-  Future<void> _processQueue() async {
-    if (_isProcessing) return;
-    _isProcessing = true;
-
-    while (_requestQueue.isNotEmpty && _currentConcurrent < _maxConcurrent) {
-      // Find next non-cancelled request
-      _ThumbnailRequest? request;
-      while (_requestQueue.isNotEmpty) {
-        final next = _requestQueue.removeFirst();
-        if (next.cancellationToken?.isCancelled ?? false) {
-          _pendingPaths.remove(next.videoPath);
-          next.completer.complete(null);
-          AppLogger.i('Cancelled thumbnail request: ${next.videoPath}');
-        } else {
-          request = next;
-          break;
-        }
-      }
-
-      if (request == null) continue;
-
-      _currentConcurrent++;
-
-      // Process in background
-      _generateThumbnailAsync(request);
-    }
-
-    _isProcessing = false;
-  }
-
-  Future<void> _generateThumbnailAsync(_ThumbnailRequest request) async {
+  /// Generate thumbnail for a video file
+  Future<String?> generateThumbnail(String videoPath) async {
     try {
-      // Check cancellation again before heavy work
-      if (request.cancellationToken?.isCancelled ?? false) {
-        _pendingPaths.remove(request.videoPath);
-        request.completer.complete(null);
-        _currentConcurrent--;
-        _processQueue();
-        return;
-      }
+      final thumbnailDir = await _getThumbnailDirectory();
 
-      AppLogger.i('Generating thumbnail: ${request.videoPath}');
-
+      // Generate thumbnail
       final thumbnailData = await VideoThumbnail.thumbnailData(
-        video: request.videoPath,
+        video: videoPath,
         imageFormat: ImageFormat.JPEG,
         maxHeight: 200,
         maxWidth: 300,
-        timeMs: request.seekMs,
+        timeMs: 1000,
         quality: 60,
       );
 
-      // Check cancellation after generation
-      if (request.cancellationToken?.isCancelled ?? false) {
-        _pendingPaths.remove(request.videoPath);
-        request.completer.complete(null);
-        _currentConcurrent--;
-        _processQueue();
-        return;
+      if (thumbnailData == null || thumbnailData.isEmpty) {
+        return null;
       }
 
-      if (thumbnailData != null && thumbnailData.isNotEmpty) {
-        final thumbnailPath = await _getThumbnailPath(request.videoPath);
-        final file = File(thumbnailPath);
-        await file.writeAsBytes(thumbnailData);
+      // Save to file
+      final fileName = '${videoPath.hashCode.abs()}.jpg';
+      final thumbnailPath = path.join(thumbnailDir, fileName);
+      final file = File(thumbnailPath);
+      await file.writeAsBytes(thumbnailData);
 
-        _thumbnailPathCache.put(request.videoPath, thumbnailPath);
-        _pendingPaths.remove(request.videoPath);
-        request.completer.complete(thumbnailPath);
-
-        AppLogger.i('Thumbnail generated: ${request.videoPath}');
-      } else {
-        _pendingPaths.remove(request.videoPath);
-        request.completer.complete(null);
-      }
-    } catch (e, stackTrace) {
-      AppLogger.e('Error generating thumbnail for ${request.videoPath}: $e', e,
-          stackTrace);
-      _pendingPaths.remove(request.videoPath);
-      request.completer.complete(null);
-    } finally {
-      _currentConcurrent--;
-      // Process next item
-      _processQueue();
+      return thumbnailPath;
+    } catch (e) {
+      return null;
     }
   }
 
-  /// Get thumbnail file path (without generating)
-  Future<String> _getThumbnailPath(String videoPath) async {
-    final thumbnailDir = await _getThumbnailDirectory();
-    final safeName = base64Url
-        .encode(utf8.encode(videoPath))
-        .replaceAll('/', '_')
-        .replaceAll('+', '-');
-    return '$thumbnailDir/$safeName.jpg';
-  }
-
-  /// Get the thumbnail directory
+  /// Get thumbnail directory
   Future<String> _getThumbnailDirectory() async {
     final directory = await getTemporaryDirectory();
     final thumbnailDir = Directory('${directory.path}/thumbnails');
@@ -268,31 +51,25 @@ class VideoThumbnailGeneratorService {
     return thumbnailDir.path;
   }
 
-  /// Get cached thumbnail path if available
-  String? getCachedThumbnail(String videoPath) {
-    return _thumbnailPathCache.get(videoPath);
-  }
+  /// Get existing thumbnail path
+  Future<String?> getThumbnail(String videoPath) async {
+    try {
+      final thumbnailDir = await _getThumbnailDirectory();
+      final fileName = '${videoPath.hashCode.abs()}.jpg';
+      final thumbnailPath = path.join(thumbnailDir, fileName);
+      final file = File(thumbnailPath);
 
-  /// Check if thumbnail is cached
-  bool isThumbnailCached(String videoPath) {
-    return _thumbnailPathCache.containsKey(videoPath);
-  }
-
-  /// Cancel all pending requests
-  void cancelAllPending() {
-    AppLogger.i('Cancelling all pending thumbnail requests');
-    for (final request in _requestQueue) {
-      _pendingPaths.remove(request.videoPath);
-      request.completer.complete(null);
+      if (await file.exists()) {
+        return thumbnailPath;
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
-    _requestQueue.clear();
   }
 
-  /// Clear all cached thumbnails
+  /// Clear all thumbnails
   Future<void> clearCache() async {
-    cancelAllPending();
-    _thumbnailPathCache.clear();
-
     try {
       final thumbnailDir = await _getThumbnailDirectory();
       final dir = Directory(thumbnailDir);
@@ -303,142 +80,8 @@ class VideoThumbnailGeneratorService {
           }
         }
       }
-      AppLogger.i('Thumbnail cache cleared');
     } catch (e) {
-      AppLogger.e('Error clearing thumbnail cache: $e');
+      // Ignore
     }
   }
-
-  /// Get queue stats for debugging
-  Map<String, dynamic> getStats() {
-    return {
-      'queueSize': _requestQueue.length,
-      'pendingPaths': _pendingPaths.length,
-      'concurrent': _currentConcurrent,
-      'cacheSize': _thumbnailPathCache.length,
-    };
-  }
-
-  /// Get total cache size on disk
-  Future<int> getCacheSizeBytes() async {
-    try {
-      final thumbnailDir = await _getThumbnailDirectory();
-      final dir = Directory(thumbnailDir);
-      int totalSize = 0;
-
-      if (await dir.exists()) {
-        await for (final entity in dir.list()) {
-          if (entity is File) {
-            totalSize += await entity.length();
-          }
-        }
-      }
-
-      return totalSize;
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  /// Get cache size in human-readable format
-  Future<String> getCacheSizeFormatted() async {
-    final sizeBytes = await getCacheSizeBytes();
-    if (sizeBytes < 1024) {
-      return '$sizeBytes B';
-    } else if (sizeBytes < 1024 * 1024) {
-      return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
-    } else if (sizeBytes < 1024 * 1024 * 1024) {
-      return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    } else {
-      return '${(sizeBytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-    }
-  }
-
-  /// Cleanup cache if it exceeds size limit
-  Future<void> cleanupCacheIfNeeded() async {
-    try {
-      final currentSize = await getCacheSizeBytes();
-      if (currentSize <= _maxCacheSizeBytes) {
-        return; // Cache is within limits
-      }
-
-      AppLogger.i(
-          'Thumbnail cache exceeds limit (${_formatBytes(currentSize)} > ${_formatBytes(_maxCacheSizeBytes)}), cleaning up...');
-
-      final thumbnailDir = await _getThumbnailDirectory();
-      final dir = Directory(thumbnailDir);
-
-      if (!await dir.exists()) return;
-
-      // Get all cache files with their last modified times
-      final files = <_CacheFile>[];
-      await for (final entity in dir.list()) {
-        if (entity is File) {
-          final stat = await entity.stat();
-          files.add(_CacheFile(
-            path: entity.path,
-            lastModified: stat.modified,
-            size: stat.size,
-          ));
-        }
-      }
-
-      // Sort by last modified (oldest first)
-      files.sort((a, b) => a.lastModified.compareTo(b.lastModified));
-
-      // Delete oldest files until we're under the limit
-      var deletedCount = 0;
-      var deletedSize = 0;
-
-      for (final file in files) {
-        if (currentSize - deletedSize <= _maxCacheSizeBytes * 0.8) {
-          break; // Stop when we're at 80% of limit
-        }
-
-        try {
-          await File(file.path).delete();
-          deletedSize += file.size;
-          deletedCount++;
-
-          // Also remove from LRU cache
-          _thumbnailPathCache.remove(file.path);
-        } catch (e) {
-          AppLogger.e('Error deleting cache file: ${file.path}');
-        }
-      }
-
-      AppLogger.i(
-          'Cache cleanup complete: deleted $deletedCount files (${_formatBytes(deletedSize)})');
-    } catch (e) {
-      AppLogger.e('Error during cache cleanup: $e');
-    }
-  }
-
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-  }
-
-  /// Background cache cleanup (call periodically)
-  static Future<void> performBackgroundCleanup() async {
-    final service = VideoThumbnailGeneratorService();
-    await service.cleanupCacheIfNeeded();
-  }
-}
-
-/// Helper class for cache file management
-class _CacheFile {
-  final String path;
-  final DateTime lastModified;
-  final int size;
-
-  _CacheFile({
-    required this.path,
-    required this.lastModified,
-    required this.size,
-  });
 }

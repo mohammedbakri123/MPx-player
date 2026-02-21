@@ -7,7 +7,7 @@ import 'media_store_scanner.dart';
 import 'video_grouping_helper.dart';
 
 /// ULTRA-FAST scanner - MX Player style
-/// 
+///
 /// Uses ONLY Android MediaStore for instant scanning (1-2 seconds)
 /// No file system scanning - Android already indexed everything!
 class ScanOrchestrator {
@@ -17,17 +17,15 @@ class ScanOrchestrator {
   }) async {
     // Start performance tracking
     performanceMonitor.startScan();
-    
+
     onProgress?.call(0.0, 'Initializing...');
     final stopwatch = Stopwatch()..start();
 
-    // ALWAYS use MediaStore on Android - with thumbnails!
+    // ALWAYS use MediaStore on Android
     if (defaultTargetPlatform == TargetPlatform.android) {
       try {
-        // Generate thumbnails during scan for first 20 videos
         final videos = await MediaStoreScanner.scan(
           onProgress: onProgress,
-          generateThumbnails: true,
         );
 
         if (videos.isNotEmpty) {

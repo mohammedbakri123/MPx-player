@@ -94,7 +94,6 @@ class AppDatabase
   /// Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     AppLogger.i('Upgrading database from $oldVersion to $newVersion');
-    // Handle future schema migrations here
   }
 
   /// Close database connection
