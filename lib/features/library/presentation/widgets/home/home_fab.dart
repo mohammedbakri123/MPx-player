@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:mpx/features/library/services/video_thumbnail_generator_service.dart';
+import '../../../services/thumbnail_worker_pool.dart';
+import '../../../services/thumbnail_cache.dart';
 import '../../../../player/services/last_played_service.dart';
 import '../../../../player/presentation/screens/video_player_screen.dart';
 import '../../../domain/entities/video_file.dart';
@@ -26,8 +27,6 @@ class _HomeFABState extends State<HomeFAB> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reload when widget becomes visible again (e.g., returning from video player)
-    // This gets called when we navigate back from another screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadLastVideo();
     });
@@ -38,7 +37,6 @@ class _HomeFABState extends State<HomeFAB> {
     if (mounted) {
       setState(() {
         _lastVideo = video;
-        // Reset thumbnail if video changed
         if (_lastVideo?.id != video?.id) {
           _thumbnailPath = null;
         }
@@ -52,7 +50,18 @@ class _HomeFABState extends State<HomeFAB> {
   Future<void> _loadThumbnail() async {
     if (_lastVideo == null) return;
 
-    // Use existing thumbnail if available
+    final cache = ThumbnailCache();
+    final cachedPath = await cache.get(_lastVideo!.path);
+    if (cachedPath != null) {
+      if (mounted) {
+        setState(() {
+          _thumbnailPath = cachedPath;
+          _isLoadingThumbnail = false;
+        });
+      }
+      return;
+    }
+
     if (_lastVideo!.thumbnailPath != null &&
         File(_lastVideo!.thumbnailPath!).existsSync()) {
       setState(() {
@@ -61,19 +70,30 @@ class _HomeFABState extends State<HomeFAB> {
       return;
     }
 
-    // Generate thumbnail on-demand
     setState(() {
       _isLoadingThumbnail = true;
     });
 
-    final thumbnailPath =
-        await VideoThumbnailService().generateThumbnail(_lastVideo!.path);
+    try {
+      final thumbnailPath = await ThumbnailWorkerPool()
+          .generateThumbnail(_lastVideo!.path)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => null,
+          );
 
-    if (mounted) {
-      setState(() {
-        _thumbnailPath = thumbnailPath;
-        _isLoadingThumbnail = false;
-      });
+      if (mounted) {
+        setState(() {
+          _thumbnailPath = thumbnailPath;
+          _isLoadingThumbnail = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingThumbnail = false;
+        });
+      }
     }
   }
 

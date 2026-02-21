@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../library/domain/entities/video_file.dart';
-import '../../../library/services/video_thumbnail_generator_service.dart';
+import '../../../library/services/thumbnail_cache.dart';
+import '../../../library/services/thumbnail_worker_pool.dart';
 import 'video_thumbnail_placeholder.dart';
 import 'video_thumbnail_overlay.dart';
 
@@ -24,27 +25,63 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
     _loadThumbnail();
   }
 
+  @override
+  void didUpdateWidget(VideoThumbnail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.video.path != widget.video.path) {
+      _loadThumbnail();
+    }
+  }
+
   Future<void> _loadThumbnail() async {
-    if (widget.video.thumbnailPath != null &&
-        await File(widget.video.thumbnailPath!).exists()) {
-      setState(() {
-        _thumbnailPath = widget.video.thumbnailPath;
-      });
+    final cache = ThumbnailCache();
+
+    final cachedPath = await cache.get(widget.video.path);
+    if (cachedPath != null) {
+      if (mounted) {
+        setState(() {
+          _thumbnailPath = cachedPath;
+          _isLoading = false;
+        });
+      }
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    final path =
-        await VideoThumbnailService().generateThumbnail(widget.video.path);
+    if (widget.video.thumbnailPath != null) {
+      final file = File(widget.video.thumbnailPath!);
+      if (await file.exists()) {
+        if (mounted) {
+          setState(() {
+            _thumbnailPath = widget.video.thumbnailPath;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+    }
 
     if (mounted) {
       setState(() {
-        _thumbnailPath = path;
-        _isLoading = false;
+        _isLoading = true;
       });
+    }
+
+    try {
+      final workerPool = ThumbnailWorkerPool();
+      final path = await workerPool.generateThumbnail(widget.video.path);
+
+      if (mounted) {
+        setState(() {
+          _thumbnailPath = path;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
