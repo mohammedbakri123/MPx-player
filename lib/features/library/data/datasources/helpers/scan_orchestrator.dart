@@ -14,6 +14,7 @@ class ScanOrchestrator {
     required bool forceRefresh,
     required Function(double progress, String status)? onProgress,
     bool generateThumbnails = true,
+    bool waitForThumbnails = false,
   }) async {
     performanceMonitor.startScan();
 
@@ -37,11 +38,6 @@ class ScanOrchestrator {
 
           final folders = VideoGroupingHelper.groupByFolder(videos);
 
-          if (generateThumbnails) {
-            onProgress?.call(0.4, 'Generating thumbnails...');
-            await _generateThumbnails(videos, onProgress);
-          }
-
           await PersistentCacheService.saveToCache(folders);
           await ScanMetadataService.setLastScanTimestamp(DateTime.now());
           await ScanMetadataService.setLastFullScanTimestamp(DateTime.now());
@@ -51,6 +47,15 @@ class ScanOrchestrator {
             durationMs: stopwatch.elapsedMilliseconds,
           );
           performanceMonitor.endScan(videos.length);
+
+          if (generateThumbnails) {
+            if (waitForThumbnails) {
+              onProgress?.call(0.4, 'Generating thumbnails...');
+              await _generateThumbnails(videos, onProgress);
+            } else {
+              _generateThumbnailsInBackground(videos);
+            }
+          }
 
           return folders;
         }
@@ -117,11 +122,6 @@ class ScanOrchestrator {
           newVideos: videos,
         );
 
-        if (generateThumbnails) {
-          onProgress?.call(0.4, 'Generating thumbnails...');
-          await _generateThumbnails(videos, onProgress);
-        }
-
         await _saveIncrementalResults(
             mergedResult.addedVideos, mergedResult.updatedFolders);
         await ScanMetadataService.setLastScanTimestamp(DateTime.now());
@@ -131,6 +131,10 @@ class ScanOrchestrator {
           durationMs: stopwatch.elapsedMilliseconds,
         );
         performanceMonitor.endScan(videos.length);
+
+        if (generateThumbnails && videos.isNotEmpty) {
+          _generateThumbnailsInBackground(videos);
+        }
 
         return IncrementalScanResult(
           folders: mergedResult.updatedFolders,
@@ -221,6 +225,18 @@ class ScanOrchestrator {
         onProgress?.call(adjustedProgress, status);
       },
     );
+  }
+
+  static void _generateThumbnailsInBackground(List<VideoFile> videos) {
+    Future(() async {
+      try {
+        final thumbnailService = ThumbnailPreGenerationService();
+        await thumbnailService.generateThumbnails(videos);
+        AppLogger.i('Background thumbnail generation complete');
+      } catch (e) {
+        AppLogger.e('Background thumbnail generation error: $e');
+      }
+    });
   }
 }
 
