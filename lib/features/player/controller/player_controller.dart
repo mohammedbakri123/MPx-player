@@ -15,6 +15,7 @@ import 'utils/time_formatter.dart' show formatTime;
 
 export 'player_state.dart';
 export 'utils/time_formatter.dart' show formatTime;
+export '../domain/repositories/player_repository.dart' show AudioTrackInfo;
 
 /// Controller for managing video player state and user interactions.
 ///
@@ -59,6 +60,8 @@ class PlayerController extends ChangeNotifier
   double get volume => _state.volume;
   double get playbackSpeed => _state.playbackSpeed;
   bool get isLongPressing => _state.isLongPressing;
+  @override
+  bool get isLocked => _state.isLocked;
   bool get subtitlesEnabled => _state.subtitlesEnabled;
   double get subtitleFontSize => _state.subtitleFontSize;
   Color get subtitleColor => _state.subtitleColor;
@@ -73,6 +76,12 @@ class PlayerController extends ChangeNotifier
   bool get showVolumeIndicator => _state.showVolumeIndicator;
   bool get showBrightnessIndicator => _state.showBrightnessIndicator;
   double get brightnessValue => _state.brightnessValue;
+  bool get showDoubleTapSeekLeft => _state.showDoubleTapSeekLeft;
+  bool get showDoubleTapSeekRight => _state.showDoubleTapSeekRight;
+  AspectRatioMode get aspectRatioMode => _state.aspectRatioMode;
+  RepeatMode get repeatMode => _state.repeatMode;
+  List<AudioTrackInfo> get audioTracks => _state.audioTracks;
+  int get currentAudioTrackIndex => _state.currentAudioTrackIndex;
 
   /// Returns the current video being played
   VideoFile? get currentVideo => _currentVideo;
@@ -126,6 +135,7 @@ class PlayerController extends ChangeNotifier
     _currentVideo = video;
     await super.loadVideo(video.path);
     await applySubtitleSettings();
+    loadAudioTracks();
     _startAutoSaveTimer();
   }
 

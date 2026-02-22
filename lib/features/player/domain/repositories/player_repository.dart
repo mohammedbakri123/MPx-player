@@ -38,6 +38,12 @@ abstract class PlayerRepository {
   /// Disables all subtitles.
   Future<void> disableSubtitles();
 
+  /// Gets available audio tracks.
+  List<AudioTrackInfo> getAudioTracks();
+
+  /// Sets the audio track.
+  Future<void> setAudioTrack(int index);
+
   /// Stream of playing state.
   ///
   /// Emits `true` when video is playing, `false` when paused.
@@ -63,8 +69,24 @@ abstract class PlayerRepository {
   /// Emits `true` when video playback has completed.
   Stream<bool> get completedStream;
 
+  /// Stream of audio tracks (emits when tracks change).
+  Stream<void> get audioTracksStream;
+
   /// Disposes of all resources used by the player.
   ///
   /// Should be called when the player is no longer needed.
   void dispose();
+}
+
+/// Information about an audio track.
+class AudioTrackInfo {
+  final int id;
+  final String? title;
+  final String? language;
+
+  AudioTrackInfo({
+    required this.id,
+    this.title,
+    this.language,
+  });
 }

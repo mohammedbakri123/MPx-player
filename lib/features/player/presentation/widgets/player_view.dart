@@ -28,21 +28,15 @@ class PlayerView extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Video surface
           PlayerSurface(
             controller: controller.videoController,
             subtitleFontSize: controller.subtitleFontSize,
             subtitleColor: controller.subtitleColor,
             subtitleHasBackground: controller.subtitleHasBackground,
+            aspectRatioMode: controller.aspectRatioMode,
           ),
-
-          // Gesture layer
           GestureLayer(controller: controller),
-
-          // Overlay indicators
           OverlayLayer(controller: controller),
-
-          // Controls layer
           ControlsLayer(
             controller: controller,
             title: videoTitle,

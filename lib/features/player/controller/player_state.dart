@@ -1,8 +1,21 @@
 import 'dart:ui' show Color;
+import '../domain/repositories/player_repository.dart' show AudioTrackInfo;
 
-/// Holds all player state fields to keep the controller clean.
+enum AspectRatioMode {
+  fit,
+  fill,
+  stretch,
+  ratio16x9,
+  ratio4x3,
+}
+
+enum RepeatMode {
+  off,
+  one,
+  all,
+}
+
 class PlayerState {
-  // Playback state
   bool isPlaying = true;
   bool showControls = true;
   bool isBuffering = false;
@@ -13,23 +26,31 @@ class PlayerState {
   double playbackSpeed = 1.0;
   bool isLongPressing = false;
 
-  // Subtitle state
+  bool isLocked = false;
+
+  AspectRatioMode aspectRatioMode = AspectRatioMode.fit;
+  RepeatMode repeatMode = RepeatMode.off;
+
+  List<AudioTrackInfo> audioTracks = [];
+  int currentAudioTrackIndex = 0;
+
   late bool subtitlesEnabled;
   late double subtitleFontSize;
   late Color subtitleColor;
   late bool subtitleHasBackground;
 
-  // Gesture state
   double dragStartX = 0;
   bool isDraggingX = false;
   bool isDraggingY = false;
   String verticalDragSide = '';
   Duration seekStartPosition = Duration.zero;
 
-  // UI indicators
   bool showSeekIndicator = false;
   String seekDirection = '';
   bool showVolumeIndicator = false;
   bool showBrightnessIndicator = false;
   double brightnessValue = 0.5;
+
+  bool showDoubleTapSeekLeft = false;
+  bool showDoubleTapSeekRight = false;
 }
