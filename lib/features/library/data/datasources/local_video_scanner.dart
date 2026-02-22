@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import '../../../../../core/services/logger_service.dart';
 import '../../services/persistent_cache_service.dart';
+import '../../services/scan_metadata_service.dart';
 import '../../domain/entities/video_file.dart';
 import '../../domain/entities/video_folder.dart';
 import '../../../../../../core/database/app_database.dart';
@@ -27,23 +28,24 @@ class VideoScanner {
   Stream<String> get onVideoRemoved => _watcher.onVideoRemoved;
   bool get isWatching => _isWatching;
 
-  /// Scan for videos - loads from DB first, then scans if empty
+  /// Scan for videos - uses incremental scanning when possible
   Future<List<VideoFolder>> scanForVideos({
     bool forceRefresh = false,
     bool enableWatching = true,
     Function(double progress, String status)? onProgress,
   }) async {
-    // Load from DB
     if (!forceRefresh) {
       final cached = await PersistentCacheService.loadFromCache();
       if (cached != null && cached.isNotEmpty) {
         _folders = cached;
+
+        _runIncrementalScanInBackground(cached);
+
         if (enableWatching) await startWatching();
         return cached;
       }
     }
 
-    // Scan if no cached data
     if (_isScanning) {
       await _waitForScan();
       return _folders ?? [];
@@ -58,7 +60,6 @@ class VideoScanner {
 
       if (folders.isNotEmpty) {
         _folders = folders;
-        await PersistentCacheService.saveToCache(folders);
         onProgress?.call(1.0, 'Found ${folders.length} folders');
       }
 
@@ -67,6 +68,48 @@ class VideoScanner {
     } catch (e) {
       AppLogger.e('Error scanning: $e');
       return _folders ?? [];
+    } finally {
+      _isScanning = false;
+    }
+  }
+
+  /// Run incremental scan in background without blocking UI
+  void _runIncrementalScanInBackground(List<VideoFolder> cachedFolders) async {
+    if (_isScanning) return;
+
+    final shouldFullScan = await ScanMetadataService.shouldDoFullScan();
+    if (shouldFullScan) {
+      AppLogger.i('Performing periodic full scan in background');
+      _isScanning = true;
+      try {
+        final folders = await ScanOrchestrator.scan(
+          forceRefresh: true,
+          onProgress: null,
+        );
+        if (folders.isNotEmpty) {
+          _folders = folders;
+        }
+      } catch (e) {
+        AppLogger.e('Background full scan error: $e');
+      } finally {
+        _isScanning = false;
+      }
+      return;
+    }
+
+    _isScanning = true;
+    try {
+      final result = await ScanOrchestrator.scanIncremental(
+        onProgress: null,
+      );
+
+      if (result.newVideosCount > 0 && result.folders.isNotEmpty) {
+        _folders = result.folders;
+        AppLogger.i(
+            'Incremental scan found ${result.newVideosCount} new videos');
+      }
+    } catch (e) {
+      AppLogger.e('Background incremental scan error: $e');
     } finally {
       _isScanning = false;
     }

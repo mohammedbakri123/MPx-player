@@ -47,12 +47,6 @@ class MockVideoScanner extends _i1.Mock implements _i2.VideoScanner {
       ) as _i3.Stream<String>);
 
   @override
-  _i3.Stream<_i4.VideoFile> get onVideoModified => (super.noSuchMethod(
-        Invocation.getter(#onVideoModified),
-        returnValue: _i3.Stream<_i4.VideoFile>.empty(),
-      ) as _i3.Stream<_i4.VideoFile>);
-
-  @override
   bool get isWatching => (super.noSuchMethod(
         Invocation.getter(#isWatching),
         returnValue: false,
@@ -112,20 +106,12 @@ class MockVideoScanner extends _i1.Mock implements _i2.VideoScanner {
       ) as _i3.Future<void>);
 
   @override
-  void clearCache() => super.noSuchMethod(
+  _i3.Future<void> clearCache() => (super.noSuchMethod(
         Invocation.method(
           #clearCache,
           [],
         ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void dispose() => super.noSuchMethod(
-        Invocation.method(
-          #dispose,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 }

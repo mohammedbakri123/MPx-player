@@ -4,14 +4,14 @@ import 'package:path/path.dart' as path;
 import '../../../../../core/services/logger_service.dart';
 import '../../../domain/entities/video_file.dart';
 
-/// MediaStore scanner for videos
 class MediaStoreScanner {
-  /// Scan videos using Android MediaStore
   static Future<List<VideoFile>> scan({
     Function(double progress, String status)? onProgress,
+    DateTime? sinceTimestamp,
   }) async {
     final videos = <VideoFile>[];
     final stopwatch = Stopwatch()..start();
+    final isIncremental = sinceTimestamp != null;
 
     try {
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
@@ -20,10 +20,12 @@ class MediaStoreScanner {
         return videos;
       }
 
-      // Get all video albums
+      final filterOption = _buildFilterOption(sinceTimestamp: sinceTimestamp);
+
       final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
         type: RequestType.video,
         hasAll: true,
+        filterOption: filterOption,
       );
 
       if (albums.isEmpty) {
@@ -31,17 +33,19 @@ class MediaStoreScanner {
         return videos;
       }
 
-      AppLogger.i('Found ${albums.length} albums, scanning...');
+      final scanType = isIncremental ? 'Incremental' : 'Full';
+      AppLogger.i(
+          '$scanType scan: Found ${albums.length} albums${isIncremental ? ' (since $sinceTimestamp)' : ''}');
 
-      // Process each album (folder)
       for (var i = 0; i < albums.length; i++) {
         final album = albums[i];
-        await _processAlbum(album, videos, onProgress);
+        await _processAlbum(album, videos, onProgress,
+            isIncremental: isIncremental);
       }
 
       stopwatch.stop();
       AppLogger.i(
-          'MediaStore scan complete: ${videos.length} videos in ${stopwatch.elapsedMilliseconds}ms');
+          'MediaStore ${isIncremental ? 'incremental' : 'full'} scan complete: ${videos.length} videos in ${stopwatch.elapsedMilliseconds}ms');
       return videos;
     } catch (e, stack) {
       AppLogger.e('MediaStore scan error: $e', e, stack);
@@ -49,12 +53,40 @@ class MediaStoreScanner {
     }
   }
 
+  static FilterOptionGroup _buildFilterOption({DateTime? sinceTimestamp}) {
+    final option = FilterOption(
+      sizeConstraint: SizeConstraint(
+        minWidth: 0,
+        minHeight: 0,
+        maxWidth: 100000,
+        maxHeight: 100000,
+        ignoreSize: false,
+      ),
+    );
+
+    FilterOptionGroup filterGroup;
+    if (sinceTimestamp != null) {
+      filterGroup = FilterOptionGroup(
+        videoOption: option,
+        createTimeCond: DateTimeCond(
+          min: sinceTimestamp,
+          max: DateTime.now(),
+        ),
+      );
+    } else {
+      filterGroup = FilterOptionGroup(videoOption: option);
+    }
+
+    return filterGroup;
+  }
+
   /// Process a single album
   static Future<void> _processAlbum(
     AssetPathEntity album,
     List<VideoFile> videos,
-    Function(double progress, String status)? onProgress,
-  ) async {
+    Function(double progress, String status)? onProgress, {
+    bool isIncremental = false,
+  }) async {
     try {
       final String albumName = album.name;
       final int assetCount = await album.assetCountAsync;

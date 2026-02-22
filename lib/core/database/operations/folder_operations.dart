@@ -21,7 +21,8 @@ mixin FolderDatabaseOperations implements VideoDatabaseOperations {
         'path': folder.path,
         'name': folder.name,
         'video_count': folder.videoCount,
-        'thumbnail_path': folder.videos.isNotEmpty ? folder.videos.first.thumbnailPath : null,
+        'thumbnail_path':
+            folder.videos.isNotEmpty ? folder.videos.first.thumbnailPath : null,
         'updated_at': now,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -31,7 +32,7 @@ mixin FolderDatabaseOperations implements VideoDatabaseOperations {
   /// Insert multiple folders in a transaction
   Future<void> insertFolders(List<VideoFolder> folders) async {
     if (folders.isEmpty) return;
-    
+
     final db = await database;
     final now = DateTime.now().millisecondsSinceEpoch;
 
@@ -44,7 +45,9 @@ mixin FolderDatabaseOperations implements VideoDatabaseOperations {
             'path': folder.path,
             'name': folder.name,
             'video_count': folder.videoCount,
-            'thumbnail_path': folder.videos.isNotEmpty ? folder.videos.first.thumbnailPath : null,
+            'thumbnail_path': folder.videos.isNotEmpty
+                ? folder.videos.first.thumbnailPath
+                : null,
             'updated_at': now,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
@@ -59,7 +62,7 @@ mixin FolderDatabaseOperations implements VideoDatabaseOperations {
   Future<List<VideoFolder>> getAllFoldersFast() async {
     final db = await database;
     final stopwatch = Stopwatch()..start();
-    
+
     final maps = await db.rawQuery('''
       SELECT 
         f.path, f.name, f.video_count,
@@ -81,7 +84,8 @@ mixin FolderDatabaseOperations implements VideoDatabaseOperations {
       final folderName = row['name'] as String;
 
       if (!folderMap.containsKey(folderPath)) {
-        folderMap[folderPath] = VideoFolder(path: folderPath, name: folderName, videos: []);
+        folderMap[folderPath] =
+            VideoFolder(path: folderPath, name: folderName, videos: []);
         videoMap[folderPath] = [];
       }
 
@@ -104,9 +108,8 @@ mixin FolderDatabaseOperations implements VideoDatabaseOperations {
 
     stopwatch.stop();
     AppLogger.i(
-      '⚡ Loaded ${folders.length} folders (${folders.fold(0, (sum, f) => sum + f.videos.length)} videos) '
-      'in ${stopwatch.elapsedMilliseconds}ms | Thumbnails: $videosWithThumbnails | Resolution: $videosWithResolution'
-    );
+        '⚡ Loaded ${folders.length} folders (${folders.fold(0, (sum, f) => sum + f.videos.length)} videos) '
+        'in ${stopwatch.elapsedMilliseconds}ms | Thumbnails: $videosWithThumbnails | Resolution: $videosWithResolution');
     return folders;
   }
 
@@ -130,6 +133,30 @@ mixin FolderDatabaseOperations implements VideoDatabaseOperations {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) as count FROM folders');
     return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  /// Get video count for a specific folder
+  Future<int> getVideoCountByFolder(String folderPath) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM videos WHERE folder_path = ?',
+      [folderPath],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  /// Update folder video count
+  Future<void> updateFolderVideoCount(String folderPath, int count) async {
+    final db = await database;
+    await db.update(
+      'folders',
+      {
+        'video_count': count,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'path = ?',
+      whereArgs: [folderPath],
+    );
   }
 
   /// Convert map to VideoFile (needed for folder operations)

@@ -29,8 +29,6 @@ class HomeHeader extends StatelessWidget {
           ),
           _IconButton(icon: Icons.search, onTap: onSearchTap ?? () {}),
           const SizedBox(width: 12),
-          _IconButton(icon: Icons.filter_list, onTap: onFilterTap ?? () {}),
-          const SizedBox(width: 12),
         ],
       ),
     );

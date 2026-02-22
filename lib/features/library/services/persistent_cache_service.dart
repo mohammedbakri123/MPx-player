@@ -1,4 +1,5 @@
 import '../../../features/library/domain/entities/video_folder.dart';
+import '../../../features/library/domain/entities/video_file.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/services/logger_service.dart';
 
@@ -19,6 +20,33 @@ class PersistentCacheService {
       AppLogger.i('Saved ${folders.length} folders to database');
     } catch (e) {
       AppLogger.e('Failed to save to database: $e');
+    }
+  }
+
+  /// Save incremental video updates without clearing existing data
+  static Future<void> saveIncrementalVideos(
+    List<VideoFile> newVideos,
+    List<VideoFolder> updatedFolders,
+  ) async {
+    try {
+      final db = AppDatabase();
+
+      if (newVideos.isNotEmpty) {
+        await db.insertVideos(newVideos);
+      }
+
+      for (final folder in updatedFolders) {
+        final existingCount = await db.getVideoCountByFolder(folder.path);
+        if (existingCount == 0) {
+          await db.insertFolder(folder);
+        } else {
+          await db.updateFolderVideoCount(folder.path, folder.videoCount);
+        }
+      }
+
+      AppLogger.i('Saved ${newVideos.length} incremental videos to database');
+    } catch (e) {
+      AppLogger.e('Failed to save incremental videos: $e');
     }
   }
 

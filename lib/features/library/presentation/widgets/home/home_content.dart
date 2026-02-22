@@ -5,7 +5,7 @@ import 'folder_list_card.dart';
 import 'folder_grid_card.dart';
 import 'home_error_state.dart';
 import 'home_empty_state.dart';
-import 'home_skeleton_loader.dart';
+// import 'home_skeleton_loader.dart';
 
 class HomeContent extends StatelessWidget {
   final LibraryController controller;
@@ -37,16 +37,16 @@ class HomeContent extends StatelessWidget {
     }
 
     // Show skeleton loader when loading
-    if (controller.isLoading) {
-      // Pass the actual folder count if we have cached data, otherwise use default
-      final itemCount = controller.folders.isNotEmpty 
-          ? controller.folders.length 
-          : (controller.isGridView ? 12 : 8);
-      return HomeSkeletonLoader(
-        isGridView: controller.isGridView,
-        itemCount: itemCount,
-      );
-    }
+    // if (controller.isLoading) {
+    //   // Pass the actual folder count if we have cached data, otherwise use default
+    //   final itemCount = controller.folders.isNotEmpty
+    //       ? controller.folders.length
+    //       : (controller.isGridView ? 12 : 8);
+    //   return HomeSkeletonLoader(
+    //     isGridView: controller.isGridView,
+    //     itemCount: itemCount,
+    //   );
+    // }
 
     // Content (list or grid) - show existing folders
     // RefreshIndicator will show its own spinner during pull-to-refresh
