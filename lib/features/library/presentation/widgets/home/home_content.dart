@@ -5,7 +5,7 @@ import 'folder_list_card.dart';
 import 'folder_grid_card.dart';
 import 'home_error_state.dart';
 import 'home_empty_state.dart';
-// import 'home_skeleton_loader.dart';
+import 'home_skeleton_loader.dart';
 
 class HomeContent extends StatelessWidget {
   final LibraryController controller;
@@ -36,17 +36,13 @@ class HomeContent extends StatelessWidget {
       );
     }
 
-    // Show skeleton loader when loading
-    // if (controller.isLoading) {
-    //   // Pass the actual folder count if we have cached data, otherwise use default
-    //   final itemCount = controller.folders.isNotEmpty
-    //       ? controller.folders.length
-    //       : (controller.isGridView ? 12 : 8);
-    //   return HomeSkeletonLoader(
-    //     isGridView: controller.isGridView,
-    //     itemCount: itemCount,
-    //   );
-    // }
+    // Show skeleton loader only during initial loading (no cached data)
+    if (controller.isLoading && controller.folders.isEmpty) {
+      return HomeSkeletonLoader(
+        isGridView: controller.isGridView,
+        itemCount: controller.isGridView ? 12 : 8,
+      );
+    }
 
     // Content (list or grid) - show existing folders
     // RefreshIndicator will show its own spinner during pull-to-refresh
@@ -60,7 +56,13 @@ class HomeContent extends StatelessWidget {
 
   Widget _buildListView(List<VideoFolder> folders) {
     if (folders.isEmpty) {
-      return const SizedBox.shrink();
+      return ListView(
+        controller: scrollController,
+        children: const [
+          SizedBox(height: 100),
+          Center(child: Text('No folders found')),
+        ],
+      );
     }
     return ListView.builder(
       controller: scrollController,
@@ -78,7 +80,14 @@ class HomeContent extends StatelessWidget {
 
   Widget _buildGridView(List<VideoFolder> folders) {
     if (folders.isEmpty) {
-      return const SizedBox.shrink();
+      return GridView.count(
+        controller: scrollController,
+        crossAxisCount: 2,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        children: const [
+          Center(child: Text('No folders found')),
+        ],
+      );
     }
     return GridView.builder(
       controller: scrollController,

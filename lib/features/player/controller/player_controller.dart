@@ -3,7 +3,7 @@ import 'dart:ui' show Color;
 import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../../player/services/play_history_service.dart';
+import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
 import '../domain/repositories/player_repository.dart';
 import '../data/repositories/media_kit_player_repository.dart';
@@ -177,11 +177,12 @@ class PlayerController extends ChangeNotifier
 
     // Perform the save
     _lastSaveTime = DateTime.now();
-    return await PlayHistoryService.savePosition(
-      _currentVideo!,
-      _state.position,
-      _state.duration,
+    await HistoryService.recordPlayback(
+      video: _currentVideo!,
+      position: _state.position,
+      duration: _state.duration,
     );
+    return true;
   }
 
   /// Save position when user pauses (always force — user explicitly paused)
@@ -210,10 +211,10 @@ class PlayerController extends ChangeNotifier
   Future<void> resetPositionOnVideoEnd() async {
     if (_currentVideo == null) return;
 
-    await PlayHistoryService.savePosition(
-      _currentVideo!,
-      Duration.zero,
-      _state.duration,
+    await HistoryService.recordPlayback(
+      video: _currentVideo!,
+      position: Duration.zero,
+      duration: _state.duration,
     );
   }
 

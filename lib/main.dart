@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
-import 'features/player/services/last_played_service.dart';
-import 'features/player/services/play_history_service.dart';
 import 'features/settings/services/subtitle_settings_service.dart';
 import 'features/favorites/services/favorites_service.dart';
 import 'core/database/database_migration.dart';
 import 'features/library/controller/library_controller.dart';
 import 'features/library/data/datasources/local_video_scanner.dart';
 import 'features/library/services/thumbnail_cache.dart';
+import 'features/library/presentation/widgets/home/home_fab.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'core/widgets/permission_wrapper.dart';
 
@@ -17,8 +16,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Future.wait([
-    LastPlayedService.init(),
-    PlayHistoryService.init(),
     SubtitleSettingsService.init(),
     FavoritesService.init(),
     DatabaseMigration.migrateIfNeeded(),
@@ -61,6 +58,7 @@ class _MPxPlayerState extends State<MPxPlayer> {
       child: MaterialApp(
         title: 'MPx Player',
         debugShowCheckedModeBanner: false,
+        navigatorObservers: [HomeFAB.routeObserver],
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF6366F1),

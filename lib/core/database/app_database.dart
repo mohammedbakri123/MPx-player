@@ -5,14 +5,16 @@ import '../services/logger_service.dart';
 import 'operations/video_operations.dart';
 import 'operations/folder_operations.dart';
 import 'operations/favorites_operations.dart';
+import 'operations/watch_history_operations.dart';
 
 /// Main database class - MPx Player
-/// Manages video library, folders, and favorites with SQLite
+/// Manages video library, folders, favorites, and watch history with SQLite
 class AppDatabase
     with
         VideoDatabaseOperations,
         FolderDatabaseOperations,
-        FavoritesDatabaseOperations {
+        FavoritesDatabaseOperations,
+        WatchHistoryOperations {
   static final AppDatabase _instance = AppDatabase._internal();
   static Database? _database;
 
@@ -20,7 +22,7 @@ class AppDatabase
   AppDatabase._internal();
 
   static const String _databaseName = 'mpx_player.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   /// Get database instance (singleton)
   @override
@@ -83,10 +85,24 @@ class AppDatabase
       )
     ''');
 
+    // Watch history table
+    await db.execute('''
+      CREATE TABLE watch_history (
+        video_id TEXT PRIMARY KEY,
+        position_ms INTEGER NOT NULL DEFAULT 0,
+        duration_ms INTEGER NOT NULL DEFAULT 0,
+        last_played_at INTEGER NOT NULL,
+        completion_percent INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+      )
+    ''');
+
     // Create indexes for performance
     await db.execute('CREATE INDEX idx_videos_folder ON videos(folder_path)');
     await db.execute('CREATE INDEX idx_videos_date ON videos(date_added DESC)');
     await db.execute('CREATE INDEX idx_videos_title ON videos(title)');
+    await db.execute(
+        'CREATE INDEX idx_history_played ON watch_history(last_played_at DESC)');
 
     AppLogger.i('Database tables created successfully');
   }
@@ -94,6 +110,23 @@ class AppDatabase
   /// Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     AppLogger.i('Upgrading database from $oldVersion to $newVersion');
+
+    if (oldVersion < 2) {
+      AppLogger.i('Migrating to version 2: Adding watch_history table');
+      await db.execute('''
+        CREATE TABLE watch_history (
+          video_id TEXT PRIMARY KEY,
+          position_ms INTEGER NOT NULL DEFAULT 0,
+          duration_ms INTEGER NOT NULL DEFAULT 0,
+          last_played_at INTEGER NOT NULL,
+          completion_percent INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute(
+          'CREATE INDEX idx_history_played ON watch_history(last_played_at DESC)');
+      AppLogger.i('Watch history table created');
+    }
   }
 
   /// Close database connection
@@ -109,6 +142,7 @@ class AppDatabase
   Future<void> deleteAllData() async {
     final db = await database;
     await db.transaction((txn) async {
+      await txn.delete('watch_history');
       await txn.delete('favorites');
       await txn.delete('videos');
       await txn.delete('folders');

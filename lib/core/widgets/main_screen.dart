@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mpx/features/library/presentation/screens/home_screen.dart';
 import 'package:mpx/features/favorites/presentation/screens/favorites_screen.dart';
+import 'package:mpx/features/history/presentation/screens/history_screen.dart';
 import 'package:mpx/features/settings/presentation/screens/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -55,6 +56,11 @@ class _MainScreenState extends State<MainScreen> {
               label: 'Favorites',
             ),
             BottomNavigationBarItem(
+              icon: Icon(Icons.history),
+              activeIcon: Icon(Icons.history),
+              label: 'History',
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.settings_outlined),
               activeIcon: Icon(Icons.settings),
               label: 'Settings',
@@ -72,6 +78,8 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         return const FavoritesScreen();
       case 2:
+        return const HistoryScreen();
+      case 3:
         return const SettingsScreen();
       default:
         return const HomeScreen();

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../services/last_played_service.dart';
-import '../../services/play_history_service.dart';
+import '../../../history/services/history_service.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/media_kit_player_repository.dart';
@@ -111,7 +111,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     if (controller.duration.inSeconds == 0) return;
 
     // Get the saved position
-    final savedPosition = await PlayHistoryService.getPosition(video.id);
+    final savedPosition = await HistoryService.getLastPosition(video.id);
     if (savedPosition == null) return;
 
     // Check if we should resume (position > 5s from start and > 30s from end)

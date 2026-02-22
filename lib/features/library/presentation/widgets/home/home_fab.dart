@@ -2,18 +2,21 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../services/thumbnail_worker_pool.dart';
 import '../../../services/thumbnail_cache.dart';
-import '../../../../player/services/last_played_service.dart';
+import '../../../../history/services/history_service.dart';
 import '../../../../player/presentation/screens/video_player_screen.dart';
 import '../../../domain/entities/video_file.dart';
 
 class HomeFAB extends StatefulWidget {
+  static final RouteObserver<PageRoute> routeObserver =
+      RouteObserver<PageRoute>();
+
   const HomeFAB({super.key});
 
   @override
-  State<HomeFAB> createState() => _HomeFABState();
+  State<HomeFAB> createState() => HomeFABState();
 }
 
-class _HomeFABState extends State<HomeFAB> {
+class HomeFABState extends State<HomeFAB> with RouteAware {
   VideoFile? _lastVideo;
   String? _thumbnailPath;
   bool _isLoadingThumbnail = false;
@@ -27,13 +30,22 @@ class _HomeFABState extends State<HomeFAB> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadLastVideo();
-    });
+    HomeFAB.routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
 
-  void _loadLastVideo() {
-    final video = LastPlayedService.getLastPlayedVideo();
+  @override
+  void dispose() {
+    HomeFAB.routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    _loadLastVideo();
+  }
+
+  Future<void> _loadLastVideo() async {
+    final video = await HistoryService.getLastPlayedVideo();
     if (mounted) {
       setState(() {
         _lastVideo = video;
@@ -105,8 +117,7 @@ class _HomeFABState extends State<HomeFAB> {
           builder: (context) => VideoPlayerScreen(video: _lastVideo!),
         ),
       );
-      // Reload the last video after returning from player
-      _loadLastVideo();
+      await _loadLastVideo();
     }
   }
 
