@@ -44,8 +44,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       // App going to background - save position and pause
       final controller = context.read<PlayerController>();
       controller.pauseVideo();
+
       // Fire-and-forget is OK here — OS gives us a brief window,
       // and SharedPreferences writes are fast. Force ensures no throttle.
+      //fire and forget means we don't await the future, allowing the app to continue closing without delay.
       controller.savePositionOnBackground();
     }
   }
@@ -59,7 +61,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         final repository = MediaKitPlayerRepository();
         final controller = PlayerController(repository);
         controller.loadVideoFile(widget.video);
-        WakelockPlus.enable();
+        WakelockPlus.enable(); // Keep screen on while player is active
         controller.startHideTimer();
         return controller;
       },

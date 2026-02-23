@@ -1,28 +1,32 @@
 name: mpx
 description: "MPx Player - A modern video player built with Flutter"
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # Media Kit - Video player with mpv backend
   media_kit: ^1.1.10
   media_kit_video: ^1.2.4
   media_kit_libs_video: ^1.0.4
-  
+
+  # Alternative video players
+  flutter_vlc_player: ^7.2.0
+  video_player: ^2.8.2
+
   # UI & Icons
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
   flutter_staggered_animations: ^1.1.1
-  
+
   # Navigation & State
   go_router: ^13.2.0
-  
+
   # Utilities
   path: ^1.8.3
   path_provider: ^2.1.2
@@ -30,26 +34,26 @@ dependencies:
   shared_preferences: ^2.2.2
   wakelock_plus: ^1.2.4
   provider: ^6.1.5+1
-  
+
   # Concurrency control
   pool: ^1.5.1
-  
+
   # MediaStore / Photos Library access
   photo_manager: ^3.6.4
-  
+
   # File watching for real-time updates
   watcher: ^1.1.0
-  
+
   # Data structures for caching
   collection: ^1.18.0
-  
+
   # Database
   sqflite: ^2.3.0
-  
+
   # Video Thumbnails & Metadata
   video_thumbnail: ^0.5.6
   media_data_extractor: ^0.0.8
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -60,7 +64,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
+
   assets:
     - assets/images/logo.png
     - assets/images/splash-bg.png
