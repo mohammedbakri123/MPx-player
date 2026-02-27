@@ -23,6 +23,9 @@ class VlcPlayerRepository implements PlayerRepository {
 
   VlcPlayerController? get controller => _controller;
 
+  @override
+  dynamic get player => null;
+
   void _listener() {
     if (_controller == null || _isDisposed) return;
     final value = _controller!.value;

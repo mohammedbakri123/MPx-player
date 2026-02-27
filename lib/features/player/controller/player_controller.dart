@@ -6,7 +6,6 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
 import '../domain/repositories/player_repository.dart';
-import '../data/repositories/media_kit_player_repository.dart';
 import 'player_state.dart';
 import 'mixins/gesture_handler_mixin.dart';
 import 'mixins/subtitle_manager_mixin.dart';
@@ -23,6 +22,29 @@ export '../domain/repositories/player_repository.dart' show AudioTrackInfo;
 /// - Depends on [PlayerRepository] abstraction (not concrete implementation)
 /// - Uses mixins to organize functionality into logical groups
 /// - Provides ChangeNotifier for UI updates
+/// - Handles auto-saving playback position with throttling to prevent excessive saves
+/// - Manages current video and exposes it for history saving
+/// - Provides utility methods for formatting time and accessing player state
+/// This controller is designed to be used with a Provider in the UI layer, allowing for easy state management and separation of concerns.
+/// The UI layer can call methods on this controller to perform actions (play, pause, seek, etc.) and listen to state changes for updating the UI accordingly.
+/// Example usage in UI layer:
+/// ```dart
+/// final controller = context.watch<PlayerController>();
+/// // Access state
+/// final isPlaying = controller.isPlaying;
+/// // Call actions
+/// controller.pauseVideo();
+/// ```
+/// The controller also handles lifecycle events such as pausing and going to background to ensure that playback position is saved appropriately.
+/// The auto-save mechanism ensures that the user's playback position is periodically saved to history without overwhelming the storage with too many writes, using a throttling mechanism to limit saves to at most once every 5 seconds (unless forced).
+/// Overall, this controller serves as the central hub for managing all aspects of video playback, user interactions, and state management in a clean and organized manner.
+/// Note: The actual video playback is handled by the PlayerRepository implementation (e.g., MediaKitPlayerRepository), and this controller interacts with it through the defined abstraction, allowing for flexibility in changing the underlying player implementation without affecting the controller logic.
+/// The controller also integrates subtitle management and gesture handling through mixins, keeping the code modular and maintainable.
+/// The controller ensures that resources are properly cleaned up on disposal, including cancelling timers and disabling wakelock, to prevent memory leaks and unintended behavior when the player is no longer in use.
+/// The controller is designed to be robust and user-friendly, providing a seamless video playback experience while also ensuring that user progress is saved and can be resumed later through the history service.
+/// This implementation focuses on the core functionality of the player controller, and additional features such as error handling, network status monitoring, and advanced subtitle features can be added in the future as needed.
+/// Overall, this PlayerController serves as a comprehensive and well-structured component for managing video playback in a Flutter application, adhering to clean architecture principles and providing a solid foundation for building a feature-rich video player experience.
+///
 class PlayerController extends ChangeNotifier
     with GestureHandlerMixin, SubtitleManagerMixin, PlaybackControlMixin {
   final PlayerRepository _repository;
@@ -87,11 +109,11 @@ class PlayerController extends ChangeNotifier
   VideoFile? get currentVideo => _currentVideo;
 
   /// Returns the underlying Player instance for VideoController creation.
-  dynamic get player => (_repository as MediaKitPlayerRepository).player;
+  dynamic get player => _repository.player;
 
   /// Returns the VideoController for video rendering.
-  late final VideoController videoController =
-      VideoController((_repository as MediaKitPlayerRepository).player);
+  VideoController? get videoController =>
+      _repository.player != null ? VideoController(_repository.player) : null;
 
   /// Creates a PlayerController with dependency injection.
   PlayerController(this._repository) {

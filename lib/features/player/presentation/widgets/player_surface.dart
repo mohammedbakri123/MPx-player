@@ -3,7 +3,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../../controller/player_state.dart';
 
 class PlayerSurface extends StatelessWidget {
-  final VideoController controller;
+  final VideoController? controller;
   final double subtitleFontSize;
   final Color subtitleColor;
   final bool subtitleHasBackground;
@@ -11,7 +11,7 @@ class PlayerSurface extends StatelessWidget {
 
   const PlayerSurface({
     super.key,
-    required this.controller,
+    this.controller,
     required this.subtitleFontSize,
     required this.subtitleColor,
     required this.subtitleHasBackground,
@@ -20,6 +20,11 @@ class PlayerSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (controller == null) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
     return Center(
       child: _buildVideoWithAspectRatio(),
     );
@@ -27,8 +32,7 @@ class PlayerSurface extends StatelessWidget {
 
   Widget _buildVideoWithAspectRatio() {
     final video = Video(
-      controller: controller,
-      controls: null,
+      controller: controller!,
       subtitleViewConfiguration: SubtitleViewConfiguration(
         style: TextStyle(
           fontSize: subtitleFontSize,

@@ -6,7 +6,7 @@ import '../../services/last_played_service.dart';
 import '../../../history/services/history_service.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../controller/player_controller.dart';
-import '../../data/repositories/media_kit_player_repository.dart';
+import '../../data/repositories/vlc_player_repository.dart';
 import '../widgets/player_view.dart';
 import '../widgets/subtitle_settings_sheet.dart';
 import '../widgets/settings_sheet.dart';
@@ -58,7 +58,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Provider automatically handles disposal via controller.dispose()
     return ChangeNotifierProvider(
       create: (_) {
-        final repository = MediaKitPlayerRepository();
+        final repository = VlcPlayerRepository();
         final controller = PlayerController(repository);
         controller.loadVideoFile(widget.video);
         WakelockPlus.enable(); // Keep screen on while player is active

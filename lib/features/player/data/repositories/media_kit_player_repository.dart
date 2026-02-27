@@ -12,6 +12,7 @@ class MediaKitPlayerRepository implements PlayerRepository {
     _player = Player();
   }
 
+  @override
   Player get player => _player;
 
   @override

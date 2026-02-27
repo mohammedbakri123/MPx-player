@@ -76,6 +76,10 @@ abstract class PlayerRepository {
   ///
   /// Should be called when the player is no longer needed.
   void dispose();
+
+  /// Returns the underlying player instance for VideoController creation.
+  /// Returns null if not applicable (e.g., VLC player).
+  dynamic get player => null;
 }
 
 /// Information about an audio track.
