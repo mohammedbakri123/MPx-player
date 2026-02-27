@@ -39,6 +39,12 @@ void main() {
     );
   });
 
+  // Note: These tests use MockPlayerRepository to test PlayerController logic.
+  // Since PlayerController depends on the PlayerRepository abstraction (not concrete
+  // implementations), these tests validate behavior for both VlcPlayerRepository
+  // and MediaKitPlayerRepository interchangeably.
+  //
+  // Integration tests for actual repository implementations should be in separate files.
   group('PlayerController', () {
     late PlayerController controller;
     late MockPlayerRepository mockRepository;

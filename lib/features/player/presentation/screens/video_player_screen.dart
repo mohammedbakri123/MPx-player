@@ -6,7 +6,8 @@ import '../../services/last_played_service.dart';
 import '../../../history/services/history_service.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../controller/player_controller.dart';
-import '../../data/repositories/vlc_player_repository.dart';
+import '../../domain/player_type.dart';
+import '../../data/repositories/player_repository_factory.dart';
 import '../widgets/player_view.dart';
 import '../widgets/subtitle_settings_sheet.dart';
 import '../widgets/settings_sheet.dart';
@@ -17,8 +18,13 @@ import '../widgets/settings_sheet.dart';
 /// and automatically handles disposal when the widget is removed.
 class VideoPlayerScreen extends StatefulWidget {
   final VideoFile video;
+  final PlayerType playerType;
 
-  const VideoPlayerScreen({super.key, required this.video});
+  const VideoPlayerScreen({
+    super.key,
+    required this.video,
+    this.playerType = PlayerType.vlc,
+  });
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
@@ -58,7 +64,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Provider automatically handles disposal via controller.dispose()
     return ChangeNotifierProvider(
       create: (_) {
-        final repository = VlcPlayerRepository();
+        final repository = createPlayerRepository(widget.playerType);
         final controller = PlayerController(repository);
         controller.loadVideoFile(widget.video);
         WakelockPlus.enable(); // Keep screen on while player is active
