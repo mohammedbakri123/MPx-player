@@ -5,4 +5,6 @@ enum PlayerType {
 
   /// MediaKit player backend (media_kit)
   mediaKit,
+
+  videoPlayer,
 }

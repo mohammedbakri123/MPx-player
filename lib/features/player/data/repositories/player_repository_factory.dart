@@ -1,7 +1,9 @@
-import '../domain/player_type.dart';
-import '../data/repositories/vlc_player_repository.dart';
-import '../data/repositories/media_kit_player_repository.dart';
-import '../domain/repositories/player_repository.dart';
+import 'package:mpx/features/player/data/repositories/video_player_repository.dart';
+
+import '../../domain/player_type.dart';
+import '../../data/repositories/vlc_player_repository.dart';
+import '../../data/repositories/media_kit_player_repository.dart';
+import '../../domain/repositories/player_repository.dart';
 
 /// Factory function to create a [PlayerRepository] based on the specified [playerType].
 ///
@@ -13,5 +15,7 @@ PlayerRepository createPlayerRepository(PlayerType playerType) {
       return VlcPlayerRepository();
     case PlayerType.mediaKit:
       return MediaKitPlayerRepository();
+    case PlayerType.videoPlayer:
+      return VideoPlayerRepository();
   }
 }

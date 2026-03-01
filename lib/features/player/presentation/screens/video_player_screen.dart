@@ -23,7 +23,7 @@ class VideoPlayerScreen extends StatefulWidget {
   const VideoPlayerScreen({
     super.key,
     required this.video,
-    this.playerType = PlayerType.vlc,
+    this.playerType = PlayerType.mediaKit,
   });
 
   @override
