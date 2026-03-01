@@ -2,10 +2,15 @@ import 'dart:async';
 import 'dart:ui' show Color;
 import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
+import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
 import '../domain/repositories/player_repository.dart';
+import '../domain/player_type.dart';
+import '../data/repositories/vlc_player_repository.dart';
+import '../data/repositories/video_player_repository.dart';
 import 'player_state.dart';
 import 'mixins/gesture_handler_mixin.dart';
 import 'mixins/subtitle_manager_mixin.dart';
@@ -109,15 +114,42 @@ class PlayerController extends ChangeNotifier
   VideoFile? get currentVideo => _currentVideo;
 
   /// Returns the underlying Player instance for VideoController creation.
+  /// Returns null if not applicable (e.g., VLC player).
   dynamic get player => _repository.player;
 
-  /// Returns the VideoController for video rendering.
+  /// Returns the VideoController for video rendering (media_kit only).
   VideoController? get videoController =>
       _repository.player != null ? VideoController(_repository.player) : null;
 
+  /// Returns the VlcPlayerController (VLC only).
+  VlcPlayerController? get vlcController {
+    if (_repository is VlcPlayerRepository) {
+      return (_repository as VlcPlayerRepository).controller;
+    }
+    return null;
+  }
+
+  /// Returns the VideoPlayerController (video_player only).
+  VideoPlayerController? get videoPlayerController {
+    if (_repository is VideoPlayerRepository) {
+      return (_repository as VideoPlayerRepository).controller;
+    }
+    return null;
+  }
+
+  /// Returns the type of player being used.
+  PlayerType get playerType {
+    if (_repository is VlcPlayerRepository) {
+      return PlayerType.vlc;
+    } else if (_repository is VideoPlayerRepository) {
+      return PlayerType.videoPlayer;
+    } else {
+      return PlayerType.mediaKit;
+    }
+  }
+
   /// Creates a PlayerController with dependency injection.
   PlayerController(this._repository) {
-    initializeSubtitles();
     _setupListeners();
   }
 

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../controller/player_controller.dart';
 import 'player_surface.dart';
+import 'vlc_player_surface.dart';
+import 'video_player_surface.dart';
 import 'gesture_layer.dart';
 import 'overlay_layer.dart';
 import 'controls_layer.dart';
+import '../../domain/player_type.dart';
 
 class PlayerView extends StatelessWidget {
   final PlayerController controller;
@@ -28,13 +31,7 @@ class PlayerView extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          PlayerSurface(
-            controller: controller.videoController,
-            subtitleFontSize: controller.subtitleFontSize,
-            subtitleColor: controller.subtitleColor,
-            subtitleHasBackground: controller.subtitleHasBackground,
-            aspectRatioMode: controller.aspectRatioMode,
-          ),
+          _buildPlayerSurface(),
           GestureLayer(controller: controller),
           OverlayLayer(controller: controller),
           ControlsLayer(
@@ -47,5 +44,28 @@ class PlayerView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildPlayerSurface() {
+    switch (controller.playerType) {
+      case PlayerType.mediaKit:
+        return PlayerSurface(
+          controller: controller.videoController,
+          subtitleFontSize: controller.subtitleFontSize,
+          subtitleColor: controller.subtitleColor,
+          subtitleHasBackground: controller.subtitleHasBackground,
+          aspectRatioMode: controller.aspectRatioMode,
+        );
+      case PlayerType.vlc:
+        return VlcPlayerSurface(
+          controller: controller.vlcController,
+          aspectRatioMode: controller.aspectRatioMode,
+        );
+      case PlayerType.videoPlayer:
+        return VideoPlayerSurface(
+          controller: controller.videoPlayerController,
+          aspectRatioMode: controller.aspectRatioMode,
+        );
+    }
   }
 }

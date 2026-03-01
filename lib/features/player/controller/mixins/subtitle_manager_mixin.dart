@@ -8,13 +8,6 @@ mixin SubtitleManagerMixin on ChangeNotifier {
   PlayerRepository get repository;
   PlayerState get state;
 
-  void initializeSubtitles() {
-    state.subtitlesEnabled = SubtitleSettingsService.isEnabled;
-    state.subtitleFontSize = SubtitleSettingsService.fontSize;
-    state.subtitleColor = SubtitleSettingsService.color;
-    state.subtitleHasBackground = SubtitleSettingsService.hasBackground;
-  }
-
   void toggleSubtitles(bool value) {
     state.subtitlesEnabled = value;
     SubtitleSettingsService.setEnabled(value);
