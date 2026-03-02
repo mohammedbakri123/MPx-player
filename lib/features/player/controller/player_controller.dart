@@ -103,6 +103,7 @@ class PlayerController extends ChangeNotifier
   /// Creates a PlayerController with dependency injection.
   PlayerController(this._repository) {
     initializeSubtitles();
+    initializeVolume();
     _setupListeners();
   }
 

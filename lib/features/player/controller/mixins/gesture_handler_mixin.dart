@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../settings/services/system_volume_service.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
 
@@ -58,6 +59,7 @@ mixin GestureHandlerMixin on ChangeNotifier {
       final volumeUpdate = -delta / 200;
       state.volume = (state.volume + volumeUpdate * 100).clamp(0, 100);
       repository.setVolume(state.volume);
+      SystemVolumeService.setVolumeFromPercent(state.volume);
     }
     notifyListeners();
   }

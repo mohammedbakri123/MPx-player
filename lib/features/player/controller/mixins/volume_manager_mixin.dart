@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../../settings/services/system_volume_service.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
 
 /// Mixin for managing volume control and audio output settings.
 ///
 /// Provides methods for adjusting volume, muting, and tracking volume changes.
+/// Volume is synced with the system volume.
 mixin VolumeManagerMixin on ChangeNotifier {
   PlayerRepository get repository;
   PlayerState get state;
@@ -15,13 +17,25 @@ mixin VolumeManagerMixin on ChangeNotifier {
   /// Whether the player is muted.
   bool get isMuted => state.volume == 0;
 
-  /// Sets the volume level.
+  /// Initialize volume from system volume on startup.
+  ///
+  /// Loads the current system volume and applies it to the player.
+  Future<void> initializeVolume() async {
+    await SystemVolumeService.init();
+    final systemVolume = SystemVolumeService.volume * 100;
+    state.volume = systemVolume;
+    repository.setVolume(systemVolume);
+    notifyListeners();
+  }
+
+  /// Sets the volume level and updates system volume.
   ///
   /// [value] - Volume level from 0.0 (mute) to 100.0 (max).
   /// The value is automatically clamped to the valid range.
   void setVolume(double value) {
     state.volume = value.clamp(0.0, 100.0);
     repository.setVolume(state.volume);
+    SystemVolumeService.setVolumeFromPercent(state.volume);
     notifyListeners();
   }
 
@@ -49,6 +63,7 @@ mixin VolumeManagerMixin on ChangeNotifier {
       state.volume = 0.0;
     }
     repository.setVolume(state.volume);
+    SystemVolumeService.setVolumeFromPercent(state.volume);
     notifyListeners();
   }
 
@@ -57,6 +72,7 @@ mixin VolumeManagerMixin on ChangeNotifier {
     if (!isMuted) {
       state.volume = 0.0;
       repository.setVolume(state.volume);
+      SystemVolumeService.setVolumeFromPercent(state.volume);
       notifyListeners();
     }
   }
@@ -66,6 +82,7 @@ mixin VolumeManagerMixin on ChangeNotifier {
     if (isMuted) {
       state.volume = 100.0;
       repository.setVolume(state.volume);
+      SystemVolumeService.setVolumeFromPercent(state.volume);
       notifyListeners();
     }
   }
@@ -78,6 +95,7 @@ mixin VolumeManagerMixin on ChangeNotifier {
     final newVolume = (state.volume + volumeUpdate * 100).clamp(0.0, 100.0);
     state.volume = newVolume;
     repository.setVolume(newVolume);
+    SystemVolumeService.setVolumeFromPercent(newVolume);
     state.showVolumeIndicator = true;
     notifyListeners();
   }
