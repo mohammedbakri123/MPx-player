@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../../core/database/app_database.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
 
 /// Mixin for managing volume control and audio output settings.
 ///
 /// Provides methods for adjusting volume, muting, and tracking volume changes.
-/// Volume settings are persisted to the database for automatic restoration.
 mixin VolumeManagerMixin on ChangeNotifier {
   PlayerRepository get repository;
   PlayerState get state;
-  AppDatabase get db;
 
   /// Current volume level (0.0 to 100.0).
   double get volume => state.volume;
@@ -18,27 +15,13 @@ mixin VolumeManagerMixin on ChangeNotifier {
   /// Whether the player is muted.
   bool get isMuted => state.volume == 0;
 
-  /// Initialize volume from database on startup.
-  ///
-  /// Loads the saved volume level and applies it to the player.
-  /// If no saved volume exists, defaults to 100.0.
-  Future<void> initializeVolume() async {
-    final savedVolume = await db.getSavedVolume();
-    if (savedVolume != null) {
-      state.volume = savedVolume;
-      repository.setVolume(savedVolume);
-      notifyListeners();
-    }
-  }
-
-  /// Sets the volume level and saves to database.
+  /// Sets the volume level.
   ///
   /// [value] - Volume level from 0.0 (mute) to 100.0 (max).
   /// The value is automatically clamped to the valid range.
   void setVolume(double value) {
     state.volume = value.clamp(0.0, 100.0);
     repository.setVolume(state.volume);
-    db.saveVolume(state.volume);
     notifyListeners();
   }
 
@@ -61,13 +44,11 @@ mixin VolumeManagerMixin on ChangeNotifier {
   /// Toggles mute on/off.
   void toggleMute() {
     if (isMuted) {
-      // Restore to previous volume or default to 100
       state.volume = 100.0;
     } else {
       state.volume = 0.0;
     }
     repository.setVolume(state.volume);
-    db.saveVolume(state.volume);
     notifyListeners();
   }
 
@@ -76,7 +57,6 @@ mixin VolumeManagerMixin on ChangeNotifier {
     if (!isMuted) {
       state.volume = 0.0;
       repository.setVolume(state.volume);
-      db.saveVolume(state.volume);
       notifyListeners();
     }
   }
@@ -86,7 +66,6 @@ mixin VolumeManagerMixin on ChangeNotifier {
     if (isMuted) {
       state.volume = 100.0;
       repository.setVolume(state.volume);
-      db.saveVolume(state.volume);
       notifyListeners();
     }
   }

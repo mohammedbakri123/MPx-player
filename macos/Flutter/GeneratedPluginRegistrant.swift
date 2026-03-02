@@ -5,6 +5,7 @@
 import FlutterMacOS
 import Foundation
 
+import flutter_volume_controller
 import media_data_extractor
 import media_kit_libs_macos_video
 import media_kit_video
@@ -17,6 +18,7 @@ import volume_controller
 import wakelock_plus
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+  FlutterVolumeControllerPlugin.register(with: registry.registrar(forPlugin: "FlutterVolumeControllerPlugin"))
   MediaDataExtractorPlugin.register(with: registry.registrar(forPlugin: "MediaDataExtractorPlugin"))
   MediaKitLibsMacosVideoPlugin.register(with: registry.registrar(forPlugin: "MediaKitLibsMacosVideoPlugin"))
   MediaKitVideoPlugin.register(with: registry.registrar(forPlugin: "MediaKitVideoPlugin"))
