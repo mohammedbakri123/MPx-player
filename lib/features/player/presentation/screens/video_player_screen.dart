@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../../services/last_played_service.dart';
+// import '../../services/last_played_service.dart';
 import '../../../history/services/history_service.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../controller/player_controller.dart';

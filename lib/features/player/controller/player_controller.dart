@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' show Color;
 import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:mpx/features/player/controller/mixins/volume_manager_mixin.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
@@ -24,7 +25,11 @@ export '../domain/repositories/player_repository.dart' show AudioTrackInfo;
 /// - Uses mixins to organize functionality into logical groups
 /// - Provides ChangeNotifier for UI updates
 class PlayerController extends ChangeNotifier
-    with GestureHandlerMixin, SubtitleManagerMixin, PlaybackControlMixin {
+    with
+        GestureHandlerMixin,
+        SubtitleManagerMixin,
+        PlaybackControlMixin,
+        VolumeManagerMixin {
   final PlayerRepository _repository;
   final PlayerState _state = PlayerState();
 
