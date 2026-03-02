@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../features/library/domain/entities/video_file.dart';
+import '../../library/domain/entities/video_file.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/services/logger_service.dart';
 

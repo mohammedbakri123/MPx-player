@@ -32,6 +32,7 @@ class PlayerController extends ChangeNotifier
   VideoFile? _currentVideo;
 
   // Auto-save timer for periodic position saves
+
   Timer? _autoSaveTimer;
 
   // Last save timestamp for throttling
@@ -133,17 +134,17 @@ class PlayerController extends ChangeNotifier
   /// Load a video file and start auto-save timer
   Future<void> loadVideoFile(VideoFile video) async {
     _currentVideo = video;
-    await super.loadVideo(video.path);
+    await loadVideo(video.path);
     await applySubtitleSettings();
     loadAudioTracks();
     _startAutoSaveTimer();
   }
 
-  @override
-  Future<void> loadVideo(String path) async {
-    await super.loadVideo(path);
-    await applySubtitleSettings();
-  }
+  // @override
+  // Future<void> loadVideo(String path) async {
+  //   await super.loadVideo(path);
+  //   await applySubtitleSettings();
+  // }
 
   // Use the formatTime utility from the utils file
   String formatDuration(Duration duration) => formatTime(duration);

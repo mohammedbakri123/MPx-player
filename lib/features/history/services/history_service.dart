@@ -34,7 +34,7 @@ class HistoryService {
       AppLogger.d(
           'Recorded playback: ${video.title} at ${position.inSeconds}s ($completionPercent%)');
     } catch (e) {
-      AppLogger.e('Failed to record playback: $e');
+      AppLogger.e('Failed to record playback history: $e');
     }
   }
 
