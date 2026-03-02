@@ -6,15 +6,17 @@ import 'operations/video_operations.dart';
 import 'operations/folder_operations.dart';
 import 'operations/favorites_operations.dart';
 import 'operations/watch_history_operations.dart';
+import 'operations/volume_operations.dart';
 
 /// Main database class - MPx Player
-/// Manages video library, folders, favorites, and watch history with SQLite
+/// Manages video library, folders, favorites, watch history, and volume settings with SQLite
 class AppDatabase
     with
         VideoDatabaseOperations,
         FolderDatabaseOperations,
         FavoritesDatabaseOperations,
-        WatchHistoryOperations {
+        WatchHistoryOperations,
+        VolumeDatabaseOperations {
   static final AppDatabase _instance = AppDatabase._internal();
   static Database? _database;
 
@@ -22,7 +24,7 @@ class AppDatabase
   AppDatabase._internal();
 
   static const String _databaseName = 'mpx_player.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
 
   /// Get database instance (singleton)
   @override
@@ -97,6 +99,15 @@ class AppDatabase
       )
     ''');
 
+    // Volume settings table
+    await db.execute('''
+      CREATE TABLE volume_settings (
+        id TEXT PRIMARY KEY,
+        volume_level REAL NOT NULL DEFAULT 100.0,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+
     // Create indexes for performance
     await db.execute('CREATE INDEX idx_videos_folder ON videos(folder_path)');
     await db.execute('CREATE INDEX idx_videos_date ON videos(date_added DESC)');
@@ -126,6 +137,18 @@ class AppDatabase
       await db.execute(
           'CREATE INDEX idx_history_played ON watch_history(last_played_at DESC)');
       AppLogger.i('Watch history table created');
+    }
+
+    if (oldVersion < 3) {
+      AppLogger.i('Migrating to version 3: Adding volume_settings table');
+      await db.execute('''
+        CREATE TABLE volume_settings (
+          id TEXT PRIMARY KEY,
+          volume_level REAL NOT NULL DEFAULT 100.0,
+          updated_at INTEGER NOT NULL
+        )
+      ''');
+      AppLogger.i('Volume settings table created');
     }
   }
 

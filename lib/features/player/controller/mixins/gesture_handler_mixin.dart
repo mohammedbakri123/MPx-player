@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/database/app_database.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
 
@@ -6,6 +7,7 @@ import '../player_state.dart';
 mixin GestureHandlerMixin on ChangeNotifier {
   PlayerRepository get repository;
   PlayerState get state;
+  AppDatabase get db;
 
   void onHorizontalDragStart(double startX) {
     state.dragStartX = startX;
@@ -66,6 +68,7 @@ mixin GestureHandlerMixin on ChangeNotifier {
     state.isDraggingY = false;
     state.showBrightnessIndicator = false;
     state.showVolumeIndicator = false;
+    db.saveVolume(state.volume);
     notifyListeners();
     startHideTimer();
   }

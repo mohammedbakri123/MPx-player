@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mpx/features/player/controller/mixins/volume_manager_mixin.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../../core/database/app_database.dart';
 import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
 import '../domain/repositories/player_repository.dart';
@@ -32,6 +33,7 @@ class PlayerController extends ChangeNotifier
         VolumeManagerMixin {
   final PlayerRepository _repository;
   final PlayerState _state = PlayerState();
+  final AppDatabase _db = AppDatabase();
 
   // Current video being played
   VideoFile? _currentVideo;
@@ -56,6 +58,9 @@ class PlayerController extends ChangeNotifier
   @override
   PlayerState get state => _state;
 
+  @override
+  AppDatabase get db => _db;
+
   // Convenience getters for UI
   bool get isPlaying => _state.isPlaying;
   bool get showControls => _state.showControls;
@@ -63,6 +68,7 @@ class PlayerController extends ChangeNotifier
   bool get isFullscreen => _state.isFullscreen;
   Duration get position => _state.position;
   Duration get duration => _state.duration;
+  @override
   double get volume => _state.volume;
   double get playbackSpeed => _state.playbackSpeed;
   bool get isLongPressing => _state.isLongPressing;
@@ -102,6 +108,7 @@ class PlayerController extends ChangeNotifier
   /// Creates a PlayerController with dependency injection.
   PlayerController(this._repository) {
     initializeSubtitles();
+    initializeVolume();
     _setupListeners();
   }
 
