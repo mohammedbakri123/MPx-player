@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../controller/player_controller.dart';
 import 'helpers/bottom_sheet_handle.dart';
 
@@ -32,27 +33,32 @@ class SettingsSheet extends StatelessWidget {
                     fontWeight: FontWeight.bold),
               ),
             ),
-            
+
             // Volume Slider
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.volume_down, color: Colors.white, size: 20),
-                  Expanded(
-                    child: Slider(
-                      value: controller.volume,
-                      min: 0,
-                      max: 100,
-                      activeColor: Colors.blue,
-                      inactiveColor: Colors.grey.shade700,
-                      onChanged: (value) {
-                        controller.setVolume(value);
-                      },
+            Consumer<PlayerController>(
+              builder: (context, controller, _) => Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.volume_down,
+                        color: Colors.white, size: 20),
+                    Expanded(
+                      child: Slider(
+                        value: controller.volume,
+                        min: 0,
+                        max: 100,
+                        activeColor: Colors.blue,
+                        inactiveColor: Colors.grey.shade700,
+                        onChanged: (value) {
+                          controller.setVolume(value);
+                        },
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.volume_up, color: Colors.white, size: 20),
-                ],
+                    const Icon(Icons.volume_up,
+                        color: Colors.white, size: 20),
+                  ],
+                ),
               ),
             ),
 

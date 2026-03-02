@@ -173,7 +173,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     );
 
     // Ensure snackbar closes after duration even if controller is null
-    Future.delayed(const Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted && _resumeSnackBarController != null) {
         _resumeSnackBarController!.close();
         _resumeSnackBarController = null;
