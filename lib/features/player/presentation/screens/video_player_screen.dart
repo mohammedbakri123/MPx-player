@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-// import '../../services/last_played_service.dart';
-import '../../../history/services/history_service.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/media_kit_player_repository.dart';
 import '../widgets/player_view.dart';
 import '../widgets/subtitle_settings_sheet.dart';
 import '../widgets/settings_sheet.dart';
+import '../widgets/resume_playback_helper.dart';
 
 /// Wrapper widget that provides PlayerController using Provider.
 ///
@@ -98,80 +97,21 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
 
   Future<void> _checkAndResumePlayback() async {
     final controller = context.read<PlayerController>();
-    final video = widget.video;
 
-    // Wait for duration to be loaded (max 10 seconds — large files need more time)
-    var attempts = 0;
-    while (controller.duration.inSeconds == 0 && attempts < 100) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      attempts++;
-    }
-
-    // If duration is still 0, video failed to load
-    if (controller.duration.inSeconds == 0) return;
-
-    // Get the saved position
-    final savedPosition = await HistoryService.getLastPosition(video.id);
-    if (savedPosition == null) return;
-
-    // Check if we should resume (position > 5s from start and > 30s from end)
-    final totalSeconds = controller.duration.inSeconds;
-    final positionSeconds = savedPosition.inSeconds;
-    final remainingSeconds = totalSeconds - positionSeconds;
-
-    // Don't resume if at the beginning or near the end
-    if (positionSeconds < 5 || remainingSeconds <= 30) {
-      return;
-    }
-
-    // Seek to the saved position
-    controller.seek(savedPosition);
-
-    // Show resume snackbar
-    if (mounted) {
-      final formattedTime = formatTime(savedPosition);
-      _showResumeSnackbar(controller, formattedTime);
-    }
-  }
-
-  void _showResumeSnackbar(PlayerController controller, String timeStr) {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    // Hide any existing snackbars first
-    scaffoldMessenger.hideCurrentSnackBar();
-
-    _resumeSnackBarController = scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          'Resumed from $timeStr',
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-        ),
-        duration: const Duration(seconds: 5),
-        backgroundColor: Colors.black.withValues(alpha: 0.8),
-        action: SnackBarAction(
-          label: 'Restart',
-          textColor: Colors.white,
-          onPressed: () {
-            // Seek to beginning
-            controller.seek(Duration.zero);
-            // Hide the snackbar
-            _resumeSnackBarController?.close();
-          },
-        ),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        dismissDirection: DismissDirection.down, // Allow swipe to dismiss
-      ),
+    final savedPosition = await ResumePlaybackHelper.checkAndResumePlayback(
+      controller: controller,
+      totalDuration: controller.duration,
+      videoId: widget.video.id,
     );
 
-    // Ensure snackbar closes after duration even if controller is null
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _resumeSnackBarController != null) {
-        _resumeSnackBarController!.close();
-        _resumeSnackBarController = null;
-      }
-    });
+    // Show resume snackbar if position was found and resumed
+    if (savedPosition != null && mounted) {
+      _resumeSnackBarController = ResumePlaybackHelper.showResumeSnackbar(
+        context: context,
+        controller: controller,
+        position: savedPosition,
+      );
+    }
   }
 
   @override
@@ -211,6 +151,9 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
         await SystemChrome.setPreferredOrientations(
             [DeviceOrientation.portraitUp]);
 
+        //  Small delay to ensure settings apply
+        await Future.delayed(const Duration(milliseconds: 200));
+
         // Perform the navigation pop
         navigator.pop();
       },
@@ -231,6 +174,9 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
             SystemChrome.setPreferredOrientations(
                 [DeviceOrientation.portraitUp]);
             // ignore: use_build_context_synchronously
+            // Small delay to ensure settings apply
+            await Future.delayed(const Duration(milliseconds: 200));
+
             Navigator.pop(context);
           },
           onSubtitleSettings: () => _showSubtitleSettings(context, controller),
@@ -261,7 +207,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
   @override
   void dispose() {
     // Close the resume snackbar when leaving the player
-    _resumeSnackBarController?.close();
+    ResumePlaybackHelper.closeSnackbar(_resumeSnackBarController);
     super.dispose();
   }
 }
