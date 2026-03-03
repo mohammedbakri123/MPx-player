@@ -90,13 +90,6 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     super.initState();
     // Initialize with portrait orientation
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    // Save as last played video
-
-    //this line maynot be needed anymore will comment it for now
-    //TODO: delete it when 100% sure not needed and make the files it came from
-
-    //LastPlayedService.saveLastPlayedVideo(widget.video);
-
     // Check for auto-resume after a short delay to ensure video is loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndResumePlayback();

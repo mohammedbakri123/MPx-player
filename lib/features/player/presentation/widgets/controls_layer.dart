@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../controller/player_controller.dart';
-import '../../domain/repositories/player_repository.dart';
 import 'top_bar.dart';
 import 'bottom_controls.dart';
 import 'play_pause_button.dart';

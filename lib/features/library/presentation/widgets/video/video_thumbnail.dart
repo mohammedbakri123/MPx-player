@@ -136,7 +136,7 @@ class _VideoThumbnailState extends State<VideoThumbnail>
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Container(
+            child: SizedBox(
               width: 100,
               height: 70,
               child: _buildThumbnailContent(),

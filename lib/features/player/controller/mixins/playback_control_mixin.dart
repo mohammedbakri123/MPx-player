@@ -140,7 +140,7 @@ mixin PlaybackControlMixin on ChangeNotifier {
   }
 
   void cycleAspectRatio() {
-    final modes = AspectRatioMode.values;
+    const modes = AspectRatioMode.values;
     final currentIndex = modes.indexOf(state.aspectRatioMode);
     final nextIndex = (currentIndex + 1) % modes.length;
     state.aspectRatioMode = modes[nextIndex];
@@ -168,7 +168,7 @@ mixin PlaybackControlMixin on ChangeNotifier {
   }
 
   void cycleRepeatMode() {
-    final modes = RepeatMode.values;
+    const modes = RepeatMode.values;
     final currentIndex = modes.indexOf(state.repeatMode);
     final nextIndex = (currentIndex + 1) % modes.length;
     state.repeatMode = modes[nextIndex];

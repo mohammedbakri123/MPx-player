@@ -192,7 +192,7 @@ void main() {
       test('togglePlayPause should play when paused', () async {
         // Arrange - simulate paused state
         playingController.add(false);
-        await Future.delayed(Duration(milliseconds: 10));
+        await Future.delayed(const Duration(milliseconds: 10));
 
         when(mockRepository.play()).thenAnswer((_) async {});
         expect(controller.isPlaying, false);
@@ -218,7 +218,7 @@ void main() {
 
       test('seek should update position and call repository', () {
         // Arrange
-        final targetPosition = Duration(seconds: 30);
+        const targetPosition = Duration(seconds: 30);
         when(mockRepository.seek(any)).thenAnswer((_) async {});
 
         // Act
@@ -231,7 +231,7 @@ void main() {
 
       test('seekBack should seek backward', () {
         // Arrange
-        positionController.add(Duration(seconds: 60));
+        positionController.add(const Duration(seconds: 60));
         when(mockRepository.seek(any)).thenAnswer((_) async {});
 
         // Act
@@ -243,8 +243,8 @@ void main() {
 
       test('seekForward should seek forward', () {
         // Arrange
-        positionController.add(Duration(seconds: 60));
-        durationController.add(Duration(minutes: 2));
+        positionController.add(const Duration(seconds: 60));
+        durationController.add(const Duration(minutes: 2));
         when(mockRepository.seek(any)).thenAnswer((_) async {});
 
         // Act
@@ -347,14 +347,14 @@ void main() {
       test('should update isPlaying from playingStream', () async {
         // Act
         playingController.add(false);
-        await Future.delayed(Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Assert
         expect(controller.isPlaying, false);
 
         // Act
         playingController.add(true);
-        await Future.delayed(Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Assert
         expect(controller.isPlaying, true);
@@ -363,11 +363,11 @@ void main() {
       test('should update position from positionStream when not dragging',
           () async {
         // Arrange
-        final newPosition = Duration(seconds: 45);
+        const newPosition = Duration(seconds: 45);
 
         // Act
         positionController.add(newPosition);
-        await Future.delayed(Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Assert
         expect(controller.position, newPosition);
@@ -377,23 +377,23 @@ void main() {
           () async {
         // Arrange
         controller.state.isDraggingX = true;
-        controller.state.position = Duration(seconds: 30);
+        controller.state.position = const Duration(seconds: 30);
 
         // Act
-        positionController.add(Duration(seconds: 60));
-        await Future.delayed(Duration(milliseconds: 50));
+        positionController.add(const Duration(seconds: 60));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Assert - position should remain unchanged
-        expect(controller.position, Duration(seconds: 30));
+        expect(controller.position, const Duration(seconds: 30));
       });
 
       test('should update duration from durationStream', () async {
         // Arrange
-        final newDuration = Duration(minutes: 5);
+        const newDuration = Duration(minutes: 5);
 
         // Act
         durationController.add(newDuration);
-        await Future.delayed(Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Assert
         expect(controller.duration, newDuration);
@@ -402,14 +402,14 @@ void main() {
       test('should update isBuffering from bufferingStream', () async {
         // Act
         bufferingController.add(true);
-        await Future.delayed(Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Assert
         expect(controller.isBuffering, true);
 
         // Act
         bufferingController.add(false);
-        await Future.delayed(Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Assert
         expect(controller.isBuffering, false);
@@ -423,12 +423,12 @@ void main() {
         when(mockRepository.enableSubtitles()).thenAnswer((_) async {});
         await controller.loadVideoFile(testVideoFile);
 
-        durationController.add(Duration(minutes: 2));
-        await Future.delayed(Duration(milliseconds: 50));
+        durationController.add(const Duration(minutes: 2));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Act - simulate completion
         completedController.add(true);
-        await Future.delayed(Duration(milliseconds: 100));
+        await Future.delayed(const Duration(milliseconds: 100));
 
         // Assert - position should be reset (this calls PlayHistoryService)
         // Note: The actual save happens in resetPositionOnVideoEnd
@@ -444,16 +444,16 @@ void main() {
         await controller.loadVideoFile(testVideoFile);
 
         // Set up duration and position for tests
-        durationController.add(Duration(minutes: 2));
-        positionController.add(Duration(seconds: 30));
-        await Future.delayed(Duration(milliseconds: 50));
+        durationController.add(const Duration(minutes: 2));
+        positionController.add(const Duration(seconds: 30));
+        await Future.delayed(const Duration(milliseconds: 50));
       });
 
       test('saveCurrentPosition should return false if position < 5 seconds',
           () async {
         // Arrange
-        positionController.add(Duration(seconds: 3));
-        await Future.delayed(Duration(milliseconds: 50));
+        positionController.add(const Duration(seconds: 3));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Act
         final result = await controller.saveCurrentPosition();
@@ -464,8 +464,8 @@ void main() {
 
       test('saveCurrentPosition should respect throttling', () async {
         // Arrange - position > 5 seconds
-        positionController.add(Duration(seconds: 30));
-        await Future.delayed(Duration(milliseconds: 50));
+        positionController.add(const Duration(seconds: 30));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // First save
         final result1 = await controller.saveCurrentPosition();
@@ -480,8 +480,8 @@ void main() {
 
       test('saveCurrentPosition should allow forced save', () async {
         // Arrange
-        positionController.add(Duration(seconds: 30));
-        await Future.delayed(Duration(milliseconds: 50));
+        positionController.add(const Duration(seconds: 30));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // First save
         await controller.saveCurrentPosition();
@@ -495,8 +495,8 @@ void main() {
 
       test('savePositionOnPause should force save', () async {
         // Arrange
-        positionController.add(Duration(seconds: 30));
-        await Future.delayed(Duration(milliseconds: 50));
+        positionController.add(const Duration(seconds: 30));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Act
         await controller.savePositionOnPause();
@@ -506,8 +506,8 @@ void main() {
 
       test('savePositionOnBackground should force save', () async {
         // Arrange
-        positionController.add(Duration(seconds: 30));
-        await Future.delayed(Duration(milliseconds: 50));
+        positionController.add(const Duration(seconds: 30));
+        await Future.delayed(const Duration(milliseconds: 50));
 
         // Act
         await controller.savePositionOnBackground();
@@ -537,8 +537,8 @@ void main() {
       test('onHorizontalDragUpdate should calculate new position', () {
         // Arrange
         controller.onHorizontalDragStart(100.0);
-        durationController.add(Duration(minutes: 2));
-        positionController.add(Duration(minutes: 1));
+        durationController.add(const Duration(minutes: 2));
+        positionController.add(const Duration(minutes: 1));
 
         // Act - drag 200 pixels to the right on a 400 pixel screen
         controller.onHorizontalDragUpdate(300.0, 400.0);
@@ -592,10 +592,11 @@ void main() {
 
     group('Format Duration', () {
       test('formatDuration should format correctly', () {
-        expect(controller.formatDuration(Duration(seconds: 65)), '01:05');
-        expect(controller.formatDuration(Duration(minutes: 5, seconds: 30)),
+        expect(controller.formatDuration(const Duration(seconds: 65)), '01:05');
+        expect(
+            controller.formatDuration(const Duration(minutes: 5, seconds: 30)),
             '05:30');
-        expect(controller.formatDuration(Duration(hours: 1, minutes: 30)),
+        expect(controller.formatDuration(const Duration(hours: 1, minutes: 30)),
             '01:30:00');
         expect(controller.formatDuration(Duration.zero), '00:00');
       });
@@ -624,13 +625,13 @@ void main() {
         when(mockRepository.seek(any)).thenAnswer((_) async {});
 
         // Act - multiple seeks
-        controller.seek(Duration(seconds: 10));
-        controller.seek(Duration(seconds: 20));
-        controller.seek(Duration(seconds: 30));
+        controller.seek(const Duration(seconds: 10));
+        controller.seek(const Duration(seconds: 20));
+        controller.seek(const Duration(seconds: 30));
 
         // Assert
         verify(mockRepository.seek(any)).called(3);
-        expect(controller.position, Duration(seconds: 30));
+        expect(controller.position, const Duration(seconds: 30));
       });
 
       test('should handle rapid volume changes', () {

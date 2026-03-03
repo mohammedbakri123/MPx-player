@@ -54,7 +54,7 @@ class MediaStoreScanner {
   }
 
   static FilterOptionGroup _buildFilterOption({DateTime? sinceTimestamp}) {
-    final option = FilterOption(
+    const option = FilterOption(
       sizeConstraint: SizeConstraint(
         minWidth: 0,
         minHeight: 0,

@@ -29,12 +29,12 @@ class OverlayLayer extends StatelessWidget {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 150),
       child: controller.showDoubleTapSeekLeft
-          ? Positioned(
-              key: const ValueKey<bool>(true),
+          ? const Positioned(
+              key: ValueKey<bool>(true),
               left: 40,
               top: 0,
               bottom: 0,
-              child: const _DoubleTapSeekAnimation(
+              child: _DoubleTapSeekAnimation(
                 icon: Icons.fast_rewind,
                 direction: SeekAnimationDirection.left,
               ),
@@ -47,12 +47,12 @@ class OverlayLayer extends StatelessWidget {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 150),
       child: controller.showDoubleTapSeekRight
-          ? Positioned(
-              key: const ValueKey<bool>(true),
+          ? const Positioned(
+              key: ValueKey<bool>(true),
               right: 40,
               top: 0,
               bottom: 0,
-              child: const _DoubleTapSeekAnimation(
+              child: _DoubleTapSeekAnimation(
                 icon: Icons.fast_forward,
                 direction: SeekAnimationDirection.right,
               ),
