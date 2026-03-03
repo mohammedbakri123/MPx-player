@@ -3,6 +3,7 @@ import 'dart:ui' show Color;
 import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mpx/features/player/controller/mixins/volume_manager_mixin.dart';
+import 'package:mpx/features/player/controller/mixins/brightness_manager_mixin.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
@@ -29,7 +30,8 @@ class PlayerController extends ChangeNotifier
         GestureHandlerMixin,
         SubtitleManagerMixin,
         PlaybackControlMixin,
-        VolumeManagerMixin {
+        VolumeManagerMixin,
+        BrightnessManagerMixin {
   final PlayerRepository _repository;
   final PlayerState _state = PlayerState();
 
@@ -104,6 +106,7 @@ class PlayerController extends ChangeNotifier
   PlayerController(this._repository) {
     initializeSubtitles();
     initializeVolume();
+    initializeBrightness();
     _setupListeners();
   }
 

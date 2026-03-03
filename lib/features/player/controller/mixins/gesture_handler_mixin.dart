@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../../settings/services/system_volume_service.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
 
 /// Mixin for handling player gestures (horizontal/vertical drag, long press).
+///
+/// This mixin expects `adjustVolumeByDrag` to be provided by VolumeManagerMixin
+/// and `adjustBrightnessByDrag` to be provided by BrightnessManagerMixin
+/// when both are used together in PlayerController.
 mixin GestureHandlerMixin on ChangeNotifier {
   PlayerRepository get repository;
   PlayerState get state;
+
+  /// Adjusts volume based on vertical drag gesture (provided by VolumeManagerMixin).
+  void adjustVolumeByDrag(double delta);
+
+  /// Adjusts brightness based on vertical drag gesture (provided by BrightnessManagerMixin).
+  void adjustBrightnessByDrag(double delta);
 
   void onHorizontalDragStart(double startX) {
     state.dragStartX = startX;
@@ -52,14 +61,11 @@ mixin GestureHandlerMixin on ChangeNotifier {
 
   void onVerticalDragUpdate(double delta) {
     if (state.verticalDragSide == 'left') {
-      final brightnessUpdate = -delta / 200;
-      state.brightnessValue =
-          (state.brightnessValue + brightnessUpdate).clamp(0.0, 1.0);
+      // Delegate to BrightnessManagerMixin
+      adjustBrightnessByDrag(delta);
     } else {
-      final volumeUpdate = -delta / 200;
-      state.volume = (state.volume + volumeUpdate * 100).clamp(0, 100);
-      repository.setVolume(state.volume);
-      SystemVolumeService.setVolumeFromPercent(state.volume);
+      // Delegate to VolumeManagerMixin
+      adjustVolumeByDrag(delta);
     }
     notifyListeners();
   }

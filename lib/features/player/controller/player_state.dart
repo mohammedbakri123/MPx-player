@@ -49,7 +49,7 @@ class PlayerState {
   String seekDirection = '';
   bool showVolumeIndicator = false;
   bool showBrightnessIndicator = false;
-  double brightnessValue = 0.5;
+  double brightnessValue = 100.0;
 
   bool showDoubleTapSeekLeft = false;
   bool showDoubleTapSeekRight = false;

@@ -7,9 +7,24 @@ import '../player_state.dart';
 ///
 /// Provides methods for adjusting volume, muting, and tracking volume changes.
 /// Volume is synced with the system volume.
+///
+/// This mixin provides the `adjustVolumeByDrag` method required by GestureHandlerMixin.
 mixin VolumeManagerMixin on ChangeNotifier {
   PlayerRepository get repository;
   PlayerState get state;
+
+  /// Adjusts volume based on vertical drag gesture.
+  ///
+  /// [delta] - The drag delta value (negative for up, positive for down).
+  void adjustVolumeByDrag(double delta) {
+    final volumeUpdate = -delta / 200;
+    final newVolume = (state.volume + volumeUpdate * 100).clamp(0.0, 100.0);
+    state.volume = newVolume;
+    repository.setVolume(newVolume);
+    SystemVolumeService.setVolumeFromPercent(newVolume);
+    state.showVolumeIndicator = true;
+    notifyListeners();
+  }
 
   /// Current volume level (0.0 to 100.0).
   double get volume => state.volume;
@@ -85,19 +100,6 @@ mixin VolumeManagerMixin on ChangeNotifier {
       SystemVolumeService.setVolumeFromPercent(state.volume);
       notifyListeners();
     }
-  }
-
-  /// Adjusts volume based on vertical drag gesture.
-  ///
-  /// [delta] - The drag delta value (negative for up, positive for down).
-  void adjustVolumeByDrag(double delta) {
-    final volumeUpdate = -delta / 200;
-    final newVolume = (state.volume + volumeUpdate * 100).clamp(0.0, 100.0);
-    state.volume = newVolume;
-    repository.setVolume(newVolume);
-    SystemVolumeService.setVolumeFromPercent(newVolume);
-    state.showVolumeIndicator = true;
-    notifyListeners();
   }
 
   /// Shows volume indicator and hides it after a short delay.
