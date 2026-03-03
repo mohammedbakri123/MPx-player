@@ -18,6 +18,9 @@ class SystemVolumeService {
     if (_initialized) return;
 
     try {
+      // Hide system volume slider - use player's own UI instead
+      await FlutterVolumeController.updateShowSystemUI(false);
+
       // Get initial volume
       final volume = await FlutterVolumeController.getVolume();
       if (volume != null) {
