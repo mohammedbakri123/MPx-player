@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mpx/features/player/controller/mixins/volume_manager_mixin.dart';
 import 'package:mpx/features/player/controller/mixins/brightness_manager_mixin.dart';
+import 'package:mpx/features/player/controller/mixins/gesture_coordinator_mixin.dart' show GestureCoordinatorMixin;
+import 'package:mpx/features/player/presentation/widgets/gesture_layer.dart' show SeekDirection;
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
@@ -27,6 +29,7 @@ export '../domain/repositories/player_repository.dart' show AudioTrackInfo;
 /// - Provides ChangeNotifier for UI updates
 class PlayerController extends ChangeNotifier
     with
+        GestureCoordinatorMixin,
         GestureHandlerMixin,
         SubtitleManagerMixin,
         PlaybackControlMixin,
@@ -41,6 +44,12 @@ class PlayerController extends ChangeNotifier
   // Auto-save timer for periodic position saves
 
   Timer? _autoSaveTimer;
+
+  // Double-tap gesture tracking
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
+  Timer? _tapTimer;
+  static const _doubleTapTimeout = Duration(milliseconds: 200);
 
   // Last save timestamp for throttling
   DateTime? _lastSaveTime;
@@ -104,6 +113,18 @@ class PlayerController extends ChangeNotifier
 
   /// Creates a PlayerController with dependency injection.
   PlayerController(this._repository) {
+    // Setup gesture coordination between mixins
+    setupGestureCoordination(
+      onSeekStart: startSeek,
+      onSeekEnd: endSeek,
+      onVolumeAdjustStart: startVolumeAdjust,
+      onVolumeAdjustEnd: endVolumeAdjust,
+      onBrightnessAdjustStart: startBrightnessAdjust,
+      onBrightnessAdjustEnd: endBrightnessAdjust,
+      shouldProcessVerticalDrag: shouldProcessVerticalDrag,
+      shouldProcessLongPress: shouldProcessLongPress,
+    );
+    
     initializeSubtitles();
     initializeVolume();
     initializeBrightness();
@@ -247,12 +268,90 @@ class PlayerController extends ChangeNotifier
     await saveCurrentPosition(force: true);
   }
 
+  /// Handle tap gesture for double-tap seek detection
+  void handleDoubleTap(SeekDirection direction) {
+    // Block double-tap during seek or volume/brightness adjustment
+    if (!shouldProcessDoubleTap()) return;
+    
+    final now = DateTime.now();
+
+    if (_lastTapTime != null &&
+        now.difference(_lastTapTime!) < _doubleTapTimeout) {
+      _tapCount++;
+      if (_tapCount == 2) {
+        // Double tap detected - seek based on direction
+        if (direction == SeekDirection.back) {
+          seekBack();
+        } else {
+          seekForward();
+        }
+        _resetTapCounter();
+        return;
+      }
+    } else {
+      _tapCount = 1;
+    }
+
+    _lastTapTime = now;
+
+    // Wait for possible second tap
+    _tapTimer?.cancel();
+    _tapTimer = Timer(_doubleTapTimeout, () {
+      if (_tapCount == 1) {
+        // Single tap on side zones - show controls
+        showControlsNow();
+      }
+      _resetTapCounter();
+    });
+  }
+
+  /// Handle center tap for double-tap pause/play
+  void handleCenterTap() {
+    // Block during seek or volume/brightness adjustment
+    if (!shouldProcessDoubleTap()) return;
+    
+    final now = DateTime.now();
+
+    if (_lastTapTime != null &&
+        now.difference(_lastTapTime!) < _doubleTapTimeout) {
+      _tapCount++;
+      if (_tapCount == 2) {
+        // Double tap detected - toggle pause/play
+        togglePlayPause();
+        _resetTapCounter();
+        return;
+      }
+    } else {
+      _tapCount = 1;
+    }
+
+    _lastTapTime = now;
+
+    // Wait for possible second tap
+    _tapTimer?.cancel();
+    _tapTimer = Timer(_doubleTapTimeout, () {
+      // Single tap in center - do nothing (disabled)
+      _resetTapCounter();
+    });
+  }
+
+  void _resetTapCounter() {
+    _tapCount = 0;
+    _lastTapTime = null;
+    _tapTimer?.cancel();
+    _tapTimer = null;
+  }
+
   @override
   void dispose() {
     // Timer should already be cancelled by saveAndCleanup(),
     // but cancel again as a safety net.
     _autoSaveTimer?.cancel();
     _autoSaveTimer = null;
+
+    // Cancel double-tap timer
+    _tapTimer?.cancel();
+    _tapTimer = null;
 
     WakelockPlus.disable();
     _repository.dispose();

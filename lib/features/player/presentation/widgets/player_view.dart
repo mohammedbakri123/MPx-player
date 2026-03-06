@@ -28,6 +28,7 @@ class PlayerView extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // Layer 1: Video surface
           PlayerSurface(
             controller: controller.videoController,
             subtitleFontSize: controller.subtitleFontSize,
@@ -35,8 +36,9 @@ class PlayerView extends StatelessWidget {
             subtitleHasBackground: controller.subtitleHasBackground,
             aspectRatioMode: controller.aspectRatioMode,
           ),
-          GestureLayer(controller: controller),
+          // Layer 2: Visual overlays (indicators, animations)
           OverlayLayer(controller: controller),
+          // Layer 3: UI controls (buttons, progress bar)
           ControlsLayer(
             controller: controller,
             title: videoTitle,
@@ -44,6 +46,8 @@ class PlayerView extends StatelessWidget {
             onSubtitleSettings: onSubtitleSettings,
             onSettings: onSettings,
           ),
+          // Layer 4: Gesture handling (TOP - must receive all touches)
+          GestureLayer(controller: controller),
         ],
       ),
     );

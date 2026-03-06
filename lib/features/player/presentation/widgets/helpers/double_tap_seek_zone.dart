@@ -26,41 +26,8 @@ class DoubleTapSeekZone extends StatefulWidget {
 }
 
 class _DoubleTapSeekZoneState extends State<DoubleTapSeekZone> {
-  int _tapCount = 0;
-  DateTime? _lastTapTime;
-
   void _handleTap() {
-    final now = DateTime.now();
-
-    if (_lastTapTime != null &&
-        now.difference(_lastTapTime!) < const Duration(milliseconds: 300)) {
-      _tapCount++;
-      if (_tapCount == 2) {
-        _performSeek();
-        _tapCount = 0;
-        _lastTapTime = null;
-        return;
-      }
-    } else {
-      _tapCount = 1;
-    }
-
-    _lastTapTime = now;
-
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (_tapCount == 1 && mounted) {
-        widget.controller.showControlsNow();
-        _tapCount = 0;
-      }
-    });
-  }
-
-  void _performSeek() {
-    if (widget.direction == SeekDirection.back) {
-      widget.controller.seekBack();
-    } else {
-      widget.controller.seekForward();
-    }
+    widget.controller.handleDoubleTap(widget.direction);
   }
 
   @override

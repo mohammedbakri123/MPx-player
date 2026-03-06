@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'helpers/double_tap_seek_zone.dart';
 import '../../controller/player_controller.dart';
+import 'touch_ripple_layer.dart';
 
 class GestureLayer extends StatelessWidget {
   final PlayerController controller;
@@ -12,9 +13,18 @@ class GestureLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return TouchRippleLayer(
+      enabled: !controller.isLocked,
+      child: _buildGestureContent(context),
+    );
+  }
+
+  Widget _buildGestureContent(BuildContext context) {
     if (controller.isLocked) {
       return _buildLockedGestureLayer();
     }
+
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Row(
       children: [
@@ -34,13 +44,14 @@ class GestureLayer extends StatelessWidget {
           flex: 2,
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
-            onTap: controller.togglePlayPause,
+            // Double tap to pause/play (single tap disabled)
+            onTapDown: (_) => controller.handleCenterTap(),
             onHorizontalDragStart: (details) =>
                 controller.onHorizontalDragStart(details.globalPosition.dx),
             onHorizontalDragUpdate: (details) =>
                 controller.onHorizontalDragUpdate(
               details.globalPosition.dx,
-              MediaQuery.of(context).size.width,
+              screenWidth,
             ),
             onHorizontalDragEnd: (_) => controller.onHorizontalDragEnd(),
             onLongPressStart: (_) => controller.onLongPressStart(),
