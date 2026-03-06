@@ -13,11 +13,13 @@ mixin BrightnessManagerMixin on ChangeNotifier {
   PlayerRepository get repository;
   PlayerState get state;
 
-  /// Adjusts brightness based on horizontal drag gesture.
+  /// Adjusts brightness based on vertical drag gesture.
   ///
-  /// [delta] - The drag delta value (negative for left, positive for right).
+  /// [delta] - The drag delta value (negative for up, positive for down).
+  /// Drag UP increases brightness, drag DOWN decreases brightness.
   void adjustBrightnessByDrag(double delta) {
-    final brightnessUpdate = delta / 200;
+    // Negate delta so dragging UP increases brightness (natural gesture)
+    final brightnessUpdate = -delta / 200;
     final newBrightness = (state.brightnessValue + brightnessUpdate * 100).clamp(0.0, 100.0);
     state.brightnessValue = newBrightness;
     SystemBrightnessService.setBrightnessFromPercent(newBrightness);

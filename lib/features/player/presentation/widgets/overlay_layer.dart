@@ -30,6 +30,7 @@ class OverlayLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      fit: StackFit.expand,
       children: [
         _buildDoubleTapSeekLeft(),
         _buildDoubleTapSeekRight(),
@@ -122,25 +123,27 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildVolumeIndicator(BuildContext context) {
-    // Volume indicator shown vertically on the right side of the screen.
-    // The controller exposes `showVolumeIndicator` and a `volume` value
-    // (expected 0..100). We render a small vertical bar and value label.
+    // Volume indicator shown on the LEFT side (opposite of drag zone)
+    // so the user's hand doesn't cover the indicator while adjusting volume
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
         return FadeTransition(opacity: animation, child: child);
       },
       child: controller.showVolumeIndicator
-          ? Positioned(
+          ? Align(
               key: const ValueKey<bool>(true),
-              right: 30,
-              top: MediaQuery.of(context).size.height / 2 - 60,
-              child: _buildVerticalIndicator(
-                icon:
-                    controller.volume == 0 ? Icons.volume_off : Icons.volume_up,
-                value: controller.volume / 100,
-                color: Colors.blue,
-                label: '${controller.volume.toInt()}',
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 30),
+                child: _buildVerticalIndicator(
+                  icon: controller.volume == 0
+                      ? Icons.volume_off
+                      : Icons.volume_up,
+                  value: controller.volume / 100,
+                  color: Colors.blue,
+                  label: '${controller.volume.toInt()}',
+                ),
               ),
             )
           : const SizedBox.shrink(key: ValueKey<bool>(false)),
@@ -148,24 +151,25 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildBrightnessIndicator(BuildContext context) {
-    // Brightness indicator shown vertically on the left side of the screen.
-    // Uses controller.showBrightnessIndicator and controller.brightnessValue
-    // (expected normalized 0.0..1.0).
+    // Brightness indicator shown on the RIGHT side (opposite of drag zone)
+    // so the user's hand doesn't cover the indicator while adjusting brightness
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
         return FadeTransition(opacity: animation, child: child);
       },
       child: controller.showBrightnessIndicator
-          ? Positioned(
+          ? Align(
               key: const ValueKey<bool>(true),
-              left: 30,
-              top: MediaQuery.of(context).size.height / 2 - 60,
-              child: _buildVerticalIndicator(
-                icon: Icons.brightness_6,
-                value: controller.brightnessValue,
-                color: Colors.yellow,
-                label: '${(controller.brightnessValue * 100).toInt()}',
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 30),
+                child: _buildVerticalIndicator(
+                  icon: Icons.brightness_6,
+                  value: controller.brightnessValue / 100,
+                  color: Colors.yellow,
+                  label: '${controller.brightnessValue.toInt()}',
+                ),
               ),
             )
           : const SizedBox.shrink(key: ValueKey<bool>(false)),
@@ -308,13 +312,17 @@ class OverlayLayer extends StatelessWidget {
               ),
               child: Align(
                 alignment: Alignment.bottomCenter,
-                child: Container(
-                  width: 4,
-                  height: 100 * value,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Container(
+                      width: 4,
+                      height: constraints.maxHeight * value,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
