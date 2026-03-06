@@ -67,45 +67,23 @@ class PlayerSurface extends StatelessWidget {
   }
 
   Widget _buildFitVideo(Widget video) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const videoAspect = 16 / 9;
-        final width = constraints.maxWidth;
-        final height = constraints.maxHeight;
-        final containerAspect = width / height;
-
-        double videoWidth;
-        double videoHeight;
-
-        if (containerAspect > videoAspect) {
-          videoHeight = height;
-          videoWidth = height * videoAspect;
-        } else {
-          videoWidth = width;
-          videoHeight = width / videoAspect;
-        }
-
-        return SizedBox(
-          width: videoWidth,
-          height: videoHeight,
-          child: video,
-        );
-      },
+    return Center(
+      child: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: video,
+      ),
     );
   }
 
   Widget _buildFillVideo(Widget video) {
     return ClipRect(
-      child: FittedBox(
-        fit: BoxFit.cover,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              child: video,
-            );
-          },
+      child: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: FittedBox(
+          fit: BoxFit.cover,
+          child: video,
         ),
       ),
     );
