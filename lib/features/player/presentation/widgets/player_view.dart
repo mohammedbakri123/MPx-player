@@ -38,7 +38,9 @@ class PlayerView extends StatelessWidget {
           ),
           // Layer 2: Visual overlays (indicators, animations)
           OverlayLayer(controller: controller),
-          // Layer 3: UI controls (buttons, progress bar)
+          // Layer 3: Gestures (ALWAYS VISIBLE - handles all touches)
+          GestureLayer(controller: controller),
+          // Layer 4: Controls (fade in/out, buttons intercept touches)
           ControlsLayer(
             controller: controller,
             title: videoTitle,
@@ -46,8 +48,6 @@ class PlayerView extends StatelessWidget {
             onSubtitleSettings: onSubtitleSettings,
             onSettings: onSettings,
           ),
-          // Layer 4: Gesture handling (TOP - must receive all touches)
-          GestureLayer(controller: controller),
         ],
       ),
     );

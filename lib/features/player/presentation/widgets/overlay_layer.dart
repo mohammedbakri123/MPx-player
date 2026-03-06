@@ -1,6 +1,24 @@
 import 'package:flutter/material.dart';
 import '../../controller/player_controller.dart';
 
+/// OverlayLayer
+///
+/// This file contains the `OverlayLayer` widget used by the video player UI.
+///
+/// Responsibilities:
+/// - Render transient overlay elements above the video (seek animations, buffering
+///   spinner, volume/brightness indicators, speed/long-press indicator, locked
+///   state UI, etc.).
+/// - Use small, self-contained private builder methods to show/hide each
+///   overlay element based on state exposed by `PlayerController`.
+/// - Keep the overlay presentation separate from playback logic. This widget
+///   observes properties on `PlayerController` (passed in) and renders
+///   animations and indicators accordingly.
+///
+/// Notes:
+/// - No playback logic or file I/O is performed here. This widget is purely
+///   presentational and receives state from the controller.
+
 class OverlayLayer extends StatelessWidget {
   final PlayerController controller;
 
@@ -26,6 +44,11 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildDoubleTapSeekLeft() {
+    // Double-tap left seek animation
+    // Shows a short animated icon on the left side when the controller
+    // indicates a double-tap-seek-left event occurred. The visibility is
+    // controlled by `controller.showDoubleTapSeekLeft` and the widget uses an
+    // AnimatedSwitcher for a smooth appearance/disappearance.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 150),
       child: controller.showDoubleTapSeekLeft
@@ -44,6 +67,9 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildDoubleTapSeekRight() {
+    // Double-tap right seek animation
+    // Mirrors the left-side animation but appears on the right when the
+    // controller signals a double-tap-seek-right event.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 150),
       child: controller.showDoubleTapSeekRight
@@ -62,6 +88,10 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildSpeedIndicator() {
+    // Long-press playback speed indicator
+    // When the user long-presses to fast-scrub or change speed, show a center
+    // overlay indicating the current speed. This example shows '2.0x'. The
+    // controller exposes `isLongPressing` which toggles this indicator.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
@@ -92,6 +122,9 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildVolumeIndicator(BuildContext context) {
+    // Volume indicator shown vertically on the right side of the screen.
+    // The controller exposes `showVolumeIndicator` and a `volume` value
+    // (expected 0..100). We render a small vertical bar and value label.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
@@ -115,6 +148,9 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildBrightnessIndicator(BuildContext context) {
+    // Brightness indicator shown vertically on the left side of the screen.
+    // Uses controller.showBrightnessIndicator and controller.brightnessValue
+    // (expected normalized 0.0..1.0).
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
@@ -137,6 +173,9 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildSeekIndicator() {
+    // Transient seek indicator shown at center when the user is performing a
+    // seek gesture. Displays an icon (forward/back) and the formatted
+    // position/time returned by controller.formatDuration(controller.position).
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
@@ -180,6 +219,8 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildBufferingIndicator() {
+    // Shows a centered CircularProgressIndicator when `controller.isBuffering`
+    // is true. Uses AnimatedSwitcher for smooth fade.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
@@ -198,6 +239,9 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildLockedIndicator() {
+    // When the player UI is locked (e.g. to prevent accidental touches),
+    // show a subtle 'locked' overlay. The controller toggles this via
+    // `controller.isLocked`.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       child: controller.isLocked
@@ -239,6 +283,10 @@ class OverlayLayer extends StatelessWidget {
     required Color color,
     required String label,
   }) {
+    // Generic vertical indicator used for both volume and brightness UI.
+    // - `icon` shows the glyph (volume or brightness)
+    // - `value` expected to be 0.0..1.0 and controls the filled height
+    // - `label` displays a small text label (percentage or numeric value)
     return Container(
       width: 50,
       height: 120,
@@ -290,6 +338,10 @@ class _DoubleTapSeekAnimation extends StatefulWidget {
     required this.icon,
     required this.direction,
   });
+
+  /// Small animated circular icon used to visualize double-tap seek events.
+  /// When created it plays a short scale+fade animation and then naturally
+  /// fades away. This widget is intentionally lightweight and self-contained.
 
   @override
   State<_DoubleTapSeekAnimation> createState() =>

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'helpers/double_tap_seek_zone.dart';
 import '../../controller/player_controller.dart';
-import 'touch_ripple_layer.dart';
 
+/// Gesture layer - ALWAYS VISIBLE, handles all touch gestures.
+/// This layer sits on top of the video and below the controls.
 class GestureLayer extends StatelessWidget {
   final PlayerController controller;
 
@@ -13,21 +14,27 @@ class GestureLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TouchRippleLayer(
-      enabled: !controller.isLocked,
-      child: _buildGestureContent(context),
-    );
-  }
-
-  Widget _buildGestureContent(BuildContext context) {
     if (controller.isLocked) {
       return _buildLockedGestureLayer();
     }
 
+    return _buildGestureLayer(context);
+  }
+
+  Widget _buildLockedGestureLayer() {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: controller.unlock,
+      child: Container(color: Colors.transparent),
+    );
+  }
+
+  Widget _buildGestureLayer(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Row(
       children: [
+        // Left zone - double tap seek back, brightness
         Expanded(
           child: DoubleTapSeekZone(
             controller: controller,
@@ -40,25 +47,24 @@ class GestureLayer extends StatelessWidget {
             onLongPressEnd: (_) => controller.onLongPressEnd(),
           ),
         ),
+        // Center zone - double tap play/pause, horizontal seek
         Expanded(
           flex: 2,
           child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            // Double tap to pause/play (single tap disabled)
+            behavior: HitTestBehavior.deferToChild,
             onTapDown: (_) => controller.handleCenterTap(),
             onHorizontalDragStart: (details) =>
                 controller.onHorizontalDragStart(details.globalPosition.dx),
-            onHorizontalDragUpdate: (details) =>
-                controller.onHorizontalDragUpdate(
-              details.globalPosition.dx,
-              screenWidth,
-            ),
+            onHorizontalDragUpdate: (details) => controller
+                .onHorizontalDragUpdate(
+                    details.globalPosition.dx, screenWidth),
             onHorizontalDragEnd: (_) => controller.onHorizontalDragEnd(),
             onLongPressStart: (_) => controller.onLongPressStart(),
             onLongPressEnd: (_) => controller.onLongPressEnd(),
             child: Container(color: Colors.transparent),
           ),
         ),
+        // Right zone - double tap seek forward, volume
         Expanded(
           child: DoubleTapSeekZone(
             controller: controller,
@@ -72,14 +78,6 @@ class GestureLayer extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildLockedGestureLayer() {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: controller.unlock,
-      child: Container(color: Colors.transparent),
     );
   }
 }

@@ -22,80 +22,118 @@ class ControlsLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (controller.isLocked) {
+      return _buildLockedLayer(context);
+    }
+
     return AnimatedOpacity(
       opacity: controller.showControls ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 200),
       child: IgnorePointer(
         ignoring: !controller.showControls,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withValues(alpha: 0.7),
-                Colors.transparent,
-                Colors.transparent,
-                Colors.black.withValues(alpha: 0.8),
+        child: _buildControlUI(context),
+      ),
+    );
+  }
+
+  Widget _buildLockedLayer(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: controller.unlock,
+      child: Container(
+        color: Colors.transparent,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock, color: Colors.white70, size: 48),
+                SizedBox(height: 8),
+                Text(
+                  'Tap to unlock',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
               ],
-              stops: const [0.0, 0.2, 0.7, 1.0],
             ),
           ),
-          child: SafeArea(
-            bottom: true,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TopBar(
-                    title: title,
-                    isFullscreen: controller.isFullscreen,
-                    isLocked: controller.isLocked,
-                    subtitlesEnabled: controller.subtitlesEnabled,
-                    aspectRatioMode: controller.aspectRatioMode,
-                    audioTracks: controller.audioTracks,
-                    currentAudioTrackIndex: controller.currentAudioTrackIndex,
-                    onBack: onBack,
-                    onToggleLock: controller.toggleLock,
-                    onToggleFullscreen: controller.toggleFullscreen,
-                    onToggleAspectRatio: controller.cycleAspectRatio,
-                    onSubtitleSettings: onSubtitleSettings,
-                    onSettings: onSettings,
-                    onShowAudioTracks: controller.audioTracks.length > 1
-                        ? () => _showAudioTrackSheet(context)
-                        : null,
-                  ),
-                  const Spacer(),
-                  PlayPauseButton(
-                    isPlaying: controller.isPlaying,
-                    onTap: controller.togglePlayPause,
-                  ),
-                  const Spacer(),
-                  BottomControls(
-                    position: controller.position,
-                    duration: controller.duration,
-                    playbackSpeed: controller.playbackSpeed,
-                    isPlaying: controller.isPlaying,
-                    repeatMode: controller.repeatMode,
-                    formatTime: controller.formatDuration,
-                    onSeekChanged: (value) {
-                      controller.seek(Duration(milliseconds: value.toInt()));
-                    },
-                    onSeekEnd: (value) {
-                      controller.seek(Duration(milliseconds: value.toInt()));
-                    },
-                    onSeekBack: controller.seekBack,
-                    onTogglePlayPause: controller.togglePlayPause,
-                    onSeekForward: controller.seekForward,
-                    onToggleRepeat: controller.cycleRepeatMode,
-                    onShowSpeedSheet: (context, speed) {
-                      controller.setSpeed(speed);
-                    },
-                  ),
-                ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControlUI(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.black.withValues(alpha: 0.7),
+            Colors.transparent,
+            Colors.transparent,
+            Colors.black.withValues(alpha: 0.8),
+          ],
+          stops: const [0.0, 0.2, 0.7, 1.0],
+        ),
+      ),
+      child: SafeArea(
+        bottom: true,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TopBar(
+                title: title,
+                isFullscreen: controller.isFullscreen,
+                isLocked: controller.isLocked,
+                subtitlesEnabled: controller.subtitlesEnabled,
+                aspectRatioMode: controller.aspectRatioMode,
+                audioTracks: controller.audioTracks,
+                currentAudioTrackIndex: controller.currentAudioTrackIndex,
+                onBack: onBack,
+                onToggleLock: controller.toggleLock,
+                onToggleFullscreen: controller.toggleFullscreen,
+                onToggleAspectRatio: controller.cycleAspectRatio,
+                onSubtitleSettings: onSubtitleSettings,
+                onSettings: onSettings,
+                onShowAudioTracks: controller.audioTracks.length > 1
+                    ? () => _showAudioTrackSheet(context)
+                    : null,
               ),
-            ),
+              const Spacer(),
+              PlayPauseButton(
+                isPlaying: controller.isPlaying,
+                onTap: controller.togglePlayPause,
+              ),
+              const Spacer(),
+              BottomControls(
+                position: controller.position,
+                duration: controller.duration,
+                playbackSpeed: controller.playbackSpeed,
+                isPlaying: controller.isPlaying,
+                repeatMode: controller.repeatMode,
+                formatTime: controller.formatDuration,
+                onSeekChanged: (value) {
+                  controller.seek(Duration(milliseconds: value.toInt()));
+                },
+                onSeekEnd: (value) {
+                  controller.seek(Duration(milliseconds: value.toInt()));
+                },
+                onSeekBack: controller.seekBack,
+                onTogglePlayPause: controller.togglePlayPause,
+                onSeekForward: controller.seekForward,
+                onToggleRepeat: controller.cycleRepeatMode,
+                onShowSpeedSheet: (context, speed) {
+                  controller.setSpeed(speed);
+                },
+              ),
+            ],
           ),
         ),
       ),
