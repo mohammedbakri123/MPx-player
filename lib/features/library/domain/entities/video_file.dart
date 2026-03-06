@@ -1,3 +1,5 @@
+import 'file_item.dart';
+
 class VideoFile {
   final String id;
   final String path;
@@ -24,6 +26,19 @@ class VideoFile {
     this.height,
     this.thumbnailPath,
   });
+
+  factory VideoFile.fromFileItem(FileItem item, String folderPath) {
+    return VideoFile(
+      id: item.path.hashCode.toString(),
+      path: item.path,
+      title: item.name,
+      folderPath: folderPath,
+      folderName: folderPath.split('/').last,
+      size: item.size,
+      duration: 0,
+      dateAdded: item.dateAdded ?? item.modified,
+    );
+  }
 
   // JSON serialization methods
   Map<String, dynamic> toJson() {
