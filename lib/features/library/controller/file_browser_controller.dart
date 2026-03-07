@@ -73,15 +73,37 @@ class FileBrowserController extends ChangeNotifier {
   Future<List<FileItem>> _filterFoldersWithVideos(List<FileItem> items) async {
     final filtered = <FileItem>[];
 
-    for (final item in items) {
-      if (!item.isDirectory && item.isVideo) {
-        filtered.add(item);
-      } else if (item.isDirectory) {
-        final videoCount = await _countVideosRecursively(item.path);
-        if (videoCount > 0) {
-          item.videoCount = videoCount;
-          filtered.add(item);
+    // Separate folders and videos
+    final videos =
+        items.where((item) => !item.isDirectory && item.isVideo).toList();
+    filtered.addAll(videos);
+
+    final folders = items.where((item) => item.isDirectory).toList();
+
+    // Process folders concurrently to vastly improve load times
+    final folderFutures = folders.map((item) async {
+      final cachedCount = _browser.getVideoCount(item.path);
+      if (cachedCount != null) {
+        if (cachedCount > 0) {
+          item.videoCount = cachedCount;
+          return item;
         }
+        return null;
+      }
+
+      final videoCount = await _countVideosRecursively(item.path);
+      _browser.setVideoCount(item.path, videoCount);
+      if (videoCount > 0) {
+        item.videoCount = videoCount;
+        return item;
+      }
+      return null;
+    });
+
+    final processedFolders = await Future.wait(folderFutures);
+    for (final folder in processedFolders) {
+      if (folder != null) {
+        filtered.add(folder);
       }
     }
 
@@ -89,7 +111,7 @@ class FileBrowserController extends ChangeNotifier {
   }
 
   Future<int> _countVideosRecursively(String path, {int depth = 0}) async {
-    if (depth > 5) return 0;
+    if (depth > 3) return 0; // Reduced depth for performance
 
     // Skip massive system folders
     if (path.endsWith('/Android') || path.contains('/Android/')) return 0;
@@ -99,7 +121,10 @@ class FileBrowserController extends ChangeNotifier {
       final dir = Directory(path);
       if (!await dir.exists()) return 0;
 
-      await for (final entity in dir.list(followLinks: false)) {
+      final entities = await dir.list(followLinks: false).toList();
+      final futures = <Future<int>>[];
+
+      for (final entity in entities) {
         if (entity is File) {
           final name = entity.path.split('/').last;
           if (_isVideoFileFast(name)) {
@@ -108,10 +133,14 @@ class FileBrowserController extends ChangeNotifier {
         } else if (entity is Directory) {
           final name = entity.path.split('/').last;
           if (!name.startsWith('.')) {
-            count +=
-                await _countVideosRecursively(entity.path, depth: depth + 1);
+            futures.add(_countVideosRecursively(entity.path, depth: depth + 1));
           }
         }
+      }
+
+      if (futures.isNotEmpty) {
+        final results = await Future.wait(futures);
+        count += results.fold<int>(0, (sum, val) => sum + val);
       }
     } catch (_) {}
 

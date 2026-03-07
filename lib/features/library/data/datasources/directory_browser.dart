@@ -7,6 +7,10 @@ class DirectoryBrowser {
   DirectoryBrowser._internal();
 
   final Map<String, List<FileItem>> _cache = {};
+  final Map<String, int> _videoCountCache = {};
+
+  int? getVideoCount(String path) => _videoCountCache[path];
+  void setVideoCount(String path, int count) => _videoCountCache[path] = count;
 
   Future<List<String>> getStorageDirectories() async {
     final dirs = <String>[];
@@ -92,10 +96,12 @@ class DirectoryBrowser {
 
   void clearCache() {
     _cache.clear();
+    _videoCountCache.clear();
   }
 
   void invalidatePath(String path) {
-    _cache.remove(path);
+    _cache.removeWhere((key, value) => key.startsWith(path));
+    _videoCountCache.removeWhere((key, value) => key.startsWith(path));
   }
 
   String getParentPath(String path) {
