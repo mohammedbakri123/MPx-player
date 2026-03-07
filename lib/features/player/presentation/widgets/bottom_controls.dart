@@ -61,80 +61,153 @@ class BottomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            trackHeight: 4,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-            activeTrackColor: Colors.blue,
-            inactiveTrackColor: Colors.grey.shade600,
-            thumbColor: Colors.blue,
+    final sliderMax =
+        duration.inMilliseconds.toDouble()._max(1); // avoid zero-division
+    final sliderValue =
+        position.inMilliseconds.toDouble().clamp(0.0, sliderMax);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 3,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              activeTrackColor: Colors.blueAccent,
+              inactiveTrackColor: Colors.white12,
+              thumbColor: Colors.blueAccent,
+              overlayShape: SliderComponentShape.noOverlay,
+            ),
+            child: Slider(
+              value: sliderValue,
+              max: sliderMax,
+              onChanged: onSeekChanged,
+              onChangeEnd: onSeekEnd,
+            ),
           ),
-          child: Slider(
-            value: position.inMilliseconds.toDouble().clamp(
-                  0,
-                  duration.inMilliseconds.toDouble()._max(1),
-                ),
-            max: duration.inMilliseconds.toDouble()._max(1),
-            onChanged: onSeekChanged,
-            onChangeEnd: onSeekEnd,
-          ),
-        ),
-        Row(
-          children: [
-            Text(
-              '${formatTime(position)} / ${formatTime(duration)}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            IconButton(
-              onPressed: onToggleRepeat,
-              icon: Icon(_getRepeatIcon(), color: _getRepeatColor()),
-            ),
-            IconButton(
-              onPressed: onSeekBack,
-              icon: const Icon(Icons.replay_10, color: Colors.white),
-            ),
-            IconButton(
-              onPressed: onTogglePlayPause,
-              icon: Icon(
-                isPlaying ? Icons.pause : Icons.play_arrow,
-                color: Colors.white,
-                size: 32,
-              ),
-            ),
-            IconButton(
-              onPressed: onSeekForward,
-              icon: const Icon(Icons.forward_10, color: Colors.white),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: () => _onSpeedTap(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              // LEFT: time
+              Expanded(
+                flex: 2,
                 child: Text(
-                  '${playbackSpeed}x',
+                  '${formatTime(position)} / ${formatTime(duration)}',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.white70,
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // CENTER: transport controls in a pill (shrinks if needed)
+              Expanded(
+                flex: 3,
+                child: Align(
+                  alignment: Alignment.center,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: onSeekBack,
+                            iconSize: 20,
+                            splashRadius: 20,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                                minWidth: 40, minHeight: 40),
+                            icon: const Icon(Icons.replay_10,
+                                color: Colors.white),
+                          ),
+                          IconButton(
+                            onPressed: onTogglePlayPause,
+                            iconSize: 26,
+                            splashRadius: 24,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                                minWidth: 44, minHeight: 44),
+                            icon: Icon(
+                              isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                              color: Colors.white,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: onSeekForward,
+                            iconSize: 20,
+                            splashRadius: 20,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                                minWidth: 40, minHeight: 40),
+                            icon: const Icon(Icons.forward_10,
+                                color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
+              // RIGHT: repeat + speed chip
+              Expanded(
+                flex: 2,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    IconButton(
+                      onPressed: onToggleRepeat,
+                      iconSize: 20,
+                      splashRadius: 20,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                          minWidth: 40, minHeight: 40),
+                      icon: Icon(_getRepeatIcon(), color: _getRepeatColor()),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: () => _onSpeedTap(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${playbackSpeed}x',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

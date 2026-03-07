@@ -26,9 +26,27 @@ class PlayerSurface extends StatelessWidget {
   }
 
   Widget _buildVideoWithAspectRatio() {
-    final video = Video(
+    final BoxFit fit;
+    switch (aspectRatioMode) {
+      case AspectRatioMode.fit:
+        fit = BoxFit.contain;
+        break;
+      case AspectRatioMode.fill:
+        fit = BoxFit.cover;
+        break;
+      case AspectRatioMode.stretch:
+        fit = BoxFit.fill;
+        break;
+      case AspectRatioMode.ratio16x9:
+      case AspectRatioMode.ratio4x3:
+        fit = BoxFit.contain;
+        break;
+    }
+
+    Widget video = Video(
       controller: controller,
       controls: null,
+      fit: fit,
       subtitleViewConfiguration: SubtitleViewConfiguration(
         style: TextStyle(
           fontSize: subtitleFontSize,
@@ -53,47 +71,14 @@ class PlayerSurface extends StatelessWidget {
     );
 
     switch (aspectRatioMode) {
-      case AspectRatioMode.fit:
-        return _buildFitVideo(video);
-      case AspectRatioMode.fill:
-        return _buildFillVideo(video);
-      case AspectRatioMode.stretch:
-        return _buildStretchVideo(video);
       case AspectRatioMode.ratio16x9:
         return AspectRatio(aspectRatio: 16 / 9, child: video);
       case AspectRatioMode.ratio4x3:
         return AspectRatio(aspectRatio: 4 / 3, child: video);
+      case AspectRatioMode.fit:
+      case AspectRatioMode.fill:
+      case AspectRatioMode.stretch:
+        return SizedBox.expand(child: video);
     }
-  }
-
-  Widget _buildFitVideo(Widget video) {
-    return Center(
-      child: SizedBox(
-        width: double.infinity,
-        height: double.infinity,
-        child: video,
-      ),
-    );
-  }
-
-  Widget _buildFillVideo(Widget video) {
-    return ClipRect(
-      child: SizedBox(
-        width: double.infinity,
-        height: double.infinity,
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: video,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStretchVideo(Widget video) {
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: video,
-    );
   }
 }

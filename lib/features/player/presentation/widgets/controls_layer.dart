@@ -73,18 +73,18 @@ class ControlsLayer extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: 0.7),
-            Colors.transparent,
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.8),
+            Colors.black.withValues(alpha: 0.75),
+            Colors.black.withValues(alpha: 0.35),
+            Colors.black.withValues(alpha: 0.15),
+            Colors.black.withValues(alpha: 0.9),
           ],
-          stops: const [0.0, 0.2, 0.7, 1.0],
+          stops: const [0.0, 0.25, 0.6, 1.0],
         ),
       ),
       child: SafeArea(
         bottom: true,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
