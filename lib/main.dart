@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:provider/provider.dart';
 import 'features/settings/services/subtitle_settings_service.dart';
 import 'features/favorites/services/favorites_service.dart';
 import 'core/database/database_migration.dart';
-import 'features/library/controller/library_controller.dart';
-import 'features/library/data/datasources/local_video_scanner.dart';
 import 'features/library/services/thumbnail_cache.dart';
 import 'features/library/presentation/widgets/home/home_fab.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
@@ -53,24 +50,21 @@ class _MPxPlayerState extends State<MPxPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => LibraryController(VideoScanner()),
-      child: MaterialApp(
-        title: 'MPx Player',
-        debugShowCheckedModeBanner: false,
-        navigatorObservers: [HomeFAB.routeObserver],
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6366F1),
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+    return MaterialApp(
+      title: 'MPx Player',
+      debugShowCheckedModeBanner: false,
+      navigatorObservers: [HomeFAB.routeObserver],
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF6366F1),
+          brightness: Brightness.light,
         ),
-        home: _showSplash
-            ? SplashScreen(onComplete: _onSplashComplete)
-            : const PermissionWrapper(),
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       ),
+      home: _showSplash
+          ? SplashScreen(onComplete: _onSplashComplete)
+          : const PermissionWrapper(),
     );
   }
 }

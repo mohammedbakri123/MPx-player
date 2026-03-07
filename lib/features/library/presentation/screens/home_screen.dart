@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:provider/provider.dart';
 import '../../controller/file_browser_controller.dart';
 import '../../domain/entities/video_file.dart';
 import '../../domain/entities/file_item.dart';
 import '../widgets/file_browser/file_browser_content.dart';
 import '../widgets/file_browser/path_breadcrumb.dart';
+import '../widgets/home/home_fab.dart';
+import '../widgets/home/home_header.dart';
 import '../../../player/presentation/screens/video_player_screen.dart';
+import '../../../favorites/services/favorites_service.dart';
+
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +22,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late FileBrowserController _controller;
+  final ScrollController _scrollController = ScrollController();
+  bool _isFabVisible = true;
+  Set<String> _favoriteIds = {};
 
   @override
   void initState() {
@@ -23,11 +32,39 @@ class _HomeScreenState extends State<HomeScreen> {
     _controller = FileBrowserController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller.initialize();
+      _loadFavorites();
     });
+    _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _loadFavorites() async {
+    final favorites = await FavoritesService.getFavorites();
+    if (mounted) {
+      setState(() {
+        _favoriteIds = favorites.map((v) => v.id).toSet();
+      });
+    }
+  }
+
+  Future<void> _toggleFavorite(VideoFile video) async {
+    await FavoritesService.toggleFavorite(video);
+    await _loadFavorites();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.userScrollDirection ==
+        ScrollDirection.reverse) {
+      if (_isFabVisible) setState(() => _isFabVisible = false);
+    } else if (_scrollController.position.userScrollDirection ==
+        ScrollDirection.forward) {
+      if (!_isFabVisible) setState(() => _isFabVisible = true);
+    }
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -36,180 +73,177 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _controller,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        drawer: _buildDrawer(),
-        appBar: _buildAppBar(),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Consumer<FileBrowserController>(
-                builder: (context, controller, _) {
-                  return PathBreadcrumb(
-                    currentPath: controller.currentPath,
-                    onPathTap: (path) =>
-                        controller.loadDirectory(path, addToHistory: true),
-                  );
-                },
-              ),
-              Expanded(
-                child: Consumer<FileBrowserController>(
-                  builder: (context, controller, _) {
-                    return FileBrowserContent(
-                      controller: controller,
-                      onVideoTap: _openVideo,
-                      onFolderTap: _navigateToFolder,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+      child: Consumer<FileBrowserController>(
+        builder: (context, controller, child) {
+          final shouldIntercept =
+              controller.isSelectionMode || controller.canGoBack;
+          return PopScope(
+            canPop: !shouldIntercept,
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) return;
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: const Color(0xFFF8FAFC),
-      elevation: 0,
-      leading: Consumer<FileBrowserController>(
-        builder: (context, controller, _) {
-          if (controller.isSelectionMode) {
-            return IconButton(
-              icon: const Icon(Icons.close, color: Color(0xFF1E293B)),
-              onPressed: controller.exitSelectionMode,
-            );
-          }
-          if (controller.canGoBack) {
-            return IconButton(
-              icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
-              onPressed: controller.goBack,
-            );
-          }
-          return Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: Color(0xFF1E293B)),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
-          );
-        },
-      ),
-      title: Consumer<FileBrowserController>(
-        builder: (context, controller, _) {
-          if (controller.isSelectionMode) {
-            return Text(
-              '${controller.selectedCount} selected',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
-              ),
-            );
-          }
-          return const Text(
-            'Files',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1E293B),
-            ),
-          );
-        },
-      ),
-      actions: [
-        Consumer<FileBrowserController>(
-          builder: (context, controller, _) {
-            if (controller.isSelectionMode) {
-              return Row(
-                children: [
-                  IconButton(
-                    icon:
-                        const Icon(Icons.select_all, color: Color(0xFF1E293B)),
-                    onPressed: controller.selectAll,
-                    tooltip: 'Select all',
-                  ),
-                ],
-              );
-            }
-            return Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    controller.showOnlyVideos
-                        ? Icons.video_library
-                        : Icons.video_library_outlined,
-                    color: controller.showOnlyVideos
-                        ? const Color(0xFF6366F1)
-                        : const Color(0xFF1E293B),
-                  ),
-                  onPressed: controller.toggleShowOnlyVideos,
-                  tooltip: controller.showOnlyVideos
-                      ? 'Show all files'
-                      : 'Show videos only',
-                ),
-                IconButton(
-                  icon: Icon(
-                    controller.isGridView ? Icons.list : Icons.grid_view,
-                    color: const Color(0xFF1E293B),
-                  ),
-                  onPressed: controller.toggleViewMode,
-                  tooltip: controller.isGridView ? 'List view' : 'Grid view',
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.sort, color: Color(0xFF1E293B)),
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'name':
-                        controller.setSortBy(SortBy.name);
-                        break;
-                      case 'date':
-                        controller.setSortBy(SortBy.date);
-                        break;
-                      case 'size':
-                        controller.setSortBy(SortBy.size);
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'name',
-                      child: Row(
-                        children: [
-                          Icon(Icons.sort_by_alpha, size: 20),
-                          SizedBox(width: 12),
-                          Text('Name'),
-                        ],
+              if (controller.isSelectionMode) {
+                controller.exitSelectionMode();
+                return;
+              }
+
+              if (controller.canGoBack) {
+                controller.goBack();
+                return;
+              }
+            },
+            child: Scaffold(
+              backgroundColor: const Color(0xFFF8FAFC),
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    if (controller.isSelectionMode)
+                      _buildSelectionHeader(context, controller)
+                    else
+                      HomeHeader(
+                        onSearchTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SearchScreen(),
+                            ),
+                          );
+                        },
                       ),
+                    PathBreadcrumb(
+                      currentPath: controller.currentPath,
+                      onPathTap: (path) =>
+                          controller.loadDirectory(path, addToHistory: true),
                     ),
-                    const PopupMenuItem(
-                      value: 'date',
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today, size: 20),
-                          SizedBox(width: 12),
-                          Text('Date'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'size',
-                      child: Row(
-                        children: [
-                          Icon(Icons.data_usage, size: 20),
-                          SizedBox(width: 12),
-                          Text('Size'),
-                        ],
+                    Expanded(
+                      child: FileBrowserContent(
+                        controller: controller,
+                        favoriteIds: _favoriteIds,
+                        onVideoTap: _openVideo,
+                        onFolderTap: (path) =>
+                            controller.loadDirectory(path, addToHistory: true),
+                        onAddToFavorites: _addToFavorites,
+                        scrollController: _scrollController,
                       ),
                     ),
                   ],
                 ),
-              ],
-            );
-          },
-        ),
-      ],
+              ),
+              floatingActionButton: AnimatedOpacity(
+                opacity: _isFabVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: IgnorePointer(
+                  ignoring: !_isFabVisible,
+                  child: const HomeFAB(),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSelectionHeader(
+      BuildContext context, FileBrowserController controller) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: controller.exitSelectionMode,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Icon(Icons.close, color: Colors.grey.shade600, size: 22),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              '${controller.selectedCount} selected',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Delete Selected'),
+                  content: Text(
+                      'Are you sure you want to delete ${controller.selectedCount} items? This cannot be undone.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                await controller.deleteSelected();
+              }
+            },
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.red.shade100),
+              ),
+              child: Icon(Icons.delete_outline,
+                  color: Colors.red.shade400, size: 22),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: controller.selectAll,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child:
+                  Icon(Icons.select_all, color: Colors.grey.shade600, size: 22),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -232,118 +266,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateToFolder(String path) {
-    _controller.navigateToFolder(
-      FileItem(
-        path: path,
-        name: path.split('/').last,
-        isDirectory: true,
-        size: 0,
-        modified: DateTime.now(),
-      ),
+  void _addToFavorites(String path) {
+    final fileItem = FileItem(
+      path: path,
+      name: path.split('/').last,
+      isDirectory: false,
+      size: 0,
+      modified: DateTime.now(),
     );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.folder_copy, size: 40, color: Color(0xFF6366F1)),
-                  SizedBox(height: 12),
-                  Text(
-                    'MPx Player',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  Text(
-                    'File Browser',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'QUICK ACCESS',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[500],
-                  letterSpacing: 1,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.storage, color: Color(0xFF1E293B)),
-              title: const Text('Internal Storage'),
-              onTap: () {
-                Navigator.pop(context);
-                _controller.loadDirectory('/storage/emulated/0');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.download, color: Color(0xFF1E293B)),
-              title: const Text('Downloads'),
-              onTap: () {
-                Navigator.pop(context);
-                _controller.loadDirectory('/storage/emulated/0/Download');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.movie, color: Color(0xFF1E293B)),
-              title: const Text('Movies'),
-              onTap: () {
-                Navigator.pop(context);
-                _controller.loadDirectory('/storage/emulated/0/Movies');
-              },
-            ),
-            ListTile(
-              leading:
-                  const Icon(Icons.video_library, color: Color(0xFF1E293B)),
-              title: const Text('Videos'),
-              onTap: () {
-                Navigator.pop(context);
-                _controller.loadDirectory('/storage/emulated/0/Videos');
-              },
-            ),
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'APP',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[500],
-                  letterSpacing: 1,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Color(0xFF1E293B)),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+    final folderPath = _controller.currentPath;
+    final videoFile = VideoFile.fromFileItem(fileItem, folderPath);
+    _toggleFavorite(videoFile);
   }
 }

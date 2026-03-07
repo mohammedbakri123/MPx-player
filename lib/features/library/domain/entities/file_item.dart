@@ -5,6 +5,7 @@ class FileItem {
   final int size;
   final DateTime modified;
   final DateTime? dateAdded;
+  int? videoCount;
 
   FileItem({
     required this.path,
@@ -13,23 +14,45 @@ class FileItem {
     required this.size,
     required this.modified,
     this.dateAdded,
+    this.videoCount,
   });
 
-  bool get isVideo => !isDirectory && _isVideoFile(name);
+  bool get isVideo {
+    if (isDirectory) return false;
+    return _isVideoFile(name);
+  }
 
   static bool _isVideoFile(String name) {
     final lower = name.toLowerCase();
-    return lower.endsWith('.mp4') ||
-        lower.endsWith('.mkv') ||
-        lower.endsWith('.avi') ||
-        lower.endsWith('.mov') ||
-        lower.endsWith('.wmv') ||
-        lower.endsWith('.flv') ||
-        lower.endsWith('.webm') ||
-        lower.endsWith('.m4v') ||
-        lower.endsWith('.3gp') ||
-        lower.endsWith('.mpeg') ||
-        lower.endsWith('.mpg');
+    final videoExtensions = [
+      '.mp4',
+      '.mkv',
+      '.avi',
+      '.mov',
+      '.wmv',
+      '.flv',
+      '.webm',
+      '.m4v',
+      '.3gp',
+      '.mpeg',
+      '.mpg',
+      '.ts',
+      '.m2ts',
+      '.mts',
+      '.ogv',
+      '.dv',
+      '.rm',
+      '.rmvb',
+      '.asf',
+      '.amv',
+      '.mp2',
+      '.m4v'
+    ];
+
+    for (final ext in videoExtensions) {
+      if (lower.endsWith(ext)) return true;
+    }
+    return false;
   }
 
   String get extension {

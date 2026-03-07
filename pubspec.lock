@@ -146,7 +146,7 @@ packages:
     source: hosted
     version: "4.11.1"
   collection:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: collection
       sha256: "2f5709ae4d3d59dd8f7cd309b4e023046b57d8a6c82130785d2b0e5868084e76"
@@ -312,14 +312,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.3"
-  go_router:
-    dependency: "direct main"
-    description:
-      name: go_router
-      sha256: b465e99ce64ba75e61c8c0ce3d87b66d8ac07f0b35d0a7e0263fcfc10f99e836
-      url: "https://pub.dev"
-    source: hosted
-    version: "13.2.5"
   google_fonts:
     dependency: "direct main"
     description:
@@ -712,14 +704,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.1"
-  photo_manager:
-    dependency: "direct main"
-    description:
-      name: photo_manager
-      sha256: "807688e3221e90fb02a4466746edd9cb9a0de025f8754c819f96604c00f6f1f5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.8.3"
   platform:
     dependency: transitive
     description:
@@ -737,7 +721,7 @@ packages:
     source: hosted
     version: "2.1.8"
   pool:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: pool
       sha256: "978783255c543aa3586a1b3c21f6e9d720eb315376a915872c61ef8b5c20177d"
@@ -1150,7 +1134,7 @@ packages:
     source: hosted
     version: "1.3.0"
   watcher:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: watcher
       sha256: "1398c9f081a753f9226febe8900fce8f7d0a67163334e1c94a2438339d79d635"

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../domain/entities/file_item.dart';
 import '../data/datasources/directory_browser.dart';
@@ -10,10 +11,11 @@ class FileBrowserController extends ChangeNotifier {
   final DirectoryBrowser _browser = DirectoryBrowser();
 
   List<FileItem> _items = [];
-  List<String> _pathHistory = [];
+  final List<String> _pathHistory = [];
   String _currentPath = '';
   bool _isLoading = false;
-  bool _showOnlyVideos = false;
+  bool _showOnlyVideos = true; // Default to TRUE as requested
+  bool _hideEmptyFolders = true; // Default to TRUE as requested
   bool _isGridView = false;
   SortBy _sortBy = SortBy.name;
   SortOrder _sortOrder = SortOrder.ascending;
@@ -55,11 +57,75 @@ class FileBrowserController extends ChangeNotifier {
     }
 
     _currentPath = path;
-    _items = await _browser.listDirectory(path);
+    var items = await _browser.listDirectory(path);
+
+    if (_hideEmptyFolders && _showOnlyVideos) {
+      items = await _filterFoldersWithVideos(items);
+    }
+
+    _items = items;
     _sortItems();
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<List<FileItem>> _filterFoldersWithVideos(List<FileItem> items) async {
+    final filtered = <FileItem>[];
+
+    for (final item in items) {
+      if (!item.isDirectory && item.isVideo) {
+        filtered.add(item);
+      } else if (item.isDirectory) {
+        final videoCount = await _countVideosRecursively(item.path);
+        if (videoCount > 0) {
+          item.videoCount = videoCount;
+          filtered.add(item);
+        }
+      }
+    }
+
+    return filtered;
+  }
+
+  Future<int> _countVideosRecursively(String path, {int depth = 0}) async {
+    if (depth > 5) return 0;
+
+    // Skip massive system folders
+    if (path.endsWith('/Android') || path.contains('/Android/')) return 0;
+
+    int count = 0;
+    try {
+      final dir = Directory(path);
+      if (!await dir.exists()) return 0;
+
+      await for (final entity in dir.list(followLinks: false)) {
+        if (entity is File) {
+          final name = entity.path.split('/').last;
+          if (_isVideoFileFast(name)) {
+            count++;
+          }
+        } else if (entity is Directory) {
+          final name = entity.path.split('/').last;
+          if (!name.startsWith('.')) {
+            count +=
+                await _countVideosRecursively(entity.path, depth: depth + 1);
+          }
+        }
+      }
+    } catch (_) {}
+
+    return count;
+  }
+
+  bool _isVideoFileFast(String name) {
+    final lower = name.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.ts');
   }
 
   Future<void> goBack() async {
@@ -67,7 +133,13 @@ class FileBrowserController extends ChangeNotifier {
 
     final previousPath = _pathHistory.removeLast();
     _currentPath = previousPath;
-    _items = await _browser.listDirectory(previousPath);
+    var items = await _browser.listDirectory(previousPath);
+
+    if (_hideEmptyFolders && _showOnlyVideos) {
+      items = await _filterFoldersWithVideos(items);
+    }
+
+    _items = items;
     _sortItems();
     notifyListeners();
   }
@@ -79,7 +151,9 @@ class FileBrowserController extends ChangeNotifier {
 
   void toggleShowOnlyVideos() {
     _showOnlyVideos = !_showOnlyVideos;
-    notifyListeners();
+    _hideEmptyFolders = _showOnlyVideos;
+    _browser.invalidatePath(_currentPath);
+    loadDirectory(_currentPath, addToHistory: false);
   }
 
   void toggleViewMode() {
@@ -125,7 +199,8 @@ class FileBrowserController extends ChangeNotifier {
   List<FileItem> get filteredItems {
     List<FileItem> result = _items;
     if (_showOnlyVideos) {
-      result = result.where((item) => item.isVideo).toList();
+      result =
+          result.where((item) => item.isVideo || item.isDirectory).toList();
     }
     return result;
   }
@@ -164,6 +239,26 @@ class FileBrowserController extends ChangeNotifier {
       _selectedItems.add(item.path);
     }
     notifyListeners();
+  }
+
+  Future<void> deleteSelected() async {
+    for (final path in _selectedItems) {
+      try {
+        final entity = File(path);
+        if (await entity.exists()) {
+          await entity.delete();
+        } else {
+          final dir = Directory(path);
+          if (await dir.exists()) {
+            await dir.delete(recursive: true);
+          }
+        }
+      } catch (e) {
+        // Skip errors
+      }
+    }
+    exitSelectionMode();
+    refresh();
   }
 
   bool isSelected(String path) => _selectedItems.contains(path);

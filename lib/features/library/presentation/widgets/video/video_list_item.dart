@@ -76,7 +76,36 @@ class VideoListItem extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: const Text('Video Info'),
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context);
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Video Information'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Name: ${video.title}'),
+                        const SizedBox(height: 8),
+                        Text('Size: ${video.formattedSize}'),
+                        const SizedBox(height: 8),
+                        Text('Path: ${video.path}'),
+                        if (video.resolution != 'Unknown') ...[
+                          const SizedBox(height: 8),
+                          Text('Resolution: ${video.resolution}'),
+                        ],
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),
