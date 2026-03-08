@@ -34,6 +34,9 @@ class PlayerView extends StatelessWidget {
             subtitleFontSize: controller.subtitleFontSize,
             subtitleColor: controller.subtitleColor,
             subtitleHasBackground: controller.subtitleHasBackground,
+            subtitleFontWeight: controller.subtitleFontWeight,
+            subtitleBottomPadding: controller.subtitleBottomPadding,
+            subtitleBackgroundOpacity: controller.subtitleBackgroundOpacity,
             aspectRatioMode: controller.aspectRatioMode,
           ),
           // Layer 2: Visual overlays (indicators, animations)

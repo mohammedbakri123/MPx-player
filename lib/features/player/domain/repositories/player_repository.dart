@@ -38,6 +38,12 @@ abstract class PlayerRepository {
   /// Disables all subtitles.
   Future<void> disableSubtitles();
 
+  /// Gets available subtitle tracks.
+  List<SubtitleTrackInfo> getSubtitleTracks();
+
+  /// Sets the subtitle track.
+  Future<void> setSubtitleTrack(int index);
+
   /// Gets available audio tracks.
   List<AudioTrackInfo> getAudioTracks();
 
@@ -72,6 +78,9 @@ abstract class PlayerRepository {
   /// Stream of audio tracks (emits when tracks change).
   Stream<void> get audioTracksStream;
 
+  /// Stream of subtitle tracks (emits when tracks change).
+  Stream<void> get subtitleTracksStream;
+
   /// Disposes of all resources used by the player.
   ///
   /// Should be called when the player is no longer needed.
@@ -85,6 +94,18 @@ class AudioTrackInfo {
   final String? language;
 
   AudioTrackInfo({
+    required this.id,
+    this.title,
+    this.language,
+  });
+}
+
+class SubtitleTrackInfo {
+  final int id;
+  final String? title;
+  final String? language;
+
+  SubtitleTrackInfo({
     required this.id,
     this.title,
     this.language,

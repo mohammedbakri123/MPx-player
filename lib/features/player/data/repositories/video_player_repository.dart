@@ -7,6 +7,8 @@ class VideoPlayerRepository implements PlayerRepository {
   bool _isDisposed = false;
   final StreamController<void> _audioTracksController =
       StreamController<void>.broadcast();
+  final StreamController<void> _subtitleTracksController =
+      StreamController<void>.broadcast();
 
   final StreamController<bool> _playingController =
       StreamController<bool>.broadcast();
@@ -95,6 +97,17 @@ class VideoPlayerRepository implements PlayerRepository {
   }
 
   @override
+  List<SubtitleTrackInfo> getSubtitleTracks() {
+    _ensureNotDisposed();
+    return [];
+  }
+
+  @override
+  Future<void> setSubtitleTrack(int index) async {
+    _ensureNotDisposed();
+  }
+
+  @override
   List<AudioTrackInfo> getAudioTracks() {
     _ensureNotDisposed();
     return [];
@@ -142,11 +155,18 @@ class VideoPlayerRepository implements PlayerRepository {
   }
 
   @override
+  Stream<void> get subtitleTracksStream {
+    _ensureNotDisposed();
+    return _subtitleTracksController.stream;
+  }
+
+  @override
   void dispose() {
     if (_isDisposed) return;
     _isDisposed = true;
     _controller?.removeListener(_listener);
     _audioTracksController.close();
+    _subtitleTracksController.close();
     _playingController.close();
     _positionController.close();
     _durationController.close();

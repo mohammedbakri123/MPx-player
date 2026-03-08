@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui' show Color;
+import 'dart:ui' show Color, FontWeight;
 import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mpx/features/player/controller/mixins/volume_manager_mixin.dart';
@@ -86,6 +86,9 @@ class PlayerController extends ChangeNotifier
   double get subtitleFontSize => _state.subtitleFontSize;
   Color get subtitleColor => _state.subtitleColor;
   bool get subtitleHasBackground => _state.subtitleHasBackground;
+  FontWeight get subtitleFontWeight => _state.subtitleFontWeight;
+  double get subtitleBottomPadding => _state.subtitleBottomPadding;
+  double get subtitleBackgroundOpacity => _state.subtitleBackgroundOpacity;
   double get dragStartX => _state.dragStartX;
   bool get isDraggingX => _state.isDraggingX;
   bool get isDraggingY => _state.isDraggingY;
@@ -102,6 +105,8 @@ class PlayerController extends ChangeNotifier
   RepeatMode get repeatMode => _state.repeatMode;
   List<AudioTrackInfo> get audioTracks => _state.audioTracks;
   int get currentAudioTrackIndex => _state.currentAudioTrackIndex;
+  List<SubtitleTrackInfo> get subtitleTracks => _state.subtitleTracks;
+  int get currentSubtitleTrackIndex => _state.currentSubtitleTrackIndex;
 
   /// Returns the current video being played
   VideoFile? get currentVideo => _currentVideo;
@@ -156,6 +161,10 @@ class PlayerController extends ChangeNotifier
       notifyListeners();
     });
 
+    _repository.subtitleTracksStream.listen((_) {
+      loadSubtitleTracks();
+    });
+
     _repository.completedStream.listen((completed) {
       if (completed) {
         // Video playback completed - reset position to 0
@@ -168,8 +177,9 @@ class PlayerController extends ChangeNotifier
   Future<void> loadVideoFile(VideoFile video) async {
     _currentVideo = video;
     await loadVideo(video.path);
-    await applySubtitleSettings();
     loadAudioTracks();
+    loadSubtitleTracks();
+    await applySubtitleSettings();
     _startAutoSaveTimer();
   }
 

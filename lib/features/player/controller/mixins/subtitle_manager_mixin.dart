@@ -13,13 +13,21 @@ mixin SubtitleManagerMixin on ChangeNotifier {
     state.subtitleFontSize = SubtitleSettingsService.fontSize;
     state.subtitleColor = SubtitleSettingsService.color;
     state.subtitleHasBackground = SubtitleSettingsService.hasBackground;
+    state.subtitleFontWeight = SubtitleSettingsService.fontWeight;
+    state.subtitleBottomPadding = SubtitleSettingsService.bottomPadding;
+    state.subtitleBackgroundOpacity = SubtitleSettingsService.backgroundOpacity;
   }
 
   void toggleSubtitles(bool value) {
     state.subtitlesEnabled = value;
     SubtitleSettingsService.setEnabled(value);
     if (value) {
-      repository.enableSubtitles();
+      if (state.currentSubtitleTrackIndex >= 0 &&
+          state.currentSubtitleTrackIndex < state.subtitleTracks.length) {
+        repository.setSubtitleTrack(state.currentSubtitleTrackIndex);
+      } else {
+        repository.enableSubtitles();
+      }
     } else {
       repository.disableSubtitles();
     }
@@ -44,9 +52,57 @@ mixin SubtitleManagerMixin on ChangeNotifier {
     notifyListeners();
   }
 
+  void setSubtitleFontWeight(FontWeight weight) {
+    state.subtitleFontWeight = weight;
+    SubtitleSettingsService.setFontWeight(weight);
+    notifyListeners();
+  }
+
+  void setSubtitleBottomPadding(double padding) {
+    state.subtitleBottomPadding = padding;
+    SubtitleSettingsService.setBottomPadding(padding);
+    notifyListeners();
+  }
+
+  void setSubtitleBackgroundOpacity(double opacity) {
+    state.subtitleBackgroundOpacity = opacity;
+    SubtitleSettingsService.setBackgroundOpacity(opacity);
+    notifyListeners();
+  }
+
+  void loadSubtitleTracks() {
+    final tracks = repository.getSubtitleTracks();
+    state.subtitleTracks = tracks;
+    if (tracks.isEmpty) {
+      state.currentSubtitleTrackIndex = -1;
+      state.subtitlesEnabled = false;
+    } else if (state.currentSubtitleTrackIndex >= tracks.length) {
+      state.currentSubtitleTrackIndex = 0;
+    } else if (state.currentSubtitleTrackIndex == -1 &&
+        state.subtitlesEnabled) {
+      state.currentSubtitleTrackIndex = 0;
+    }
+    notifyListeners();
+  }
+
+  void setSubtitleTrack(int index) {
+    if (index < 0 || index >= state.subtitleTracks.length) return;
+
+    state.currentSubtitleTrackIndex = index;
+    state.subtitlesEnabled = true;
+    SubtitleSettingsService.setEnabled(true);
+    repository.setSubtitleTrack(index);
+    notifyListeners();
+  }
+
   Future<void> applySubtitleSettings() async {
     if (state.subtitlesEnabled) {
-      await repository.enableSubtitles();
+      if (state.currentSubtitleTrackIndex >= 0 &&
+          state.currentSubtitleTrackIndex < state.subtitleTracks.length) {
+        await repository.setSubtitleTrack(state.currentSubtitleTrackIndex);
+      } else {
+        await repository.enableSubtitles();
+      }
     }
   }
 }

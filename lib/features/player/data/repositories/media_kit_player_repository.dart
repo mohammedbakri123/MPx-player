@@ -7,6 +7,8 @@ class MediaKitPlayerRepository implements PlayerRepository {
   bool _isDisposed = false;
   final StreamController<void> _audioTracksController =
       StreamController<void>.broadcast();
+  final StreamController<void> _subtitleTracksController =
+      StreamController<void>.broadcast();
 
   MediaKitPlayerRepository() {
     _player = Player();
@@ -54,12 +56,38 @@ class MediaKitPlayerRepository implements PlayerRepository {
   Future<void> enableSubtitles() async {
     _ensureNotDisposed();
     await _player.setSubtitleTrack(SubtitleTrack.auto());
+    _subtitleTracksController.add(null);
   }
 
   @override
   Future<void> disableSubtitles() async {
     _ensureNotDisposed();
     await _player.setSubtitleTrack(SubtitleTrack.no());
+    _subtitleTracksController.add(null);
+  }
+
+  @override
+  List<SubtitleTrackInfo> getSubtitleTracks() {
+    _ensureNotDisposed();
+    final tracks = _player.state.tracks.subtitle;
+    return tracks.asMap().entries.map((entry) {
+      final track = entry.value;
+      return SubtitleTrackInfo(
+        id: entry.key,
+        title: track.title,
+        language: track.language,
+      );
+    }).toList();
+  }
+
+  @override
+  Future<void> setSubtitleTrack(int index) async {
+    _ensureNotDisposed();
+    final tracks = _player.state.tracks.subtitle;
+    if (index >= 0 && index < tracks.length) {
+      await _player.setSubtitleTrack(tracks[index]);
+      _subtitleTracksController.add(null);
+    }
   }
 
   @override
@@ -123,10 +151,17 @@ class MediaKitPlayerRepository implements PlayerRepository {
   }
 
   @override
+  Stream<void> get subtitleTracksStream {
+    _ensureNotDisposed();
+    return _subtitleTracksController.stream;
+  }
+
+  @override
   void dispose() {
     if (_isDisposed) return;
     _isDisposed = true;
     _audioTracksController.close();
+    _subtitleTracksController.close();
     _player.dispose();
   }
 

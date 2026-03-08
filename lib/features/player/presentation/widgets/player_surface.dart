@@ -7,6 +7,9 @@ class PlayerSurface extends StatelessWidget {
   final double subtitleFontSize;
   final Color subtitleColor;
   final bool subtitleHasBackground;
+  final FontWeight subtitleFontWeight;
+  final double subtitleBottomPadding;
+  final double subtitleBackgroundOpacity;
   final AspectRatioMode aspectRatioMode;
 
   const PlayerSurface({
@@ -15,6 +18,9 @@ class PlayerSurface extends StatelessWidget {
     required this.subtitleFontSize,
     required this.subtitleColor,
     required this.subtitleHasBackground,
+    required this.subtitleFontWeight,
+    required this.subtitleBottomPadding,
+    required this.subtitleBackgroundOpacity,
     this.aspectRatioMode = AspectRatioMode.fit,
   });
 
@@ -51,9 +57,9 @@ class PlayerSurface extends StatelessWidget {
         style: TextStyle(
           fontSize: subtitleFontSize,
           color: subtitleColor,
-          fontWeight: FontWeight.w500,
+          fontWeight: subtitleFontWeight,
           backgroundColor: subtitleHasBackground
-              ? Colors.black.withValues(alpha: 0.7)
+              ? Colors.black.withValues(alpha: subtitleBackgroundOpacity)
               : Colors.transparent,
           shadows: !subtitleHasBackground
               ? const [
@@ -66,7 +72,7 @@ class PlayerSurface extends StatelessWidget {
               : null,
         ),
         textAlign: TextAlign.center,
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.fromLTRB(24, 24, 24, subtitleBottomPadding),
       ),
     );
 

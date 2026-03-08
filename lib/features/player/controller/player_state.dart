@@ -1,5 +1,6 @@
-import 'dart:ui' show Color;
-import '../domain/repositories/player_repository.dart' show AudioTrackInfo;
+import 'dart:ui' show Color, FontWeight;
+import '../domain/repositories/player_repository.dart'
+    show AudioTrackInfo, SubtitleTrackInfo;
 
 enum AspectRatioMode {
   fit,
@@ -35,10 +36,16 @@ class PlayerState {
   List<AudioTrackInfo> audioTracks = [];
   int currentAudioTrackIndex = 0;
 
-  late bool subtitlesEnabled;
-  late double subtitleFontSize;
-  late Color subtitleColor;
-  late bool subtitleHasBackground;
+  List<SubtitleTrackInfo> subtitleTracks = [];
+  int currentSubtitleTrackIndex = -1;
+
+  bool subtitlesEnabled = true;
+  double subtitleFontSize = 24.0;
+  Color subtitleColor = const Color(0xFFFFFFFF);
+  bool subtitleHasBackground = true;
+  FontWeight subtitleFontWeight = FontWeight.w500;
+  double subtitleBottomPadding = 24.0;
+  double subtitleBackgroundOpacity = 0.7;
 
   double dragStartX = 0;
   bool isDraggingX = false;
