@@ -40,43 +40,75 @@ class PathBreadcrumb extends StatelessWidget {
   Widget build(BuildContext context) {
     final segments = _segments;
 
+    if (segments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (int i = 0; i < segments.length; i++) ...[
-              InkWell(
-                onTap: () => onPathTap(segments[i].path),
-                borderRadius: BorderRadius.circular(4),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                  child: Text(
-                    segments[i].name,
-                    style: TextStyle(
-                      fontSize: 13,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.route_rounded,
+            size: 18,
+            color: Color(0xFF64748B),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (int i = 0; i < segments.length; i++) ...[
+                    Material(
                       color: i == segments.length - 1
-                          ? const Color(0xFF6366F1)
-                          : Colors.grey[600],
-                      fontWeight: i == segments.length - 1
-                          ? FontWeight.w600
-                          : FontWeight.normal,
+                          ? const Color(0xFFDBEAFE)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(999),
+                      child: InkWell(
+                        onTap: () => onPathTap(segments[i].path),
+                        borderRadius: BorderRadius.circular(999),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(
+                            segments[i].name,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: i == segments.length - 1
+                                  ? const Color(0xFF1D4ED8)
+                                  : const Color(0xFF475569),
+                              fontWeight: i == segments.length - 1
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                    if (i < segments.length - 1)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 2),
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          size: 16,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                  ],
+                ],
               ),
-              if (i < segments.length - 1)
-                Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: Colors.grey[400],
-                ),
-            ],
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

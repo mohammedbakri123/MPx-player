@@ -35,16 +35,17 @@ class FileListItem extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
             ),
           ],
           border: Border.all(
-            color: isSelected ? const Color(0xFF6366F1) : Colors.grey.shade100,
+            color:
+                isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -84,34 +85,44 @@ class FileListItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    item.isDirectory
-                        ? (item.videoCount != null
-                            ? '${item.videoCount} videos'
-                            : 'Folder')
-                        : item.formattedSize,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade500,
-                    ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _MetaChip(
+                        label: item.isDirectory
+                            ? (item.videoCount != null
+                                ? '${item.videoCount} videos'
+                                : 'Folder')
+                            : item.formattedSize,
+                        tint: item.isDirectory
+                            ? const Color(0xFF2563EB)
+                            : const Color(0xFFEA580C),
+                      ),
+                      _MetaChip(
+                        label: item.isDirectory
+                            ? 'Updated ${_relativeDate(item.modified)}'
+                            : item.extension.toUpperCase(),
+                        tint: const Color(0xFF0F766E),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(
                     item.isDirectory
-                        ? 'Updated ${_relativeDate(item.modified)}'
-                        : '${_folderName(item.path)} • ${item.extension.toUpperCase()} • ${_relativeDate(item.modified)}',
+                        ? 'Open folder and continue browsing from here'
+                        : '${_folderName(item.path)} • ${_relativeDate(item.modified)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade400,
+                      color: Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -136,12 +147,12 @@ class FileListItem extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.more_horiz,
-                        color: Colors.grey.shade600,
+                        color: Color(0xFF475569),
                         size: 18,
                       ),
                     ),
@@ -209,7 +220,7 @@ class FileListItem extends StatelessWidget {
         ),
         child: const Icon(
           Icons.folder,
-          color: Color(0xFF6366F1),
+          color: Color(0xFF2563EB),
           size: 24,
         ),
       );
@@ -241,6 +252,32 @@ class FileListItem extends StatelessWidget {
         Icons.insert_drive_file,
         color: Colors.grey.shade600,
         size: 24,
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  final String label;
+  final Color tint;
+
+  const _MetaChip({required this.label, required this.tint});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: tint,
+        ),
       ),
     );
   }
