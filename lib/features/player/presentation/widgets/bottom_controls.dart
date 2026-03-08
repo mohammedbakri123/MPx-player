@@ -91,28 +91,35 @@ class BottomControls extends StatelessWidget {
               onChangeEnd: onSeekEnd,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // LEFT: time
-              Expanded(
-                flex: 2,
-                child: Text(
-                  '${formatTime(position)} / ${formatTime(duration)}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                formatTime(position),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              // CENTER: transport controls in a pill (shrinks if needed)
+              Text(
+                formatTime(duration),
+                style: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              // CENTER: transport controls in a pill (flexible)
               Expanded(
-                flex: 3,
                 child: Align(
-                  alignment: Alignment.center,
+                  alignment: Alignment.centerLeft,
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Container(
@@ -132,8 +139,10 @@ class BottomControls extends StatelessWidget {
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
                                 minWidth: 40, minHeight: 40),
-                            icon: const Icon(Icons.replay_10,
-                                color: Colors.white),
+                            icon: const Icon(
+                              Icons.replay_10,
+                              color: Colors.white,
+                            ),
                           ),
                           IconButton(
                             onPressed: onTogglePlayPause,
@@ -156,8 +165,10 @@ class BottomControls extends StatelessWidget {
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
                                 minWidth: 40, minHeight: 40),
-                            icon: const Icon(Icons.forward_10,
-                                color: Colors.white),
+                            icon: const Icon(
+                              Icons.forward_10,
+                              color: Colors.white,
+                            ),
                           ),
                         ],
                       ),
@@ -165,44 +176,41 @@ class BottomControls extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               // RIGHT: repeat + speed chip
-              Expanded(
-                flex: 2,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    IconButton(
-                      onPressed: onToggleRepeat,
-                      iconSize: 20,
-                      splashRadius: 20,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                          minWidth: 40, minHeight: 40),
-                      icon: Icon(_getRepeatIcon(), color: _getRepeatColor()),
-                    ),
-                    const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: () => _onSpeedTap(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${playbackSpeed}x',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: onToggleRepeat,
+                    iconSize: 20,
+                    splashRadius: 20,
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 40, minHeight: 40),
+                    icon: Icon(_getRepeatIcon(), color: _getRepeatColor()),
+                  ),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: () => _onSpeedTap(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${playbackSpeed}x',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),

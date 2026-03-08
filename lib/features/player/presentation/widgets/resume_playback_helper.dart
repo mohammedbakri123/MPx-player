@@ -19,20 +19,22 @@ class ResumePlaybackHelper {
   }) async {
     // Wait for duration to be loaded (max 10 seconds — large files need more time)
     var attempts = 0;
-    while (totalDuration.inSeconds == 0 && attempts < 100) {
+    var effectiveDuration = totalDuration;
+    while (effectiveDuration.inSeconds == 0 && attempts < 100) {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
+      effectiveDuration = controller.duration;
     }
 
     // If duration is still 0, video failed to load
-    if (totalDuration.inSeconds == 0) return null;
+    if (effectiveDuration.inSeconds == 0) return null;
 
     // Get the saved position
     final savedPosition = await HistoryService.getLastPosition(videoId);
     if (savedPosition == null) return null;
 
     // Check if we should resume (position > 5s from start and > 30s from end)
-    final totalSeconds = totalDuration.inSeconds;
+    final totalSeconds = effectiveDuration.inSeconds;
     final positionSeconds = savedPosition.inSeconds;
     final remainingSeconds = totalSeconds - positionSeconds;
 

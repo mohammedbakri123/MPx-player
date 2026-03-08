@@ -85,88 +85,92 @@ class TopBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Flexible(
-            child: Wrap(
-              alignment: WrapAlignment.end,
-              spacing: 2,
-              runSpacing: 0,
-              children: [
-                GestureDetector(
-                  onTap: onToggleAspectRatio,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    margin: const EdgeInsets.only(right: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      _getAspectRatioLabel(aspectRatioMode),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+          SizedBox(
+            height: 36,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              reverse: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: onToggleAspectRatio,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.only(right: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                    ),
-                  ),
-                ),
-                if (audioTracks.length > 1)
-                  _TopBarIconButton(
-                    icon: Icons.audiotrack,
-                    onPressed: onShowAudioTracks,
-                  ),
-                _TopBarIconButton(
-                  icon: isLocked ? Icons.lock : Icons.lock_open,
-                  color: isLocked ? Colors.blue : Colors.white70,
-                  onPressed: onToggleLock,
-                ),
-                _TopBarIconButton(
-                  icon:
-                      isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                  color: Colors.white,
-                  onPressed: onToggleFullscreen,
-                ),
-                SizedBox(
-                  width: 40,
-                  height: 36,
-                  child: Stack(
-                    children: [
-                      Align(
-                        alignment: Alignment.center,
-                        child: IconButton(
-                          onPressed: onSubtitleSettings,
-                          iconSize: 20,
-                          splashRadius: 20,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                              minWidth: 36, minHeight: 36),
-                          icon: const Icon(Icons.subtitles,
-                              color: Colors.white70),
+                      child: Text(
+                        _getAspectRatioLabel(aspectRatioMode),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      if (subtitlesEnabled)
-                        Positioned(
-                          right: 6,
-                          top: 6,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.blue,
-                              shape: BoxShape.circle,
-                            ),
+                    ),
+                  ),
+                  if (audioTracks.length > 1)
+                    _TopBarIconButton(
+                      icon: Icons.audiotrack,
+                      onPressed: onShowAudioTracks,
+                    ),
+                  _TopBarIconButton(
+                    icon: isLocked ? Icons.lock : Icons.lock_open,
+                    color: isLocked ? Colors.blue : Colors.white70,
+                    onPressed: onToggleLock,
+                  ),
+                  _TopBarIconButton(
+                    icon:
+                        isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                    color: Colors.white,
+                    onPressed: onToggleFullscreen,
+                  ),
+                  SizedBox(
+                    width: 40,
+                    height: 36,
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: Alignment.center,
+                          child: IconButton(
+                            onPressed: onSubtitleSettings,
+                            iconSize: 20,
+                            splashRadius: 20,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                                minWidth: 36, minHeight: 36),
+                            icon: const Icon(Icons.subtitles,
+                                color: Colors.white70),
                           ),
                         ),
-                    ],
+                        if (subtitlesEnabled)
+                          Positioned(
+                            right: 6,
+                            top: 6,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                _TopBarIconButton(
-                  icon: Icons.settings,
-                  color: Colors.white70,
-                  onPressed: onSettings,
-                ),
-              ],
+                  _TopBarIconButton(
+                    icon: Icons.settings,
+                    color: Colors.white70,
+                    onPressed: onSettings,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
