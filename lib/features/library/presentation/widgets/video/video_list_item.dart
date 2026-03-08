@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/video_file.dart';
+import '../common/library_item_details_sheet.dart';
 import 'video_thumbnail.dart';
 import 'video_info.dart';
 // import 'video_action_button.dart';
@@ -49,7 +50,23 @@ class VideoListItem extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             VideoInfo(video: video),
-            // VideoActionButton(isLoading: isLoading),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () => _showContextMenu(context),
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.more_horiz,
+                  color: Colors.grey.shade600,
+                  size: 18,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -57,59 +74,11 @@ class VideoListItem extends StatelessWidget {
   }
 
   void _showContextMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: Colors.red),
-              title: Text(
-                  isFavorite ? 'Remove from Favorites' : 'Add to Favorites'),
-              onTap: () {
-                Navigator.pop(context);
-                onAddToFavorites();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('Video Info'),
-              onTap: () {
-                Navigator.pop(context);
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Video Information'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Name: ${video.title}'),
-                        const SizedBox(height: 8),
-                        Text('Size: ${video.formattedSize}'),
-                        const SizedBox(height: 8),
-                        Text('Path: ${video.path}'),
-                        if (video.resolution != 'Unknown') ...[
-                          const SizedBox(height: 8),
-                          Text('Resolution: ${video.resolution}'),
-                        ],
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Close'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+    LibraryItemDetailsSheet.showForVideo(
+      context,
+      video,
+      isFavorite: isFavorite,
+      onToggleFavorite: onAddToFavorites,
     );
   }
 }

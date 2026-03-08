@@ -1,15 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../controller/player_controller.dart';
 import 'helpers/bottom_sheet_handle.dart';
 
 class SettingsSheet extends StatelessWidget {
   final PlayerController controller;
+  final VoidCallback? onOpenSubtitleSettings;
 
   const SettingsSheet({
     super.key,
     required this.controller,
+    this.onOpenSubtitleSettings,
   });
+
+  String _formatAspectRatio(PlayerController controller) {
+    return controller.getAspectRatioLabel(controller.aspectRatioMode);
+  }
+
+  String _formatRepeatMode(PlayerController controller) {
+    return controller.getRepeatModeLabel(controller.repeatMode);
+  }
+
+  String _formatAudioTrack(PlayerController controller) {
+    if (controller.audioTracks.isEmpty) return 'Default';
+
+    final safeIndex = controller.currentAudioTrackIndex < 0
+        ? 0
+        : controller.currentAudioTrackIndex >= controller.audioTracks.length
+            ? controller.audioTracks.length - 1
+            : controller.currentAudioTrackIndex;
+
+    final track = controller.audioTracks[safeIndex];
+    final title = track.title?.trim();
+    final language = track.language?.trim();
+
+    if (title != null && title.isNotEmpty) return title;
+    if (language != null && language.isNotEmpty) return language.toUpperCase();
+    return 'Track ${safeIndex + 1}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,98 +46,305 @@ class SettingsSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const BottomSheetHandle(),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Playback Settings',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            Consumer<PlayerController>(
-              builder: (context, controller, _) => Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.volume_down,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    Expanded(
-                      child: Slider(
-                        value: controller.volume,
-                        min: 0,
-                        max: 100,
-                        activeColor: Colors.blue,
-                        inactiveColor: Colors.grey.shade700,
-                        onChanged: (value) {
-                          controller.setVolume(value);
-                        },
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) {
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(child: BottomSheetHandle()),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
+                    child: Text(
+                      'Player Settings',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Icon(
-                      Icons.volume_up,
-                      color: Colors.white70,
-                      size: 20,
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Text(
+                      'Keep the screen clean and put the extra controls here.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
                     ),
-                  ],
+                  ),
+                  _SettingsSection(
+                    title: 'Playback',
+                    child: Column(
+                      children: [
+                        _SettingsTile(
+                          icon: Icons.speed,
+                          title: 'Playback speed',
+                          subtitle: 'Change the current speed',
+                          value: '${controller.playbackSpeed}x',
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => _SettingsSpeedSheet(
+                                currentSpeed: controller.playbackSpeed,
+                                onSpeedSelected: controller.setSpeed,
+                              ),
+                            );
+                          },
+                        ),
+                        _SettingsTile(
+                          icon: Icons.aspect_ratio,
+                          title: 'Aspect ratio',
+                          subtitle: 'Fit, fill, stretch, and classic ratios',
+                          value: _formatAspectRatio(controller),
+                          onTap: controller.cycleAspectRatio,
+                        ),
+                        _SettingsTile(
+                          icon: Icons.repeat,
+                          title: 'Repeat mode',
+                          subtitle: 'Choose what happens at the end',
+                          value: _formatRepeatMode(controller),
+                          onTap: controller.cycleRepeatMode,
+                        ),
+                        _VolumeTile(controller: controller),
+                      ],
+                    ),
+                  ),
+                  _SettingsSection(
+                    title: 'Tracks & Screen',
+                    child: Column(
+                      children: [
+                        if (onOpenSubtitleSettings != null)
+                          _SettingsTile(
+                            icon: Icons.subtitles_outlined,
+                            title: 'Subtitle settings',
+                            subtitle: controller.subtitlesEnabled
+                                ? 'Customize subtitles'
+                                : 'Subtitles are currently off',
+                            value: controller.subtitlesEnabled ? 'On' : 'Off',
+                            onTap: () {
+                              Navigator.pop(context);
+                              onOpenSubtitleSettings!();
+                            },
+                          ),
+                        if (controller.audioTracks.length > 1)
+                          _SettingsTile(
+                            icon: Icons.audiotrack,
+                            title: 'Audio track',
+                            subtitle: 'Switch language or commentary track',
+                            value: _formatAudioTrack(controller),
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder: (ctx) => _AudioTrackSheet(
+                                  audioTracks: controller.audioTracks,
+                                  currentIndex:
+                                      controller.currentAudioTrackIndex,
+                                  onSelected: (index) {
+                                    controller.setAudioTrack(index);
+                                    Navigator.pop(ctx);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        _SettingsTile(
+                          icon: controller.isFullscreen
+                              ? Icons.fullscreen_exit
+                              : Icons.fullscreen,
+                          title: 'Screen mode',
+                          subtitle: 'Toggle portrait and landscape player',
+                          value:
+                              controller.isFullscreen ? 'Fullscreen' : 'Inline',
+                          onTap: controller.toggleFullscreen,
+                        ),
+                        _SettingsTile(
+                          icon: controller.isLocked
+                              ? Icons.lock
+                              : Icons.lock_open,
+                          title: 'Lock controls',
+                          subtitle: 'Prevent accidental touches while watching',
+                          value: controller.isLocked ? 'Locked' : 'Unlocked',
+                          onTap: () {
+                            controller.toggleLock();
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 4, 16, 20),
+                    child: Text(
+                      'Tip: tap the center of the video to show or hide controls.',
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _SettingsSection({
+    required this.title,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
-            const Divider(color: Colors.white10, height: 1),
-            ListTile(
-              leading: const Icon(Icons.speed, color: Colors.white),
-              title: const Text(
-                'Playback speed',
-                style: TextStyle(color: Colors.white),
-              ),
-              subtitle: const Text(
-                'Fine-tune how fast videos play',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-              trailing: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  '${controller.playbackSpeed}x',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  builder: (ctx) => _SettingsSpeedSheet(
-                    currentSpeed: controller.playbackSpeed,
-                    onSpeedSelected: (speed) {
-                      controller.setSpeed(speed);
-                    },
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+            child,
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String value;
+  final VoidCallback onTap;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(
+        title,
+        style: const TextStyle(color: Colors.white),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(color: Colors.white60, fontSize: 12),
+      ),
+      trailing: _SettingsValueChip(label: value),
+      onTap: onTap,
+    );
+  }
+}
+
+class _VolumeTile extends StatelessWidget {
+  final PlayerController controller;
+
+  const _VolumeTile({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Volume',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Row(
+            children: [
+              const Icon(Icons.volume_down, color: Colors.white70, size: 20),
+              Expanded(
+                child: Slider(
+                  value: controller.volume,
+                  min: 0,
+                  max: 100,
+                  activeColor: Colors.white,
+                  inactiveColor: Colors.grey.shade700,
+                  onChanged: controller.setVolume,
+                ),
+              ),
+              const Icon(Icons.volume_up, color: Colors.white70, size: 20),
+              SizedBox(
+                width: 42,
+                child: Text(
+                  '${controller.volume.round()}%',
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsValueChip extends StatelessWidget {
+  final String label;
+
+  const _SettingsValueChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -136,7 +370,7 @@ class _SettingsSpeedSheet extends StatelessWidget {
     1.75,
     2.0,
     2.5,
-    3.0
+    3.0,
   ];
 
   @override
@@ -167,7 +401,7 @@ class _SettingsSpeedSheet extends StatelessWidget {
                   Text(
                     '${currentSpeed}x',
                     style: const TextStyle(
-                      color: Colors.blue,
+                      color: Colors.white70,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -189,19 +423,112 @@ class _SettingsSpeedSheet extends StatelessWidget {
                     title: Text(
                       speed == 1.0 ? 'Normal' : '${speed}x',
                       style: TextStyle(
-                        color: isSelected ? Colors.blue : Colors.white,
+                        color: isSelected ? Colors.white : Colors.white70,
                         fontSize: 16,
                         fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                            isSelected ? FontWeight.w700 : FontWeight.normal,
                       ),
                     ),
                     trailing: isSelected
-                        ? const Icon(Icons.check, color: Colors.blue)
+                        ? const Icon(Icons.check, color: Colors.white)
                         : null,
                     onTap: () {
                       onSpeedSelected(speed);
                       Navigator.pop(context);
                     },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AudioTrackSheet extends StatelessWidget {
+  final List<AudioTrackInfo> audioTracks;
+  final int currentIndex;
+  final ValueChanged<int> onSelected;
+
+  const _AudioTrackSheet({
+    required this.audioTracks,
+    required this.currentIndex,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const BottomSheetHandle(),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Audio Track',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${audioTracks.length} tracks',
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.grey, height: 1),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 260),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: audioTracks.length,
+                itemBuilder: (context, index) {
+                  final track = audioTracks[index];
+                  final isSelected = index == currentIndex;
+
+                  return ListTile(
+                    title: Text(
+                      track.title?.trim().isNotEmpty == true
+                          ? track.title!
+                          : 'Track ${index + 1}',
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.white70,
+                        fontSize: 16,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.normal,
+                      ),
+                    ),
+                    subtitle: track.language?.trim().isNotEmpty == true
+                        ? Text(
+                            track.language!,
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                          )
+                        : null,
+                    trailing: isSelected
+                        ? const Icon(Icons.check, color: Colors.white)
+                        : null,
+                    onTap: () => onSelected(index),
                   );
                 },
               ),

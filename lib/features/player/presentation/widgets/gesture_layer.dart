@@ -22,10 +22,9 @@ class GestureLayer extends StatelessWidget {
   }
 
   Widget _buildLockedGestureLayer() {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: controller.unlock,
-      child: Container(color: Colors.transparent),
+    return const IgnorePointer(
+      ignoring: true,
+      child: SizedBox.expand(),
     );
   }
 
@@ -56,8 +55,7 @@ class GestureLayer extends StatelessWidget {
             onHorizontalDragStart: (details) =>
                 controller.onHorizontalDragStart(details.globalPosition.dx),
             onHorizontalDragUpdate: (details) => controller
-                .onHorizontalDragUpdate(
-                    details.globalPosition.dx, screenWidth),
+                .onHorizontalDragUpdate(details.globalPosition.dx, screenWidth),
             onHorizontalDragEnd: (_) => controller.onHorizontalDragEnd(),
             onLongPressStart: (_) => controller.onLongPressStart(),
             onLongPressEnd: (_) => controller.onLongPressEnd(),

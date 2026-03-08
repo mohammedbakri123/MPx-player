@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../controller/file_browser_controller.dart';
 import '../../../domain/entities/file_item.dart';
 import '../../../domain/entities/video_file.dart';
+import '../common/library_item_details_sheet.dart';
 import '../video/video_thumbnail.dart';
 import 'file_list_item.dart';
 
@@ -29,7 +30,9 @@ class FileBrowserContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (controller.isLoading) {
+    final items = controller.filteredItems;
+
+    if (controller.isLoading && items.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(),
       );
@@ -56,8 +59,6 @@ class FileBrowserContent extends StatelessWidget {
       );
     }
 
-    final items = controller.filteredItems;
-
     if (items.isEmpty) {
       return Center(
         child: Column(
@@ -77,86 +78,150 @@ class FileBrowserContent extends StatelessWidget {
       );
     }
 
-    if (controller.isGridView) {
-      return _buildGridView(items);
-    }
+    final content = controller.isGridView
+        ? _buildGridView(items)
+        : RefreshIndicator(
+            onRefresh: () async => controller.refresh(),
+            child: ListView.separated(
+              controller: scrollController,
+              padding: const EdgeInsets.all(24),
+              itemCount: items.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final isSelected = controller.isSelected(item.path);
 
-    return RefreshIndicator(
-      onRefresh: () async => controller.refresh(),
-      child: ListView.separated(
-        controller: scrollController,
-        padding: const EdgeInsets.all(24),
-        itemCount: items.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          final isSelected = controller.isSelected(item.path);
-
-          return FileListItem(
-            item: item,
-            isSelectionMode: controller.isSelectionMode,
-            isSelected: isSelected,
-            isFavorite: item.isVideo ? _isFavorite(item.path) : false,
-            onTap: () {
-              if (controller.isSelectionMode) {
-                controller.toggleSelection(item.path);
-              } else if (item.isDirectory) {
-                onFolderTap(item.path);
-              } else if (item.isVideo) {
-                onVideoTap(item.path);
-              }
-            },
-            onLongPress: () {
-              controller.enterSelectionMode(item.path);
-            },
-            onSelectionToggle: () => controller.toggleSelection(item.path),
-            onAddToFavorites: item.isVideo && onAddToFavorites != null
-                ? () => onAddToFavorites!(item.path)
-                : null,
+                return FileListItem(
+                  item: item,
+                  isSelectionMode: controller.isSelectionMode,
+                  isSelected: isSelected,
+                  isFavorite: item.isVideo ? _isFavorite(item.path) : false,
+                  onTap: () {
+                    if (controller.isSelectionMode) {
+                      controller.toggleSelection(item.path);
+                    } else if (item.isDirectory) {
+                      onFolderTap(item.path);
+                    } else if (item.isVideo) {
+                      onVideoTap(item.path);
+                    }
+                  },
+                  onLongPress: () {
+                    controller.enterSelectionMode(item.path);
+                  },
+                  onSelectionToggle: () =>
+                      controller.toggleSelection(item.path),
+                  onAddToFavorites: item.isVideo && onAddToFavorites != null
+                      ? () => onAddToFavorites!(item.path)
+                      : null,
+                );
+              },
+            ),
           );
-        },
-      ),
+
+    return Stack(
+      children: [
+        content,
+        if (controller.isLoading)
+          Positioned(
+            top: 10,
+            left: 24,
+            right: 24,
+            child: IgnorePointer(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Refreshing library...',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
   Widget _buildGridView(List<FileItem> items) {
     return RefreshIndicator(
       onRefresh: () async => controller.refresh(),
-      child: GridView.builder(
-        controller: scrollController,
-        padding: const EdgeInsets.all(24),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.9,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          final item = items[index];
-          final isSelected = controller.isSelected(item.path);
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final crossAxisCount = width >= 1200
+              ? 4
+              : width >= 840
+                  ? 3
+                  : width >= 520
+                      ? 2
+                      : 1;
+          final cardWidth =
+              (width - 48 - ((crossAxisCount - 1) * 14)) / crossAxisCount;
+          final previewHeight = cardWidth.clamp(140.0, 190.0);
+          final mainAxisExtent = previewHeight + 120;
 
-          return _GridItem(
-            item: item,
-            isSelectionMode: controller.isSelectionMode,
-            isSelected: isSelected,
-            isFavorite: item.isVideo ? _isFavorite(item.path) : false,
-            onTap: () {
-              if (controller.isSelectionMode) {
-                controller.toggleSelection(item.path);
-              } else if (item.isDirectory) {
-                onFolderTap(item.path);
-              } else if (item.isVideo) {
-                onVideoTap(item.path);
-              }
+          return GridView.builder(
+            controller: scrollController,
+            padding: const EdgeInsets.all(24),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+              mainAxisExtent: mainAxisExtent,
+            ),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final isSelected = controller.isSelected(item.path);
+
+              return _GridItem(
+                item: item,
+                isSelectionMode: controller.isSelectionMode,
+                isSelected: isSelected,
+                isFavorite: item.isVideo ? _isFavorite(item.path) : false,
+                previewHeight: previewHeight,
+                onTap: () {
+                  if (controller.isSelectionMode) {
+                    controller.toggleSelection(item.path);
+                  } else if (item.isDirectory) {
+                    onFolderTap(item.path);
+                  } else if (item.isVideo) {
+                    onVideoTap(item.path);
+                  }
+                },
+                onLongPress: () {
+                  controller.enterSelectionMode(item.path);
+                },
+                onSelectionToggle: () => controller.toggleSelection(item.path),
+                onAddToFavorites: item.isVideo && onAddToFavorites != null
+                    ? () => onAddToFavorites!(item.path)
+                    : null,
+              );
             },
-            onLongPress: () {
-              controller.enterSelectionMode(item.path);
-            },
-            onSelectionToggle: () => controller.toggleSelection(item.path),
-            onAddToFavorites: item.isVideo && onAddToFavorites != null
-                ? () => onAddToFavorites!(item.path)
-                : null,
           );
         },
       ),
@@ -169,6 +234,7 @@ class _GridItem extends StatelessWidget {
   final bool isSelectionMode;
   final bool isSelected;
   final bool isFavorite;
+  final double previewHeight;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final VoidCallback onSelectionToggle;
@@ -179,6 +245,7 @@ class _GridItem extends StatelessWidget {
     required this.isSelectionMode,
     required this.isSelected,
     required this.isFavorite,
+    required this.previewHeight,
     required this.onTap,
     required this.onLongPress,
     required this.onSelectionToggle,
@@ -191,6 +258,7 @@ class _GridItem extends StatelessWidget {
       onTap: onTap,
       onLongPress: onLongPress,
       child: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -209,46 +277,93 @@ class _GridItem extends StatelessWidget {
         child: Stack(
           children: [
             Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildIcon(item),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    item.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E293B),
+                _buildPreview(item),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                                height: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                _GridMetaChip(
+                                  label: item.isDirectory
+                                      ? '${item.videoCount ?? 0} videos'
+                                      : item.formattedSize,
+                                  color: item.isDirectory
+                                      ? const Color(0xFF2563EB)
+                                      : const Color(0xFFEA580C),
+                                ),
+                                _GridMetaChip(
+                                  label: item.isDirectory
+                                      ? _folderTimeLabel(item)
+                                      : item.extension.toUpperCase(),
+                                  color: const Color(0xFF334155),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        Text(
+                          item.isDirectory
+                              ? 'Updated ${_relativeDate(item.modified)}'
+                              : '${_folderName(item.path)} • ${_relativeDate(item.modified)}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                if (item.isDirectory && item.videoCount != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '${item.videoCount} videos',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade500,
-                    ),
-                  ),
-                ],
-                if (!item.isDirectory) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    item.formattedSize,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade500,
-                    ),
-                  ),
-                ],
               ],
             ),
+            if (!isSelectionMode)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: GestureDetector(
+                  onTap: () => _showDetails(context),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.more_horiz,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
             if (isSelectionMode)
               Positioned(
                 top: 8,
@@ -291,19 +406,58 @@ class _GridItem extends StatelessWidget {
     );
   }
 
-  Widget _buildIcon(FileItem item) {
+  Future<void> _showDetails(BuildContext context) {
+    return LibraryItemDetailsSheet.showForItem(
+      context,
+      item,
+      isFavorite: isFavorite,
+      onToggleFavorite: onAddToFavorites,
+    );
+  }
+
+  Widget _buildPreview(FileItem item) {
     if (item.isDirectory) {
       return Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: const Color(0xFF6366F1).withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
+        height: previewHeight,
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFDBEAFE),
+              Color(0xFFBFDBFE),
+              Color(0xFFE0F2FE),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-        child: const Icon(
-          Icons.folder,
-          color: Color(0xFF6366F1),
-          size: 28,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.folder_rounded,
+                color: Color(0xFF2563EB),
+                size: 24,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${item.videoCount ?? 0} videos',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1D4ED8),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -313,25 +467,75 @@ class _GridItem extends StatelessWidget {
         item,
         item.path.substring(0, item.path.lastIndexOf('/')),
       );
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          width: 56,
-          height: 56,
-          child: VideoThumbnail(video: video, isFavorite: false),
-        ),
+      return SizedBox(
+        height: previewHeight,
+        width: double.infinity,
+        child: VideoThumbnail(video: video, isFavorite: false),
       );
     }
 
     return Container(
-      width: 56,
-      height: 56,
+      height: previewHeight,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(16),
       ),
-      child:
-          Icon(Icons.insert_drive_file, color: Colors.grey.shade600, size: 28),
+      child: Icon(
+        Icons.insert_drive_file,
+        color: Colors.grey.shade600,
+        size: 28,
+      ),
+    );
+  }
+
+  String _relativeDate(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays == 0) return 'today';
+    if (diff.inDays == 1) return 'yesterday';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
+    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
+    return '${(diff.inDays / 365).floor()}y ago';
+  }
+
+  String _folderTimeLabel(FileItem item) {
+    if (item.videoCount == null) {
+      return 'Folder';
+    }
+    return item.videoCount == 1 ? '1 item' : '${item.videoCount} items';
+  }
+
+  String _folderName(String path) {
+    final lastSeparator = path.lastIndexOf('/');
+    if (lastSeparator <= 0) {
+      return '/';
+    }
+    return path.substring(0, lastSeparator).split('/').last;
+  }
+}
+
+class _GridMetaChip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _GridMetaChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
     );
   }
 }

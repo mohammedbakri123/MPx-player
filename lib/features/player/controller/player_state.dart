@@ -24,6 +24,7 @@ class PlayerState {
   Duration duration = Duration.zero;
   double volume = 100;
   double playbackSpeed = 1.0;
+  double speedBeforeLongPress = 1.0;
   bool isLongPressing = false;
 
   bool isLocked = false;
@@ -53,4 +54,6 @@ class PlayerState {
 
   bool showDoubleTapSeekLeft = false;
   bool showDoubleTapSeekRight = false;
+
+  int hideControlsRequestId = 0;
 }

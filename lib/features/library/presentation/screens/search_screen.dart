@@ -1,9 +1,8 @@
-import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../domain/entities/video_file.dart';
-import '../../domain/entities/file_item.dart';
 import '../../data/datasources/directory_browser.dart';
+import '../../services/library_index_service.dart';
 import '../../../player/presentation/screens/video_player_screen.dart';
 import '../../../favorites/services/favorites_service.dart';
 import '../widgets/video/video_list_item.dart';
@@ -19,12 +18,16 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final DirectoryBrowser _browser = DirectoryBrowser();
+  final LibraryIndexService _indexService = LibraryIndexService();
   Set<String> _favoriteIds = {};
   List<VideoFile> _searchResults = [];
   bool _isNavigating = false;
   bool _isSearching = false;
+  bool _isIndexing = false;
   String _searchQuery = '';
   Timer? _debounceTimer;
+  int _searchToken = 0;
+  LibrarySearchSort _sortBy = LibrarySearchSort.relevance;
 
   @override
   void initState() {
@@ -52,83 +55,64 @@ class _SearchScreenState extends State<SearchScreen> {
   void _onSearchChanged(String query) {
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
 
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 250), () {
       _search(query);
     });
   }
 
   Future<void> _search(String query) async {
-    final trimmed = query.trim().toLowerCase();
+    final trimmed = query.trim();
+    final normalized = trimmed.toLowerCase();
+    final token = ++_searchToken;
+
     setState(() {
       _searchQuery = trimmed;
     });
 
-    if (trimmed.isEmpty) {
+    if (normalized.isEmpty) {
       setState(() {
         _searchResults = [];
         _isSearching = false;
+        _isIndexing = false;
       });
       return;
     }
 
-    setState(() => _isSearching = true);
+    setState(() {
+      _isSearching = true;
+      _isIndexing = _indexService.getSnapshot(_browser.getRootPath()) == null;
+    });
 
     final rootPath = _browser.getRootPath();
-    final results = <VideoFile>[];
-    await _searchDirectory(rootPath, trimmed, results, depth: 0);
+    final results = await _indexService.search(
+      rootPath,
+      normalized,
+      sortBy: _sortBy,
+    );
 
-    if (mounted) {
+    if (mounted && token == _searchToken) {
       setState(() {
         _searchResults = results;
         _isSearching = false;
+        _isIndexing = false;
       });
     }
   }
 
-  Future<void> _searchDirectory(
-    String path,
-    String query,
-    List<VideoFile> results, {
-    required int depth,
-  }) async {
-    if (depth > 5) return;
-
-    // Skip system folders that are massive and don't contain user videos
-    if (path.endsWith('/Android') || path.contains('/Android/')) return;
-
-    try {
-      final dir = Directory(path);
-      if (!await dir.exists()) return;
-
-      // Yield to event loop to keep UI smooth during deep traversal
-      await Future.delayed(Duration.zero);
-
-      await for (final entity in dir.list(followLinks: false)) {
-        if (entity is File) {
-          final name = entity.path.split('/').last;
-          if (name.toLowerCase().contains(query)) {
-            final item = FileItem(
-              path: entity.path,
-              name: name,
-              isDirectory: false,
-              size: (await entity.stat()).size,
-              modified: (await entity.stat()).modified,
-            );
-            if (item.isVideo) {
-              results.add(VideoFile.fromFileItem(item, path));
-            }
-          }
-        } else if (entity is Directory) {
-          final name = entity.path.split('/').last;
-          if (!name.startsWith('.') && depth < 5) {
-            await _searchDirectory(entity.path, query, results,
-                depth: depth + 1);
-          }
-        }
-      }
-    } catch (e) {
-      // Skip folders without permission
+  Future<void> _setSort(LibrarySearchSort sortBy) async {
+    if (_sortBy == sortBy) {
+      return;
     }
+
+    setState(() {
+      _sortBy = sortBy;
+    });
+
+    if (_searchQuery.trim().isEmpty) {
+      return;
+    }
+
+    await _search(_searchQuery);
   }
 
   void _openVideoPlayer(VideoFile video) async {
@@ -157,6 +141,7 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           children: [
             _buildSearchBar(),
+            _buildSortBar(),
             Expanded(
               child: _buildResults(),
             ),
@@ -232,20 +217,70 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Widget _buildSortBar() {
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        children: [
+          _SortChip(
+            label: 'Best match',
+            isSelected: _sortBy == LibrarySearchSort.relevance,
+            onTap: () => _setSort(LibrarySearchSort.relevance),
+          ),
+          _SortChip(
+            label: 'Recent',
+            isSelected: _sortBy == LibrarySearchSort.recent,
+            onTap: () => _setSort(LibrarySearchSort.recent),
+          ),
+          _SortChip(
+            label: 'Name',
+            isSelected: _sortBy == LibrarySearchSort.name,
+            onTap: () => _setSort(LibrarySearchSort.name),
+          ),
+          _SortChip(
+            label: 'Size',
+            isSelected: _sortBy == LibrarySearchSort.size,
+            onTap: () => _setSort(LibrarySearchSort.size),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildResults() {
     if (_isSearching) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              _isIndexing ? 'Indexing your library...' : 'Searching videos...',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     if (_searchQuery.isEmpty) {
       return _buildEmptyState(
-          'Search for videos', 'Enter a search term to find videos');
+        'Search your library',
+        'Try a title, folder name, or a few keywords',
+      );
     }
 
     if (_searchResults.isEmpty) {
       return _buildEmptyState(
         'No results found',
-        'Try searching with different keywords',
+        'Try shorter keywords or search by folder name',
       );
     }
 
@@ -293,6 +328,48 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SortChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _SortChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF0F172A) : Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color:
+                  isSelected ? const Color(0xFF0F172A) : Colors.grey.shade200,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.white : const Color(0xFF334155),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,14 +1,17 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../domain/entities/file_item.dart';
 import '../data/datasources/directory_browser.dart';
+import '../services/library_index_service.dart';
 
-enum SortBy { name, date, size }
+enum SortBy { name, date, size, videos }
 
 enum SortOrder { ascending, descending }
 
 class FileBrowserController extends ChangeNotifier {
   final DirectoryBrowser _browser = DirectoryBrowser();
+  final LibraryIndexService _indexService = LibraryIndexService();
 
   List<FileItem> _items = [];
   final List<String> _pathHistory = [];
@@ -45,6 +48,7 @@ class FileBrowserController extends ChangeNotifier {
   Future<void> initialize() async {
     _currentPath = _browser.getRootPath();
     await loadDirectory(_currentPath);
+    unawaited(_indexService.ensureIndexed(_currentPath));
   }
 
   Future<void> loadDirectory(String path, {bool addToHistory = true}) async {
@@ -57,21 +61,46 @@ class FileBrowserController extends ChangeNotifier {
     }
 
     _currentPath = path;
-    var items = await _browser.listDirectory(path);
-
-    if (_hideEmptyFolders && _showOnlyVideos) {
-      items = await _filterFoldersWithVideos(items);
-    }
-
-    _items = items;
+    final items = await _browser.listDirectory(path);
+    _items = _prepareVisibleItems(items);
     _sortItems();
 
     _isLoading = false;
     notifyListeners();
+
+    _scheduleFolderHydration(path, items);
   }
 
-  Future<List<FileItem>> _filterFoldersWithVideos(List<FileItem> items) async {
+  List<FileItem> _prepareVisibleItems(List<FileItem> items) {
+    final rootPath = _browser.getRootPath();
+    final preparedItems = List<FileItem>.from(items);
+
+    for (final item in preparedItems) {
+      if (!item.isDirectory) {
+        continue;
+      }
+
+      final indexedCount =
+          _indexService.getFolderVideoCount(rootPath, item.path);
+      final cachedCount = _browser.getVideoCount(item.path);
+      item.videoCount = indexedCount ?? cachedCount;
+    }
+
+    if (!_showOnlyVideos) {
+      return preparedItems;
+    }
+
+    return preparedItems
+        .where((item) => item.isDirectory || item.isVideo)
+        .toList();
+  }
+
+  Future<List<FileItem>> _filterFoldersWithVideos(
+    String path,
+    List<FileItem> items,
+  ) async {
     final filtered = <FileItem>[];
+    final rootPath = _browser.getRootPath();
 
     // Separate folders and videos
     final videos =
@@ -82,6 +111,17 @@ class FileBrowserController extends ChangeNotifier {
 
     // Process folders concurrently to vastly improve load times
     final folderFutures = folders.map((item) async {
+      final indexedCount =
+          _indexService.getFolderVideoCount(rootPath, item.path);
+      if (indexedCount != null) {
+        _browser.setVideoCount(item.path, indexedCount);
+        if (indexedCount > 0) {
+          item.videoCount = indexedCount;
+          return item;
+        }
+        return null;
+      }
+
       final cachedCount = _browser.getVideoCount(item.path);
       if (cachedCount != null) {
         if (cachedCount > 0) {
@@ -108,6 +148,27 @@ class FileBrowserController extends ChangeNotifier {
     }
 
     return filtered;
+  }
+
+  void _scheduleFolderHydration(String path, List<FileItem> items) {
+    if (!_hideEmptyFolders || !_showOnlyVideos) {
+      return;
+    }
+
+    unawaited(_hydrateFolderVisibility(path, items));
+  }
+
+  Future<void> _hydrateFolderVisibility(
+      String path, List<FileItem> items) async {
+    final filtered = await _filterFoldersWithVideos(path, items);
+
+    if (_currentPath != path || !_hideEmptyFolders || !_showOnlyVideos) {
+      return;
+    }
+
+    _items = filtered;
+    _sortItems();
+    notifyListeners();
   }
 
   Future<int> _countVideosRecursively(String path, {int depth = 0}) async {
@@ -162,15 +223,12 @@ class FileBrowserController extends ChangeNotifier {
 
     final previousPath = _pathHistory.removeLast();
     _currentPath = previousPath;
-    var items = await _browser.listDirectory(previousPath);
-
-    if (_hideEmptyFolders && _showOnlyVideos) {
-      items = await _filterFoldersWithVideos(items);
-    }
-
-    _items = items;
+    final items = await _browser.listDirectory(previousPath);
+    _items = _prepareVisibleItems(items);
     _sortItems();
     notifyListeners();
+
+    _scheduleFolderHydration(previousPath, items);
   }
 
   Future<void> navigateToFolder(FileItem folder) async {
@@ -182,6 +240,7 @@ class FileBrowserController extends ChangeNotifier {
     _showOnlyVideos = !_showOnlyVideos;
     _hideEmptyFolders = _showOnlyVideos;
     _browser.invalidatePath(_currentPath);
+    _indexService.invalidate(_browser.getRootPath());
     loadDirectory(_currentPath, addToHistory: false);
   }
 
@@ -197,10 +256,21 @@ class FileBrowserController extends ChangeNotifier {
           : SortOrder.ascending;
     } else {
       _sortBy = sortBy;
-      _sortOrder = SortOrder.ascending;
+      _sortOrder = _defaultOrderFor(sortBy);
     }
     _sortItems();
     notifyListeners();
+  }
+
+  SortOrder _defaultOrderFor(SortBy sortBy) {
+    switch (sortBy) {
+      case SortBy.name:
+        return SortOrder.ascending;
+      case SortBy.date:
+      case SortBy.size:
+      case SortBy.videos:
+        return SortOrder.descending;
+    }
   }
 
   void _sortItems() {
@@ -219,6 +289,14 @@ class FileBrowserController extends ChangeNotifier {
         case SortBy.size:
           result = a.size.compareTo(b.size);
           break;
+        case SortBy.videos:
+          result = (a.videoCount ?? (a.isDirectory ? -1 : 0))
+              .compareTo(b.videoCount ?? (b.isDirectory ? -1 : 0));
+          break;
+      }
+
+      if (result == 0) {
+        result = a.name.toLowerCase().compareTo(b.name.toLowerCase());
       }
 
       return _sortOrder == SortOrder.ascending ? result : -result;
@@ -236,6 +314,7 @@ class FileBrowserController extends ChangeNotifier {
 
   void refresh() {
     _browser.invalidatePath(_currentPath);
+    _indexService.invalidate(_browser.getRootPath());
     loadDirectory(_currentPath, addToHistory: false);
   }
 

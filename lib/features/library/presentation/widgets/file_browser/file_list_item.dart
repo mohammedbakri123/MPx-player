@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/file_item.dart';
 import '../../../domain/entities/video_file.dart';
+import '../common/library_item_details_sheet.dart';
 import '../video/video_thumbnail.dart';
 
 class FileListItem extends StatelessWidget {
@@ -29,13 +30,7 @@ class FileListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      onLongPress: () {
-        if (onLongPress != null) {
-          onLongPress!();
-        } else if (item.isVideo && onAddToFavorites != null) {
-          _showContextMenu(context);
-        }
-      },
+      onLongPress: onLongPress,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -106,92 +101,101 @@ class FileListItem extends StatelessWidget {
                       color: Colors.grey.shade500,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.isDirectory
+                        ? 'Updated ${_relativeDate(item.modified)}'
+                        : '${_folderName(item.path)} • ${item.extension.toUpperCase()} • ${_relativeDate(item.modified)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
                 ],
               ),
             ),
             if (!isSelectionMode)
-              item.isVideo
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isFavorite)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4),
-                            child: Icon(
-                              Icons.favorite,
-                              color: Colors.red.shade400,
-                              size: 18,
-                            ),
-                          ),
-                        Icon(
-                          Icons.play_circle_outline,
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.6),
-                          size: 28,
-                        ),
-                      ],
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (item.isVideo && isFavorite)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Icon(
+                        Icons.favorite,
+                        color: Colors.red.shade400,
+                        size: 18,
+                      ),
+                    ),
+                  GestureDetector(
+                    onTap: () => _showDetails(context),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.more_horiz,
+                        color: Colors.grey.shade600,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                  if (item.isVideo)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Icon(
+                        Icons.play_circle_outline,
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.6),
+                        size: 28,
+                      ),
                     )
-                  : item.isDirectory
-                      ? Icon(Icons.chevron_right, color: Colors.grey.shade400)
-                      : const SizedBox.shrink(),
+                  else if (item.isDirectory)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                ],
+              ),
           ],
         ),
       ),
     );
   }
 
-  void _showContextMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: Colors.red,
-              ),
-              title: Text(
-                  isFavorite ? 'Remove from Favorites' : 'Add to Favorites'),
-              onTap: () {
-                Navigator.pop(context);
-                onAddToFavorites?.call();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('Video Info'),
-              onTap: () {
-                Navigator.pop(context);
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('File Information'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Name: ${item.name}'),
-                        const SizedBox(height: 8),
-                        Text('Size: ${item.formattedSize}'),
-                        const SizedBox(height: 8),
-                        Text('Path: ${item.path}'),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Close'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+  void _showDetails(BuildContext context) {
+    LibraryItemDetailsSheet.showForItem(
+      context,
+      item,
+      isFavorite: isFavorite,
+      onToggleFavorite: onAddToFavorites,
     );
+  }
+
+  String _relativeDate(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays == 0) return 'today';
+    if (diff.inDays == 1) return 'yesterday';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
+    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
+    return '${(diff.inDays / 365).floor()}y ago';
+  }
+
+  String _folderName(String path) {
+    final lastSeparator = path.lastIndexOf('/');
+    if (lastSeparator <= 0) {
+      return '/';
+    }
+    return path.substring(0, lastSeparator).split('/').last;
   }
 
   Widget _buildIcon() {

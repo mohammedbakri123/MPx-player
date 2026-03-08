@@ -81,6 +81,7 @@ mixin PlaybackControlMixin on ChangeNotifier {
     state.isLocked = !state.isLocked;
     if (state.isLocked) {
       state.showControls = false;
+      cancelHideTimer();
     }
     notifyListeners();
   }
@@ -101,8 +102,29 @@ mixin PlaybackControlMixin on ChangeNotifier {
     startHideTimer();
   }
 
+  void toggleControlsVisibility() {
+    if (state.isLocked) return;
+
+    state.showControls = !state.showControls;
+    notifyListeners();
+
+    if (state.showControls) {
+      startHideTimer();
+    } else {
+      cancelHideTimer();
+    }
+  }
+
+  void cancelHideTimer() {
+    state.hideControlsRequestId++;
+  }
+
   void startHideTimer() {
+    final requestId = ++state.hideControlsRequestId;
+
     Future.delayed(const Duration(seconds: 4), () {
+      if (requestId != state.hideControlsRequestId) return;
+
       if (state.showControls &&
           !state.isLongPressing &&
           !state.isDraggingX &&
@@ -200,6 +222,11 @@ mixin PlaybackControlMixin on ChangeNotifier {
   void setAudioTrack(int index) {
     state.currentAudioTrackIndex = index;
     repository.setAudioTrack(index);
+    notifyListeners();
+  }
+
+  void previewSeek(Duration position) {
+    state.position = position;
     notifyListeners();
   }
 }

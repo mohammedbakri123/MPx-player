@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:mpx/features/player/controller/mixins/volume_manager_mixin.dart';
 import 'package:mpx/features/player/controller/mixins/brightness_manager_mixin.dart';
-import 'package:mpx/features/player/controller/mixins/gesture_coordinator_mixin.dart' show GestureCoordinatorMixin;
-import 'package:mpx/features/player/presentation/widgets/gesture_layer.dart' show SeekDirection;
+import 'package:mpx/features/player/controller/mixins/gesture_coordinator_mixin.dart'
+    show GestureCoordinatorMixin;
+import 'package:mpx/features/player/presentation/widgets/gesture_layer.dart'
+    show SeekDirection;
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
@@ -124,7 +126,7 @@ class PlayerController extends ChangeNotifier
       shouldProcessVerticalDrag: shouldProcessVerticalDrag,
       shouldProcessLongPress: shouldProcessLongPress,
     );
-    
+
     initializeSubtitles();
     initializeVolume();
     initializeBrightness();
@@ -272,7 +274,7 @@ class PlayerController extends ChangeNotifier
   void handleDoubleTap(SeekDirection direction) {
     // Block double-tap during seek or volume/brightness adjustment
     if (!shouldProcessDoubleTap()) return;
-    
+
     final now = DateTime.now();
 
     if (_lastTapTime != null &&
@@ -309,7 +311,7 @@ class PlayerController extends ChangeNotifier
   void handleCenterTap() {
     // Block during seek or volume/brightness adjustment
     if (!shouldProcessDoubleTap()) return;
-    
+
     final now = DateTime.now();
 
     if (_lastTapTime != null &&
@@ -330,7 +332,7 @@ class PlayerController extends ChangeNotifier
     // Wait for possible second tap
     _tapTimer?.cancel();
     _tapTimer = Timer(_doubleTapTimeout, () {
-      // Single tap in center - do nothing (disabled)
+      toggleControlsVisibility();
       _resetTapCounter();
     });
   }

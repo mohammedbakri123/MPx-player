@@ -3,11 +3,11 @@ import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
 
 /// Mixin for handling player gestures (horizontal/vertical drag, long press).
-/// 
+///
 /// This mixin expects:
 /// - `adjustVolumeByDrag` to be provided by VolumeManagerMixin
 /// - `adjustBrightnessByDrag` to be provided by BrightnessManagerMixin
-/// 
+///
 /// For gesture coordination (priority/locking), apply GestureCoordinatorMixin
 /// BEFORE this mixin in the class declaration.
 mixin GestureHandlerMixin on ChangeNotifier {
@@ -128,17 +128,21 @@ mixin GestureHandlerMixin on ChangeNotifier {
   void onLongPressStart() {
     // Block long-press speed toggle during seek to prevent conflicts
     if (!_coordShouldProcessLongPress()) return;
+    if (state.isLongPressing) return;
 
     state.isLongPressing = true;
+    state.speedBeforeLongPress = state.playbackSpeed;
     state.playbackSpeed = 2.0;
     repository.setSpeed(2.0);
     notifyListeners();
   }
 
   void onLongPressEnd() {
+    if (!state.isLongPressing) return;
+
     state.isLongPressing = false;
-    state.playbackSpeed = 1.0;
-    repository.setSpeed(1.0);
+    state.playbackSpeed = state.speedBeforeLongPress;
+    repository.setSpeed(state.speedBeforeLongPress);
     notifyListeners();
   }
 

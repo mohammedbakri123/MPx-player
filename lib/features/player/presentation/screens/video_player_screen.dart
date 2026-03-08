@@ -200,7 +200,12 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => SettingsSheet(controller: controller),
+      isScrollControlled: true,
+      builder: (context) => SettingsSheet(
+        controller: controller,
+        onOpenSubtitleSettings: () =>
+            _showSubtitleSettings(this.context, controller),
+      ),
     );
   }
 

@@ -55,6 +55,8 @@ class FileItem {
     return false;
   }
 
+  static bool isVideoFileName(String name) => _isVideoFile(name);
+
   String get extension {
     if (isDirectory) return '';
     final dotIndex = name.lastIndexOf('.');

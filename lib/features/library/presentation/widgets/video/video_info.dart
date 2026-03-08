@@ -18,6 +18,18 @@ class VideoInfo extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
+            video.folderName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFEA580C),
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
             video.title,
             style: const TextStyle(
               fontSize: 15,
@@ -29,6 +41,17 @@ class VideoInfo extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           VideoMetadata(video: video),
+          const SizedBox(height: 8),
+          Text(
+            video.path,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF64748B),
+            ),
+          ),
         ],
       ),
     );

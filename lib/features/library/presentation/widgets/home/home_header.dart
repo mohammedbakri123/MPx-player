@@ -45,6 +45,9 @@ class HomeHeader extends StatelessWidget {
                     case 'size':
                       controller.setSortBy(SortBy.size);
                       break;
+                    case 'videos':
+                      controller.setSortBy(SortBy.videos);
+                      break;
                   }
                 },
                 offset: const Offset(0, 50),
@@ -98,6 +101,25 @@ class HomeHeader extends StatelessWidget {
                         const SizedBox(width: 12),
                         const Text('Size'),
                         if (controller.sortBy == SortBy.size) ...[
+                          const Spacer(),
+                          Icon(
+                            controller.sortOrder == SortOrder.ascending
+                                ? Icons.arrow_upward
+                                : Icons.arrow_downward,
+                            size: 16,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'videos',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.video_library_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        const Text('Videos'),
+                        if (controller.sortBy == SortBy.videos) ...[
                           const Spacer(),
                           Icon(
                             controller.sortOrder == SortOrder.ascending

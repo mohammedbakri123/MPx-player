@@ -243,41 +243,9 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildLockedIndicator() {
-    // When the player UI is locked (e.g. to prevent accidental touches),
-    // show a subtle 'locked' overlay. The controller toggles this via
-    // `controller.isLocked`.
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 200),
-      child: controller.isLocked
-          ? Center(
-              key: const ValueKey<bool>(true),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.lock,
-                      color: Colors.white70,
-                      size: 48,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Tap to unlock',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : const SizedBox.shrink(key: ValueKey<bool>(false)),
+    return const AnimatedSwitcher(
+      duration: Duration(milliseconds: 200),
+      child: SizedBox.shrink(key: ValueKey<bool>(false)),
     );
   }
 
