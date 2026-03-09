@@ -34,8 +34,6 @@ class FileBrowserContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = controller.filteredItems;
-    final folderCount = items.where((item) => item.isDirectory).length;
-    final videoCount = items.where((item) => item.isVideo).length;
 
     if (controller.isLoading && items.isEmpty) {
       return HomeSkeletonLoader(isGridView: controller.isGridView);
@@ -65,19 +63,10 @@ class FileBrowserContent extends StatelessWidget {
             child: ListView.separated(
               controller: scrollController,
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              itemCount: items.length + 1,
+              itemCount: items.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _LibraryOverviewCard(
-                    folderCount: folderCount,
-                    videoCount: videoCount,
-                    isGridView: controller.isGridView,
-                    showOnlyVideos: controller.showOnlyVideos,
-                  );
-                }
-
-                final item = items[index - 1];
+                final item = items[index];
                 final isSelected = controller.isSelected(item.path);
 
                 return FileListItem(
@@ -156,9 +145,6 @@ class FileBrowserContent extends StatelessWidget {
   }
 
   Widget _buildGridView(List<FileItem> items) {
-    final folderCount = items.where((item) => item.isDirectory).length;
-    final videoCount = items.where((item) => item.isVideo).length;
-
     return RefreshIndicator(
       onRefresh: () async => controller.refresh(),
       child: LayoutBuilder(
@@ -185,19 +171,9 @@ class FileBrowserContent extends StatelessWidget {
               mainAxisSpacing: 14,
               mainAxisExtent: mainAxisExtent,
             ),
-            itemCount: items.length + 1,
+            itemCount: items.length,
             itemBuilder: (context, index) {
-              if (index == 0) {
-                return _LibraryOverviewCard(
-                  folderCount: folderCount,
-                  videoCount: videoCount,
-                  isGridView: controller.isGridView,
-                  showOnlyVideos: controller.showOnlyVideos,
-                  compact: true,
-                );
-              }
-
-              final item = items[index - 1];
+              final item = items[index];
               final isSelected = controller.isSelected(item.path);
 
               return _GridItem(
@@ -226,141 +202,6 @@ class FileBrowserContent extends StatelessWidget {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class _LibraryOverviewCard extends StatelessWidget {
-  final int folderCount;
-  final int videoCount;
-  final bool isGridView;
-  final bool showOnlyVideos;
-  final bool compact;
-
-  const _LibraryOverviewCard({
-    required this.folderCount,
-    required this.videoCount,
-    required this.isGridView,
-    required this.showOnlyVideos,
-    this.compact = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(compact ? 14 : 18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFFFFFF), Color(0xFFF8FAFC)],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: compact
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Overview',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                Text(
-                  '$folderCount folders\n$videoCount videos',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    height: 1.4,
-                    color: Color(0xFF475569),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                _OverviewPill(
-                  label:
-                      showOnlyVideos ? 'Video filter on' : 'All files visible',
-                ),
-              ],
-            )
-          : Row(
-              children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Current Folder',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Keep browsing, jump into folders, or play a video right away.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.4,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _OverviewPill(label: '$folderCount folders'),
-                    _OverviewPill(label: '$videoCount videos'),
-                    _OverviewPill(
-                      label: showOnlyVideos
-                          ? 'Video filter on'
-                          : 'All files visible',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-    );
-  }
-}
-
-class _OverviewPill extends StatelessWidget {
-  final String label;
-
-  const _OverviewPill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE2E8F0),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF334155),
-        ),
       ),
     );
   }
