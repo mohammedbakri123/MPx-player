@@ -60,6 +60,21 @@ class _VideoThumbnailState extends State<VideoThumbnail>
   Future<void> _loadThumbnail() async {
     final cache = ThumbnailCache();
 
+    // 1. Check memory cache SYNCHRONOUSLY
+    final memoryData = cache.memoryCache.get(widget.video.path);
+    if (memoryData != null) {
+      if (mounted) {
+        setState(() {
+          _thumbnailPath = 'MEMORY_LOADED'; // Marker
+          _isLoading = false;
+          _hasError = false;
+        });
+        _fadeController.forward();
+      }
+      return;
+    }
+
+    // 2. Check disk cache
     final cachedPath = await cache.get(widget.video.path);
     if (cachedPath != null) {
       if (mounted) {
@@ -162,6 +177,9 @@ class _VideoThumbnailState extends State<VideoThumbnail>
   }
 
   Widget _buildThumbnailContent() {
+    final cache = ThumbnailCache();
+    final memoryData = cache.memoryCache.get(widget.video.path);
+
     return Stack(
       children: [
         Container(
@@ -177,7 +195,7 @@ class _VideoThumbnailState extends State<VideoThumbnail>
                 size: 28, color: Colors.white24),
           ),
         ),
-        if (_isLoading)
+        if (_isLoading && memoryData == null)
           Container(
             color: Colors.black26,
             child: const Center(
@@ -191,7 +209,22 @@ class _VideoThumbnailState extends State<VideoThumbnail>
               ),
             ),
           ),
-        if (_thumbnailPath != null)
+        if (memoryData != null)
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: Image.memory(
+              memoryData,
+              fit: BoxFit.cover,
+              key: ValueKey('mem_${widget.video.path}'),
+              cacheWidth: 200,
+              cacheHeight: 140,
+              filterQuality: FilterQuality.medium,
+              errorBuilder: (context, error, stackTrace) {
+                return const SizedBox.shrink();
+              },
+            ),
+          )
+        else if (_thumbnailPath != null && _thumbnailPath != 'MEMORY_LOADED')
           FadeTransition(
             opacity: _fadeAnimation,
             child: Image.file(

@@ -35,6 +35,7 @@ class FileBrowserContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = controller.filteredItems;
 
+    // Show skeleton whenever loading an empty list
     if (controller.isLoading && items.isEmpty) {
       return HomeSkeletonLoader(isGridView: controller.isGridView);
     }
@@ -50,16 +51,29 @@ class FileBrowserContent extends StatelessWidget {
     }
 
     if (items.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(24),
-        child: HomeEmptyState(onTryRefresh: controller.refresh),
+      return RefreshIndicator(
+        onRefresh: () async => controller.refresh(silent: true),
+        displacement: 20,
+        edgeOffset: 20,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: HomeEmptyState(onTryRefresh: controller.refresh),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     final content = controller.isGridView
         ? _buildGridView(items)
         : RefreshIndicator(
-            onRefresh: () async => controller.refresh(),
+            onRefresh: () async => controller.refresh(silent: true),
             child: ListView.separated(
               controller: scrollController,
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -99,7 +113,8 @@ class FileBrowserContent extends StatelessWidget {
     return Stack(
       children: [
         content,
-        if (controller.isLoading)
+        // Only show refresh indicator after initial load is complete
+        if (controller.isLoading && controller.isInitialized)
           Positioned(
             top: 10,
             left: 24,
@@ -146,7 +161,7 @@ class FileBrowserContent extends StatelessWidget {
 
   Widget _buildGridView(List<FileItem> items) {
     return RefreshIndicator(
-      onRefresh: () async => controller.refresh(),
+      onRefresh: () async => controller.refresh(silent: true),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;

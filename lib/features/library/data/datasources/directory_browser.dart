@@ -52,28 +52,34 @@ class DirectoryBrowser {
       }
 
       final items = <FileItem>[];
-      await for (final entity in dir.list()) {
-        final stat = await entity.stat();
+      // Faster listing by minimizing stat calls during the initial loop
+      await for (final entity in dir.list(followLinks: false)) {
+        final name = entity.path.split('/').last;
+        if (name.startsWith('.')) continue;
 
         if (entity is File) {
+          // Fast extension check before doing expensive stat
+          if (!FileItem.isVideoFileName(name)) continue;
+          
+          final stat = await entity.stat();
           items.add(FileItem(
             path: entity.path,
-            name: entity.path.split('/').last,
+            name: name,
             isDirectory: false,
             size: stat.size,
             modified: stat.modified,
           ));
         } else if (entity is Directory) {
-          final name = entity.path.split('/').last;
-          if (!name.startsWith('.')) {
-            items.add(FileItem(
-              path: entity.path,
-              name: name,
-              isDirectory: true,
-              size: 0,
-              modified: stat.modified,
-            ));
-          }
+          // For folders, we still need modified date for sorting, 
+          // but we can skip size (it's always 0 anyway)
+          final stat = await entity.stat();
+          items.add(FileItem(
+            path: entity.path,
+            name: name,
+            isDirectory: true,
+            size: 0,
+            modified: stat.modified,
+          ));
         }
       }
 
@@ -100,8 +106,9 @@ class DirectoryBrowser {
   }
 
   void invalidatePath(String path) {
-    _cache.removeWhere((key, value) => key.startsWith(path));
-    _videoCountCache.removeWhere((key, value) => key.startsWith(path));
+    // Only invalidate exact path to keep other navigation cache
+    _cache.remove(path);
+    _videoCountCache.remove(path);
   }
 
   String getParentPath(String path) {

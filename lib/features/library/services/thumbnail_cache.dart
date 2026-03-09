@@ -273,8 +273,24 @@ class ThumbnailCache {
     return await diskCache.get(videoPath);
   }
 
+  bool isInMemory(String videoPath) {
+    return memoryCache.get(videoPath) != null;
+  }
+
   Future<void> put(String videoPath, Uint8List data) async {
     memoryCache.put(videoPath, data);
+  }
+
+  Future<void> putPath(String videoPath, String thumbnailPath) async {
+    try {
+      final file = File(thumbnailPath);
+      if (await file.exists()) {
+        final bytes = await file.readAsBytes();
+        memoryCache.put(videoPath, bytes);
+      }
+    } catch (e) {
+      // Ignore
+    }
   }
 
   Future<void> invalidate(String videoPath) async {

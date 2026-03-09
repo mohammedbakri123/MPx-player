@@ -14,12 +14,9 @@ class HomeSkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () async {},
-      child: isGridView
-          ? _buildGridView(context)
-          : _buildListView(context),
-    );
+    return isGridView
+        ? _buildGridView(context)
+        : _buildListView(context);
   }
 
   Widget _buildGridView(BuildContext context) {
