@@ -7,7 +7,6 @@ import 'package:mpx/features/player/controller/player_controller.dart';
 // import 'package:mpx/features/player/controller/player_state.dart';
 // import 'package:mpx/features/player/domain/repositories/player_repository.dart';
 import 'package:mpx/features/library/domain/entities/video_file.dart';
-import 'package:mpx/features/player/services/play_history_service.dart';
 import 'package:mpx/features/settings/services/subtitle_settings_service.dart';
 
 import '../../mocks/player_repository_mock.mocks.dart';
@@ -69,7 +68,6 @@ void main() {
       SharedPreferences.setMockInitialValues({});
 
       // Initialize services
-      await PlayHistoryService.init();
       await SubtitleSettingsService.init();
 
       // Setup stream controllers

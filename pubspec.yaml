@@ -37,7 +37,7 @@ dependencies:
   # Database
   sqflite: ^2.3.0
 
-  # Video Thumbnails & Metadata
+  # Video Metadata & Thumbnails
   video_thumbnail: ^0.5.6
   media_data_extractor: ^0.0.8
 

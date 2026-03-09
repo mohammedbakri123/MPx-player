@@ -1,7 +1,10 @@
 import 'dart:io';
 
+import '../../../core/database/app_database.dart';
+import '../../../core/services/logger_service.dart';
 import '../domain/entities/file_item.dart';
 import '../domain/entities/video_file.dart';
+import '../domain/entities/video_folder.dart';
 
 enum LibrarySearchSort { relevance, recent, name, size }
 
@@ -24,6 +27,7 @@ class LibraryIndexService {
 
   LibraryIndexService._internal();
 
+  final AppDatabase _db = AppDatabase();
   final Map<String, LibraryIndexSnapshot> _snapshots = {};
   final Map<String, Future<LibraryIndexSnapshot>> _inFlight = {};
 
@@ -36,25 +40,56 @@ class LibraryIndexService {
   Future<LibraryIndexSnapshot> ensureIndexed(
     String rootPath, {
     bool forceRefresh = false,
-  }) {
+  }) async {
     if (!forceRefresh && _snapshots.containsKey(rootPath)) {
-      return Future.value(_snapshots[rootPath]!);
+      return _snapshots[rootPath]!;
     }
 
     if (!forceRefresh && _inFlight.containsKey(rootPath)) {
       return _inFlight[rootPath]!;
     }
 
-    final future = _buildIndex(rootPath);
+    final future = _loadOrBuildIndex(rootPath, forceRefresh);
     _inFlight[rootPath] = future;
 
-    future.then((snapshot) {
+    try {
+      final snapshot = await future;
       _snapshots[rootPath] = snapshot;
-    }).whenComplete(() {
+      return snapshot;
+    } finally {
       _inFlight.remove(rootPath);
-    });
+    }
+  }
 
-    return future;
+  Future<LibraryIndexSnapshot> _loadOrBuildIndex(
+      String rootPath, bool forceRefresh) async {
+    if (!forceRefresh) {
+      final db = await _db.database;
+      final metadata = await _db.getLibraryIndexMetadata(db, rootPath);
+
+      if (metadata != null) {
+        AppLogger.i('Loading library index from database for $rootPath');
+        final videos = await _db.getAllVideos();
+        
+        // Filter videos that belong to this root path (if multiple roots supported)
+        final rootVideos = videos.where((v) => v.path.startsWith(rootPath)).toList();
+        
+        if (rootVideos.isNotEmpty) {
+          final folderVideoCounts = <String, int>{};
+          for (final video in rootVideos) {
+            _incrementFolderCounts(folderVideoCounts, rootPath, video.folderPath);
+          }
+
+          return LibraryIndexSnapshot(
+            videos: rootVideos,
+            folderVideoCounts: folderVideoCounts,
+            indexedAt: DateTime.fromMillisecondsSinceEpoch(metadata['indexed_at']),
+          );
+        }
+      }
+    }
+
+    return _buildIndex(rootPath);
   }
 
   Future<List<VideoFile>> search(
@@ -86,12 +121,21 @@ class LibraryIndexService {
     return matches.map((match) => match.video).toList(growable: false);
   }
 
-  void invalidate(String rootPath) {
+  Future<void> invalidate(String rootPath) async {
     _snapshots.remove(rootPath);
     _inFlight.remove(rootPath);
+    try {
+      final db = await _db.database;
+      await _db.deleteLibraryIndexMetadata(db, rootPath);
+      // We might also want to delete all videos if this is the only root, 
+      // but for now let's just delete metadata to trigger re-index.
+    } catch (e) {
+      AppLogger.e('Failed to invalidate library index in database: $e');
+    }
   }
 
   Future<LibraryIndexSnapshot> _buildIndex(String rootPath) async {
+    AppLogger.i('Building library index from scratch for $rootPath');
     final root = Directory(rootPath);
     if (!await root.exists()) {
       return LibraryIndexSnapshot(
@@ -153,11 +197,39 @@ class LibraryIndexService {
       }
     }
 
-    return LibraryIndexSnapshot(
+    final now = DateTime.now();
+    final snapshot = LibraryIndexSnapshot(
       videos: videos,
       folderVideoCounts: folderVideoCounts,
-      indexedAt: DateTime.now(),
+      indexedAt: now,
     );
+
+    // Persist to database
+    try {
+      final db = await _db.database;
+      await _db.insertVideos(videos);
+      
+      // Group videos by folder for correct folder persistence
+      final videosByFolder = <String, List<VideoFile>>{};
+      for (final video in videos) {
+        videosByFolder.putIfAbsent(video.folderPath, () => []).add(video);
+      }
+
+      final folders = videosByFolder.entries.map((entry) => VideoFolder(
+        path: entry.key,
+        name: entry.key.split('/').last,
+        videos: entry.value,
+      )).toList();
+      
+      await _db.insertFolders(folders);
+
+      await _db.saveLibraryIndexMetadata(db, rootPath, now);
+      AppLogger.i('Saved ${videos.length} videos and index metadata to database');
+    } catch (e) {
+      AppLogger.e('Failed to persist library index: $e');
+    }
+
+    return snapshot;
   }
 
   bool _shouldSkipDirectory(String path, String name) {

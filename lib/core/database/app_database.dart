@@ -6,6 +6,7 @@ import 'operations/video_operations.dart';
 import 'operations/folder_operations.dart';
 import 'operations/favorites_operations.dart';
 import 'operations/watch_history_operations.dart';
+import 'operations/library_index_operations.dart';
 
 /// Main database class - MPx Player
 /// Manages video library, folders, favorites, and watch history with SQLite
@@ -14,7 +15,8 @@ class AppDatabase
         VideoDatabaseOperations,
         FolderDatabaseOperations,
         FavoritesDatabaseOperations,
-        WatchHistoryOperations {
+        WatchHistoryOperations,
+        LibraryIndexDatabaseOperations {
   static final AppDatabase _instance = AppDatabase._internal();
   static Database? _database;
 
@@ -46,6 +48,15 @@ class AppDatabase
   /// Create tables on first launch
   Future<void> _onCreate(Database db, int version) async {
     AppLogger.i('Creating database tables (version $version)');
+
+    // Library Index Metadata table
+    await db.execute('''
+      CREATE TABLE library_index_metadata (
+        root_path TEXT PRIMARY KEY,
+        indexed_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
 
     // Videos table
     await db.execute('''

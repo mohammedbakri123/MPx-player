@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'features/settings/services/subtitle_settings_service.dart';
 import 'features/favorites/services/favorites_service.dart';
-import 'core/database/database_migration.dart';
 import 'features/library/services/thumbnail_cache.dart';
 import 'features/library/presentation/widgets/home/home_fab.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
@@ -15,7 +14,6 @@ Future<void> main() async {
   await Future.wait([
     SubtitleSettingsService.init(),
     FavoritesService.init(),
-    DatabaseMigration.migrateIfNeeded(),
   ]);
 
   ThumbnailCache().cleanup();

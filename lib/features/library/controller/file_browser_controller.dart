@@ -62,7 +62,13 @@ class FileBrowserController extends ChangeNotifier {
 
     _currentPath = path;
     final items = await _browser.listDirectory(path);
-    _items = _prepareVisibleItems(items);
+    
+    if (_hideEmptyFolders && _showOnlyVideos) {
+      _items = await _filterFoldersWithVideos(path, items);
+    } else {
+      _items = _prepareVisibleItems(items);
+    }
+    
     _sortItems();
 
     _isLoading = false;
@@ -312,10 +318,10 @@ class FileBrowserController extends ChangeNotifier {
     return result;
   }
 
-  void refresh() {
+  Future<void> refresh() async {
     _browser.invalidatePath(_currentPath);
-    _indexService.invalidate(_browser.getRootPath());
-    loadDirectory(_currentPath, addToHistory: false);
+    await _indexService.invalidate(_browser.getRootPath());
+    await loadDirectory(_currentPath, addToHistory: false);
   }
 
   void toggleSelection(String path) {
@@ -366,7 +372,7 @@ class FileBrowserController extends ChangeNotifier {
       }
     }
     exitSelectionMode();
-    refresh();
+    await refresh();
   }
 
   bool isSelected(String path) => _selectedItems.contains(path);
