@@ -19,7 +19,6 @@ class FileBrowserController extends ChangeNotifier {
   bool _isLoading = false;
   bool _isInitialized = false;
   bool _showOnlyVideos = true; // Default to TRUE as requested
-  bool _hideEmptyFolders = true; // Default to TRUE as requested
   bool _isGridView = false;
   SortBy _sortBy = SortBy.name;
   SortOrder _sortOrder = SortOrder.ascending;
@@ -42,20 +41,22 @@ class FileBrowserController extends ChangeNotifier {
   Set<String> get selectedItems => _selectedItems;
   int get selectedCount => _selectedItems.length;
 
-  String get currentFolderName {
-    if (_currentPath.isEmpty) return 'Files';
-    return _currentPath.split('/').last;
-  }
-
   Future<void> initialize() async {
     _currentPath = _browser.getRootPath();
+
+    if (_indexService.getSnapshot(_currentPath) == null &&
+        await _indexService.hasPersistedIndex(_currentPath)) {
+      await _indexService.ensureIndexed(_currentPath);
+    }
+
     await loadDirectory(_currentPath);
     _isInitialized = true;
     notifyListeners();
     unawaited(_indexService.ensureIndexed(_currentPath));
   }
 
-  Future<void> loadDirectory(String path, {bool addToHistory = true, bool silent = false}) async {
+  Future<void> loadDirectory(String path,
+      {bool addToHistory = true, bool silent = false}) async {
     if (!silent) {
       _isLoading = true;
       _error = null;
@@ -72,26 +73,19 @@ class FileBrowserController extends ChangeNotifier {
     final items = await _browser.listDirectory(path);
 
     // Filter items based on the best available data
-    final filtered = _prepareVisibleItems(items, isRefreshing: silent);
+    final filtered = _prepareVisibleItems(items);
 
-    if (filtered.isEmpty && items.isNotEmpty && silent) {
-      // Avoid flickering to empty screen during refresh:
-      // if filtered is empty but original list is not, it means
-      // scanning hasn't finished. Keep showing original folders initially.
-      _items = items.where((item) => item.isDirectory || item.isVideo).toList();
-    } else {
-      _items = filtered;
-    }
+    _items = filtered;
 
     _sortItems();
     if (!silent) _isLoading = false;
     notifyListeners();
-    
+
     // Always schedule background hydration to ensure counts are fresh
     _scheduleFolderHydration(path, items);
   }
 
-  List<FileItem> _prepareVisibleItems(List<FileItem> items, {bool isRefreshing = false}) {
+  List<FileItem> _prepareVisibleItems(List<FileItem> items) {
     final rootPath = _browser.getRootPath();
     final preparedItems = List<FileItem>.from(items);
     final snapshot = _indexService.getSnapshot(rootPath);
@@ -99,9 +93,10 @@ class FileBrowserController extends ChangeNotifier {
     for (final item in preparedItems) {
       if (!item.isDirectory) continue;
 
-      final indexedCount = _indexService.getFolderVideoCount(rootPath, item.path);
+      final indexedCount =
+          _indexService.getFolderVideoCount(rootPath, item.path);
       final cachedCount = _browser.getVideoCount(item.path);
-      item.videoCount = indexedCount ?? cachedCount ?? 0;
+      item.videoCount = indexedCount ?? cachedCount;
     }
 
     if (!_showOnlyVideos) return preparedItems;
@@ -109,39 +104,41 @@ class FileBrowserController extends ChangeNotifier {
     return preparedItems.where((item) {
       if (item.isVideo) return true;
       if (item.isDirectory) {
-        final count = _indexService.getFolderVideoCount(rootPath, item.path) ?? 
-                     _browser.getVideoCount(item.path);
-        
+        final count = _indexService.getFolderVideoCount(rootPath, item.path) ??
+            _browser.getVideoCount(item.path);
+
         // If we have an index (snapshot), we are strict about 0.
         // If count is null, it means folder is not indexed.
         if (snapshot != null) {
           // Key exists in snapshot -> use it. Missing key -> it's empty (0).
-          final int indexedCount = _indexService.getFolderVideoCount(rootPath, item.path) ?? 0;
+          final int indexedCount =
+              _indexService.getFolderVideoCount(rootPath, item.path) ?? 0;
           return indexedCount > 0;
         }
 
-        // If no snapshot yet, be lenient to avoid empty library screen
-        return count == null || count > 0;
+        // Before the index is ready, only keep folders we already know contain videos.
+        return (count ?? 0) > 0;
       }
       return false;
     }).toList();
   }
 
   Future<List<FileItem>> _filterFoldersWithVideos(
-    String path,
     List<FileItem> items,
   ) async {
     final filtered = <FileItem>[];
     final rootPath = _browser.getRootPath();
 
-    final videos = items.where((item) => !item.isDirectory && item.isVideo).toList();
+    final videos =
+        items.where((item) => !item.isDirectory && item.isVideo).toList();
     filtered.addAll(videos);
 
     final folders = items.where((item) => item.isDirectory).toList();
 
     // Process folders concurrently
     final folderFutures = folders.map((item) async {
-      final indexedCount = _indexService.getFolderVideoCount(rootPath, item.path);
+      final indexedCount =
+          _indexService.getFolderVideoCount(rootPath, item.path);
       if (indexedCount != null) {
         _browser.setVideoCount(item.path, indexedCount);
         if (indexedCount > 0) {
@@ -178,24 +175,26 @@ class FileBrowserController extends ChangeNotifier {
   }
 
   void _scheduleFolderHydration(String path, List<FileItem> items) {
-    if (!_hideEmptyFolders || !_showOnlyVideos) return;
+    if (!_showOnlyVideos) return;
     unawaited(_hydrateFolderVisibility(path, items));
   }
 
-  Future<void> _hydrateFolderVisibility(String path, List<FileItem> items) async {
+  Future<void> _hydrateFolderVisibility(
+      String path, List<FileItem> items) async {
     final rootPath = _browser.getRootPath();
     final hasAllCounts = items.every((item) {
       if (!item.isDirectory) return true;
-      final indexedCount = _indexService.getFolderVideoCount(rootPath, item.path);
+      final indexedCount =
+          _indexService.getFolderVideoCount(rootPath, item.path);
       final cachedCount = _browser.getVideoCount(item.path);
       return indexedCount != null || cachedCount != null;
     });
 
     if (hasAllCounts) return;
 
-    final filtered = await _filterFoldersWithVideos(path, items);
+    final filtered = await _filterFoldersWithVideos(items);
 
-    if (_currentPath != path || !_hideEmptyFolders || !_showOnlyVideos) return;
+    if (_currentPath != path || !_showOnlyVideos) return;
 
     _items = filtered;
     _sortItems();
@@ -214,11 +213,12 @@ class FileBrowserController extends ChangeNotifier {
       final entities = await dir.list(followLinks: false).toList();
       for (final entity in entities) {
         if (entity is File) {
-          if (_isVideoFileFast(entity.path.split('/').last)) count++;
+          if (FileItem.isVideoFileName(entity.path.split('/').last)) count++;
         } else if (entity is Directory) {
           final name = entity.path.split('/').last;
           if (!name.startsWith('.')) {
-            count += await _countVideosRecursively(entity.path, depth: depth + 1);
+            count +=
+                await _countVideosRecursively(entity.path, depth: depth + 1);
           }
         }
       }
@@ -226,18 +226,12 @@ class FileBrowserController extends ChangeNotifier {
     return count;
   }
 
-  bool _isVideoFileFast(String name) {
-    final lower = name.toLowerCase();
-    return lower.endsWith('.mp4') || lower.endsWith('.mkv') || lower.endsWith('.avi') || 
-           lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.ts');
-  }
-
   Future<void> goBack() async {
     if (_pathHistory.isEmpty) return;
     final previousPath = _pathHistory.removeLast();
     _currentPath = previousPath;
     final items = await _browser.listDirectory(previousPath);
-    _items = _prepareVisibleItems(items, isRefreshing: true);
+    _items = _prepareVisibleItems(items);
     _sortItems();
     notifyListeners();
     _scheduleFolderHydration(previousPath, items);
@@ -250,7 +244,6 @@ class FileBrowserController extends ChangeNotifier {
 
   void toggleShowOnlyVideos() {
     _showOnlyVideos = !_showOnlyVideos;
-    _hideEmptyFolders = _showOnlyVideos;
     _browser.invalidatePath(_currentPath);
     _indexService.invalidate(_browser.getRootPath());
     loadDirectory(_currentPath, addToHistory: false);
@@ -263,7 +256,9 @@ class FileBrowserController extends ChangeNotifier {
 
   void setSortBy(SortBy sortBy) {
     if (_sortBy == sortBy) {
-      _sortOrder = _sortOrder == SortOrder.ascending ? SortOrder.descending : SortOrder.ascending;
+      _sortOrder = _sortOrder == SortOrder.ascending
+          ? SortOrder.descending
+          : SortOrder.ascending;
     } else {
       _sortBy = sortBy;
       _sortOrder = _defaultOrderFor(sortBy);
@@ -274,10 +269,12 @@ class FileBrowserController extends ChangeNotifier {
 
   SortOrder _defaultOrderFor(SortBy sortBy) {
     switch (sortBy) {
-      case SortBy.name: return SortOrder.ascending;
+      case SortBy.name:
+        return SortOrder.ascending;
       case SortBy.date:
       case SortBy.size:
-      case SortBy.videos: return SortOrder.descending;
+      case SortBy.videos:
+        return SortOrder.descending;
     }
   }
 
@@ -288,33 +285,37 @@ class FileBrowserController extends ChangeNotifier {
 
       int result;
       switch (_sortBy) {
-        case SortBy.name: result = a.name.toLowerCase().compareTo(b.name.toLowerCase()); break;
-        case SortBy.date: result = a.modified.compareTo(b.modified); break;
-        case SortBy.size: result = a.size.compareTo(b.size); break;
+        case SortBy.name:
+          result = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          break;
+        case SortBy.date:
+          result = a.modified.compareTo(b.modified);
+          break;
+        case SortBy.size:
+          result = a.size.compareTo(b.size);
+          break;
         case SortBy.videos:
-          result = (a.videoCount ?? (a.isDirectory ? -1 : 0)).compareTo(b.videoCount ?? (b.isDirectory ? -1 : 0));
+          result = (a.videoCount ?? (a.isDirectory ? -1 : 0))
+              .compareTo(b.videoCount ?? (b.isDirectory ? -1 : 0));
           break;
       }
       return _sortOrder == SortOrder.ascending ? result : -result;
     });
   }
 
-  List<FileItem> get filteredItems => _items;
-
   Future<void> refresh({bool silent = false}) async {
-    // 1. First invalidate ONLY browser cache for the current path
     _browser.invalidatePath(_currentPath);
-    
-    // 2. Load directory. Because the INDEX is still valid, it will be strict
-    // about which folders to show, preventing non-video folders from appearing.
     await loadDirectory(_currentPath, addToHistory: false, silent: silent);
-    
-    // 3. ONLY THEN invalidate the index to re-scan for new files in background
-    await _indexService.invalidate(_browser.getRootPath());
-    
-    // 4. Trigger hydration to find any truly new video folders added recently
-    final items = await _browser.listDirectory(_currentPath);
-    _scheduleFolderHydration(_currentPath, items);
+
+    final rootPath = _browser.getRootPath();
+    final refreshedPath = _currentPath;
+    unawaited(() async {
+      await _indexService.refreshInBackground(rootPath);
+      if (_currentPath != refreshedPath) {
+        return;
+      }
+      await loadDirectory(refreshedPath, addToHistory: false, silent: true);
+    }());
   }
 
   void toggleSelection(String path) {
@@ -340,7 +341,9 @@ class FileBrowserController extends ChangeNotifier {
   }
 
   void selectAll() {
-    for (final item in filteredItems) _selectedItems.add(item.path);
+    for (final item in _items) {
+      _selectedItems.add(item.path);
+    }
     notifyListeners();
   }
 
@@ -348,12 +351,15 @@ class FileBrowserController extends ChangeNotifier {
     for (final path in _selectedItems) {
       try {
         final entity = File(path);
-        if (await entity.exists()) await entity.delete();
-        else {
+        if (await entity.exists()) {
+          await entity.delete();
+        } else {
           final dir = Directory(path);
-          if (await dir.exists()) await dir.delete(recursive: true);
+          if (await dir.exists()) {
+            await dir.delete(recursive: true);
+          }
         }
-      } catch (e) {}
+      } catch (_) {}
     }
     exitSelectionMode();
     await refresh();

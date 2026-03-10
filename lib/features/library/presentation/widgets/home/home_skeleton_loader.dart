@@ -14,23 +14,37 @@ class HomeSkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return isGridView
-        ? _buildGridView(context)
-        : _buildListView(context);
+    return isGridView ? _buildGridView(context) : _buildListView(context);
   }
 
   Widget _buildGridView(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 1,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        return _buildGridSkeleton();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final estimatedCount = ((width + 14) / 190).floor();
+        final crossAxisCount = estimatedCount < 2
+            ? 2
+            : estimatedCount > 4
+                ? 4
+                : estimatedCount;
+        final cardWidth =
+            (width - 48 - ((crossAxisCount - 1) * 14)) / crossAxisCount;
+        final previewHeight = cardWidth.clamp(132.0, 180.0);
+        final mainAxisExtent = previewHeight + 108;
+
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+            mainAxisExtent: mainAxisExtent,
+          ),
+          itemCount: itemCount,
+          itemBuilder: (context, index) {
+            return _buildGridSkeleton(previewHeight);
+          },
+        );
       },
     );
   }
@@ -45,25 +59,44 @@ class HomeSkeletonLoader extends StatelessWidget {
     );
   }
 
-  Widget _buildGridSkeleton() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildThumbnailSkeleton(
-          height: double.infinity,
-          borderRadius: 16,
-        ),
-        const SizedBox(height: 12),
-        _buildTextSkeleton(
-          width: double.infinity,
-          height: 18,
-        ),
-        const SizedBox(height: 8),
-        _buildTextSkeleton(
-          width: 100,
-          height: 14,
-        ),
-      ],
+  Widget _buildGridSkeleton(double previewHeight) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildThumbnailSkeleton(
+            height: previewHeight,
+            borderRadius: 20,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTextSkeleton(
+                  width: double.infinity,
+                  height: 16,
+                ),
+                const SizedBox(height: 6),
+                _buildTextSkeleton(
+                  width: 110,
+                  height: 12,
+                ),
+                const SizedBox(height: 14),
+                _buildTextSkeleton(
+                  width: 86,
+                  height: 22,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

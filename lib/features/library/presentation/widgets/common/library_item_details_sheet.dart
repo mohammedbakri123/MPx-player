@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/file_item.dart';
 import '../../../domain/entities/video_file.dart';
 import '../../../services/video_metadata_service.dart';
+import 'library_item_ui.dart';
 
 class LibraryItemDetailsSheet {
   static Future<void> showForItem(
@@ -23,7 +24,7 @@ class LibraryItemDetailsSheet {
             : const Color(0xFFEA580C),
         icon: item.isDirectory ? Icons.folder_rounded : Icons.movie_rounded,
         primaryMeta: item.isDirectory
-            ? '${item.videoCount ?? 0} videos'
+            ? LibraryItemUi.folderVideoLabel(item.videoCount)
             : item.formattedSize,
         secondaryMeta: _formatDateTime(item.modified),
         action: !item.isDirectory && onToggleFavorite != null
@@ -34,7 +35,10 @@ class LibraryItemDetailsSheet {
               )
             : null,
         facts: [
-          _SheetFact(label: 'Location', value: _folderName(item.path)),
+          _SheetFact(
+            label: 'Location',
+            value: LibraryItemUi.parentFolderName(item.path),
+          ),
           _SheetFact(
             label: item.isDirectory ? 'Contains' : 'Format',
             value: item.isDirectory
@@ -93,16 +97,7 @@ class LibraryItemDetailsSheet {
   }
 
   static String _folderContainsLabel(int? count) {
-    final total = count ?? 0;
-    return total == 1 ? '1 video' : '$total videos';
-  }
-
-  static String _folderName(String path) {
-    final lastSeparator = path.lastIndexOf('/');
-    if (lastSeparator <= 0) {
-      return '/';
-    }
-    return path.substring(0, lastSeparator).split('/').last;
+    return LibraryItemUi.folderVideoLabel(count);
   }
 
   static String _formatDateTime(DateTime date) {

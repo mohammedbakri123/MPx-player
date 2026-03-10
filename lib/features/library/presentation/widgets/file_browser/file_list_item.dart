@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/file_item.dart';
-import '../../../domain/entities/video_file.dart';
+import '../common/library_item_ui.dart';
 import '../common/library_item_details_sheet.dart';
 import '../video/video_thumbnail.dart';
 
@@ -96,27 +96,24 @@ class FileListItem extends StatelessWidget {
                     children: [
                       _MetaChip(
                         label: item.isDirectory
-                            ? (item.videoCount != null
-                                ? '${item.videoCount} videos'
-                                : 'Folder')
+                            ? LibraryItemUi.folderVideoLabel(item.videoCount)
                             : item.formattedSize,
                         tint: item.isDirectory
                             ? const Color(0xFF2563EB)
                             : const Color(0xFFEA580C),
                       ),
-                      _MetaChip(
-                        label: item.isDirectory
-                            ? 'Updated ${_relativeDate(item.modified)}'
-                            : item.extension.toUpperCase(),
-                        tint: const Color(0xFF0F766E),
-                      ),
+                      if (item.isVideo)
+                        _MetaChip(
+                          label: item.extension.toUpperCase(),
+                          tint: const Color(0xFF0F766E),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
                     item.isDirectory
-                        ? 'Open folder and continue browsing from here'
-                        : '${_folderName(item.path)} • ${_relativeDate(item.modified)}',
+                        ? 'Folder'
+                        : '${LibraryItemUi.parentFolderName(item.path)} • ${LibraryItemUi.relativeDate(item.modified)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -191,24 +188,6 @@ class FileListItem extends StatelessWidget {
     );
   }
 
-  String _relativeDate(DateTime date) {
-    final diff = DateTime.now().difference(date);
-    if (diff.inDays == 0) return 'today';
-    if (diff.inDays == 1) return 'yesterday';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
-    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
-    return '${(diff.inDays / 365).floor()}y ago';
-  }
-
-  String _folderName(String path) {
-    final lastSeparator = path.lastIndexOf('/');
-    if (lastSeparator <= 0) {
-      return '/';
-    }
-    return path.substring(0, lastSeparator).split('/').last;
-  }
-
   Widget _buildIcon() {
     if (item.isDirectory) {
       return Container(
@@ -227,10 +206,7 @@ class FileListItem extends StatelessWidget {
     }
 
     if (item.isVideo) {
-      final video = VideoFile.fromFileItem(
-        item,
-        item.path.substring(0, item.path.lastIndexOf('/')),
-      );
+      final video = LibraryItemUi.videoFromFileItem(item);
       return ClipRRect(
         borderRadius: BorderRadius.circular(14),
         child: SizedBox(

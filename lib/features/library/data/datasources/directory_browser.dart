@@ -60,7 +60,7 @@ class DirectoryBrowser {
         if (entity is File) {
           // Fast extension check before doing expensive stat
           if (!FileItem.isVideoFileName(name)) continue;
-          
+
           final stat = await entity.stat();
           items.add(FileItem(
             path: entity.path,
@@ -70,7 +70,7 @@ class DirectoryBrowser {
             modified: stat.modified,
           ));
         } else if (entity is Directory) {
-          // For folders, we still need modified date for sorting, 
+          // For folders, we still need modified date for sorting,
           // but we can skip size (it's always 0 anyway)
           final stat = await entity.stat();
           items.add(FileItem(
@@ -96,10 +96,6 @@ class DirectoryBrowser {
     }
   }
 
-  List<FileItem> filterVideos(List<FileItem> items) {
-    return items.where((item) => item.isVideo).toList();
-  }
-
   void clearCache() {
     _cache.clear();
     _videoCountCache.clear();
@@ -109,19 +105,6 @@ class DirectoryBrowser {
     // Only invalidate exact path to keep other navigation cache
     _cache.remove(path);
     _videoCountCache.remove(path);
-  }
-
-  String getParentPath(String path) {
-    final lastSep = path.lastIndexOf('/');
-    if (lastSep <= 0) return '/';
-    return path.substring(0, lastSep);
-  }
-
-  bool isRoot(String path) {
-    if (Platform.isAndroid) {
-      return path == '/storage/emulated/0' || path == '/';
-    }
-    return path == '/';
   }
 
   String getRootPath() {
