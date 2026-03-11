@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../services/favorites_service.dart';
 import '../widgets/favorites_header.dart';
@@ -79,25 +80,38 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        body: SafeArea(
-            child: Column(children: [
-          FavoritesHeader(
-            videoCount: _filteredVideos.length,
-            searchQuery: _searchQuery,
-            onSearchChanged: _onSearchChanged,
-            onClearSearch: _clearSearch,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: theme.appBackground,
+      body: SafeArea(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [theme.appBackground, theme.appBackgroundAlt],
+            ),
           ),
-          Expanded(
-              child: FavoritesContent(
-                  videos: _filteredVideos,
-                  isLoading: _isLoading,
-                  onRefresh: _loadFavorites,
-                  onVideoTap: _openVideoPlayer,
-                  isNavigating: _isNavigating,
-                  onRemove: _removeFromFavorites,
-                  onTryDemo: null)),
-        ])),
-      );
+          child: Column(children: [
+            FavoritesHeader(
+              videoCount: _filteredVideos.length,
+              searchQuery: _searchQuery,
+              onSearchChanged: _onSearchChanged,
+              onClearSearch: _clearSearch,
+            ),
+            Expanded(
+                child: FavoritesContent(
+                    videos: _filteredVideos,
+                    isLoading: _isLoading,
+                    onRefresh: _loadFavorites,
+                    onVideoTap: _openVideoPlayer,
+                    isNavigating: _isNavigating,
+                    onRemove: _removeFromFavorites,
+                    onTryDemo: null)),
+          ]),
+        ),
+      ),
+    );
+  }
 }

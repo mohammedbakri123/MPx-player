@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../domain/entities/video_file.dart';
 import '../../data/datasources/directory_browser.dart';
 import '../../services/library_index_service.dart';
@@ -135,8 +136,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: theme.appBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -152,6 +154,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchBar() {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -162,11 +165,11 @@ class _SearchScreenState extends State<SearchScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.elevatedSurface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: theme.softBorder),
               ),
-              child: const Icon(Icons.arrow_back, color: Colors.grey),
+              child: Icon(Icons.arrow_back, color: theme.mutedText),
             ),
           ),
           const SizedBox(width: 12),
@@ -174,12 +177,12 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Container(
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.elevatedSurface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: theme.softBorder),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: theme.cardShadow,
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -189,18 +192,18 @@ class _SearchScreenState extends State<SearchScreen> {
                 controller: _searchController,
                 focusNode: _focusNode,
                 onChanged: _onSearchChanged,
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16, color: theme.strongText),
                 decoration: InputDecoration(
                   hintText: 'Search videos...',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+                  hintStyle: TextStyle(color: theme.faintText),
+                  prefixIcon: Icon(Icons.search, color: theme.faintText),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? GestureDetector(
                           onTap: () {
                             _searchController.clear();
                             _search('');
                           },
-                          child: Icon(Icons.clear, color: Colors.grey.shade400),
+                          child: Icon(Icons.clear, color: theme.faintText),
                         )
                       : null,
                   border: InputBorder.none,
@@ -250,6 +253,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildResults() {
+    final theme = Theme.of(context);
     if (_isSearching) {
       return Center(
         child: Column(
@@ -262,7 +266,7 @@ class _SearchScreenState extends State<SearchScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey.shade600,
+                color: theme.mutedText,
               ),
             ),
           ],
@@ -301,6 +305,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildEmptyState(String title, String subtitle) {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -308,7 +313,7 @@ class _SearchScreenState extends State<SearchScreen> {
           Icon(
             Icons.search,
             size: 64,
-            color: Colors.grey.shade300,
+            color: theme.faintText,
           ),
           const SizedBox(height: 16),
           Text(
@@ -316,7 +321,7 @@ class _SearchScreenState extends State<SearchScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: theme.strongText,
             ),
           ),
           const SizedBox(height: 8),
@@ -324,7 +329,7 @@ class _SearchScreenState extends State<SearchScreen> {
             subtitle,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade400,
+              color: theme.mutedText,
             ),
           ),
         ],
@@ -346,6 +351,7 @@ class _SortChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
@@ -354,11 +360,10 @@ class _SortChip extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF0F172A) : Colors.white,
+            color: isSelected ? theme.strongText : theme.elevatedSurface,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color:
-                  isSelected ? const Color(0xFF0F172A) : Colors.grey.shade200,
+              color: isSelected ? theme.strongText : theme.softBorder,
             ),
           ),
           child: Text(
@@ -366,7 +371,7 @@ class _SortChip extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : const Color(0xFF334155),
+              color: isSelected ? theme.colorScheme.surface : theme.mutedText,
             ),
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 
 class FavoritesTitle extends StatelessWidget {
   final int videoCount;
@@ -7,20 +8,22 @@ class FavoritesTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Favorites',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             letterSpacing: -0.5,
+            color: theme.strongText,
           ),
         ),
         Text(
           '$videoCount videos found',
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 14, color: theme.mutedText),
         ),
       ],
     );

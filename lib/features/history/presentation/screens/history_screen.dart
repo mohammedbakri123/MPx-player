@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../domain/entities/watch_history_entry.dart';
 import '../../services/history_service.dart';
 import '../widgets/history_header.dart';
@@ -117,29 +118,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: theme.appBackground,
       body: SafeArea(
-        child: Column(
-          children: [
-            HistoryHeader(
-              videoCount: _filteredEntries.length,
-              searchQuery: _searchQuery,
-              onSearchChanged: _onSearchChanged,
-              onClearSearch: _clearSearch,
-              onClearHistory: _entries.isNotEmpty ? _clearAllHistory : null,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [theme.appBackground, theme.appBackgroundAlt],
             ),
-            Expanded(
-              child: HistoryContent(
-                entries: _filteredEntries,
-                isLoading: _isLoading,
-                onRefresh: _loadHistory,
-                onVideoTap: _openVideoPlayer,
-                onRemove: _removeFromHistory,
-                isNavigating: _isNavigating,
+          ),
+          child: Column(
+            children: [
+              HistoryHeader(
+                videoCount: _filteredEntries.length,
+                searchQuery: _searchQuery,
+                onSearchChanged: _onSearchChanged,
+                onClearSearch: _clearSearch,
+                onClearHistory: _entries.isNotEmpty ? _clearAllHistory : null,
               ),
-            ),
-          ],
+              Expanded(
+                child: HistoryContent(
+                  entries: _filteredEntries,
+                  isLoading: _isLoading,
+                  onRefresh: _loadHistory,
+                  onVideoTap: _openVideoPlayer,
+                  onRemove: _removeFromHistory,
+                  isNavigating: _isNavigating,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

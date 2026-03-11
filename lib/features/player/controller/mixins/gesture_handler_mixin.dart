@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../settings/services/app_settings_service.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
 
@@ -85,6 +86,8 @@ mixin GestureHandlerMixin on ChangeNotifier {
   }
 
   void onVerticalDragStart(String side) {
+    if (!AppSettingsService.swipeGesturesEnabled) return;
+
     // Block vertical drag during horizontal seek to prevent conflicts
     if (!_coordShouldProcessVerticalDrag() || state.isDraggingX) return;
 
@@ -126,6 +129,8 @@ mixin GestureHandlerMixin on ChangeNotifier {
   }
 
   void onLongPressStart() {
+    if (!AppSettingsService.holdToBoostEnabled) return;
+
     // Block long-press speed toggle during seek to prevent conflicts
     if (!_coordShouldProcessLongPress()) return;
     if (state.isLongPressing) return;

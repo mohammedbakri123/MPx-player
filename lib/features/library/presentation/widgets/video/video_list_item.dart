@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../../domain/entities/video_file.dart';
 import '../common/library_item_details_sheet.dart';
 import 'video_thumbnail.dart';
@@ -23,6 +24,7 @@ class VideoListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: isLoading ? null : onTap,
       onLongPress: () => _showContextMenu(context),
@@ -30,16 +32,16 @@ class VideoListItem extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.elevatedSurface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: theme.cardShadow,
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
           ],
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: theme.softBorder),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -77,12 +79,12 @@ class VideoListItem extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
+                      color: theme.subtleSurface,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.more_horiz,
-                      color: Color(0xFF475569),
+                      color: theme.mutedText,
                       size: 18,
                     ),
                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 import 'favorites_title.dart';
 
 class FavoritesHeader extends StatelessWidget {
@@ -23,40 +24,44 @@ class FavoritesHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              _buildIcon(),
+              _buildIcon(context),
               const SizedBox(width: 16),
               Expanded(child: FavoritesTitle(videoCount: videoCount)),
             ],
           ),
           const SizedBox(height: 16),
-          _buildSearchField(),
+          _buildSearchField(context),
         ],
       ),
     );
   }
 
-  Widget _buildIcon() {
+  Widget _buildIcon(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: Colors.red.shade50,
+        color: const Color(0xFFE11D48).withValues(
+          alpha: theme.isDarkMode ? 0.18 : 0.1,
+        ),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Icon(Icons.favorite, color: Colors.red.shade500, size: 24),
+      child: const Icon(Icons.favorite, color: Color(0xFFE11D48), size: 24),
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.elevatedSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.softBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: theme.cardShadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -64,15 +69,15 @@ class FavoritesHeader extends StatelessWidget {
       ),
       child: TextField(
         onChanged: onSearchChanged,
-        style: const TextStyle(fontSize: 16),
+        style: TextStyle(fontSize: 16, color: theme.strongText),
         decoration: InputDecoration(
           hintText: 'Search favorites...',
-          hintStyle: TextStyle(color: Colors.grey.shade400),
-          prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+          hintStyle: TextStyle(color: theme.faintText),
+          prefixIcon: Icon(Icons.search, color: theme.faintText),
           suffixIcon: searchQuery.isNotEmpty
               ? GestureDetector(
                   onTap: onClearSearch,
-                  child: Icon(Icons.clear, color: Colors.grey.shade400),
+                  child: Icon(Icons.clear, color: theme.faintText),
                 )
               : null,
           border: InputBorder.none,

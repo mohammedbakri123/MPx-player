@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 
 class HistoryEmptyState extends StatelessWidget {
   final VoidCallback? onBrowseVideos;
@@ -7,6 +8,7 @@ class HistoryEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -17,22 +19,24 @@ class HistoryEmptyState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.purple.shade50,
+                color: const Color(0xFF7C3AED).withValues(
+                  alpha: theme.isDarkMode ? 0.18 : 0.1,
+                ),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.history,
                 size: 40,
-                color: Colors.purple.shade300,
+                color: Color(0xFF7C3AED),
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'No Watch History',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+                color: theme.strongText,
               ),
             ),
             const SizedBox(height: 8),
@@ -41,7 +45,7 @@ class HistoryEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade500,
+                color: theme.mutedText,
               ),
             ),
             const SizedBox(height: 24),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../../library/presentation/widgets/video/video_metadata.dart';
 
@@ -14,7 +15,7 @@ class VideoInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTitle(),
+          _buildTitle(context),
           const SizedBox(height: 8),
           VideoMetadata(video: video),
         ],
@@ -22,13 +23,14 @@ class VideoInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildTitle() {
+  Widget _buildTitle(BuildContext context) {
+    final theme = Theme.of(context);
     return Text(
       video.title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w700,
-        color: Color(0xFF1E293B),
+        color: theme.strongText,
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,

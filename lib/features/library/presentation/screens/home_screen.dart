@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:provider/provider.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../controller/file_browser_controller.dart';
 import '../../domain/entities/video_file.dart';
 import '../widgets/file_browser/file_browser_content.dart';
@@ -48,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ChangeNotifierProvider.value(
       value: _controller,
       child: Consumer<FileBrowserController>(
@@ -68,14 +70,14 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             child: Scaffold(
-              backgroundColor: const Color(0xFFF8FAFC),
+              backgroundColor: theme.appBackground,
               body: SafeArea(
                 child: Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
+                      colors: [theme.appBackground, theme.appBackgroundAlt],
                     ),
                   ),
                   child: Column(

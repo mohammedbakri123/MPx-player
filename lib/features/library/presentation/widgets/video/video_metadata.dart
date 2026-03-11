@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../../domain/entities/video_file.dart';
 import '../../../services/video_metadata_service.dart';
 
@@ -136,6 +137,7 @@ class _VideoMetadataState extends State<VideoMetadata> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     developer.log(
         'Building VideoMetadata - resolution: $_resolution, loading: $_isLoading',
         name: 'VideoMetadata');
@@ -176,7 +178,7 @@ class _VideoMetadataState extends State<VideoMetadata> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade500,
+            color: theme.mutedText,
           ),
         ),
         Text(
@@ -184,7 +186,7 @@ class _VideoMetadataState extends State<VideoMetadata> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade500,
+            color: theme.mutedText,
           ),
         ),
         Text(
@@ -192,7 +194,7 @@ class _VideoMetadataState extends State<VideoMetadata> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade500,
+            color: theme.mutedText,
           ),
         ),
       ],

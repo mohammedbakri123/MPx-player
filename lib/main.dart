@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:provider/provider.dart';
+import 'core/theme/app_theme.dart';
+import 'features/settings/presentation/controllers/app_settings_controller.dart';
+import 'features/settings/services/app_settings_service.dart';
 import 'features/settings/services/subtitle_settings_service.dart';
 import 'features/favorites/services/favorites_service.dart';
 import 'features/library/services/thumbnail_cache.dart';
@@ -12,6 +16,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Future.wait([
+    AppSettingsService.init(),
     SubtitleSettingsService.init(),
     FavoritesService.init(),
   ]);
@@ -39,6 +44,7 @@ class MPxPlayer extends StatefulWidget {
 
 class _MPxPlayerState extends State<MPxPlayer> {
   bool _showSplash = true;
+  AppSettingsController? _settingsController;
 
   void _onSplashComplete() {
     setState(() {
@@ -47,22 +53,47 @@ class _MPxPlayerState extends State<MPxPlayer> {
   }
 
   @override
+  void dispose() {
+    _settingsController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MPx Player',
-      debugShowCheckedModeBanner: false,
-      navigatorObservers: [HomeFAB.routeObserver],
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+    _settingsController ??= AppSettingsController();
+
+    return ChangeNotifierProvider.value(
+      value: _settingsController!,
+      child: Consumer<AppSettingsController>(
+        builder: (context, settings, _) {
+          final platformBrightness =
+              WidgetsBinding.instance.platformDispatcher.platformBrightness;
+          final isDark = settings.themeMode == ThemeMode.dark ||
+              (settings.themeMode == ThemeMode.system &&
+                  platformBrightness == Brightness.dark);
+
+          SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness:
+                  isDark ? Brightness.light : Brightness.dark,
+              statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+            ),
+          );
+
+          return MaterialApp(
+            title: 'MPx Player',
+            debugShowCheckedModeBanner: false,
+            navigatorObservers: [HomeFAB.routeObserver],
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
+            themeMode: settings.themeMode,
+            home: _showSplash
+                ? SplashScreen(onComplete: _onSplashComplete)
+                : const PermissionWrapper(),
+          );
+        },
       ),
-      home: _showSplash
-          ? SplashScreen(onComplete: _onSplashComplete)
-          : const PermissionWrapper(),
     );
   }
 }

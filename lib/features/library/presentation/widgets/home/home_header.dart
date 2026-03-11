@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 
 class HomeHeader extends StatelessWidget {
   final VoidCallback? onSortTap;
@@ -16,21 +17,23 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          const Text(
+          Text(
             'MPx',
             style: TextStyle(
-              color: Color(0xFF0F172A),
+              color: theme.strongText,
               fontSize: 22,
               fontWeight: FontWeight.w800,
             ),
           ),
           const Spacer(),
           IconButton(
-            icon: Icon(isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded),
+            icon: Icon(
+                isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded),
             onPressed: onToggleViewTap,
             tooltip: isGridView ? 'List View' : 'Grid View',
           ),

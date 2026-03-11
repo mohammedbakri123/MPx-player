@@ -8,6 +8,7 @@ import 'package:mpx/features/player/controller/mixins/gesture_coordinator_mixin.
     show GestureCoordinatorMixin;
 import 'package:mpx/features/player/presentation/widgets/gesture_layer.dart'
     show SeekDirection;
+import 'package:mpx/features/settings/services/app_settings_service.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
@@ -177,10 +178,19 @@ class PlayerController extends ChangeNotifier
   Future<void> loadVideoFile(VideoFile video) async {
     _currentVideo = video;
     await loadVideo(video.path);
+    await _applyPlayerPreset();
     loadAudioTracks();
     loadSubtitleTracks();
     await applySubtitleSettings();
     _startAutoSaveTimer();
+  }
+
+  Future<void> _applyPlayerPreset() async {
+    _state.playbackSpeed = AppSettingsService.presetPlaybackSpeed;
+    _state.aspectRatioMode = AppSettingsService.presetAspectRatioMode;
+    _state.repeatMode = AppSettingsService.presetRepeatMode;
+    await _repository.setSpeed(_state.playbackSpeed);
+    notifyListeners();
   }
 
   // @override

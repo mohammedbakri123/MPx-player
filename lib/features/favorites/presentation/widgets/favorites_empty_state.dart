@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 
 class FavoritesEmptyState extends StatelessWidget {
   final VoidCallback? onTryDemo;
@@ -7,21 +8,22 @@ class FavoritesEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
       child: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade400),
+            Icon(Icons.favorite_border, size: 80, color: theme.faintText),
             const SizedBox(height: 20),
             Text('No favorite videos',
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade700)),
+                    color: theme.strongText)),
             const SizedBox(height: 8),
             Text('Long press a video to add it to favorites',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+                style: TextStyle(fontSize: 14, color: theme.mutedText)),
             if (onTryDemo != null) ...[
               const SizedBox(height: 32),
               ElevatedButton.icon(

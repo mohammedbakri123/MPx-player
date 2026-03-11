@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../library/domain/entities/video_file.dart';
+import '../../../settings/services/app_settings_service.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/media_kit_player_repository.dart';
 import '../widgets/player_view.dart';
@@ -60,7 +61,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         final repository = MediaKitPlayerRepository();
         final controller = PlayerController(repository);
         controller.loadVideoFile(widget.video);
-        WakelockPlus.enable(); // Keep screen on while player is active
+        if (AppSettingsService.keepScreenAwake) {
+          WakelockPlus.enable();
+        }
         controller.startHideTimer();
         return controller;
       },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 
 class PathBreadcrumb extends StatelessWidget {
   final String currentPath;
@@ -38,6 +39,7 @@ class PathBreadcrumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final segments = _segments;
 
     if (segments.isEmpty) {
@@ -48,16 +50,17 @@ class PathBreadcrumb extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        color: theme.elevatedSurface
+            .withValues(alpha: theme.isDarkMode ? 0.92 : 0.9),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: theme.softBorder),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.route_rounded,
             size: 18,
-            color: Color(0xFF64748B),
+            color: theme.mutedText,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -68,7 +71,8 @@ class PathBreadcrumb extends StatelessWidget {
                   for (int i = 0; i < segments.length; i++) ...[
                     Material(
                       color: i == segments.length - 1
-                          ? const Color(0xFFDBEAFE)
+                          ? const Color(0xFF2563EB)
+                              .withValues(alpha: theme.isDarkMode ? 0.22 : 0.14)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(999),
                       child: InkWell(
@@ -85,7 +89,7 @@ class PathBreadcrumb extends StatelessWidget {
                               fontSize: 12,
                               color: i == segments.length - 1
                                   ? const Color(0xFF1D4ED8)
-                                  : const Color(0xFF475569),
+                                  : theme.mutedText,
                               fontWeight: i == segments.length - 1
                                   ? FontWeight.w700
                                   : FontWeight.w600,
@@ -100,7 +104,6 @@ class PathBreadcrumb extends StatelessWidget {
                         child: Icon(
                           Icons.chevron_right_rounded,
                           size: 16,
-                          color: Color(0xFF94A3B8),
                         ),
                       ),
                   ],

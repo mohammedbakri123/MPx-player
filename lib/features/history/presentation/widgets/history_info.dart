@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../domain/entities/watch_history_entry.dart';
 
 class HistoryInfo extends StatelessWidget {
@@ -8,6 +9,7 @@ class HistoryInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -15,10 +17,10 @@ class HistoryInfo extends StatelessWidget {
         children: [
           Text(
             entry.video?.title ?? 'Unknown Video',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1E293B),
+              color: theme.strongText,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -26,15 +28,14 @@ class HistoryInfo extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.folder_outlined,
-                  size: 14, color: Colors.grey.shade500),
+              Icon(Icons.folder_outlined, size: 14, color: theme.mutedText),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   entry.video?.folderName ?? '',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade500,
+                    color: theme.mutedText,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -46,14 +47,17 @@ class HistoryInfo extends StatelessWidget {
           Row(
             children: [
               _buildInfoChip(
+                context,
                 icon: Icons.access_time,
                 label: entry.formattedLastPlayed,
               ),
               const SizedBox(width: 12),
-              _buildInfoChip(
-                icon: Icons.timer_outlined,
-                label: entry.formattedProgress,
-              ),
+              if (!entry.isCompleted)
+                _buildInfoChip(
+                  context,
+                  icon: Icons.play_arrow,
+                  label: entry.formattedProgress,
+                ),
               if (entry.isCompleted) ...[
                 const SizedBox(width: 12),
                 _buildCompletedChip(),
@@ -65,17 +69,19 @@ class HistoryInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoChip({required IconData icon, required String label}) {
+  Widget _buildInfoChip(BuildContext context,
+      {required IconData icon, required String label}) {
+    final theme = Theme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.grey.shade400),
+        Icon(icon, size: 14, color: theme.faintText),
         const SizedBox(width: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade500,
+            color: theme.mutedText,
           ),
         ),
       ],

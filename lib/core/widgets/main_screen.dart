@@ -16,6 +16,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     // Don't use IndexedStack - rebuild the screen to avoid duplicate players
     final currentScreen = _getCurrentScreen();
 
@@ -23,10 +24,12 @@ class _MainScreenState extends State<MainScreen> {
       body: currentScreen,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.bottomNavigationBarTheme.backgroundColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.22 : 0.05,
+              ),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
@@ -35,11 +38,12 @@ class _MainScreenState extends State<MainScreen> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
-          backgroundColor: Colors.white,
+          backgroundColor: theme.bottomNavigationBarTheme.backgroundColor,
           elevation: 0,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color(0xFF6366F1),
-          unselectedItemColor: Colors.grey.shade400,
+          selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor,
+          unselectedItemColor:
+              theme.bottomNavigationBarTheme.unselectedItemColor,
           selectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 12,

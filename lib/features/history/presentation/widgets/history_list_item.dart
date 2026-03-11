@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../domain/entities/watch_history_entry.dart';
 import 'history_thumbnail.dart';
 import 'history_info.dart';
@@ -19,21 +20,22 @@ class HistoryListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: isLoading ? null : onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.elevatedSurface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: theme.cardShadow,
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
           ],
-          border: Border.all(color: Colors.grey.shade100),
+          border: Border.all(color: theme.softBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

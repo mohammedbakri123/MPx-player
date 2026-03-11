@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../../controller/file_browser_controller.dart';
 
 class HomeSelectionHeader extends StatelessWidget {
@@ -17,39 +18,39 @@ class HomeSelectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.elevatedSurface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: theme.cardShadow,
                 blurRadius: 18,
                 offset: const Offset(0, 8))
           ],
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: theme.softBorder),
         ),
         child: Row(
           children: [
-            SelectionActionButton(
-                icon: Icons.close, onTap: onClose),
+            SelectionActionButton(icon: Icons.close, onTap: onClose),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('${controller.selectedCount} selected',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A))),
+                          color: theme.strongText)),
                   const SizedBox(height: 2),
-                  const Text('Select more items or manage them in one go.',
+                  Text('Select more items or manage them in one go.',
                       style: TextStyle(
-                          color: Color(0xFF64748B),
+                          color: theme.mutedText,
                           fontSize: 12,
                           fontWeight: FontWeight.w500)),
                 ],
@@ -62,8 +63,7 @@ class HomeSelectionHeader extends StatelessWidget {
               onTap: onDelete,
             ),
             const SizedBox(width: 8),
-            SelectionActionButton(
-                icon: Icons.select_all, onTap: onSelectAll),
+            SelectionActionButton(icon: Icons.select_all, onTap: onSelectAll),
           ],
         ),
       ),
@@ -86,16 +86,20 @@ class SelectionActionButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0))),
-          child: Icon(icon, color: tint, size: 22),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: background == Colors.white ? theme.subtleSurface : background,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: theme.softBorder),
         ),
-      );
+        child: Icon(icon, color: tint, size: 22),
+      ),
+    );
+  }
 }
