@@ -18,16 +18,42 @@ class FavoritesHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       child: Column(
         children: [
-          Row(
-            children: [
-              _buildIcon(context),
-              const SizedBox(width: 16),
-              Expanded(child: FavoritesTitle(videoCount: videoCount)),
-            ],
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.elevatedSurface,
+                  const Color(0xFFE11D48).withValues(
+                    alpha: theme.isDarkMode ? 0.10 : 0.06,
+                  ),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: theme.softBorder),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.cardShadow,
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                _buildIcon(context),
+                const SizedBox(width: 16),
+                Expanded(child: FavoritesTitle(videoCount: videoCount)),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           _buildSearchField(context),
@@ -42,12 +68,26 @@ class FavoritesHeader extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: const Color(0xFFE11D48).withValues(
-          alpha: theme.isDarkMode ? 0.18 : 0.1,
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFE11D48).withValues(alpha: 0.92),
+            const Color(0xFFF97393).withValues(alpha: 0.88),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE11D48).withValues(
+              alpha: theme.isDarkMode ? 0.24 : 0.18,
+            ),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: const Icon(Icons.favorite, color: Color(0xFFE11D48), size: 24),
+      child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 24),
     );
   }
 

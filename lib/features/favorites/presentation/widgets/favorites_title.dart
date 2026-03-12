@@ -16,14 +16,21 @@ class FavoritesTitle extends StatelessWidget {
           'Favorites',
           style: TextStyle(
             fontSize: 24,
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.5,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.8,
             color: theme.strongText,
           ),
         ),
+        const SizedBox(height: 4),
         Text(
-          '$videoCount videos found',
-          style: TextStyle(fontSize: 14, color: theme.mutedText),
+          videoCount == 0
+              ? 'Your saved videos live here'
+              : '$videoCount saved ${videoCount == 1 ? 'video' : 'videos'} ready to play',
+          style: TextStyle(
+            fontSize: 14,
+            color: theme.mutedText,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
