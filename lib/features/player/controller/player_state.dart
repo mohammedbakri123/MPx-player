@@ -63,4 +63,5 @@ class PlayerState {
   bool showDoubleTapSeekRight = false;
 
   int hideControlsRequestId = 0;
+  int controlsInteractionCount = 0;
 }

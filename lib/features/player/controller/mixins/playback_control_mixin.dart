@@ -12,11 +12,17 @@ mixin PlaybackControlMixin on ChangeNotifier {
   }
 
   void togglePlayPause() {
+    registerControlsInteraction();
+
     if (state.isPlaying) {
       repository.pause();
+      state.showControls = true;
+      cancelHideTimer();
+      notifyListeners();
       onPause();
     } else {
       repository.play();
+      showControlsNow();
     }
   }
 
@@ -27,6 +33,7 @@ mixin PlaybackControlMixin on ChangeNotifier {
   }
 
   void seekBack() {
+    registerControlsInteraction();
     final newPosition = state.position - const Duration(seconds: 10);
     final clampedPosition = Duration(
       milliseconds:
@@ -37,6 +44,7 @@ mixin PlaybackControlMixin on ChangeNotifier {
   }
 
   void seekForward() {
+    registerControlsInteraction();
     final newPosition = state.position + const Duration(seconds: 10);
     final clampedPosition = Duration(
       milliseconds:
@@ -47,6 +55,7 @@ mixin PlaybackControlMixin on ChangeNotifier {
   }
 
   void changeSpeed() {
+    registerControlsInteraction();
     final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
     final idx = speeds.indexOf(state.playbackSpeed);
     final nextSpeed = speeds[(idx + 1) % speeds.length];
@@ -56,28 +65,33 @@ mixin PlaybackControlMixin on ChangeNotifier {
   }
 
   void setSpeed(double speed) {
+    registerControlsInteraction();
     state.playbackSpeed = speed;
     repository.setSpeed(speed);
     notifyListeners();
   }
 
   void setVolume(double value) {
+    registerControlsInteraction();
     state.volume = value;
     repository.setVolume(value);
     notifyListeners();
   }
 
   void setBrightness(double value) {
+    registerControlsInteraction();
     state.brightnessValue = value.clamp(0.0, 1.0);
     notifyListeners();
   }
 
   void toggleFullscreen() {
+    registerControlsInteraction();
     state.isFullscreen = !state.isFullscreen;
     notifyListeners();
   }
 
   void toggleLock() {
+    registerControlsInteraction();
     state.isLocked = !state.isLocked;
     if (state.isLocked) {
       state.showControls = false;
@@ -100,6 +114,36 @@ mixin PlaybackControlMixin on ChangeNotifier {
     state.showControls = true;
     notifyListeners();
     startHideTimer();
+  }
+
+  void registerControlsInteraction() {
+    if (state.isLocked) return;
+
+    final shouldNotify = !state.showControls;
+    state.showControls = true;
+    cancelHideTimer();
+    if (shouldNotify) {
+      notifyListeners();
+    }
+    startHideTimer();
+  }
+
+  void beginControlsInteraction() {
+    if (state.isLocked) return;
+
+    state.controlsInteractionCount++;
+    state.showControls = true;
+    cancelHideTimer();
+    notifyListeners();
+  }
+
+  void endControlsInteraction() {
+    if (state.controlsInteractionCount > 0) {
+      state.controlsInteractionCount--;
+    }
+    if (!state.isLocked) {
+      startHideTimer();
+    }
   }
 
   void toggleControlsVisibility() {
@@ -126,9 +170,12 @@ mixin PlaybackControlMixin on ChangeNotifier {
       if (requestId != state.hideControlsRequestId) return;
 
       if (state.showControls &&
+          state.isPlaying &&
+          !state.isBuffering &&
           !state.isLongPressing &&
           !state.isDraggingX &&
           !state.isDraggingY &&
+          state.controlsInteractionCount == 0 &&
           !state.isLocked) {
         state.showControls = false;
         notifyListeners();
@@ -220,12 +267,14 @@ mixin PlaybackControlMixin on ChangeNotifier {
   }
 
   void setAudioTrack(int index) {
+    registerControlsInteraction();
     state.currentAudioTrackIndex = index;
     repository.setAudioTrack(index);
     notifyListeners();
   }
 
   void previewSeek(Duration position) {
+    registerControlsInteraction();
     state.position = position;
     notifyListeners();
   }

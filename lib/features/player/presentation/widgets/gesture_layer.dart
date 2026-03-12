@@ -50,7 +50,7 @@ class GestureLayer extends StatelessWidget {
         Expanded(
           flex: 2,
           child: GestureDetector(
-            behavior: HitTestBehavior.deferToChild,
+            behavior: HitTestBehavior.translucent,
             onTapDown: (_) => controller.handleCenterTap(),
             onHorizontalDragStart: (details) =>
                 controller.onHorizontalDragStart(details.globalPosition.dx),

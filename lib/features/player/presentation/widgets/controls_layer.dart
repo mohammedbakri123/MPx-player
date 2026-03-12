@@ -67,72 +67,97 @@ class ControlsLayer extends StatelessWidget {
   }
 
   Widget _buildControlUI(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.black.withValues(alpha: 0.75),
-            Colors.black.withValues(alpha: 0.35),
-            Colors.black.withValues(alpha: 0.15),
-            Colors.black.withValues(alpha: 0.9),
-          ],
-          stops: const [0.0, 0.25, 0.6, 1.0],
-        ),
-      ),
-      child: SafeArea(
-        bottom: true,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TopBar(
-                title: title,
-                isFullscreen: controller.isFullscreen,
-                isLocked: controller.isLocked,
-                subtitlesEnabled: controller.subtitlesEnabled,
-                aspectRatioMode: controller.aspectRatioMode,
-                audioTracks: controller.audioTracks,
-                currentAudioTrackIndex: controller.currentAudioTrackIndex,
-                onBack: onBack,
-                onToggleLock: controller.toggleLock,
-                onToggleFullscreen: controller.toggleFullscreen,
-                onToggleAspectRatio: controller.cycleAspectRatio,
-                onSubtitleSettings: onSubtitleSettings,
-                onSettings: onSettings,
-                onShowAudioTracks: null,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.75),
+                  Colors.black.withValues(alpha: 0.35),
+                  Colors.black.withValues(alpha: 0.15),
+                  Colors.black.withValues(alpha: 0.9),
+                ],
+                stops: const [0.0, 0.25, 0.6, 1.0],
               ),
-              const Spacer(),
-              PlayPauseButton(
-                isPlaying: controller.isPlaying,
-                onTap: controller.togglePlayPause,
-              ),
-              const Spacer(),
-              BottomControls(
-                position: controller.position,
-                duration: controller.duration,
-                isPlaying: controller.isPlaying,
-                isFullscreen: controller.isFullscreen,
-                isLocked: controller.isLocked,
-                formatTime: controller.formatDuration,
-                onSeekChanged: (value) {
-                  controller.previewSeek(Duration(milliseconds: value.toInt()));
-                },
-                onSeekEnd: (value) {
-                  controller.seek(Duration(milliseconds: value.toInt()));
-                },
-                onSeekBack: controller.seekBack,
-                onTogglePlayPause: controller.togglePlayPause,
-                onSeekForward: controller.seekForward,
-                onToggleFullscreen: controller.toggleFullscreen,
-                onToggleLock: controller.toggleLock,
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+        SafeArea(
+          bottom: true,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: TopBar(
+                    title: title,
+                    isFullscreen: controller.isFullscreen,
+                    isLocked: controller.isLocked,
+                    subtitlesEnabled: controller.subtitlesEnabled,
+                    aspectRatioMode: controller.aspectRatioMode,
+                    audioTracks: controller.audioTracks,
+                    currentAudioTrackIndex: controller.currentAudioTrackIndex,
+                    onBack: () {
+                      controller.registerControlsInteraction();
+                      onBack();
+                    },
+                    onToggleLock: controller.toggleLock,
+                    onToggleFullscreen: controller.toggleFullscreen,
+                    onToggleAspectRatio: controller.cycleAspectRatio,
+                    onSubtitleSettings: () {
+                      controller.registerControlsInteraction();
+                      onSubtitleSettings();
+                    },
+                    onSettings: () {
+                      controller.registerControlsInteraction();
+                      onSettings();
+                    },
+                    onShowAudioTracks: null,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.center,
+                  child: PlayPauseButton(
+                    isPlaying: controller.isPlaying,
+                    onTap: controller.togglePlayPause,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: BottomControls(
+                    position: controller.position,
+                    duration: controller.duration,
+                    isPlaying: controller.isPlaying,
+                    isFullscreen: controller.isFullscreen,
+                    isLocked: controller.isLocked,
+                    formatTime: controller.formatDuration,
+                    onSeekStart: controller.beginControlsInteraction,
+                    onSeekChanged: (value) {
+                      controller
+                          .previewSeek(Duration(milliseconds: value.toInt()));
+                    },
+                    onSeekEnd: (value) {
+                      controller.seek(Duration(milliseconds: value.toInt()));
+                      controller.endControlsInteraction();
+                    },
+                    onSeekBack: controller.seekBack,
+                    onTogglePlayPause: controller.togglePlayPause,
+                    onSeekForward: controller.seekForward,
+                    onToggleFullscreen: controller.toggleFullscreen,
+                    onToggleLock: controller.toggleLock,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

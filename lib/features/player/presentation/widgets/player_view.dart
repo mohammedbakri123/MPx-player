@@ -25,33 +25,32 @@ class PlayerView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       label: 'Video player for $videoTitle',
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Layer 1: Video surface
-          PlayerSurface(
-            controller: controller.videoController,
-            subtitleFontSize: controller.subtitleFontSize,
-            subtitleColor: controller.subtitleColor,
-            subtitleHasBackground: controller.subtitleHasBackground,
-            subtitleFontWeight: controller.subtitleFontWeight,
-            subtitleBottomPadding: controller.subtitleBottomPadding,
-            subtitleBackgroundOpacity: controller.subtitleBackgroundOpacity,
-            aspectRatioMode: controller.aspectRatioMode,
-          ),
-          // Layer 2: Visual overlays (indicators, animations)
-          OverlayLayer(controller: controller),
-          // Layer 3: Gestures (ALWAYS VISIBLE - handles all touches)
-          GestureLayer(controller: controller),
-          // Layer 4: Controls (fade in/out, buttons intercept touches)
-          ControlsLayer(
-            controller: controller,
-            title: videoTitle,
-            onBack: onBack,
-            onSubtitleSettings: onSubtitleSettings,
-            onSettings: onSettings,
-          ),
-        ],
+      child: AnimatedBuilder(
+        animation: controller,
+        builder: (context, _) => Stack(
+          fit: StackFit.expand,
+          children: [
+            PlayerSurface(
+              controller: controller.videoController,
+              subtitleFontSize: controller.subtitleFontSize,
+              subtitleColor: controller.subtitleColor,
+              subtitleHasBackground: controller.subtitleHasBackground,
+              subtitleFontWeight: controller.subtitleFontWeight,
+              subtitleBottomPadding: controller.subtitleBottomPadding,
+              subtitleBackgroundOpacity: controller.subtitleBackgroundOpacity,
+              aspectRatioMode: controller.aspectRatioMode,
+            ),
+            OverlayLayer(controller: controller),
+            GestureLayer(controller: controller),
+            ControlsLayer(
+              controller: controller,
+              title: videoTitle,
+              onBack: onBack,
+              onSubtitleSettings: onSubtitleSettings,
+              onSettings: onSettings,
+            ),
+          ],
+        ),
       ),
     );
   }

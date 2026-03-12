@@ -7,6 +7,7 @@ class BottomControls extends StatefulWidget {
   final bool isFullscreen;
   final bool isLocked;
   final String Function(Duration) formatTime;
+  final VoidCallback onSeekStart;
   final ValueChanged<double> onSeekChanged;
   final ValueChanged<double> onSeekEnd;
   final VoidCallback onSeekBack;
@@ -23,6 +24,7 @@ class BottomControls extends StatefulWidget {
     required this.isFullscreen,
     required this.isLocked,
     required this.formatTime,
+    required this.onSeekStart,
     required this.onSeekChanged,
     required this.onSeekEnd,
     required this.onSeekBack,
@@ -72,6 +74,9 @@ class _BottomControlsState extends State<BottomControls> {
             child: Slider(
               value: _sliderValue,
               max: _sliderMax,
+              onChangeStart: (_) {
+                widget.onSeekStart();
+              },
               onChanged: (value) {
                 setState(() => _dragValue = value);
                 widget.onSeekChanged(value);

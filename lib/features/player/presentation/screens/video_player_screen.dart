@@ -119,8 +119,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
 
   @override
   Widget build(BuildContext context) {
-    // Get controller from Provider
-    final controller = context.watch<PlayerController>();
+    final controller = context.read<PlayerController>();
 
     // Handle fullscreen state
     if (controller.isFullscreen) {

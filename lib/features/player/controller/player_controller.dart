@@ -62,6 +62,7 @@ class PlayerController extends ChangeNotifier
 
   // Auto-save interval
   static const Duration _autoSaveInterval = Duration(seconds: 30);
+  DateTime? _lastPositionUiUpdate;
 
   // Getters for state access
   @override
@@ -146,8 +147,23 @@ class PlayerController extends ChangeNotifier
     });
 
     _repository.positionStream.listen((pos) {
-      if (!_state.isDraggingX) {
-        _state.position = pos;
+      if (_state.isDraggingX) return;
+
+      _state.position = pos;
+      final now = DateTime.now();
+      final shouldNotify = _state.showControls ||
+          _state.showSeekIndicator ||
+          _state.showVolumeIndicator ||
+          _state.showBrightnessIndicator ||
+          _state.showDoubleTapSeekLeft ||
+          _state.showDoubleTapSeekRight ||
+          _state.controlsInteractionCount > 0 ||
+          _lastPositionUiUpdate == null ||
+          now.difference(_lastPositionUiUpdate!) >=
+              const Duration(milliseconds: 250);
+
+      if (shouldNotify) {
+        _lastPositionUiUpdate = now;
         notifyListeners();
       }
     });
