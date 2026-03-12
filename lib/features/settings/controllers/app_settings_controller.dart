@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../services/app_settings_service.dart';
+import '../services/app_settings_service.dart';
 
 class AppSettingsController extends ChangeNotifier {
   AppThemePreference _themePreference = AppSettingsService.themePreference;

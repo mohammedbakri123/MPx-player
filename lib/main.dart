@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
-import 'features/settings/presentation/controllers/app_settings_controller.dart';
+import 'features/settings/controllers/app_settings_controller.dart';
 import 'features/settings/services/app_settings_service.dart';
 import 'features/settings/services/subtitle_settings_service.dart';
 import 'features/favorites/services/favorites_service.dart';
