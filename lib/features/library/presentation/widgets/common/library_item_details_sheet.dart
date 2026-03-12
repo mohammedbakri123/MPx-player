@@ -154,7 +154,16 @@ class _DetailsSheet extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: theme.appBackground,
+        gradient: LinearGradient(
+          colors: [
+            theme.appBackground,
+            theme.isDarkMode
+                ? theme.appBackgroundAlt.withValues(alpha: 0.72)
+                : accentColor.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: SafeArea(
@@ -183,8 +192,20 @@ class _DetailsSheet extends StatelessWidget {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.14),
+                      gradient: LinearGradient(
+                        colors: [
+                          accentColor.withValues(alpha: 0.18),
+                          accentColor.withValues(alpha: 0.08),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: accentColor.withValues(
+                          alpha: theme.isDarkMode ? 0.18 : 0.10,
+                        ),
+                      ),
                     ),
                     child: Icon(icon, color: accentColor, size: 28),
                   ),
@@ -254,7 +275,7 @@ class _DetailsSheet extends StatelessWidget {
                       action!.onTap();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.strongText,
+                      backgroundColor: accentColor,
                       foregroundColor: theme.colorScheme.surface,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -382,6 +403,9 @@ class _MetaBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: theme.isDarkMode ? 0.18 : 0.10),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: accentColor.withValues(alpha: theme.isDarkMode ? 0.18 : 0.08),
+        ),
       ),
       child: Text(
         label,
@@ -410,6 +434,14 @@ class _InfoTile extends StatelessWidget {
         color: theme.elevatedSurface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: theme.softBorder),
+        boxShadow: [
+          BoxShadow(
+            color: theme.cardShadow
+                .withValues(alpha: theme.isDarkMode ? 0.12 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,6 +486,14 @@ class _FactRow extends StatelessWidget {
         color: theme.elevatedSurface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: theme.softBorder),
+        boxShadow: [
+          BoxShadow(
+            color: theme.cardShadow
+                .withValues(alpha: theme.isDarkMode ? 0.12 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
