@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../../services/thumbnail_worker_pool.dart';
 import '../../../services/thumbnail_cache.dart';
 import '../../../../history/services/history_service.dart';
@@ -158,95 +159,116 @@ class HomeFABState extends State<HomeFAB> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final hasLastVideo = _lastVideo != null;
 
-    return GestureDetector(
-      onTap: hasLastVideo ? _openLastVideo : null,
-      child: Container(
-        width: hasLastVideo ? 200 : 64,
-        height: 64,
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+    return Material(
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: InkWell(
+          onTap: hasLastVideo ? _openLastVideo : null,
+          borderRadius: BorderRadius.circular(24),
+          child: Ink(
+            width: hasLastVideo ? 232 : 68,
+            height: 68,
+            decoration: BoxDecoration(
+              color: theme.elevatedSurface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: theme.softBorder),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.cardShadow,
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: hasLastVideo
-            ? Row(
-                children: [
-                  // Thumbnail
-                  ClipRRect(
-                    borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(20),
-                    ),
+            child: hasLastVideo
+                ? Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(24),
+                        ),
+                        child: Container(
+                          width: 72,
+                          height: 68,
+                          color: Colors.black.withValues(alpha: 0.18),
+                          child: _buildThumbnail(),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Continue watching',
+                                      style: TextStyle(
+                                        color: theme.mutedText,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      _lastVideo!.title,
+                                      style: TextStyle(
+                                        color: theme.strongText,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary.withValues(
+                                    alpha: 0.14,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.play_arrow_rounded,
+                                  color: theme.colorScheme.primary,
+                                  size: 22,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Center(
                     child: Container(
-                      width: 64,
-                      height: 64,
-                      color: Colors.black26,
-                      child: _buildThumbnail(),
-                    ),
-                  ),
-                  // Title and play icon
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Continue Watching',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _lastVideo!.title,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ],
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color:
+                            theme.colorScheme.primary.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.play_arrow_rounded,
+                        color: theme.colorScheme.primary,
+                        size: 24,
                       ),
                     ),
                   ),
-                ],
-              )
-            : const Center(
-                child: Icon(
-                  Icons.play_arrow,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
+          ),
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../../controller/file_browser_controller.dart';
 import '../../../domain/entities/file_item.dart';
 import '../common/library_item_ui.dart';
@@ -246,8 +247,9 @@ class _GridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Material(
-      color: Colors.white,
+      color: theme.elevatedSurface,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -257,14 +259,12 @@ class _GridItem extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isSelected
-                  ? const Color(0xFF2563EB)
-                  : const Color(0xFFE2E8F0),
+              color: isSelected ? theme.colorScheme.primary : theme.softBorder,
               width: isSelected ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: theme.cardShadow,
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),
@@ -275,7 +275,7 @@ class _GridItem extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildPreview(item),
+                  _buildPreview(context, item),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
@@ -286,10 +286,10 @@ class _GridItem extends StatelessWidget {
                             item.name,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F172A),
+                              color: theme.strongText,
                               height: 1.25,
                             ),
                           ),
@@ -303,7 +303,7 @@ class _GridItem extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade600,
+                              color: theme.mutedText,
                             ),
                           ),
                           const Spacer(),
@@ -325,7 +325,7 @@ class _GridItem extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 _GridMetaChip(
                                   label: item.extension.toUpperCase(),
-                                  color: const Color(0xFF334155),
+                                  color: theme.mutedText,
                                 ),
                               ],
                             ],
@@ -372,13 +372,14 @@ class _GridItem extends StatelessWidget {
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color:
-                            isSelected ? const Color(0xFF6366F1) : Colors.white,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.elevatedSurface,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isSelected
-                              ? const Color(0xFF6366F1)
-                              : Colors.grey.shade400,
+                              ? theme.colorScheme.primary
+                              : theme.faintText,
                           width: 2,
                         ),
                       ),
@@ -397,7 +398,7 @@ class _GridItem extends StatelessWidget {
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: theme.elevatedSurface.withValues(alpha: 0.92),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -423,18 +424,19 @@ class _GridItem extends StatelessWidget {
     );
   }
 
-  Widget _buildPreview(FileItem item) {
+  Widget _buildPreview(BuildContext context, FileItem item) {
+    final theme = Theme.of(context);
     if (item.isDirectory) {
       return Container(
         height: previewHeight,
         width: double.infinity,
         padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFFDBEAFE),
-              Color(0xFFBFDBFE),
-              Color(0xFFE0F2FE),
+              theme.colorScheme.primary.withValues(alpha: 0.20),
+              theme.colorScheme.secondary.withValues(alpha: 0.16),
+              theme.colorScheme.primary.withValues(alpha: 0.10),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -447,12 +449,12 @@ class _GridItem extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.75),
+                color: theme.elevatedSurface.withValues(alpha: 0.76),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.folder_rounded,
-                color: Color(0xFF2563EB),
+                color: theme.colorScheme.primary,
                 size: 24,
               ),
             ),
@@ -460,15 +462,15 @@ class _GridItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: theme.elevatedSurface.withValues(alpha: 0.76),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 LibraryItemUi.folderVideoLabel(item.videoCount),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1D4ED8),
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ),
@@ -490,11 +492,11 @@ class _GridItem extends StatelessWidget {
       height: previewHeight,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: theme.subtleSurface,
       ),
       child: Icon(
         Icons.insert_drive_file,
-        color: Colors.grey.shade600,
+        color: theme.mutedText,
         size: 28,
       ),
     );
@@ -509,10 +511,11 @@ class _GridMetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: color.withValues(alpha: theme.isDarkMode ? 0.18 : 0.10),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(

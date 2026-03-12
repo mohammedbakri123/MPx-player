@@ -21,36 +21,42 @@ class HistoryListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: isLoading ? null : onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: theme.elevatedSurface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: theme.cardShadow,
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+    return Material(
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: InkWell(
+          onTap: isLoading ? null : onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: theme.elevatedSurface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.cardShadow,
+                  blurRadius: 22,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+              border: Border.all(color: theme.softBorder),
             ),
-          ],
-          border: Border.all(color: theme.softBorder),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                HistoryThumbnail(entry: entry),
-                if (entry.isInProgress) _buildProgressBar(),
-                if (onRemove != null) _buildRemoveButton(),
-                if (entry.isInProgress && !entry.isCompleted)
-                  _buildResumeBadge(),
+                Stack(
+                  children: [
+                    HistoryThumbnail(entry: entry),
+                    if (entry.isInProgress) _buildProgressBar(),
+                    if (onRemove != null) _buildRemoveButton(),
+                    if (entry.isInProgress && !entry.isCompleted)
+                      _buildResumeBadge(),
+                  ],
+                ),
+                HistoryInfo(entry: entry),
               ],
             ),
-            HistoryInfo(entry: entry),
-          ],
+          ),
         ),
       ),
     );
@@ -73,10 +79,10 @@ class HistoryListItem extends StatelessWidget {
         child: FractionallySizedBox(
           alignment: Alignment.centerLeft,
           widthFactor: entry.progressFraction.clamp(0.0, 1.0),
-          child: Container(
+          child: const DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.purple.shade500,
-              borderRadius: const BorderRadius.only(
+              color: Color(0xFF7C3AED),
+              borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(12),
                 bottomRight: Radius.circular(4),
               ),
@@ -91,25 +97,19 @@ class HistoryListItem extends StatelessWidget {
     return Positioned(
       top: 8,
       right: 8,
-      child: GestureDetector(
-        onTap: isLoading ? null : onRemove,
-        child: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.delete_outline,
-            color: Colors.white,
-            size: 18,
+      child: Material(
+        color: const Color(0xFFDC2626).withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: isLoading ? null : onRemove,
+          borderRadius: BorderRadius.circular(12),
+          child: const Padding(
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.delete_outline,
+              color: Colors.white,
+              size: 18,
+            ),
           ),
         ),
       ),
@@ -123,8 +123,8 @@ class HistoryListItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.purple.shade500,
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFF7C3AED),
+          borderRadius: BorderRadius.circular(999),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
