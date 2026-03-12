@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 
 import '../../../domain/entities/file_item.dart';
 import '../../../domain/entities/video_file.dart';
@@ -20,8 +21,8 @@ class LibraryItemDetailsSheet {
         title: item.name,
         subtitle: item.isDirectory ? 'Folder' : 'Video',
         accentColor: item.isDirectory
-            ? const Color(0xFF2563EB)
-            : const Color(0xFFEA580C),
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.secondary,
         icon: item.isDirectory ? Icons.folder_rounded : Icons.movie_rounded,
         primaryMeta: item.isDirectory
             ? LibraryItemUi.folderVideoLabel(item.videoCount)
@@ -72,7 +73,7 @@ class LibraryItemDetailsSheet {
       builder: (context) => _DetailsSheet(
         title: video.title,
         subtitle: video.folderName,
-        accentColor: const Color(0xFFEA580C),
+        accentColor: Theme.of(context).colorScheme.secondary,
         icon: Icons.play_circle_fill_rounded,
         primaryMeta: video.formattedSize,
         secondaryMeta: video.formattedDate,
@@ -150,10 +151,11 @@ class _DetailsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: theme.appBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: SafeArea(
         top: false,
@@ -168,7 +170,7 @@ class _DetailsSheet extends StatelessWidget {
                   width: 42,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.12),
+                    color: theme.faintText,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -195,19 +197,19 @@ class _DetailsSheet extends StatelessWidget {
                           title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF0F172A),
+                            color: theme.strongText,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           subtitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF64748B),
+                            color: theme.mutedText,
                           ),
                         ),
                       ],
@@ -222,8 +224,9 @@ class _DetailsSheet extends StatelessWidget {
                 children: [
                   _MetaBadge(label: primaryMeta, accentColor: accentColor),
                   _MetaBadge(
-                      label: secondaryMeta,
-                      accentColor: const Color(0xFF0F172A)),
+                    label: secondaryMeta,
+                    accentColor: theme.strongText,
+                  ),
                 ],
               ),
               if (extraContent != null) ...[
@@ -231,12 +234,12 @@ class _DetailsSheet extends StatelessWidget {
                 extraContent!,
               ],
               const SizedBox(height: 18),
-              const Text(
+              Text(
                 'Details',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
+                  color: theme.strongText,
                 ),
               ),
               const SizedBox(height: 10),
@@ -251,8 +254,8 @@ class _DetailsSheet extends StatelessWidget {
                       action!.onTap();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F172A),
-                      foregroundColor: Colors.white,
+                      backgroundColor: theme.strongText,
+                      foregroundColor: theme.colorScheme.surface,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -373,10 +376,11 @@ class _MetaBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.10),
+        color: accentColor.withValues(alpha: theme.isDarkMode ? 0.18 : 0.10),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -399,22 +403,23 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.elevatedSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: theme.softBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF64748B),
+              color: theme.mutedText,
             ),
           ),
           const SizedBox(height: 6),
@@ -422,10 +427,10 @@ class _InfoTile extends StatelessWidget {
             value,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF0F172A),
+              color: theme.strongText,
             ),
           ),
         ],
@@ -441,13 +446,14 @@ class _FactRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.elevatedSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: theme.softBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,10 +462,10 @@ class _FactRow extends StatelessWidget {
             width: 76,
             child: Text(
               fact.label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF64748B),
+                color: theme.mutedText,
               ),
             ),
           ),
@@ -467,10 +473,10 @@ class _FactRow extends StatelessWidget {
           Expanded(
             child: Text(
               fact.value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF0F172A),
+                color: theme.strongText,
               ),
             ),
           ),

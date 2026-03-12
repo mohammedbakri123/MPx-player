@@ -103,13 +103,13 @@ class FileListItem extends StatelessWidget {
                               ? LibraryItemUi.folderVideoLabel(item.videoCount)
                               : item.formattedSize,
                           tint: item.isDirectory
-                              ? const Color(0xFF2563EB)
-                              : const Color(0xFFEA580C),
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.secondary,
                         ),
                         if (item.isVideo)
                           _MetaChip(
                             label: item.extension.toUpperCase(),
-                            tint: const Color(0xFF0F766E),
+                            tint: theme.strongText,
                           ),
                       ],
                     ),
