@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/services/logger_service.dart';
 import '../widgets/splash_background.dart';
 import '../widgets/splash_logo.dart';
@@ -90,33 +91,46 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.appBackground,
       body: Stack(
         fit: StackFit.expand,
         children: [
           const SplashBackground(),
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              return FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: child,
-                ),
-              );
-            },
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SplashLogo(),
-                SplashTitle(),
-                SizedBox(height: 8),
-                SplashSubtitle(),
-              ],
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              child: Column(
+                children: [
+                  const Spacer(),
+                  AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      return FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SplashLogo(),
+                        SplashTitle(),
+                        SizedBox(height: 10),
+                        SplashSubtitle(),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  SplashProgressBar(animation: _progressAnimation),
+                ],
+              ),
             ),
           ),
-          SplashProgressBar(animation: _progressAnimation),
         ],
       ),
     );

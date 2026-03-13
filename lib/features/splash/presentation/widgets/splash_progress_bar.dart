@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_theme_tokens.dart';
 
 class SplashProgressBar extends StatelessWidget {
   final Animation<double> animation;
@@ -10,43 +11,59 @@ class SplashProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    return Positioned(
-      bottom: 48,
-      left: 0,
-      right: 0,
-      child: Center(
-        child: AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            return Container(
-              width: 192,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(2),
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  width: 192 * animation.value,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    borderRadius: BorderRadius.circular(2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withValues(alpha: 0.5),
-                        blurRadius: 10,
+    return Center(
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, child) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 192,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: theme.subtleSurface,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: theme.softBorder),
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    width: 192 * animation.value,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          primaryColor,
+                          Theme.of(context).colorScheme.secondary,
+                        ],
                       ),
-                    ],
+                      borderRadius: BorderRadius.circular(999),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryColor.withValues(alpha: 0.32),
+                          blurRadius: 12,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            );
-          },
-        ),
+              const SizedBox(height: 12),
+              Text(
+                'Loading your library shell',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: theme.mutedText,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

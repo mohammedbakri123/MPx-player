@@ -154,16 +154,7 @@ class _DetailsSheet extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.appBackground,
-            theme.isDarkMode
-                ? theme.appBackgroundAlt.withValues(alpha: 0.72)
-                : accentColor.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        color: theme.appBackground,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: SafeArea(

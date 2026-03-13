@@ -54,9 +54,7 @@ class PathBreadcrumb extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             theme.elevatedSurface,
-            theme.isDarkMode
-                ? theme.elevatedSurface.withValues(alpha: 0.96)
-                : accent.withValues(alpha: 0.05),
+            theme.elevatedSurface.withValues(alpha: 0.96)
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,

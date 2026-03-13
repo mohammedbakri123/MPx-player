@@ -119,10 +119,13 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
 
   @override
   Widget build(BuildContext context) {
+    // Use select to only rebuild when isFullscreen changes
+    final isFullscreen = context.select<PlayerController, bool>(
+        (controller) => controller.isFullscreen);
     final controller = context.read<PlayerController>();
 
     // Handle fullscreen state
-    if (controller.isFullscreen) {
+    if (isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
