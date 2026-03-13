@@ -29,7 +29,18 @@ class FileBrowserContent extends StatelessWidget {
   });
 
   bool _isFavorite(String path) {
-    return favoriteIds.contains(path.hashCode.toString());
+    FileItem? item;
+    for (final currentItem in controller.items) {
+      if (currentItem.path == path) {
+        item = currentItem;
+        break;
+      }
+    }
+
+    if (item == null || !item.isVideo) return false;
+
+    final video = LibraryItemUi.videoFromFileItem(item);
+    return favoriteIds.contains(video.id);
   }
 
   @override
@@ -74,10 +85,11 @@ class FileBrowserContent extends StatelessWidget {
     final content = controller.isGridView
         ? _buildGridView(items)
         : RefreshIndicator(
-            onRefresh: () async => controller.refresh(silent: true),
+            onRefresh: () => controller.refresh(silent: true),
             child: ListView.separated(
-              controller: scrollController,
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              controller: scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
               itemCount: items.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
@@ -162,7 +174,7 @@ class FileBrowserContent extends StatelessWidget {
 
   Widget _buildGridView(List<FileItem> items) {
     return RefreshIndicator(
-      onRefresh: () async => controller.refresh(silent: true),
+      onRefresh: () => controller.refresh(silent: true),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
@@ -178,6 +190,7 @@ class FileBrowserContent extends StatelessWidget {
           final mainAxisExtent = previewHeight + 108;
 
           return GridView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
             controller: scrollController,
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

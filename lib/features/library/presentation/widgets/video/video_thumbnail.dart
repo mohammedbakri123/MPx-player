@@ -22,7 +22,6 @@ class _VideoThumbnailState extends State<VideoThumbnail>
     with SingleTickerProviderStateMixin {
   String? _thumbnailPath;
   bool _isLoading = false;
-  bool _hasError = false;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -52,7 +51,6 @@ class _VideoThumbnailState extends State<VideoThumbnail>
     if (oldWidget.video.path != widget.video.path) {
       _fadeController.reset();
       _thumbnailPath = null;
-      _hasError = false;
       _loadThumbnail();
     }
   }
@@ -60,30 +58,26 @@ class _VideoThumbnailState extends State<VideoThumbnail>
   Future<void> _loadThumbnail() async {
     final cache = ThumbnailCache();
 
-    // 1. Check memory cache SYNCHRONOUSLY
     final memoryData = cache.memoryCache.get(widget.video.path);
     if (memoryData != null) {
       if (mounted) {
         setState(() {
-          _thumbnailPath = 'MEMORY_LOADED'; // Marker
+          _thumbnailPath = null;
           _isLoading = false;
-          _hasError = false;
         });
-        _fadeController.forward();
+        _fadeController.forward(from: 0);
       }
       return;
     }
 
-    // 2. Check disk cache
     final cachedPath = await cache.get(widget.video.path);
-    if (cachedPath != null) {
+    if (cachedPath != null && await File(cachedPath).exists()) {
       if (mounted) {
         setState(() {
           _thumbnailPath = cachedPath;
           _isLoading = false;
-          _hasError = false;
         });
-        _fadeController.forward();
+        _fadeController.forward(from: 0);
       }
       return;
     }
@@ -95,9 +89,8 @@ class _VideoThumbnailState extends State<VideoThumbnail>
           setState(() {
             _thumbnailPath = widget.video.thumbnailPath;
             _isLoading = false;
-            _hasError = false;
           });
-          _fadeController.forward();
+          _fadeController.forward(from: 0);
         }
         return;
       }
@@ -106,7 +99,6 @@ class _VideoThumbnailState extends State<VideoThumbnail>
     if (mounted) {
       setState(() {
         _isLoading = true;
-        _hasError = false;
       });
     }
 
@@ -128,17 +120,15 @@ class _VideoThumbnailState extends State<VideoThumbnail>
         setState(() {
           _thumbnailPath = path;
           _isLoading = false;
-          _hasError = path == null;
         });
         if (path != null) {
-          _fadeController.forward();
+          _fadeController.forward(from: 0);
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _hasError = true;
         });
       }
     }
@@ -148,15 +138,9 @@ class _VideoThumbnailState extends State<VideoThumbnail>
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: SizedBox(
-              width: 100,
-              height: 70,
-              child: _buildThumbnailContent(),
-            ),
-          ),
+          _buildThumbnailContent(),
           if (widget.isFavorite)
             Positioned(
               top: 4,
@@ -180,66 +164,70 @@ class _VideoThumbnailState extends State<VideoThumbnail>
     final cache = ThumbnailCache();
     final memoryData = cache.memoryCache.get(widget.video.path);
 
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF424242), Color(0xFF212121)],
+    return Container(
+      color: Colors.transparent,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF424242), Color(0xFF212121)],
+              ),
+            ),
+            child: const Center(
+              child: Icon(Icons.play_circle_outline,
+                  size: 28, color: Colors.white24),
             ),
           ),
-          child: const Center(
-            child: Icon(Icons.play_circle_outline,
-                size: 28, color: Colors.white24),
-          ),
-        ),
-        if (_isLoading && memoryData == null)
-          Container(
-            color: Colors.black26,
-            child: const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white70,
+          if (_isLoading && memoryData == null)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white70,
+                  ),
                 ),
               ),
             ),
-          ),
-        if (memoryData != null)
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: Image.memory(
-              memoryData,
-              fit: BoxFit.cover,
-              key: ValueKey('mem_${widget.video.path}'),
-              cacheWidth: 200,
-              cacheHeight: 140,
-              filterQuality: FilterQuality.medium,
-              errorBuilder: (context, error, stackTrace) {
-                return const SizedBox.shrink();
-              },
+          if (memoryData != null)
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: Image.memory(
+                memoryData,
+                fit: BoxFit.cover,
+                key: ValueKey('mem_${widget.video.path}'),
+                cacheWidth: 200,
+                cacheHeight: 140,
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox.shrink();
+                },
+              ),
+            )
+          else if (_thumbnailPath != null && File(_thumbnailPath!).existsSync())
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: Image.file(
+                File(_thumbnailPath!),
+                fit: BoxFit.cover,
+                key: ValueKey(_thumbnailPath),
+                cacheWidth: 200,
+                cacheHeight: 140,
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
-          )
-        else if (_thumbnailPath != null && _thumbnailPath != 'MEMORY_LOADED')
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: Image.file(
-              File(_thumbnailPath!),
-              fit: BoxFit.cover,
-              key: ValueKey(_thumbnailPath),
-              cacheWidth: 200,
-              cacheHeight: 140,
-              filterQuality: FilterQuality.medium,
-              errorBuilder: (context, error, stackTrace) {
-                return const SizedBox.shrink();
-              },
-            ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

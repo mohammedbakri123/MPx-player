@@ -304,18 +304,16 @@ class FileBrowserController extends ChangeNotifier {
   }
 
   Future<void> refresh({bool silent = false}) async {
-    _browser.invalidatePath(_currentPath);
-    await loadDirectory(_currentPath, addToHistory: false, silent: silent);
-
     final rootPath = _browser.getRootPath();
     final refreshedPath = _currentPath;
-    unawaited(() async {
-      await _indexService.refreshInBackground(rootPath);
-      if (_currentPath != refreshedPath) {
-        return;
-      }
-      await loadDirectory(refreshedPath, addToHistory: false, silent: true);
-    }());
+
+    _browser.invalidatePath(refreshedPath);
+    await _indexService.invalidate(rootPath);
+    await _indexService.refreshInBackground(rootPath);
+
+    if (_currentPath != refreshedPath) return;
+
+    await loadDirectory(refreshedPath, addToHistory: false, silent: silent);
   }
 
   void toggleSelection(String path) {

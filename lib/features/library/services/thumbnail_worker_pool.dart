@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -20,45 +19,34 @@ Future<String> getPersistentThumbnailDirectory() async {
   return _persistentThumbnailDir!;
 }
 
-/// Parameters for thumbnail generation in isolate
-class _ThumbnailParams {
-  final String videoPath;
-  final String thumbnailDir;
-  final int? timeMs;
-  final bool smartTimestamp;
-  final int? durationMs;
-
-  _ThumbnailParams({
-    required this.videoPath,
-    required this.thumbnailDir,
-    this.timeMs,
-    this.smartTimestamp = true,
-    this.durationMs,
-  });
-}
-
-/// Isolate function for thumbnail generation
-Future<String?> _generateThumbnailIsolate(_ThumbnailParams params) async {
+Future<String?> _generateThumbnailFile(
+  String videoPath,
+  String thumbnailDir, {
+  int? timeMs,
+  bool smartTimestamp = true,
+  int? durationMs,
+}) async {
   try {
-    final fileName = '${params.videoPath.hashCode.abs()}.jpg';
-    final thumbnailPath = '${params.thumbnailDir}/$fileName';
+    final fileName = '${videoPath.hashCode.abs()}.jpg';
+    final thumbnailPath = '$thumbnailDir/$fileName';
 
     final existingFile = File(thumbnailPath);
     if (await existingFile.exists()) {
       return thumbnailPath;
     }
 
-    int finalTimeMs = params.timeMs ?? 1000;
+    int finalTimeMs = timeMs ?? 1000;
 
-    if (params.smartTimestamp &&
-        params.timeMs == null &&
-        params.durationMs != null &&
-        params.durationMs! > 10000) {
-      finalTimeMs = (params.durationMs! * 0.1).toInt();
+    if (smartTimestamp &&
+        timeMs == null &&
+        durationMs != null &&
+        durationMs > 10000) {
+      finalTimeMs = (durationMs * 0.1).toInt();
     }
 
-    final Uint8List? thumbnailData = await VideoThumbnail.thumbnailData(
-      video: params.videoPath,
+    final thumbnailData = await VideoThumbnail.thumbnailFile(
+      video: videoPath,
+      thumbnailPath: thumbnailPath,
       imageFormat: ImageFormat.JPEG,
       maxHeight: 200,
       maxWidth: 300,
@@ -70,12 +58,9 @@ Future<String?> _generateThumbnailIsolate(_ThumbnailParams params) async {
       return null;
     }
 
-    final file = File(thumbnailPath);
-    await file.writeAsBytes(thumbnailData);
-
-    return thumbnailPath;
+    return thumbnailData;
   } catch (e) {
-    debugPrint('Error in _generateThumbnailIsolate: $e');
+    debugPrint('Error generating thumbnail file: $e');
     return null;
   }
 }
@@ -124,33 +109,29 @@ class ThumbnailWorkerPool {
       if (await File(thumbnailPath).exists()) {
         _pendingRequests.remove(videoPath);
         completer.complete(thumbnailPath);
-        
+
         // Asynchronously update memory cache
         unawaited(ThumbnailCache().putPath(videoPath, thumbnailPath));
         return thumbnailPath;
       }
 
-      // Generate in background isolate using compute
-      final path = await compute(
-        _generateThumbnailIsolate,
-        _ThumbnailParams(
-          videoPath: videoPath,
-          thumbnailDir: _thumbnailDir!,
-          timeMs: timeMs,
-          smartTimestamp: smartTimestamp,
-          durationMs: durationMs,
-        ),
+      final path = await _generateThumbnailFile(
+        videoPath,
+        _thumbnailDir!,
+        timeMs: timeMs,
+        smartTimestamp: smartTimestamp,
+        durationMs: durationMs,
       );
 
       _pendingRequests.remove(videoPath);
       completer.complete(path);
-      
+
       if (path != null) {
         AppLogger.i('Thumbnail generated in background: $path');
         // Asynchronously update memory cache
         unawaited(ThumbnailCache().putPath(videoPath, path));
       }
-      
+
       return path;
     } catch (e) {
       AppLogger.e('Error generating thumbnail: $e');
