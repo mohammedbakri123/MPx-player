@@ -12,17 +12,50 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen>
+    with SingleTickerProviderStateMixin {
   static const double _swipeVelocityThreshold = 320;
+  static const double _swipeProgressThreshold = 0.22;
   int _currentIndex = 0;
   final List<bool> _loadedTabs = [true, false, false, false];
+  late final AnimationController _swipeController;
+  Animation<double>? _swipeAnimation;
+  double _dragOffset = 0;
+  int? _pendingTabIndex;
 
   @override
   void initState() {
     super.initState();
+    _swipeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    )
+      ..addListener(() {
+        final value = _swipeAnimation?.value;
+        if (value == null) return;
+        setState(() => _dragOffset = value);
+      })
+      ..addStatusListener((status) {
+        if (status != AnimationStatus.completed) return;
+        final pendingTabIndex = _pendingTabIndex;
+        if (pendingTabIndex != null) {
+          _selectTab(pendingTabIndex);
+        }
+        if (!mounted) return;
+        setState(() {
+          _dragOffset = 0;
+          _pendingTabIndex = null;
+        });
+      });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _warmUpTabs();
     });
+  }
+
+  @override
+  void dispose() {
+    _swipeController.dispose();
+    super.dispose();
   }
 
   Future<void> _warmUpTabs() async {
@@ -40,18 +73,126 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _currentIndex = index);
   }
 
-  void _handleHorizontalDragEnd(DragEndDetails details) {
-    final velocity = details.primaryVelocity ?? 0;
-    if (velocity.abs() < _swipeVelocityThreshold) return;
+  void _handleHorizontalDragStart(DragStartDetails details) {
+    if (_swipeController.isAnimating) {
+      _swipeController.stop();
+      _swipeAnimation = null;
+      _pendingTabIndex = null;
+    }
+  }
 
-    if (velocity < 0 && _currentIndex < 3) {
-      _selectTab(_currentIndex + 1);
+  void _handleHorizontalDragUpdate(DragUpdateDetails details, double width) {
+    if (_swipeController.isAnimating) return;
+
+    final nextOffset =
+        (_dragOffset + details.primaryDelta!).clamp(-width, width);
+    final hasTarget = nextOffset < 0
+        ? _currentIndex < 3
+        : nextOffset > 0
+            ? _currentIndex > 0
+            : true;
+
+    if (!hasTarget) {
+      setState(() => _dragOffset = nextOffset * 0.18);
       return;
     }
 
-    if (velocity > 0 && _currentIndex > 0) {
-      _selectTab(_currentIndex - 1);
+    final targetIndex = nextOffset < 0 ? _currentIndex + 1 : _currentIndex - 1;
+    if (nextOffset != 0) {
+      _ensureTabLoaded(targetIndex);
     }
+
+    setState(() => _dragOffset = nextOffset);
+  }
+
+  void _handleHorizontalDragEnd(DragEndDetails details, double width) {
+    if (_swipeController.isAnimating) return;
+
+    final velocity = details.primaryVelocity ?? 0;
+    final progress = width == 0 ? 0.0 : _dragOffset.abs() / width;
+    final shouldAdvance = velocity.abs() >= _swipeVelocityThreshold ||
+        progress >= _swipeProgressThreshold;
+    final targetIndex = _getTargetIndexForOffset(_dragOffset);
+
+    if (shouldAdvance && targetIndex != null) {
+      _animateDragTo(
+        _dragOffset < 0 ? -width : width,
+        pendingTabIndex: targetIndex,
+      );
+      return;
+    }
+
+    _animateDragTo(0);
+  }
+
+  void _ensureTabLoaded(int index) {
+    if (index < 0 || index >= _loadedTabs.length || _loadedTabs[index]) return;
+    setState(() => _loadedTabs[index] = true);
+  }
+
+  int? _getTargetIndexForOffset(double offset) {
+    if (offset < 0 && _currentIndex < 3) return _currentIndex + 1;
+    if (offset > 0 && _currentIndex > 0) return _currentIndex - 1;
+    return null;
+  }
+
+  void _animateDragTo(double targetOffset, {int? pendingTabIndex}) {
+    _swipeController.stop();
+    _pendingTabIndex = pendingTabIndex;
+    _swipeAnimation = Tween<double>(
+      begin: _dragOffset,
+      end: targetOffset,
+    ).animate(CurvedAnimation(
+      parent: _swipeController,
+      curve: Curves.easeOutCubic,
+    ));
+    _swipeController
+      ..reset()
+      ..forward();
+  }
+
+  Widget _buildTabLayers(double width) {
+    final dragTargetIndex = _getTargetIndexForOffset(_dragOffset);
+
+    return Stack(
+      children: List.generate(4, (index) {
+        if (!_loadedTabs[index]) {
+          return const SizedBox.shrink();
+        }
+
+        final isCurrent = index == _currentIndex;
+        final isDragTarget = dragTargetIndex == index;
+        final shouldShow = isCurrent || isDragTarget;
+
+        if (!shouldShow) {
+          return Offstage(
+            offstage: true,
+            child: TickerMode(
+              enabled: false,
+              child: KeyedSubtree(
+                key: ValueKey(index),
+                child: _buildScreen(index),
+              ),
+            ),
+          );
+        }
+
+        final offset = isCurrent
+            ? _dragOffset
+            : (_dragOffset < 0 ? width : -width) + _dragOffset;
+
+        return Transform.translate(
+          offset: Offset(offset, 0),
+          child: TickerMode(
+            enabled: isCurrent,
+            child: KeyedSubtree(
+              key: ValueKey(index),
+              child: _buildScreen(index),
+            ),
+          ),
+        );
+      }),
+    );
   }
 
   @override
@@ -63,50 +204,47 @@ class _MainScreenState extends State<MainScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onHorizontalDragEnd: _handleHorizontalDragEnd,
-              child: Stack(
-                children: List.generate(4, (index) {
-                  if (!_loadedTabs[index]) {
-                    return const SizedBox.shrink();
-                  }
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
 
-                  return Offstage(
-                    offstage: _currentIndex != index,
-                    child: TickerMode(
-                      enabled: _currentIndex == index,
-                      child: KeyedSubtree(
-                        key: ValueKey(index),
-                        child: _buildScreen(index),
-                      ),
-                    ),
-                  );
-                }),
-              ),
+                return GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onHorizontalDragStart: _handleHorizontalDragStart,
+                  onHorizontalDragUpdate: (details) =>
+                      _handleHorizontalDragUpdate(details, width),
+                  onHorizontalDragEnd: (details) =>
+                      _handleHorizontalDragEnd(details, width),
+                  child: ClipRect(
+                    child: _buildTabLayers(width),
+                  ),
+                );
+              },
             ),
           ),
           Positioned(
             left: 16,
             right: 16,
-            bottom: 18,
+            bottom: 10,
+            height: 65,
             child: SafeArea(
               top: false,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(30),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      theme.elevatedSurface.withValues(
-                        alpha: theme.isDarkMode ? 0.96 : 0.985,
-                      ),
-                      theme.subtleSurface.withValues(
-                        alpha: theme.isDarkMode ? 0.88 : 0.94,
-                      ),
-                    ],
-                  ),
+                  color: theme.elevatedSurface,
+                  // gradient: LinearGradient(
+                  //   begin: Alignment.topLeft,
+                  //   end: Alignment.bottomRight,
+                  //   colors: [
+                  //     theme.elevatedSurface.withValues(
+                  //       alpha: theme.isDarkMode ? 0.96 : 0.985,
+                  //     // height: 65,   ),
+                  //     theme.subtleSurface.withValues(
+                  //       alpha: theme.isDarkMode ? 0.88 : 0.94,
+                  //     ),
+                  //   ],
+                  // ),
                   border: Border.all(
                     color: theme.softBorder.withValues(
                       alpha: theme.isDarkMode ? 0.82 : 0.68,
