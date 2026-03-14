@@ -32,6 +32,28 @@ class AppTheme {
         elevation: 0,
         type: BottomNavigationBarType.fixed,
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        height: 74,
+        indicatorColor: scheme.primary.withValues(alpha: 0.14),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final isSelected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            size: 24,
+            color: isSelected ? scheme.primary : const Color(0xFF7C879A),
+          );
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final isSelected = states.contains(WidgetState.selected);
+          return TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            color: isSelected ? scheme.primary : const Color(0xFF7C879A),
+          );
+        }),
+      ),
     );
   }
 
@@ -66,6 +88,28 @@ class AppTheme {
         unselectedItemColor: const Color(0xFF7D8CA5),
         elevation: 0,
         type: BottomNavigationBarType.fixed,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        height: 74,
+        indicatorColor: scheme.primary.withValues(alpha: 0.18),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final isSelected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            size: 24,
+            color: isSelected ? scheme.primary : const Color(0xFF7D8CA5),
+          );
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final isSelected = states.contains(WidgetState.selected);
+          return TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            color: isSelected ? scheme.primary : const Color(0xFF7D8CA5),
+          );
+        }),
       ),
     );
   }
