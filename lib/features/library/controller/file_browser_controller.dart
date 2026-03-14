@@ -10,6 +10,9 @@ enum SortBy { name, date, size, videos }
 enum SortOrder { ascending, descending }
 
 class FileBrowserController extends ChangeNotifier {
+  static String? _persistedCurrentPath;
+  static List<String> _persistedPathHistory = <String>[];
+
   final DirectoryBrowser _browser = DirectoryBrowser();
   final LibraryIndexService _indexService = LibraryIndexService();
 
@@ -42,17 +45,23 @@ class FileBrowserController extends ChangeNotifier {
   int get selectedCount => _selectedItems.length;
 
   Future<void> initialize() async {
-    _currentPath = _browser.getRootPath();
+    final rootPath = _browser.getRootPath();
+    _currentPath = _resolveInitialPath(rootPath);
+    _pathHistory
+      ..clear()
+      ..addAll(
+        _persistedPathHistory.where((path) => path.startsWith(rootPath)),
+      );
 
-    if (_indexService.getSnapshot(_currentPath) == null &&
-        await _indexService.hasPersistedIndex(_currentPath)) {
-      await _indexService.ensureIndexed(_currentPath);
+    if (_indexService.getSnapshot(rootPath) == null &&
+        await _indexService.hasPersistedIndex(rootPath)) {
+      await _indexService.ensureIndexed(rootPath);
     }
 
-    await loadDirectory(_currentPath);
+    await loadDirectory(_currentPath, addToHistory: false);
     _isInitialized = true;
     notifyListeners();
-    unawaited(_indexService.ensureIndexed(_currentPath));
+    unawaited(_indexService.ensureIndexed(rootPath));
   }
 
   Future<void> loadDirectory(String path,
@@ -68,6 +77,7 @@ class FileBrowserController extends ChangeNotifier {
     }
 
     _currentPath = path;
+    _persistNavigationState();
     // Don't force refresh browser cache on initial Load to be fast.
     // Refresh command will handle browser cache invalidation.
     final items = await _browser.listDirectory(path);
@@ -230,6 +240,7 @@ class FileBrowserController extends ChangeNotifier {
     if (_pathHistory.isEmpty) return;
     final previousPath = _pathHistory.removeLast();
     _currentPath = previousPath;
+    _persistNavigationState();
     final items = await _browser.listDirectory(previousPath);
     _items = _prepareVisibleItems(items);
     _sortItems();
@@ -240,6 +251,19 @@ class FileBrowserController extends ChangeNotifier {
   Future<void> navigateToFolder(FileItem folder) async {
     if (!folder.isDirectory) return;
     await loadDirectory(folder.path);
+  }
+
+  String _resolveInitialPath(String rootPath) {
+    final persistedPath = _persistedCurrentPath;
+    if (persistedPath == null || !persistedPath.startsWith(rootPath)) {
+      return rootPath;
+    }
+    return persistedPath;
+  }
+
+  void _persistNavigationState() {
+    _persistedCurrentPath = _currentPath;
+    _persistedPathHistory = List<String>.from(_pathHistory);
   }
 
   void toggleShowOnlyVideos() {
@@ -308,7 +332,6 @@ class FileBrowserController extends ChangeNotifier {
     final refreshedPath = _currentPath;
 
     _browser.invalidatePath(refreshedPath);
-    await _indexService.invalidate(rootPath);
     await _indexService.refreshInBackground(rootPath);
 
     if (_currentPath != refreshedPath) return;
