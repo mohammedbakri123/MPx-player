@@ -4,6 +4,7 @@ import 'package:mpx/features/library/presentation/screens/home_screen.dart';
 import 'package:mpx/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:mpx/features/history/presentation/screens/history_screen.dart';
 import 'package:mpx/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mpx/features/reels/presentation/screens/reels_screen.dart'; // New import for ReelsScreen
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,7 +19,8 @@ class _MainScreenState extends State<MainScreen>
   static const double _swipeProgressThreshold = 0.22;
   static const double _dockBottomOffset = 4;
   int _currentIndex = 0;
-  final List<bool> _loadedTabs = [true, false, false, false];
+  // Updated _loadedTabs size from 4 to 5
+  final List<bool> _loadedTabs = [true, false, false, false, false];
   late final AnimationController _swipeController;
   Animation<double>? _swipeAnimation;
   double _dragOffset = 0;
@@ -60,10 +62,11 @@ class _MainScreenState extends State<MainScreen>
   }
 
   Future<void> _warmUpTabs() async {
-    for (final index in [1, 2, 3]) {
+    // Adjusted loop to cover all tabs dynamically
+    for (int i = 1; i < _labels.length; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 140));
-      if (!mounted || _loadedTabs[index]) continue;
-      setState(() => _loadedTabs[index] = true);
+      if (!mounted || _loadedTabs[i]) continue;
+      setState(() => _loadedTabs[i] = true);
     }
   }
 
@@ -87,8 +90,9 @@ class _MainScreenState extends State<MainScreen>
 
     final nextOffset =
         (_dragOffset + details.primaryDelta!).clamp(-width, width);
+    // Updated hasTarget condition to use dynamic tab count
     final hasTarget = nextOffset < 0
-        ? _currentIndex < 3
+        ? _currentIndex < _labels.length - 1
         : nextOffset > 0
             ? _currentIndex > 0
             : true;
@@ -132,8 +136,13 @@ class _MainScreenState extends State<MainScreen>
   }
 
   int? _getTargetIndexForOffset(double offset) {
-    if (offset < 0 && _currentIndex < 3) return _currentIndex + 1;
-    if (offset > 0 && _currentIndex > 0) return _currentIndex - 1;
+    // Updated condition to use dynamic tab count and added curly braces
+    if (offset < 0 && _currentIndex < _labels.length - 1) {
+      return _currentIndex + 1;
+    }
+    if (offset > 0 && _currentIndex > 0) {
+      return _currentIndex - 1;
+    }
     return null;
   }
 
@@ -156,7 +165,8 @@ class _MainScreenState extends State<MainScreen>
     final dragTargetIndex = _getTargetIndexForOffset(_dragOffset);
 
     return Stack(
-      children: List.generate(4, (index) {
+      // Updated List.generate count to use dynamic tab count
+      children: List.generate(_labels.length, (index) {
         if (!_loadedTabs[index]) {
           return const SizedBox.shrink();
         }
@@ -273,7 +283,8 @@ class _MainScreenState extends State<MainScreen>
     return SizedBox(
       height: 64,
       child: Row(
-        children: List.generate(4, (index) {
+        // Updated List.generate count to use dynamic tab count
+        children: List.generate(_labels.length, (index) {
           final isSelected = _currentIndex == index;
           final iconData =
               isSelected ? _selectedIcons[index] : _outlineIcons[index];
@@ -330,8 +341,10 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
+  // Updated static lists for icons and labels
   static const List<IconData> _outlineIcons = [
     Icons.folder_outlined,
+    Icons.video_library_outlined, // Reels at index 1
     Icons.favorite_outline_rounded,
     Icons.history_rounded,
     Icons.settings_outlined,
@@ -339,6 +352,7 @@ class _MainScreenState extends State<MainScreen>
 
   static const List<IconData> _selectedIcons = [
     Icons.folder_rounded,
+    Icons.video_library_rounded, // Reels at index 1
     Icons.favorite_rounded,
     Icons.history_toggle_off_rounded,
     Icons.settings_rounded,
@@ -346,6 +360,7 @@ class _MainScreenState extends State<MainScreen>
 
   static const List<String> _labels = [
     'Home',
+    'Reels', // Reels at index 1
     'Favorites',
     'History',
     'Settings',
@@ -355,11 +370,13 @@ class _MainScreenState extends State<MainScreen>
     switch (index) {
       case 0:
         return const HomeScreen();
-      case 1:
+      case 1: // New Reels Screen
+        return const ReelsScreen();
+      case 2: // Shifted from 1
         return const FavoritesScreen();
-      case 2:
+      case 3: // Shifted from 2
         return const HistoryScreen();
-      case 3:
+      case 4: // Shifted from 3
         return const SettingsScreen();
       default:
         return const HomeScreen();

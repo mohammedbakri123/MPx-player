@@ -13,6 +13,7 @@ import '../widgets/home/home_selection_header.dart';
 import '../widgets/home/home_sort_sheet.dart';
 import '../../../player/presentation/screens/video_player_screen.dart';
 import '../../../favorites/services/favorites_service.dart';
+import '../../../../features/reels/controllers/reels_controller.dart'; // Import ReelsController
 import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -45,6 +46,43 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _importCurrentFolderToReels() async {
+    final reelsController =
+        Provider.of<ReelsController>(context, listen: false);
+    final currentPath = _controller.currentPath;
+
+    if (currentPath.isEmpty) {
+      _showSnackBar('Please navigate to a folder first.', Colors.orange);
+      return;
+    }
+
+    // Check if the current path is the root path. We don't want to add the entire device.
+    if (currentPath == _controller.getRootPath) {
+      // Corrected to use getter
+      _showSnackBar(
+          'Cannot import root directory. Please navigate to a specific folder.',
+          Colors.red);
+      return;
+    }
+
+    try {
+      await reelsController.importFolderToReels(currentPath);
+      _showSnackBar('Folder imported to Reels!', Colors.green);
+    } catch (e) {
+      _showSnackBar('Failed to import folder: $e', Colors.red);
+    }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -93,6 +131,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             MaterialPageRoute(
                                 builder: (_) => const SearchScreen()),
                           ),
+                          onAddReelTap:
+                              _importCurrentFolderToReels, // Pass the new callback
                         )
                       else
                         HomeSelectionHeader(

@@ -1,3 +1,5 @@
+import 'package:provider/provider.dart';
+import '../../../../reels/controllers/reels_controller.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_theme_tokens.dart';
 
@@ -56,6 +58,30 @@ class LibraryItemDetailsSheet {
                 fallbackDuration: '00:00',
                 fallbackResolution: 'Unknown',
               ),
+        onAddToReels: !item.isDirectory
+            ? () async {
+                final reelsController =
+                    Provider.of<ReelsController>(context, listen: false);
+                try {
+                  await reelsController.importVideoToReels(item.path);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Video added to Reels'),
+                          backgroundColor: Colors.green),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Failed to add to Reels: $e'),
+                          backgroundColor: Colors.red),
+                    );
+                  }
+                }
+              }
+            : null,
       ),
     );
   }
@@ -93,6 +119,28 @@ class LibraryItemDetailsSheet {
           fallbackDuration: video.formattedDuration,
           fallbackResolution: video.resolution,
         ),
+        onAddToReels: () async {
+          final reelsController =
+              Provider.of<ReelsController>(context, listen: false);
+          try {
+            await reelsController.importVideoToReels(video.path);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Video added to Reels'),
+                    backgroundColor: Colors.green),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('Failed to add to Reels: $e'),
+                    backgroundColor: Colors.red),
+              );
+            }
+          }
+        },
       ),
     );
   }
@@ -134,6 +182,7 @@ class _DetailsSheet extends StatelessWidget {
   final IconData icon;
   final Color accentColor;
   final _SheetAction? action;
+  final VoidCallback? onAddToReels; // Add property
   final List<_SheetFact> facts;
   final Widget? extraContent;
 
@@ -146,6 +195,7 @@ class _DetailsSheet extends StatelessWidget {
     required this.accentColor,
     required this.facts,
     this.action,
+    this.onAddToReels, // Initialize property
     this.extraContent,
   });
 
@@ -276,6 +326,28 @@ class _DetailsSheet extends StatelessWidget {
                     ),
                     icon: Icon(action!.icon, size: 18),
                     label: Text(action!.label),
+                  ),
+                ),
+              ],
+              if (onAddToReels != null) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      onAddToReels!();
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.strongText,
+                      side: BorderSide(color: theme.softBorder),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    icon: const Icon(Icons.video_collection_rounded, size: 18),
+                    label: const Text('Add to Reels'),
                   ),
                 ),
               ],

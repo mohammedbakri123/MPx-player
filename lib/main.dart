@@ -10,6 +10,7 @@ import 'features/favorites/services/favorites_service.dart';
 import 'features/library/services/thumbnail_cache.dart';
 import 'features/library/presentation/widgets/home/home_fab.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
+import 'features/reels/controllers/reels_controller.dart';
 import 'core/widgets/permission_wrapper.dart';
 
 Future<void> main() async {
@@ -62,8 +63,11 @@ class _MPxPlayerState extends State<MPxPlayer> {
   Widget build(BuildContext context) {
     _settingsController ??= AppSettingsController();
 
-    return ChangeNotifierProvider.value(
-      value: _settingsController!,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _settingsController!),
+        ChangeNotifierProvider(create: (_) => ReelsController()),
+      ],
       child: Consumer<AppSettingsController>(
         builder: (context, settings, _) {
           final platformBrightness =

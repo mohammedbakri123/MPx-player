@@ -44,6 +44,9 @@ class FileBrowserController extends ChangeNotifier {
   Set<String> get selectedItems => _selectedItems;
   int get selectedCount => _selectedItems.length;
 
+  // Public getter for root path
+  String get getRootPath => _browser.getRootPath();
+
   Future<void> initialize() async {
     final rootPath = _browser.getRootPath();
     _currentPath = _resolveInitialPath(rootPath);
