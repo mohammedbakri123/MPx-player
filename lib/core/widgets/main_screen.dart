@@ -16,6 +16,7 @@ class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
   static const double _swipeVelocityThreshold = 320;
   static const double _swipeProgressThreshold = 0.22;
+  static const double _dockBottomOffset = 4;
   int _currentIndex = 0;
   final List<bool> _loadedTabs = [true, false, false, false];
   late final AnimationController _swipeController;
@@ -225,8 +226,7 @@ class _MainScreenState extends State<MainScreen>
           Positioned(
             left: 16,
             right: 16,
-            bottom: 10,
-            height: 65,
+            bottom: _dockBottomOffset,
             child: SafeArea(
               top: false,
               child: DecoratedBox(

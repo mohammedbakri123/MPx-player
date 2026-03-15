@@ -11,6 +11,8 @@ import '../video/video_thumbnail.dart';
 import 'file_list_item.dart';
 
 class FileBrowserContent extends StatelessWidget {
+  static const double _bottomClearance = 128;
+
   final FileBrowserController controller;
   final void Function(String path) onVideoTap;
   final void Function(String path) onFolderTap;
@@ -68,6 +70,7 @@ class FileBrowserContent extends StatelessWidget {
         displacement: 20,
         edgeOffset: 20,
         child: ListView(
+          padding: const EdgeInsets.only(bottom: _bottomClearance),
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             SizedBox(
@@ -87,7 +90,7 @@ class FileBrowserContent extends StatelessWidget {
         : RefreshIndicator(
             onRefresh: () => controller.refresh(silent: true),
             child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, _bottomClearance),
               controller: scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: items.length,
@@ -192,7 +195,7 @@ class FileBrowserContent extends StatelessWidget {
           return GridView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             controller: scrollController,
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, _bottomClearance),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
               crossAxisSpacing: 14,

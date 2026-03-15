@@ -16,7 +16,7 @@ extension AppThemeTokens on ThemeData {
       : const Color(0xFFF8FAFC);
 
   Color get softBorder => isDarkMode
-      ? Colors.white.withValues(alpha: 0.08)
+      ? const Color.fromARGB(255, 5, 56, 61).withValues(alpha: 0.08)
       : const Color(0xFFE2E8F0);
 
   Color get strongText => colorScheme.onSurface;
