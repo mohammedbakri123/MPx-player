@@ -224,27 +224,16 @@ class _MainScreenState extends State<MainScreen>
             ),
           ),
           Positioned(
-            left: 16,
-            right: 16,
+            left: 8,
+            right: 8,
             bottom: _dockBottomOffset,
             child: SafeArea(
               top: false,
+              minimum: EdgeInsets.zero,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(30),
                   color: theme.elevatedSurface,
-                  // gradient: LinearGradient(
-                  //   begin: Alignment.topLeft,
-                  //   end: Alignment.bottomRight,
-                  //   colors: [
-                  //     theme.elevatedSurface.withValues(
-                  //       alpha: theme.isDarkMode ? 0.96 : 0.985,
-                  //     // height: 65,   ),
-                  //     theme.subtleSurface.withValues(
-                  //       alpha: theme.isDarkMode ? 0.88 : 0.94,
-                  //     ),
-                  //   ],
-                  // ),
                   border: Border.all(
                     color: theme.softBorder.withValues(
                       alpha: theme.isDarkMode ? 0.82 : 0.68,
@@ -270,35 +259,7 @@ class _MainScreenState extends State<MainScreen>
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(30),
-                  child: NavigationBar(
-                    selectedIndex: _currentIndex,
-                    animationDuration: const Duration(milliseconds: 240),
-                    onDestinationSelected: _selectTab,
-                    labelBehavior:
-                        NavigationDestinationLabelBehavior.onlyShowSelected,
-                    destinations: const [
-                      NavigationDestination(
-                        icon: Icon(Icons.folder_outlined),
-                        selectedIcon: Icon(Icons.folder_rounded),
-                        label: 'Home',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.favorite_outline_rounded),
-                        selectedIcon: Icon(Icons.favorite_rounded),
-                        label: 'Favorites',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.history_rounded),
-                        selectedIcon: Icon(Icons.history_toggle_off_rounded),
-                        label: 'History',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.settings_outlined),
-                        selectedIcon: Icon(Icons.settings_rounded),
-                        label: 'Settings',
-                      ),
-                    ],
-                  ),
+                  child: _buildCustomBottomBar(theme),
                 ),
               ),
             ),
@@ -307,6 +268,88 @@ class _MainScreenState extends State<MainScreen>
       ),
     );
   }
+
+  Widget _buildCustomBottomBar(ThemeData theme) {
+    return SizedBox(
+      height: 64,
+      child: Row(
+        children: List.generate(4, (index) {
+          final isSelected = _currentIndex == index;
+          final iconData =
+              isSelected ? _selectedIcons[index] : _outlineIcons[index];
+          final label = _labels[index];
+
+          return Expanded(
+            child: InkWell(
+              onTap: () => _selectTab(index),
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (isSelected)
+                    Container(
+                      width: 62,
+                      height: 62,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer
+                            .withValues(alpha: theme.isDarkMode ? 0.32 : 0.18),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        iconData,
+                        size: 22,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.faintText,
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.faintText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  static const List<IconData> _outlineIcons = [
+    Icons.folder_outlined,
+    Icons.favorite_outline_rounded,
+    Icons.history_rounded,
+    Icons.settings_outlined,
+  ];
+
+  static const List<IconData> _selectedIcons = [
+    Icons.folder_rounded,
+    Icons.favorite_rounded,
+    Icons.history_toggle_off_rounded,
+    Icons.settings_rounded,
+  ];
+
+  static const List<String> _labels = [
+    'Home',
+    'Favorites',
+    'History',
+    'Settings',
+  ];
 
   Widget _buildScreen(int index) {
     switch (index) {
