@@ -114,11 +114,45 @@ class _ReelsScreenState extends State<ReelsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Navigate to a folder in Home and tap the import button.',
+                    'Navigate to a folder in Home and tap the import button, or add videos via the video details sheet.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: theme.mutedText),
                   ),
+                  if (controller.reelsFolderPath != null) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: theme.elevatedSurface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.softBorder),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Or add/delete your own videos externally at:',
+                            style: TextStyle(
+                                color: theme.strongText,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          SelectableText(
+                            controller.reelsFolderPath!,
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: _importFolder,
@@ -142,41 +176,47 @@ class _ReelsScreenState extends State<ReelsScreen> {
 
         return Scaffold(
           backgroundColor: Colors.black,
-          body: Stack(
-            children: [
-              PageView.builder(
-                controller: _pageController,
-                scrollDirection: Axis.vertical,
-                onPageChanged: _onPageChanged,
-                itemCount: controller.reelsVideos.length,
-                itemBuilder: (context, index) {
-                  final video = controller.reelsVideos[index];
-                  return ReelPlayerItem(
-                    video: video,
-                    isCurrentlyVisible: _currentPage == index,
-                  );
-                },
-              ),
-              Positioned(
-                top: 40,
-                right: 20,
-                child: SafeArea(
-                  child: FloatingActionButton(
-                    onPressed: _importFolder,
-                    mini: true,
-                    backgroundColor:
-                        theme.elevatedSurface.withValues(alpha: 0.7),
-                    child: Icon(Icons.add_box_rounded, color: theme.strongText),
+          body: RefreshIndicator(
+            onRefresh: () async {
+              await controller.loadReels();
+            },
+            child: Stack(
+              children: [
+                PageView.builder(
+                  controller: _pageController,
+                  scrollDirection: Axis.vertical,
+                  onPageChanged: _onPageChanged,
+                  itemCount: controller.reelsVideos.length,
+                  itemBuilder: (context, index) {
+                    final video = controller.reelsVideos[index];
+                    return ReelPlayerItem(
+                      video: video,
+                      isCurrentlyVisible: _currentPage == index,
+                    );
+                  },
+                ),
+                Positioned(
+                  top: 40,
+                  right: 20,
+                  child: SafeArea(
+                    child: FloatingActionButton(
+                      onPressed: _importFolder,
+                      mini: true,
+                      backgroundColor:
+                          theme.elevatedSurface.withValues(alpha: 0.7),
+                      child:
+                          Icon(Icons.add_box_rounded, color: theme.strongText),
+                    ),
                   ),
                 ),
-              ),
-              if (controller.isLoading)
-                const Positioned(
-                  top: 50,
-                  right: 20,
-                  child: CircularProgressIndicator(),
-                ),
-            ],
+                if (controller.isLoading)
+                  const Positioned(
+                    top: 50,
+                    right: 20,
+                    child: CircularProgressIndicator(),
+                  ),
+              ],
+            ),
           ),
         );
       },

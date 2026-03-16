@@ -13,13 +13,31 @@ class ReelService {
     if (_reelsDirectory != null) {
       return _reelsDirectory!;
     }
-    final appDocDir = await getApplicationDocumentsDirectory();
-    final reelsDir = Directory(p.join(appDocDir.path, _reelsFolderName));
+
+    Directory baseDir;
+    if (Platform.isAndroid) {
+      // Use public Movies directory on Android so users can easily access it via file managers
+      baseDir = Directory('/storage/emulated/0/Movies');
+      if (!await baseDir.exists()) {
+        baseDir = Directory(
+            '/storage/emulated/0'); // Fallback to root external storage
+      }
+    } else {
+      baseDir = await getApplicationDocumentsDirectory();
+    }
+
+    final reelsDir = Directory(p.join(baseDir.path, _reelsFolderName));
     if (!await reelsDir.exists()) {
       await reelsDir.create(recursive: true);
     }
     _reelsDirectory = reelsDir;
     return reelsDir;
+  }
+
+  // Returns the path of the Reels folder for user display
+  static Future<String> getReelsFolderPath() async {
+    final reelsDir = await _getReelsDirectory();
+    return reelsDir.path;
   }
 
   // Imports video files from a source folder to the mpxReels directory

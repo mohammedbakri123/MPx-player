@@ -6,13 +6,21 @@ class ReelsController extends ChangeNotifier {
   List<VideoFile> _reelsVideos = [];
   bool _isLoading = false;
   String? _error;
+  String? _reelsFolderPath;
 
   List<VideoFile> get reelsVideos => _reelsVideos;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get reelsFolderPath => _reelsFolderPath;
 
   ReelsController() {
     loadReels();
+    _loadFolderPath();
+  }
+
+  Future<void> _loadFolderPath() async {
+    _reelsFolderPath = await ReelService.getReelsFolderPath();
+    notifyListeners();
   }
 
   Future<void> loadReels() async {

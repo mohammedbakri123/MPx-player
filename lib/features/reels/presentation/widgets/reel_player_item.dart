@@ -112,6 +112,8 @@ class _ReelPlayerItemState extends State<ReelPlayerItem> {
             height: MediaQuery.of(context).size.height,
             child: Video(
               controller: _controller,
+              controls:
+                  null, // Disable default controls to allow custom gestures
               fit: BoxFit.contain, // Maintain aspect ratio without cropping
             ),
           ),

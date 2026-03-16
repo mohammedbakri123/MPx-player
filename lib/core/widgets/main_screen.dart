@@ -233,10 +233,12 @@ class _MainScreenState extends State<MainScreen>
               },
             ),
           ),
-          Positioned(
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
             left: 8,
             right: 8,
-            bottom: _dockBottomOffset,
+            bottom: _currentIndex == 1 ? -100 : _dockBottomOffset,
             child: SafeArea(
               top: false,
               minimum: EdgeInsets.zero,
