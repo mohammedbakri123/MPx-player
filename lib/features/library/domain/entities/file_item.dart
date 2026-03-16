@@ -24,35 +24,27 @@ class FileItem {
 
   static bool _isVideoFile(String name) {
     final lower = name.toLowerCase();
-    final videoExtensions = [
-      '.mp4',
-      '.mkv',
-      '.avi',
-      '.mov',
-      '.wmv',
-      '.flv',
-      '.webm',
-      '.m4v',
-      '.3gp',
-      '.mpeg',
-      '.mpg',
-      '.ts',
-      '.m2ts',
-      '.mts',
-      '.ogv',
-      '.dv',
-      '.rm',
-      '.rmvb',
-      '.asf',
-      '.amv',
-      '.mp2',
-      '.m4v'
-    ];
-
-    for (final ext in videoExtensions) {
-      if (lower.endsWith(ext)) return true;
-    }
-    return false;
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.wmv') ||
+        lower.endsWith('.flv') ||
+        lower.endsWith('.3gp') ||
+        lower.endsWith('.m4v') ||
+        lower.endsWith('.mpeg') ||
+        lower.endsWith('.mpg') ||
+        lower.endsWith('.ts') ||
+        lower.endsWith('.m2ts') ||
+        lower.endsWith('.mts') ||
+        lower.endsWith('.ogv') ||
+        lower.endsWith('.dv') ||
+        lower.endsWith('.rm') ||
+        lower.endsWith('.rmvb') ||
+        lower.endsWith('.asf') ||
+        lower.endsWith('.amv') ||
+        lower.endsWith('.mp2');
   }
 
   static bool isVideoFileName(String name) => _isVideoFile(name);

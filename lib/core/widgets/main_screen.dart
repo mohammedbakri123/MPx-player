@@ -373,7 +373,13 @@ class _MainScreenState extends State<MainScreen>
       case 0:
         return const HomeScreen();
       case 1: // New Reels Screen
-        return ReelsScreen(isActive: _currentIndex == 1 && _dragOffset == 0);
+        // We only consider Reels active if we are strictly on the Reels tab, with NO drag offset,
+        // AND the drag animation is completely finished.
+        final isStrictlyActive = _currentIndex == 1 &&
+            _dragOffset == 0 &&
+            _pendingTabIndex == null &&
+            !_swipeController.isAnimating;
+        return ReelsScreen(isActive: isStrictlyActive);
       case 2: // Shifted from 1
         return const FavoritesScreen();
       case 3: // Shifted from 2

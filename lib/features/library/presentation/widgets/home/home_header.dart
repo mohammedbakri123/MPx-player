@@ -46,11 +46,11 @@ class HomeHeader extends StatelessWidget {
             onPressed: onSortTap,
             tooltip: 'Sort',
           ),
-          IconButton(
-            icon: const Icon(Icons.video_collection_rounded),
-            onPressed: onAddReelTap,
-            tooltip: 'Add current folder to Reels',
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.video_collection_rounded),
+          //   onPressed: onAddReelTap,
+          //   tooltip: 'Add current folder to Reels',
+          // ),
           IconButton(
             icon: const Icon(Icons.play_circle_outline_rounded),
             onPressed: onPlayFolderAsReelsTap,
