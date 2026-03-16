@@ -6,19 +6,28 @@ import 'package:mpx/features/library/controller/file_browser_controller.dart';
 import 'package:mpx/core/theme/app_theme_tokens.dart';
 
 class ReelsScreen extends StatefulWidget {
-  const ReelsScreen({super.key});
+  final bool isActive;
+  final String? folderPath;
+
+  const ReelsScreen({
+    super.key,
+    this.isActive = true,
+    this.folderPath,
+  });
 
   @override
   State<ReelsScreen> createState() => _ReelsScreenState();
 }
 
-class _ReelsScreenState extends State<ReelsScreen> {
+class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
   late PageController _pageController;
   int _currentPage = 0;
+  bool _isAppActive = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pageController = PageController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -28,15 +37,36 @@ class _ReelsScreenState extends State<ReelsScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (mounted) {
+      setState(() {
+        _isAppActive = state == AppLifecycleState.resumed;
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(ReelsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive != oldWidget.isActive) {
+      // Rebuild to pass new isActive state to children
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
   }
 
   void _onPageChanged(int page) {
-    setState(() {
-      _currentPage = page;
-    });
+    if (mounted) {
+      setState(() {
+        _currentPage = page;
+      });
+    }
   }
 
   Future<void> _importFolder() async {
@@ -61,19 +91,32 @@ class _ReelsScreenState extends State<ReelsScreen> {
   }
 
   void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: color,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isCustomFolder = widget.folderPath != null;
 
+    return isCustomFolder
+        ? ChangeNotifierProvider(
+            create: (_) => ReelsController(targetFolderPath: widget.folderPath),
+            child: _buildContent(context, theme, isCustomFolder),
+          )
+        : _buildContent(context, theme, isCustomFolder);
+  }
+
+  Widget _buildContent(
+      BuildContext context, ThemeData theme, bool isCustomFolder) {
     return Consumer<ReelsController>(
       builder: (context, controller, child) {
         if (controller.isLoading && controller.reelsVideos.isEmpty) {
@@ -119,7 +162,8 @@ class _ReelsScreenState extends State<ReelsScreen> {
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: theme.mutedText),
                   ),
-                  if (controller.reelsFolderPath != null) ...[
+                  if (!isCustomFolder &&
+                      controller.reelsFolderPath != null) ...[
                     const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -154,20 +198,21 @@ class _ReelsScreenState extends State<ReelsScreen> {
                     ),
                   ],
                   const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: _importFolder,
-                    icon: const Icon(Icons.folder_open_rounded),
-                    label: const Text('Import Current Folder'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                  if (!isCustomFolder)
+                    ElevatedButton.icon(
+                      onPressed: _importFolder,
+                      icon: const Icon(Icons.folder_open_rounded),
+                      label: const Text('Import Current Folder'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -191,24 +236,76 @@ class _ReelsScreenState extends State<ReelsScreen> {
                     final video = controller.reelsVideos[index];
                     return ReelPlayerItem(
                       video: video,
-                      isCurrentlyVisible: _currentPage == index,
+                      isCurrentlyVisible: widget.isActive &&
+                          _currentPage == index &&
+                          _isAppActive,
                     );
                   },
                 ),
+                if (!isCustomFolder)
+                  Positioned(
+                    top: 40,
+                    right: 20,
+                    child: SafeArea(
+                      child: FloatingActionButton(
+                        onPressed: _importFolder,
+                        mini: true,
+                        backgroundColor:
+                            theme.elevatedSurface.withValues(alpha: 0.7),
+                        child: Icon(Icons.add_box_rounded,
+                            color: theme.strongText),
+                      ),
+                    ),
+                  ),
                 Positioned(
                   top: 40,
-                  right: 20,
+                  right: isCustomFolder ? 20 : 80,
                   child: SafeArea(
-                    child: FloatingActionButton(
-                      onPressed: _importFolder,
-                      mini: true,
-                      backgroundColor:
-                          theme.elevatedSurface.withValues(alpha: 0.7),
-                      child:
-                          Icon(Icons.add_box_rounded, color: theme.strongText),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: theme.elevatedSurface.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: PopupMenuButton<ReelsSortOrder>(
+                        icon: Icon(Icons.sort_rounded, color: theme.strongText),
+                        onSelected: controller.changeSortOrder,
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: ReelsSortOrder.dateDesc,
+                            child: Text('Newest First'),
+                          ),
+                          const PopupMenuItem(
+                            value: ReelsSortOrder.dateAsc,
+                            child: Text('Oldest First'),
+                          ),
+                          const PopupMenuItem(
+                            value: ReelsSortOrder.nameAsc,
+                            child: Text('By Name'),
+                          ),
+                          const PopupMenuItem(
+                            value: ReelsSortOrder.shuffle,
+                            child: Text('Shuffle'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
+                if (isCustomFolder)
+                  Positioned(
+                    top: 40,
+                    left: 20,
+                    child: SafeArea(
+                      child: FloatingActionButton(
+                        onPressed: () => Navigator.pop(context),
+                        mini: true,
+                        backgroundColor:
+                            theme.elevatedSurface.withValues(alpha: 0.7),
+                        child: Icon(Icons.arrow_back_rounded,
+                            color: theme.strongText),
+                      ),
+                    ),
+                  ),
                 if (controller.isLoading)
                   const Positioned(
                     top: 50,

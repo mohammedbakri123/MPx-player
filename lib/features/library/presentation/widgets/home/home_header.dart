@@ -5,7 +5,8 @@ class HomeHeader extends StatelessWidget {
   final VoidCallback? onSortTap;
   final VoidCallback? onSearchTap;
   final VoidCallback? onToggleViewTap;
-  final VoidCallback? onAddReelTap; // New callback for adding to reels
+  final VoidCallback? onAddReelTap;
+  final VoidCallback? onPlayFolderAsReelsTap; // New callback
   final bool isGridView;
 
   const HomeHeader({
@@ -13,7 +14,8 @@ class HomeHeader extends StatelessWidget {
     this.onSortTap,
     this.onSearchTap,
     this.onToggleViewTap,
-    this.onAddReelTap, // Initialize new callback
+    this.onAddReelTap,
+    this.onPlayFolderAsReelsTap, // Initialize
     this.isGridView = false,
   });
 
@@ -44,11 +46,15 @@ class HomeHeader extends StatelessWidget {
             onPressed: onSortTap,
             tooltip: 'Sort',
           ),
-          // New IconButton for "Add to Reels"
           IconButton(
             icon: const Icon(Icons.video_collection_rounded),
             onPressed: onAddReelTap,
             tooltip: 'Add current folder to Reels',
+          ),
+          IconButton(
+            icon: const Icon(Icons.play_circle_outline_rounded),
+            onPressed: onPlayFolderAsReelsTap,
+            tooltip: 'Play current folder as Reels',
           ),
           IconButton(
             icon: const Icon(Icons.search_rounded),

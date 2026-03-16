@@ -373,7 +373,7 @@ class _MainScreenState extends State<MainScreen>
       case 0:
         return const HomeScreen();
       case 1: // New Reels Screen
-        return const ReelsScreen();
+        return ReelsScreen(isActive: _currentIndex == 1 && _dragOffset == 0);
       case 2: // Shifted from 1
         return const FavoritesScreen();
       case 3: // Shifted from 2

@@ -31,18 +31,7 @@ class FileBrowserContent extends StatelessWidget {
   });
 
   bool _isFavorite(String path) {
-    FileItem? item;
-    for (final currentItem in controller.items) {
-      if (currentItem.path == path) {
-        item = currentItem;
-        break;
-      }
-    }
-
-    if (item == null || !item.isVideo) return false;
-
-    final video = LibraryItemUi.videoFromFileItem(item);
-    return favoriteIds.contains(video.id);
+    return favoriteIds.contains(path.hashCode.toString());
   }
 
   @override

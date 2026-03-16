@@ -79,6 +79,42 @@ class ReelService {
     }
   }
 
+  // Returns a list of VideoFile objects from ANY specified directory
+  static Future<List<VideoFile>> getVideosFromAnyFolder(String path) async {
+    final dir = Directory(path);
+    final List<VideoFile> videos = [];
+
+    if (!await dir.exists()) {
+      return videos;
+    }
+
+    final folderPath = dir.path;
+    final folderName = p.basename(dir.path);
+
+    await for (final entity in dir.list(recursive: false, followLinks: false)) {
+      if (entity is File) {
+        // Use FileItem.isVideoFileName to check if it's a video
+        if (FileItem.isVideoFileName(p.basename(entity.path))) {
+          final stat = await entity.stat();
+          videos.add(
+            VideoFile(
+              id: p.basename(entity.path), // Use filename as ID for simplicity
+              path: entity.path,
+              title: p.basenameWithoutExtension(entity.path),
+              folderPath: folderPath, // Corrected parameter
+              folderName: folderName, // Corrected parameter
+              size: stat.size,
+              duration:
+                  0, // Default to 0, actual duration will be fetched by player
+              dateAdded: stat.changed, // Using stat.changed as dateAdded
+            ),
+          );
+        }
+      }
+    }
+    return videos;
+  }
+
   // Returns a list of VideoFile objects from the mpxReels directory
   static Future<List<VideoFile>> getReelsVideos() async {
     final reelsDir = await _getReelsDirectory();

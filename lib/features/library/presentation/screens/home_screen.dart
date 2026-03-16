@@ -13,7 +13,8 @@ import '../widgets/home/home_selection_header.dart';
 import '../widgets/home/home_sort_sheet.dart';
 import '../../../player/presentation/screens/video_player_screen.dart';
 import '../../../favorites/services/favorites_service.dart';
-import '../../../../features/reels/controllers/reels_controller.dart'; // Import ReelsController
+import '../../../../features/reels/controllers/reels_controller.dart';
+import '../../../../features/reels/presentation/screens/reels_screen.dart'; // Import ReelsScreen
 import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -85,6 +86,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _playCurrentFolderAsReels() {
+    final currentPath = _controller.currentPath;
+
+    if (currentPath.isEmpty || currentPath == _controller.getRootPath) {
+      _showSnackBar('Please navigate to a specific folder to play as Reels.',
+          Colors.orange);
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReelsScreen(folderPath: currentPath),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -131,8 +149,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             MaterialPageRoute(
                                 builder: (_) => const SearchScreen()),
                           ),
-                          onAddReelTap:
-                              _importCurrentFolderToReels, // Pass the new callback
+                          onAddReelTap: _importCurrentFolderToReels,
+                          onPlayFolderAsReelsTap:
+                              _playCurrentFolderAsReels, // Pass the new callback
                         )
                       else
                         HomeSelectionHeader(
