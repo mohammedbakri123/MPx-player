@@ -166,7 +166,7 @@ class HomeFABState extends State<HomeFAB> with RouteAware {
     return Material(
       color: Colors.transparent,
       child: Padding(
-        padding: const EdgeInsets.only(right: 4, bottom: 14),
+        padding: const EdgeInsets.only(right: 6, bottom: 96),
         child: InkWell(
           onTap: hasLastVideo ? _openLastVideo : null,
           borderRadius: BorderRadius.circular(24),

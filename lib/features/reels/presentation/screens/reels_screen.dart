@@ -23,6 +23,7 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
   late PageController _pageController;
   int _currentPage = 0;
   bool _isAppActive = true;
+  bool _showExitHint = true;
 
   @override
   void initState() {
@@ -32,6 +33,11 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         Provider.of<ReelsController>(context, listen: false).loadReels();
+      }
+    });
+    Future<void>.delayed(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() => _showExitHint = false);
       }
     });
   }
@@ -291,6 +297,52 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                     ),
                   ),
                 ),
+                if (!isCustomFolder)
+                  Positioned(
+                    top: 40,
+                    left: 20,
+                    child: SafeArea(
+                      child: AnimatedOpacity(
+                        opacity: _showExitHint ? 1 : 0.72,
+                        duration: const Duration(milliseconds: 260),
+                        child: IgnorePointer(
+                          ignoring: true,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.48),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.swipe_right_alt_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Swipe right to leave Reels',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 if (isCustomFolder)
                   Positioned(
                     top: 40,
@@ -303,6 +355,34 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                             theme.elevatedSurface.withValues(alpha: 0.7),
                         child: Icon(Icons.arrow_back_rounded,
                             color: theme.strongText),
+                      ),
+                    ),
+                  ),
+                if (isCustomFolder)
+                  Positioned(
+                    top: 96,
+                    left: 20,
+                    child: SafeArea(
+                      child: IgnorePointer(
+                        ignoring: true,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Text(
+                            'Tap back to return',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),

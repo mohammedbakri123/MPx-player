@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mpx/core/theme/app_theme_tokens.dart';
 
 /// Card container for settings sections with optional accent color border
 class SettingsCard extends StatelessWidget {
@@ -10,21 +11,20 @@ class SettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color,
+        color: theme.elevatedSurface,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: (accent ?? colors.onSurface).withValues(alpha: 0.08),
+          color: (accent ?? theme.softBorder).withValues(
+            alpha: theme.isDarkMode ? 0.18 : 0.16,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.12 : 0.05,
-            ),
+            color: theme.cardShadow,
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -116,12 +116,13 @@ class SettingsChoiceCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             color: isSelected
-                ? colors.primary.withValues(alpha: 0.12)
-                : colors.onSurface.withValues(alpha: 0.03),
+                ? colors.primary
+                    .withValues(alpha: theme.isDarkMode ? 0.16 : 0.12)
+                : theme.subtleSurface,
             border: Border.all(
               color: isSelected
                   ? colors.primary.withValues(alpha: 0.35)
-                  : colors.onSurface.withValues(alpha: 0.08),
+                  : theme.softBorder,
             ),
           ),
           child: Column(
@@ -156,7 +157,8 @@ class SettingsInlineStat extends StatelessWidget {
   final String label;
   final String value;
 
-  const SettingsInlineStat({super.key, required this.label, required this.value});
+  const SettingsInlineStat(
+      {super.key, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -166,8 +168,9 @@ class SettingsInlineStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color,
+        color: theme.elevatedSurface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.softBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

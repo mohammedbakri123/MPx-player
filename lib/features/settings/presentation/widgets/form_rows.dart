@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mpx/core/theme/app_theme_tokens.dart';
 
 /// Row widget with a switch control for settings
 class SettingsSwitchRow extends StatelessWidget {
@@ -27,8 +28,9 @@ class SettingsSwitchRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: colors.onSurface.withValues(alpha: 0.03),
+          color: theme.subtleSurface,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: theme.softBorder),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,8 +106,9 @@ class SettingsSliderRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
         decoration: BoxDecoration(
-          color: colors.onSurface.withValues(alpha: 0.03),
+          color: theme.subtleSurface,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: theme.softBorder),
         ),
         child: Column(
           children: [
@@ -138,7 +141,8 @@ class SettingsSliderRow extends StatelessWidget {
                 ),
               ],
             ),
-            Slider(value: sliderValue, min: min, max: max, onChanged: onChanged),
+            Slider(
+                value: sliderValue, min: min, max: max, onChanged: onChanged),
           ],
         ),
       ),
@@ -170,8 +174,9 @@ class SettingsInfoRow extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: colors.onSurface.withValues(alpha: 0.03),
+          color: theme.subtleSurface,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: theme.softBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mpx/core/theme/app_theme_tokens.dart';
 
 import '../../controllers/app_settings_controller.dart';
 import '../helpers/settings_helpers.dart';
@@ -13,7 +14,6 @@ class SettingsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -22,13 +22,18 @@ class SettingsHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDark
+          colors: theme.isDarkMode
               ? const [Color(0xFF12344A), Color(0xFF0D1728)]
-              : const [Color(0xFFE7F7F4), Color(0xFFF3EEDF)],
+              : const [Color(0xFFEAF3FF), Color(0xFFDCEAFE)],
+        ),
+        border: Border.all(
+          color:
+              colors.primary.withValues(alpha: theme.isDarkMode ? 0.14 : 0.12),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.06),
+            color:
+                Colors.black.withValues(alpha: theme.isDarkMode ? 0.16 : 0.08),
             blurRadius: 26,
             offset: const Offset(0, 10),
           ),

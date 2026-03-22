@@ -226,7 +226,7 @@ class FileListItem extends StatelessWidget {
           height: 56,
           child: LazyThumbnail(
             video: video,
-            placeholder: _ThumbnailPlaceholder(isCompact: true),
+            placeholder: const _ThumbnailPlaceholder(isCompact: true),
           ),
         ),
       );

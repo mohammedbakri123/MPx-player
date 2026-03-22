@@ -134,6 +134,11 @@ MPx Player follows **Clean Architecture** principles:
    flutter run
    ```
 
+### Contributing
+
+- Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for coding expectations, PR guidance, and release workflow.
+- For publish readiness, validate playback, scrolling, and release artifacts before opening a release PR.
+
 ---
 
 ## 📦 Tech Stack

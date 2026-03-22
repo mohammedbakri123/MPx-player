@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mpx/core/theme/app_theme_tokens.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/app_settings_controller.dart';
@@ -24,10 +25,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final settings = context.watch<AppSettingsController>();
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: colors.surface,
+      backgroundColor: theme.appBackground,
       body: SafeArea(
         child: Container(
           decoration: BoxDecoration(
@@ -35,8 +35,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                colors.surface,
-                isDark ? const Color(0xFF0B1422) : const Color(0xFFEAEDE3),
+                theme.appBackground,
+                theme.appBackgroundAlt,
               ],
             ),
           ),
@@ -65,7 +65,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             .map(
                               (preference) => SettingsChoiceCard(
                                 icon: SettingsThemeHelpers.getIcon(preference),
-                                title: SettingsThemeHelpers.getLabel(preference),
+                                title:
+                                    SettingsThemeHelpers.getLabel(preference),
                                 subtitle: SettingsThemeHelpers.getDescription(
                                     preference),
                                 isSelected:
@@ -100,8 +101,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               (preset) => SettingsChoiceCard(
                                 icon: SettingsPresetHelpers.getIcon(preset),
                                 title: SettingsPresetHelpers.getLabel(preset),
-                                subtitle:
-                                    SettingsPresetHelpers.getDescription(preset),
+                                subtitle: SettingsPresetHelpers.getDescription(
+                                    preset),
                                 isSelected: settings.playerPreset == preset,
                                 onTap: () => settings.setPlayerPreset(preset),
                               ),
@@ -112,8 +113,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: colors.primary.withValues(alpha: 0.08),
+                          color: colors.primary.withValues(
+                            alpha: theme.isDarkMode ? 0.14 : 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: colors.primary.withValues(
+                              alpha: theme.isDarkMode ? 0.18 : 0.12,
+                            ),
+                          ),
                         ),
                         child: Wrap(
                           spacing: 12,
@@ -169,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 16),
                 SettingsCard(
-                  accent: const Color(0xFF7C3AED),
+                  accent: colors.primary,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
