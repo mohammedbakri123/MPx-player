@@ -48,9 +48,10 @@ class HomeFABState extends State<HomeFAB> with RouteAware {
   Future<void> _loadLastVideo() async {
     final video = await HistoryService.getLastPlayedVideo();
     if (mounted) {
+      final previousVideoId = _lastVideo?.id;
       setState(() {
         _lastVideo = video;
-        if (_lastVideo?.id != video?.id) {
+        if (previousVideoId != video?.id) {
           _thumbnailPath = null;
         }
       });
@@ -165,7 +166,7 @@ class HomeFABState extends State<HomeFAB> with RouteAware {
     return Material(
       color: Colors.transparent,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 75),
+        padding: const EdgeInsets.only(right: 4, bottom: 14),
         child: InkWell(
           onTap: hasLastVideo ? _openLastVideo : null,
           borderRadius: BorderRadius.circular(24),

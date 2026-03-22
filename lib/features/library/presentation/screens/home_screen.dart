@@ -127,6 +127,8 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             child: Scaffold(
               backgroundColor: theme.appBackground,
+              floatingActionButtonLocation:
+                  FloatingActionButtonLocation.endFloat,
               body: SafeArea(
                 child: Container(
                   decoration: BoxDecoration(

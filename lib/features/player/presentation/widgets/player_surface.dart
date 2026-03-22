@@ -26,8 +26,10 @@ class PlayerSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: _buildVideoWithAspectRatio(),
+    return RepaintBoundary(
+      child: Center(
+        child: _buildVideoWithAspectRatio(),
+      ),
     );
   }
 
@@ -53,6 +55,9 @@ class PlayerSurface extends StatelessWidget {
       controller: controller,
       controls: null,
       fit: fit,
+      filterQuality: FilterQuality.low,
+      pauseUponEnteringBackgroundMode: false,
+      wakelock: false,
       subtitleViewConfiguration: SubtitleViewConfiguration(
         style: TextStyle(
           fontSize: subtitleFontSize,

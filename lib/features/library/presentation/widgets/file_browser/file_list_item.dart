@@ -3,7 +3,7 @@ import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../../domain/entities/file_item.dart';
 import '../common/library_item_ui.dart';
 import '../common/library_item_details_sheet.dart';
-import '../video/video_thumbnail.dart';
+import '../video/lazy_thumbnail.dart';
 
 class FileListItem extends StatelessWidget {
   final FileItem item;
@@ -224,7 +224,10 @@ class FileListItem extends StatelessWidget {
         child: SizedBox(
           width: 80,
           height: 56,
-          child: VideoThumbnail(video: video, isFavorite: false),
+          child: LazyThumbnail(
+            video: video,
+            placeholder: _ThumbnailPlaceholder(isCompact: true),
+          ),
         ),
       );
     }
@@ -240,6 +243,32 @@ class FileListItem extends StatelessWidget {
         Icons.insert_drive_file,
         color: theme.mutedText,
         size: 24,
+      ),
+    );
+  }
+}
+
+class _ThumbnailPlaceholder extends StatelessWidget {
+  final bool isCompact;
+
+  const _ThumbnailPlaceholder({this.isCompact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF475569), Color(0xFF0F172A)],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.play_circle_outline_rounded,
+          size: isCompact ? 24 : 32,
+          color: Colors.white24,
+        ),
       ),
     );
   }

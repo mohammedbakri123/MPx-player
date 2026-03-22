@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../controller/player_controller.dart';
 import 'player_surface.dart';
 import 'gesture_layer.dart';
@@ -25,13 +26,11 @@ class PlayerView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       label: 'Video player for $videoTitle',
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (context, _) => Stack(
-          fit: StackFit.expand,
-          children: [
-            PlayerSurface(
-              controller: controller.videoController,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Selector<PlayerController, _PlayerSurfaceConfig>(
+            selector: (_, controller) => _PlayerSurfaceConfig(
               subtitleFontSize: controller.subtitleFontSize,
               subtitleColor: controller.subtitleColor,
               subtitleHasBackground: controller.subtitleHasBackground,
@@ -40,18 +39,83 @@ class PlayerView extends StatelessWidget {
               subtitleBackgroundOpacity: controller.subtitleBackgroundOpacity,
               aspectRatioMode: controller.aspectRatioMode,
             ),
-            OverlayLayer(controller: controller),
-            GestureLayer(controller: controller),
-            ControlsLayer(
+            builder: (context, config, _) {
+              return PlayerSurface(
+                controller: controller.videoController,
+                subtitleFontSize: config.subtitleFontSize,
+                subtitleColor: config.subtitleColor,
+                subtitleHasBackground: config.subtitleHasBackground,
+                subtitleFontWeight: config.subtitleFontWeight,
+                subtitleBottomPadding: config.subtitleBottomPadding,
+                subtitleBackgroundOpacity: config.subtitleBackgroundOpacity,
+                aspectRatioMode: config.aspectRatioMode,
+              );
+            },
+          ),
+          Selector<PlayerController, bool>(
+            selector: (_, controller) => controller.isLocked,
+            builder: (context, _, __) => GestureLayer(controller: controller),
+          ),
+          AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) => OverlayLayer(controller: controller),
+          ),
+          AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) => ControlsLayer(
               controller: controller,
               title: videoTitle,
               onBack: onBack,
               onSubtitleSettings: onSubtitleSettings,
               onSettings: onSettings,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _PlayerSurfaceConfig {
+  final double subtitleFontSize;
+  final Color subtitleColor;
+  final bool subtitleHasBackground;
+  final FontWeight subtitleFontWeight;
+  final double subtitleBottomPadding;
+  final double subtitleBackgroundOpacity;
+  final AspectRatioMode aspectRatioMode;
+
+  const _PlayerSurfaceConfig({
+    required this.subtitleFontSize,
+    required this.subtitleColor,
+    required this.subtitleHasBackground,
+    required this.subtitleFontWeight,
+    required this.subtitleBottomPadding,
+    required this.subtitleBackgroundOpacity,
+    required this.aspectRatioMode,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _PlayerSurfaceConfig &&
+        other.subtitleFontSize == subtitleFontSize &&
+        other.subtitleColor == subtitleColor &&
+        other.subtitleHasBackground == subtitleHasBackground &&
+        other.subtitleFontWeight == subtitleFontWeight &&
+        other.subtitleBottomPadding == subtitleBottomPadding &&
+        other.subtitleBackgroundOpacity == subtitleBackgroundOpacity &&
+        other.aspectRatioMode == aspectRatioMode;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        subtitleFontSize,
+        subtitleColor,
+        subtitleHasBackground,
+        subtitleFontWeight,
+        subtitleBottomPadding,
+        subtitleBackgroundOpacity,
+        aspectRatioMode,
+      );
 }

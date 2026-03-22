@@ -4,19 +4,22 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF0F766E),
+      seedColor: const Color(0xFF2563EB),
       brightness: Brightness.light,
     ).copyWith(
-      primary: const Color(0xFF0F766E),
-      secondary: const Color(0xFF2563EB),
-      surface: const Color(0xFFF6F7F2),
-      onSurface: const Color(0xFF172033),
+      primary: const Color(0xFF2563EB),
+      onPrimary: Colors.white,
+      primaryContainer: const Color(0xFFDCEBFF),
+      secondary: const Color(0xFF0EA5E9),
+      secondaryContainer: const Color(0xFFE0F2FE),
+      surface: const Color(0xFFF3F8FF),
+      onSurface: const Color(0xFF10233F),
     );
 
     final base = ThemeData(useMaterial3: true, colorScheme: scheme);
 
     return base.copyWith(
-      scaffoldBackgroundColor: const Color(0xFFF6F7F2),
+      scaffoldBackgroundColor: const Color(0xFFF3F8FF),
       textTheme: GoogleFonts.manropeTextTheme(base.textTheme),
       cardTheme: const CardThemeData(
         color: Colors.white,
@@ -26,9 +29,9 @@ class AppTheme {
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFCFDFF),
         selectedItemColor: scheme.primary,
-        unselectedItemColor: const Color(0xFF7C879A),
+        unselectedItemColor: const Color(0xFF6F7E97),
         elevation: 0,
         type: BottomNavigationBarType.fixed,
       ),
@@ -42,7 +45,7 @@ class AppTheme {
           final isSelected = states.contains(WidgetState.selected);
           return IconThemeData(
             size: 24,
-            color: isSelected ? scheme.primary : const Color(0xFF7C879A),
+            color: isSelected ? scheme.primary : const Color(0xFF6F7E97),
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -50,7 +53,7 @@ class AppTheme {
           return TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? scheme.primary : const Color(0xFF7C879A),
+            color: isSelected ? scheme.primary : const Color(0xFF6F7E97),
           );
         }),
       ),

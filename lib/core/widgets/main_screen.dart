@@ -17,7 +17,7 @@ class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
   static const double _swipeVelocityThreshold = 320;
   static const double _swipeProgressThreshold = 0.22;
-  static const double _dockBottomOffset = 4;
+  static const double _dockBottomOffset = 10;
   int _currentIndex = 0;
   // Updated _loadedTabs size from 4 to 5
   final List<bool> _loadedTabs = [true, false, false, false, false];
@@ -236,41 +236,43 @@ class _MainScreenState extends State<MainScreen>
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutCubic,
-            left: 8,
-            right: 8,
+            left: 14,
+            right: 14,
             bottom: _currentIndex == 1 ? -100 : _dockBottomOffset,
             child: SafeArea(
               top: false,
               minimum: EdgeInsets.zero,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  color: theme.elevatedSurface,
+                  borderRadius: BorderRadius.circular(34),
+                  color: theme.elevatedSurface.withValues(
+                    alpha: theme.isDarkMode ? 0.94 : 0.98,
+                  ),
                   border: Border.all(
                     color: theme.softBorder.withValues(
-                      alpha: theme.isDarkMode ? 0.82 : 0.68,
+                      alpha: theme.isDarkMode ? 0.82 : 0.9,
                     ),
                   ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(
-                        alpha: theme.isDarkMode ? 0.34 : 0.12,
+                        alpha: theme.isDarkMode ? 0.3 : 0.1,
                       ),
-                      blurRadius: 34,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 18),
+                      blurRadius: 28,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 14),
                     ),
                     BoxShadow(
                       color: theme.colorScheme.primary.withValues(
-                        alpha: theme.isDarkMode ? 0.07 : 0.04,
+                        alpha: theme.isDarkMode ? 0.06 : 0.05,
                       ),
-                      blurRadius: 22,
-                      offset: const Offset(0, 8),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(34),
                   child: _buildCustomBottomBar(theme),
                 ),
               ),
@@ -283,62 +285,64 @@ class _MainScreenState extends State<MainScreen>
 
   Widget _buildCustomBottomBar(ThemeData theme) {
     return SizedBox(
-      height: 64,
-      child: Row(
-        // Updated List.generate count to use dynamic tab count
-        children: List.generate(_labels.length, (index) {
-          final isSelected = _currentIndex == index;
-          final iconData =
-              isSelected ? _selectedIcons[index] : _outlineIcons[index];
-          final label = _labels[index];
+      height: 76,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(6, 6, 6, 8),
+        child: Row(
+          // Updated List.generate count to use dynamic tab count
+          children: List.generate(_labels.length, (index) {
+            final isSelected = _currentIndex == index;
+            final iconData =
+                isSelected ? _selectedIcons[index] : _outlineIcons[index];
+            final label = _labels[index];
 
-          return Expanded(
-            child: InkWell(
-              onTap: () => _selectTab(index),
-              borderRadius: BorderRadius.circular(24),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (isSelected)
-                    Container(
-                      width: 62,
-                      height: 62,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer
-                            .withValues(alpha: theme.isDarkMode ? 0.32 : 0.18),
-                        shape: BoxShape.circle,
-                      ),
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: InkWell(
+                  onTap: () => _selectTab(index),
+                  borderRadius: BorderRadius.circular(22),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      color: isSelected
+                          ? theme.colorScheme.primaryContainer.withValues(
+                              alpha: theme.isDarkMode ? 0.3 : 0.82,
+                            )
+                          : Colors.transparent,
                     ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        iconData,
-                        size: 22,
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.faintText,
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.w400,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          iconData,
+                          size: isSelected ? 23 : 21,
                           color: isSelected
                               ? theme.colorScheme.primary
                               : theme.faintText,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.faintText,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }

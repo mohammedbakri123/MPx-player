@@ -11,7 +11,12 @@ class MediaKitPlayerRepository implements PlayerRepository {
       StreamController<void>.broadcast();
 
   MediaKitPlayerRepository() {
-    _player = Player();
+    _player = Player(
+      configuration: const PlayerConfiguration(
+        title: 'MPx Player',
+        bufferSize: 96 * 1024 * 1024,
+      ),
+    );
   }
 
   Player get player => _player;

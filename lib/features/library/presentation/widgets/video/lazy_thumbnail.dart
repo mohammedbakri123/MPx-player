@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import '../../../domain/entities/video_file.dart';
 import '../../../services/thumbnail_cache.dart';
@@ -35,11 +34,19 @@ class _LazyThumbnailState extends State<LazyThumbnail> {
   String? _thumbnailPath;
   bool _isLoading = false;
   bool _hasLoaded = false;
+  ValueNotifier<bool>? _scrollingNotifier;
 
   @override
   void initState() {
     super.initState();
     _checkExistingThumbnail();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _bindScrollNotifier();
+    _scheduleLoadIfIdle();
   }
 
   @override
@@ -49,7 +56,40 @@ class _LazyThumbnailState extends State<LazyThumbnail> {
       _hasLoaded = false;
       _thumbnailPath = null;
       _checkExistingThumbnail();
+      _scheduleLoadIfIdle();
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollingNotifier?.removeListener(_handleScrollActivityChanged);
+    super.dispose();
+  }
+
+  void _bindScrollNotifier() {
+    final nextNotifier =
+        Scrollable.maybeOf(context)?.position.isScrollingNotifier;
+    if (_scrollingNotifier == nextNotifier) return;
+
+    _scrollingNotifier?.removeListener(_handleScrollActivityChanged);
+    _scrollingNotifier = nextNotifier;
+    _scrollingNotifier?.addListener(_handleScrollActivityChanged);
+  }
+
+  void _handleScrollActivityChanged() {
+    if (_scrollingNotifier?.value == false) {
+      _scheduleLoadIfIdle();
+    }
+  }
+
+  void _scheduleLoadIfIdle() {
+    if (_hasLoaded || _isLoading) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _hasLoaded || _isLoading) return;
+      if (Scrollable.recommendDeferredLoadingForContext(context)) return;
+      _loadThumbnail();
+    });
   }
 
   Future<void> _checkExistingThumbnail() async {
@@ -107,20 +147,13 @@ class _LazyThumbnailState extends State<LazyThumbnail> {
     }
   }
 
-  void _onVisibilityChanged(bool isVisible) {
-    if (isVisible && !_hasLoaded && !_isLoading) {
-      _loadThumbnail();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
       child: ClipRRect(
         borderRadius: widget.borderRadius ?? BorderRadius.zero,
-        child: VisibilityDetector(
-          onVisibilityChanged: _onVisibilityChanged,
+        child: RepaintBoundary(
           child: SizedBox(
             width: widget.width,
             height: widget.height,
@@ -151,64 +184,5 @@ class _LazyThumbnailState extends State<LazyThumbnail> {
     }
 
     return widget.placeholder;
-  }
-}
-
-class VisibilityDetector extends StatefulWidget {
-  final Widget child;
-  final void Function(bool isVisible) onVisibilityChanged;
-
-  const VisibilityDetector({
-    super.key,
-    required this.child,
-    required this.onVisibilityChanged,
-  });
-
-  @override
-  State<VisibilityDetector> createState() => _VisibilityDetectorState();
-}
-
-class _VisibilityDetectorState extends State<VisibilityDetector> {
-  bool _wasVisible = false;
-  final GlobalKey _key = GlobalKey();
-
-  void _checkVisibility() {
-    if (!mounted) return;
-
-    final renderObject = _key.currentContext?.findRenderObject() as RenderBox?;
-    if (renderObject == null || !renderObject.hasSize) return;
-
-    final viewport = RenderAbstractViewport.of(renderObject);
-    final offsetToReveal = viewport.getOffsetToReveal(renderObject, 0.0);
-    final viewportDimension = viewport.paintBounds.size.height;
-
-    final itemTop = offsetToReveal.offset;
-    final itemBottom = itemTop + renderObject.size.height;
-    const viewportTop = 0.0;
-    final viewportBottom = viewportDimension;
-
-    final isVisible = itemBottom > viewportTop && itemTop < viewportBottom;
-
-    if (isVisible != _wasVisible) {
-      _wasVisible = isVisible;
-      widget.onVisibilityChanged(isVisible);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        if (notification is ScrollUpdateNotification) {
-          _checkVisibility();
-        }
-        return false;
-      },
-      child: Opacity(
-        key: _key,
-        opacity: 1.0,
-        child: widget.child,
-      ),
-    );
   }
 }

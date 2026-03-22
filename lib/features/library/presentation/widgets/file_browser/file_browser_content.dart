@@ -7,7 +7,7 @@ import '../common/library_item_details_sheet.dart';
 import '../home/home_empty_state.dart';
 import '../home/home_error_state.dart';
 import '../home/home_skeleton_loader.dart';
-import '../video/video_thumbnail.dart';
+import '../video/lazy_thumbnail.dart';
 import 'file_list_item.dart';
 
 class FileBrowserContent extends StatelessWidget {
@@ -489,7 +489,10 @@ class _GridItem extends StatelessWidget {
       return SizedBox(
         height: previewHeight,
         width: double.infinity,
-        child: VideoThumbnail(video: video, isFavorite: false),
+        child: LazyThumbnail(
+          video: video,
+          placeholder: const _GridThumbnailPlaceholder(),
+        ),
       );
     }
 
@@ -503,6 +506,30 @@ class _GridItem extends StatelessWidget {
         Icons.insert_drive_file,
         color: theme.mutedText,
         size: 28,
+      ),
+    );
+  }
+}
+
+class _GridThumbnailPlaceholder extends StatelessWidget {
+  const _GridThumbnailPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF334155), Color(0xFF0F172A), Color(0xFF1E293B)],
+        ),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.play_circle_outline_rounded,
+          color: Colors.white24,
+          size: 34,
+        ),
       ),
     );
   }
