@@ -42,6 +42,7 @@ class PlayerState {
   bool subtitlesEnabled = true;
   double subtitleFontSize = 24.0;
   Color subtitleColor = const Color(0xFFFFFFFF);
+  String subtitleFontFamily = 'Roboto';
   bool subtitleHasBackground = true;
   FontWeight subtitleFontWeight = FontWeight.w500;
   double subtitleBottomPadding = 24.0;

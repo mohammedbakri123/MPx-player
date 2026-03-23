@@ -12,6 +12,7 @@ mixin SubtitleManagerMixin on ChangeNotifier {
     state.subtitlesEnabled = SubtitleSettingsService.isEnabled;
     state.subtitleFontSize = SubtitleSettingsService.fontSize;
     state.subtitleColor = SubtitleSettingsService.color;
+    state.subtitleFontFamily = SubtitleSettingsService.fontFamily;
     state.subtitleHasBackground = SubtitleSettingsService.hasBackground;
     state.subtitleFontWeight = SubtitleSettingsService.fontWeight;
     state.subtitleBottomPadding = SubtitleSettingsService.bottomPadding;
@@ -43,6 +44,12 @@ mixin SubtitleManagerMixin on ChangeNotifier {
   void setSubtitleColor(Color color) {
     state.subtitleColor = color;
     SubtitleSettingsService.setColor(color);
+    notifyListeners();
+  }
+
+  void setSubtitleFontFamily(String family) {
+    state.subtitleFontFamily = family;
+    SubtitleSettingsService.setFontFamily(family);
     notifyListeners();
   }
 

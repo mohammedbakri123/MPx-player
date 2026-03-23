@@ -87,6 +87,7 @@ class PlayerController extends ChangeNotifier
   bool get subtitlesEnabled => _state.subtitlesEnabled;
   double get subtitleFontSize => _state.subtitleFontSize;
   Color get subtitleColor => _state.subtitleColor;
+  String get subtitleFontFamily => _state.subtitleFontFamily;
   bool get subtitleHasBackground => _state.subtitleHasBackground;
   FontWeight get subtitleFontWeight => _state.subtitleFontWeight;
   double get subtitleBottomPadding => _state.subtitleBottomPadding;

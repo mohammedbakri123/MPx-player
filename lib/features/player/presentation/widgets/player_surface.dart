@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_mpv_video/flutter_mpv_video.dart';
+import 'package:mpx/features/settings/presentation/helpers/subtitle_font_helpers.dart';
 import '../../controller/player_state.dart';
 
 class PlayerSurface extends StatelessWidget {
   final VideoController controller;
   final double subtitleFontSize;
   final Color subtitleColor;
+  final String subtitleFontFamily;
   final bool subtitleHasBackground;
   final FontWeight subtitleFontWeight;
   final double subtitleBottomPadding;
@@ -17,6 +19,7 @@ class PlayerSurface extends StatelessWidget {
     required this.controller,
     required this.subtitleFontSize,
     required this.subtitleColor,
+    required this.subtitleFontFamily,
     required this.subtitleHasBackground,
     required this.subtitleFontWeight,
     required this.subtitleBottomPadding,
@@ -59,7 +62,8 @@ class PlayerSurface extends StatelessWidget {
       pauseUponEnteringBackgroundMode: false,
       wakelock: false,
       subtitleViewConfiguration: SubtitleViewConfiguration(
-        style: TextStyle(
+        style: SubtitleFontHelpers.textStyle(
+          subtitleFontFamily,
           fontSize: subtitleFontSize,
           color: subtitleColor,
           fontWeight: subtitleFontWeight,

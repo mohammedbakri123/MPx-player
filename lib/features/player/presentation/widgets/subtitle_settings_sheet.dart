@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mpx/core/theme/app_theme_tokens.dart';
+import 'package:mpx/features/settings/presentation/helpers/subtitle_font_helpers.dart';
 import '../../controller/player_controller.dart';
 import '../../domain/repositories/player_repository.dart';
 import 'helpers/bottom_sheet_handle.dart';
@@ -29,39 +31,46 @@ class SubtitleSettingsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF111111),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
+      ),
+      decoration: BoxDecoration(
+        color: theme.elevatedSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
+        top: false,
         child: AnimatedBuilder(
           animation: controller,
           builder: (context, _) {
             final tracks = controller.subtitleTracks;
 
             return SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Center(child: BottomSheetHandle()),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
                     child: Text(
                       'Subtitle Settings',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: theme.strongText,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     child: Text(
                       'Choose a subtitle track and tune how captions look on screen.',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      style: TextStyle(color: theme.mutedText, fontSize: 12),
                     ),
                   ),
                   _Section(
@@ -71,36 +80,39 @@ class SubtitleSettingsSheet extends StatelessWidget {
                         SwitchListTile.adaptive(
                           value: controller.subtitlesEnabled,
                           onChanged: controller.toggleSubtitles,
-                          activeThumbColor: Colors.white,
-                          activeTrackColor: Colors.white38,
-                          title: const Text(
+                          activeThumbColor: theme.colorScheme.primary,
+                          activeTrackColor:
+                              theme.colorScheme.primary.withValues(alpha: 0.32),
+                          title: Text(
                             'Enable subtitles',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color: theme.strongText),
                           ),
                           subtitle: Text(
                             tracks.isEmpty
                                 ? 'No subtitle tracks found for this video'
                                 : '${tracks.length} subtitle track${tracks.length == 1 ? '' : 's'} available',
-                            style: const TextStyle(
-                              color: Colors.white60,
+                            style: TextStyle(
+                              color: theme.mutedText,
                               fontSize: 12,
                             ),
                           ),
                         ),
                         if (tracks.isNotEmpty)
                           ListTile(
-                            leading: const Icon(
+                            leading: Icon(
                               Icons.closed_caption_outlined,
-                              color: Colors.white,
+                              color: theme.strongText,
                             ),
-                            title: const Text(
+                            title: Text(
                               'Subtitle track',
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color: theme.strongText),
                             ),
-                            subtitle: const Text(
+                            subtitle: Text(
                               'Pick the subtitle stream for this video',
                               style: TextStyle(
-                                  color: Colors.white60, fontSize: 12),
+                                color: theme.mutedText,
+                                fontSize: 12,
+                              ),
                             ),
                             trailing: _ValueChip(
                               label: controller.currentSubtitleTrackIndex >=
@@ -143,21 +155,54 @@ class SubtitleSettingsSheet extends StatelessWidget {
                             title: 'Font size',
                             value: controller.subtitleFontSize,
                             min: 16,
-                            max: 40,
+                            max: 72,
                             label: '${controller.subtitleFontSize.round()} pt',
                             onChanged: controller.setSubtitleFontSize,
                           ),
                           ListTile(
-                            leading: const Icon(Icons.format_bold,
-                                color: Colors.white),
-                            title: const Text(
-                              'Font weight',
-                              style: TextStyle(color: Colors.white),
+                            leading: Icon(
+                              Icons.font_download_outlined,
+                              color: theme.strongText,
                             ),
-                            subtitle: const Text(
+                            title: Text(
+                              'Font type',
+                              style: TextStyle(color: theme.strongText),
+                            ),
+                            subtitle: Text(
+                              controller.subtitleFontFamily,
+                              style: TextStyle(
+                                color: theme.mutedText,
+                                fontSize: 12,
+                              ),
+                            ),
+                            trailing: _ValueChip(
+                              label: controller.subtitleFontFamily,
+                            ),
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder: (ctx) => _SubtitleFontFamilySheet(
+                                  currentFamily: controller.subtitleFontFamily,
+                                  onSelected: (family) {
+                                    controller.setSubtitleFontFamily(family);
+                                    Navigator.pop(ctx);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          ListTile(
+                            leading: Icon(Icons.format_bold,
+                                color: theme.strongText),
+                            title: Text(
+                              'Font weight',
+                              style: TextStyle(color: theme.strongText),
+                            ),
+                            subtitle: Text(
                               'Make captions lighter or heavier',
                               style: TextStyle(
-                                  color: Colors.white60, fontSize: 12),
+                                  color: theme.mutedText, fontSize: 12),
                             ),
                             trailing: _ValueChip(
                               label:
@@ -181,16 +226,17 @@ class SubtitleSettingsSheet extends StatelessWidget {
                           SwitchListTile.adaptive(
                             value: controller.subtitleHasBackground,
                             onChanged: controller.setSubtitleBackground,
-                            activeThumbColor: Colors.white,
-                            activeTrackColor: Colors.white38,
-                            title: const Text(
+                            activeThumbColor: theme.colorScheme.primary,
+                            activeTrackColor: theme.colorScheme.primary
+                                .withValues(alpha: 0.32),
+                            title: Text(
                               'Background box',
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color: theme.strongText),
                             ),
-                            subtitle: const Text(
+                            subtitle: Text(
                               'Add a dark plate behind subtitle text',
                               style: TextStyle(
-                                  color: Colors.white60, fontSize: 12),
+                                  color: theme.mutedText, fontSize: 12),
                             ),
                           ),
                           if (controller.subtitleHasBackground)
@@ -237,13 +283,15 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: theme.subtleSurface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: theme.softBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,8 +300,8 @@ class _Section extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
               child: Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: theme.strongText,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
@@ -286,6 +334,8 @@ class _SliderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Column(
@@ -295,8 +345,8 @@ class _SliderTile extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: theme.strongText,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -304,8 +354,8 @@ class _SliderTile extends StatelessWidget {
               const Spacer(),
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white70,
+                style: TextStyle(
+                  color: theme.mutedText,
                   fontSize: 12,
                 ),
               ),
@@ -315,8 +365,8 @@ class _SliderTile extends StatelessWidget {
             value: value.clamp(min, max),
             min: min,
             max: max,
-            activeColor: Colors.white,
-            inactiveColor: Colors.grey.shade700,
+            activeColor: theme.colorScheme.primary,
+            inactiveColor: theme.softBorder,
             onChanged: onChanged,
           ),
         ],
@@ -341,15 +391,17 @@ class _ColorTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Color',
             style: TextStyle(
-              color: Colors.white,
+              color: theme.strongText,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -370,7 +422,9 @@ class _ColorTile extends StatelessWidget {
                     color: color,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: selected ? Colors.white : Colors.white24,
+                      color: selected
+                          ? theme.colorScheme.primary
+                          : theme.softBorder,
                       width: selected ? 3 : 1,
                     ),
                   ),
@@ -391,23 +445,25 @@ class _PreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.35),
+          color: theme.subtleSurface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: theme.softBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Preview',
               style: TextStyle(
-                color: Colors.white70,
+                color: theme.mutedText,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -426,7 +482,8 @@ class _PreviewCard extends StatelessWidget {
                 child: Text(
                   'This is how your subtitles will look',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: SubtitleFontHelpers.textStyle(
+                    controller.subtitleFontFamily,
                     color: controller.subtitleColor,
                     fontSize: controller.subtitleFontSize,
                     fontWeight: controller.subtitleFontWeight,
@@ -458,16 +515,18 @@ class _ValueChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
+        color: theme.colorScheme.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: theme.colorScheme.primary,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
@@ -491,24 +550,30 @@ class _SubtitleTrackSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.72,
+      ),
+      decoration: BoxDecoration(
+        color: theme.elevatedSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const BottomSheetHandle(),
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Text(
                     'Subtitle Tracks',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: theme.strongText,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -516,9 +581,8 @@ class _SubtitleTrackSheet extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(color: Colors.grey, height: 1),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 280),
+            Divider(color: theme.softBorder, height: 1),
+            Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: tracks.length,
@@ -529,7 +593,7 @@ class _SubtitleTrackSheet extends StatelessWidget {
                     title: Text(
                       labelBuilder(track, index),
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
+                        color: isSelected ? theme.strongText : theme.mutedText,
                         fontSize: 16,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.normal,
@@ -538,14 +602,14 @@ class _SubtitleTrackSheet extends StatelessWidget {
                     subtitle: track.language?.trim().isNotEmpty == true
                         ? Text(
                             track.language!,
-                            style: const TextStyle(
-                              color: Colors.white54,
+                            style: TextStyle(
+                              color: theme.faintText,
                               fontSize: 12,
                             ),
                           )
                         : null,
                     trailing: isSelected
-                        ? const Icon(Icons.check, color: Colors.white)
+                        ? Icon(Icons.check, color: theme.colorScheme.primary)
                         : null,
                     onTap: () => onSelected(index),
                   );
@@ -585,24 +649,30 @@ class _SubtitleWeightSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.72,
+      ),
+      decoration: BoxDecoration(
+        color: theme.elevatedSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const BottomSheetHandle(),
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Text(
                     'Font Weight',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: theme.strongText,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -610,23 +680,103 @@ class _SubtitleWeightSheet extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(color: Colors.grey, height: 1),
-            ...weights.map((weight) {
-              final isSelected = weight == currentWeight;
-              return ListTile(
-                title: Text(
-                  _label(weight),
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white70,
-                    fontWeight: weight,
+            Divider(color: theme.softBorder, height: 1),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: weights.map((weight) {
+                  final isSelected = weight == currentWeight;
+                  return ListTile(
+                    title: Text(
+                      _label(weight),
+                      style: TextStyle(
+                        color: isSelected ? theme.strongText : theme.mutedText,
+                        fontWeight: weight,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(Icons.check, color: theme.colorScheme.primary)
+                        : null,
+                    onTap: () => onSelected(weight),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SubtitleFontFamilySheet extends StatelessWidget {
+  final String currentFamily;
+  final ValueChanged<String> onSelected;
+
+  const _SubtitleFontFamilySheet({
+    required this.currentFamily,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.72,
+      ),
+      decoration: BoxDecoration(
+        color: theme.elevatedSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const BottomSheetHandle(),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Text(
+                    'Font Type',
+                    style: TextStyle(
+                      color: theme.strongText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                trailing: isSelected
-                    ? const Icon(Icons.check, color: Colors.white)
-                    : null,
-                onTap: () => onSelected(weight),
-              );
-            }),
+                ],
+              ),
+            ),
+            Divider(color: theme.softBorder, height: 1),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: SubtitleFontHelpers.options.map((option) {
+                  final isSelected = option.family == currentFamily;
+                  return ListTile(
+                    title: Text(
+                      option.label,
+                      style: SubtitleFontHelpers.textStyle(
+                        option.family,
+                        color: isSelected ? theme.strongText : theme.mutedText,
+                        fontSize: 16,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(Icons.check, color: theme.colorScheme.primary)
+                        : null,
+                    onTap: () => onSelected(option.family),
+                  );
+                }).toList(),
+              ),
+            ),
             const SizedBox(height: 8),
           ],
         ),

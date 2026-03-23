@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mpx/features/settings/presentation/helpers/subtitle_font_helpers.dart';
 import '../../../controller/player_controller.dart';
 
 class SubtitlePreview extends StatelessWidget {
@@ -20,9 +21,11 @@ class SubtitlePreview extends StatelessWidget {
       ),
       child: Text(
         'This is a subtitle preview',
-        style: TextStyle(
+        style: SubtitleFontHelpers.textStyle(
+          controller.subtitleFontFamily,
           color: controller.subtitleColor,
           fontSize: controller.subtitleFontSize,
+          fontWeight: controller.subtitleFontWeight,
           backgroundColor: controller.subtitleHasBackground
               ? Colors.black.withValues(alpha: 0.7)
               : Colors.transparent,
