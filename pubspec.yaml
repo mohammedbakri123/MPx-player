@@ -10,10 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Media Kit - Video player with mpv backend
-  media_kit: ^1.1.10
-  media_kit_video: ^1.2.4
-  media_kit_libs_video: ^1.0.4
+  # flutter_mpv - Video player with mpv backend
+  flutter_mpv: ^1.2.12
+  flutter_mpv_video: ^2.0.4
+  flutter_mpv_libs_video: ^1.0.11
 
   # Alternative video players
   flutter_vlc_player: ^7.2.0

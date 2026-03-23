@@ -9,6 +9,7 @@ import '../helpers/settings_helpers.dart';
 import '../widgets/settings_header.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/form_rows.dart';
+import '../widgets/advanced_playback_settings_section.dart';
 import '../widgets/subtitle_settings_section.dart';
 
 /// Main settings screen with theme, presets, subtitle, and advanced options
@@ -183,66 +184,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       const SettingsSectionTitle(
                         eyebrow: 'Advanced',
-                        title: 'Power-user controls',
+                        title: 'Playback engine and gestures',
                         description:
-                            'Keep this off for a simpler app, or enable deeper playback behavior.',
+                            'Tune MPx for faster seeking, smoother motion, or safer compatibility.',
                       ),
                       const SizedBox(height: 10),
-                      SettingsSwitchRow(
-                        icon: Icons.tune_rounded,
-                        title: 'Enable advanced options',
-                        subtitle: 'Reveal extra playback and gesture controls',
-                        value: settings.advancedOptionsEnabled,
-                        onChanged: settings.setAdvancedOptionsEnabled,
-                      ),
-                      AnimatedCrossFade(
-                        duration: const Duration(milliseconds: 180),
-                        crossFadeState: settings.advancedOptionsEnabled
-                            ? CrossFadeState.showSecond
-                            : CrossFadeState.showFirst,
-                        firstChild: const Padding(
-                          padding: EdgeInsets.only(top: 6),
-                          child: Text(
-                            'Advanced options stay hidden until you turn them on.',
-                          ),
-                        ),
-                        secondChild: Column(
-                          children: [
-                            SettingsSwitchRow(
-                              icon: Icons.history_toggle_off,
-                              title: 'Auto resume playback',
-                              subtitle:
-                                  'Jump back to the saved position when you reopen a video',
-                              value: settings.autoResumePlayback,
-                              onChanged: settings.setAutoResumePlayback,
-                            ),
-                            SettingsSwitchRow(
-                              icon: Icons.screen_lock_portrait_outlined,
-                              title: 'Keep screen awake',
-                              subtitle:
-                                  'Prevent the display from sleeping while a video is open',
-                              value: settings.keepScreenAwake,
-                              onChanged: settings.setKeepScreenAwake,
-                            ),
-                            SettingsSwitchRow(
-                              icon: Icons.swipe_vertical_outlined,
-                              title: 'Swipe brightness and volume',
-                              subtitle:
-                                  'Use left and right edge swipes for quick adjustments',
-                              value: settings.swipeGestures,
-                              onChanged: settings.setSwipeGestures,
-                            ),
-                            SettingsSwitchRow(
-                              icon: Icons.speed,
-                              title: 'Hold for 2x speed',
-                              subtitle:
-                                  'Temporarily boost playback while pressing on the video',
-                              value: settings.holdToBoost,
-                              onChanged: settings.setHoldToBoost,
-                            ),
-                          ],
-                        ),
-                      ),
+                      AdvancedPlaybackSettingsSection(settings: settings),
                     ],
                   ),
                 ),

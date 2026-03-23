@@ -20,7 +20,8 @@ mixin BrightnessManagerMixin on ChangeNotifier {
   void adjustBrightnessByDrag(double delta) {
     // Negate delta so dragging UP increases brightness (natural gesture)
     final brightnessUpdate = -delta / 200;
-    final newBrightness = (state.brightnessValue + brightnessUpdate * 100).clamp(0.0, 100.0);
+    final newBrightness =
+        (state.brightnessValue + brightnessUpdate * 100).clamp(0.0, 100.0);
     state.brightnessValue = newBrightness;
     SystemBrightnessService.setBrightnessFromPercent(newBrightness);
     state.showBrightnessIndicator = true;
@@ -37,7 +38,9 @@ mixin BrightnessManagerMixin on ChangeNotifier {
     await SystemBrightnessService.init();
     final systemBrightness = SystemBrightnessService.brightness * 100;
     state.brightnessValue = systemBrightness;
-    notifyListeners();
+    try {
+      notifyListeners();
+    } catch (_) {}
   }
 
   /// Sets the brightness level and updates system brightness.
@@ -75,7 +78,8 @@ mixin BrightnessManagerMixin on ChangeNotifier {
   /// Resets brightness to system default.
   void brightnessResetToSystemDefault() {
     SystemBrightnessService.resetToSystemDefault();
-    state.brightnessValue = SystemBrightnessService.brightnessPercent.toDouble();
+    state.brightnessValue =
+        SystemBrightnessService.brightnessPercent.toDouble();
     _showBrightnessFeedback();
   }
 
@@ -86,7 +90,9 @@ mixin BrightnessManagerMixin on ChangeNotifier {
 
     Future.delayed(const Duration(milliseconds: 800), () {
       state.showBrightnessIndicator = false;
-      notifyListeners();
+      try {
+        notifyListeners();
+      } catch (_) {}
     });
   }
 

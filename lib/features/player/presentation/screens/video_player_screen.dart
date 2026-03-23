@@ -5,7 +5,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../../settings/services/app_settings_service.dart';
 import '../../controller/player_controller.dart';
-import '../../data/repositories/media_kit_player_repository.dart';
+import '../../data/repositories/mpv_player_repository.dart';
 import '../widgets/player_view.dart';
 import '../widgets/subtitle_settings_sheet.dart';
 import '../widgets/settings_sheet.dart';
@@ -58,7 +58,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Provider automatically handles disposal via controller.dispose()
     return ChangeNotifierProvider(
       create: (_) {
-        final repository = MediaKitPlayerRepository();
+        final repository = MpvPlayerRepository();
         final controller = PlayerController(repository);
         controller.loadVideoFile(widget.video);
         if (AppSettingsService.keepScreenAwake) {

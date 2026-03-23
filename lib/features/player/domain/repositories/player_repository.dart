@@ -1,7 +1,7 @@
 /// Abstract repository interface for video player control.
 ///
 /// This interface defines the contract for video playback operations
-/// without depending on any specific implementation (e.g., media_kit).
+/// without depending on any specific implementation (e.g., flutter_mpv).
 ///
 /// The domain layer should depend on this abstraction, not concrete implementations.
 abstract class PlayerRepository {

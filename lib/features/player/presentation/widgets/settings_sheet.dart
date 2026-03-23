@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mpx/core/theme/app_theme_tokens.dart';
+import 'package:provider/provider.dart';
+import 'package:mpx/features/settings/controllers/app_settings_controller.dart';
+import 'package:mpx/features/settings/presentation/widgets/advanced_playback_settings_section.dart';
 import '../../controller/player_controller.dart';
 import 'helpers/bottom_sheet_handle.dart';
 
@@ -40,10 +44,12 @@ class SettingsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF101010),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: theme.elevatedSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         child: AnimatedBuilder(
@@ -55,23 +61,23 @@ class SettingsSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Center(child: BottomSheetHandle()),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
                     child: Text(
                       'Player Settings',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: theme.strongText,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     child: Text(
                       'Keep the screen clean and put the extra controls here.',
                       style: TextStyle(
-                        color: Colors.white70,
+                        color: theme.mutedText,
                         fontSize: 12,
                       ),
                     ),
@@ -178,12 +184,34 @@ class SettingsSheet extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 4, 16, 20),
+                  Consumer<AppSettingsController>(
+                    builder: (context, settings, _) {
+                      return _SettingsSection(
+                        title: 'Advanced',
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: AdvancedPlaybackSettingsSection(
+                            settings: settings,
+                            compact: true,
+                            onAdvancedOptionsChanged: (_) =>
+                                controller.syncKeepScreenAwakePreference(),
+                            onPerformancePresetChanged: (_) =>
+                                controller.applyVideoPerformanceProfile(),
+                            onKeepScreenAwakeChanged: (_) =>
+                                controller.syncKeepScreenAwakePreference(),
+                            footerText:
+                                'Engine profile updates are pushed to the active player right away.',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
                     child: Text(
                       'Tip: tap the center of the video to show or hide controls.',
                       style: TextStyle(
-                        color: Colors.white54,
+                        color: theme.mutedText,
                         fontSize: 12,
                       ),
                     ),
@@ -209,13 +237,15 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: theme.subtleSurface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: theme.softBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,8 +254,8 @@ class _SettingsSection extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
               child: Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: theme.strongText,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
@@ -256,15 +286,17 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return ListTile(
-      leading: Icon(icon, color: Colors.white),
+      leading: Icon(icon, color: theme.strongText),
       title: Text(
         title,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: theme.strongText),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(color: Colors.white60, fontSize: 12),
+        style: TextStyle(color: theme.mutedText, fontSize: 12),
       ),
       trailing: _SettingsValueChip(label: value),
       onTap: onTap,
@@ -279,40 +311,42 @@ class _VolumeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Volume',
             style: TextStyle(
-              color: Colors.white,
+              color: theme.strongText,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
           ),
           Row(
             children: [
-              const Icon(Icons.volume_down, color: Colors.white70, size: 20),
+              Icon(Icons.volume_down, color: theme.mutedText, size: 20),
               Expanded(
                 child: Slider(
                   value: controller.volume,
                   min: 0,
                   max: 100,
-                  activeColor: Colors.white,
+                  activeColor: theme.colorScheme.primary,
                   inactiveColor: Colors.grey.shade700,
                   onChanged: controller.setVolume,
                 ),
               ),
-              const Icon(Icons.volume_up, color: Colors.white70, size: 20),
+              Icon(Icons.volume_up, color: theme.mutedText, size: 20),
               SizedBox(
                 width: 42,
                 child: Text(
                   '${controller.volume.round()}%',
                   textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: theme.mutedText,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -333,16 +367,18 @@ class _SettingsValueChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
+        color: theme.colorScheme.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: theme.colorScheme.primary,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
@@ -375,10 +411,12 @@ class _SettingsSpeedSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      decoration: BoxDecoration(
+        color: theme.elevatedSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: SafeArea(
         child: Column(
@@ -390,18 +428,18 @@ class _SettingsSpeedSheet extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Playback Speed',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: theme.strongText,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     '${currentSpeed}x',
-                    style: const TextStyle(
-                      color: Colors.white70,
+                    style: TextStyle(
+                      color: theme.mutedText,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -409,7 +447,7 @@ class _SettingsSpeedSheet extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(color: Colors.grey, height: 1),
+            Divider(color: theme.softBorder, height: 1),
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 300),
               child: ListView.builder(
@@ -423,14 +461,14 @@ class _SettingsSpeedSheet extends StatelessWidget {
                     title: Text(
                       speed == 1.0 ? 'Normal' : '${speed}x',
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
+                        color: isSelected ? theme.strongText : theme.mutedText,
                         fontSize: 16,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.normal,
                       ),
                     ),
                     trailing: isSelected
-                        ? const Icon(Icons.check, color: Colors.white)
+                        ? Icon(Icons.check, color: theme.colorScheme.primary)
                         : null,
                     onTap: () {
                       onSpeedSelected(speed);
@@ -461,10 +499,12 @@ class _AudioTrackSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      decoration: BoxDecoration(
+        color: theme.elevatedSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: SafeArea(
         child: Column(
@@ -476,25 +516,25 @@ class _AudioTrackSheet extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Audio Track',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: theme.strongText,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     '${audioTracks.length} tracks',
-                    style: const TextStyle(
-                      color: Colors.white60,
+                    style: TextStyle(
+                      color: theme.mutedText,
                       fontSize: 14,
                     ),
                   ),
                 ],
               ),
             ),
-            const Divider(color: Colors.grey, height: 1),
+            Divider(color: theme.softBorder, height: 1),
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 260),
               child: ListView.builder(
@@ -510,7 +550,7 @@ class _AudioTrackSheet extends StatelessWidget {
                           ? track.title!
                           : 'Track ${index + 1}',
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
+                        color: isSelected ? theme.strongText : theme.mutedText,
                         fontSize: 16,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.normal,
@@ -519,14 +559,14 @@ class _AudioTrackSheet extends StatelessWidget {
                     subtitle: track.language?.trim().isNotEmpty == true
                         ? Text(
                             track.language!,
-                            style: const TextStyle(
-                              color: Colors.white54,
+                            style: TextStyle(
+                              color: theme.faintText,
                               fontSize: 12,
                             ),
                           )
                         : null,
                     trailing: isSelected
-                        ? const Icon(Icons.check, color: Colors.white)
+                        ? Icon(Icons.check, color: theme.colorScheme.primary)
                         : null,
                     onTap: () => onSelected(index),
                   );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:media_kit/media_kit.dart';
+import 'package:flutter_mpv/flutter_mpv.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/controllers/app_settings_controller.dart';
@@ -24,7 +24,7 @@ Future<void> main() async {
 
   ThumbnailCache().cleanup();
 
-  MediaKit.ensureInitialized();
+  FlutterMpv.ensureInitialized();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

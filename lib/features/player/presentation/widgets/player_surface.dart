@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:flutter_mpv_video/flutter_mpv_video.dart';
 import '../../controller/player_state.dart';
 
 class PlayerSurface extends StatelessWidget {

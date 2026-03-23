@@ -107,6 +107,84 @@ class SettingsPresetHelpers {
   }
 }
 
+class SettingsVideoPerformanceHelpers {
+  static IconData getIcon(VideoPerformancePreset preset) {
+    switch (preset) {
+      case VideoPerformancePreset.powerSaver:
+        return Icons.energy_savings_leaf_outlined;
+      case VideoPerformancePreset.balanced:
+        return Icons.tune_rounded;
+      case VideoPerformancePreset.instantSeeking:
+        return Icons.bolt_rounded;
+      case VideoPerformancePreset.quality:
+        return Icons.hd_rounded;
+      case VideoPerformancePreset.smoothMotion:
+        return Icons.motion_photos_on_rounded;
+      case VideoPerformancePreset.streaming:
+        return Icons.wifi_tethering_rounded;
+      case VideoPerformancePreset.softwareDecoding:
+        return Icons.memory_rounded;
+    }
+  }
+
+  static String getLabel(VideoPerformancePreset preset) {
+    switch (preset) {
+      case VideoPerformancePreset.powerSaver:
+        return 'Power Saver';
+      case VideoPerformancePreset.balanced:
+        return 'Balanced';
+      case VideoPerformancePreset.instantSeeking:
+        return 'Instant Seek';
+      case VideoPerformancePreset.quality:
+        return 'Quality';
+      case VideoPerformancePreset.smoothMotion:
+        return 'Smooth Motion';
+      case VideoPerformancePreset.streaming:
+        return 'Streaming';
+      case VideoPerformancePreset.softwareDecoding:
+        return 'Software Decode';
+    }
+  }
+
+  static String getDescription(VideoPerformancePreset preset) {
+    switch (preset) {
+      case VideoPerformancePreset.powerSaver:
+        return 'Lower heat and battery use on weaker devices.';
+      case VideoPerformancePreset.balanced:
+        return 'Safe everyday playback with decent quality.';
+      case VideoPerformancePreset.instantSeeking:
+        return 'Fast local scrubbing and quicker jump response.';
+      case VideoPerformancePreset.quality:
+        return 'Sharper output for capable devices and big files.';
+      case VideoPerformancePreset.smoothMotion:
+        return 'Interpolation-focused playback for extra fluid motion.';
+      case VideoPerformancePreset.streaming:
+        return 'Bigger cache for unstable network playback.';
+      case VideoPerformancePreset.softwareDecoding:
+        return 'Compatibility fallback when hardware decode misbehaves.';
+    }
+  }
+
+  static String getBadge(VideoPerformancePreset preset) {
+    switch (preset) {
+      case VideoPerformancePreset.powerSaver:
+        return 'Cool';
+      case VideoPerformancePreset.balanced:
+        return 'Default';
+      case VideoPerformancePreset.instantSeeking:
+        return 'Fast';
+      case VideoPerformancePreset.quality:
+        return 'Sharp';
+      case VideoPerformancePreset.smoothMotion:
+        return 'Fluid';
+      case VideoPerformancePreset.streaming:
+        return 'Buffer';
+      case VideoPerformancePreset.softwareDecoding:
+        return 'Fallback';
+    }
+  }
+}
+
 /// Helper functions for font weight UI elements
 class SettingsFontWeightHelpers {
   static String getLabel(FontWeight weight) {

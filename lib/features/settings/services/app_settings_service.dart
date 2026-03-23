@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_mpv/flutter_mpv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../player/controller/player_state.dart';
@@ -7,10 +8,21 @@ enum AppThemePreference { system, light, dark }
 
 enum PlayerPreset { balanced, cinema, binge }
 
+enum VideoPerformancePreset {
+  powerSaver,
+  balanced,
+  instantSeeking,
+  quality,
+  smoothMotion,
+  streaming,
+  softwareDecoding,
+}
+
 class AppSettingsService {
   static const String _themePreferenceKey = 'app_theme_preference';
   static const String _playerPresetKey = 'player_preset';
   static const String _advancedOptionsEnabledKey = 'advanced_options_enabled';
+  static const String _videoPerformancePresetKey = 'advanced_video_performance';
   static const String _autoResumePlaybackKey = 'advanced_auto_resume';
   static const String _keepScreenAwakeKey = 'advanced_keep_screen_awake';
   static const String _swipeGesturesKey = 'advanced_swipe_gestures';
@@ -60,6 +72,26 @@ class AppSettingsService {
   static bool get advancedOptionsEnabled =>
       _prefs.getBool(_advancedOptionsEnabledKey) ?? false;
 
+  static VideoPerformancePreset get videoPerformancePreset {
+    final value = _prefs.getString(_videoPerformancePresetKey);
+    switch (value) {
+      case 'powerSaver':
+        return VideoPerformancePreset.powerSaver;
+      case 'balanced':
+        return VideoPerformancePreset.balanced;
+      case 'quality':
+        return VideoPerformancePreset.quality;
+      case 'smoothMotion':
+        return VideoPerformancePreset.smoothMotion;
+      case 'streaming':
+        return VideoPerformancePreset.streaming;
+      case 'softwareDecoding':
+        return VideoPerformancePreset.softwareDecoding;
+      default:
+        return VideoPerformancePreset.instantSeeking;
+    }
+  }
+
   static bool get autoResumePlaybackSetting =>
       _prefs.getBool(_autoResumePlaybackKey) ?? true;
 
@@ -82,6 +114,25 @@ class AppSettingsService {
 
   static bool get holdToBoostEnabled =>
       advancedOptionsEnabled && holdToBoostSetting;
+
+  static VideoPerformanceConfiguration get videoPerformanceConfiguration {
+    switch (videoPerformancePreset) {
+      case VideoPerformancePreset.powerSaver:
+        return VideoPerformancePresets.powerSaver;
+      case VideoPerformancePreset.balanced:
+        return VideoPerformancePresets.balanced;
+      case VideoPerformancePreset.instantSeeking:
+        return VideoPerformancePresets.instantSeeking;
+      case VideoPerformancePreset.quality:
+        return VideoPerformancePresets.quality;
+      case VideoPerformancePreset.smoothMotion:
+        return VideoPerformancePresets.smoothMotion;
+      case VideoPerformancePreset.streaming:
+        return VideoPerformancePresets.streaming;
+      case VideoPerformancePreset.softwareDecoding:
+        return VideoPerformancePresets.softwareDecoding;
+    }
+  }
 
   static double get presetPlaybackSpeed {
     switch (playerPreset) {
@@ -126,6 +177,10 @@ class AppSettingsService {
 
   static Future<bool> setAdvancedOptionsEnabled(bool value) {
     return _prefs.setBool(_advancedOptionsEnabledKey, value);
+  }
+
+  static Future<bool> setVideoPerformancePreset(VideoPerformancePreset value) {
+    return _prefs.setString(_videoPerformancePresetKey, value.name);
   }
 
   static Future<bool> setAutoResumePlayback(bool value) {

@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'package:media_kit/media_kit.dart';
+import 'package:flutter_mpv/flutter_mpv.dart';
+import 'package:mpx/features/settings/services/app_settings_service.dart';
 import '../../domain/repositories/player_repository.dart';
 
-class MediaKitPlayerRepository implements PlayerRepository {
+class MpvPlayerRepository implements PlayerRepository {
   late final Player _player;
   bool _isDisposed = false;
   final StreamController<void> _audioTracksController =
@@ -10,13 +11,84 @@ class MediaKitPlayerRepository implements PlayerRepository {
   final StreamController<void> _subtitleTracksController =
       StreamController<void>.broadcast();
 
-  MediaKitPlayerRepository() {
+  MpvPlayerRepository() {
     _player = Player(
-      configuration: const PlayerConfiguration(
+      configuration: _configuration,
+    );
+  }
+
+  PlayerConfiguration get _configuration => PlayerConfiguration(
         title: 'MPx Player',
         bufferSize: 96 * 1024 * 1024,
-      ),
-    );
+        videoPerformance: AppSettingsService.videoPerformanceConfiguration,
+      );
+
+  Future<void> applyVideoPerformanceConfiguration(
+    VideoPerformanceConfiguration configuration,
+  ) async {
+    _ensureNotDisposed();
+
+    final properties = _videoPerformanceProperties(configuration);
+    for (final entry in properties.entries) {
+      await _player.setProperty(entry.key, entry.value);
+    }
+  }
+
+  Map<String, String> _videoPerformanceProperties(
+    VideoPerformanceConfiguration video,
+  ) {
+    final properties = <String, String>{
+      if (video.hardwareDecoding != null) 'hwdec': video.hardwareDecoding!,
+      if (video.decoderThreads != null)
+        'vd-lavc-threads': video.decoderThreads.toString(),
+      if (video.frameDropping != null) 'framedrop': video.frameDropping!,
+      if (video.videoSync != null) 'video-sync': video.videoSync!,
+      if (video.scaler != null) 'scale': video.scaler!,
+      if (video.downScaler != null) 'dscale': video.downScaler!,
+      'interpolation': video.interpolation ? 'yes' : 'no',
+      if (video.temporalScaler != null) 'tscale': video.temporalScaler!,
+      if (video.deinterlacing != null) 'deinterlace': video.deinterlacing!,
+      if (video.gpuBackend != null) 'gpu-backend': video.gpuBackend!,
+      if (video.demuxerMaxBytes != null)
+        'demuxer-max-bytes': video.demuxerMaxBytes!,
+      if (video.demuxerMaxBackBytes != null)
+        'demuxer-max-back-bytes': video.demuxerMaxBackBytes!,
+      if (video.profile != null) 'profile': video.profile!,
+      if (video.cache != null) 'cache': video.cache!,
+      if (video.cacheSecs != null) 'cache-secs': video.cacheSecs.toString(),
+      if (video.cacheBack != null) 'cache-back': video.cacheBack!,
+      if (video.hrSeek != null) 'hr-seek': video.hrSeek!,
+      if (video.softwareDecodingDirectRendering != null)
+        'vd-lavc-dr': video.softwareDecodingDirectRendering!,
+      if (video.fastDecoding != null) 'vd-lavc-fast': video.fastDecoding!,
+      if (video.openglPbo != null) 'opengl-pbo': video.openglPbo!,
+      if (video.videoLatencyHacks != null)
+        'video-latency-hacks': video.videoLatencyHacks!,
+      if (video.gpuApi != null) 'gpu-api': video.gpuApi!,
+      if (video.decoderOptions != null) 'vd-lavc-o': video.decoderOptions!,
+      if (video.hwdecCodecs != null) 'hwdec-codecs': video.hwdecCodecs!,
+      if (video.hrSeekFramedrop != null)
+        'hr-seek-framedrop': video.hrSeekFramedrop!,
+    };
+
+    if (video.fastSeek != null && video.hrSeek == null) {
+      properties['hr-seek'] = video.fastSeek == 'yes' ? 'no' : 'yes';
+    }
+
+    if (video.instantSeeking) {
+      properties.addAll({
+        'hr-seek': 'no',
+        'hr-seek-framedrop': 'yes',
+        'seek-to-file-pos': 'yes',
+        'index-mode': 'both',
+        'cache': 'yes',
+        if (video.optimizeForLocalFiles) 'demuxer-readahead-secs': '0',
+        if (video.demuxerMaxBackBytes == null) 'demuxer-max-back-bytes': '256M',
+        if (video.cacheBack == null) 'cache-back': '256M',
+      });
+    }
+
+    return properties;
   }
 
   Player get player => _player;
@@ -173,7 +245,7 @@ class MediaKitPlayerRepository implements PlayerRepository {
   void _ensureNotDisposed() {
     if (_isDisposed) {
       throw StateError(
-        'MediaKitPlayerRepository has been disposed and cannot be used.',
+        'MpvPlayerRepository has been disposed and cannot be used.',
       );
     }
   }

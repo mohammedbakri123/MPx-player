@@ -40,7 +40,9 @@ mixin VolumeManagerMixin on ChangeNotifier {
     final systemVolume = SystemVolumeService.volume * 100;
     state.volume = systemVolume;
     repository.setVolume(systemVolume);
-    notifyListeners();
+    try {
+      notifyListeners();
+    } catch (_) {}
   }
 
   /// Sets the volume level and updates system volume.
@@ -109,7 +111,9 @@ mixin VolumeManagerMixin on ChangeNotifier {
 
     Future.delayed(const Duration(milliseconds: 800), () {
       state.showVolumeIndicator = false;
-      notifyListeners();
+      try {
+        notifyListeners();
+      } catch (_) {}
     });
   }
 
