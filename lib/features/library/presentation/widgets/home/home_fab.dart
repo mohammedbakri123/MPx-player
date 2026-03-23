@@ -164,6 +164,7 @@ class HomeFABState extends State<HomeFAB> with RouteAware {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasLastVideo = _lastVideo != null;
+    final bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return NotificationListener<UserScrollNotification>(
       onNotification: (notification) {
@@ -181,7 +182,7 @@ class HomeFABState extends State<HomeFAB> with RouteAware {
           curve: Curves.easeOutCubic,
           padding: EdgeInsets.only(
             right: 6,
-            bottom: _isVisible ? 80 : 14,
+            bottom: (_isVisible && !isKeyboardVisible) ? 80 : 14,
           ),
           child: InkWell(
             onTap: hasLastVideo ? _openLastVideo : null,

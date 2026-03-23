@@ -121,6 +121,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.appBackground,
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Container(
           decoration: BoxDecoration(

@@ -65,16 +65,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         runSpacing: 12,
                         children: AppThemePreference.values
                             .map(
-                              (preference) => SettingsChoiceCard(
-                                icon: SettingsThemeHelpers.getIcon(preference),
-                                title:
-                                    SettingsThemeHelpers.getLabel(preference),
-                                subtitle: SettingsThemeHelpers.getDescription(
-                                    preference),
-                                isSelected:
-                                    settings.themePreference == preference,
-                                onTap: () =>
-                                    settings.setThemePreference(preference),
+                              (preference) => SizedBox(
+                                width: 170,
+                                child: SettingsChoiceCard(
+                                  icon:
+                                      SettingsThemeHelpers.getIcon(preference),
+                                  title:
+                                      SettingsThemeHelpers.getLabel(preference),
+                                  subtitle: SettingsThemeHelpers.getDescription(
+                                      preference),
+                                  isSelected:
+                                      settings.themePreference == preference,
+                                  onTap: () =>
+                                      settings.setThemePreference(preference),
+                                ),
                               ),
                             )
                             .toList(),

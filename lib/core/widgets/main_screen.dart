@@ -224,9 +224,11 @@ class _MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           Positioned.fill(
@@ -253,7 +255,7 @@ class _MainScreenState extends State<MainScreen>
             curve: Curves.easeOutCubic,
             left: 14,
             right: 14,
-            bottom: (_currentIndex == 1 || !_isDockVisible)
+            bottom: (_currentIndex == 1 || !_isDockVisible || isKeyboardVisible)
                 ? _dockHideOffset
                 : _dockBottomOffset,
             child: SafeArea(

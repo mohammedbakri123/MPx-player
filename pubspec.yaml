@@ -15,14 +15,8 @@ dependencies:
   flutter_mpv_video: ^2.0.4
   flutter_mpv_libs_video: ^1.0.11
 
-  # Alternative video players
-  flutter_vlc_player: ^7.2.0
-  video_player: ^2.8.2
-
-  # UI & Icons
-  cupertino_icons: ^1.0.8
+  # UI
   google_fonts: ^6.2.1
-  flutter_staggered_animations: ^1.1.1
 
   # Utilities
   path: ^1.8.3
