@@ -63,6 +63,18 @@ class MockPlayerRepository extends _i1.Mock implements _i2.PlayerRepository {
       ) as _i3.Stream<bool>);
 
   @override
+  _i3.Stream<void> get audioTracksStream => (super.noSuchMethod(
+        Invocation.getter(#audioTracksStream),
+        returnValue: _i3.Stream<void>.empty(),
+      ) as _i3.Stream<void>);
+
+  @override
+  _i3.Stream<void> get subtitleTracksStream => (super.noSuchMethod(
+        Invocation.getter(#subtitleTracksStream),
+        returnValue: _i3.Stream<void>.empty(),
+      ) as _i3.Stream<void>);
+
+  @override
   _i3.Future<void> load(String? path) => (super.noSuchMethod(
         Invocation.method(
           #load,
@@ -137,6 +149,44 @@ class MockPlayerRepository extends _i1.Mock implements _i2.PlayerRepository {
         Invocation.method(
           #disableSubtitles,
           [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  List<_i2.SubtitleTrackInfo> getSubtitleTracks() => (super.noSuchMethod(
+        Invocation.method(
+          #getSubtitleTracks,
+          [],
+        ),
+        returnValue: <_i2.SubtitleTrackInfo>[],
+      ) as List<_i2.SubtitleTrackInfo>);
+
+  @override
+  _i3.Future<void> setSubtitleTrack(int? index) => (super.noSuchMethod(
+        Invocation.method(
+          #setSubtitleTrack,
+          [index],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  List<_i2.AudioTrackInfo> getAudioTracks() => (super.noSuchMethod(
+        Invocation.method(
+          #getAudioTracks,
+          [],
+        ),
+        returnValue: <_i2.AudioTrackInfo>[],
+      ) as List<_i2.AudioTrackInfo>);
+
+  @override
+  _i3.Future<void> setAudioTrack(int? index) => (super.noSuchMethod(
+        Invocation.method(
+          #setAudioTrack,
+          [index],
         ),
         returnValue: _i3.Future<void>.value(),
         returnValueForMissingStub: _i3.Future<void>.value(),

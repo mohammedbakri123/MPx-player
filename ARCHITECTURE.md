@@ -76,7 +76,7 @@ MPx Player follows **Clean Architecture** with **Feature-Based Organization**:
 │  │ MediaKitPlayer   │  │ DirectoryBrowser │  │ Services     │  │
 │  │ Repository       │  │                  │  │              │  │
 │  │                  │  │ - Scan storage   │  │ - Favorites  │  │
-│  │ - media_kit      │  │ - Multi-cache    │  │   Service    │  │
+│  │ - flutter_mpv    │  │ - Multi-cache    │  │   Service    │  │
 │  │ - Player control │  │ - Real-time      │  │ - History    │  │
 │  │ - Streams        │  │   watching       │  │   Service    │  │
 │  └──────────────────┘  └──────────────────┘  └──────────────┘  │
@@ -158,7 +158,7 @@ MPx Player follows **Clean Architecture** with **Feature-Based Organization**:
 2. Navigator.push(VideoPlayerScreen(video: video))
    ↓
 3. VideoPlayerScreen creates ChangeNotifierProvider
-   └─ Creates PlayerController(MediaKitPlayerRepository())
+   └─ Creates PlayerController(MpvPlayerRepository())
        ↓
 4. PlayerController constructor:
    ├─ Initializes mixins
@@ -171,8 +171,8 @@ MPx Player follows **Clean Architecture** with **Feature-Based Organization**:
    ├─ Applies subtitle settings
    └─ Starts auto-save timer
        ↓
-6. MediaKitPlayerRepository loads video
-   └─ media_kit Player opens video
+6. MpvPlayerRepository loads video
+   └─ flutter_mpv Player opens video
        ↓
 7. Streams emit updates:
    ├─ positionStream → Updates _state.position
@@ -256,7 +256,7 @@ lib/features/player/
 │   └── mixins/                       # Mixins for granular logic
 ├── data/
 │   └── repositories/
-│       └── media_kit_player_repository.dart
+│       └── mpv_player_repository.dart
 ├── domain/
 │   └── repositories/
 │       └── player_repository.dart    # Abstract interface
@@ -365,7 +365,7 @@ Screen-Level Providers (Created/Disposed per screen)
 VideoPlayerScreen
     ↓
 ChangeNotifierProvider
-    └─ PlayerController(MediaKitPlayerRepository())
+    └─ PlayerController(MpvPlayerRepository())
 ```
 
 ---

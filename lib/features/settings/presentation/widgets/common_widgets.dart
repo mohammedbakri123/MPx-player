@@ -106,46 +106,42 @@ class SettingsChoiceCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    return SizedBox(
-      width: 170,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Ink(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          color: isSelected
+              ? colors.primary.withValues(alpha: theme.isDarkMode ? 0.16 : 0.12)
+              : theme.subtleSurface,
+          border: Border.all(
             color: isSelected
-                ? colors.primary
-                    .withValues(alpha: theme.isDarkMode ? 0.16 : 0.12)
-                : theme.subtleSurface,
-            border: Border.all(
-              color: isSelected
-                  ? colors.primary.withValues(alpha: 0.35)
-                  : theme.softBorder,
+                ? colors.primary.withValues(alpha: 0.35)
+                : theme.softBorder,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: isSelected ? colors.primary : colors.onSurface),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: isSelected ? colors.primary : colors.onSurface),
-              const SizedBox(height: 14),
-              Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.onSurface.withValues(alpha: 0.68),
+                height: 1.35,
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.onSurface.withValues(alpha: 0.68),
-                  height: 1.35,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

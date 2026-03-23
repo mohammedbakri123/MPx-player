@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:flutter_mpv/flutter_mpv.dart';
+import 'package:flutter_mpv_video/flutter_mpv_video.dart';
 import 'package:mpx/features/library/domain/entities/video_file.dart';
 import 'package:mpx/features/player/presentation/widgets/player_volume_indicator.dart';
 import 'dart:async';
@@ -20,7 +20,13 @@ class ReelPlayerItem extends StatefulWidget {
 }
 
 class _ReelPlayerItemState extends State<ReelPlayerItem> {
-  late final Player _player = Player();
+  late final Player _player = Player(
+    configuration: const PlayerConfiguration(
+      title: 'MPx Reels',
+      bufferSize: 96 * 1024 * 1024,
+      videoPerformance: VideoPerformancePresets.balanced,
+    ),
+  );
   late final VideoController _controller = VideoController(_player);
   bool _isMuted = false;
   Timer? _hideVolumeIndicatorTimer;

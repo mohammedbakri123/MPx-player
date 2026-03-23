@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:mpx/core/theme/app_theme_tokens.dart';
 import 'package:mpx/features/library/presentation/screens/home_screen.dart';
 import 'package:mpx/features/favorites/presentation/screens/favorites_screen.dart';
@@ -18,6 +19,8 @@ class _MainScreenState extends State<MainScreen>
   static const double _swipeVelocityThreshold = 320;
   static const double _swipeProgressThreshold = 0.22;
   static const double _dockBottomOffset = 10;
+  static const double _dockHideOffset = -100;
+
   int _currentIndex = 0;
   // Updated _loadedTabs size from 4 to 5
   final List<bool> _loadedTabs = [true, false, false, false, false];
@@ -25,6 +28,8 @@ class _MainScreenState extends State<MainScreen>
   Animation<double>? _swipeAnimation;
   double _dragOffset = 0;
   int? _pendingTabIndex;
+
+  bool _isDockVisible = true;
 
   @override
   void initState() {
@@ -164,54 +169,66 @@ class _MainScreenState extends State<MainScreen>
   Widget _buildTabLayers(double width) {
     final dragTargetIndex = _getTargetIndexForOffset(_dragOffset);
 
-    return Stack(
-      // Updated List.generate count to use dynamic tab count
-      children: List.generate(_labels.length, (index) {
-        if (!_loadedTabs[index]) {
-          return const SizedBox.shrink();
+    return NotificationListener<UserScrollNotification>(
+      onNotification: (notification) {
+        if (notification.direction == ScrollDirection.forward) {
+          if (!_isDockVisible) setState(() => _isDockVisible = true);
+        } else if (notification.direction == ScrollDirection.reverse) {
+          if (_isDockVisible) setState(() => _isDockVisible = false);
         }
+        return false;
+      },
+      child: Stack(
+        // Updated List.generate count to use dynamic tab count
+        children: List.generate(_labels.length, (index) {
+          if (!_loadedTabs[index]) {
+            return const SizedBox.shrink();
+          }
 
-        final isCurrent = index == _currentIndex;
-        final isDragTarget = dragTargetIndex == index;
-        final shouldShow = isCurrent || isDragTarget;
+          final isCurrent = index == _currentIndex;
+          final isDragTarget = dragTargetIndex == index;
+          final shouldShow = isCurrent || isDragTarget;
 
-        if (!shouldShow) {
-          return Offstage(
-            offstage: true,
+          if (!shouldShow) {
+            return Offstage(
+              offstage: true,
+              child: TickerMode(
+                enabled: false,
+                child: KeyedSubtree(
+                  key: ValueKey(index),
+                  child: _buildScreen(index),
+                ),
+              ),
+            );
+          }
+
+          final offset = isCurrent
+              ? _dragOffset
+              : (_dragOffset < 0 ? width : -width) + _dragOffset;
+
+          return Transform.translate(
+            offset: Offset(offset, 0),
             child: TickerMode(
-              enabled: false,
+              enabled: isCurrent,
               child: KeyedSubtree(
                 key: ValueKey(index),
                 child: _buildScreen(index),
               ),
             ),
           );
-        }
-
-        final offset = isCurrent
-            ? _dragOffset
-            : (_dragOffset < 0 ? width : -width) + _dragOffset;
-
-        return Transform.translate(
-          offset: Offset(offset, 0),
-          child: TickerMode(
-            enabled: isCurrent,
-            child: KeyedSubtree(
-              key: ValueKey(index),
-              child: _buildScreen(index),
-            ),
-          ),
-        );
-      }),
+        }),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           Positioned.fill(
@@ -238,7 +255,9 @@ class _MainScreenState extends State<MainScreen>
             curve: Curves.easeOutCubic,
             left: 14,
             right: 14,
-            bottom: _currentIndex == 1 ? -100 : _dockBottomOffset,
+            bottom: (_currentIndex == 1 || !_isDockVisible || isKeyboardVisible)
+                ? _dockHideOffset
+                : _dockBottomOffset,
             child: SafeArea(
               top: false,
               minimum: EdgeInsets.zero,

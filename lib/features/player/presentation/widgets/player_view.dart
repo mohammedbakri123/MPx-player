@@ -33,6 +33,7 @@ class PlayerView extends StatelessWidget {
             selector: (_, controller) => _PlayerSurfaceConfig(
               subtitleFontSize: controller.subtitleFontSize,
               subtitleColor: controller.subtitleColor,
+              subtitleFontFamily: controller.subtitleFontFamily,
               subtitleHasBackground: controller.subtitleHasBackground,
               subtitleFontWeight: controller.subtitleFontWeight,
               subtitleBottomPadding: controller.subtitleBottomPadding,
@@ -44,6 +45,7 @@ class PlayerView extends StatelessWidget {
                 controller: controller.videoController,
                 subtitleFontSize: config.subtitleFontSize,
                 subtitleColor: config.subtitleColor,
+                subtitleFontFamily: config.subtitleFontFamily,
                 subtitleHasBackground: config.subtitleHasBackground,
                 subtitleFontWeight: config.subtitleFontWeight,
                 subtitleBottomPadding: config.subtitleBottomPadding,
@@ -79,6 +81,7 @@ class PlayerView extends StatelessWidget {
 class _PlayerSurfaceConfig {
   final double subtitleFontSize;
   final Color subtitleColor;
+  final String subtitleFontFamily;
   final bool subtitleHasBackground;
   final FontWeight subtitleFontWeight;
   final double subtitleBottomPadding;
@@ -88,6 +91,7 @@ class _PlayerSurfaceConfig {
   const _PlayerSurfaceConfig({
     required this.subtitleFontSize,
     required this.subtitleColor,
+    required this.subtitleFontFamily,
     required this.subtitleHasBackground,
     required this.subtitleFontWeight,
     required this.subtitleBottomPadding,
@@ -101,6 +105,7 @@ class _PlayerSurfaceConfig {
     return other is _PlayerSurfaceConfig &&
         other.subtitleFontSize == subtitleFontSize &&
         other.subtitleColor == subtitleColor &&
+        other.subtitleFontFamily == subtitleFontFamily &&
         other.subtitleHasBackground == subtitleHasBackground &&
         other.subtitleFontWeight == subtitleFontWeight &&
         other.subtitleBottomPadding == subtitleBottomPadding &&
@@ -112,6 +117,7 @@ class _PlayerSurfaceConfig {
   int get hashCode => Object.hash(
         subtitleFontSize,
         subtitleColor,
+        subtitleFontFamily,
         subtitleHasBackground,
         subtitleFontWeight,
         subtitleBottomPadding,

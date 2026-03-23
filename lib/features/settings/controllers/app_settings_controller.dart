@@ -6,6 +6,11 @@ class AppSettingsController extends ChangeNotifier {
   AppThemePreference _themePreference = AppSettingsService.themePreference;
   PlayerPreset _playerPreset = AppSettingsService.playerPreset;
   bool _advancedOptionsEnabled = AppSettingsService.advancedOptionsEnabled;
+  VideoPerformancePreset _videoPerformancePreset =
+      AppSettingsService.videoPerformancePreset;
+  bool _expertEngineEnabled = AppSettingsService.expertEngineEnabled;
+  ExpertEngineSettings _expertEngineSettings =
+      AppSettingsService.expertEngineSettings;
   bool _autoResumePlayback = AppSettingsService.autoResumePlaybackSetting;
   bool _keepScreenAwake = AppSettingsService.keepScreenAwakeSetting;
   bool _swipeGestures = AppSettingsService.swipeGesturesSetting;
@@ -15,6 +20,9 @@ class AppSettingsController extends ChangeNotifier {
   ThemeMode get themeMode => AppSettingsService.themeMode;
   PlayerPreset get playerPreset => _playerPreset;
   bool get advancedOptionsEnabled => _advancedOptionsEnabled;
+  VideoPerformancePreset get videoPerformancePreset => _videoPerformancePreset;
+  bool get expertEngineEnabled => _expertEngineEnabled;
+  ExpertEngineSettings get expertEngineSettings => _expertEngineSettings;
   bool get autoResumePlayback => _autoResumePlayback;
   bool get keepScreenAwake => _keepScreenAwake;
   bool get swipeGestures => _swipeGestures;
@@ -35,6 +43,34 @@ class AppSettingsController extends ChangeNotifier {
   Future<void> setAdvancedOptionsEnabled(bool value) async {
     _advancedOptionsEnabled = value;
     await AppSettingsService.setAdvancedOptionsEnabled(value);
+    notifyListeners();
+  }
+
+  Future<void> setVideoPerformancePreset(VideoPerformancePreset value) async {
+    _videoPerformancePreset = value;
+    await AppSettingsService.setVideoPerformancePreset(value);
+    notifyListeners();
+  }
+
+  Future<void> setExpertEngineEnabled(bool value) async {
+    _expertEngineEnabled = value;
+    await AppSettingsService.setExpertEngineEnabled(value);
+    notifyListeners();
+  }
+
+  Future<void> setExpertEngineSettings(ExpertEngineSettings value) async {
+    _expertEngineSettings = value;
+    await AppSettingsService.setExpertEngineSettings(value);
+    notifyListeners();
+  }
+
+  Future<void> resetExpertEngineSettingsFromPreset(
+    VideoPerformancePreset preset,
+  ) async {
+    _videoPerformancePreset = preset;
+    _expertEngineSettings = ExpertEngineSettings.fromPreset(preset);
+    await AppSettingsService.setVideoPerformancePreset(preset);
+    await AppSettingsService.setExpertEngineSettings(_expertEngineSettings);
     notifyListeners();
   }
 

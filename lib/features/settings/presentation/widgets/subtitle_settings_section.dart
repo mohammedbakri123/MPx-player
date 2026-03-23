@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/subtitle_settings_service.dart';
 import '../helpers/settings_helpers.dart';
+import '../helpers/subtitle_font_helpers.dart';
 import 'subtitle_preview.dart';
 import 'form_rows.dart';
 import 'color_option.dart';
@@ -21,6 +22,7 @@ class _SubtitleSettingsSectionState extends State<SubtitleSettingsSection> {
   late Color _subtitleColor;
   late bool _subtitleHasBackground;
   late FontWeight _subtitleFontWeight;
+  late String _subtitleFontFamily;
   late double _subtitleBottomPadding;
   late double _subtitleBackgroundOpacity;
 
@@ -32,6 +34,7 @@ class _SubtitleSettingsSectionState extends State<SubtitleSettingsSection> {
     _subtitleColor = SubtitleSettingsService.color;
     _subtitleHasBackground = SubtitleSettingsService.hasBackground;
     _subtitleFontWeight = SubtitleSettingsService.fontWeight;
+    _subtitleFontFamily = SubtitleSettingsService.fontFamily;
     _subtitleBottomPadding = SubtitleSettingsService.bottomPadding;
     _subtitleBackgroundOpacity = SubtitleSettingsService.backgroundOpacity;
   }
@@ -40,8 +43,9 @@ class _SubtitleSettingsSectionState extends State<SubtitleSettingsSection> {
   Widget build(BuildContext context) {
     return AnimatedCrossFade(
       duration: const Duration(milliseconds: 180),
-      crossFadeState:
-          _subtitleEnabled ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      crossFadeState: _subtitleEnabled
+          ? CrossFadeState.showSecond
+          : CrossFadeState.showFirst,
       firstChild: const SizedBox.shrink(),
       secondChild: Column(
         children: [
@@ -51,11 +55,32 @@ class _SubtitleSettingsSectionState extends State<SubtitleSettingsSection> {
             value: '${_subtitleFontSize.round()} pt',
             sliderValue: _subtitleFontSize,
             min: 16,
-            max: 40,
+            max: 72,
             onChanged: (value) async {
               await SubtitleSettingsService.setFontSize(value);
               setState(() => _subtitleFontSize = value);
             },
+          ),
+          SettingsInfoRow(
+            icon: Icons.font_download_outlined,
+            title: 'Font type',
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: SubtitleFontHelpers.options
+                  .map(
+                    (option) => ChoiceChip(
+                      label: Text(option.label),
+                      selected: _subtitleFontFamily == option.family,
+                      onSelected: (_) async {
+                        await SubtitleSettingsService.setFontFamily(
+                            option.family);
+                        setState(() => _subtitleFontFamily = option.family);
+                      },
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
           SettingsInfoRow(
             icon: Icons.format_bold,
@@ -92,8 +117,7 @@ class _SubtitleSettingsSectionState extends State<SubtitleSettingsSection> {
                   .map(
                     (color) => SettingsColorOption(
                       color: color,
-                      isSelected:
-                          _subtitleColor.toARGB32() == color.toARGB32(),
+                      isSelected: _subtitleColor.toARGB32() == color.toARGB32(),
                       onTap: () async {
                         await SubtitleSettingsService.setColor(color);
                         setState(() => _subtitleColor = color);
@@ -143,6 +167,7 @@ class _SubtitleSettingsSectionState extends State<SubtitleSettingsSection> {
             color: _subtitleColor,
             fontSize: _subtitleFontSize,
             fontWeight: _subtitleFontWeight,
+            fontFamily: _subtitleFontFamily,
             hasBackground: _subtitleHasBackground,
             backgroundOpacity: _subtitleBackgroundOpacity,
             bottomPadding: _subtitleBottomPadding,
@@ -157,8 +182,10 @@ class _SubtitleSettingsSectionState extends State<SubtitleSettingsSection> {
                   _subtitleEnabled = SubtitleSettingsService.isEnabled;
                   _subtitleFontSize = SubtitleSettingsService.fontSize;
                   _subtitleColor = SubtitleSettingsService.color;
-                  _subtitleHasBackground = SubtitleSettingsService.hasBackground;
+                  _subtitleHasBackground =
+                      SubtitleSettingsService.hasBackground;
                   _subtitleFontWeight = SubtitleSettingsService.fontWeight;
+                  _subtitleFontFamily = SubtitleSettingsService.fontFamily;
                   _subtitleBottomPadding =
                       SubtitleSettingsService.bottomPadding;
                   _subtitleBackgroundOpacity =

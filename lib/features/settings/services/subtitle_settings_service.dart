@@ -10,6 +10,7 @@ class SubtitleSettingsService {
   static const String _colorBlueKey = 'subtitle_color_blue';
   static const String _backgroundKey = 'subtitle_background';
   static const String _fontWeightKey = 'subtitle_font_weight';
+  static const String _fontFamilyKey = 'subtitle_font_family';
   static const String _bottomPaddingKey = 'subtitle_bottom_padding';
   static const String _backgroundOpacityKey = 'subtitle_background_opacity';
 
@@ -35,6 +36,8 @@ class SubtitleSettingsService {
     final weight = _prefs.getInt(_fontWeightKey) ?? 500;
     return _fontWeightFromValue(weight);
   }
+
+  static String get fontFamily => _prefs.getString(_fontFamilyKey) ?? 'Roboto';
 
   static double get bottomPadding =>
       _prefs.getDouble(_bottomPaddingKey) ?? 24.0;
@@ -66,6 +69,10 @@ class SubtitleSettingsService {
     return await _prefs.setInt(_fontWeightKey, value.value);
   }
 
+  static Future<bool> setFontFamily(String value) async {
+    return await _prefs.setString(_fontFamilyKey, value);
+  }
+
   static Future<bool> setBottomPadding(double value) async {
     return await _prefs.setDouble(_bottomPaddingKey, value);
   }
@@ -84,6 +91,7 @@ class SubtitleSettingsService {
     await _prefs.remove(_colorBlueKey);
     await _prefs.remove(_backgroundKey);
     await _prefs.remove(_fontWeightKey);
+    await _prefs.remove(_fontFamilyKey);
     await _prefs.remove(_bottomPaddingKey);
     await _prefs.remove(_backgroundOpacityKey);
   }
@@ -97,6 +105,7 @@ class SubtitleSettingsService {
           color.toARGB32(), // Using new API to avoid deprecated value property
       'hasBackground': hasBackground,
       'fontWeight': fontWeight.value,
+      'fontFamily': fontFamily,
       'bottomPadding': bottomPadding,
       'backgroundOpacity': backgroundOpacity,
     };
@@ -120,6 +129,9 @@ class SubtitleSettingsService {
     if (settings.containsKey('fontWeight')) {
       await setFontWeight(_fontWeightFromValue(settings['fontWeight']));
     }
+    if (settings.containsKey('fontFamily')) {
+      await setFontFamily(settings['fontFamily']);
+    }
     if (settings.containsKey('bottomPadding')) {
       await setBottomPadding(settings['bottomPadding']);
     }
@@ -137,6 +149,7 @@ class SubtitleSettingsService {
           color.toARGB32(), // Using new API to avoid deprecated value property
       'subtitle_background': hasBackground,
       'subtitle_font_weight': fontWeight.value,
+      'subtitle_font_family': fontFamily,
       'subtitle_bottom_padding': bottomPadding,
       'subtitle_background_opacity': backgroundOpacity,
     };
@@ -162,6 +175,9 @@ class SubtitleSettingsService {
         _fontWeightFromValue(settings['subtitle_font_weight']),
       );
     }
+    if (settings.containsKey('subtitle_font_family')) {
+      await setFontFamily(settings['subtitle_font_family']);
+    }
     if (settings.containsKey('subtitle_bottom_padding')) {
       await setBottomPadding(settings['subtitle_bottom_padding']);
     }
@@ -172,7 +188,7 @@ class SubtitleSettingsService {
 
   // Validation methods for settings page
   static bool isValidFontSize(double size) {
-    return size >= 12.0 && size <= 48.0;
+    return size >= 12.0 && size <= 72.0;
   }
 
   static List<Color> getDefaultColorOptions() {

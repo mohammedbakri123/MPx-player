@@ -40,7 +40,8 @@ MPx Player is a **privacy-focused local video player** for Android and iOS that 
 - **Instant Search** across the entire indexed library
 
 ### 🎬 Advanced Video Playback
-- **Powered by media_kit** (mpv backend) with hardware acceleration
+- **Powered by flutter_mpv** (mpv backend) with hardware acceleration and deep tuning options
+- **Expert Engine Mode** for overriding underlying decoding, sync, and frame-dropping strategies
 - **Gesture controls:**
   - Horizontal swipe to seek
   - Vertical swipe (left) to adjust brightness
@@ -63,7 +64,9 @@ MPx Player is a **privacy-focused local video player** for Android and iOS that 
 - **Persistent data** across app restarts
 
 ### ⚙️ Settings & Customization
-- **Subtitle settings** (size, color, background)
+- **Expert player behavior** controls (auto-resume, keep-awake, gestures)
+- **Deep engine profiles** and manual mpv-parameter tuning
+- **Advanced Subtitle formatting** (size up to 72pt, font types, color, background)
 - **Modern Material 3** design
 - **Cache management** for thumbnails
 
@@ -96,7 +99,7 @@ MPx Player follows **Clean Architecture** principles:
                      ↓
 ┌─────────────────────────────────────────────┐
 │  Data Layer (Implementation)               │
-│  - MediaKitPlayerRepository                │
+│  - MpvPlayerRepository                     │
 │  - DirectoryBrowser (Datasource)           │
 │  - SQLite Database (Library, History, Favs)│
 │  - SharedPreferences (Settings)           │
@@ -148,8 +151,8 @@ MPx Player follows **Clean Architecture** principles:
 - **Dart** 3.0+ - Programming language
 
 ### Video Playback
-- **media_kit** - Modern video player with mpv backend
-- **media_kit_video** - Video rendering widget
+- **flutter_mpv** - Modern video player with mpv backend
+- **flutter_mpv_video** - Video rendering widget
 
 ### State Management
 - **provider** - Reactive state management

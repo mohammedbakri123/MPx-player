@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:ui' show Color, FontWeight;
 import 'package:flutter/foundation.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:flutter_mpv_video/flutter_mpv_video.dart';
 import 'package:mpx/features/player/controller/mixins/volume_manager_mixin.dart';
 import 'package:mpx/features/player/controller/mixins/brightness_manager_mixin.dart';
 import 'package:mpx/features/player/controller/mixins/gesture_coordinator_mixin.dart'
@@ -13,7 +13,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../history/services/history_service.dart';
 import '../../library/domain/entities/video_file.dart';
 import '../domain/repositories/player_repository.dart';
-import '../data/repositories/media_kit_player_repository.dart';
+import '../data/repositories/mpv_player_repository.dart';
 import 'player_state.dart';
 import 'mixins/gesture_handler_mixin.dart';
 import 'mixins/subtitle_manager_mixin.dart';
@@ -87,6 +87,7 @@ class PlayerController extends ChangeNotifier
   bool get subtitlesEnabled => _state.subtitlesEnabled;
   double get subtitleFontSize => _state.subtitleFontSize;
   Color get subtitleColor => _state.subtitleColor;
+  String get subtitleFontFamily => _state.subtitleFontFamily;
   bool get subtitleHasBackground => _state.subtitleHasBackground;
   FontWeight get subtitleFontWeight => _state.subtitleFontWeight;
   double get subtitleBottomPadding => _state.subtitleBottomPadding;
@@ -114,11 +115,11 @@ class PlayerController extends ChangeNotifier
   VideoFile? get currentVideo => _currentVideo;
 
   /// Returns the underlying Player instance for VideoController creation.
-  dynamic get player => (_repository as MediaKitPlayerRepository).player;
+  dynamic get player => (_repository as MpvPlayerRepository).player;
 
   /// Returns the VideoController for video rendering.
   late final VideoController videoController =
-      VideoController((_repository as MediaKitPlayerRepository).player);
+      VideoController((_repository as MpvPlayerRepository).player);
 
   /// Creates a PlayerController with dependency injection.
   PlayerController(this._repository) {
@@ -207,6 +208,22 @@ class PlayerController extends ChangeNotifier
     _state.repeatMode = AppSettingsService.presetRepeatMode;
     await _repository.setSpeed(_state.playbackSpeed);
     notifyListeners();
+  }
+
+  Future<void> applyVideoPerformanceProfile() async {
+    await (_repository as MpvPlayerRepository)
+        .applyVideoPerformanceConfiguration(
+      AppSettingsService.videoPerformanceConfiguration,
+    );
+  }
+
+  Future<void> syncKeepScreenAwakePreference() async {
+    if (AppSettingsService.keepScreenAwake) {
+      await WakelockPlus.enable();
+      return;
+    }
+
+    await WakelockPlus.disable();
   }
 
   // @override
@@ -391,7 +408,7 @@ class PlayerController extends ChangeNotifier
     _tapTimer?.cancel();
     _tapTimer = null;
 
-    WakelockPlus.disable();
+    unawaited(WakelockPlus.disable().catchError((_) {}));
     _repository.dispose();
     super.dispose();
   }

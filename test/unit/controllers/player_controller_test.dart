@@ -7,6 +7,7 @@ import 'package:mpx/features/player/controller/player_controller.dart';
 // import 'package:mpx/features/player/controller/player_state.dart';
 // import 'package:mpx/features/player/domain/repositories/player_repository.dart';
 import 'package:mpx/features/library/domain/entities/video_file.dart';
+import 'package:mpx/features/settings/services/app_settings_service.dart';
 import 'package:mpx/features/settings/services/subtitle_settings_service.dart';
 
 import '../../mocks/player_repository_mock.mocks.dart';
@@ -28,12 +29,38 @@ void main() {
         return true;
       },
     );
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMessageHandler(
+      'dev.flutter.pigeon.wakelock_plus_platform_interface.WakelockPlusApi.toggle',
+      (message) async =>
+          const StandardMethodCodec().encodeSuccessEnvelope(null),
+    );
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMessageHandler(
+      'dev.flutter.pigeon.wakelock_plus_platform_interface.WakelockPlusApi.isEnabled',
+      (message) async =>
+          const StandardMethodCodec().encodeSuccessEnvelope(<Object?>[false]),
+    );
   });
 
   tearDownAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       wakelockChannel,
+      null,
+    );
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMessageHandler(
+      'dev.flutter.pigeon.wakelock_plus_platform_interface.WakelockPlusApi.toggle',
+      null,
+    );
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMessageHandler(
+      'dev.flutter.pigeon.wakelock_plus_platform_interface.WakelockPlusApi.isEnabled',
       null,
     );
   });
@@ -62,12 +89,15 @@ void main() {
     late StreamController<Duration> durationController;
     late StreamController<bool> bufferingController;
     late StreamController<bool> completedController;
+    late StreamController<void> audioTracksController;
+    late StreamController<void> subtitleTracksController;
 
     setUp(() async {
       // Setup mock SharedPreferences
       SharedPreferences.setMockInitialValues({});
 
       // Initialize services
+      await AppSettingsService.init();
       await SubtitleSettingsService.init();
 
       // Setup stream controllers
@@ -76,6 +106,8 @@ void main() {
       durationController = StreamController<Duration>.broadcast();
       bufferingController = StreamController<bool>.broadcast();
       completedController = StreamController<bool>.broadcast();
+      audioTracksController = StreamController<void>.broadcast();
+      subtitleTracksController = StreamController<void>.broadcast();
 
       mockRepository = MockPlayerRepository();
 
@@ -90,8 +122,15 @@ void main() {
           .thenAnswer((_) => bufferingController.stream);
       when(mockRepository.completedStream)
           .thenAnswer((_) => completedController.stream);
+      when(mockRepository.audioTracksStream)
+          .thenAnswer((_) => audioTracksController.stream);
+      when(mockRepository.subtitleTracksStream)
+          .thenAnswer((_) => subtitleTracksController.stream);
+      when(mockRepository.getAudioTracks()).thenReturn(const []);
+      when(mockRepository.getSubtitleTracks()).thenReturn(const []);
 
       controller = PlayerController(mockRepository);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
     });
 
     tearDown(() async {
@@ -101,6 +140,8 @@ void main() {
       await durationController.close();
       await bufferingController.close();
       await completedController.close();
+      await audioTracksController.close();
+      await subtitleTracksController.close();
 
       // Disable wakelock before dispose to avoid platform channel issues
       // Then dispose

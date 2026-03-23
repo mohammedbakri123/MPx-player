@@ -6,10 +6,19 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mpx/main.dart';
+import 'package:mpx/features/favorites/services/favorites_service.dart';
+import 'package:mpx/features/settings/services/app_settings_service.dart';
+import 'package:mpx/features/settings/services/subtitle_settings_service.dart';
 
 void main() {
   testWidgets('App loads successfully', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await AppSettingsService.init();
+    await SubtitleSettingsService.init();
+    await FavoritesService.init();
+
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MPxPlayer());
 

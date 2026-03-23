@@ -9,6 +9,8 @@ import '../helpers/settings_helpers.dart';
 import '../widgets/settings_header.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/form_rows.dart';
+import '../widgets/advanced_playback_settings_section.dart';
+import '../widgets/expert_engine_settings_section.dart';
 import '../widgets/subtitle_settings_section.dart';
 
 /// Main settings screen with theme, presets, subtitle, and advanced options
@@ -63,87 +65,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         runSpacing: 12,
                         children: AppThemePreference.values
                             .map(
-                              (preference) => SettingsChoiceCard(
-                                icon: SettingsThemeHelpers.getIcon(preference),
-                                title:
-                                    SettingsThemeHelpers.getLabel(preference),
-                                subtitle: SettingsThemeHelpers.getDescription(
-                                    preference),
-                                isSelected:
-                                    settings.themePreference == preference,
-                                onTap: () =>
-                                    settings.setThemePreference(preference),
+                              (preference) => SizedBox(
+                                width: 170,
+                                child: SettingsChoiceCard(
+                                  icon:
+                                      SettingsThemeHelpers.getIcon(preference),
+                                  title:
+                                      SettingsThemeHelpers.getLabel(preference),
+                                  subtitle: SettingsThemeHelpers.getDescription(
+                                      preference),
+                                  isSelected:
+                                      settings.themePreference == preference,
+                                  onTap: () =>
+                                      settings.setThemePreference(preference),
+                                ),
                               ),
                             )
                             .toList(),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SettingsCard(
-                  accent: colors.secondary,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SettingsSectionTitle(
-                        eyebrow: 'Player Presets',
-                        title: 'Choose your playback vibe',
-                        description:
-                            'Each preset changes the default speed, framing, and repeat behavior for new videos.',
-                      ),
-                      const SizedBox(height: 18),
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: PlayerPreset.values
-                            .map(
-                              (preset) => SettingsChoiceCard(
-                                icon: SettingsPresetHelpers.getIcon(preset),
-                                title: SettingsPresetHelpers.getLabel(preset),
-                                subtitle: SettingsPresetHelpers.getDescription(
-                                    preset),
-                                isSelected: settings.playerPreset == preset,
-                                onTap: () => settings.setPlayerPreset(preset),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: colors.primary.withValues(
-                            alpha: theme.isDarkMode ? 0.14 : 0.1,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: colors.primary.withValues(
-                              alpha: theme.isDarkMode ? 0.18 : 0.12,
-                            ),
-                          ),
-                        ),
-                        child: Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            SettingsInlineStat(
-                              label: 'Speed',
-                              value: SettingsPresetHelpers.getSpeed(
-                                  settings.playerPreset),
-                            ),
-                            SettingsInlineStat(
-                              label: 'Aspect',
-                              value: SettingsPresetHelpers.getAspect(
-                                  settings.playerPreset),
-                            ),
-                            SettingsInlineStat(
-                              label: 'Repeat',
-                              value: SettingsPresetHelpers.getRepeat(
-                                  settings.playerPreset),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   ),
@@ -182,67 +120,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SettingsSectionTitle(
-                        eyebrow: 'Advanced',
-                        title: 'Power-user controls',
+                        eyebrow: 'Player Behavior',
+                        title: 'How the player should behave',
                         description:
-                            'Keep this off for a simpler app, or enable deeper playback behavior.',
+                            'Control resume, wake lock, and gesture behavior without touching engine internals.',
                       ),
                       const SizedBox(height: 10),
-                      SettingsSwitchRow(
-                        icon: Icons.tune_rounded,
-                        title: 'Enable advanced options',
-                        subtitle: 'Reveal extra playback and gesture controls',
-                        value: settings.advancedOptionsEnabled,
-                        onChanged: settings.setAdvancedOptionsEnabled,
+                      AdvancedPlaybackSettingsSection(settings: settings),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SettingsCard(
+                  accent: const Color(0xFF0F766E),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SettingsSectionTitle(
+                        eyebrow: 'Expert Engine',
+                        title: 'Real mpv tuning',
+                        description:
+                            'Change decoder, sync, scaling, cache, and seek internals. Expert mode overrides the simple engine profile.',
                       ),
-                      AnimatedCrossFade(
-                        duration: const Duration(milliseconds: 180),
-                        crossFadeState: settings.advancedOptionsEnabled
-                            ? CrossFadeState.showSecond
-                            : CrossFadeState.showFirst,
-                        firstChild: const Padding(
-                          padding: EdgeInsets.only(top: 6),
-                          child: Text(
-                            'Advanced options stay hidden until you turn them on.',
-                          ),
-                        ),
-                        secondChild: Column(
-                          children: [
-                            SettingsSwitchRow(
-                              icon: Icons.history_toggle_off,
-                              title: 'Auto resume playback',
-                              subtitle:
-                                  'Jump back to the saved position when you reopen a video',
-                              value: settings.autoResumePlayback,
-                              onChanged: settings.setAutoResumePlayback,
-                            ),
-                            SettingsSwitchRow(
-                              icon: Icons.screen_lock_portrait_outlined,
-                              title: 'Keep screen awake',
-                              subtitle:
-                                  'Prevent the display from sleeping while a video is open',
-                              value: settings.keepScreenAwake,
-                              onChanged: settings.setKeepScreenAwake,
-                            ),
-                            SettingsSwitchRow(
-                              icon: Icons.swipe_vertical_outlined,
-                              title: 'Swipe brightness and volume',
-                              subtitle:
-                                  'Use left and right edge swipes for quick adjustments',
-                              value: settings.swipeGestures,
-                              onChanged: settings.setSwipeGestures,
-                            ),
-                            SettingsSwitchRow(
-                              icon: Icons.speed,
-                              title: 'Hold for 2x speed',
-                              subtitle:
-                                  'Temporarily boost playback while pressing on the video',
-                              value: settings.holdToBoost,
-                              onChanged: settings.setHoldToBoost,
-                            ),
-                          ],
-                        ),
-                      ),
+                      const SizedBox(height: 10),
+                      ExpertEngineSettingsSection(settings: settings),
                     ],
                   ),
                 ),
