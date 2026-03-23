@@ -187,20 +187,17 @@ class SettingsSheet extends StatelessWidget {
                   Consumer<AppSettingsController>(
                     builder: (context, settings, _) {
                       return _SettingsSection(
-                        title: 'Advanced',
+                        title: 'Player Behavior',
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           child: AdvancedPlaybackSettingsSection(
                             settings: settings,
-                            compact: true,
                             onAdvancedOptionsChanged: (_) =>
                                 controller.syncKeepScreenAwakePreference(),
-                            onPerformancePresetChanged: (_) =>
-                                controller.applyVideoPerformanceProfile(),
                             onKeepScreenAwakeChanged: (_) =>
                                 controller.syncKeepScreenAwakePreference(),
                             footerText:
-                                'Engine profile updates are pushed to the active player right away.',
+                                'Engine tuning lives on the main Settings screen so it does not conflict with playback presets.',
                           ),
                         ),
                       );

@@ -10,6 +10,7 @@ import '../widgets/settings_header.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/form_rows.dart';
 import '../widgets/advanced_playback_settings_section.dart';
+import '../widgets/expert_engine_settings_section.dart';
 import '../widgets/subtitle_settings_section.dart';
 
 /// Main settings screen with theme, presets, subtitle, and advanced options
@@ -183,13 +184,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SettingsSectionTitle(
-                        eyebrow: 'Advanced',
-                        title: 'Playback engine and gestures',
+                        eyebrow: 'Player Behavior',
+                        title: 'How the player should behave',
                         description:
-                            'Tune MPx for faster seeking, smoother motion, or safer compatibility.',
+                            'Control resume, wake lock, and gesture behavior without touching engine internals.',
                       ),
                       const SizedBox(height: 10),
                       AdvancedPlaybackSettingsSection(settings: settings),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SettingsCard(
+                  accent: const Color(0xFF0F766E),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SettingsSectionTitle(
+                        eyebrow: 'Expert Engine',
+                        title: 'Real mpv tuning',
+                        description:
+                            'Change decoder, sync, scaling, cache, and seek internals. Expert mode overrides the simple engine profile.',
+                      ),
+                      const SizedBox(height: 10),
+                      ExpertEngineSettingsSection(settings: settings),
                     ],
                   ),
                 ),
