@@ -30,12 +30,23 @@ android {
         versionName = flutter.versionName
     }
 
+    packagingOptions {
+        jniLibs {
+            excludes += setOf(
+                "**/libvlc.so",
+                "**/libvlcjni.so",
+                "**/libVLCAll.so",
+                "**/libVLC++.so"
+            )
+        }
+    }
+
     splits {
         abi {
             isEnable = true
             reset()
-            include("arm64-v8a", "armeabi-v7a", "x86_64")
-            isUniversalApk = false
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
         }
     }
 
