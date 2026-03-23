@@ -1,400 +1,219 @@
-# 🏗️ MPx Player - Architecture Overview
+# 🏗️ MPx Player - Architecture & Technical Design Document
 
-This document provides a comprehensive overview of the MPx Player architecture, data flows, and design patterns.
-
-**Last Updated:** March 9, 2026  
-**Status:** Production-ready foundation with persistent indexing and comprehensive testing
+This document serves as the comprehensive, authoritative source for understanding the architecture, design patterns, data flows, and technical decisions behind MPx Player. It is intended for core maintainers and contributors.
 
 ---
 
-## 📐 Architecture Overview
+## 🧭 1. Architectural Philosophy
 
-MPx Player follows **Clean Architecture** with **Feature-Based Organization**:
+MPx Player is built upon a strict **Feature-First Clean Architecture**. This approach ensures that the app is scalable, highly testable, and maintainable. 
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     PRESENTATION LAYER                          │
-│  (UI Components - Screens and Widgets)                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────┐ │
-│  │  Home Screen     │  │  Player Screen   │  │  Favorites   │ │
-│  │                  │  │                  │  │  Screen      │ │
-│  │  - Folder list   │  │  - Video         │  │  - Fav list  │ │
-│  │  - Grid/List     │  │    playback      │  │  - Toggle    │ │
-│  │  - Pull refresh  │  │  - Gestures      │  │  - Play      │ │
-│  └──────────────────┘  └──────────────────┘  └──────────────┘ │
-│           ↓                      ↓                    ↓        │
-│     Consumer<>             Consumer<>           Consumer<>    │
-│     context.watch()        context.watch()      context.watch()│
-└─────────────────────────────────────────────────────────────────┘
-                                ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                     CONTROLLER LAYER                            │
-│  (Business Logic - ChangeNotifier implementations)             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌────────────────────────┐  ┌─────────────────────────────────┐  │
-│  │ FileBrowserController  │  │ PlayerController                │  │
-│  │                        │  │                                 │  │
-│  │ - Load directories     │  │ extends ChangeNotifier          │  │
-│  │ - Refresh storage      │  │ with GestureHandlerMixin,       │  │
-│  │ - Lazy loading         │  │      SubtitleManagerMixin,      │  │
-│  │ - View mode            │  │      PlaybackControlMixin       │  │
-│  │ - Cache management     │  │                                 │  │
-│  └────────────────────────┘  │ - Play/pause/seek               │  │
-│                              │ - Speed control                 │  │
-│                              │ - Volume/brightness             │  │
-│                              │ - Position tracking             │  │
-│                              │ - Auto-save history             │  │
-│                              └─────────────────────────────────┘  │
-│                                                                 │
-│  Note: Favorites uses Service pattern (static methods)          │
-│        No controller needed - simple CRUD operations            │
-└─────────────────────────────────────────────────────────────────┘
-                                ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    DOMAIN LAYER                                 │
-│  (Entity Models - Pure Dart, no dependencies)                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────────┐         ┌──────────────────┐            │
-│  │  Repository      │         │  Entity Models   │            │
-│  │  Interfaces      │         │                  │            │
-│  │                  │         │ - VideoFile      │            │
-│  │ - PlayerRepo     │         │ - VideoFolder    │            │
-│  │   (abstract)     │         │                  │            │
-│  └──────────────────┘         └──────────────────┘            │
-└─────────────────────────────────────────────────────────────────┘
-                                ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                      DATA LAYER                                 │
-│  (Implementations - External dependencies)                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────┐  │
-│  │ MediaKitPlayer   │  │ DirectoryBrowser │  │ Services     │  │
-│  │ Repository       │  │                  │  │              │  │
-│  │                  │  │ - Scan storage   │  │ - Favorites  │  │
-│  │ - flutter_mpv    │  │ - Multi-cache    │  │   Service    │  │
-│  │ - Player control │  │ - Real-time      │  │ - History    │  │
-│  │ - Streams        │  │   watching       │  │   Service    │  │
-│  └──────────────────┘  └──────────────────┘  └──────────────┘  │
-│                                                                 │
-│  Storage:                                                      │
-│  ┌────────────────────┐  ┌────────────────────┐                │
-│  │ SQLite (sqflite)   │  │ SharedPreferences  │                │
-│  │ - Favorites table  │  │ - Settings         │                │
-│  │ - Watch history    │  │ - Subtitle prefs   │                │
-│  │ - Library index    │  │                    │                │
-│  └────────────────────┘  └────────────────────┘                │
-└─────────────────────────────────────────────────────────────────┘
+### Core Tenets:
+1. **Decoupled Layers:** UI code knows nothing about SQLite or video engines. Data code knows nothing about Flutter Widgets.
+2. **Feature Encapsulation:** Code is grouped by what it *does* (e.g., `player`, `library`), not by what it *is* (e.g., all controllers in one folder).
+3. **Offline-First Resilience:** The app assumes no network connectivity exists. All operations fail gracefully or rely on local caching.
+4. **Reactive State:** The UI is a pure function of state, driven by streams and `ChangeNotifier`s.
+
+---
+
+## 📂 2. Directory Structure & Feature Modules
+
+The codebase is housed entirely in the `lib/` directory.
+
+```text
+lib/
+├── core/                               # App-wide shared infrastructure
+│   ├── database/                       # SQLite config, migrations, DB helper
+│   ├── errors/                         # Failure classes, Exceptions
+│   ├── services/                       # Singleton services (Logger, Permissions)
+│   ├── theme/                          # Colors, Typography, AppThemeTokens
+│   ├── utils/                          # Constants, Extensions, formatters
+│   └── widgets/                        # Dumb, reusable UI components
+│
+├── features/                           # Independent feature modules
+│   ├── library/                        # Core file browsing and indexing
+│   │   ├── controller/                 # FileBrowserController
+│   │   ├── data/                       # DirectoryBrowser, LibraryRepositoryImpl
+│   │   ├── domain/                     # Entities (VideoFile, VideoFolder)
+│   │   ├── presentation/               # Screens (Home, Search), UI lists
+│   │   └── services/                   # LibraryIndexService (DB interaction)
+│   │
+│   ├── player/                         # Video playback and controls
+│   │   ├── controller/                 # PlayerController, State Mixins
+│   │   ├── data/                       # MpvPlayerRepository (flutter_mpv wrapper)
+│   │   ├── domain/                     # PlayerRepository Interface
+│   │   └── presentation/               # VideoPlayerScreen, Gestures, Overlays
+│   │
+│   ├── favorites/                      # Curated favorites management
+│   ├── history/                        # Watch history and resume playback
+│   └── settings/                       # User preferences and app config
+│
+└── main.dart                           # App entry point, DI setup
 ```
 
 ---
 
-## 🔄 Data Flow: Complete Journey
+## 🧅 3. The Clean Architecture Layers
 
-### Scenario 1: App Launch to Video Display
+Each feature module is divided into four distinct layers.
 
-```
-1. User opens app
-   ↓
-2. main.dart → MultiProvider initializes FileBrowserController
-   ↓
-3. HomeScreen builds → Calls controller.initialize()
-   ↓
-4. FileBrowserController.loadDirectory(rootPath)
-   ↓
-5. LibraryIndexService.ensureIndexed(rootPath)
-   ├─ Check memory cache (_snapshots map)
-   ├─ Check SQLite index (library_index_metadata table)
-   └─ Full scan (recursively list directories, only if needed)
-       ↓
-       _buildIndex(rootPath)
-       └─ Uses Directory.list()
-           └─ Groups videos by folder and persists to SQLite
-               ↓
-6. Returns LibraryIndexSnapshot
-   ↓
-7. FileBrowserController updates _items with filtered folders/videos
-   ↓
-8. notifyListeners() called
-   ↓
-9. HomeScreen rebuilds with Consumer<FileBrowserController>
-   ↓
-10. UI displays folders in ListView/GridView
-```
+### 3.1 Domain Layer (The Core)
+This is the innermost layer. It has **no dependencies** on Flutter or external packages.
+- **Entities:** Pure Dart classes representing business objects.
+  ```dart
+  class VideoFile extends FileItem {
+    final String path;
+    final Duration duration;
+    // ...
+  }
+  ```
+- **Repositories (Interfaces):** Abstract classes defining the contract for data operations.
+  ```dart
+  abstract class PlayerRepository {
+    Future<void> load(String path);
+    Stream<Duration> get positionStream;
+  }
+  ```
 
-### Scenario 2: User Opens Folder
+### 3.2 Data Layer (Implementation)
+This layer implements Domain interfaces and interacts with APIs, engines, and databases.
+- **Data Sources:** Direct interaction with `sqflite`, `shared_preferences`, or `Directory.list()`.
+- **Repositories (Impl):** Implements the Domain repository interfaces, maps raw data to Domain entities, and handles low-level exceptions.
 
-```
-1. User taps folder
-   ↓
-2. FileBrowserController.navigateToFolder(folder)
-   ↓
-3. loadDirectory(folder.path)
-   ↓
-4. DirectoryBrowser.listDirectory(path)
-   ├─ Cache hit → Return immediately
-   └─ Cache miss → Call Directory.list()
-       ↓
-       Return List<FileItem>
-       ↓
-5. Cache results in DirectoryBrowser._cache
-   ↓
-6. Filter empty folders if requested using LibraryIndexService
-   ↓
-7. notifyListeners()
-   ↓
-8. UI displays items in the folder
-```
+### 3.3 Controller Layer (Business Logic)
+This layer bridges Domain and Presentation.
+- Uses `ChangeNotifier` to hold application state.
+- Executes business rules, calls Repository methods, and updates state.
+- **Example:** `PlayerController` starts the video, listens to the position stream, and updates `PlayerState.position`, calling `notifyListeners()`.
 
-### Scenario 3: Video Playback
-
-```
-1. User taps video
-   ↓
-2. Navigator.push(VideoPlayerScreen(video: video))
-   ↓
-3. VideoPlayerScreen creates ChangeNotifierProvider
-   └─ Creates PlayerController(MpvPlayerRepository())
-       ↓
-4. PlayerController constructor:
-   ├─ Initializes mixins
-   ├─ Calls initializeSubtitles()
-   └─ Sets up stream listeners
-       ↓
-5. controller.loadVideoFile(video) called
-   ├─ Sets _currentVideo
-   ├─ Calls repository.load(video.path)
-   ├─ Applies subtitle settings
-   └─ Starts auto-save timer
-       ↓
-6. MpvPlayerRepository loads video
-   └─ flutter_mpv Player opens video
-       ↓
-7. Streams emit updates:
-   ├─ positionStream → Updates _state.position
-   ├─ durationStream → Updates _state.duration
-   ├─ playingStream → Updates _state.isPlaying
-   └─ bufferingStream → Updates _state.isBuffering
-       ↓
-8. Each stream update calls notifyListeners()
-   ↓
-9. VideoPlayerScreen rebuilds
-   └─ Shows updated position, controls, etc.
-       ↓
-10. User interacts:
-    ├─ Tap → togglePlayPause()
-    ├─ Horizontal drag → seek
-    ├─ Vertical drag → volume/brightness
-    └─ Long press → 2x speed
-       ↓
-11. Every 30 seconds (if playing):
-    └─ Auto-save position to HistoryService (SQLite)
-       ↓
-12. User exits → PlayerController.dispose()
-    ├─ Cancel auto-save timer
-    ├─ Force save final position
-    ├─ Disable wakelock
-    └─ Dispose repository
-```
+### 3.4 Presentation Layer (UI)
+Flutter Widgets and Screens.
+- Reacts to state changes via `provider`.
+- Dispatches actions to controllers.
+- Contains absolutely zero business logic or data formatting.
 
 ---
 
-## 📦 Feature Organization
+## 🗄️ 4. Data Storage & Schema Design
 
-Each feature is self-contained with its own:
-- **Controller** - Business logic and state (ChangeNotifier)
-- **Data** - Repositories and data sources
-- **Domain** - Entity models and repository interfaces
-- **Presentation** - Screens and widgets
-- **Services** - Feature-specific utilities
+MPx Player uses a robust multi-tier caching system backed by `sqflite` to ensure instantaneous library loads, even with thousands of videos.
 
-### Feature: Library
+### SQLite Database Schema (`app_database.db`)
 
-```
-lib/features/library/
-├── controller/
-│   └── file_browser_controller.dart  # Main controller
-├── data/
-│   └── datasources/
-│       └── directory_browser.dart    # Directory listing & caching
-├── domain/
-│   └── entities/
-│       ├── file_item.dart            # Generic file/folder model
-│       ├── video_file.dart           # Video model
-│       └── video_folder.dart         # Folder model
-├── presentation/
-│   ├── screens/
-│   │   ├── home_screen.dart
-│   │   └── search_screen.dart
-│   └── widgets/
-│       ├── file_browser/             # File browser UI
-│       ├── video/                    # Video list/thumbnail widgets
-│       └── ...
-└── services/
-    └── library_index_service.dart    # Persistent indexing logic
-```
+**1. `videos`**
+Caches individual video metadata.
+- `id` (INTEGER PRIMARY KEY)
+- `path` (TEXT UNIQUE) - Absolute file path
+- `folder_path` (TEXT) - Parent directory
+- `title` (TEXT)
+- `duration` (INTEGER) - In milliseconds
+- `size` (INTEGER) - In bytes
+- `resolution` (TEXT)
+- `last_modified` (INTEGER)
 
-**Key Responsibilities:**
-- Scan device storage for videos
-- Persist library index in SQLite
-- Provide instant search across all indexed videos
-- Manage view mode (list/grid)
-- Filter empty folders (those without videos)
-- Handle pull-to-refresh (invalidates index and rescans)
+**2. `folders`**
+Caches directory metadata for instant folder listing.
+- `path` (TEXT PRIMARY KEY)
+- `name` (TEXT)
+- `video_count` (INTEGER)
 
-### Feature: Player
+**3. `watch_history`**
+Tracks playback progress for the "Resume" feature.
+- `video_path` (TEXT PRIMARY KEY)
+- `position` (INTEGER) - Last played millisecond
+- `last_played_at` (INTEGER) - Timestamp
 
-```
-lib/features/player/
-├── controller/
-│   ├── player_controller.dart        # Main controller
-│   ├── player_state.dart             # State holder
-│   └── mixins/                       # Mixins for granular logic
-├── data/
-│   └── repositories/
-│       └── mpv_player_repository.dart
-├── domain/
-│   └── repositories/
-│       └── player_repository.dart    # Abstract interface
-├── presentation/
-│   ├── screens/
-│   │   └── video_player_screen.dart
-│   └── widgets/                      # Player UI components
-└── services/
-    └── ...
-```
+**4. `favorites`**
+- `video_path` (TEXT PRIMARY KEY)
+- `added_at` (INTEGER)
 
-### Feature: Favorites
+**5. `library_metadata`**
+Tracks the state of the indexing engine.
+- `id` (INTEGER PRIMARY KEY)
+- `last_scan_timestamp` (INTEGER)
+- `is_indexing` (INTEGER boolean)
 
-Uses **Service Pattern** (static methods) with SQLite persistence:
-
-```
-lib/features/favorites/
-├── services/
-│   └── favorites_service.dart        # Static methods
-├── data/
-│   └── repositories/
-│       └── favorites_repository.dart
-└── presentation/
-    └── screens/
-        └── favorites_screen.dart
-```
+### Multi-Tier Caching Flow
+When `FileBrowserController` requests data:
+1. **L1 Cache (Memory):** Checks `LibraryIndexService._snapshots` (Dart `Map`). Returns `~0ms`.
+2. **L2 Cache (SQLite):** Queries the `videos` and `folders` tables. Returns `~50-150ms`.
+3. **L3 Cache (Disk Scan):** Uses `Directory.list()` to recursively scan storage, parse metadata, populate SQLite, and update Memory. Returns `~1-5s`.
 
 ---
 
-## 🗄️ Data Persistence Architecture
+## 🎬 5. Video Engine Architecture (`flutter_mpv`)
 
-### Storage Strategy
+We use `flutter_mpv` (a wrapper for `libmpv`) for unparalleled format support and hardware acceleration.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    DATA PERSISTENCE                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌──────────────────────┐  ┌──────────────────────┐        │
-│  │ SQLite (sqflite)     │  │ SharedPreferences    │        │
-│  │                      │  │                      │        │
-│  │ - Favorites table    │  │ - Settings           │        │
-│  │ - Watch history      │  │ - Subtitle prefs     │        │
-│  │ - Library index      │  │                      │        │
-│  │                      │  │                      │        │
-│  │ Tables:              │  │ Keys:                │        │
-│  │ - favorites          │  │ - subtitle_enabled   │        │
-│  │ - watch_history      │  │ - subtitle_font_size │        │
-│  │ - videos             │  │ - ...                │        │
-│  │ - folders            │  │                      │        │
-│  │ - library_metadata   │  │                      │        │
-│  └──────────────────────┘  └──────────────────────┘        │
-│                                                             │
-│  Access Pattern:                                           │
-│  FavoritesService → SQLite → Device storage                │
-│  HistoryService → SQLite → Device storage                  │
-│  LibraryIndexService → SQLite → Device storage             │
-└─────────────────────────────────────────────────────────────┘
+### Player Initialization Flow
+```mermaid
+sequenceDiagram
+    participant UI as VideoPlayerScreen
+    participant Ctrl as PlayerController
+    participant Repo as MpvPlayerRepository
+    participant Engine as MPV Engine
+
+    UI->>Ctrl: loadVideo(path)
+    Ctrl->>Repo: load(path)
+    Repo->>Engine: mpv_command("loadfile", path)
+    Engine-->>Repo: (Async Streams: position, duration, state)
+    Repo-->>Ctrl: yield streams
+    Ctrl-->>UI: notifyListeners() (60fps UI updates)
 ```
 
-### Multi-Tier Caching (Library Indexing)
-
-```
-LibraryIndexService.ensureIndexed()
-    ↓
-┌──────────────────────┐
-│ Tier 1: Memory Cache │  (Instant)
-│ _snapshots map       │
-│ Speed: ~0ms          │
-└──────────────────────┘
-    ↓ (if miss)
-┌──────────────────────┐
-│ Tier 2: SQLite Index │  (Fast)
-│ videos/folders tables│
-│ Speed: ~100-300ms    │
-└──────────────────────┘
-    ↓ (if miss)
-┌──────────────────────┐
-│ Tier 3: Disk Scan    │  (Slower)
-│ Directory.list()     │
-│ Speed: ~1-5 seconds  │
-│ (Only once per root) │
-└──────────────────────┘
-```
+### Stream Management
+The `MpvPlayerRepository` abstracts MPV's complex event loop into native Dart `Stream`s. `PlayerController` listens to these streams. To prevent memory leaks, **all stream subscriptions are explicitly canceled in `PlayerController.dispose()`**, which is triggered when `VideoPlayerScreen` is popped.
 
 ---
 
-## 🔄 State Management Pattern
+## 🔄 6. State Management Deep Dive
 
-### Provider Hierarchy
+We exclusively use the `provider` package (`ChangeNotifierProvider`, `Consumer`, `Selector`).
 
-```
-main.dart
-    ↓
-MultiProvider (App-Level, Persistent)
-    ├─ FileBrowserController()
-    │   └─ Singleton-like: Created once, persists for app lifetime
-    │
-    └─ ...
-
-Navigation
-    ↓
-
-Screen-Level Providers (Created/Disposed per screen)
-    ↓
-VideoPlayerScreen
-    ↓
-ChangeNotifierProvider
-    └─ PlayerController(MpvPlayerRepository())
+### Dependency Injection (DI)
+`main.dart` configures `MultiProvider` for global dependencies:
+```dart
+MultiProvider(
+  providers: [
+    ChangeNotifierProvider(create: (_) => SettingsController()),
+    ChangeNotifierProvider(create: (_) => FileBrowserController()),
+  ],
+  child: const MPxApp(),
+)
 ```
 
----
-
-## 🧪 Testing Architecture
-
-### Current Status
-
-✅ **FileBrowserController Tests**: Passing (Renamed from LibraryController)
-✅ **PlayerController Tests**: Passing
-✅ **LibraryIndexService**: New logic covered by existing patterns
-
-🎯 **Target**: Maintain high test coverage while evolving the indexing system.
-
----
-
-## 🚀 Offline-First Design
-
-This app is built with **privacy and offline operation** as core principles:
-
-- ✅ **No network requests** - Everything works offline
-- ✅ **Local storage only** - SQLite + SharedPreferences
-- ✅ **No cloud dependencies** - No Firebase, no analytics
-- ✅ **Open source** - Transparent and auditable
+### Mixin-Based Controllers
+To prevent massive "God Classes", complex controllers use Dart Mixins.
+`PlayerController` is defined as:
+```dart
+class PlayerController extends ChangeNotifier 
+    with PlaybackControlMixin, 
+         SubtitleManagerMixin, 
+         GestureHandlerMixin {
+    
+    final PlayerRepository _repository;
+    // Core state holds the current video, buffering status, etc.
+}
+```
+This isolates subtitle logic to `SubtitleManagerMixin`, making testing and maintenance drastically easier.
 
 ---
 
-**Architecture Questions?** Check the [APP_UNDERSTANDING_GUIDE.md](APP_UNDERSTANDING_GUIDE.md) for detailed explanations of each component.
+## 🚦 7. Concurrency & Performance Optimization
+
+- **Isolates:** Heavy JSON parsing or initial massive directory recursive scans (`Directory.list(recursive: true)`) are offloaded to Dart Isolates using `compute()` to prevent UI thread frame drops.
+- **Widget Granularity:** Instead of wrapping a whole screen in `Consumer<PlayerController>`, we wrap *only* the specific widgets that change.
+  *Example:* Only the `ProgressBar` widget is wrapped in a `Consumer` to react to the high-frequency `positionStream`, leaving the rest of the player UI completely static.
+- **Thumbnail Caching:** Thumbnails are generated asynchronously and cached to disk, with paths saved in the `videos` SQLite table.
 
 ---
 
-*Last updated: March 9, 2026*
+## 🐛 8. Error Handling & App Stability
+
+- **Data Layer:** Catches `PlatformException`, `FileSystemException`, or `DatabaseException`.
+- **Domain Layer:** Converts these into strongly-typed `Failure` objects (e.g., `StoragePermissionFailure`, `EngineCrashFailure`).
+- **Controller Layer:** Receives the `Failure`, updates the state (`_state = ErrorState(msg)`), and notifies the UI.
+- **Presentation Layer:** Displays elegant error overlays or SnackBars.
+
+---
+*End of Architecture Document.*

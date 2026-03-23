@@ -1,123 +1,138 @@
-# 🎬 MPx Player
+<div align="center">
+  <img src="screenshots/1774286272927.jpg" alt="MPx Player Banner" width="200" style="border-radius: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+  
+  <br />
+  <br />
 
-A modern, open-source video player app built with Flutter. Features clean architecture, offline-first design, and professional code quality. **No tracking, no analytics, completely offline.**
+  # 🎬 MPx Player
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.0%2B-blue.svg)](https://flutter.dev/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  **The Ultimate Privacy-Focused Local Video Player for Android & iOS**
+  
+  <p align="center">
+    <a href="https://flutter.dev/"><img src="https://img.shields.io/badge/Flutter-3.0%2B-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter"></a>
+    <a href="https://dart.dev/"><img src="https://img.shields.io/badge/Dart-3.0%2B-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-success?style=for-the-badge" alt="License"></a>
+    <img src="https://img.shields.io/badge/100%25-Offline-FF3E00?style=for-the-badge" alt="100% Offline">
+  </p>
 
----
+  <p align="center">
+    <b>Clean Architecture • Offline-First Design • Professional Code Quality • Zero Tracking • Zero Analytics</b>
+  </p>
 
-## 📱 What is MPx Player?
-
-MPx Player is a **privacy-focused local video player** for Android and iOS that lets you:
-
-- 📁 **Browse** your device storage and find all video files automatically
-- ⚡ **Lightning fast** scanning with persistent SQLite indexing
-- ⭐ **Mark videos as favorites** with persistent storage
-- ▶️ **Play videos** with advanced playback controls and gestures
-- 🎯 **Resume videos** where you left off (watch history)
-- 🌓 **Modern Material 3 UI** with smooth animations
-- 🔒 **100% Offline** - no internet, no tracking, no analytics
-
-**Built with production-ready practices:**
-- ✅ Clean Architecture (Presentation → Controller → Repository → Data)
-- ✅ Provider-based state management
-- ✅ Repository pattern for data abstraction
-- ✅ Comprehensive error handling
-- ✅ Data persistence (SQLite + SharedPreferences)
-- ✅ **Zero Firebase / Zero Analytics / 100% Offline**
+</div>
 
 ---
 
-## ✨ Features
+## 📱 Screenshots Showcase
 
-### 🏠 Library Management
-- **Persistent library indexing** in SQLite (only scans once, instant subsequently)
-- **Automatic filtering** of empty folders (those without videos)
-- **Folder-based organization** (Camera, Downloads, Movies, etc.)
-- **List/Grid view toggle** for browsing
-- **Pull-to-refresh** to rescan storage and rebuild index
-- **Instant Search** across the entire indexed library
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><img src="screenshots/1774286272927.jpg" width="200px" alt="Screenshot 1"/></td>
+      <td align="center"><img src="screenshots/1774286272936.jpg" width="200px" alt="Screenshot 2"/></td>
+      <td align="center"><img src="screenshots/1774286272944.jpg" width="200px" alt="Screenshot 3"/></td>
+      <td align="center"><img src="screenshots/1774286272958.jpg" width="200px" alt="Screenshot 4"/></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="screenshots/1774286272971.jpg" width="200px" alt="Screenshot 5"/></td>
+      <td align="center"><img src="screenshots/1774286272983.jpg" width="200px" alt="Screenshot 6"/></td>
+      <td align="center"><img src="screenshots/1774286272994.jpg" width="200px" alt="Screenshot 7"/></td>
+      <td align="center"><img src="screenshots/1774286273005.jpg" width="200px" alt="Screenshot 8"/></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="screenshots/1774286273016.jpg" width="200px" alt="Screenshot 9"/></td>
+      <td align="center"><img src="screenshots/1774286273027.jpg" width="200px" alt="Screenshot 10"/></td>
+      <td align="center"><img src="screenshots/1774286273036.jpg" width="200px" alt="Screenshot 11"/></td>
+      <td align="center"><img src="screenshots/1774286273045.jpg" width="200px" alt="Screenshot 12"/></td>
+    </tr>
+    <tr>
+      <td align="center" colspan="2"><img src="screenshots/1774286273053.jpg" width="200px" alt="Screenshot 13"/></td>
+      <td align="center" colspan="2"><img src="screenshots/1774286273063.jpg" width="200px" alt="Screenshot 14"/></td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## 🌟 Why MPx Player?
+
+MPx Player is not just another video player. It's built from the ground up prioritizing **your privacy** and delivering a **lightning-fast experience**. 
+
+We guarantee:
+- 🚫 **No Analytics** 
+- 🚫 **No Tracking**
+- 🚫 **No Internet Required**
+- 🚫 **No Ads**
+
+---
+
+## ✨ Power-Packed Features
+
+### 🏠 Intelligent Library Management
+> Experience your media library without the wait.
+- ⚡ **Instant Loading**: Persistent SQLite indexing means it scans once and loads instantly forever.
+- 🧹 **Smart Filtering**: Automatically hides empty folders.
+- 🗂️ **Folder-Based Organization**: Easily browse `Camera`, `Downloads`, `Movies`, and more.
+- 🔍 **Instant Search**: Find any video across your entire indexed library in milliseconds.
+- 🔄 **Pull-to-Refresh**: Seamlessly rescan storage and rebuild your index on demand.
 
 ### 🎬 Advanced Video Playback
-- **Powered by flutter_mpv** (mpv backend) with hardware acceleration and deep tuning options
-- **Expert Engine Mode** for overriding underlying decoding, sync, and frame-dropping strategies
-- **Gesture controls:**
-  - Horizontal swipe to seek
-  - Vertical swipe (left) to adjust brightness
-  - Vertical swipe (right) to adjust volume
-  - Long press for 2x speed
-  - Double tap zones for seeking/pause
-- **Playback controls:**
-  - Play/pause
-  - Seek bar with live position tracking
-  - Speed control (0.5x to 2x)
-  - Fullscreen mode
-- **Subtitle support** with customization (size, color, background)
-- **Auto-hiding controls** for immersive viewing
-- **Watch history** - tracks viewing progress automatically
+> Powered by the robust `flutter_mpv` engine for uncompromising quality.
+- 🚀 **Hardware Acceleration**: Deep tuning options for flawless playback.
+- 🛠️ **Expert Engine Mode**: Override underlying decoding, sync, and frame-dropping strategies.
+- 🤌 **Intuitive Gestures**:
+  - ↔️ *Horizontal Swipe*: Seek forward/backward
+  - ↕️ *Left Vertical Swipe*: Adjust Brightness
+  - ↕️ *Right Vertical Swipe*: Adjust Volume
+  - 👆 *Long Press*: 2x Speed playback
+  - ✌️ *Double Tap*: Quick seeking & pause/play
+- 📝 **Advanced Subtitles**: Full customization (size up to 72pt, colors, font types, background).
+- 🕒 **Watch History**: Automatically remembers where you left off.
 
-### ⭐ Favorites & History
-- **Add videos to favorites** with one tap (persisted in SQLite)
-- **Watch history** tracks your viewing progress automatically
-- **Continue watching** section for quick access
-- **Persistent data** across app restarts
-
-### ⚙️ Settings & Customization
-- **Expert player behavior** controls (auto-resume, keep-awake, gestures)
-- **Deep engine profiles** and manual mpv-parameter tuning
-- **Advanced Subtitle formatting** (size up to 72pt, font types, color, background)
-- **Modern Material 3** design
-- **Cache management** for thumbnails
+### ⭐ Favorites & Personalization
+- ❤️ **One-Tap Favorites**: Curate your favorite videos with persistent SQLite storage.
+- 🎨 **Modern Material 3**: Beautiful, fluid, and responsive design with smooth animations.
+- ⚙️ **Deep Customization**: Control auto-resume, keep-awake behavior, cache management, and manual `mpv` parameters.
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Clean & Scalable Architecture
 
-MPx Player follows **Clean Architecture** principles:
+MPx Player is engineered with **Clean Architecture** principles and **Feature-Based** organization, making the codebase highly maintainable and scalable.
 
-```
-┌─────────────────────────────────────────────┐
-│  Presentation Layer (UI + Widgets)         │
-│  - Screens, Widgets                        │
-│  - Uses context.watch<Controller>()        │
-└─────────────────────────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────┐
-│  Controller Layer (Business Logic)         │
-│  - FileBrowserController                   │
-│  - PlayerController                        │
-│  - ChangeNotifier for reactive updates    │
-└─────────────────────────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────┐
-│  Domain Layer (Interfaces)                 │
-│  - Repository interfaces                   │
-│  - Entity models                           │
-│  - Zero external dependencies              │
-└─────────────────────────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────┐
-│  Data Layer (Implementation)               │
-│  - MpvPlayerRepository                     │
-│  - DirectoryBrowser (Datasource)           │
-│  - SQLite Database (Library, History, Favs)│
-│  - SharedPreferences (Settings)           │
-└─────────────────────────────────────────────┘
+```mermaid
+graph TD;
+    Presentation[Presentation Layer] --> Controller[Controller Layer];
+    Controller --> Domain[Domain Layer];
+    Domain --> Data[Data Layer];
 ```
 
-📚 **[Read full architecture documentation →](ARCHITECTURE.md)**
-📚 **[Read app understanding guide →](APP_UNDERSTANDING_GUIDE.md)**
+Explore our deep-dives:
+- 📐 **[Architecture Overview](ARCHITECTURE.md)**
+- 🤝 **[Contributing Guide](CONTRIBUTING.md)**
+
+---
+
+## 🛠️ Tech Stack
+
+| Domain | Technologies |
+|---|---|
+| **Core Framework** | Flutter 3.0+, Dart 3.0+ |
+| **Video Engine** | `flutter_mpv`, `flutter_mpv_video` |
+| **State Management** | Provider |
+| **Database & Persistence**| `sqflite`, `shared_preferences` |
+| **UI & Animations** | Material 3, Google Fonts, `flutter_staggered_animations` |
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
+Follow these steps to build the project locally.
 
-- **Flutter SDK** 3.0.0 or higher
-- **Android Studio** / **Xcode**
-- **Git**
+### Prerequisites
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) 3.0.0 or higher
+- Android Studio / Xcode
+- Git
 
 ### Installation
 
@@ -137,97 +152,13 @@ MPx Player follows **Clean Architecture** principles:
    flutter run
    ```
 
-### Contributing
-
-- Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for coding expectations, PR guidance, and release workflow.
-- For publish readiness, validate playback, scrolling, and release artifacts before opening a release PR.
-
 ---
 
-## 📦 Tech Stack
+## 🤝 Contributing
 
-### Core Framework
-- **Flutter** 3.0+ - Cross-platform UI framework
-- **Dart** 3.0+ - Programming language
+We welcome contributions from the community! Whether it's a bug fix, new feature, or UI polish, your help is appreciated.
 
-### Video Playback
-- **flutter_mpv** - Modern video player with mpv backend
-- **flutter_mpv_video** - Video rendering widget
-
-### State Management
-- **provider** - Reactive state management
-
-### Data Persistence
-- **sqflite** - SQLite database (indexing, favorites, watch history)
-- **shared_preferences** - Key-value storage (settings)
-
-### UI & Design
-- **google_fonts** - Custom typography
-- **flutter_staggered_animations** - Smooth animations
-- **Material 3** - Modern design system
-
----
-
-## 📁 Project Structure
-
-```
-lib/
-├── core/                               # Shared utilities
-│   ├── database/                       # SQLite database
-│   ├── services/                       # Logger, permissions
-│   └── widgets/                        # Common UI components
-│
-├── features/                           # Each feature is self-contained
-│   ├── library/                        # 📁 Video library feature
-│   │   ├── controller/
-│   │   │   └── file_browser_controller.dart
-│   │   ├── data/
-│   │   │   └── datasources/
-│   │   │       └── directory_browser.dart
-│   │   ├── domain/
-│   │   │   └── entities/
-│   │   ├── presentation/
-│   │   │   ├── screens/
-│   │   │   └── widgets/
-│   │   └── services/
-│   │       └── library_index_service.dart
-│   │
-│   ├── player/                         # 🎬 Video player feature
-│   │   ├── controller/
-│   │   │   ├── player_controller.dart
-│   │   │   ├── player_state.dart
-│   │   │   └── mixins/
-│   │   ├── data/
-│   │   │   └── repositories/
-│   │   ├── domain/
-│   │   │   └── repositories/
-│   │   └── presentation/
-│   │
-│   ├── favorites/                      # ⭐ Favorites feature
-│   │   ├── services/
-│   │   └── presentation/
-│   │
-│   ├── settings/                       # ⚙️ Settings feature
-│   │
-│   └── splash/                         # 🚀 Splash screen
-│
-└── main.dart                           # App entry point
-```
-
----
-
-## 🎯 Current Status
-
-### ✅ Completed Features
-- [x] Clean architecture & Provider state management
-- [x] **Persistent SQLite indexing** (Instant library loads)
-- [x] **Empty folder filtering**
-- [x] **Instant Search** implementation
-- [x] Advanced video playback with gestures
-- [x] Subtitle support with customization
-- [x] Watch history with resume playback
-- [x] Modern Material 3 UI with animations
-- [x] 100% Offline / Zero Tracking
+Please check out our [**Contributing Guidelines**](CONTRIBUTING.md) to get started. Let's build the best local video player together!
 
 ---
 
@@ -235,8 +166,6 @@ lib/
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
-<p align="center">
-  Made with ❤️ using Flutter | 100% Offline | Zero Tracking
-</p>
+<div align="center">
+  <p>Made with ❤️ using Flutter | 100% Offline | Zero Tracking</p>
+</div>
