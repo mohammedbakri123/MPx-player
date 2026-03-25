@@ -117,101 +117,66 @@ class FileBrowserController extends ChangeNotifier {
     return preparedItems.where((item) {
       if (item.isVideo) return true;
       if (item.isDirectory) {
-        final count = _indexService.getFolderVideoCount(rootPath, item.path) ??
-            _browser.getVideoCount(item.path);
-
-        // If we have an index (snapshot), we are strict about 0.
-        // If count is null, it means folder is not indexed.
-        if (snapshot != null) {
-          // Key exists in snapshot -> use it. Missing key -> it's empty (0).
-          final int indexedCount =
-              _indexService.getFolderVideoCount(rootPath, item.path) ?? 0;
-          return indexedCount > 0;
-        }
-
-        // Before the index is ready, only keep folders we already know contain videos.
-        return (count ?? 0) > 0;
+        // Show all directories initially - let hydration hide empty ones later
+        // This prevents the "no videos found" flash
+        if (item.videoCount == null) return true;
+        return item.videoCount! > 0;
       }
       return false;
     }).toList();
   }
 
-  Future<List<FileItem>> _filterFoldersWithVideos(
-    List<FileItem> items,
-  ) async {
-    final filtered = <FileItem>[];
-    final rootPath = _browser.getRootPath();
-
-    final videos =
-        items.where((item) => !item.isDirectory && item.isVideo).toList();
-    filtered.addAll(videos);
-
-    final folders = items.where((item) => item.isDirectory).toList();
-
-    // Process folders concurrently
-    final folderFutures = folders.map((item) async {
-      final indexedCount =
-          _indexService.getFolderVideoCount(rootPath, item.path);
-      if (indexedCount != null) {
-        _browser.setVideoCount(item.path, indexedCount);
-        if (indexedCount > 0) {
-          item.videoCount = indexedCount;
-          return item;
-        }
-        return null;
-      }
-
-      final cachedCount = _browser.getVideoCount(item.path);
-      if (cachedCount != null) {
-        if (cachedCount > 0) {
-          item.videoCount = cachedCount;
-          return item;
-        }
-        return null;
-      }
-
-      final videoCount = await _countVideosRecursively(item.path);
-      _browser.setVideoCount(item.path, videoCount);
-      if (videoCount > 0) {
-        item.videoCount = videoCount;
-        return item;
-      }
-      return null;
-    });
-
-    final processedFolders = await Future.wait(folderFutures);
-    for (final folder in processedFolders) {
-      if (folder != null) filtered.add(folder);
-    }
-
-    return filtered;
-  }
-
   void _scheduleFolderHydration(String path, List<FileItem> items) {
     if (!_showOnlyVideos) return;
-    unawaited(_hydrateFolderVisibility(path, items));
+    unawaited(_hydrateFolderVisibilityBatch(path, items));
   }
 
-  Future<void> _hydrateFolderVisibility(
+  Future<void> _hydrateFolderVisibilityBatch(
       String path, List<FileItem> items) async {
     final rootPath = _browser.getRootPath();
-    final hasAllCounts = items.every((item) {
-      if (!item.isDirectory) return true;
-      final indexedCount =
-          _indexService.getFolderVideoCount(rootPath, item.path);
-      final cachedCount = _browser.getVideoCount(item.path);
-      return indexedCount != null || cachedCount != null;
-    });
+    final folders = items.where((item) => item.isDirectory).toList();
 
-    if (hasAllCounts) return;
+    if (folders.isEmpty) return;
 
-    final filtered = await _filterFoldersWithVideos(items);
+    final List<FileItem> foldersToHide = [];
 
-    if (_currentPath != path || !_showOnlyVideos) return;
+    // Process folders in batches of 5
+    for (var i = 0; i < folders.length; i += 5) {
+      final batch = folders.skip(i).take(5).toList();
 
-    _items = filtered;
-    _sortItems();
-    notifyListeners();
+      await Future.wait(batch.map((item) async {
+        final indexedCount =
+            _indexService.getFolderVideoCount(rootPath, item.path);
+        if (indexedCount != null) {
+          if (indexedCount == 0) {
+            foldersToHide.add(item);
+          }
+          return;
+        }
+
+        final cachedCount = _browser.getVideoCount(item.path);
+        if (cachedCount != null) {
+          if (cachedCount == 0) {
+            foldersToHide.add(item);
+          }
+          return;
+        }
+
+        final videoCount = await _countVideosRecursively(item.path);
+        _browser.setVideoCount(item.path, videoCount);
+        item.videoCount = videoCount;
+        if (videoCount == 0) {
+          foldersToHide.add(item);
+        }
+      }));
+
+      // Update UI after each batch
+      if (_currentPath == path && _showOnlyVideos && foldersToHide.isNotEmpty) {
+        _items = _items.where((item) => !foldersToHide.contains(item)).toList();
+        notifyListeners();
+        foldersToHide.clear();
+      }
+    }
   }
 
   Future<int> _countVideosRecursively(String path, {int depth = 0}) async {

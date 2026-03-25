@@ -100,6 +100,8 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
                       _buildPermissionRow('Photos', _statuses['photos']),
                       const SizedBox(height: 8),
                       _buildPermissionRow('Videos', _statuses['videos']),
+                      const SizedBox(height: 8),
+                      _buildPermissionRow('Storage', _statuses['storage']),
                     ],
                   ),
                 ),

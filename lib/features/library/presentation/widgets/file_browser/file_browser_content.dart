@@ -38,8 +38,8 @@ class FileBrowserContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = controller.items;
 
-    // Show skeleton whenever loading an empty list
-    if (controller.isLoading && items.isEmpty) {
+    // Show skeleton only during initial load (not initialized yet)
+    if (!controller.isInitialized && items.isEmpty) {
       return HomeSkeletonLoader(isGridView: controller.isGridView);
     }
 
