@@ -39,8 +39,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SettingsHeader(settings: settings),
-              const SizedBox(height: 24),
+              const SettingsHeader(),
+              const SizedBox(height: 16),
               _buildExpandableSection(
                 index: 0,
                 title: 'Appearance',
