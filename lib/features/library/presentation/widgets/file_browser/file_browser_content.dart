@@ -115,6 +115,8 @@ class FileBrowserContent extends StatelessWidget {
             ),
           );
 
+    final theme = Theme.of(context);
+
     return Stack(
       children: [
         content,
@@ -129,7 +131,7 @@ class FileBrowserContent extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: theme.elevatedSurface,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -141,10 +143,13 @@ class FileBrowserContent extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const SizedBox(
+                    SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -152,7 +157,7 @@ class FileBrowserContent extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
+                        color: theme.faintText,
                       ),
                     ),
                   ],

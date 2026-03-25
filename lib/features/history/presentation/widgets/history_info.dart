@@ -60,7 +60,7 @@ class HistoryInfo extends StatelessWidget {
                 ),
               if (entry.isCompleted) ...[
                 const SizedBox(width: 12),
-                _buildCompletedChip(),
+                _buildCompletedChip(context),
               ],
             ],
           ),
@@ -88,23 +88,25 @@ class HistoryInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildCompletedChip() {
+  Widget _buildCompletedChip(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
+        color: colors.primaryContainer,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle, size: 12, color: Colors.green.shade600),
+          Icon(Icons.check_circle, size: 12, color: colors.primary),
           const SizedBox(width: 4),
           Text(
             'Watched',
             style: TextStyle(
               fontSize: 11,
-              color: Colors.green.shade600,
+              color: colors.primary,
               fontWeight: FontWeight.w500,
             ),
           ),

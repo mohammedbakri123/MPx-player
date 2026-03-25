@@ -248,24 +248,9 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                     );
                   },
                 ),
-                if (!isCustomFolder)
-                  Positioned(
-                    top: 40,
-                    right: 20,
-                    child: SafeArea(
-                      child: FloatingActionButton(
-                        onPressed: _importFolder,
-                        mini: true,
-                        backgroundColor:
-                            theme.elevatedSurface.withValues(alpha: 0.7),
-                        child: Icon(Icons.add_box_rounded,
-                            color: theme.strongText),
-                      ),
-                    ),
-                  ),
                 Positioned(
                   top: 40,
-                  right: isCustomFolder ? 20 : 80,
+                  right: 20,
                   child: SafeArea(
                     child: Container(
                       decoration: BoxDecoration(

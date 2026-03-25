@@ -21,7 +21,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final Set<int> _expandedSections = {0, 1};
+  final Set<int> _expandedSections = {};
 
   @override
   Widget build(BuildContext context) {
@@ -31,57 +31,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: theme.appBackground,
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                theme.appBackground,
-                theme.appBackgroundAlt,
-              ],
-            ),
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SettingsHeader(settings: settings),
-                const SizedBox(height: 24),
-                _buildExpandableSection(
-                  index: 0,
-                  title: 'Appearance',
-                  icon: Icons.palette_outlined,
-                  colors: colors,
-                  child: _ThemeSection(settings: settings),
-                ),
-                _buildExpandableSection(
-                  index: 1,
-                  title: 'Subtitles',
-                  icon: Icons.subtitles_outlined,
-                  accent: const Color(0xFFEA580C),
-                  colors: colors,
-                  child: const _SubtitleSection(),
-                ),
-                _buildExpandableSection(
-                  index: 2,
-                  title: 'Playback',
-                  icon: Icons.play_circle_outline,
-                  colors: colors,
-                  child: _PlaybackSection(settings: settings),
-                ),
-                _buildExpandableSection(
-                  index: 3,
-                  title: 'Engine',
-                  icon: Icons.tune,
-                  accent: const Color(0xFF0F766E),
-                  colors: colors,
-                  child: _EngineSection(settings: settings),
-                ),
-              ],
-            ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SettingsHeader(settings: settings),
+              const SizedBox(height: 24),
+              _buildExpandableSection(
+                index: 0,
+                title: 'Appearance',
+                icon: Icons.palette_outlined,
+                colors: colors,
+                child: _ThemeSection(settings: settings),
+              ),
+              _buildExpandableSection(
+                index: 1,
+                title: 'Subtitles',
+                icon: Icons.subtitles_outlined,
+                accent: const Color(0xFFEA580C),
+                colors: colors,
+                child: const _SubtitleSection(),
+              ),
+              _buildExpandableSection(
+                index: 2,
+                title: 'Playback',
+                icon: Icons.play_circle_outline,
+                colors: colors,
+                child: _PlaybackSection(settings: settings),
+              ),
+              _buildExpandableSection(
+                index: 3,
+                title: 'Engine',
+                icon: Icons.tune,
+                accent: const Color(0xFF0F766E),
+                colors: colors,
+                child: _EngineSection(settings: settings),
+              ),
+            ],
           ),
         ),
       ),
