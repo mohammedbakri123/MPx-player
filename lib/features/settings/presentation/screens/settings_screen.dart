@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mpx/core/theme/app_theme_tokens.dart';
+import 'package:mpx/features/downloader/presentation/screens/downloader_settings_screen.dart';
+import 'package:mpx/features/downloader/presentation/screens/downloads_manager_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/app_settings_controller.dart';
@@ -70,6 +72,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 accent: const Color(0xFF0F766E),
                 colors: colors,
                 child: _EngineSection(settings: settings),
+              ),
+              _buildExpandableSection(
+                index: 4,
+                title: 'Downloader',
+                icon: Icons.download_rounded,
+                accent: const Color(0xFF2563EB),
+                colors: colors,
+                child: const _DownloaderSection(),
               ),
             ],
           ),
@@ -296,6 +306,56 @@ class _EngineSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ExpertEngineSettingsSection(settings: settings),
+        ],
+      ),
+    );
+  }
+}
+
+class _DownloaderSection extends StatelessWidget {
+  const _DownloaderSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Manage on-device downloads and downloader preferences.',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.download_for_offline_outlined),
+            title: const Text('Open downloader'),
+            subtitle: const Text('Queue URLs and manage active downloads'),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const DownloadsManagerScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.tune_rounded),
+            title: const Text('Downloader settings'),
+            subtitle: const Text('Quality, cookies, updates, and diagnostics'),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const DownloaderSettingsScreen(),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

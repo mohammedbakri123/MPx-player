@@ -5,6 +5,7 @@
 import FlutterMacOS
 import Foundation
 
+import file_picker
 import flutter_mpv_libs_macos_video
 import flutter_mpv_video
 import flutter_volume_controller
@@ -16,6 +17,7 @@ import sqflite_darwin
 import wakelock_plus
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+  FilePickerPlugin.register(with: registry.registrar(forPlugin: "FilePickerPlugin"))
   FlutterMpvLibsMacosVideoPlugin.register(with: registry.registrar(forPlugin: "FlutterMpvLibsMacosVideoPlugin"))
   FlutterMpvVideoPlugin.register(with: registry.registrar(forPlugin: "FlutterMpvVideoPlugin"))
   FlutterVolumeControllerPlugin.register(with: registry.registrar(forPlugin: "FlutterVolumeControllerPlugin"))

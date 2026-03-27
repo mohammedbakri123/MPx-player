@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("com.chaquo.python")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -28,6 +29,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     packagingOptions {
@@ -38,15 +43,6 @@ android {
                 "**/libVLCAll.so",
                 "**/libVLC++.so"
             )
-        }
-    }
-
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "armeabi-v7a")
-            isUniversalApk = true
         }
     }
 
@@ -61,6 +57,16 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+}
+
+chaquopy {
+    defaultConfig {
+        version = "3.14"
+        buildPython("python3")
+        pip {
+            install("yt-dlp==2026.3.17")
         }
     }
 }

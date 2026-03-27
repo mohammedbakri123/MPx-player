@@ -1,6 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:mpx/core/services/binary_manager.dart';
+import 'package:mpx/core/services/downloader_platform_service.dart';
 import 'package:mpx/core/theme/app_theme_tokens.dart';
+import 'package:mpx/features/downloader/presentation/screens/downloads_manager_screen.dart';
+import 'package:mpx/features/downloader/services/downloader_settings_service.dart';
 import 'package:mpx/features/library/presentation/screens/home_screen.dart';
 import 'package:mpx/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:mpx/features/history/presentation/screens/history_screen.dart';
@@ -30,6 +36,7 @@ class _MainScreenState extends State<MainScreen>
   int? _pendingTabIndex;
 
   bool _isDockVisible = true;
+  StreamSubscription<String>? _sharedUrlSubscription;
 
   @override
   void initState() {
@@ -57,13 +64,51 @@ class _MainScreenState extends State<MainScreen>
       });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _warmUpTabs();
+      _consumeInitialSharedUrl();
     });
+    _sharedUrlSubscription =
+        DownloaderPlatformService.instance.sharedUrlEvents.listen(
+      (url) {
+        _openSharedUrl(url);
+      },
+    );
+    if (DownloaderSettingsService.autoUpdateEnabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(BinaryManager.instance.ensureBinariesAvailable());
+        unawaited(
+          BinaryManager.instance.checkForUpdates().catchError((_) {
+            return BinaryManager.instance.status;
+          }),
+        );
+      });
+    }
   }
 
   @override
   void dispose() {
+    _sharedUrlSubscription?.cancel();
     _swipeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _consumeInitialSharedUrl() async {
+    final url = await DownloaderPlatformService.instance.consumeSharedUrl();
+    if (!mounted || url == null || url.isEmpty) {
+      return;
+    }
+    _openSharedUrl(url);
+  }
+
+  Future<void> _openSharedUrl(String url) async {
+    if (!mounted) {
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DownloadsManagerScreen(initialSharedUrl: url),
+      ),
+    );
   }
 
   Future<void> _warmUpTabs() async {

@@ -27,8 +27,10 @@ class AppLogger {
   }
 
   /// Internal method to handle the actual logging.
-  static void _log(String level, String message, [Object? error, StackTrace? stackTrace]) {
-    final timestamp = DateTime.now().toString().split('.')[0]; // Remove milliseconds
+  static void _log(String level, String message,
+      [Object? error, StackTrace? stackTrace]) {
+    final timestamp =
+        DateTime.now().toString().split('.')[0]; // Remove milliseconds
     final logMessage = '[$level] [$timestamp] $message';
 
     // Log to the console

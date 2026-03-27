@@ -13,7 +13,10 @@ mixin FavoritesDatabaseOperations {
       final db = await database;
       await db.insert(
         'favorites',
-        {'video_id': videoId, 'added_at': DateTime.now().millisecondsSinceEpoch},
+        {
+          'video_id': videoId,
+          'added_at': DateTime.now().millisecondsSinceEpoch
+        },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
       return true;
@@ -55,7 +58,8 @@ mixin FavoritesDatabaseOperations {
   /// Check if video is favorite
   Future<bool> isFavorite(String videoId) async {
     final db = await database;
-    final maps = await db.query('favorites', where: 'video_id = ?', whereArgs: [videoId], limit: 1);
+    final maps = await db.query('favorites',
+        where: 'video_id = ?', whereArgs: [videoId], limit: 1);
     return maps.isNotEmpty;
   }
 
