@@ -204,17 +204,34 @@ class DownloaderRepositoryImpl implements DownloaderRepository {
     if (progress.status == DownloadStatus.completed) {
       final latest = await _localDataSource.getDownload(taskId);
       final sourcePath = progress.filePath ?? latest?.savePath;
-      if (latest != null &&
-          sourcePath != null &&
-          !sourcePath.contains('/Movies/mpxReels/')) {
-        final exportedPath = await _platform.exportDownload(sourcePath);
-        if (exportedPath != null && exportedPath.isNotEmpty) {
+      if (latest != null && sourcePath != null) {
+        try {
+          final exportedPath = await _platform.exportDownload(sourcePath);
+          if (exportedPath != null && exportedPath.isNotEmpty) {
+            await _localDataSource.upsertDownload(
+              latest.copyWith(
+                savePath: exportedPath,
+                progress: 1,
+                status: DownloadStatus.completed,
+                completedAt: DateTime.now(),
+                clearErrorMessage: true,
+              ),
+            );
+          }
+        } catch (error) {
           await _localDataSource.upsertDownload(
             latest.copyWith(
-              savePath: exportedPath,
-              progress: 1,
-              status: DownloadStatus.completed,
-              completedAt: DateTime.now(),
+              status: DownloadStatus.failed,
+              errorMessage: error.toString(),
+              clearCompletedAt: true,
+            ),
+          );
+          _emitProgress(
+            DownloadProgress(
+              taskId: taskId,
+              progress: latest.progress,
+              status: DownloadStatus.failed,
+              logLine: error.toString(),
             ),
           );
         }
@@ -228,14 +245,14 @@ class DownloaderRepositoryImpl implements DownloaderRepository {
     QualityPreference quality,
   ) async {
     final supportDir = await getApplicationSupportDirectory();
-    final downloadsDir = Directory(p.join(supportDir.path, 'downloads'));
+    final downloadsDir =
+        Directory(p.join(supportDir.path, 'downloads', taskId));
     if (!await downloadsDir.exists()) {
       await downloadsDir.create(recursive: true);
     }
 
     final safeTitle = _sanitizeFileName(title ?? 'download_$taskId');
-    final extension = quality == QualityPreference.audioOnly ? 'm4a' : 'mp4';
-    return p.join(downloadsDir.path, '$safeTitle.$extension');
+    return p.join(downloadsDir.path, '$safeTitle.%(ext)s');
   }
 
   String _sanitizeFileName(String value) {

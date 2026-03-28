@@ -1,5 +1,6 @@
 package com.example.mpx
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,13 +8,24 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import java.io.File
 
 class ShareDownloadService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun showToast(context: Context, message: String) {
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val url = intent?.getStringExtra(EXTRA_URL)
@@ -56,13 +68,18 @@ class ShareDownloadService : Service() {
                     token,
                 ).toString()
 
-                val exportedPath = PublicMediaExporter.exportToMovies(appContext, finalPath)
+                val exportedPath = PublicMediaExporter.exportToPublicPath(
+                    appContext,
+                    finalPath,
+                    DownloaderPythonBridge.downloadPath(appContext),
+                )
                 NotificationHelper.showFinishedNotification(
                     context = appContext,
-                    title = "Saved to Movies/mpxReels",
+                    title = "Saved download",
                     text = exportedPath,
                     success = true,
                 )
+                showToast(appContext, "Saved to $exportedPath")
             } catch (error: Exception) {
                 NotificationHelper.showFinishedNotification(
                     context = appContext,
@@ -70,6 +87,7 @@ class ShareDownloadService : Service() {
                     text = error.message ?: "Unable to download shared video",
                     success = false,
                 )
+                showToast(appContext, error.message ?: "Download failed")
             } finally {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf(startId)
@@ -168,6 +186,9 @@ private object NotificationHelper {
         progress: Int,
         indeterminate: Boolean,
     ) {
+        if (!canPostNotifications(context)) {
+            return
+        }
         ensureChannel(context)
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(
@@ -182,6 +203,9 @@ private object NotificationHelper {
         text: String,
         success: Boolean,
     ) {
+        if (!canPostNotifications(context)) {
+            return
+        }
         ensureChannel(context)
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -195,5 +219,15 @@ private object NotificationHelper {
             .setAutoCancel(true)
             .build()
         manager.notify(NOTIFICATION_ID + 1, notification)
+    }
+
+    private fun canPostNotifications(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true
+        }
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
     }
 }

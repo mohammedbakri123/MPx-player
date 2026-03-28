@@ -136,7 +136,11 @@ class MainActivity : FlutterActivity() {
 
         Thread {
             try {
-                val exportedPath = PublicMediaExporter.exportToMovies(this, sourcePath)
+                val exportedPath = PublicMediaExporter.exportToPublicPath(
+                    this,
+                    sourcePath,
+                    DownloaderPythonBridge.downloadPath(this),
+                )
                 mainHandler.post {
                     result.success(
                         mapOf(

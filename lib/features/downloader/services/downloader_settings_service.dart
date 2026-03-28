@@ -5,6 +5,7 @@ import '../domain/enums/quality_preference.dart';
 class DownloaderSettingsService {
   static const String _autoUpdateKey = 'downloader_auto_update';
   static const String _defaultQualityKey = 'downloader_default_quality';
+  static const String _downloadPathKey = 'downloader_download_path';
   static const String _cookiesPathKey = 'downloader_cookies_path';
   static const String _logsEnabledKey = 'downloader_logs_enabled';
   static const String _autoDownloadSharedLinksKey =
@@ -33,6 +34,9 @@ class DownloaderSettingsService {
   }
 
   static String? get cookiesPath => _prefs.getString(_cookiesPathKey);
+
+  static String get downloadPath =>
+      _prefs.getString(_downloadPathKey) ?? '/Movies/mpxReels';
 
   static bool get logsEnabled => _prefs.getBool(_logsEnabledKey) ?? false;
 
@@ -66,6 +70,11 @@ class DownloaderSettingsService {
       return;
     }
     await _prefs.setString(_cookiesPathKey, value);
+  }
+
+  static Future<void> setDownloadPath(String value) async {
+    final normalized = value.trim().isEmpty ? '/Movies/mpxReels' : value.trim();
+    await _prefs.setString(_downloadPathKey, normalized);
   }
 
   static Future<void> setLogsEnabled(bool value) async {

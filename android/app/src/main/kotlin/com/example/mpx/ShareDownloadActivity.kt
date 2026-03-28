@@ -3,8 +3,12 @@ package com.example.mpx
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Build
 import android.util.Patterns
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 
@@ -17,6 +21,13 @@ class ShareDownloadActivity : ComponentActivity() {
         "480p" to "best[height<=480][ext=mp4]/best[height<=480]/best",
         "Audio only" to "bestaudio[ext=m4a]/bestaudio/best",
     )
+    private var pendingUrl: String? = null
+    private var pendingFormatSelector: String? = null
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { _ ->
+        startPendingShareDownload()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,11 +50,37 @@ class ShareDownloadActivity : ComponentActivity() {
             .setPositiveButton("Download") { _, _ ->
                 val label = qualityLabels[selectedIndex]
                 val formatSelector = qualityValues[label] ?: qualityValues.getValue("Auto")
-                startShareDownloadService(this, sharedUrl, formatSelector)
-                finish()
+                pendingUrl = sharedUrl
+                pendingFormatSelector = formatSelector
+                ensureNotificationsThenStart()
             }
             .setOnCancelListener { finish() }
             .show()
+    }
+
+    private fun ensureNotificationsThenStart() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
+        startPendingShareDownload()
+    }
+
+    private fun startPendingShareDownload() {
+        val url = pendingUrl
+        val formatSelector = pendingFormatSelector
+        if (url == null || formatSelector == null) {
+            finish()
+            return
+        }
+        startShareDownloadService(this, url, formatSelector)
+        Toast.makeText(this, "Share download started", Toast.LENGTH_SHORT).show()
+        finish()
     }
 
     private fun startShareDownloadService(context: Context, url: String, formatSelector: String) {

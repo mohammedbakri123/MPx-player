@@ -3,7 +3,9 @@ package com.example.mpx
 import android.content.ContentValues
 import android.content.Context
 import android.os.Environment
+import android.provider.MediaStore.Audio
 import android.provider.MediaStore
+import android.provider.MediaStore.Video
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import java.io.File
@@ -27,12 +29,16 @@ object DownloaderPythonBridge {
         val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
         return prefs.getString("flutter.downloader_default_quality", "auto") ?: "auto"
     }
+
+    fun downloadPath(context: Context): String {
+        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        return prefs.getString("flutter.downloader_download_path", "/Movies/mpxReels")
+            ?: "/Movies/mpxReels"
+    }
 }
 
 object PublicMediaExporter {
-    private val relativeMoviesPath = Environment.DIRECTORY_MOVIES + "/mpxReels"
-
-    fun exportToMovies(context: Context, sourcePath: String): String {
+    fun exportToPublicPath(context: Context, sourcePath: String, preferredPath: String): String {
         val sourceFile = File(sourcePath)
         require(sourceFile.exists()) { "Downloaded file not found: $sourcePath" }
 
@@ -44,17 +50,22 @@ object PublicMediaExporter {
             else -> "video/mp4"
         }
 
+        val relativePath = toRelativePath(preferredPath)
+
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, relativeMoviesPath)
+            put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
 
-        val collection = MediaStore.Files.getContentUri("external")
+        val collection = when {
+            mimeType.startsWith("audio/") -> Audio.Media.EXTERNAL_CONTENT_URI
+            else -> Video.Media.EXTERNAL_CONTENT_URI
+        }
         val resolver = context.contentResolver
         val uri = resolver.insert(collection, values)
-            ?: throw IllegalStateException("Failed to create Movies/MPxReels entry")
+            ?: throw IllegalStateException("Failed to create public media entry")
 
         resolver.openOutputStream(uri)?.use { output ->
             sourceFile.inputStream().use { input -> input.copyTo(output) }
@@ -67,7 +78,16 @@ object PublicMediaExporter {
 
         sourceFile.delete()
 
-        val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-        return File(publicDir, "mpxReels/$displayName").absolutePath
+        val publicDir = Environment.getExternalStorageDirectory()
+        return File(publicDir, "$relativePath/$displayName").absolutePath
+    }
+
+    private fun toRelativePath(preferredPath: String): String {
+        val normalized = preferredPath.trim().ifEmpty { "/Movies/mpxReels" }
+        val cleaned = normalized.removePrefix("/").trimEnd('/')
+        if (cleaned.isEmpty()) {
+            return Environment.DIRECTORY_MOVIES + "/mpxReels"
+        }
+        return cleaned
     }
 }
