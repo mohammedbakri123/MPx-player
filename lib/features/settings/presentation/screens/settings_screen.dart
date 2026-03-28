@@ -32,58 +32,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final settings = context.watch<AppSettingsController>();
 
     return Scaffold(
-      backgroundColor: theme.appBackground,
+      backgroundColor: theme.appBackgroundAlt,
       resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SettingsHeader(),
-              const SizedBox(height: 16),
-              _buildExpandableSection(
-                index: 0,
-                title: 'Appearance',
-                icon: Icons.palette_outlined,
-                colors: colors,
-                child: _ThemeSection(settings: settings),
+      body: SizedBox.expand(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [theme.appBackground, theme.appBackgroundAlt],
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SettingsHeader(),
+                  const SizedBox(height: 16),
+                  _buildExpandableSection(
+                    index: 0,
+                    title: 'Appearance',
+                    icon: Icons.palette_outlined,
+                    colors: colors,
+                    child: _ThemeSection(settings: settings),
+                  ),
+                  _buildExpandableSection(
+                    index: 1,
+                    title: 'Subtitles',
+                    icon: Icons.subtitles_outlined,
+                    accent: const Color(0xFFEA580C),
+                    colors: colors,
+                    child: const _SubtitleSection(),
+                  ),
+                  _buildExpandableSection(
+                    index: 2,
+                    title: 'Playback',
+                    icon: Icons.play_circle_outline,
+                    colors: colors,
+                    child: _PlaybackSection(settings: settings),
+                  ),
+                  _buildExpandableSection(
+                    index: 3,
+                    title: 'Engine',
+                    icon: Icons.tune,
+                    accent: const Color(0xFF0F766E),
+                    colors: colors,
+                    child: _EngineSection(settings: settings),
+                  ),
+                  _buildExpandableSection(
+                    index: 4,
+                    title: 'Downloader',
+                    icon: Icons.download_rounded,
+                    accent: const Color(0xFF2563EB),
+                    colors: colors,
+                    child: const _DownloaderSection(),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+                ],
               ),
-              _buildExpandableSection(
-                index: 1,
-                title: 'Subtitles',
-                icon: Icons.subtitles_outlined,
-                accent: const Color(0xFFEA580C),
-                colors: colors,
-                child: const _SubtitleSection(),
-              ),
-              _buildExpandableSection(
-                index: 2,
-                title: 'Playback',
-                icon: Icons.play_circle_outline,
-                colors: colors,
-                child: _PlaybackSection(settings: settings),
-              ),
-              _buildExpandableSection(
-                index: 3,
-                title: 'Engine',
-                icon: Icons.tune,
-                accent: const Color(0xFF0F766E),
-                colors: colors,
-                child: _EngineSection(settings: settings),
-              ),
-              _buildExpandableSection(
-                index: 4,
-                title: 'Downloader',
-                icon: Icons.download_rounded,
-                accent: const Color(0xFF2563EB),
-                colors: colors,
-                child: const _DownloaderSection(),
-              ),
-              SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
-            ],
+            ),
           ),
         ),
       ),
@@ -103,7 +114,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(16),
@@ -157,7 +169,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutCubic,
                       child: Icon(
                         Icons.keyboard_arrow_down,
                         color: colors.onSurfaceVariant,
@@ -167,13 +180,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            AnimatedCrossFade(
-              firstChild: child,
-              secondChild: const SizedBox.shrink(),
-              crossFadeState: isExpanded
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              duration: const Duration(milliseconds: 200),
+            ClipRect(
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: isExpanded ? child : const SizedBox.shrink(),
+              ),
             ),
           ],
         ),

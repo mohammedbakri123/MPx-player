@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:mpx/core/services/binary_manager.dart';
 import 'package:mpx/core/services/downloader_platform_service.dart';
 import 'package:mpx/core/theme/app_theme_tokens.dart';
@@ -24,8 +23,6 @@ class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
   static const double _swipeVelocityThreshold = 320;
   static const double _swipeProgressThreshold = 0.22;
-  static const double _dockBottomOffset = 10;
-  static const double _dockHideOffset = -100;
 
   int _currentIndex = 0;
   // Updated _loadedTabs size from 4 to 5
@@ -35,7 +32,6 @@ class _MainScreenState extends State<MainScreen>
   double _dragOffset = 0;
   int? _pendingTabIndex;
 
-  bool _isDockVisible = true;
   StreamSubscription<String>? _sharedUrlSubscription;
 
   @override
@@ -214,198 +210,129 @@ class _MainScreenState extends State<MainScreen>
   Widget _buildTabLayers(double width) {
     final dragTargetIndex = _getTargetIndexForOffset(_dragOffset);
 
-    return NotificationListener<UserScrollNotification>(
-      onNotification: (notification) {
-        if (notification.direction == ScrollDirection.forward) {
-          if (!_isDockVisible) setState(() => _isDockVisible = true);
-        } else if (notification.direction == ScrollDirection.reverse) {
-          if (_isDockVisible) setState(() => _isDockVisible = false);
+    return Stack(
+      children: List.generate(_labels.length, (index) {
+        if (!_loadedTabs[index]) {
+          return const SizedBox.shrink();
         }
-        return false;
-      },
-      child: Stack(
-        // Updated List.generate count to use dynamic tab count
-        children: List.generate(_labels.length, (index) {
-          if (!_loadedTabs[index]) {
-            return const SizedBox.shrink();
-          }
 
-          final isCurrent = index == _currentIndex;
-          final isDragTarget = dragTargetIndex == index;
-          final shouldShow = isCurrent || isDragTarget;
+        final isCurrent = index == _currentIndex;
+        final isDragTarget = dragTargetIndex == index;
+        final shouldShow = isCurrent || isDragTarget;
 
-          if (!shouldShow) {
-            return Offstage(
-              offstage: true,
-              child: TickerMode(
-                enabled: false,
-                child: KeyedSubtree(
-                  key: ValueKey(index),
-                  child: _buildScreen(index),
-                ),
-              ),
-            );
-          }
-
-          final offset = isCurrent
-              ? _dragOffset
-              : (_dragOffset < 0 ? width : -width) + _dragOffset;
-
-          return Transform.translate(
-            offset: Offset(offset, 0),
+        if (!shouldShow) {
+          return Offstage(
+            offstage: true,
             child: TickerMode(
-              enabled: isCurrent,
+              enabled: false,
               child: KeyedSubtree(
                 key: ValueKey(index),
                 child: _buildScreen(index),
               ),
             ),
           );
-        }),
-      ),
+        }
+
+        final offset = isCurrent
+            ? _dragOffset
+            : (_dragOffset < 0 ? width : -width) + _dragOffset;
+
+        return Transform.translate(
+          offset: Offset(offset, 0),
+          child: TickerMode(
+            enabled: isCurrent,
+            child: KeyedSubtree(
+              key: ValueKey(index),
+              child: _buildScreen(index),
+            ),
+          ),
+        );
+      }),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
 
-                return GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onHorizontalDragStart: _handleHorizontalDragStart,
-                  onHorizontalDragUpdate: (details) =>
-                      _handleHorizontalDragUpdate(details, width),
-                  onHorizontalDragEnd: (details) =>
-                      _handleHorizontalDragEnd(details, width),
-                  child: ClipRect(
-                    child: _buildTabLayers(width),
-                  ),
-                );
-              },
+          return GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragStart: _handleHorizontalDragStart,
+            onHorizontalDragUpdate: (details) =>
+                _handleHorizontalDragUpdate(details, width),
+            onHorizontalDragEnd: (details) =>
+                _handleHorizontalDragEnd(details, width),
+            child: ClipRect(
+              child: _buildTabLayers(width),
             ),
-          ),
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            left: 14,
-            right: 14,
-            bottom: (_currentIndex == 1 || !_isDockVisible || isKeyboardVisible)
-                ? _dockHideOffset
-                : _dockBottomOffset,
-            child: SafeArea(
-              top: false,
-              minimum: EdgeInsets.zero,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(34),
-                  color: theme.elevatedSurface.withValues(
-                    alpha: theme.isDarkMode ? 0.94 : 0.98,
-                  ),
-                  border: Border.all(
-                    color: theme.softBorder.withValues(
-                      alpha: theme.isDarkMode ? 0.82 : 0.9,
-                    ),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: theme.isDarkMode ? 0.3 : 0.1,
-                      ),
-                      blurRadius: 28,
-                      spreadRadius: 0,
-                      offset: const Offset(0, 14),
-                    ),
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withValues(
-                        alpha: theme.isDarkMode ? 0.06 : 0.05,
-                      ),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(34),
-                  child: _buildCustomBottomBar(theme),
-                ),
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildCustomBottomBar(ThemeData theme) {
-    return SizedBox(
-      height: 76,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(6, 6, 6, 8),
-        child: Row(
-          // Updated List.generate count to use dynamic tab count
-          children: List.generate(_labels.length, (index) {
-            final isSelected = _currentIndex == index;
-            final iconData =
-                isSelected ? _selectedIcons[index] : _outlineIcons[index];
-            final label = _labels[index];
-
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: InkWell(
-                  onTap: () => _selectTab(index),
-                  borderRadius: BorderRadius.circular(22),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOutCubic,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
-                      color: isSelected
-                          ? theme.colorScheme.primaryContainer.withValues(
-                              alpha: theme.isDarkMode ? 0.3 : 0.82,
-                            )
-                          : Colors.transparent,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          iconData,
-                          size: isSelected ? 23 : 21,
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : theme.faintText,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected
-                                ? theme.colorScheme.primary
-                                : theme.faintText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: theme.softBorder,
+              width: 0.5,
+            ),
+          ),
+        ),
+        child: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            backgroundColor: theme.elevatedSurface,
+            surfaceTintColor: Colors.transparent,
+            indicatorColor: theme.colorScheme.primaryContainer.withValues(
+              alpha: theme.isDarkMode ? 0.28 : 0.7,
+            ),
+            iconTheme: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return IconThemeData(
+                  color: theme.colorScheme.primary,
+                  size: 24,
+                );
+              }
+              return IconThemeData(
+                color: theme.faintText,
+                size: 22,
+              );
+            }),
+            labelTextStyle: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.primary,
+                );
+              }
+              return TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: theme.faintText,
+              );
+            }),
+            height: 68,
+            elevation: 0,
+            shadowColor: Colors.transparent,
+          ),
+          child: NavigationBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: _selectTab,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: List.generate(_labels.length, (index) {
+              return NavigationDestination(
+                icon: Icon(_outlineIcons[index]),
+                selectedIcon: Icon(_selectedIcons[index]),
+                label: _labels[index],
+              );
+            }),
+          ),
         ),
       ),
     );
