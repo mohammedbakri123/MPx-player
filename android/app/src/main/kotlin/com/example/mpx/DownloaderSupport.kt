@@ -30,13 +30,34 @@ object DownloaderPythonBridge {
 
     fun defaultSharedQuality(context: Context): String {
         val prefs = context.getSharedPreferences("flutter.shared_preferences", Context.MODE_PRIVATE)
-        return prefs.getString("flutter.downloader_default_quality", "auto") ?: "auto"
+        return prefs.getString("flutter.downloader_default_quality", "p480") ?: "p480"
     }
 
     fun downloadPath(context: Context): String {
         val prefs = context.getSharedPreferences("flutter.shared_preferences", Context.MODE_PRIVATE)
         return prefs.getString("flutter.downloader_download_path", "/Movies/mpxReels")
             ?: "/Movies/mpxReels"
+    }
+}
+
+object ShareDownloadRegistry {
+    private const val PREFS_NAME = "share_download_registry"
+    private const val KEY_PENDING = "pending_downloads"
+
+    fun registerCompleted(context: Context, url: String, title: String, savePath: String, success: Boolean, error: String?) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val existing = prefs.getStringSet(KEY_PENDING, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        val separator = "|||"
+        val entry = listOf(url, title, savePath, if (success) "1" else "0", error ?: "").joinToString(separator)
+        existing.add(entry)
+        prefs.edit().putStringSet(KEY_PENDING, existing).apply()
+    }
+
+    fun consumeAll(context: Context): List<List<String>> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val existing = prefs.getStringSet(KEY_PENDING, mutableSetOf())?.toMutableList() ?: mutableListOf()
+        prefs.edit().remove(KEY_PENDING).apply()
+        return existing.map { it.split("|||") }
     }
 }
 

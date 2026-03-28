@@ -48,7 +48,7 @@
         <activity
             android:name=".ShareDownloadActivity"
             android:exported="true"
-            android:theme="@style/ShareDialogTheme"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
             android:finishOnTaskLaunch="true">
             <intent-filter>

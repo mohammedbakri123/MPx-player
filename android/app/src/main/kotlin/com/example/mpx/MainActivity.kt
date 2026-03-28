@@ -54,6 +54,7 @@ class MainActivity : FlutterActivity() {
                     "ensureBinariesAvailable" -> handleEnsureBinaries(result)
                     "checkForUpdates" -> handleCheckForUpdates(call, result)
                     "consumeSharedUrl" -> handleConsumeSharedUrl(result)
+                    "consumeShareDownloads" -> handleConsumeShareDownloads(result)
                     "exportDownload" -> handleExportDownload(call, result)
                     "fetchVideoInfo" -> handleFetchVideoInfo(call, result)
                     "startDownload" -> handleStartDownload(call, result)
@@ -125,6 +126,20 @@ class MainActivity : FlutterActivity() {
         val url = pendingSharedUrl
         pendingSharedUrl = null
         result.success(url)
+    }
+
+    private fun handleConsumeShareDownloads(result: MethodChannel.Result) {
+        val entries = ShareDownloadRegistry.consumeAll(this)
+        val list = entries.map { parts ->
+            mapOf(
+                "url" to (parts.getOrNull(0) ?: ""),
+                "title" to (parts.getOrNull(1) ?: "Shared Video"),
+                "savePath" to (parts.getOrNull(2) ?: ""),
+                "success" to (parts.getOrNull(3) == "1"),
+                "error" to (parts.getOrNull(4) ?: ""),
+            )
+        }
+        result.success(list)
     }
 
     private fun handleExportDownload(call: MethodCall, result: MethodChannel.Result) {

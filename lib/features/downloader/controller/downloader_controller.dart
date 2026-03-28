@@ -27,6 +27,7 @@ class DownloaderController extends ChangeNotifier {
   DownloaderUiState get state => _state;
 
   Future<void> refreshDownloads() async {
+    await _repository.importShareDownloads();
     final activeDownloads = await _repository.getActiveDownloads();
     final completedDownloads = await _repository.getCompletedDownloads();
     for (final item in activeDownloads) {

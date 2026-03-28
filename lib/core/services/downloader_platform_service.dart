@@ -115,4 +115,11 @@ class DownloaderPlatformService {
       <String, dynamic>{'taskId': taskId},
     );
   }
+
+  Future<List<Map<String, dynamic>>> consumeShareDownloads() async {
+    final result = await _methodChannel
+        .invokeMethod<List<dynamic>>('consumeShareDownloads');
+    if (result == null) return [];
+    return result.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
 }

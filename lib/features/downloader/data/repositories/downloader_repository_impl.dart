@@ -138,6 +138,37 @@ class DownloaderRepositoryImpl implements DownloaderRepository {
     await _progressControllers.remove(taskId)?.close();
   }
 
+  @override
+  Future<int> importShareDownloads() async {
+    final entries = await _platform.consumeShareDownloads();
+    int count = 0;
+    for (final entry in entries) {
+      final url = entry['url'] as String? ?? '';
+      final title = entry['title'] as String? ?? 'Shared Video';
+      final savePath = entry['savePath'] as String? ?? '';
+      final success = entry['success'] as bool? ?? false;
+      final error = entry['error'] as String?;
+
+      if (url.isEmpty) continue;
+
+      final taskId = _uuid.v4();
+      final item = DownloadItem(
+        id: taskId,
+        url: url,
+        title: title,
+        savePath: success && savePath.isNotEmpty ? savePath : null,
+        status: success ? DownloadStatus.completed : DownloadStatus.failed,
+        progress: success ? 1 : 0,
+        completedAt: success ? DateTime.now() : null,
+        errorMessage: error?.isNotEmpty == true ? error : null,
+        addedAt: DateTime.now(),
+      );
+      await _localDataSource.upsertDownload(item);
+      count++;
+    }
+    return count;
+  }
+
   Future<void> _startRemoteDownload(DownloadItem item) async {
     await _updateStatus(item.id, DownloadStatus.downloading);
     final stream = _remoteDataSource.startDownload(

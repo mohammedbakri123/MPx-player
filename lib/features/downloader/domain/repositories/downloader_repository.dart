@@ -21,4 +21,6 @@ abstract class DownloaderRepository {
   Future<List<DownloadItem>> getCompletedDownloads();
 
   Future<void> deleteDownload(String taskId);
+
+  Future<int> importShareDownloads();
 }

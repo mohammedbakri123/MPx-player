@@ -84,6 +84,11 @@ class ShareDownloadService : Service() {
                     finalPath,
                     DownloaderPythonBridge.downloadPath(appContext),
                 )
+
+                ShareDownloadRegistry.registerCompleted(
+                    appContext, url, "Shared Video", exportedPath, true, null
+                )
+
                 NotificationHelper.showFinishedNotification(
                     context = appContext,
                     title = "Download complete",
@@ -94,6 +99,11 @@ class ShareDownloadService : Service() {
             } catch (error: Exception) {
                 Log.e("ShareDownloadService", "Download failed", error)
                 val errorMessage = error.message ?: "Unable to download shared video"
+
+                ShareDownloadRegistry.registerCompleted(
+                    appContext, url, "Shared Video", "", false, errorMessage
+                )
+
                 NotificationHelper.showFinishedNotification(
                     context = appContext,
                     title = "Download failed",
