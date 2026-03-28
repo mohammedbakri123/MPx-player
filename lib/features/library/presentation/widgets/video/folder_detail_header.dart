@@ -45,17 +45,19 @@ class _FolderDetailHeaderState extends State<FolderDetailHeader> {
         .where((v) => v.duration > 0)
         .fold(0, (sum, v) => sum + v.duration);
 
-    // Extract missing durations
-    for (final video in videosWithZeroDuration) {
+    // Extract missing durations in parallel
+    final futures = videosWithZeroDuration.map((video) async {
       try {
         final metadata =
             await VideoMetadataService().extractMetadata(video.path);
-        if (metadata?.duration != null) {
-          totalDuration += metadata!.duration!.inMilliseconds;
-        }
-      } catch (e) {
-        // Ignore errors for individual videos
+        return metadata?.duration?.inMilliseconds ?? 0;
+      } catch (_) {
+        return 0;
       }
+    });
+    final durations = await Future.wait(futures);
+    for (final d in durations) {
+      totalDuration += d;
     }
 
     if (mounted) {

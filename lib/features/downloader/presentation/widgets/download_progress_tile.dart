@@ -166,41 +166,49 @@ class _DownloadProgressTileState extends State<DownloadProgressTile> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
                           children: [
                             _buildStatusBadge(theme, item.status),
-                            if (_fileSize != null) ...[
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.sd_storage_rounded,
-                                size: 12,
-                                color: theme.faintText,
+                            if (_fileSize != null)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.sd_storage_rounded,
+                                    size: 12,
+                                    color: theme.faintText,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    _fileSize!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.faintText,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 3),
-                              Text(
-                                _fileSize!,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.faintText,
-                                  fontSize: 11,
-                                ),
+                            if (item.completedAt != null)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.schedule_rounded,
+                                    size: 12,
+                                    color: theme.faintText,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    _formatTime(item.completedAt!),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.faintText,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                            if (item.completedAt != null) ...[
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.schedule_rounded,
-                                size: 12,
-                                color: theme.faintText,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                _formatTime(item.completedAt!),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.faintText,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       ],

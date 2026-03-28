@@ -22,8 +22,8 @@ class _DownloaderSettingsScreenState extends State<DownloaderSettingsScreen> {
   late bool _autoUpdate;
   late bool _logsEnabled;
   late QualityPreference _quality;
-  late final TextEditingController _downloadPathController;
   String? _cookiesPath;
+  String? _downloadPath;
   bool _checking = false;
   bool _loadingStatus = true;
 
@@ -33,22 +33,16 @@ class _DownloaderSettingsScreenState extends State<DownloaderSettingsScreen> {
     _autoUpdate = DownloaderSettingsService.autoUpdateEnabled;
     _logsEnabled = DownloaderSettingsService.logsEnabled;
     _quality = DownloaderSettingsService.defaultQuality;
-    _downloadPathController = TextEditingController(
-      text: DownloaderSettingsService.downloadPath,
-    );
+    _downloadPath = DownloaderSettingsService.downloadPath;
     _cookiesPath = DownloaderSettingsService.cookiesPath;
     _refreshStatus();
-  }
-
-  @override
-  void dispose() {
-    _downloadPathController.dispose();
-    super.dispose();
   }
 
   Future<void> _refreshStatus() async {
     try {
       await BinaryManager.instance.ensureBinariesAvailable();
+    } catch (_) {
+      // Platform channel may not be registered yet — fail silently.
     } finally {
       if (mounted) {
         setState(() => _loadingStatus = false);
@@ -70,6 +64,22 @@ class _DownloaderSettingsScreenState extends State<DownloaderSettingsScreen> {
     await File(path).copy(target.path);
     await DownloaderSettingsService.setCookiesPath(target.path);
     setState(() => _cookiesPath = target.path);
+  }
+
+  Future<void> _pickDownloadFolder() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final selectedDir = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Choose download folder',
+    );
+    if (selectedDir == null) return;
+
+    await DownloaderSettingsService.setDownloadPath(selectedDir);
+    if (mounted) {
+      setState(() => _downloadPath = selectedDir);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Download folder saved.')),
+      );
+    }
   }
 
   Future<void> _checkNow() async {
@@ -137,40 +147,19 @@ class _DownloaderSettingsScreenState extends State<DownloaderSettingsScreen> {
             },
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _downloadPathController,
-            decoration: const InputDecoration(
-              labelText: 'Download path',
-              hintText: '/Movies/mpxReels',
-              border: OutlineInputBorder(),
-              helperText: 'Public phone path. Default is /Movies/mpxReels.',
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.folder_outlined),
+            title: const Text('Download folder'),
+            subtitle: Text(
+              _downloadPath ?? '/Movies/mpxReels',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            onSubmitted: (value) async {
-              final messenger = ScaffoldMessenger.of(context);
-              await DownloaderSettingsService.setDownloadPath(value);
-              if (mounted) {
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Download path saved.')),
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: OutlinedButton(
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                await DownloaderSettingsService.setDownloadPath(
-                  _downloadPathController.text,
-                );
-                if (mounted) {
-                  messenger.showSnackBar(
-                    const SnackBar(content: Text('Download path saved.')),
-                  );
-                }
-              },
-              child: const Text('Save path'),
+            trailing: OutlinedButton.icon(
+              onPressed: _pickDownloadFolder,
+              icon: const Icon(Icons.drive_file_rename_outline, size: 18),
+              label: const Text('Change'),
             ),
           ),
           ListTile(

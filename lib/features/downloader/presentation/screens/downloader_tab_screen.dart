@@ -76,11 +76,18 @@ class _DownloaderTabScreenState extends State<DownloaderTabScreen> {
       return;
     }
 
-    await Navigator.of(context).push(
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => VideoPreviewScreen(url: url),
       ),
     );
+
+    if (!mounted) return;
+
+    if (result == true) {
+      // Download started — pop back to DownloadsManagerScreen.
+      Navigator.of(context).pop(true);
+    }
   }
 
   @override

@@ -29,6 +29,13 @@ class FileBrowserController extends ChangeNotifier {
   final Set<String> _selectedItems = {};
   bool _isSelectionMode = false;
 
+  // Navigation debounce
+  bool _isNavigating = false;
+
+  // File system watcher
+  StreamSubscription<FileSystemEvent>? _dirWatcherSub;
+  Timer? _watcherDebounce;
+
   List<FileItem> get items => _items;
   String get currentPath => _currentPath;
   List<String> get pathHistory => _pathHistory;
@@ -94,6 +101,9 @@ class FileBrowserController extends ChangeNotifier {
     if (!silent) _isLoading = false;
     notifyListeners();
 
+    // Watch this directory for changes
+    _startWatching(path);
+
     // Always schedule background hydration to ensure counts are fresh
     _scheduleFolderHydration(path, items);
   }
@@ -101,7 +111,6 @@ class FileBrowserController extends ChangeNotifier {
   List<FileItem> _prepareVisibleItems(List<FileItem> items) {
     final rootPath = _browser.getRootPath();
     final preparedItems = List<FileItem>.from(items);
-    final snapshot = _indexService.getSnapshot(rootPath);
 
     for (final item in preparedItems) {
       if (!item.isDirectory) continue;
@@ -213,12 +222,19 @@ class FileBrowserController extends ChangeNotifier {
     _items = _prepareVisibleItems(items);
     _sortItems();
     notifyListeners();
+    _startWatching(previousPath);
     _scheduleFolderHydration(previousPath, items);
   }
 
   Future<void> navigateToFolder(FileItem folder) async {
     if (!folder.isDirectory) return;
-    await loadDirectory(folder.path);
+    if (_isNavigating) return;
+    _isNavigating = true;
+    try {
+      await loadDirectory(folder.path);
+    } finally {
+      _isNavigating = false;
+    }
   }
 
   String _resolveInitialPath(String rootPath) {
@@ -299,7 +315,8 @@ class FileBrowserController extends ChangeNotifier {
     final rootPath = _browser.getRootPath();
     final refreshedPath = _currentPath;
 
-    _browser.invalidatePath(refreshedPath);
+    // Invalidate the full path tree, not just the current path
+    _browser.invalidatePathTree(refreshedPath);
     await _indexService.refreshInBackground(rootPath);
 
     if (_currentPath != refreshedPath) return;
@@ -355,4 +372,50 @@ class FileBrowserController extends ChangeNotifier {
   }
 
   bool isSelected(String path) => _selectedItems.contains(path);
+
+  // --- File system watcher ---
+
+  void _startWatching(String path) {
+    _stopWatching();
+    try {
+      final dir = Directory(path);
+      if (!dir.existsSync()) return;
+      _dirWatcherSub = dir.watch(events: FileSystemEvent.all).listen((event) {
+        // Debounce: wait 800ms of quiet before refreshing
+        _watcherDebounce?.cancel();
+        _watcherDebounce = Timer(const Duration(milliseconds: 800), () {
+          _handleFsChange(path);
+        });
+      }, onError: (_) {});
+    } catch (_) {
+      // Watching not supported on this platform/path – fail silently
+    }
+  }
+
+  void _stopWatching() {
+    _watcherDebounce?.cancel();
+    _watcherDebounce = null;
+    _dirWatcherSub?.cancel();
+    _dirWatcherSub = null;
+  }
+
+  Future<void> _handleFsChange(String watchedPath) async {
+    if (_currentPath != watchedPath) return;
+    // Invalidate cache for this directory and reload silently
+    _browser.invalidatePath(watchedPath);
+    final rootPath = _browser.getRootPath();
+    // Incremental index update (fast, only scans for new/deleted files)
+    await _indexService.updateIndexIncremental(rootPath, watchedPath);
+    // Reload directory listing silently (no spinner)
+    final items = await _browser.listDirectory(watchedPath);
+    _items = _prepareVisibleItems(items);
+    _sortItems();
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _stopWatching();
+    super.dispose();
+  }
 }

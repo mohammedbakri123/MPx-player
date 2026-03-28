@@ -17,44 +17,22 @@ class QualitySelectorDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.elevatedSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.softBorder,
-          width: 1.5,
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => _showPicker(context),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.elevatedSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.softBorder,
+            width: 1,
+          ),
         ),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButtonFormField<QualityPreference>(
-          initialValue: value,
-          icon: Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: theme.colorScheme.primary,
-              size: 18,
-            ),
-          ),
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-          dropdownColor: theme.elevatedSurface,
-          decoration: InputDecoration(
-            labelText: 'Download Quality',
-            labelStyle: TextStyle(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-            prefixIcon: Container(
-              margin: const EdgeInsets.only(left: 12, right: 8),
+        child: Row(
+          children: [
+            Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color:
@@ -67,57 +45,113 @@ class QualitySelectorDropdown extends StatelessWidget {
                 size: 20,
               ),
             ),
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 16,
-            ),
-          ),
-          borderRadius: BorderRadius.circular(16),
-          items: QualityPreference.values
-              .map(
-                (quality) => DropdownMenuItem<QualityPreference>(
-                  value: quality,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _getQualityIcon(quality),
-                          size: 20,
-                          color: theme.mutedText,
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              quality.label,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              _getQualityDescription(quality),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.faintText,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Download Quality',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   ),
-                ),
-              )
-              .toList(growable: false),
-          onChanged: onChanged,
+                  Text(
+                    '${value.label} — ${_getQualityDescription(value)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.faintText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: theme.colorScheme.primary,
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Future<void> _showPicker(BuildContext context) async {
+    final theme = Theme.of(context);
+    final selected = await showModalBottomSheet<QualityPreference>(
+      context: context,
+      backgroundColor: theme.elevatedSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.faintText,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Select Quality',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...QualityPreference.values.map((quality) {
+                final isSelected = quality == value;
+                return ListTile(
+                  leading: Icon(
+                    _getQualityIcon(quality),
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.mutedText,
+                  ),
+                  title: Text(
+                    quality.label,
+                    style: TextStyle(
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  subtitle: Text(
+                    _getQualityDescription(quality),
+                    style: TextStyle(color: theme.faintText),
+                  ),
+                  trailing: isSelected
+                      ? Icon(Icons.check_circle,
+                          color: theme.colorScheme.primary)
+                      : null,
+                  onTap: () => Navigator.of(ctx).pop(quality),
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+    if (selected != null) {
+      onChanged(selected);
+    }
   }
 
   IconData _getQualityIcon(QualityPreference quality) {

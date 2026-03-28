@@ -35,8 +35,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: theme.appBackground,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,6 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 colors: colors,
                 child: const _DownloaderSection(),
               ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
             ],
           ),
         ),

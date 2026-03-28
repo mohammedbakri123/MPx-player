@@ -136,8 +136,6 @@ class LibraryIndexService {
     try {
       final db = await _db.database;
       await _db.deleteLibraryIndexMetadata(db, rootPath);
-      // We might also want to delete all videos if this is the only root,
-      // but for now let's just delete metadata to trigger re-index.
     } catch (e) {
       AppLogger.e('Failed to invalidate library index in database: $e');
     }
@@ -149,6 +147,99 @@ class LibraryIndexService {
     }
 
     return ensureIndexed(rootPath, forceRefresh: true).then((_) {});
+  }
+
+  /// Incrementally update the index for a single directory.
+  /// Much faster than a full rebuild: only scans the given folder,
+  /// diffs against the current snapshot, and applies minimal DB changes.
+  Future<void> updateIndexIncremental(String rootPath, String dirPath) async {
+    final snapshot = _snapshots[rootPath];
+    if (snapshot == null) {
+      // No snapshot yet – fall back to full index build
+      await ensureIndexed(rootPath);
+      return;
+    }
+
+    // Build a set of existing video paths in this directory from the snapshot
+    final existingVideos = <String, VideoFile>{};
+    for (final v in snapshot.videos) {
+      if (v.folderPath == dirPath || v.folderPath.startsWith('$dirPath/')) {
+        existingVideos[v.path] = v;
+      }
+    }
+
+    // Scan the filesystem for current video files
+    final currentVideoPaths = <String>{};
+    final newVideos = <VideoFile>[];
+    try {
+      final dir = Directory(dirPath);
+      if (!await dir.exists()) return;
+
+      await for (final entity in dir.list(followLinks: false)) {
+        if (entity is! File) continue;
+        final name = entity.path.split('/').last;
+        if (!FileItem.isVideoFileName(name)) continue;
+
+        currentVideoPaths.add(entity.path);
+        if (!existingVideos.containsKey(entity.path)) {
+          final stat = await entity.stat();
+          final item = FileItem(
+            path: entity.path,
+            name: name,
+            isDirectory: false,
+            size: stat.size,
+            modified: stat.modified,
+          );
+          newVideos.add(VideoFile.fromFileItem(item, dirPath));
+        }
+      }
+    } catch (_) {
+      return;
+    }
+
+    // Determine deleted videos
+    final deletedPaths =
+        existingVideos.keys.toSet().difference(currentVideoPaths);
+
+    if (newVideos.isEmpty && deletedPaths.isEmpty) return; // No changes
+
+    // Update snapshot in memory
+    final updatedVideos = List<VideoFile>.from(snapshot.videos)
+      ..removeWhere((v) => deletedPaths.contains(v.path))
+      ..addAll(newVideos);
+
+    final updatedCounts = Map<String, int>.from(snapshot.folderVideoCounts);
+
+    // Remove counts for deleted videos
+    for (final deletedPath in deletedPaths) {
+      final video = existingVideos[deletedPath]!;
+      _decrementFolderCounts(updatedCounts, rootPath, video.folderPath);
+    }
+
+    // Add counts for new videos
+    for (final video in newVideos) {
+      _incrementFolderCounts(updatedCounts, rootPath, video.folderPath);
+    }
+
+    final updatedSnapshot = LibraryIndexSnapshot(
+      videos: updatedVideos,
+      folderVideoCounts: updatedCounts,
+      indexedAt: snapshot.indexedAt,
+    );
+    _snapshots[rootPath] = updatedSnapshot;
+
+    // Persist changes to DB
+    try {
+      if (newVideos.isNotEmpty) {
+        await _db.insertVideos(newVideos);
+      }
+      for (final deletedPath in deletedPaths) {
+        final video = existingVideos[deletedPath]!;
+        await _db.deleteVideo(video.id);
+      }
+    } catch (e) {
+      AppLogger.e('Incremental index DB update failed: $e');
+    }
   }
 
   Future<LibraryIndexSnapshot> _buildIndex(String rootPath) async {
@@ -274,6 +365,33 @@ class LibraryIndexService {
     while (currentPath.startsWith(rootPath)) {
       folderVideoCounts[currentPath] =
           (folderVideoCounts[currentPath] ?? 0) + 1;
+
+      if (currentPath == rootPath) {
+        break;
+      }
+
+      final parentPath = _parentPath(currentPath);
+      if (parentPath == currentPath) {
+        break;
+      }
+      currentPath = parentPath;
+    }
+  }
+
+  void _decrementFolderCounts(
+    Map<String, int> folderVideoCounts,
+    String rootPath,
+    String folderPath,
+  ) {
+    var currentPath = folderPath;
+
+    while (currentPath.startsWith(rootPath)) {
+      final current = folderVideoCounts[currentPath] ?? 0;
+      if (current <= 1) {
+        folderVideoCounts.remove(currentPath);
+      } else {
+        folderVideoCounts[currentPath] = current - 1;
+      }
 
       if (currentPath == rootPath) {
         break;
