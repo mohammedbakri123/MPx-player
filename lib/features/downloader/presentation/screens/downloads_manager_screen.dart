@@ -135,6 +135,7 @@ class _DownloadsList extends StatelessWidget {
             onResume: () => controller.resumeDownload(item.id),
             onCancel: () => controller.cancelDownload(item.id),
             onDelete: () => controller.deleteDownload(item.id),
+            onRetry: () => controller.retryDownload(item.id),
             onPlay: item.savePath == null
                 ? null
                 : () => openDownloadedVideo(context, item.savePath!),

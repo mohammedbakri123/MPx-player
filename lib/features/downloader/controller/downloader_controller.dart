@@ -119,6 +119,14 @@ class DownloaderController extends ChangeNotifier {
     await refreshDownloads();
   }
 
+  Future<void> retryDownload(String taskId) async {
+    final item = await _repository.getDownload(taskId);
+    if (item == null) return;
+    await _repository.deleteDownload(taskId);
+    _subscriptions.remove(taskId)?.cancel();
+    await startDownload(item.url, quality: null);
+  }
+
   Future<void> deleteDownload(String taskId) async {
     await _repository.deleteDownload(taskId);
     await _subscriptions.remove(taskId)?.cancel();

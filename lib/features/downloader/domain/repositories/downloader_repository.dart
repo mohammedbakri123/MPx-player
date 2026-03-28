@@ -20,6 +20,8 @@ abstract class DownloaderRepository {
 
   Future<List<DownloadItem>> getCompletedDownloads();
 
+  Future<DownloadItem?> getDownload(String taskId);
+
   Future<void> deleteDownload(String taskId);
 
   Future<int> importShareDownloads();

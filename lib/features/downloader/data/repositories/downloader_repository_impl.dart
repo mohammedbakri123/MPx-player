@@ -132,6 +132,11 @@ class DownloaderRepositoryImpl implements DownloaderRepository {
   }
 
   @override
+  Future<DownloadItem?> getDownload(String taskId) {
+    return _localDataSource.getDownload(taskId);
+  }
+
+  @override
   Future<void> deleteDownload(String taskId) async {
     await _activeTasks.remove(taskId)?.cancel();
     await _localDataSource.deleteDownload(taskId);
