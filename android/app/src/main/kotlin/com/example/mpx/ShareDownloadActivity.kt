@@ -1,16 +1,19 @@
 package com.example.mpx
 
+import android.graphics.drawable.ColorDrawable
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Build
+import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
+import android.graphics.Color
 
 class ShareDownloadActivity : ComponentActivity() {
     private val qualityLabels = arrayOf("Auto", "1080p", "720p", "480p", "Audio only")
@@ -23,10 +26,17 @@ class ShareDownloadActivity : ComponentActivity() {
     )
     private var pendingUrl: String? = null
     private var pendingFormatSelector: String? = null
+    private var dialog: AlertDialog? = null
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { _ ->
-        startPendingShareDownload()
+    ) { granted ->
+        if (granted) {
+            startPendingShareDownload()
+        } else {
+            Toast.makeText(this, "Notification permission denied, download may not show progress", Toast.LENGTH_LONG).show()
+            startPendingShareDownload()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,9 +49,10 @@ class ShareDownloadActivity : ComponentActivity() {
         }
 
         var selectedIndex = qualityIndexFor(DownloaderPythonBridge.defaultSharedQuality(this))
+        Log.d("ShareDownloadActivity", "Share URL: $sharedUrl, default quality index: $selectedIndex")
 
-        AlertDialog.Builder(this)
-            .setTitle("Download to MPxReels")
+        dialog = AlertDialog.Builder(this)
+            .setTitle("Download to MPx Player")
             .setMessage(sharedUrl)
             .setSingleChoiceItems(qualityLabels, selectedIndex) { _, which ->
                 selectedIndex = which
@@ -52,10 +63,18 @@ class ShareDownloadActivity : ComponentActivity() {
                 val formatSelector = qualityValues[label] ?: qualityValues.getValue("Auto")
                 pendingUrl = sharedUrl
                 pendingFormatSelector = formatSelector
+                Log.d("ShareDownloadActivity", "Starting download with quality: $label, format: $formatSelector")
                 ensureNotificationsThenStart()
             }
             .setOnCancelListener { finish() }
-            .show()
+            .create()
+        dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.WHITE))
+        dialog?.show()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        dialog?.dismiss()
     }
 
     private fun ensureNotificationsThenStart() {

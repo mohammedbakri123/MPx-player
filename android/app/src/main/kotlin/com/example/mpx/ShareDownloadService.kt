@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -30,22 +31,29 @@ class ShareDownloadService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val url = intent?.getStringExtra(EXTRA_URL)
         val formatSelector = intent?.getStringExtra(EXTRA_FORMAT_SELECTOR)
+        Log.d("ShareDownloadService", "onStartCommand: url=$url, format=$formatSelector")
+        
         if (url.isNullOrBlank() || formatSelector.isNullOrBlank()) {
+            Log.e("ShareDownloadService", "Missing url or format selector")
             stopSelf(startId)
             return START_NOT_STICKY
         }
 
         NotificationHelper.ensureChannel(this)
-        startForeground(
-            NOTIFICATION_ID,
-            NotificationHelper.buildProgressNotification(
-                context = this,
-                title = "Starting download",
-                text = "Preparing MPx share download...",
-                progress = 0,
-                indeterminate = true,
-            ),
-        )
+        try {
+            startForeground(
+                NOTIFICATION_ID,
+                NotificationHelper.buildProgressNotification(
+                    context = this,
+                    title = "Starting download",
+                    text = "Preparing MPx share download...",
+                    progress = 0,
+                    indeterminate = true,
+                ),
+            )
+        } catch (e: Exception) {
+            Log.e("ShareDownloadService", "Failed to start foreground: ${e.message}")
+        }
 
         val appContext = applicationContext
         Thread {
@@ -55,7 +63,9 @@ class ShareDownloadService : Service() {
             val token = CancelToken()
 
             try {
+                Log.d("ShareDownloadService", "Ensuring Python started...")
                 DownloaderPythonBridge.ensureStarted(appContext)
+                Log.d("ShareDownloadService", "Python started, starting download...")
                 val notifier = ServiceProgressEmitter(appContext)
                 val finalPath = DownloaderPythonBridge.module().callAttr(
                     "download_video",
@@ -67,6 +77,7 @@ class ShareDownloadService : Service() {
                     notifier,
                     token,
                 ).toString()
+                Log.d("ShareDownloadService", "Download completed: $finalPath")
 
                 val exportedPath = PublicMediaExporter.exportToPublicPath(
                     appContext,
@@ -75,21 +86,28 @@ class ShareDownloadService : Service() {
                 )
                 NotificationHelper.showFinishedNotification(
                     context = appContext,
-                    title = "Saved download",
-                    text = exportedPath,
+                    title = "Download complete",
+                    text = "Saved to $exportedPath",
                     success = true,
                 )
                 showToast(appContext, "Saved to $exportedPath")
             } catch (error: Exception) {
+                Log.e("ShareDownloadService", "Download failed", error)
+                val errorMessage = error.message ?: "Unable to download shared video"
                 NotificationHelper.showFinishedNotification(
                     context = appContext,
                     title = "Download failed",
-                    text = error.message ?: "Unable to download shared video",
+                    text = errorMessage,
                     success = false,
                 )
-                showToast(appContext, error.message ?: "Download failed")
+                showToast(appContext, "Download failed: $errorMessage")
             } finally {
-                stopForeground(STOP_FOREGROUND_REMOVE)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION")
+                    stopForeground(true)
+                }
                 stopSelf(startId)
             }
         }.start()

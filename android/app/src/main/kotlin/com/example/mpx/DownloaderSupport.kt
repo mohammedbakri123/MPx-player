@@ -12,26 +12,29 @@ import java.io.File
 import java.util.Locale
 
 object DownloaderPythonBridge {
+    private var pythonStarted: Boolean = false
+    
     fun ensureStarted(context: Context) {
-        if (!Python.isStarted()) {
+        if (!pythonStarted && !Python.isStarted()) {
             Python.start(AndroidPlatform(context.applicationContext))
+            pythonStarted = true
         }
     }
 
     fun module() = Python.getInstance().getModule("downloader_bridge")
 
     fun cookiesPath(context: Context): String? {
-        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("flutter.shared_preferences", Context.MODE_PRIVATE)
         return prefs.getString("flutter.downloader_cookies_path", null)
     }
 
     fun defaultSharedQuality(context: Context): String {
-        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("flutter.shared_preferences", Context.MODE_PRIVATE)
         return prefs.getString("flutter.downloader_default_quality", "auto") ?: "auto"
     }
 
     fun downloadPath(context: Context): String {
-        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("flutter.shared_preferences", Context.MODE_PRIVATE)
         return prefs.getString("flutter.downloader_download_path", "/Movies/mpxReels")
             ?: "/Movies/mpxReels"
     }
