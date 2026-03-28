@@ -254,6 +254,7 @@ class _MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isReels = _currentIndex == 1;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -275,31 +276,40 @@ class _MainScreenState extends State<MainScreen>
           );
         },
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
+          color: isReels ? Colors.black : theme.elevatedSurface,
           border: Border(
             top: BorderSide(
-              color: theme.softBorder,
+              color: isReels
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : theme.softBorder,
               width: 0.5,
             ),
           ),
         ),
         child: NavigationBarTheme(
           data: NavigationBarThemeData(
-            backgroundColor: theme.elevatedSurface,
+            backgroundColor: Colors.transparent,
             surfaceTintColor: Colors.transparent,
-            indicatorColor: theme.colorScheme.primaryContainer.withValues(
-              alpha: theme.isDarkMode ? 0.28 : 0.7,
-            ),
+            indicatorColor: isReels
+                ? Colors.white.withValues(alpha: 0.12)
+                : theme.colorScheme.primaryContainer.withValues(
+                    alpha: theme.isDarkMode ? 0.28 : 0.7,
+                  ),
             iconTheme: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.selected)) {
                 return IconThemeData(
-                  color: theme.colorScheme.primary,
+                  color: isReels ? Colors.white : theme.colorScheme.primary,
                   size: 24,
                 );
               }
               return IconThemeData(
-                color: theme.faintText,
+                color: isReels
+                    ? Colors.white.withValues(alpha: 0.55)
+                    : theme.faintText,
                 size: 22,
               );
             }),
@@ -308,13 +318,15 @@ class _MainScreenState extends State<MainScreen>
                 return TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.primary,
+                  color: isReels ? Colors.white : theme.colorScheme.primary,
                 );
               }
               return TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: theme.faintText,
+                color: isReels
+                    ? Colors.white.withValues(alpha: 0.55)
+                    : theme.faintText,
               );
             }),
             height: 68,
