@@ -180,10 +180,7 @@ class HomeFABState extends State<HomeFAB> with RouteAware {
         child: AnimatedPadding(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          padding: EdgeInsets.only(
-            right: 6,
-            bottom: (_isVisible && !isKeyboardVisible) ? 80 : 14,
-          ),
+          padding: const EdgeInsets.only(bottom: 0),
           child: InkWell(
             onTap: hasLastVideo ? _openLastVideo : null,
             borderRadius: BorderRadius.circular(24),

@@ -12,6 +12,8 @@ class PlayerView extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onSubtitleSettings;
   final VoidCallback onSettings;
+  final VoidCallback? onNext;
+  final VoidCallback? onPrevious;
 
   const PlayerView({
     super.key,
@@ -20,6 +22,8 @@ class PlayerView extends StatelessWidget {
     required this.onBack,
     required this.onSubtitleSettings,
     required this.onSettings,
+    this.onNext,
+    this.onPrevious,
   });
 
   @override
@@ -70,6 +74,8 @@ class PlayerView extends StatelessWidget {
               onBack: onBack,
               onSubtitleSettings: onSubtitleSettings,
               onSettings: onSettings,
+              onNext: onNext,
+              onPrevious: onPrevious,
             ),
           ),
         ],

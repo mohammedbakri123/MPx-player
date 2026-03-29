@@ -10,6 +10,8 @@ class ControlsLayer extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onSubtitleSettings;
   final VoidCallback onSettings;
+  final VoidCallback? onNext;
+  final VoidCallback? onPrevious;
 
   const ControlsLayer({
     super.key,
@@ -18,6 +20,8 @@ class ControlsLayer extends StatelessWidget {
     required this.onBack,
     required this.onSubtitleSettings,
     required this.onSettings,
+    this.onNext,
+    this.onPrevious,
   });
 
   @override
@@ -123,9 +127,32 @@ class ControlsLayer extends StatelessWidget {
                 ),
                 Align(
                   alignment: Alignment.center,
-                  child: PlayPauseButton(
-                    isPlaying: controller.isPlaying,
-                    onTap: controller.togglePlayPause,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onPrevious != null)
+                        _SeekButton(
+                          icon: Icons.skip_previous,
+                          onTap: () {
+                            controller.registerControlsInteraction();
+                            onPrevious!();
+                          },
+                        ),
+                      if (onPrevious != null) const SizedBox(width: 24),
+                      PlayPauseButton(
+                        isPlaying: controller.isPlaying,
+                        onTap: controller.togglePlayPause,
+                      ),
+                      if (onNext != null) const SizedBox(width: 24),
+                      if (onNext != null)
+                        _SeekButton(
+                          icon: Icons.skip_next,
+                          onTap: () {
+                            controller.registerControlsInteraction();
+                            onNext!();
+                          },
+                        ),
+                    ],
                   ),
                 ),
                 Align(
@@ -146,9 +173,7 @@ class ControlsLayer extends StatelessWidget {
                       controller.seek(Duration(milliseconds: value.toInt()));
                       controller.endControlsInteraction();
                     },
-                    onSeekBack: controller.seekBack,
                     onTogglePlayPause: controller.togglePlayPause,
-                    onSeekForward: controller.seekForward,
                     onToggleFullscreen: controller.toggleFullscreen,
                     onToggleLock: controller.toggleLock,
                   ),
@@ -158,6 +183,40 @@ class ControlsLayer extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SeekButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _SeekButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.45),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.35),
+            width: 1.8,
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: 28,
+        ),
+      ),
     );
   }
 }
