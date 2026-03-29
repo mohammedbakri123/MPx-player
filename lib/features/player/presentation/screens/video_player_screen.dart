@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../../history/services/history_service.dart';
 import '../../../library/domain/entities/video_file.dart';
+import '../../../library/data/datasources/directory_browser.dart';
+import '../../../library/domain/entities/file_item.dart';
 import '../../../settings/services/app_settings_service.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/mpv_player_repository.dart';
@@ -17,8 +21,15 @@ import '../widgets/resume_playback_helper.dart';
 /// and automatically handles disposal when the widget is removed.
 class VideoPlayerScreen extends StatefulWidget {
   final VideoFile video;
+  final List<VideoFile>? playlist;
+  final int? initialPlaylistIndex;
 
-  const VideoPlayerScreen({super.key, required this.video});
+  const VideoPlayerScreen({
+    super.key,
+    required this.video,
+    this.playlist,
+    this.initialPlaylistIndex,
+  });
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
@@ -67,7 +78,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         controller.startHideTimer();
         return controller;
       },
-      child: _VideoPlayerScreenContent(video: widget.video),
+      child: _VideoPlayerScreenContent(
+        video: widget.video,
+        playlist: widget.playlist,
+        initialPlaylistIndex: widget.initialPlaylistIndex ?? 0,
+      ),
     );
   }
 }
@@ -75,8 +90,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 /// The actual screen content that consumes PlayerController from Provider.
 class _VideoPlayerScreenContent extends StatefulWidget {
   final VideoFile video;
+  final List<VideoFile>? playlist;
+  final int initialPlaylistIndex;
 
-  const _VideoPlayerScreenContent({required this.video});
+  const _VideoPlayerScreenContent({
+    required this.video,
+    this.playlist,
+    required this.initialPlaylistIndex,
+  });
 
   @override
   State<_VideoPlayerScreenContent> createState() =>
@@ -86,16 +107,69 @@ class _VideoPlayerScreenContent extends StatefulWidget {
 class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
       _resumeSnackBarController;
+  late int _currentIndex;
+  late List<VideoFile> _playlist;
+  String? _overlayMessage;
+  Timer? _messageTimer;
 
   @override
   void initState() {
     super.initState();
+    if (widget.playlist != null && widget.playlist!.isNotEmpty) {
+      _playlist = widget.playlist!;
+      _currentIndex = widget.initialPlaylistIndex;
+    } else {
+      _playlist = [widget.video];
+      _currentIndex = 0;
+      _loadFolderPlaylist();
+    }
     // Initialize with portrait orientation
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     // Check for auto-resume after a short delay to ensure video is loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndResumePlayback();
+      _recordVideoInHistory();
     });
+  }
+
+  Future<void> _recordVideoInHistory() async {
+    // Check if video already has a history entry
+    final existing = await HistoryService.getHistoryEntry(widget.video.id);
+    if (existing != null) return; // Don't overwrite existing entry
+
+    // Record video in history only if it's new
+    await HistoryService.recordPlayback(
+      video: widget.video,
+      position: Duration.zero,
+      duration: widget.video.duration > 0
+          ? Duration(milliseconds: widget.video.duration)
+          : Duration.zero,
+    );
+  }
+
+  Future<void> _loadFolderPlaylist() async {
+    try {
+      final browser = DirectoryBrowser();
+      final fileItems = await browser.listDirectory(widget.video.folderPath);
+      final videos = fileItems
+          .where((item) =>
+              !item.isDirectory && FileItem.isVideoFileName(item.name))
+          .map((item) => VideoFile.fromFileItem(item, widget.video.folderPath))
+          .toList();
+
+      if (videos.length > 1) {
+        // Find current video's index
+        final index = videos.indexWhere((v) => v.id == widget.video.id);
+        if (index >= 0 && mounted) {
+          setState(() {
+            _playlist = videos;
+            _currentIndex = index;
+          });
+        }
+      }
+    } catch (e) {
+      // If loading fails, keep single video playlist
+    }
   }
 
   Future<void> _checkAndResumePlayback() async {
@@ -164,28 +238,64 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
       },
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: PlayerView(
-          controller: controller,
-          videoTitle: widget.video.title,
-          onBack: () async {
-            // Pause video first so position stops advancing
-            controller.pauseVideo();
+        body: Stack(
+          children: [
+            PlayerView(
+              controller: controller,
+              videoTitle: widget.video.title,
+              onBack: () async {
+                // Pause video first so position stops advancing
+                controller.pauseVideo();
 
-            // Await the position save before navigating away
-            await controller.saveAndCleanup();
+                // Await the position save before navigating away
+                await controller.saveAndCleanup();
 
-            // Reset system UI settings when leaving the player via back button
-            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-            SystemChrome.setPreferredOrientations(
-                [DeviceOrientation.portraitUp]);
-            // ignore: use_build_context_synchronously
-            // Small delay to ensure settings apply
-            await Future.delayed(const Duration(milliseconds: 200));
+                // Reset system UI settings when leaving the player via back button
+                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                SystemChrome.setPreferredOrientations(
+                    [DeviceOrientation.portraitUp]);
+                // ignore: use_build_context_synchronously
+                // Small delay to ensure settings apply
+                await Future.delayed(const Duration(milliseconds: 200));
 
-            Navigator.pop(context);
-          },
-          onSubtitleSettings: () => _showSubtitleSettings(context, controller),
-          onSettings: () => _showSettings(context, controller),
+                Navigator.pop(context);
+              },
+              onSubtitleSettings: () =>
+                  _showSubtitleSettings(context, controller),
+              onSettings: () => _showSettings(context, controller),
+              onNext: _playlist.length > 1 ? () => _playNext(context) : null,
+              onPrevious:
+                  _playlist.length > 1 ? () => _playPrevious(context) : null,
+            ),
+            if (_overlayMessage != null)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 60,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: AnimatedOpacity(
+                    opacity: _overlayMessage != null ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _overlayMessage!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -214,10 +324,65 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     );
   }
 
+  void _playPrevious(BuildContext context) async {
+    if (_currentIndex <= 0) {
+      _showOverlayMessage('No previous video');
+      return;
+    }
+    final controller = context.read<PlayerController>();
+    controller.pauseVideo();
+    await controller.saveAndCleanup();
+    _currentIndex--;
+    if (context.mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VideoPlayerScreen(
+            video: _playlist[_currentIndex],
+            playlist: _playlist,
+            initialPlaylistIndex: _currentIndex,
+          ),
+        ),
+      );
+    }
+  }
+
+  void _playNext(BuildContext context) async {
+    if (_currentIndex >= _playlist.length - 1) {
+      _showOverlayMessage('No next video');
+      return;
+    }
+    final controller = context.read<PlayerController>();
+    controller.pauseVideo();
+    await controller.saveAndCleanup();
+    _currentIndex++;
+    if (context.mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VideoPlayerScreen(
+            video: _playlist[_currentIndex],
+            playlist: _playlist,
+            initialPlaylistIndex: _currentIndex,
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showOverlayMessage(String message) {
+    setState(() => _overlayMessage = message);
+    _messageTimer?.cancel();
+    _messageTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _overlayMessage = null);
+    });
+  }
+
   @override
   void dispose() {
     // Close the resume snackbar when leaving the player
     ResumePlaybackHelper.closeSnackbar(_resumeSnackBarController);
+    _messageTimer?.cancel();
     super.dispose();
   }
 }

@@ -320,17 +320,13 @@ class AppSettingsService {
 
   static bool get holdToBoostSetting => _prefs.getBool(_holdToBoostKey) ?? true;
 
-  static bool get autoResumePlayback =>
-      advancedOptionsEnabled && autoResumePlaybackSetting;
+  static bool get autoResumePlayback => autoResumePlaybackSetting;
 
-  static bool get keepScreenAwake =>
-      advancedOptionsEnabled && keepScreenAwakeSetting;
+  static bool get keepScreenAwake => keepScreenAwakeSetting;
 
-  static bool get swipeGesturesEnabled =>
-      advancedOptionsEnabled && swipeGesturesSetting;
+  static bool get swipeGesturesEnabled => swipeGesturesSetting;
 
-  static bool get holdToBoostEnabled =>
-      advancedOptionsEnabled && holdToBoostSetting;
+  static bool get holdToBoostEnabled => holdToBoostSetting;
 
   static VideoPerformanceConfiguration videoPerformancePresetToConfiguration(
     VideoPerformancePreset preset,

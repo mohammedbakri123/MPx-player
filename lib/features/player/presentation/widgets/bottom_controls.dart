@@ -10,9 +10,7 @@ class BottomControls extends StatefulWidget {
   final VoidCallback onSeekStart;
   final ValueChanged<double> onSeekChanged;
   final ValueChanged<double> onSeekEnd;
-  final VoidCallback onSeekBack;
   final VoidCallback onTogglePlayPause;
-  final VoidCallback onSeekForward;
   final VoidCallback onToggleFullscreen;
   final VoidCallback onToggleLock;
 
@@ -27,9 +25,7 @@ class BottomControls extends StatefulWidget {
     required this.onSeekStart,
     required this.onSeekChanged,
     required this.onSeekEnd,
-    required this.onSeekBack,
     required this.onTogglePlayPause,
-    required this.onSeekForward,
     required this.onToggleFullscreen,
     required this.onToggleLock,
   });
@@ -122,21 +118,11 @@ class _BottomControlsState extends State<BottomControls> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _TransportButton(
-                      icon: Icons.replay_10,
-                      onPressed: widget.onSeekBack,
-                    ),
-                    const SizedBox(width: 8),
-                    _TransportButton(
                       icon: widget.isPlaying
                           ? Icons.pause_rounded
                           : Icons.play_arrow_rounded,
                       onPressed: widget.onTogglePlayPause,
                       emphasized: true,
-                    ),
-                    const SizedBox(width: 8),
-                    _TransportButton(
-                      icon: Icons.forward_10,
-                      onPressed: widget.onSeekForward,
                     ),
                   ],
                 ),

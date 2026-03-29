@@ -7,6 +7,7 @@ import 'operations/folder_operations.dart';
 import 'operations/favorites_operations.dart';
 import 'operations/watch_history_operations.dart';
 import 'operations/library_index_operations.dart';
+import 'operations/download_operations.dart';
 
 /// Main database class - MPx Player
 /// Manages video library, folders, favorites, and watch history with SQLite
@@ -16,7 +17,8 @@ class AppDatabase
         FolderDatabaseOperations,
         FavoritesDatabaseOperations,
         WatchHistoryOperations,
-        LibraryIndexDatabaseOperations {
+        LibraryIndexDatabaseOperations,
+        DownloadDatabaseOperations {
   static final AppDatabase _instance = AppDatabase._internal();
   static Database? _database;
 
@@ -24,7 +26,7 @@ class AppDatabase
   AppDatabase._internal();
 
   static const String _databaseName = 'mpx_player.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
 
   /// Get database instance (singleton)
   @override
@@ -108,12 +110,31 @@ class AppDatabase
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE downloads (
+        id TEXT PRIMARY KEY,
+        video_id TEXT,
+        url TEXT NOT NULL,
+        title TEXT NOT NULL,
+        save_path TEXT,
+        format_selector TEXT,
+        status TEXT NOT NULL,
+        progress REAL NOT NULL DEFAULT 0.0,
+        added_at INTEGER NOT NULL,
+        completed_at INTEGER,
+        error_message TEXT
+      )
+    ''');
+
     // Create indexes for performance
     await db.execute('CREATE INDEX idx_videos_folder ON videos(folder_path)');
     await db.execute('CREATE INDEX idx_videos_date ON videos(date_added DESC)');
     await db.execute('CREATE INDEX idx_videos_title ON videos(title)');
     await db.execute(
         'CREATE INDEX idx_history_played ON watch_history(last_played_at DESC)');
+    await db.execute('CREATE INDEX idx_downloads_status ON downloads(status)');
+    await db.execute(
+        'CREATE INDEX idx_downloads_added ON downloads(added_at DESC)');
 
     AppLogger.i('Database tables created successfully');
   }
@@ -138,6 +159,30 @@ class AppDatabase
           'CREATE INDEX idx_history_played ON watch_history(last_played_at DESC)');
       AppLogger.i('Watch history table created');
     }
+
+    if (oldVersion < 3) {
+      AppLogger.i('Migrating to version 3: Adding downloads table');
+      await db.execute('''
+        CREATE TABLE downloads (
+          id TEXT PRIMARY KEY,
+          video_id TEXT,
+          url TEXT NOT NULL,
+          title TEXT NOT NULL,
+          save_path TEXT,
+          format_selector TEXT,
+          status TEXT NOT NULL,
+          progress REAL NOT NULL DEFAULT 0.0,
+          added_at INTEGER NOT NULL,
+          completed_at INTEGER,
+          error_message TEXT
+        )
+      ''');
+      await db
+          .execute('CREATE INDEX idx_downloads_status ON downloads(status)');
+      await db.execute(
+          'CREATE INDEX idx_downloads_added ON downloads(added_at DESC)');
+      AppLogger.i('Downloads table created');
+    }
   }
 
   /// Close database connection
@@ -157,6 +202,7 @@ class AppDatabase
       await txn.delete('favorites');
       await txn.delete('videos');
       await txn.delete('folders');
+      await txn.delete('downloads');
     });
     AppLogger.i('All database data deleted');
   }

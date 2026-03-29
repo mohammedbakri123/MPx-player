@@ -102,9 +102,15 @@ class DirectoryBrowser {
   }
 
   void invalidatePath(String path) {
-    // Only invalidate exact path to keep other navigation cache
     _cache.remove(path);
     _videoCountCache.remove(path);
+  }
+
+  /// Invalidate a path and all its descendant paths in the cache.
+  void invalidatePathTree(String path) {
+    _cache.removeWhere((key, _) => key == path || key.startsWith('$path/'));
+    _videoCountCache
+        .removeWhere((key, _) => key == path || key.startsWith('$path/'));
   }
 
   String getRootPath() {

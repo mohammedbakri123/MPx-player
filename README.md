@@ -4,10 +4,10 @@
   <br />
   <br />
 
-  # 🎬 MPx Player
+# 🎬 MPx Player
 
-  **The Ultimate Privacy-Focused Local Video Player for Android & iOS**
-  
+**The Ultimate Privacy-Focused Local Video Player for Android & iOS**
+
   <p align="center">
     <a href="https://flutter.dev/"><img src="https://img.shields.io/badge/Flutter-3.0%2B-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter"></a>
     <a href="https://dart.dev/"><img src="https://img.shields.io/badge/Dart-3.0%2B-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart"></a>
@@ -56,10 +56,11 @@
 
 ## 🌟 Why MPx Player?
 
-MPx Player is not just another video player. It's built from the ground up prioritizing **your privacy** and delivering a **lightning-fast experience**. 
+MPx Player is not just another video player. It's built from the ground up prioritizing **your privacy** and delivering a **lightning-fast experience**.
 
 We guarantee:
-- 🚫 **No Analytics** 
+
+- 🚫 **No Analytics**
 - 🚫 **No Tracking**
 - 🚫 **No Internet Required**
 - 🚫 **No Ads**
@@ -69,7 +70,9 @@ We guarantee:
 ## ✨ Power-Packed Features
 
 ### 🏠 Intelligent Library Management
+
 > Experience your media library without the wait.
+
 - ⚡ **Instant Loading**: Persistent SQLite indexing means it scans once and loads instantly forever.
 - 🧹 **Smart Filtering**: Automatically hides empty folders.
 - 🗂️ **Folder-Based Organization**: Easily browse `Camera`, `Downloads`, `Movies`, and more.
@@ -77,19 +80,22 @@ We guarantee:
 - 🔄 **Pull-to-Refresh**: Seamlessly rescan storage and rebuild your index on demand.
 
 ### 🎬 Advanced Video Playback
+
 > Powered by the robust `flutter_mpv` engine for uncompromising quality.
+
 - 🚀 **Hardware Acceleration**: Deep tuning options for flawless playback.
 - 🛠️ **Expert Engine Mode**: Override underlying decoding, sync, and frame-dropping strategies.
 - 🤌 **Intuitive Gestures**:
-  - ↔️ *Horizontal Swipe*: Seek forward/backward
-  - ↕️ *Left Vertical Swipe*: Adjust Brightness
-  - ↕️ *Right Vertical Swipe*: Adjust Volume
-  - 👆 *Long Press*: 2x Speed playback
-  - ✌️ *Double Tap*: Quick seeking & pause/play
+  - ↔️ _Horizontal Swipe_: Seek forward/backward
+  - ↕️ _Left Vertical Swipe_: Adjust Brightness
+  - ↕️ _Right Vertical Swipe_: Adjust Volume
+  - 👆 _Long Press_: 2x Speed playback
+  - ✌️ _Double Tap_: Quick seeking & pause/play
 - 📝 **Advanced Subtitles**: Full customization (size up to 72pt, colors, font types, background).
 - 🕒 **Watch History**: Automatically remembers where you left off.
 
 ### ⭐ Favorites & Personalization
+
 - ❤️ **One-Tap Favorites**: Curate your favorite videos with persistent SQLite storage.
 - 🎨 **Modern Material 3**: Beautiful, fluid, and responsive design with smooth animations.
 - ⚙️ **Deep Customization**: Control auto-resume, keep-awake behavior, cache management, and manual `mpv` parameters.
@@ -108,6 +114,7 @@ graph TD;
 ```
 
 Explore our deep-dives:
+
 - 📐 **[Architecture Overview](ARCHITECTURE.md)**
 - 🤝 **[Contributing Guide](CONTRIBUTING.md)**
 
@@ -115,13 +122,13 @@ Explore our deep-dives:
 
 ## 🛠️ Tech Stack
 
-| Domain | Technologies |
-|---|---|
-| **Core Framework** | Flutter 3.0+, Dart 3.0+ |
-| **Video Engine** | `flutter_mpv`, `flutter_mpv_video` |
-| **State Management** | Provider |
-| **Database & Persistence**| `sqflite`, `shared_preferences` |
-| **UI & Animations** | Material 3, Google Fonts, `flutter_staggered_animations` |
+| Domain                     | Technologies                                             |
+| -------------------------- | -------------------------------------------------------- |
+| **Core Framework**         | Flutter 3.0+, Dart 3.0+                                  |
+| **Video Engine**           | `flutter_mpv`, `flutter_mpv_video`                       |
+| **State Management**       | Provider                                                 |
+| **Database & Persistence** | `sqflite`, `shared_preferences`                          |
+| **UI & Animations**        | Material 3, Google Fonts, `flutter_staggered_animations` |
 
 ---
 
@@ -130,6 +137,7 @@ Explore our deep-dives:
 Follow these steps to build the project locally.
 
 ### Prerequisites
+
 - [Flutter SDK](https://flutter.dev/docs/get-started/install) 3.0.0 or higher
 - Android Studio / Xcode
 - Git
@@ -137,12 +145,14 @@ Follow these steps to build the project locally.
 ### Installation
 
 1. **Clone the repository:**
+
    ```bash
-   git clone https://github.com/yourusername/mpx-player.git
-   cd mpx-player/mpx
+   git clone https://github.com/mohammedbakri123/MPx-player.git
+   cd MPx-player
    ```
 
 2. **Install dependencies:**
+
    ```bash
    flutter pub get
    ```

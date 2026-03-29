@@ -11,7 +11,7 @@ import '../video/lazy_thumbnail.dart';
 import 'file_list_item.dart';
 
 class FileBrowserContent extends StatelessWidget {
-  static const double _bottomClearance = 128;
+  static const double _bottomClearance = 10;
 
   final FileBrowserController controller;
   final void Function(String path) onVideoTap;
