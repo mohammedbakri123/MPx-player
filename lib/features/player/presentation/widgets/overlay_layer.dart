@@ -1,23 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../controller/player_controller.dart';
-
-/// OverlayLayer
-///
-/// This file contains the `OverlayLayer` widget used by the video player UI.
-///
-/// Responsibilities:
-/// - Render transient overlay elements above the video (seek animations, buffering
-///   spinner, volume/brightness indicators, speed/long-press indicator, locked
-///   state UI, etc.).
-/// - Use small, self-contained private builder methods to show/hide each
-///   overlay element based on state exposed by `PlayerController`.
-/// - Keep the overlay presentation separate from playback logic. This widget
-///   observes properties on `PlayerController` (passed in) and renders
-///   animations and indicators accordingly.
-///
-/// Notes:
-/// - No playback logic or file I/O is performed here. This widget is purely
-///   presentational and receives state from the controller.
+import '../../../reels/presentation/widgets/playback_speed_indicator.dart';
+import '../../../reels/presentation/widgets/seek_feedback_indicator.dart';
 
 class OverlayLayer extends StatelessWidget {
   final PlayerController controller;
@@ -45,22 +29,16 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildDoubleTapSeekLeft() {
-    // Double-tap left seek animation
-    // Shows a short animated icon on the left side when the controller
-    // indicates a double-tap-seek-left event occurred. The visibility is
-    // controlled by `controller.showDoubleTapSeekLeft` and the widget uses an
-    // AnimatedSwitcher for a smooth appearance/disappearance.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 150),
       child: controller.showDoubleTapSeekLeft
           ? const Positioned(
               key: ValueKey<bool>(true),
-              left: 40,
+              left: 24,
               top: 0,
-              bottom: 0,
-              child: _DoubleTapSeekAnimation(
-                icon: Icons.fast_rewind,
-                direction: SeekAnimationDirection.left,
+              bottom: 80,
+              child: Center(
+                child: SeekFeedbackIndicator(isForward: false),
               ),
             )
           : const SizedBox.shrink(key: ValueKey<bool>(false)),
@@ -68,20 +46,16 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildDoubleTapSeekRight() {
-    // Double-tap right seek animation
-    // Mirrors the left-side animation but appears on the right when the
-    // controller signals a double-tap-seek-right event.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 150),
       child: controller.showDoubleTapSeekRight
           ? const Positioned(
               key: ValueKey<bool>(true),
-              right: 40,
+              right: 24,
               top: 0,
-              bottom: 0,
-              child: _DoubleTapSeekAnimation(
-                icon: Icons.fast_forward,
-                direction: SeekAnimationDirection.right,
+              bottom: 80,
+              child: Center(
+                child: SeekFeedbackIndicator(isForward: true),
               ),
             )
           : const SizedBox.shrink(key: ValueKey<bool>(false)),
@@ -89,33 +63,19 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildSpeedIndicator() {
-    // Long-press playback speed indicator
-    // When the user long-presses to fast-scrub or change speed, show a center
-    // overlay indicating the current speed. This example shows '2.0x'. The
-    // controller exposes `isLongPressing` which toggles this indicator.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
         return FadeTransition(opacity: animation, child: child);
       },
       child: controller.isLongPressing
-          ? Center(
-              key: const ValueKey<bool>(true),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  '2.0x',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+          ? const Positioned(
+              key: ValueKey<bool>(true),
+              top: 120,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: PlaybackSpeedIndicator(speed: 2.0),
               ),
             )
           : const SizedBox.shrink(key: ValueKey<bool>(false)),
@@ -123,8 +83,6 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildVolumeIndicator(BuildContext context) {
-    // Volume indicator shown on the LEFT side (opposite of drag zone)
-    // so the user's hand doesn't cover the indicator while adjusting volume
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
@@ -151,8 +109,6 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildBrightnessIndicator(BuildContext context) {
-    // Brightness indicator shown on the RIGHT side (opposite of drag zone)
-    // so the user's hand doesn't cover the indicator while adjusting brightness
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
@@ -177,9 +133,6 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildSeekIndicator() {
-    // Transient seek indicator shown at center when the user is performing a
-    // seek gesture. Displays an icon (forward/back) and the formatted
-    // position/time returned by controller.formatDuration(controller.position).
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
@@ -190,28 +143,28 @@ class OverlayLayer extends StatelessWidget {
               key: const ValueKey<bool>(true),
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.black.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       controller.seekDirection == 'forward'
-                          ? Icons.forward_10
-                          : Icons.replay_10,
+                          ? Icons.forward_10_rounded
+                          : Icons.replay_10_rounded,
                       color: Colors.white,
-                      size: 24,
+                      size: 28,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
                       controller.formatDuration(controller.position),
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -223,19 +176,24 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildBufferingIndicator() {
-    // Shows a centered CircularProgressIndicator when `controller.isBuffering`
-    // is true. Uses AnimatedSwitcher for smooth fade.
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) {
         return FadeTransition(opacity: animation, child: child);
       },
       child: controller.isBuffering
-          ? const Center(
-              key: ValueKey<bool>(true),
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 3,
+          ? Center(
+              key: const ValueKey<bool>(true),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
               ),
             )
           : const SizedBox.shrink(key: ValueKey<bool>(false)),
@@ -255,10 +213,6 @@ class OverlayLayer extends StatelessWidget {
     required Color color,
     required String label,
   }) {
-    // Generic vertical indicator used for both volume and brightness UI.
-    // - `icon` shows the glyph (volume or brightness)
-    // - `value` expected to be 0.0..1.0 and controls the filled height
-    // - `label` displays a small text label (percentage or numeric value)
     return Container(
       width: 50,
       height: 120,
@@ -300,86 +254,6 @@ class OverlayLayer extends StatelessWidget {
               style: const TextStyle(color: Colors.white, fontSize: 10)),
         ],
       ),
-    );
-  }
-}
-
-enum SeekAnimationDirection { left, right }
-
-class _DoubleTapSeekAnimation extends StatefulWidget {
-  final IconData icon;
-  final SeekAnimationDirection direction;
-
-  const _DoubleTapSeekAnimation({
-    required this.icon,
-    required this.direction,
-  });
-
-  /// Small animated circular icon used to visualize double-tap seek events.
-  /// When created it plays a short scale+fade animation and then naturally
-  /// fades away. This widget is intentionally lightweight and self-contained.
-
-  @override
-  State<_DoubleTapSeekAnimation> createState() =>
-      _DoubleTapSeekAnimationState();
-}
-
-class _DoubleTapSeekAnimationState extends State<_DoubleTapSeekAnimation>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.5, 1.0)),
-    );
-
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                widget.icon,
-                color: Colors.white,
-                size: 40,
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
