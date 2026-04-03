@@ -3,16 +3,26 @@ import 'package:flutter_mpv/flutter_mpv.dart';
 import 'package:flutter_mpv_video/flutter_mpv_video.dart';
 import 'package:mpx/features/library/domain/entities/video_file.dart';
 import 'package:mpx/features/player/presentation/widgets/player_volume_indicator.dart';
+import 'package:mpx/features/reels/presentation/widgets/reel_progress_bar.dart';
+import 'package:mpx/features/reels/presentation/widgets/seek_feedback_indicator.dart';
+import 'package:mpx/features/reels/presentation/widgets/playback_speed_indicator.dart';
+import 'package:mpx/features/reels/presentation/widgets/pause_indicator.dart';
 import 'dart:async';
 
 class ReelPlayerItem extends StatefulWidget {
   final VideoFile video;
   final bool isCurrentlyVisible;
+  final double playbackSpeed;
+  final VoidCallback? onTogglePause;
+  final bool isPaused;
 
   const ReelPlayerItem({
     super.key,
     required this.video,
     required this.isCurrentlyVisible,
+    this.playbackSpeed = 1.0,
+    this.onTogglePause,
+    this.isPaused = false,
   });
 
   @override
@@ -31,27 +41,50 @@ class _ReelPlayerItemState extends State<ReelPlayerItem> {
   bool _isMuted = false;
   Timer? _hideVolumeIndicatorTimer;
   double _volumeIndicatorOpacity = 0.0;
-  bool _showSeekIndicator = false;
-  bool _isSeekingForward = false;
+  bool _showSeekForward = false;
+  bool _showSeekBackward = false;
+  Timer? _seekHideTimer;
+  bool _isLongPressing = false;
+  bool _showPauseIndicator = false;
+  Timer? _pauseHideTimer;
+  Duration _currentPosition = Duration.zero;
+  Duration _duration = Duration.zero;
+  int _tapCount = 0;
+  Timer? _tapTimer;
 
   @override
   void initState() {
     super.initState();
     _player.setVolume(_isMuted ? 0.0 : 100.0);
     _player.setPlaylistMode(PlaylistMode.single);
-    _player.open(Media(widget.video.path), play: widget.isCurrentlyVisible);
+    _player.setRate(widget.playbackSpeed);
+    _player.open(Media(widget.video.path),
+        play: widget.isCurrentlyVisible && !widget.isPaused);
+    _player.stream.position.listen((pos) {
+      if (mounted) {
+        setState(() => _currentPosition = pos);
+      }
+    });
+    _player.stream.duration.listen((dur) {
+      if (mounted) {
+        setState(() => _duration = dur);
+      }
+    });
   }
 
   @override
   void didUpdateWidget(ReelPlayerItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isCurrentlyVisible != oldWidget.isCurrentlyVisible) {
-      if (widget.isCurrentlyVisible) {
+    if (widget.playbackSpeed != oldWidget.playbackSpeed && !_isLongPressing) {
+      _player.setRate(widget.playbackSpeed);
+    }
+    if (widget.isCurrentlyVisible != oldWidget.isCurrentlyVisible ||
+        widget.isPaused != oldWidget.isPaused) {
+      final shouldPlay = widget.isCurrentlyVisible && !widget.isPaused;
+      if (shouldPlay) {
         _player.play();
       } else {
         _player.pause();
-        // optionally seek back to start
-        // _player.seek(Duration.zero);
       }
     }
   }
@@ -60,7 +93,26 @@ class _ReelPlayerItemState extends State<ReelPlayerItem> {
   void dispose() {
     _player.dispose();
     _hideVolumeIndicatorTimer?.cancel();
+    _seekHideTimer?.cancel();
+    _pauseHideTimer?.cancel();
+    _tapTimer?.cancel();
     super.dispose();
+  }
+
+  void _onTap() {
+    _tapCount++;
+    if (_tapCount == 1) {
+      _tapTimer = Timer(const Duration(milliseconds: 250), () {
+        if (_tapCount == 1) {
+          _toggleMute();
+        }
+        _tapCount = 0;
+      });
+    } else if (_tapCount >= 2) {
+      _tapTimer?.cancel();
+      _tapCount = 0;
+      _togglePause();
+    }
   }
 
   void _toggleMute() {
@@ -71,46 +123,79 @@ class _ReelPlayerItemState extends State<ReelPlayerItem> {
       _hideVolumeIndicatorTimer?.cancel();
       _hideVolumeIndicatorTimer = Timer(const Duration(seconds: 1), () {
         if (mounted) {
-          setState(() {
-            _volumeIndicatorOpacity = 0.0;
-          });
+          setState(() => _volumeIndicatorOpacity = 0.0);
         }
       });
     });
   }
 
-  void _seek(bool forward) {
-    setState(() {
-      _showSeekIndicator = true;
-      _isSeekingForward = forward;
+  void _togglePause() {
+    widget.onTogglePause?.call();
+    _showPauseIndicator = true;
+    _pauseHideTimer?.cancel();
+    _pauseHideTimer = Timer(const Duration(milliseconds: 600), () {
+      if (mounted) setState(() => _showPauseIndicator = false);
     });
+  }
 
+  void _seek(bool forward) {
     final currentPosition = _player.state.position;
     final newPosition = currentPosition +
         (forward ? const Duration(seconds: 10) : const Duration(seconds: -10));
     _player.seek(newPosition);
 
-    Timer(const Duration(milliseconds: 500), () {
+    setState(() {
+      if (forward) {
+        _showSeekForward = true;
+      } else {
+        _showSeekBackward = true;
+      }
+    });
+
+    _seekHideTimer?.cancel();
+    _seekHideTimer = Timer(const Duration(milliseconds: 600), () {
       if (mounted) {
         setState(() {
-          _showSeekIndicator = false;
+          _showSeekForward = false;
+          _showSeekBackward = false;
         });
       }
     });
   }
 
+  void _onSeek(Duration position) {
+    _player.seek(position);
+  }
+
+  void _onLongPressStart() {
+    setState(() {
+      _isLongPressing = true;
+    });
+    _player.setRate(2.0);
+  }
+
+  void _onLongPressEnd() {
+    setState(() {
+      _isLongPressing = false;
+    });
+    _player.setRate(widget.playbackSpeed);
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _toggleMute,
+      onTap: _onTap,
       onDoubleTapDown: (details) {
         final screenWidth = MediaQuery.of(context).size.width;
         if (details.localPosition.dx < screenWidth / 2) {
-          _seek(false); // Double tap on left half
+          _seek(false);
         } else {
-          _seek(true); // Double tap on right half
+          _seek(true);
         }
       },
+      onLongPressStart: (_) => _onLongPressStart(),
+      onLongPressEnd: (_) => _onLongPressEnd(),
+      onLongPressCancel: _onLongPressEnd,
       child: Stack(
         children: [
           SizedBox(
@@ -118,9 +203,8 @@ class _ReelPlayerItemState extends State<ReelPlayerItem> {
             height: MediaQuery.of(context).size.height,
             child: Video(
               controller: _controller,
-              controls:
-                  null, // Disable default controls to allow custom gestures
-              fit: BoxFit.contain, // Maintain aspect ratio without cropping
+              controls: null,
+              fit: BoxFit.contain,
             ),
           ),
           Center(
@@ -130,37 +214,46 @@ class _ReelPlayerItemState extends State<ReelPlayerItem> {
               child: PlayerVolumeIndicator(isMuted: _isMuted),
             ),
           ),
-          if (_showSeekIndicator)
-            Center(
-              child: Icon(
-                _isSeekingForward
-                    ? Icons.forward_10_rounded
-                    : Icons.replay_10_rounded,
-                color: Colors.white,
-                size: 80,
+          if (_showSeekForward)
+            const Positioned(
+              right: 24,
+              top: 0,
+              bottom: 80,
+              child: Center(
+                child: SeekFeedbackIndicator(isForward: true),
               ),
             ),
-          // Progress bar at the bottom
+          if (_showSeekBackward)
+            const Positioned(
+              left: 24,
+              top: 0,
+              bottom: 80,
+              child: Center(
+                child: SeekFeedbackIndicator(isForward: false),
+              ),
+            ),
+          if (_isLongPressing)
+            const Positioned(
+              top: 120,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: PlaybackSpeedIndicator(speed: 2.0),
+              ),
+            ),
+          Center(
+            child: PauseIndicator(
+              isPaused: widget.isPaused && _showPauseIndicator,
+            ),
+          ),
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: StreamBuilder<Duration>(
-              stream: _player.stream.position,
-              builder: (context, snapshot) {
-                final position = snapshot.data ?? Duration.zero;
-                final duration = _player.state.duration;
-                final double progress = duration.inMilliseconds > 0
-                    ? position.inMilliseconds / duration.inMilliseconds
-                    : 0.0;
-                return LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.white.withValues(alpha: 0.3),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.primary,
-                  ),
-                );
-              },
+            child: ReelProgressBar(
+              position: _currentPosition,
+              duration: _duration,
+              onSeek: _onSeek,
             ),
           ),
         ],

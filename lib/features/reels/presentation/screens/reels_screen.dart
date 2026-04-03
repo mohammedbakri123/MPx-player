@@ -8,6 +8,7 @@ import 'package:mpx/features/reels/presentation/widgets/reels_swipe_hint.dart';
 import 'package:mpx/features/reels/presentation/widgets/custom_folder_back_button.dart';
 import 'package:mpx/features/reels/presentation/widgets/custom_folder_back_hint.dart';
 import 'package:mpx/features/library/controller/file_browser_controller.dart';
+import 'package:mpx/core/theme/app_theme_tokens.dart';
 
 class ReelsScreen extends StatefulWidget {
   final bool isActive;
@@ -164,6 +165,9 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                       isCurrentlyVisible: widget.isActive &&
                           _currentPage == index &&
                           _isAppActive,
+                      playbackSpeed: controller.playbackSpeed,
+                      isPaused: controller.isPaused,
+                      onTogglePause: controller.togglePause,
                     );
                   },
                 ),
@@ -171,9 +175,35 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                   top: 40,
                   right: 20,
                   child: SafeArea(
-                    child: ReelsSortMenu(
-                      onSortSelected: controller.changeSortOrder,
-                      theme: theme,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: controller.cyclePlaybackSpeed,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color:
+                                  theme.elevatedSurface.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              '${controller.playbackSpeed}x',
+                              style: TextStyle(
+                                color: theme.strongText,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ReelsSortMenu(
+                          onSortSelected: controller.changeSortOrder,
+                          theme: theme,
+                        ),
+                      ],
                     ),
                   ),
                 ),

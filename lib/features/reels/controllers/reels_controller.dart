@@ -11,12 +11,16 @@ class ReelsController extends ChangeNotifier {
   String? _reelsFolderPath;
   final String? targetFolderPath;
   ReelsSortOrder _sortOrder = ReelsSortOrder.dateDesc;
+  double _playbackSpeed = 1.0;
+  bool _isPaused = false;
 
   List<VideoFile> get reelsVideos => _reelsVideos;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get reelsFolderPath => _reelsFolderPath;
   ReelsSortOrder get sortOrder => _sortOrder;
+  double get playbackSpeed => _playbackSpeed;
+  bool get isPaused => _isPaused;
 
   ReelsController({this.targetFolderPath}) {
     loadReels();
@@ -79,9 +83,38 @@ class ReelsController extends ChangeNotifier {
     }
   }
 
+  void togglePause() {
+    _isPaused = !_isPaused;
+    notifyListeners();
+  }
+
+  void setPaused(bool paused) {
+    if (_isPaused != paused) {
+      _isPaused = paused;
+      notifyListeners();
+    }
+  }
+
+  void cyclePlaybackSpeed() {
+    const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+    final currentIndex = speeds.indexOf(_playbackSpeed);
+    _playbackSpeed = speeds[(currentIndex + 1) % speeds.length];
+    notifyListeners();
+  }
+
+  void setPlaybackSpeed(double speed) {
+    _playbackSpeed = speed;
+    notifyListeners();
+  }
+
+  void resetPlaybackSpeed() {
+    _playbackSpeed = 1.0;
+    notifyListeners();
+  }
+
   Future<void> importFolderToReels(String folderPath) async {
     if (targetFolderPath != null) {
-      return; // Disallow importing when viewing a specific folder
+      return;
     }
     _isLoading = true;
     _error = null;
@@ -89,7 +122,7 @@ class ReelsController extends ChangeNotifier {
 
     try {
       await ReelService.importFolder(folderPath);
-      await loadReels(); // Reload reels after import
+      await loadReels();
     } catch (e) {
       _error = 'Failed to import folder: $e';
     } finally {
@@ -100,7 +133,7 @@ class ReelsController extends ChangeNotifier {
 
   Future<void> importVideoToReels(String filePath) async {
     if (targetFolderPath != null) {
-      return; // Disallow importing when viewing a specific folder
+      return;
     }
     _isLoading = true;
     _error = null;
@@ -108,7 +141,7 @@ class ReelsController extends ChangeNotifier {
 
     try {
       await ReelService.importVideoFile(filePath);
-      await loadReels(); // Reload reels after import
+      await loadReels();
     } catch (e) {
       _error = 'Failed to import video: $e';
     } finally {
