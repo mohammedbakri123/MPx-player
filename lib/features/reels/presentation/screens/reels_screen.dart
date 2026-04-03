@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mpx/features/reels/controllers/reels_controller.dart';
 import 'package:mpx/features/reels/presentation/widgets/reel_player_item.dart';
+import 'package:mpx/features/reels/presentation/widgets/empty_reels_view.dart';
+import 'package:mpx/features/reels/presentation/widgets/reels_sort_menu.dart';
+import 'package:mpx/features/reels/presentation/widgets/reels_swipe_hint.dart';
+import 'package:mpx/features/reels/presentation/widgets/custom_folder_back_button.dart';
+import 'package:mpx/features/reels/presentation/widgets/custom_folder_back_hint.dart';
 import 'package:mpx/features/library/controller/file_browser_controller.dart';
-import 'package:mpx/core/theme/app_theme_tokens.dart';
 
 class ReelsScreen extends StatefulWidget {
   final bool isActive;
@@ -55,7 +59,6 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
   void didUpdateWidget(ReelsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive != oldWidget.isActive) {
-      // Rebuild to pass new isActive state to children
       setState(() {});
     }
   }
@@ -65,14 +68,6 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
-  }
-
-  void _onPageChanged(int page) {
-    if (mounted) {
-      setState(() {
-        _currentPage = page;
-      });
-    }
   }
 
   Future<void> _importFolder() async {
@@ -144,99 +139,23 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
         }
 
         if (controller.reelsVideos.isEmpty) {
-          return Scaffold(
-            backgroundColor: theme.appBackground,
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.video_library_rounded,
-                    size: 80,
-                    color: theme.faintText,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No Reels yet!',
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(color: theme.strongText),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Navigate to a folder in Home and tap the import button, or add videos via the video details sheet.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: theme.mutedText),
-                  ),
-                  if (!isCustomFolder &&
-                      controller.reelsFolderPath != null) ...[
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.symmetric(horizontal: 24),
-                      decoration: BoxDecoration(
-                        color: theme.elevatedSurface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.softBorder),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Or add/delete your own videos externally at:',
-                            style: TextStyle(
-                                color: theme.strongText,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 6),
-                          SelectableText(
-                            controller.reelsFolderPath!,
-                            style: TextStyle(
-                              color: theme.colorScheme.primary,
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  if (!isCustomFolder)
-                    ElevatedButton.icon(
-                      onPressed: _importFolder,
-                      icon: const Icon(Icons.folder_open_rounded),
-                      label: const Text('Import Current Folder'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+          return EmptyReelsView(
+            isCustomFolder: isCustomFolder,
+            onImportFolder: isCustomFolder ? null : _importFolder,
+            reelsFolderPath: controller.reelsFolderPath,
           );
         }
 
         return Scaffold(
           backgroundColor: Colors.black,
           body: RefreshIndicator(
-            onRefresh: () async {
-              await controller.loadReels();
-            },
+            onRefresh: controller.loadReels,
             child: Stack(
               children: [
                 PageView.builder(
                   controller: _pageController,
                   scrollDirection: Axis.vertical,
-                  onPageChanged: _onPageChanged,
+                  onPageChanged: (page) => setState(() => _currentPage = page),
                   itemCount: controller.reelsVideos.length,
                   itemBuilder: (context, index) {
                     final video = controller.reelsVideos[index];
@@ -252,33 +171,9 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                   top: 40,
                   right: 20,
                   child: SafeArea(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: theme.elevatedSurface.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: PopupMenuButton<ReelsSortOrder>(
-                        icon: Icon(Icons.sort_rounded, color: theme.strongText),
-                        onSelected: controller.changeSortOrder,
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: ReelsSortOrder.dateDesc,
-                            child: Text('Newest First'),
-                          ),
-                          const PopupMenuItem(
-                            value: ReelsSortOrder.dateAsc,
-                            child: Text('Oldest First'),
-                          ),
-                          const PopupMenuItem(
-                            value: ReelsSortOrder.nameAsc,
-                            child: Text('By Name'),
-                          ),
-                          const PopupMenuItem(
-                            value: ReelsSortOrder.shuffle,
-                            child: Text('Shuffle'),
-                          ),
-                        ],
-                      ),
+                    child: ReelsSortMenu(
+                      onSortSelected: controller.changeSortOrder,
+                      theme: theme,
                     ),
                   ),
                 ),
@@ -287,90 +182,28 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                     top: 40,
                     left: 20,
                     child: SafeArea(
-                      child: AnimatedOpacity(
-                        opacity: _showExitHint ? 1 : 0.72,
-                        duration: const Duration(milliseconds: 260),
-                        child: IgnorePointer(
-                          ignoring: true,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.48),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.swipe_right_alt_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Swipe right to leave Reels',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      child: ReelsSwipeHint(showExitHint: _showExitHint),
                     ),
                   ),
-                if (isCustomFolder)
+                if (isCustomFolder) ...[
                   Positioned(
                     top: 40,
                     left: 20,
                     child: SafeArea(
-                      child: FloatingActionButton(
-                        onPressed: () => Navigator.pop(context),
-                        mini: true,
-                        backgroundColor:
-                            theme.elevatedSurface.withValues(alpha: 0.7),
-                        child: Icon(Icons.arrow_back_rounded,
-                            color: theme.strongText),
+                      child: CustomFolderBackButton(
+                        onBack: () => Navigator.pop(context),
+                        theme: theme,
                       ),
                     ),
                   ),
-                if (isCustomFolder)
-                  Positioned(
+                  const Positioned(
                     top: 96,
                     left: 20,
                     child: SafeArea(
-                      child: IgnorePointer(
-                        ignoring: true,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Text(
-                            'Tap back to return',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
+                      child: CustomFolderBackHint(),
                     ),
                   ),
+                ],
                 if (controller.isLoading)
                   const Positioned(
                     top: 50,
