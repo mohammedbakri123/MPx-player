@@ -13,6 +13,8 @@ class BottomControls extends StatefulWidget {
   final VoidCallback onTogglePlayPause;
   final VoidCallback onToggleFullscreen;
   final VoidCallback onToggleLock;
+  final VoidCallback? onTogglePip;
+  final bool showPipButton;
 
   const BottomControls({
     super.key,
@@ -28,6 +30,8 @@ class BottomControls extends StatefulWidget {
     required this.onTogglePlayPause,
     required this.onToggleFullscreen,
     required this.onToggleLock,
+    this.onTogglePip,
+    this.showPipButton = false,
   });
 
   @override
@@ -49,6 +53,17 @@ class _BottomControlsState extends State<BottomControls> {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 200 || constraints.maxHeight < 120) {
+          return const SizedBox.shrink();
+        }
+        return _buildContent(context);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       decoration: BoxDecoration(
@@ -134,6 +149,13 @@ class _BottomControlsState extends State<BottomControls> {
                     : Icons.fullscreen,
                 onPressed: widget.onToggleFullscreen,
               ),
+              if (widget.showPipButton && widget.onTogglePip != null) ...[
+                const SizedBox(width: 8),
+                _UtilityButton(
+                  icon: Icons.picture_in_picture_alt_rounded,
+                  onPressed: widget.onTogglePip!,
+                ),
+              ],
             ],
           ),
         ],

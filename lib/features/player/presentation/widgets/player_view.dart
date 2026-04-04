@@ -14,6 +14,9 @@ class PlayerView extends StatelessWidget {
   final VoidCallback onSettings;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+  final VoidCallback? onTogglePip;
+  final bool showPipButton;
+  final bool isInPipMode;
 
   const PlayerView({
     super.key,
@@ -24,6 +27,9 @@ class PlayerView extends StatelessWidget {
     required this.onSettings,
     this.onNext,
     this.onPrevious,
+    this.onTogglePip,
+    this.showPipButton = false,
+    this.isInPipMode = false,
   });
 
   @override
@@ -58,26 +64,31 @@ class PlayerView extends StatelessWidget {
               );
             },
           ),
-          Selector<PlayerController, bool>(
-            selector: (_, controller) => controller.isLocked,
-            builder: (context, _, __) => GestureLayer(controller: controller),
-          ),
-          AnimatedBuilder(
-            animation: controller,
-            builder: (context, _) => OverlayLayer(controller: controller),
-          ),
-          AnimatedBuilder(
-            animation: controller,
-            builder: (context, _) => ControlsLayer(
-              controller: controller,
-              title: videoTitle,
-              onBack: onBack,
-              onSubtitleSettings: onSubtitleSettings,
-              onSettings: onSettings,
-              onNext: onNext,
-              onPrevious: onPrevious,
+          if (!isInPipMode)
+            Selector<PlayerController, bool>(
+              selector: (_, controller) => controller.isLocked,
+              builder: (context, _, __) => GestureLayer(controller: controller),
             ),
-          ),
+          if (!isInPipMode)
+            AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) => OverlayLayer(controller: controller),
+            ),
+          if (!isInPipMode)
+            AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) => ControlsLayer(
+                controller: controller,
+                title: videoTitle,
+                onBack: onBack,
+                onSubtitleSettings: onSubtitleSettings,
+                onSettings: onSettings,
+                onNext: onNext,
+                onPrevious: onPrevious,
+                onTogglePip: onTogglePip,
+                showPipButton: showPipButton,
+              ),
+            ),
         ],
       ),
     );

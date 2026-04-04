@@ -14,11 +14,17 @@ class GestureLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (controller.isLocked) {
-      return _buildLockedGestureLayer();
-    }
-
-    return _buildGestureLayer(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 200 || constraints.maxHeight < 120) {
+          return const SizedBox.shrink();
+        }
+        if (controller.isLocked) {
+          return _buildLockedGestureLayer();
+        }
+        return _buildGestureLayer(context);
+      },
+    );
   }
 
   Widget _buildLockedGestureLayer() {

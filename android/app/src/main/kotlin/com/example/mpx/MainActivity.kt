@@ -1,5 +1,6 @@
 package com.example.mpx
 
+import cl.puntito.simple_pip_mode.PipCallbackHelperActivityWrapper
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -16,7 +17,7 @@ import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
-class MainActivity : FlutterActivity() {
+class MainActivity : PipCallbackHelperActivityWrapper() {
     private val methodChannelName = "mpx/downloader/methods"
     private val eventChannelName = "mpx/downloader/events"
     private val mainHandler = Handler(Looper.getMainLooper())

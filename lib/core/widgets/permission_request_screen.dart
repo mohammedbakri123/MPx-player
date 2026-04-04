@@ -86,28 +86,6 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Permission Status
-              if (_statuses.isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildPermissionRow('Photos', _statuses['photos']),
-                      const SizedBox(height: 8),
-                      _buildPermissionRow('Videos', _statuses['videos']),
-                      const SizedBox(height: 8),
-                      _buildPermissionRow('Storage', _statuses['storage']),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -149,50 +127,6 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPermissionRow(String name, PermissionStatus? status) {
-    IconData icon;
-    Color color;
-    String text;
-
-    if (status == null) {
-      icon = Icons.help_outline;
-      color = Colors.grey;
-      text = 'Unknown';
-    } else if (status.isGranted) {
-      icon = Icons.check_circle;
-      color = Colors.green;
-      text = 'Granted';
-    } else if (status.isDenied) {
-      icon = Icons.cancel;
-      color = Colors.orange;
-      text = 'Denied';
-    } else if (status.isPermanentlyDenied) {
-      icon = Icons.block;
-      color = Colors.red;
-      text = 'Permanently Denied';
-    } else {
-      icon = Icons.help_outline;
-      color = Colors.grey;
-      text = status.toString();
-    }
-
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 8),
-        Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        const Spacer(),
-        Text(
-          text,
-          style: TextStyle(color: color, fontSize: 12),
-        ),
-      ],
     );
   }
 }

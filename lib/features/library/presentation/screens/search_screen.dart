@@ -100,22 +100,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  Future<void> _setSort(LibrarySearchSort sortBy) async {
-    if (_sortBy == sortBy) {
-      return;
-    }
-
-    setState(() {
-      _sortBy = sortBy;
-    });
-
-    if (_searchQuery.trim().isEmpty) {
-      return;
-    }
-
-    await _search(_searchQuery);
-  }
-
   void _openVideoPlayer(VideoFile video) async {
     if (_isNavigating) return;
     setState(() => _isNavigating = true);
@@ -144,7 +128,6 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           children: [
             _buildSearchBar(),
-            _buildSortBar(),
             Expanded(
               child: _buildResults(),
             ),
@@ -215,38 +198,6 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSortBar() {
-    return SizedBox(
-      height: 44,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        children: [
-          _SortChip(
-            label: 'Best match',
-            isSelected: _sortBy == LibrarySearchSort.relevance,
-            onTap: () => _setSort(LibrarySearchSort.relevance),
-          ),
-          _SortChip(
-            label: 'Recent',
-            isSelected: _sortBy == LibrarySearchSort.recent,
-            onTap: () => _setSort(LibrarySearchSort.recent),
-          ),
-          _SortChip(
-            label: 'Name',
-            isSelected: _sortBy == LibrarySearchSort.name,
-            onTap: () => _setSort(LibrarySearchSort.name),
-          ),
-          _SortChip(
-            label: 'Size',
-            isSelected: _sortBy == LibrarySearchSort.size,
-            onTap: () => _setSort(LibrarySearchSort.size),
           ),
         ],
       ),
@@ -334,48 +285,6 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SortChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _SortChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? theme.strongText : theme.elevatedSurface,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: isSelected ? theme.strongText : theme.softBorder,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isSelected ? theme.colorScheme.surface : theme.mutedText,
-            ),
-          ),
-        ),
       ),
     );
   }

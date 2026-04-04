@@ -12,6 +12,8 @@ class ControlsLayer extends StatelessWidget {
   final VoidCallback onSettings;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+  final VoidCallback? onTogglePip;
+  final bool showPipButton;
 
   const ControlsLayer({
     super.key,
@@ -22,10 +24,23 @@ class ControlsLayer extends StatelessWidget {
     required this.onSettings,
     this.onNext,
     this.onPrevious,
+    this.onTogglePip,
+    this.showPipButton = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 200 || constraints.maxHeight < 120) {
+          return const SizedBox.shrink();
+        }
+        return _buildContent(context);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     if (controller.isLocked) {
       return _buildLockedLayer(context);
     }
@@ -176,6 +191,8 @@ class ControlsLayer extends StatelessWidget {
                     onTogglePlayPause: controller.togglePlayPause,
                     onToggleFullscreen: controller.toggleFullscreen,
                     onToggleLock: controller.toggleLock,
+                    onTogglePip: onTogglePip,
+                    showPipButton: showPipButton,
                   ),
                 ),
               ],

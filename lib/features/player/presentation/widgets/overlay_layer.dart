@@ -13,18 +13,25 @@ class OverlayLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        _buildDoubleTapSeekLeft(),
-        _buildDoubleTapSeekRight(),
-        _buildSpeedIndicator(),
-        _buildVolumeIndicator(context),
-        _buildBrightnessIndicator(context),
-        _buildSeekIndicator(),
-        _buildBufferingIndicator(),
-        _buildLockedIndicator(),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 200 || constraints.maxHeight < 120) {
+          return const SizedBox.shrink();
+        }
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildDoubleTapSeekLeft(),
+            _buildDoubleTapSeekRight(),
+            _buildSpeedIndicator(),
+            _buildVolumeIndicator(context),
+            _buildBrightnessIndicator(context),
+            _buildSeekIndicator(),
+            _buildBufferingIndicator(),
+            _buildLockedIndicator(),
+          ],
+        );
+      },
     );
   }
 

@@ -1,7 +1,7 @@
 name: mpx
 description: "MPx Player - A modern video player built with Flutter"
 publish_to: "none"
-version: 2.0.3+1
+version: 2.1.4+1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -31,6 +31,7 @@ dependencies:
   provider: ^6.1.5+1
   flutter_volume_controller: ^1.3.0
   screen_brightness: ^2.0.1
+  simple_pip_mode: ^1.1.0
   # file_picker: ^8.0.0 # Removed file_picker
 
   # Database

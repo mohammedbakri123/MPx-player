@@ -1,8 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:simple_pip_mode/actions/pip_action.dart';
+import 'package:simple_pip_mode/actions/pip_actions_layout.dart';
+import 'package:simple_pip_mode/pip_widget.dart';
+import 'package:simple_pip_mode/simple_pip.dart';
 import '../../../history/services/history_service.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../../library/data/datasources/directory_browser.dart';
@@ -10,6 +15,7 @@ import '../../../library/domain/entities/file_item.dart';
 import '../../../settings/services/app_settings_service.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/mpv_player_repository.dart';
+import '../widgets/player_surface.dart';
 import '../widgets/player_view.dart';
 import '../widgets/subtitle_settings_sheet.dart';
 import '../widgets/settings_sheet.dart';
@@ -37,6 +43,8 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     with WidgetsBindingObserver {
+  bool _isInPipMode = false;
+
   @override
   void initState() {
     super.initState();
@@ -49,16 +57,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     super.dispose();
   }
 
+  void _setPipMode(bool inPip) {
+    _isInPipMode = inPip;
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      // App going to background - save position and pause
+      if (_isInPipMode) return;
       final controller = context.read<PlayerController>();
       controller.pauseVideo();
-
-      // Fire-and-forget is OK here — OS gives us a brief window,
-      // and SharedPreferences writes are fast. Force ensures no throttle.
-      //fire and forget means we don't await the future, allowing the app to continue closing without delay.
       controller.savePositionOnBackground();
     }
   }
@@ -82,6 +90,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         video: widget.video,
         playlist: widget.playlist,
         initialPlaylistIndex: widget.initialPlaylistIndex ?? 0,
+        onPipModeChanged: _setPipMode,
+        isInPipMode: _isInPipMode,
       ),
     );
   }
@@ -92,11 +102,15 @@ class _VideoPlayerScreenContent extends StatefulWidget {
   final VideoFile video;
   final List<VideoFile>? playlist;
   final int initialPlaylistIndex;
+  final ValueChanged<bool>? onPipModeChanged;
+  final bool isInPipMode;
 
   const _VideoPlayerScreenContent({
     required this.video,
     this.playlist,
     required this.initialPlaylistIndex,
+    this.onPipModeChanged,
+    this.isInPipMode = false,
   });
 
   @override
@@ -111,6 +125,8 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
   late List<VideoFile> _playlist;
   String? _overlayMessage;
   Timer? _messageTimer;
+  bool _showPipButton = false;
+  SimplePip? _simplePip;
 
   @override
   void initState() {
@@ -129,15 +145,43 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndResumePlayback();
       _recordVideoInHistory();
+      _initPip();
     });
   }
 
-  Future<void> _recordVideoInHistory() async {
-    // Check if video already has a history entry
-    final existing = await HistoryService.getHistoryEntry(widget.video.id);
-    if (existing != null) return; // Don't overwrite existing entry
+  void _initPip() {
+    if (!Platform.isAndroid) return;
+    _simplePip = SimplePip(
+      onPipEntered: () {
+        widget.onPipModeChanged?.call(true);
+        if (mounted) {
+          final controller = context.read<PlayerController>();
+          controller.cancelHideTimer();
+        }
+      },
+      onPipExited: () {
+        widget.onPipModeChanged?.call(false);
+        if (mounted) {
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+          final controller = context.read<PlayerController>();
+          controller.startHideTimer();
+        }
+      },
+    );
+    setState(() => _showPipButton = true);
+  }
 
-    // Record video in history only if it's new
+  Future<void> _togglePip() async {
+    final controller = context.read<PlayerController>();
+    await controller.saveCurrentPosition(force: true);
+    controller.cancelHideTimer();
+    await _simplePip?.enterPipMode();
+  }
+
+  Future<void> _recordVideoInHistory() async {
+    final existing = await HistoryService.getHistoryEntry(widget.video.id);
+    if (existing != null) return;
     await HistoryService.recordPlayback(
       video: widget.video,
       position: Duration.zero,
@@ -156,9 +200,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
               !item.isDirectory && FileItem.isVideoFileName(item.name))
           .map((item) => VideoFile.fromFileItem(item, widget.video.folderPath))
           .toList();
-
       if (videos.length > 1) {
-        // Find current video's index
         final index = videos.indexWhere((v) => v.id == widget.video.id);
         if (index >= 0 && mounted) {
           setState(() {
@@ -174,14 +216,11 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
 
   Future<void> _checkAndResumePlayback() async {
     final controller = context.read<PlayerController>();
-
     final savedPosition = await ResumePlaybackHelper.checkAndResumePlayback(
       controller: controller,
       totalDuration: controller.duration,
       videoId: widget.video.id,
     );
-
-    // Show resume snackbar if position was found and resumed
     if (savedPosition != null && mounted) {
       _resumeSnackBarController = ResumePlaybackHelper.showResumeSnackbar(
         context: context,
@@ -193,12 +232,10 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
 
   @override
   Widget build(BuildContext context) {
-    // Use select to only rebuild when isFullscreen changes
     final isFullscreen = context.select<PlayerController, bool>(
         (controller) => controller.isFullscreen);
     final controller = context.read<PlayerController>();
 
-    // Handle fullscreen state
     if (isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       SystemChrome.setPreferredOrientations([
@@ -211,91 +248,118 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     }
 
     return PopScope(
-      canPop: false, // Disable default pop behavior to handle it ourselves
+      canPop: false,
       onPopInvokedWithResult: (didPop, Object? result) async {
-        if (didPop) return; // If already popped, do nothing
-
-        // Pause video first so position stops advancing
+        if (didPop) return;
         controller.pauseVideo();
-
-        // Await the position save — this is the critical fix!
         await controller.saveAndCleanup();
-
-        // Store the navigator reference before the async operations
         // ignore: use_build_context_synchronously
         final navigator = Navigator.of(context);
-
-        // Reset system UI settings when leaving the player
         await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         await SystemChrome.setPreferredOrientations(
             [DeviceOrientation.portraitUp]);
-
-        //  Small delay to ensure settings apply
         await Future.delayed(const Duration(milliseconds: 200));
-
-        // Perform the navigation pop
         navigator.pop();
       },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            PlayerView(
-              controller: controller,
-              videoTitle: widget.video.title,
-              onBack: () async {
-                // Pause video first so position stops advancing
-                controller.pauseVideo();
-
-                // Await the position save before navigating away
-                await controller.saveAndCleanup();
-
-                // Reset system UI settings when leaving the player via back button
-                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                SystemChrome.setPreferredOrientations(
-                    [DeviceOrientation.portraitUp]);
-                // ignore: use_build_context_synchronously
-                // Small delay to ensure settings apply
-                await Future.delayed(const Duration(milliseconds: 200));
-
-                Navigator.pop(context);
-              },
-              onSubtitleSettings: () =>
-                  _showSubtitleSettings(context, controller),
-              onSettings: () => _showSettings(context, controller),
-              onNext: _playlist.length > 1 ? () => _playNext(context) : null,
-              onPrevious:
-                  _playlist.length > 1 ? () => _playPrevious(context) : null,
+      child: PipWidget(
+        pipLayout: PipActionsLayout.media,
+        onPipAction: (action) {
+          final controller = context.read<PlayerController>();
+          switch (action) {
+            case PipAction.play:
+              controller.togglePlayPause();
+            case PipAction.pause:
+              controller.pauseVideo();
+            default:
+              break;
+          }
+        },
+        pipChild: Scaffold(
+          backgroundColor: Colors.black,
+          body: Selector<PlayerController, _PipSurfaceConfig>(
+            selector: (_, c) => _PipSurfaceConfig(
+              controller: c.videoController,
+              subtitleFontSize: c.subtitleFontSize,
+              subtitleColor: c.subtitleColor,
+              subtitleFontFamily: c.subtitleFontFamily,
+              subtitleHasBackground: c.subtitleHasBackground,
+              subtitleFontWeight: c.subtitleFontWeight,
+              subtitleBottomPadding: c.subtitleBottomPadding,
+              subtitleBackgroundOpacity: c.subtitleBackgroundOpacity,
+              aspectRatioMode: c.aspectRatioMode,
             ),
-            if (_overlayMessage != null)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 60,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: AnimatedOpacity(
-                    opacity: _overlayMessage != null ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _overlayMessage!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+            builder: (context, config, _) {
+              return PlayerSurface(
+                controller: config.controller,
+                subtitleFontSize: config.subtitleFontSize,
+                subtitleColor: config.subtitleColor,
+                subtitleFontFamily: config.subtitleFontFamily,
+                subtitleHasBackground: config.subtitleHasBackground,
+                subtitleFontWeight: config.subtitleFontWeight,
+                subtitleBottomPadding: config.subtitleBottomPadding,
+                subtitleBackgroundOpacity: config.subtitleBackgroundOpacity,
+                aspectRatioMode: config.aspectRatioMode,
+              );
+            },
+          ),
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            children: [
+              PlayerView(
+                controller: controller,
+                videoTitle: widget.video.title,
+                onBack: () async {
+                  controller.pauseVideo();
+                  await controller.saveAndCleanup();
+                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                  SystemChrome.setPreferredOrientations(
+                      [DeviceOrientation.portraitUp]);
+                  await Future.delayed(const Duration(milliseconds: 200));
+                  // ignore: use_build_context_synchronously
+                  Navigator.pop(context);
+                },
+                onSubtitleSettings: () =>
+                    _showSubtitleSettings(context, controller),
+                onSettings: () => _showSettings(context, controller),
+                onNext: _playlist.length > 1 ? () => _playNext(context) : null,
+                onPrevious:
+                    _playlist.length > 1 ? () => _playPrevious(context) : null,
+                onTogglePip: _showPipButton ? _togglePip : null,
+                showPipButton: _showPipButton,
+                isInPipMode: widget.isInPipMode,
+              ),
+              if (_overlayMessage != null)
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 60,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: AnimatedOpacity(
+                      opacity: _overlayMessage != null ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _overlayMessage!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -380,9 +444,33 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
 
   @override
   void dispose() {
-    // Close the resume snackbar when leaving the player
     ResumePlaybackHelper.closeSnackbar(_resumeSnackBarController);
     _messageTimer?.cancel();
+    _simplePip = null;
     super.dispose();
   }
+}
+
+class _PipSurfaceConfig {
+  final dynamic controller;
+  final double subtitleFontSize;
+  final Color subtitleColor;
+  final String subtitleFontFamily;
+  final bool subtitleHasBackground;
+  final FontWeight subtitleFontWeight;
+  final double subtitleBottomPadding;
+  final double subtitleBackgroundOpacity;
+  final AspectRatioMode aspectRatioMode;
+
+  const _PipSurfaceConfig({
+    required this.controller,
+    required this.subtitleFontSize,
+    required this.subtitleColor,
+    required this.subtitleFontFamily,
+    required this.subtitleHasBackground,
+    required this.subtitleFontWeight,
+    required this.subtitleBottomPadding,
+    required this.subtitleBackgroundOpacity,
+    required this.aspectRatioMode,
+  });
 }

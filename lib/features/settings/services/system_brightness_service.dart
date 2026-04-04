@@ -26,7 +26,8 @@ class SystemBrightnessService {
       }
 
       _initialized = true;
-      AppLogger.i('System brightness service initialized: ${(_currentBrightness * 100).toStringAsFixed(0)}%');
+      AppLogger.i(
+          'System brightness service initialized: ${(_currentBrightness * 100).toStringAsFixed(0)}%');
     } catch (e) {
       AppLogger.e('Failed to initialize system brightness service: $e');
       _currentBrightness = 1.0;
@@ -48,7 +49,8 @@ class SystemBrightnessService {
     try {
       await _screenBrightness.setScreenBrightness(clampedValue);
       _currentBrightness = clampedValue;
-      AppLogger.d('System brightness set to: ${(clampedValue * 100).toStringAsFixed(0)}%');
+      AppLogger.d(
+          'System brightness set to: ${(clampedValue * 100).toStringAsFixed(0)}%');
     } catch (e) {
       AppLogger.e('Failed to set system brightness: $e');
     }
@@ -81,6 +83,7 @@ class SystemBrightnessService {
     if (brightness != null) {
       _currentBrightness = brightness;
     }
-    AppLogger.d('System brightness reset to default: ${(_currentBrightness * 100).toStringAsFixed(0)}%');
+    AppLogger.d(
+        'System brightness reset to default: ${(_currentBrightness * 100).toStringAsFixed(0)}%');
   }
 }
