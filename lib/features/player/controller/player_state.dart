@@ -65,4 +65,7 @@ class PlayerState {
 
   int hideControlsRequestId = 0;
   int controlsInteractionCount = 0;
+
+  int doubleTapSeekStep = 10;
+  double dragSeekSensitivity = 0.3;
 }

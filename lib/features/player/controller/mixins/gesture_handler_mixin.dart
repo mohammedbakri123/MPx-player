@@ -63,7 +63,7 @@ mixin GestureHandlerMixin on ChangeNotifier {
 
   void onHorizontalDragUpdate(double currentX, double screenWidth) {
     final deltaX = currentX - state.dragStartX;
-    final seekPercent = deltaX / screenWidth;
+    final seekPercent = (deltaX / screenWidth) * state.dragSeekSensitivity;
     final seekMs = (seekPercent * state.duration.inMilliseconds).toInt();
     final newPosition =
         state.seekStartPosition + Duration(milliseconds: seekMs);

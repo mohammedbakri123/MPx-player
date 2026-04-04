@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mpx/features/player/controller/player_controller.dart';
 import 'package:mpx/features/player/presentation/widgets/gesture_layer.dart';
@@ -33,11 +34,37 @@ class DoubleTapSeekZone extends StatefulWidget {
 }
 
 class _DoubleTapSeekZoneState extends State<DoubleTapSeekZone> {
+  int _tapCount = 0;
+  Timer? _tapTimer;
+
+  void _handleTap() {
+    _tapCount++;
+    _tapTimer?.cancel();
+    _tapTimer = Timer(const Duration(milliseconds: 300), () {
+      if (_tapCount == 1) {
+        widget.controller.toggleControlsVisibility();
+      } else if (_tapCount >= 2) {
+        if (widget.direction == SeekDirection.back) {
+          widget.controller.seekBack();
+        } else {
+          widget.controller.seekForward();
+        }
+      }
+      _tapCount = 0;
+    });
+  }
+
+  @override
+  void dispose() {
+    _tapTimer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onTapDown: (_) => widget.controller.handleCenterTap(),
+      onTap: _handleTap,
       onVerticalDragStart: widget.onVerticalDragStart,
       onVerticalDragUpdate: widget.onVerticalDragUpdate,
       onVerticalDragEnd: widget.onVerticalDragEnd,

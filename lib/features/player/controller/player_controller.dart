@@ -116,6 +116,9 @@ class PlayerController extends ChangeNotifier
   /// Returns the current video being played
   VideoFile? get currentVideo => _currentVideo;
 
+  int get doubleTapSeekStep => _state.doubleTapSeekStep;
+  double get dragSeekSensitivity => _state.dragSeekSensitivity;
+
   @override
   Future<void> loadExternalSubtitle(String path, {VideoFile? video}) async {
     final targetVideo = video ?? _currentVideo;
@@ -133,6 +136,18 @@ class PlayerController extends ChangeNotifier
   Future<void> setAudioTrack(int index, {VideoFile? video}) async {
     final targetVideo = video ?? _currentVideo;
     await super.setAudioTrack(index, video: targetVideo);
+  }
+
+  @override
+  Future<void> setDoubleTapSeekStep(int seconds) async {
+    super.setDoubleTapSeekStep(seconds);
+    await AppSettingsService.setDoubleTapSeekStep(seconds);
+  }
+
+  @override
+  Future<void> setDragSeekSensitivity(double sensitivity) async {
+    super.setDragSeekSensitivity(sensitivity);
+    await AppSettingsService.setDragSeekSensitivity(sensitivity);
   }
 
   /// Returns the underlying Player instance for VideoController creation.
@@ -159,7 +174,13 @@ class PlayerController extends ChangeNotifier
     initializeSubtitles();
     initializeVolume();
     initializeBrightness();
+    _loadSeekSettings();
     _setupListeners();
+  }
+
+  void _loadSeekSettings() {
+    state.doubleTapSeekStep = AppSettingsService.doubleTapSeekStep;
+    state.dragSeekSensitivity = AppSettingsService.dragSeekSensitivity;
   }
 
   void _setupListeners() {

@@ -213,6 +213,8 @@ class AppSettingsService {
   static const String _expertFastSeekKey = 'expert_fast_seek';
   static const String _expertFastDecodingKey = 'expert_fast_decoding';
   static const String _expertHwdecCodecsKey = 'expert_hwdec_codecs';
+  static const String _doubleTapSeekStepKey = 'double_tap_seek_step';
+  static const String _dragSeekSensitivityKey = 'drag_seek_sensitivity';
 
   static late SharedPreferences _prefs;
 
@@ -453,5 +455,21 @@ class AppSettingsService {
 
   static Future<bool> setHoldToBoostSetting(bool value) {
     return _prefs.setBool(_holdToBoostKey, value);
+  }
+
+  static int get doubleTapSeekStep {
+    return _prefs.getInt(_doubleTapSeekStepKey) ?? 10;
+  }
+
+  static Future<bool> setDoubleTapSeekStep(int seconds) {
+    return _prefs.setInt(_doubleTapSeekStepKey, seconds);
+  }
+
+  static double get dragSeekSensitivity {
+    return _prefs.getDouble(_dragSeekSensitivityKey) ?? 0.3;
+  }
+
+  static Future<bool> setDragSeekSensitivity(double sensitivity) {
+    return _prefs.setDouble(_dragSeekSensitivityKey, sensitivity);
   }
 }

@@ -36,7 +36,8 @@ mixin PlaybackControlMixin on ChangeNotifier {
 
   void seekBack() {
     registerControlsInteraction();
-    final newPosition = state.position - const Duration(seconds: 10);
+    final newPosition =
+        state.position - Duration(seconds: state.doubleTapSeekStep);
     final clampedPosition = Duration(
       milliseconds:
           newPosition.inMilliseconds.clamp(0, state.duration.inMilliseconds),
@@ -47,7 +48,8 @@ mixin PlaybackControlMixin on ChangeNotifier {
 
   void seekForward() {
     registerControlsInteraction();
-    final newPosition = state.position + const Duration(seconds: 10);
+    final newPosition =
+        state.position + Duration(seconds: state.doubleTapSeekStep);
     final clampedPosition = Duration(
       milliseconds:
           newPosition.inMilliseconds.clamp(0, state.duration.inMilliseconds),
@@ -248,6 +250,16 @@ mixin PlaybackControlMixin on ChangeNotifier {
 
   void setRepeatMode(RepeatMode mode) {
     state.repeatMode = mode;
+    notifyListeners();
+  }
+
+  void setDoubleTapSeekStep(int seconds) {
+    state.doubleTapSeekStep = seconds;
+    notifyListeners();
+  }
+
+  void setDragSeekSensitivity(double sensitivity) {
+    state.dragSeekSensitivity = sensitivity;
     notifyListeners();
   }
 

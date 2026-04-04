@@ -42,6 +42,12 @@ class SettingsSheet extends StatelessWidget {
     return 'Track ${safeIndex + 1}';
   }
 
+  String _formatSensitivity(double sensitivity) {
+    if (sensitivity <= 0.15) return 'Low';
+    if (sensitivity <= 0.4) return 'Medium';
+    return 'High';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -115,6 +121,41 @@ class SettingsSheet extends StatelessWidget {
                           subtitle: 'Choose what happens at the end',
                           value: _formatRepeatMode(controller),
                           onTap: controller.cycleRepeatMode,
+                        ),
+                        _SettingsTile(
+                          icon: Icons.touch_app,
+                          title: 'Double tap seek',
+                          subtitle: 'Seconds to skip per tap',
+                          value: '${controller.doubleTapSeekStep}s',
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => _SeekStepSheet(
+                                currentStep: controller.doubleTapSeekStep,
+                                onStepSelected: controller.setDoubleTapSeekStep,
+                              ),
+                            );
+                          },
+                        ),
+                        _SettingsTile(
+                          icon: Icons.swipe,
+                          title: 'Drag sensitivity',
+                          subtitle: 'How much seek distance covers',
+                          value: _formatSensitivity(
+                              controller.dragSeekSensitivity),
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => _SensitivitySheet(
+                                currentSensitivity:
+                                    controller.dragSeekSensitivity,
+                                onSensitivitySelected:
+                                    controller.setDragSeekSensitivity,
+                              ),
+                            );
+                          },
                         ),
                         _VolumeTile(controller: controller),
                       ],
@@ -571,8 +612,7 @@ class _AudioTrackSheetState extends State<_AudioTrackSheet> {
               ),
             ),
             Divider(color: theme.softBorder, height: 1),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 260),
+            Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: widget.audioTracks.length,
@@ -605,6 +645,189 @@ class _AudioTrackSheetState extends State<_AudioTrackSheet> {
                         ? Icon(Icons.check, color: theme.colorScheme.primary)
                         : null,
                     onTap: () => widget.onSelected(index),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SeekStepSheet extends StatelessWidget {
+  final int currentStep;
+  final ValueChanged<int> onStepSelected;
+
+  const _SeekStepSheet({
+    required this.currentStep,
+    required this.onStepSelected,
+  });
+
+  static const List<int> steps = [10, 15, 20, 30, 60];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.elevatedSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const BottomSheetHandle(),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Double Tap Seek Step',
+                    style: TextStyle(
+                      color: theme.strongText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${currentStep}s',
+                    style: TextStyle(
+                      color: theme.mutedText,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(color: theme.softBorder, height: 1),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: steps.length,
+                itemBuilder: (context, index) {
+                  final step = steps[index];
+                  final isSelected = step == currentStep;
+
+                  return ListTile(
+                    title: Text(
+                      '${step}s',
+                      style: TextStyle(
+                        color: isSelected ? theme.strongText : theme.mutedText,
+                        fontSize: 16,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.normal,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(Icons.check, color: theme.colorScheme.primary)
+                        : null,
+                    onTap: () {
+                      onStepSelected(step);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SensitivitySheet extends StatelessWidget {
+  final double currentSensitivity;
+  final ValueChanged<double> onSensitivitySelected;
+
+  const _SensitivitySheet({
+    required this.currentSensitivity,
+    required this.onSensitivitySelected,
+  });
+
+  static const List<MapEntry<String, double>> options = [
+    MapEntry('Low', 0.15),
+    MapEntry('Medium', 0.3),
+    MapEntry('High', 0.5),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.elevatedSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const BottomSheetHandle(),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Drag Sensitivity',
+                    style: TextStyle(
+                      color: theme.strongText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    options
+                        .firstWhere(
+                          (e) => e.value == currentSensitivity,
+                          orElse: () => const MapEntry('Medium', 0.3),
+                        )
+                        .key,
+                    style: TextStyle(
+                      color: theme.mutedText,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(color: theme.softBorder, height: 1),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final option = options[index];
+                  final isSelected = option.value == currentSensitivity;
+
+                  return ListTile(
+                    title: Text(
+                      option.key,
+                      style: TextStyle(
+                        color: isSelected ? theme.strongText : theme.mutedText,
+                        fontSize: 16,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.normal,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(Icons.check, color: theme.colorScheme.primary)
+                        : null,
+                    onTap: () {
+                      onSensitivitySelected(option.value);
+                      Navigator.pop(context);
+                    },
                   );
                 },
               ),
