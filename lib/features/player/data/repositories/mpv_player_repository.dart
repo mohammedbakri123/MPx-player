@@ -36,6 +36,8 @@ class MpvPlayerRepository implements PlayerRepository {
         options: const {
           'sub-auto': 'all',
           'sub-paths': '.',
+          'demuxer-mkv-probe-all': 'yes',
+          'demuxer-max-back-bytes': '512M',
         },
       );
 

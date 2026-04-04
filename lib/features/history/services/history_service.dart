@@ -175,4 +175,24 @@ class HistoryService {
       return null;
     }
   }
+
+  static Future<void> saveSelectedAudioTrack(
+      String videoId, String trackLabel) async {
+    try {
+      final db = AppDatabase();
+      await db.saveSelectedAudioTrack(videoId, trackLabel);
+    } catch (e) {
+      AppLogger.e('Failed to save selected audio track: $e');
+    }
+  }
+
+  static Future<String?> getSelectedAudioTrack(String videoId) async {
+    try {
+      final db = AppDatabase();
+      return await db.getSelectedAudioTrack(videoId);
+    } catch (e) {
+      AppLogger.e('Failed to get selected audio track: $e');
+      return null;
+    }
+  }
 }

@@ -129,6 +129,12 @@ class PlayerController extends ChangeNotifier
     await super.setSubtitleTrack(index, video: targetVideo);
   }
 
+  @override
+  Future<void> setAudioTrack(int index, {VideoFile? video}) async {
+    final targetVideo = video ?? _currentVideo;
+    await super.setAudioTrack(index, video: targetVideo);
+  }
+
   /// Returns the underlying Player instance for VideoController creation.
   dynamic get player => (_repository as MpvPlayerRepository).player;
 
@@ -198,6 +204,12 @@ class PlayerController extends ChangeNotifier
       loadSubtitleTracks();
     });
 
+    _repository.audioTracksStream.listen((_) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        loadAudioTracks();
+      });
+    });
+
     _repository.completedStream.listen((completed) {
       if (completed) {
         // Video playback completed - reset position to 0
@@ -218,6 +230,7 @@ class PlayerController extends ChangeNotifier
     await _loadSidecarSubtitles();
     await _loadPersistedSubtitles();
     await loadSubtitleTracksWithRestore(video: video);
+    await loadAudioTracksWithRestore(video: video);
     _startAutoSaveTimer();
   }
 

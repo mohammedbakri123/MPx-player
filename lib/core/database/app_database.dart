@@ -26,7 +26,7 @@ class AppDatabase
   AppDatabase._internal();
 
   static const String _databaseName = 'mpx_player.db';
-  static const int _databaseVersion = 5;
+  static const int _databaseVersion = 6;
 
   /// Get database instance (singleton)
   @override
@@ -198,6 +198,14 @@ class AppDatabase
       await db.execute(
           'ALTER TABLE watch_history ADD COLUMN selected_subtitle_track TEXT DEFAULT ""');
       AppLogger.i('selected_subtitle_track column added');
+    }
+
+    if (oldVersion < 6) {
+      AppLogger.i(
+          'Migrating to version 6: Adding selected_audio_track to watch_history');
+      await db.execute(
+          'ALTER TABLE watch_history ADD COLUMN selected_audio_track TEXT DEFAULT ""');
+      AppLogger.i('selected_audio_track column added');
     }
   }
 

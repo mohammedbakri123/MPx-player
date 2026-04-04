@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../history/services/history_service.dart';
+import '../../../library/domain/entities/video_file.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
 
@@ -266,10 +268,46 @@ mixin PlaybackControlMixin on ChangeNotifier {
     notifyListeners();
   }
 
-  void setAudioTrack(int index) {
+  Future<void> loadAudioTracksWithRestore({VideoFile? video}) async {
+    final tracks = repository.getAudioTracks();
+    state.audioTracks = tracks;
+    if (tracks.isNotEmpty && video != null) {
+      final savedTrack = await HistoryService.getSelectedAudioTrack(video.id);
+      if (savedTrack != null && savedTrack.isNotEmpty) {
+        final idx = tracks.indexWhere((t) {
+          final title = t.title?.trim();
+          final lang = t.language?.trim();
+          final label = title != null && title.isNotEmpty
+              ? title
+              : lang != null && lang.isNotEmpty
+                  ? lang.toUpperCase()
+                  : null;
+          return label == savedTrack;
+        });
+        if (idx >= 0) {
+          state.currentAudioTrackIndex = idx;
+          repository.setAudioTrack(idx);
+        }
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> setAudioTrack(int index, {VideoFile? video}) async {
     registerControlsInteraction();
     state.currentAudioTrackIndex = index;
     repository.setAudioTrack(index);
+    if (video != null && index >= 0 && index < state.audioTracks.length) {
+      final track = state.audioTracks[index];
+      final title = track.title?.trim();
+      final lang = track.language?.trim();
+      final label = title != null && title.isNotEmpty
+          ? title
+          : lang != null && lang.isNotEmpty
+              ? lang.toUpperCase()
+              : 'Track ${index + 1}';
+      await HistoryService.saveSelectedAudioTrack(video.id, label);
+    }
     notifyListeners();
   }
 

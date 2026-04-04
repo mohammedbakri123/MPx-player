@@ -155,6 +155,10 @@ class SettingsSheet extends StatelessWidget {
                                     controller.setAudioTrack(index);
                                     Navigator.pop(ctx);
                                   },
+                                  onRefresh: () {
+                                    controller.loadAudioTracks();
+                                    Navigator.pop(ctx);
+                                  },
                                 ),
                               );
                             },
@@ -483,16 +487,32 @@ class _SettingsSpeedSheet extends StatelessWidget {
   }
 }
 
-class _AudioTrackSheet extends StatelessWidget {
+class _AudioTrackSheet extends StatefulWidget {
   final List<AudioTrackInfo> audioTracks;
   final int currentIndex;
   final ValueChanged<int> onSelected;
+  final VoidCallback onRefresh;
 
   const _AudioTrackSheet({
     required this.audioTracks,
     required this.currentIndex,
     required this.onSelected,
+    required this.onRefresh,
   });
+
+  @override
+  State<_AudioTrackSheet> createState() => _AudioTrackSheetState();
+}
+
+class _AudioTrackSheetState extends State<_AudioTrackSheet> {
+  bool _refreshing = false;
+
+  Future<void> _handleRefresh() async {
+    setState(() => _refreshing = true);
+    widget.onRefresh();
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) setState(() => _refreshing = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -521,12 +541,31 @@ class _AudioTrackSheet extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
-                    '${audioTracks.length} tracks',
-                    style: TextStyle(
-                      color: theme.mutedText,
-                      fontSize: 14,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '${widget.audioTracks.length} tracks',
+                        style: TextStyle(
+                          color: theme.mutedText,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: _refreshing
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.refresh, size: 20),
+                        onPressed: _refreshing ? null : _handleRefresh,
+                        tooltip: 'Refresh tracks',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -536,10 +575,10 @@ class _AudioTrackSheet extends StatelessWidget {
               constraints: const BoxConstraints(maxHeight: 260),
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: audioTracks.length,
+                itemCount: widget.audioTracks.length,
                 itemBuilder: (context, index) {
-                  final track = audioTracks[index];
-                  final isSelected = index == currentIndex;
+                  final track = widget.audioTracks[index];
+                  final isSelected = index == widget.currentIndex;
 
                   return ListTile(
                     title: Text(
@@ -565,7 +604,7 @@ class _AudioTrackSheet extends StatelessWidget {
                     trailing: isSelected
                         ? Icon(Icons.check, color: theme.colorScheme.primary)
                         : null,
-                    onTap: () => onSelected(index),
+                    onTap: () => widget.onSelected(index),
                   );
                 },
               ),

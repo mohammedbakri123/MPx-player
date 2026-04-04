@@ -258,4 +258,29 @@ mixin WatchHistoryOperations {
     if (raw == null || raw.isEmpty) return null;
     return raw;
   }
+
+  Future<void> saveSelectedAudioTrack(String videoId, String trackLabel) async {
+    final db = await database;
+    await db.update(
+      'watch_history',
+      {'selected_audio_track': trackLabel},
+      where: 'video_id = ?',
+      whereArgs: [videoId],
+    );
+  }
+
+  Future<String?> getSelectedAudioTrack(String videoId) async {
+    final db = await database;
+    final maps = await db.query(
+      'watch_history',
+      columns: ['selected_audio_track'],
+      where: 'video_id = ?',
+      whereArgs: [videoId],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    final raw = maps.first['selected_audio_track'] as String?;
+    if (raw == null || raw.isEmpty) return null;
+    return raw;
+  }
 }
