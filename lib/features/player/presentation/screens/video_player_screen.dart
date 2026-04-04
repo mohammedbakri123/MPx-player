@@ -15,7 +15,6 @@ import '../../../library/domain/entities/file_item.dart';
 import '../../../settings/services/app_settings_service.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/mpv_player_repository.dart';
-import '../widgets/player_surface.dart';
 import '../widgets/player_view.dart';
 import '../widgets/subtitle_settings_sheet.dart';
 import '../widgets/settings_sheet.dart';
@@ -126,7 +125,6 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
   String? _overlayMessage;
   Timer? _messageTimer;
   bool _showPipButton = false;
-  SimplePip? _simplePip;
 
   @override
   void initState() {
@@ -151,24 +149,6 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
 
   void _initPip() {
     if (!Platform.isAndroid) return;
-    _simplePip = SimplePip(
-      onPipEntered: () {
-        widget.onPipModeChanged?.call(true);
-        if (mounted) {
-          final controller = context.read<PlayerController>();
-          controller.cancelHideTimer();
-        }
-      },
-      onPipExited: () {
-        widget.onPipModeChanged?.call(false);
-        if (mounted) {
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-          final controller = context.read<PlayerController>();
-          controller.startHideTimer();
-        }
-      },
-    );
     setState(() => _showPipButton = true);
   }
 
@@ -176,7 +156,7 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
     final controller = context.read<PlayerController>();
     await controller.saveCurrentPosition(force: true);
     controller.cancelHideTimer();
-    await _simplePip?.enterPipMode();
+    await SimplePip().enterPipMode();
   }
 
   Future<void> _recordVideoInHistory() async {
@@ -276,31 +256,15 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
         },
         pipChild: Scaffold(
           backgroundColor: Colors.black,
-          body: Selector<PlayerController, _PipSurfaceConfig>(
-            selector: (_, c) => _PipSurfaceConfig(
-              controller: c.videoController,
-              subtitleFontSize: c.subtitleFontSize,
-              subtitleColor: c.subtitleColor,
-              subtitleFontFamily: c.subtitleFontFamily,
-              subtitleHasBackground: c.subtitleHasBackground,
-              subtitleFontWeight: c.subtitleFontWeight,
-              subtitleBottomPadding: c.subtitleBottomPadding,
-              subtitleBackgroundOpacity: c.subtitleBackgroundOpacity,
-              aspectRatioMode: c.aspectRatioMode,
+          body: Center(
+            child: PlayerView(
+              controller: controller,
+              videoTitle: widget.video.title,
+              onBack: () {},
+              onSubtitleSettings: () {},
+              onSettings: () {},
+              isInPipMode: true,
             ),
-            builder: (context, config, _) {
-              return PlayerSurface(
-                controller: config.controller,
-                subtitleFontSize: config.subtitleFontSize,
-                subtitleColor: config.subtitleColor,
-                subtitleFontFamily: config.subtitleFontFamily,
-                subtitleHasBackground: config.subtitleHasBackground,
-                subtitleFontWeight: config.subtitleFontWeight,
-                subtitleBottomPadding: config.subtitleBottomPadding,
-                subtitleBackgroundOpacity: config.subtitleBackgroundOpacity,
-                aspectRatioMode: config.aspectRatioMode,
-              );
-            },
           ),
         ),
         child: Scaffold(
@@ -446,31 +410,6 @@ class _VideoPlayerScreenContentState extends State<_VideoPlayerScreenContent> {
   void dispose() {
     ResumePlaybackHelper.closeSnackbar(_resumeSnackBarController);
     _messageTimer?.cancel();
-    _simplePip = null;
     super.dispose();
   }
-}
-
-class _PipSurfaceConfig {
-  final dynamic controller;
-  final double subtitleFontSize;
-  final Color subtitleColor;
-  final String subtitleFontFamily;
-  final bool subtitleHasBackground;
-  final FontWeight subtitleFontWeight;
-  final double subtitleBottomPadding;
-  final double subtitleBackgroundOpacity;
-  final AspectRatioMode aspectRatioMode;
-
-  const _PipSurfaceConfig({
-    required this.controller,
-    required this.subtitleFontSize,
-    required this.subtitleColor,
-    required this.subtitleFontFamily,
-    required this.subtitleHasBackground,
-    required this.subtitleFontWeight,
-    required this.subtitleBottomPadding,
-    required this.subtitleBackgroundOpacity,
-    required this.aspectRatioMode,
-  });
 }
