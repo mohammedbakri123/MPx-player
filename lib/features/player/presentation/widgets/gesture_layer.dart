@@ -39,7 +39,7 @@ class GestureLayer extends StatelessWidget {
 
     return Row(
       children: [
-        // Left zone - double tap seek back, brightness
+        // Left zone - double tap seek back, brightness, horizontal seek, play/pause
         Expanded(
           child: DoubleTapSeekZone(
             controller: controller,
@@ -48,11 +48,15 @@ class GestureLayer extends StatelessWidget {
             onVerticalDragUpdate: (details) =>
                 controller.onVerticalDragUpdate(details.delta.dy),
             onVerticalDragEnd: (_) => controller.onVerticalDragEnd(),
+            onHorizontalDragStart: (_) => controller.onHorizontalDragStart(0),
+            onHorizontalDragUpdate: (details) => controller
+                .onHorizontalDragUpdate(details.globalPosition.dx, screenWidth),
+            onHorizontalDragEnd: (_) => controller.onHorizontalDragEnd(),
             onLongPressStart: (_) => controller.onLongPressStart(),
             onLongPressEnd: (_) => controller.onLongPressEnd(),
           ),
         ),
-        // Center zone - double tap play/pause, horizontal seek
+        // Center zone - single tap play/pause, horizontal seek
         Expanded(
           flex: 2,
           child: GestureDetector(
@@ -68,7 +72,7 @@ class GestureLayer extends StatelessWidget {
             child: Container(color: Colors.transparent),
           ),
         ),
-        // Right zone - double tap seek forward, volume
+        // Right zone - double tap seek forward, volume, horizontal seek, play/pause
         Expanded(
           child: DoubleTapSeekZone(
             controller: controller,
@@ -77,6 +81,11 @@ class GestureLayer extends StatelessWidget {
             onVerticalDragUpdate: (details) =>
                 controller.onVerticalDragUpdate(details.delta.dy),
             onVerticalDragEnd: (_) => controller.onVerticalDragEnd(),
+            onHorizontalDragStart: (_) =>
+                controller.onHorizontalDragStart(screenWidth),
+            onHorizontalDragUpdate: (details) => controller
+                .onHorizontalDragUpdate(details.globalPosition.dx, screenWidth),
+            onHorizontalDragEnd: (_) => controller.onHorizontalDragEnd(),
             onLongPressStart: (_) => controller.onLongPressStart(),
             onLongPressEnd: (_) => controller.onLongPressEnd(),
           ),

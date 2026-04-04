@@ -9,6 +9,7 @@ class PlayerOverlays extends StatelessWidget {
   final double brightnessValue;
   final String seekDirection;
   final Duration position;
+  final Duration duration;
   final String Function(Duration) formatTime;
 
   const PlayerOverlays({
@@ -21,6 +22,7 @@ class PlayerOverlays extends StatelessWidget {
     required this.brightnessValue,
     required this.seekDirection,
     required this.position,
+    required this.duration,
     required this.formatTime,
   });
 
@@ -70,36 +72,63 @@ class PlayerOverlays extends StatelessWidget {
           ),
         if (showSeekIndicator)
           Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    seekDirection == 'forward'
-                        ? Icons.forward_10
-                        : Icons.replay_10,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    formatTime(position),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            child: _buildSeekIndicator(context),
           ),
       ],
+    );
+  }
+
+  Widget _buildSeekIndicator(BuildContext context) {
+    final progress = duration.inMilliseconds > 0
+        ? position.inMilliseconds / duration.inMilliseconds
+        : 0.0;
+
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            seekDirection == 'forward'
+                ? Icons.fast_forward_rounded
+                : Icons.fast_rewind_rounded,
+            color: Colors.white,
+            size: 28,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            formatTime(position),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${formatTime(position)} / ${formatTime(duration)}',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 4,
+              backgroundColor: Colors.white24,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

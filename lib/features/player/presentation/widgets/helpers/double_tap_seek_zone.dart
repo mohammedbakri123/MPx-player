@@ -8,15 +8,22 @@ class DoubleTapSeekZone extends StatefulWidget {
   final void Function(DragStartDetails)? onVerticalDragStart;
   final void Function(DragUpdateDetails)? onVerticalDragUpdate;
   final void Function(DragEndDetails)? onVerticalDragEnd;
+  final void Function(DragStartDetails)? onHorizontalDragStart;
+  final void Function(DragUpdateDetails)? onHorizontalDragUpdate;
+  final void Function(DragEndDetails)? onHorizontalDragEnd;
   final void Function(LongPressStartDetails)? onLongPressStart;
   final void Function(LongPressEndDetails)? onLongPressEnd;
 
   const DoubleTapSeekZone({
+    super.key,
     required this.controller,
     required this.direction,
     this.onVerticalDragStart,
     this.onVerticalDragUpdate,
     this.onVerticalDragEnd,
+    this.onHorizontalDragStart,
+    this.onHorizontalDragUpdate,
+    this.onHorizontalDragEnd,
     this.onLongPressStart,
     this.onLongPressEnd,
   });
@@ -26,18 +33,17 @@ class DoubleTapSeekZone extends StatefulWidget {
 }
 
 class _DoubleTapSeekZoneState extends State<DoubleTapSeekZone> {
-  void _handleTap() {
-    widget.controller.handleDoubleTap(widget.direction);
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onTap: _handleTap,
+      onTapDown: (_) => widget.controller.handleCenterTap(),
       onVerticalDragStart: widget.onVerticalDragStart,
       onVerticalDragUpdate: widget.onVerticalDragUpdate,
       onVerticalDragEnd: widget.onVerticalDragEnd,
+      onHorizontalDragStart: widget.onHorizontalDragStart,
+      onHorizontalDragUpdate: widget.onHorizontalDragUpdate,
+      onHorizontalDragEnd: widget.onHorizontalDragEnd,
       onLongPressStart: widget.onLongPressStart,
       onLongPressEnd: widget.onLongPressEnd,
       child: Container(color: Colors.transparent),

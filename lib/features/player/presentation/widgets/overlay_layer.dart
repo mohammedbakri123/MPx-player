@@ -140,41 +140,63 @@ class OverlayLayer extends StatelessWidget {
   }
 
   Widget _buildSeekIndicator() {
+    final progress = controller.duration.inMilliseconds > 0
+        ? controller.position.inMilliseconds /
+            controller.duration.inMilliseconds
+        : 0.0;
+
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 150),
       transitionBuilder: (child, animation) {
         return FadeTransition(opacity: animation, child: child);
       },
       child: controller.showSeekIndicator
-          ? Center(
+          ? Positioned(
               key: const ValueKey<bool>(true),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      controller.seekDirection == 'forward'
-                          ? Icons.forward_10_rounded
-                          : Icons.replay_10_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      controller.formatDuration(controller.position),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+              bottom: 100,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  width: 160,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        controller.formatDuration(controller.position),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: progress.clamp(0.0, 1.0),
+                          minHeight: 3,
+                          backgroundColor: Colors.white24,
+                          valueColor:
+                              const AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        controller.formatDuration(controller.duration),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
