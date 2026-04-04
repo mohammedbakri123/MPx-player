@@ -13,6 +13,8 @@ class BottomControls extends StatefulWidget {
   final VoidCallback onTogglePlayPause;
   final VoidCallback onToggleFullscreen;
   final VoidCallback onToggleLock;
+  final VoidCallback onCycleAspectRatio;
+  final String aspectRatioLabel;
   final VoidCallback? onTogglePip;
   final bool showPipButton;
 
@@ -30,6 +32,8 @@ class BottomControls extends StatefulWidget {
     required this.onTogglePlayPause,
     required this.onToggleFullscreen,
     required this.onToggleLock,
+    required this.onCycleAspectRatio,
+    required this.aspectRatioLabel,
     this.onTogglePip,
     this.showPipButton = false,
   });
@@ -50,6 +54,23 @@ class _BottomControlsState extends State<BottomControls> {
 
   Duration get _effectivePosition =>
       Duration(milliseconds: _sliderValue.round());
+
+  IconData _aspectRatioIcon(String label) {
+    switch (label) {
+      case 'Fit':
+        return Icons.fit_screen_outlined;
+      case 'Fill':
+        return Icons.crop_square_outlined;
+      case 'Stretch':
+        return Icons.aspect_ratio_outlined;
+      case '16:9':
+        return Icons.stay_current_landscape_outlined;
+      case '4:3':
+        return Icons.tv_outlined;
+      default:
+        return Icons.crop_free_rounded;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +143,11 @@ class _BottomControlsState extends State<BottomControls> {
           const SizedBox(height: 10),
           Row(
             children: [
+              _UtilityButton(
+                icon: _aspectRatioIcon(widget.aspectRatioLabel),
+                onPressed: widget.onCycleAspectRatio,
+              ),
+              const SizedBox(width: 8),
               _UtilityButton(
                 icon: widget.isLocked ? Icons.lock : Icons.lock_open,
                 onPressed: widget.onToggleLock,

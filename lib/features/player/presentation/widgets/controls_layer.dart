@@ -191,6 +191,9 @@ class ControlsLayer extends StatelessWidget {
                     onTogglePlayPause: controller.togglePlayPause,
                     onToggleFullscreen: controller.toggleFullscreen,
                     onToggleLock: controller.toggleLock,
+                    onCycleAspectRatio: controller.cycleAspectRatio,
+                    aspectRatioLabel: controller
+                        .getAspectRatioLabel(controller.aspectRatioMode),
                     onTogglePip: onTogglePip,
                     showPipButton: showPipButton,
                   ),
