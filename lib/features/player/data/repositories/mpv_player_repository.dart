@@ -15,12 +15,28 @@ class MpvPlayerRepository implements PlayerRepository {
     _player = Player(
       configuration: _configuration,
     );
+    _setupTrackListeners();
+  }
+
+  void _setupTrackListeners() {
+    _player.stream.tracks.listen((tracks) {
+      if (!_audioTracksController.isClosed) {
+        _audioTracksController.add(null);
+      }
+      if (!_subtitleTracksController.isClosed) {
+        _subtitleTracksController.add(null);
+      }
+    });
   }
 
   PlayerConfiguration get _configuration => PlayerConfiguration(
         title: 'MPx Player',
         bufferSize: 96 * 1024 * 1024,
         videoPerformance: AppSettingsService.videoPerformanceConfiguration,
+        options: const {
+          'sub-auto': 'all',
+          'sub-paths': '.',
+        },
       );
 
   Future<void> applyVideoPerformanceConfiguration(
@@ -165,6 +181,21 @@ class MpvPlayerRepository implements PlayerRepository {
       await _player.setSubtitleTrack(tracks[index]);
       _subtitleTracksController.add(null);
     }
+  }
+
+  @override
+  Future<void> loadExternalSubtitle(String path) async {
+    _ensureNotDisposed();
+    final fileName = path.split('/').last;
+    final name = fileName.split('.').first;
+    await _player.setSubtitleTrack(
+      SubtitleTrack.uri(
+        path,
+        title: name,
+        language: 'auto',
+      ),
+    );
+    _subtitleTracksController.add(null);
   }
 
   @override

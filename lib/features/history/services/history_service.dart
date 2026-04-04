@@ -135,4 +135,44 @@ class HistoryService {
     }
     return null;
   }
+
+  static Future<void> saveSubtitlePaths(
+      String videoId, List<String> paths) async {
+    try {
+      final db = AppDatabase();
+      await db.saveSubtitlePaths(videoId, paths);
+    } catch (e) {
+      AppLogger.e('Failed to save subtitle paths: $e');
+    }
+  }
+
+  static Future<List<String>> getSubtitlePaths(String videoId) async {
+    try {
+      final db = AppDatabase();
+      return await db.getSubtitlePaths(videoId);
+    } catch (e) {
+      AppLogger.e('Failed to get subtitle paths: $e');
+      return [];
+    }
+  }
+
+  static Future<void> saveSelectedSubtitleTrack(
+      String videoId, String trackTitle) async {
+    try {
+      final db = AppDatabase();
+      await db.saveSelectedSubtitleTrack(videoId, trackTitle);
+    } catch (e) {
+      AppLogger.e('Failed to save selected subtitle track: $e');
+    }
+  }
+
+  static Future<String?> getSelectedSubtitleTrack(String videoId) async {
+    try {
+      final db = AppDatabase();
+      return await db.getSelectedSubtitleTrack(videoId);
+    } catch (e) {
+      AppLogger.e('Failed to get selected subtitle track: $e');
+      return null;
+    }
+  }
 }

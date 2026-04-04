@@ -44,6 +44,9 @@ abstract class PlayerRepository {
   /// Sets the subtitle track.
   Future<void> setSubtitleTrack(int index);
 
+  /// Loads an external subtitle file from the given path.
+  Future<void> loadExternalSubtitle(String path);
+
   /// Gets available audio tracks.
   List<AudioTrackInfo> getAudioTracks();
 

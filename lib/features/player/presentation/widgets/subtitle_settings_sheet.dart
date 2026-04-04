@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:mpx/core/theme/app_theme_tokens.dart';
 import 'package:mpx/features/settings/presentation/helpers/subtitle_font_helpers.dart';
 import '../../controller/player_controller.dart';
 import '../../domain/repositories/player_repository.dart';
 import 'helpers/bottom_sheet_handle.dart';
 
-class SubtitleSettingsSheet extends StatelessWidget {
+class SubtitleSettingsSheet extends StatefulWidget {
   final PlayerController controller;
 
   const SubtitleSettingsSheet({
     super.key,
     required this.controller,
   });
+
+  @override
+  State<SubtitleSettingsSheet> createState() => _SubtitleSettingsSheetState();
+}
+
+class _SubtitleSettingsSheetState extends State<SubtitleSettingsSheet> {
+  bool _isLoading = false;
 
   String _trackLabel(SubtitleTrackInfo track, int index) {
     final title = track.title?.trim();
@@ -29,9 +37,55 @@ class SubtitleSettingsSheet extends StatelessWidget {
     return 'Medium';
   }
 
+  Future<void> _loadExternalSubtitle(BuildContext context) async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: [
+          'srt',
+          'ass',
+          'ssa',
+          'sub',
+          'vtt',
+          'idx',
+          'smi',
+          'ttml',
+          'dfxp',
+        ],
+      );
+      if (result != null && result.files.single.path != null) {
+        await widget.controller.loadExternalSubtitle(result.files.single.path!);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Subtitle loaded: ${result.files.single.name}'),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load subtitle: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ctrl = widget.controller;
 
     return Container(
       constraints: BoxConstraints(
@@ -44,9 +98,9 @@ class SubtitleSettingsSheet extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: AnimatedBuilder(
-          animation: controller,
+          animation: ctrl,
           builder: (context, _) {
-            final tracks = controller.subtitleTracks;
+            final tracks = ctrl.subtitleTracks;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 20),
@@ -78,8 +132,8 @@ class SubtitleSettingsSheet extends StatelessWidget {
                     child: Column(
                       children: [
                         SwitchListTile.adaptive(
-                          value: controller.subtitlesEnabled,
-                          onChanged: controller.toggleSubtitles,
+                          value: ctrl.subtitlesEnabled,
+                          onChanged: ctrl.toggleSubtitles,
                           activeThumbColor: theme.colorScheme.primary,
                           activeTrackColor:
                               theme.colorScheme.primary.withValues(alpha: 0.32),
@@ -115,14 +169,12 @@ class SubtitleSettingsSheet extends StatelessWidget {
                               ),
                             ),
                             trailing: _ValueChip(
-                              label: controller.currentSubtitleTrackIndex >=
-                                          0 &&
-                                      controller.currentSubtitleTrackIndex <
+                              label: ctrl.currentSubtitleTrackIndex >= 0 &&
+                                      ctrl.currentSubtitleTrackIndex <
                                           tracks.length
                                   ? _trackLabel(
-                                      tracks[
-                                          controller.currentSubtitleTrackIndex],
-                                      controller.currentSubtitleTrackIndex,
+                                      tracks[ctrl.currentSubtitleTrackIndex],
+                                      ctrl.currentSubtitleTrackIndex,
                                     )
                                   : 'Auto',
                             ),
@@ -132,32 +184,58 @@ class SubtitleSettingsSheet extends StatelessWidget {
                                 backgroundColor: Colors.transparent,
                                 builder: (ctx) => _SubtitleTrackSheet(
                                   tracks: tracks,
-                                  currentIndex:
-                                      controller.currentSubtitleTrackIndex,
+                                  currentIndex: ctrl.currentSubtitleTrackIndex,
                                   labelBuilder: _trackLabel,
                                   onSelected: (index) {
-                                    controller.setSubtitleTrack(index);
+                                    ctrl.setSubtitleTrack(index);
                                     Navigator.pop(ctx);
                                   },
                                 ),
                               );
                             },
                           ),
+                        ListTile(
+                          leading: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(
+                                  Icons.add_circle_outline,
+                                  color: Colors.white,
+                                ),
+                          title: Text(
+                            'Load external subtitle',
+                            style: TextStyle(color: theme.strongText),
+                          ),
+                          subtitle: Text(
+                            'Pick a .srt, .ass, or other subtitle file',
+                            style: TextStyle(
+                              color: theme.mutedText,
+                              fontSize: 12,
+                            ),
+                          ),
+                          onTap: _isLoading
+                              ? null
+                              : () => _loadExternalSubtitle(context),
+                        ),
                       ],
                     ),
                   ),
-                  if (controller.subtitlesEnabled) ...[
+                  if (ctrl.subtitlesEnabled) ...[
                     _Section(
                       title: 'Appearance',
                       child: Column(
                         children: [
                           _SliderTile(
                             title: 'Font size',
-                            value: controller.subtitleFontSize,
+                            value: ctrl.subtitleFontSize,
                             min: 16,
                             max: 72,
-                            label: '${controller.subtitleFontSize.round()} pt',
-                            onChanged: controller.setSubtitleFontSize,
+                            label: '${ctrl.subtitleFontSize.round()} pt',
+                            onChanged: ctrl.setSubtitleFontSize,
                           ),
                           ListTile(
                             leading: Icon(
@@ -169,23 +247,23 @@ class SubtitleSettingsSheet extends StatelessWidget {
                               style: TextStyle(color: theme.strongText),
                             ),
                             subtitle: Text(
-                              controller.subtitleFontFamily,
+                              ctrl.subtitleFontFamily,
                               style: TextStyle(
                                 color: theme.mutedText,
                                 fontSize: 12,
                               ),
                             ),
                             trailing: _ValueChip(
-                              label: controller.subtitleFontFamily,
+                              label: ctrl.subtitleFontFamily,
                             ),
                             onTap: () {
                               showModalBottomSheet(
                                 context: context,
                                 backgroundColor: Colors.transparent,
                                 builder: (ctx) => _SubtitleFontFamilySheet(
-                                  currentFamily: controller.subtitleFontFamily,
+                                  currentFamily: ctrl.subtitleFontFamily,
                                   onSelected: (family) {
-                                    controller.setSubtitleFontFamily(family);
+                                    ctrl.setSubtitleFontFamily(family);
                                     Navigator.pop(ctx);
                                   },
                                 ),
@@ -205,27 +283,26 @@ class SubtitleSettingsSheet extends StatelessWidget {
                                   color: theme.mutedText, fontSize: 12),
                             ),
                             trailing: _ValueChip(
-                              label:
-                                  _weightLabel(controller.subtitleFontWeight),
+                              label: _weightLabel(ctrl.subtitleFontWeight),
                             ),
                             onTap: () {
                               showModalBottomSheet(
                                 context: context,
                                 backgroundColor: Colors.transparent,
                                 builder: (ctx) => _SubtitleWeightSheet(
-                                  currentWeight: controller.subtitleFontWeight,
+                                  currentWeight: ctrl.subtitleFontWeight,
                                   onSelected: (weight) {
-                                    controller.setSubtitleFontWeight(weight);
+                                    ctrl.setSubtitleFontWeight(weight);
                                     Navigator.pop(ctx);
                                   },
                                 ),
                               );
                             },
                           ),
-                          _ColorTile(controller: controller),
+                          _ColorTile(controller: ctrl),
                           SwitchListTile.adaptive(
-                            value: controller.subtitleHasBackground,
-                            onChanged: controller.setSubtitleBackground,
+                            value: ctrl.subtitleHasBackground,
+                            onChanged: ctrl.setSubtitleBackground,
                             activeThumbColor: theme.colorScheme.primary,
                             activeTrackColor: theme.colorScheme.primary
                                 .withValues(alpha: 0.32),
@@ -239,30 +316,28 @@ class SubtitleSettingsSheet extends StatelessWidget {
                                   color: theme.mutedText, fontSize: 12),
                             ),
                           ),
-                          if (controller.subtitleHasBackground)
+                          if (ctrl.subtitleHasBackground)
                             _SliderTile(
                               title: 'Background opacity',
-                              value: controller.subtitleBackgroundOpacity,
+                              value: ctrl.subtitleBackgroundOpacity,
                               min: 0.2,
                               max: 1.0,
                               label:
-                                  '${(controller.subtitleBackgroundOpacity * 100).round()}%',
-                              onChanged:
-                                  controller.setSubtitleBackgroundOpacity,
+                                  '${(ctrl.subtitleBackgroundOpacity * 100).round()}%',
+                              onChanged: ctrl.setSubtitleBackgroundOpacity,
                             ),
                           _SliderTile(
                             title: 'Bottom spacing',
-                            value: controller.subtitleBottomPadding,
+                            value: ctrl.subtitleBottomPadding,
                             min: 12,
                             max: 80,
-                            label:
-                                '${controller.subtitleBottomPadding.round()} px',
-                            onChanged: controller.setSubtitleBottomPadding,
+                            label: '${ctrl.subtitleBottomPadding.round()} px',
+                            onChanged: ctrl.setSubtitleBottomPadding,
                           ),
                         ],
                       ),
                     ),
-                    _PreviewCard(controller: controller),
+                    _PreviewCard(controller: ctrl),
                   ],
                   const SizedBox(height: 20),
                 ],

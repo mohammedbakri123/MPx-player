@@ -46,17 +46,29 @@ mixin WatchHistoryOperations {
 
   Future<void> upsertHistory(WatchHistoryEntry entry) async {
     final db = await database;
-    await db.insert(
+    final existing = await db.query(
       'watch_history',
-      {
-        'video_id': entry.videoId,
-        'position_ms': entry.positionMs,
-        'duration_ms': entry.durationMs,
-        'last_played_at': entry.lastPlayedAt.millisecondsSinceEpoch,
-        'completion_percent': entry.completionPercent,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      where: 'video_id = ?',
+      whereArgs: [entry.videoId],
+      limit: 1,
     );
+    final data = {
+      'video_id': entry.videoId,
+      'position_ms': entry.positionMs,
+      'duration_ms': entry.durationMs,
+      'last_played_at': entry.lastPlayedAt.millisecondsSinceEpoch,
+      'completion_percent': entry.completionPercent,
+    };
+    if (existing.isNotEmpty) {
+      await db.update(
+        'watch_history',
+        data,
+        where: 'video_id = ?',
+        whereArgs: [entry.videoId],
+      );
+    } else {
+      await db.insert('watch_history', data);
+    }
   }
 
   Future<List<WatchHistoryEntry>> getHistory({int? limit}) async {
@@ -193,5 +205,57 @@ mixin WatchHistoryOperations {
           DateTime.fromMillisecondsSinceEpoch(map['last_played_at'] as int),
       completionPercent: map['completion_percent'] as int,
     );
+  }
+
+  Future<void> saveSubtitlePaths(String videoId, List<String> paths) async {
+    final db = await database;
+    final joined = paths.join('|');
+    await db.update(
+      'watch_history',
+      {'subtitle_paths': joined},
+      where: 'video_id = ?',
+      whereArgs: [videoId],
+    );
+  }
+
+  Future<List<String>> getSubtitlePaths(String videoId) async {
+    final db = await database;
+    final maps = await db.query(
+      'watch_history',
+      columns: ['subtitle_paths'],
+      where: 'video_id = ?',
+      whereArgs: [videoId],
+      limit: 1,
+    );
+    if (maps.isEmpty) return [];
+    final raw = maps.first['subtitle_paths'] as String?;
+    if (raw == null || raw.isEmpty) return [];
+    return raw.split('|');
+  }
+
+  Future<void> saveSelectedSubtitleTrack(
+      String videoId, String trackTitle) async {
+    final db = await database;
+    await db.update(
+      'watch_history',
+      {'selected_subtitle_track': trackTitle},
+      where: 'video_id = ?',
+      whereArgs: [videoId],
+    );
+  }
+
+  Future<String?> getSelectedSubtitleTrack(String videoId) async {
+    final db = await database;
+    final maps = await db.query(
+      'watch_history',
+      columns: ['selected_subtitle_track'],
+      where: 'video_id = ?',
+      whereArgs: [videoId],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    final raw = maps.first['selected_subtitle_track'] as String?;
+    if (raw == null || raw.isEmpty) return null;
+    return raw;
   }
 }

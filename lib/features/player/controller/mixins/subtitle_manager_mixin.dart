@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../history/services/history_service.dart';
+import '../../../library/domain/entities/video_file.dart';
 import '../../../settings/services/subtitle_settings_service.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../player_state.dart';
@@ -92,13 +94,80 @@ mixin SubtitleManagerMixin on ChangeNotifier {
     notifyListeners();
   }
 
-  void setSubtitleTrack(int index) {
+  Future<void> loadSubtitleTracksWithRestore({VideoFile? video}) async {
+    final tracks = repository.getSubtitleTracks();
+    state.subtitleTracks = tracks;
+    if (tracks.isEmpty) {
+      state.currentSubtitleTrackIndex = -1;
+      state.subtitlesEnabled = false;
+    } else if (video != null) {
+      final savedTrack =
+          await HistoryService.getSelectedSubtitleTrack(video.id);
+      if (savedTrack != null && savedTrack.isNotEmpty) {
+        final idx = tracks.indexWhere((t) {
+          final title = t.title?.trim();
+          final lang = t.language?.trim();
+          final label = title != null && title.isNotEmpty
+              ? title
+              : lang != null && lang.isNotEmpty
+                  ? lang.toUpperCase()
+                  : null;
+          return label == savedTrack;
+        });
+        if (idx >= 0) {
+          state.currentSubtitleTrackIndex = idx;
+          state.subtitlesEnabled = true;
+          await repository.setSubtitleTrack(idx);
+        }
+      } else if (state.currentSubtitleTrackIndex >= tracks.length) {
+        state.currentSubtitleTrackIndex = 0;
+      } else if (state.currentSubtitleTrackIndex == -1 &&
+          state.subtitlesEnabled) {
+        state.currentSubtitleTrackIndex = 0;
+      }
+    } else if (state.currentSubtitleTrackIndex >= tracks.length) {
+      state.currentSubtitleTrackIndex = 0;
+    } else if (state.currentSubtitleTrackIndex == -1 &&
+        state.subtitlesEnabled) {
+      state.currentSubtitleTrackIndex = 0;
+    }
+    notifyListeners();
+  }
+
+  Future<void> setSubtitleTrack(int index, {VideoFile? video}) async {
     if (index < 0 || index >= state.subtitleTracks.length) return;
 
     state.currentSubtitleTrackIndex = index;
     state.subtitlesEnabled = true;
     SubtitleSettingsService.setEnabled(true);
     repository.setSubtitleTrack(index);
+    if (video != null) {
+      final track = state.subtitleTracks[index];
+      final title = track.title?.trim();
+      final lang = track.language?.trim();
+      final label = title != null && title.isNotEmpty
+          ? title
+          : lang != null && lang.isNotEmpty
+              ? lang.toUpperCase()
+              : 'Subtitle ${index + 1}';
+      await HistoryService.saveSelectedSubtitleTrack(video.id, label);
+    }
+    notifyListeners();
+  }
+
+  Future<void> loadExternalSubtitle(String path, {VideoFile? video}) async {
+    await repository.loadExternalSubtitle(path);
+    loadSubtitleTracks();
+    state.subtitlesEnabled = true;
+    SubtitleSettingsService.setEnabled(true);
+    if (video != null) {
+      try {
+        final existing = await HistoryService.getSubtitlePaths(video.id);
+        if (!existing.contains(path)) {
+          await HistoryService.saveSubtitlePaths(video.id, [...existing, path]);
+        }
+      } catch (_) {}
+    }
     notifyListeners();
   }
 
