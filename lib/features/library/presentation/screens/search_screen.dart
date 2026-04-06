@@ -6,7 +6,8 @@ import '../../data/datasources/directory_browser.dart';
 import '../../services/library_index_service.dart';
 import '../../../player/presentation/screens/video_player_screen.dart';
 import '../../../favorites/services/favorites_service.dart';
-import '../widgets/video/video_list_item.dart';
+import '../widgets/video/video_thumbnail.dart';
+import '../widgets/common/library_item_details_sheet.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -211,7 +212,7 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(),
+            CircularProgressIndicator(color: theme.colorScheme.primary),
             const SizedBox(height: 16),
             Text(
               _isIndexing ? 'Indexing your library...' : 'Searching videos...',
@@ -240,52 +241,358 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final video = _searchResults[index];
-        return VideoListItem(
-          video: video,
-          onTap: () => _openVideoPlayer(video),
-          onAddToFavorites: () => _toggleFavorite(video),
-          isFavorite: _favoriteIds.contains(video.id),
-          isLoading: _isNavigating,
-        );
-      },
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Row(
+            children: [
+              Text(
+                '${_searchResults.length} result${_searchResults.length == 1 ? '' : 's'}',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: theme.mutedText,
+                ),
+              ),
+              const Spacer(),
+              _SortDropdown(
+                value: _sortBy,
+                onChanged: (sort) {
+                  setState(() => _sortBy = sort);
+                  _search(_searchQuery);
+                },
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            itemCount: _searchResults.length,
+            itemBuilder: (context, index) {
+              final video = _searchResults[index];
+              return _SearchResultItem(
+                video: video,
+                query: _searchQuery,
+                onTap: () => _openVideoPlayer(video),
+                onAddToFavorites: () => _toggleFavorite(video),
+                isFavorite: _favoriteIds.contains(video.id),
+                isLoading: _isNavigating,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildEmptyState(String title, String subtitle) {
     final theme = Theme.of(context);
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              size: 64,
+              color: theme.faintText,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: theme.strongText,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.mutedText,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SortDropdown extends StatelessWidget {
+  final LibrarySearchSort value;
+  final ValueChanged<LibrarySearchSort> onChanged;
+
+  const _SortDropdown({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.subtleSurface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.softBorder),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<LibrarySearchSort>(
+          value: value,
+          icon: Icon(Icons.sort, size: 18, color: theme.mutedText),
+          dropdownColor: theme.elevatedSurface,
+          style: TextStyle(fontSize: 13, color: theme.strongText),
+          items: const [
+            DropdownMenuItem(
+              value: LibrarySearchSort.relevance,
+              child: Text('Relevance'),
+            ),
+            DropdownMenuItem(
+              value: LibrarySearchSort.recent,
+              child: Text('Recent'),
+            ),
+            DropdownMenuItem(
+              value: LibrarySearchSort.name,
+              child: Text('Name'),
+            ),
+            DropdownMenuItem(
+              value: LibrarySearchSort.size,
+              child: Text('Size'),
+            ),
+          ],
+          onChanged: (v) {
+            if (v != null) onChanged(v);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchResultItem extends StatelessWidget {
+  final VideoFile video;
+  final String query;
+  final VoidCallback onTap;
+  final VoidCallback onAddToFavorites;
+  final bool isLoading;
+  final bool isFavorite;
+
+  const _SearchResultItem({
+    required this.video,
+    required this.query,
+    required this.onTap,
+    required this.onAddToFavorites,
+    required this.isLoading,
+    required this.isFavorite,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: isLoading ? null : onTap,
+      onLongPress: () => _showContextMenu(context),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: theme.elevatedSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.softBorder),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 72,
+              height: 72,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: VideoThumbnail(
+                  video: video,
+                  isFavorite: isFavorite,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    video.folderName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  _HighlightText(
+                    text: video.title,
+                    query: query,
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 4),
+                  _CompactMetadata(video: video),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _showContextMenu(context),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.subtleSurface,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.more_horiz,
+                  color: theme.mutedText,
+                  size: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showContextMenu(BuildContext context) {
+    LibraryItemDetailsSheet.showForVideo(
+      context,
+      video,
+      isFavorite: isFavorite,
+      onToggleFavorite: onAddToFavorites,
+    );
+  }
+}
+
+class _HighlightText extends StatelessWidget {
+  final String text;
+  final String query;
+  final int maxLines;
+
+  const _HighlightText({
+    required this.text,
+    required this.query,
+    required this.maxLines,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final queryIndex = lowerText.indexOf(lowerQuery);
+
+    if (queryIndex == -1) {
+      return Text(
+        text,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: theme.strongText,
+          height: 1.2,
+        ),
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    final before = text.substring(0, queryIndex);
+    final match = text.substring(queryIndex, queryIndex + query.length);
+    final after = text.substring(queryIndex + query.length);
+
+    return RichText(
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: theme.strongText,
+          height: 1.2,
+        ),
         children: [
-          Icon(
-            Icons.search,
-            size: 64,
-            color: theme.faintText,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
+          TextSpan(text: before),
+          TextSpan(
+            text: match,
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: theme.strongText,
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 8),
+          TextSpan(text: after),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactMetadata extends StatelessWidget {
+  final VideoFile video;
+
+  const _CompactMetadata({required this.video});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final resolution = video.resolution;
+    final hasResolution = resolution != 'Unknown';
+
+    return Wrap(
+      spacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (hasResolution)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Text(
+              resolution,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+        Text(
+          video.formattedSize,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: theme.mutedText,
+          ),
+        ),
+        if (video.duration > 0)
           Text(
-            subtitle,
+            '• ${video.formattedDuration}',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
               color: theme.mutedText,
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }

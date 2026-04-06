@@ -277,10 +277,16 @@ class PlayerController extends ChangeNotifier
       for (final entity in dirContents) {
         if (entity is dartIo.File) {
           final lowerPath = entity.path.toLowerCase();
+          final lowerName = nameWithoutExt.toLowerCase();
           for (final ext in extensions) {
             if (lowerPath.endsWith(ext)) {
               if (!exactMatches.contains(entity.path)) {
-                anyMatches.add(entity.path);
+                final fileName = entity.path.split('/').last;
+                final fileBase =
+                    fileName.substring(0, fileName.lastIndexOf('.'));
+                if (fileBase.toLowerCase().startsWith(lowerName)) {
+                  anyMatches.add(entity.path);
+                }
               }
               break;
             }

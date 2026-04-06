@@ -408,20 +408,16 @@ class LibraryIndexService {
   int _scoreVideo(VideoFile video, String query, List<String> terms) {
     final title = video.title.toLowerCase();
     final folderName = video.folderName.toLowerCase();
-    final path = video.path.toLowerCase();
 
-    if (!title.contains(query) &&
-        !folderName.contains(query) &&
-        !terms.every((term) => path.contains(term))) {
-      return 0;
-    }
+    int? titleScore = _fuzzyScore(title, query, terms);
+    if (titleScore == null) return 0;
 
-    var score = 0;
+    var score = titleScore;
 
+    if (folderName.contains(query)) score += 180;
     if (title == query) score += 1200;
     if (title.startsWith(query)) score += 800;
     if (title.contains(query)) score += 500;
-    if (folderName.contains(query)) score += 180;
 
     for (final term in terms) {
       if (title.startsWith(term)) {
@@ -445,6 +441,79 @@ class LibraryIndexService {
     }
 
     return score;
+  }
+
+  int? _fuzzyScore(String target, String query, List<String> terms) {
+    final exactScore = _exactMatchScore(target, query, terms);
+    if (exactScore != null) return exactScore;
+
+    final fuzzyScore = _fuzzyMatchScore(target, query);
+    if (fuzzyScore > 0) return fuzzyScore;
+
+    return null;
+  }
+
+  int? _exactMatchScore(String target, String query, List<String> terms) {
+    if (target == query) return 1000;
+    if (target.startsWith(query)) return 800;
+    if (target.contains(query)) return 500;
+
+    if (terms.every((term) => target.contains(term))) {
+      var score = 300;
+      for (final term in terms) {
+        if (target.contains(term)) score += 50;
+      }
+      return score;
+    }
+
+    return null;
+  }
+
+  int _fuzzyMatchScore(String target, String query) {
+    if (query.isEmpty || target.isEmpty) return 0;
+
+    int bestScore = 0;
+
+    for (int start = 0; start < target.length; start++) {
+      int score = 0;
+      int queryIndex = 0;
+      int targetIndex = start;
+      bool lastMatchWasConsecutive = false;
+      bool firstMatch = true;
+
+      while (queryIndex < query.length && targetIndex < target.length) {
+        if (target[targetIndex] == query[queryIndex]) {
+          if (firstMatch) {
+            score += 10;
+            firstMatch = false;
+          } else if (lastMatchWasConsecutive) {
+            score += 15;
+          } else {
+            score += 5;
+          }
+
+          if (targetIndex > 0 && target[targetIndex - 1] == ' ') {
+            score += 20;
+          }
+
+          queryIndex++;
+          lastMatchWasConsecutive = true;
+        } else {
+          lastMatchWasConsecutive = false;
+        }
+        targetIndex++;
+      }
+
+      if (queryIndex == query.length && score > bestScore) {
+        bestScore = score;
+      }
+    }
+
+    if (bestScore >= query.length * 5) {
+      return bestScore;
+    }
+
+    return 0;
   }
 
   int _compareMatches(
