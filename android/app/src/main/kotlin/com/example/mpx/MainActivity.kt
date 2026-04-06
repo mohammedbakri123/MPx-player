@@ -206,6 +206,8 @@ class MainActivity : PipCallbackHelperActivityWrapper() {
         val formatSelector = call.argument<String>("formatSelector")
         val cookiesPath = call.argument<String>("cookiesPath")
 
+        android.util.Log.w("MPxDownloader", "handleStartDownload: taskId=$taskId, formatSelector=$formatSelector")
+
         if (taskId.isNullOrBlank() || url.isNullOrBlank() || outputPath.isNullOrBlank()) {
             result.error("invalid_args", "Missing required download arguments", null)
             return

@@ -71,7 +71,8 @@ class DownloaderController extends ChangeNotifier {
     }
   }
 
-  Future<void> startDownload(String url, {QualityPreference? quality}) async {
+  Future<void> startDownload(String url,
+      {QualityPreference? quality, String? title}) async {
     _setState(
       _state.copyWith(
         isBusy: true,
@@ -83,6 +84,7 @@ class DownloaderController extends ChangeNotifier {
       final taskId = await _repository.enqueueDownload(
         url,
         quality ?? _state.selectedQuality,
+        customTitle: title ?? _state.customTitle,
       );
       _subscribeToProgress(taskId);
       await refreshDownloads();
@@ -91,6 +93,7 @@ class DownloaderController extends ChangeNotifier {
           isBusy: false,
           activeTaskId: taskId,
           clearVideoInfo: true,
+          clearCustomTitle: true,
         ),
       );
     } catch (error) {
@@ -122,9 +125,20 @@ class DownloaderController extends ChangeNotifier {
   Future<void> retryDownload(String taskId) async {
     final item = await _repository.getDownload(taskId);
     if (item == null) return;
+    final originalQuality = _qualityFromFormatSelector(item.formatSelector);
     await _repository.deleteDownload(taskId);
     _subscriptions.remove(taskId)?.cancel();
-    await startDownload(item.url, quality: null);
+    await startDownload(item.url, quality: originalQuality);
+  }
+
+  QualityPreference? _qualityFromFormatSelector(String? formatSelector) {
+    if (formatSelector == null) return null;
+    for (final quality in QualityPreference.values) {
+      if (quality.formatSelector == formatSelector) {
+        return quality;
+      }
+    }
+    return null;
   }
 
   Future<void> deleteDownload(String taskId) async {
@@ -136,6 +150,10 @@ class DownloaderController extends ChangeNotifier {
   void selectQuality(QualityPreference quality) {
     unawaited(DownloaderSettingsService.setDefaultQuality(quality));
     _setState(_state.copyWith(selectedQuality: quality));
+  }
+
+  void setCustomTitle(String? title) {
+    _setState(_state.copyWith(customTitle: title));
   }
 
   void _subscribeToProgress(String taskId) {

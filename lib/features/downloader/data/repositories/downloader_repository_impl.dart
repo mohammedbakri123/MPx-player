@@ -41,21 +41,31 @@ class DownloaderRepositoryImpl implements DownloaderRepository {
   }
 
   @override
-  Future<String> enqueueDownload(String url, QualityPreference quality) async {
+  Future<String> enqueueDownload(
+    String url,
+    QualityPreference quality, {
+    String? customTitle,
+  }) async {
     final taskId = _uuid.v4();
     final videoInfo = await _remoteDataSource.fetchVideoInfo(url);
+    final title =
+        customTitle?.isNotEmpty == true ? customTitle : videoInfo?.title;
     final outputPath = await _buildOutputPath(
       taskId,
-      videoInfo?.title,
+      title,
       quality,
     );
+    final formatSelector = quality.formatSelector;
+    // ignore: avoid_print
+    print(
+        '[Downloader] enqueueDownload: quality=$quality, formatSelector=$formatSelector');
     final item = DownloadItem(
       id: taskId,
       videoId: videoInfo?.id,
       url: url,
-      title: videoInfo?.title ?? 'Pending download',
+      title: title ?? 'Pending download',
       savePath: outputPath,
-      formatSelector: quality.formatSelector,
+      formatSelector: formatSelector,
       status: DownloadStatus.queued,
       progress: 0,
       addedAt: DateTime.now(),

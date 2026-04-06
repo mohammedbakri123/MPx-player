@@ -9,6 +9,7 @@ class DownloaderUiState {
   final String? errorMessage;
   final VideoInfo? videoInfo;
   final QualityPreference selectedQuality;
+  final String? customTitle;
   final List<DownloadItem> activeDownloads;
   final List<DownloadItem> completedDownloads;
 
@@ -19,6 +20,7 @@ class DownloaderUiState {
     this.errorMessage,
     this.videoInfo,
     this.selectedQuality = QualityPreference.auto,
+    this.customTitle,
     this.activeDownloads = const <DownloadItem>[],
     this.completedDownloads = const <DownloadItem>[],
   });
@@ -30,11 +32,13 @@ class DownloaderUiState {
     String? errorMessage,
     VideoInfo? videoInfo,
     QualityPreference? selectedQuality,
+    String? customTitle,
     List<DownloadItem>? activeDownloads,
     List<DownloadItem>? completedDownloads,
     bool clearActiveTaskId = false,
     bool clearErrorMessage = false,
     bool clearVideoInfo = false,
+    bool clearCustomTitle = false,
   }) {
     return DownloaderUiState(
       isLoading: isLoading ?? this.isLoading,
@@ -45,6 +49,7 @@ class DownloaderUiState {
           clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       videoInfo: clearVideoInfo ? null : (videoInfo ?? this.videoInfo),
       selectedQuality: selectedQuality ?? this.selectedQuality,
+      customTitle: clearCustomTitle ? null : (customTitle ?? this.customTitle),
       activeDownloads: activeDownloads ?? this.activeDownloads,
       completedDownloads: completedDownloads ?? this.completedDownloads,
     );

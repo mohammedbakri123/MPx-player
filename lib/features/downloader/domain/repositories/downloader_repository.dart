@@ -6,7 +6,8 @@ import '../enums/quality_preference.dart';
 abstract class DownloaderRepository {
   Future<VideoInfo?> getVideoInfo(String url);
 
-  Future<String> enqueueDownload(String url, QualityPreference quality);
+  Future<String> enqueueDownload(String url, QualityPreference quality,
+      {String? customTitle});
 
   Future<void> cancelDownload(String taskId);
 

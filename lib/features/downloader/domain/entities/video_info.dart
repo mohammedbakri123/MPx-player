@@ -37,6 +37,7 @@ class VideoInfo {
   final int? duration;
   final String? webpageUrl;
   final int? viewCount;
+  final int? fileSizeApprox;
   final List<VideoThumbnail> thumbnails;
   final List<VideoFormat> formats;
 
@@ -47,6 +48,7 @@ class VideoInfo {
     this.duration,
     this.webpageUrl,
     this.viewCount,
+    this.fileSizeApprox,
     this.thumbnails = const [],
     this.formats = const [],
   });

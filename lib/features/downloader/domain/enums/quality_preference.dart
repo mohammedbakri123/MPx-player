@@ -25,15 +25,15 @@ extension QualityPreferenceX on QualityPreference {
   String get formatSelector {
     switch (this) {
       case QualityPreference.auto:
-        return 'best[ext=mp4]/best';
+        return 'best[ext=mp4]/best[ext=webm]/best';
       case QualityPreference.p1080:
-        return 'best[height<=1080][ext=mp4]/best[height<=1080]/best';
+        return 'best[height<=1080][ext=mp4]/best[height<=1080][ext=webm]/best[height<=1080]';
       case QualityPreference.p720:
-        return 'best[height<=720][ext=mp4]/best[height<=720]/best';
+        return 'best[height<=720][ext=mp4]/best[height<=720][ext=webm]/best[height<=720]';
       case QualityPreference.p480:
-        return 'best[height<=480][ext=mp4]/best[height<=480]/best';
+        return 'best[height<=480][ext=mp4]/best[height<=480][ext=webm]/best[height<=480]';
       case QualityPreference.audioOnly:
-        return 'bestaudio[ext=m4a]/bestaudio/best';
+        return 'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio/best';
     }
   }
 }

@@ -178,9 +178,15 @@ def download_video(
         "continuedl": True,
         "retries": 1,
     }
+    import logging
+    logging.warning(f"[yt-dlp] format_selector = {format_selector}")
+    logging.warning(f"[yt-dlp] output_path = {output_path}")
     try:
         with YoutubeDL(options) as ydl:  # type: ignore[arg-type]
             info = ydl.extract_info(url, download=True)
+            selected_format = info.get("format") or info.get("format_id") or "unknown"
+            selected_height = info.get("height") or "unknown"
+            logging.warning(f"[yt-dlp] selected format = {selected_format}, height = {selected_height}")
             final_path = _resolve_final_path(info, ydl, output_path)
     except Exception as exc:
         raise RuntimeError(_friendly_error_message(url, exc)) from exc

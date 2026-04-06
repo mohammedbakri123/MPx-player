@@ -34,7 +34,8 @@ class VideoFormatModel extends VideoFormat {
       height: (json['height'] as num?)?.toInt(),
       width: (json['width'] as num?)?.toInt(),
       fps: (json['fps'] as num?)?.toDouble(),
-      fileSize: (json['filesize'] as num?)?.toInt(),
+      fileSize: (json['filesize'] as num?)?.toInt() ??
+          (json['filesize_approx'] as num?)?.toInt(),
       formatNote: json['format_note'] as String?,
     );
   }
@@ -48,6 +49,7 @@ class VideoInfoModel extends VideoInfo {
     super.duration,
     super.webpageUrl,
     super.viewCount,
+    super.fileSizeApprox,
     super.thumbnails,
     super.formats,
   });
@@ -69,6 +71,8 @@ class VideoInfoModel extends VideoInfo {
       duration: (json['duration'] as num?)?.toInt(),
       webpageUrl: json['webpage_url'] as String?,
       viewCount: (json['view_count'] as num?)?.toInt(),
+      fileSizeApprox: (json['filesize_approx'] as num?)?.toInt() ??
+          (json['filesize'] as num?)?.toInt(),
       thumbnails: thumbnails,
       formats: formats,
     );
