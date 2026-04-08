@@ -1,176 +1,138 @@
-# 🤝 Contributing to MPx Player
+# Contributing to MPx Player
 
-Welcome! We are incredibly excited that you are interested in contributing to MPx Player. This guide provides an exhaustive walkthrough for setting up your environment, understanding our code standards, and successfully merging your code.
+Thanks for considering a contribution.
 
----
+MPx Player is not a demo app. It is a real product codebase focused on private, high-quality local media playback. That means contributions should improve the app in ways users can feel: smoother playback, clearer UI, stronger architecture, fewer regressions, and better reliability.
 
-## 🛡️ 1. Core Development Tenets
+## What We Value
 
-Before writing a single line of code, understand these non-negotiable rules:
-1. **Privacy Absolute:** NO telemetry, NO analytics, NO crash reporting frameworks (like Firebase or Sentry), NO network calls. The app must function entirely isolated from the internet.
-2. **Clean Architecture Strictness:** UI must never import anything from `dart:io`, `sqflite`, or `media_kit`. Business logic must never import `package:flutter/material.dart`.
-3. **Performance First:** The UI must maintain 60/120fps. Avoid `context.watch()` at the top of large widget trees.
+- Privacy: no analytics, no trackers, no ad tech
+- Performance: playback and gestures should feel immediate
+- Maintainability: features should fit the existing structure cleanly
+- Product quality: polish matters, not just functionality
 
----
+## Good First Contributions
 
-## 🛠️ 2. Comprehensive Environment Setup
+- fix playback or gesture regressions
+- improve subtitle, audio track, or history behavior
+- strengthen downloader error handling
+- add or improve tests
+- refine docs and developer onboarding
+- improve search, indexing, or library UX
 
-### System Prerequisites
-- **Flutter SDK:** `>= 3.0.0`
-- **Dart SDK:** `>= 3.0.0`
-- **Android Development:** Android Studio, Android SDK (API 34+), and **NDK (Side-by-side)** installed (crucial for compiling the C++ backing of `flutter_mpv`).
-- **iOS Development:** macOS, Xcode 14+, CocoaPods.
+## Development Setup
 
-### Step-by-Step Initialization
-1. **Fork & Clone:**
-   ```bash
-   git clone https://github.com/your-username/mpx-player.git
-   cd mpx-player/mpx
-   ```
+### Requirements
 
-2. **Fetch Dependencies:**
-   ```bash
-   flutter pub get
-   ```
+- Flutter SDK
+- Android Studio and Android SDK
+- Python 3 for Android builds using Chaquopy
+- A physical Android device for player-related testing when possible
 
-3. **Verify Static Analysis:**
-   Ensure your local environment passes our strict linting rules.
-   ```bash
-   flutter analyze
-   ```
+### Local Setup
 
-4. **Run Unit Tests:**
-   ```bash
-   flutter test
-   ```
-
-5. **Deploy to Device:**
-   > ⚠️ **CRITICAL:** Emulators do not support hardware video decoding accurately. You **must** test on a physical Android or iOS device when working on player logic.
-   ```bash
-   flutter run -d <device_id> --profile
-   ```
-
----
-
-## 🏗️ 3. How to Add a New Feature
-
-Adding a feature requires adhering to our Feature-First Clean Architecture. Let's say you are adding a "Playlists" feature.
-
-1. **Create the Directory:** `lib/features/playlists/`
-2. **Domain Layer:** 
-   - Create `domain/entities/playlist.dart` (Pure Dart class).
-   - Create `domain/repositories/playlist_repository.dart` (Abstract class).
-3. **Data Layer:**
-   - Create `data/repositories/playlist_repository_impl.dart` (Implements the interface, talks to SQLite).
-4. **Controller Layer:**
-   - Create `controller/playlist_controller.dart` (Extends `ChangeNotifier`, uses the repository interface).
-5. **Presentation Layer:**
-   - Create `presentation/screens/playlist_screen.dart`.
-   - Access the controller using `context.watch<PlaylistController>()`.
-6. **Dependency Injection:**
-   - Register your new controller in `main.dart` inside the `MultiProvider`.
-
----
-
-## 🎨 4. Code Style & Best Practices
-
-### Formatting & Linting
-We strictly enforce standard Dart formatting.
 ```bash
-# Auto-format your code before committing
-dart format .
+git clone https://github.com/mohammedbakri123/MPx-player.git
+cd MPx-player/mpx
+flutter pub get
+flutter analyze
+flutter test
+flutter run
 ```
 
-### State Management (`provider`) Anti-Patterns to Avoid
-- 🚫 **BAD:** Using `context.watch<Controller>()` inside an `onPressed` callback. (Will throw an exception).
-- ✅ **GOOD:** Using `context.read<Controller>()` inside an `onPressed` callback.
-- 🚫 **BAD:** Wrapping an entire `Scaffold` in a `Consumer` just to update a single text string.
-- ✅ **GOOD:** Wrapping only the `Text` widget in a `Consumer` or `Selector`.
+## Project Shape
 
-### Naming Conventions
-- Variables/Methods: `camelCase`
-- Classes/Enums: `PascalCase`
-- Files/Folders: `snake_case` (e.g., `video_player_screen.dart`)
-- Private variables must be prefixed with an underscore `_`.
+The codebase is organized by feature, with internal separation between presentation, controller, domain, and data layers.
 
-### Documentation
-Use `///` for public APIs, classes, and complex methods.
-```dart
-/// Parses the raw directory path and filters out hidden files.
-/// Throws a [FileSystemException] if the path does not exist.
-List<FileItem> parseDirectory(String path) { ... }
+Typical feature layout:
+
+```text
+lib/features/<feature>/
+  controller/
+  data/
+  domain/
+  presentation/
 ```
 
----
+Use this structure when adding new work unless there is a strong reason not to.
 
-## 🌿 5. Git Workflow & Branching Strategy
+## Working Principles
 
-We use a standard Feature Branch workflow and **Conventional Commits**.
+### 1. Respect Layer Boundaries
 
-### Branch Naming
-- Features: `feature/brief-description`
-- Bug Fixes: `fix/issue-description`
-- Refactors: `refactor/what-is-changed`
+- presentation code should stay UI-focused
+- business rules belong in controllers/domain logic
+- persistence and platform details belong in data/services
 
-### Conventional Commits
-Your commit messages must follow this format to allow automated changelog generation:
-`<type>(<scope>): <description>`
+### 2. Preserve User Trust
 
-- `feat:` A new feature (e.g., `feat(player): add subtitle offset control`)
-- `fix:` A bug fix (e.g., `fix(library): resolve crash on empty folders`)
-- `refactor:` Code restructuring (e.g., `refactor(db): migrate sqflite helper to singleton`)
-- `perf:` Performance improvements
-- `style:` Formatting, missing semi-colons, etc.
+- do not add telemetry
+- do not add hidden network behavior
+- do not weaken offline-first behavior without a strong product reason
 
----
+### 3. Optimize for Responsiveness
 
-## 🧪 6. Comprehensive Testing Guide
+- avoid unnecessary rebuilds in large widget trees
+- be careful with overlays, gestures, and animated layers on the player surface
+- test interaction-heavy changes on a real device when possible
 
-We require tests for all business logic (Controllers) and data manipulation (Services/Repositories).
+### 4. Match Existing Style
 
-1. **Unit Tests (`test/features/.../controller_test.dart`)**
-   Use `mocktail` or `mockito` to mock Repositories.
-   ```dart
-   test('Should update state to playing when play is called', () async {
-     when(() => mockRepo.play()).thenAnswer((_) async => Future.value());
-     await controller.play();
-     expect(controller.isPlaying, true);
-   });
-   ```
+- use `snake_case` for files
+- use `PascalCase` for classes
+- use `camelCase` for fields and methods
+- prefer small, focused widgets and services
 
-2. **Widget Tests**
-   Ensure UI components render correctly given a specific mocked state.
+## Before You Open a PR
 
-**To run all tests:**
+Please make sure your change does the following:
+
+- solves one clear problem well
+- keeps code readable
+- avoids unrelated refactors unless necessary
+- passes analysis and tests
+- includes manual verification notes for UI or playback changes
+
+Recommended checks:
+
 ```bash
-flutter test --coverage
+flutter analyze
+flutter test
 ```
 
----
+If you changed Android release behavior, also verify a release build:
 
-## 🚀 7. Pull Request & Review Process
+```bash
+flutter build apk --release --target-platform android-arm64
+```
 
-1. **Push your branch** to your fork.
-2. **Open a Pull Request** against the `main` branch.
-3. **Fill out the PR Template** thoroughly. Include screen recordings if you modified UI/UX.
-4. **CI Checks:** Ensure GitHub Actions (Linting, Tests) pass green.
-5. **Code Review:** A core maintainer will review your code. Address any requested changes.
-6. **Merge:** Once approved, a maintainer will squash and merge your PR.
+## Pull Request Guidance
 
----
+When opening a PR, include:
 
-## 📦 8. Release Management (Maintainers Only)
+- what changed
+- why it changed
+- screenshots or screen recordings for UI work
+- device and build mode used for testing when relevant
+- any known tradeoffs or follow-up work
 
-To publish a new version:
-1. Update `version` in `pubspec.yaml` (e.g., `1.2.0+14`).
-2. Update `CHANGELOG.md`.
-3. Build release artifacts:
-   ```bash
-   flutter build apk --release --split-per-abi
-   flutter build appbundle --release
-   flutter build ios --release
-   ```
-4. Create a GitHub Release with the APKs attached.
+Small, focused PRs are much easier to review and merge than broad mixed changes.
 
----
-Thank you for making MPx Player better! 🎬
+## Areas Where Contributors Can Have Big Impact
+
+- player performance and gesture quality
+- subtitle system improvements
+- downloader resilience and UX
+- release engineering and APK size optimization
+- architecture cleanup and test coverage
+- documentation that helps users and new contributors succeed
+
+## If You Are Unsure Where to Start
+
+Open an issue, propose a focused improvement, or start with a bug fix in one of the high-impact areas above.
+
+Strong contributions are not only large features. A well-executed fix for a frustrating playback bug can be just as valuable.
+
+## Thank You
+
+If you choose to spend time on MPx Player, you are helping build a more respectful kind of media app: fast, private, useful, and technically serious.

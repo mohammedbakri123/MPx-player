@@ -1,181 +1,156 @@
-<div align="center">
-  <img src="screenshots/1774286272927.jpg" alt="MPx Player Banner" width="200" style="border-radius: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-  
-  <br />
-  <br />
+# MPx Player
 
-# 🎬 MPx Player
+MPx Player is a fast, privacy-first Flutter video player built for people who want full control over local playback without ads, trackers, or cloud lock-in.
 
-**The Ultimate Privacy-Focused Local Video Player for Android & iOS**
+It combines an `mpv`-powered playback core with a polished mobile experience: gesture-driven seeking, subtitle controls, history, favorites, downloader tools, reels, and deep playback tuning.
 
-  <p align="center">
-    <a href="https://flutter.dev/"><img src="https://img.shields.io/badge/Flutter-3.0%2B-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter"></a>
-    <a href="https://dart.dev/"><img src="https://img.shields.io/badge/Dart-3.0%2B-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-success?style=for-the-badge" alt="License"></a>
-    <img src="https://img.shields.io/badge/100%25-Offline-FF3E00?style=for-the-badge" alt="100% Offline">
-  </p>
+![MPx Player screenshot](screenshots/1774286272927.jpg)
 
-  <p align="center">
-    <b>Clean Architecture • Offline-First Design • Professional Code Quality • Zero Tracking • Zero Analytics</b>
-  </p>
+## Why It Stands Out
 
-</div>
+- Privacy first: no analytics, no tracking, no ad SDKs
+- Playback focused: `mpv` engine, hardware acceleration, advanced seek and subtitle controls
+- Built for real use: library indexing, favorites, watch history, downloader flows, PiP, and configurable gestures
+- Contributor friendly: feature-based structure, clean separation of concerns, practical architecture
 
----
+## Feature Highlights
 
-## 📱 Screenshots Showcase
+### Playback
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center"><img src="screenshots/1774286272927.jpg" width="200px" alt="Screenshot 1"/></td>
-      <td align="center"><img src="screenshots/1774286272936.jpg" width="200px" alt="Screenshot 2"/></td>
-      <td align="center"><img src="screenshots/1774286272944.jpg" width="200px" alt="Screenshot 3"/></td>
-      <td align="center"><img src="screenshots/1774286272958.jpg" width="200px" alt="Screenshot 4"/></td>
-    </tr>
-    <tr>
-      <td align="center"><img src="screenshots/1774286272971.jpg" width="200px" alt="Screenshot 5"/></td>
-      <td align="center"><img src="screenshots/1774286272983.jpg" width="200px" alt="Screenshot 6"/></td>
-      <td align="center"><img src="screenshots/1774286272994.jpg" width="200px" alt="Screenshot 7"/></td>
-      <td align="center"><img src="screenshots/1774286273005.jpg" width="200px" alt="Screenshot 8"/></td>
-    </tr>
-    <tr>
-      <td align="center"><img src="screenshots/1774286273016.jpg" width="200px" alt="Screenshot 9"/></td>
-      <td align="center"><img src="screenshots/1774286273027.jpg" width="200px" alt="Screenshot 10"/></td>
-      <td align="center"><img src="screenshots/1774286273036.jpg" width="200px" alt="Screenshot 11"/></td>
-      <td align="center"><img src="screenshots/1774286273045.jpg" width="200px" alt="Screenshot 12"/></td>
-    </tr>
-    <tr>
-      <td align="center" colspan="2"><img src="screenshots/1774286273053.jpg" width="200px" alt="Screenshot 13"/></td>
-      <td align="center" colspan="2"><img src="screenshots/1774286273063.jpg" width="200px" alt="Screenshot 14"/></td>
-    </tr>
-  </table>
-</div>
+- `mpv`-backed video playback
+- Double-tap seek with configurable seek duration
+- Horizontal drag scrubbing
+- Long press for temporary `2x` speed
+- Brightness and volume swipe controls
+- Aspect ratio controls and playback tuning
+- Resume playback and watch history
 
----
+### Subtitles and Audio
 
-## 🌟 Why MPx Player?
+- External subtitle loading
+- Subtitle size, color, weight, background, font, and position controls
+- Audio track selection and restoration
 
-MPx Player is not just another video player. It's built from the ground up prioritizing **your privacy** and delivering a **lightning-fast experience**.
+### Library Experience
 
-We guarantee:
+- Indexed local library for fast loading
+- Folder browsing and search
+- Favorites management
+- Thumbnail support and metadata extraction
 
-- 🚫 **No Analytics**
-- 🚫 **No Tracking**
-- 🚫 **No Internet Required**
-- 🚫 **No Ads**
+### Downloader and Reels
 
----
+- Integrated downloader flow with `yt-dlp` via Chaquopy
+- Share-target support
+- Reels-style playback surface for short-form browsing
 
-## ✨ Power-Packed Features
+## Product Principles
 
-### 🏠 Intelligent Library Management
+MPx Player is shaped by a few non-negotiables:
 
-> Experience your media library without the wait.
+- Local-first by default
+- Fast interactions over flashy complexity
+- User control over hidden automation
+- Architecture that stays maintainable as features grow
 
-- ⚡ **Instant Loading**: Persistent SQLite indexing means it scans once and loads instantly forever.
-- 🧹 **Smart Filtering**: Automatically hides empty folders.
-- 🗂️ **Folder-Based Organization**: Easily browse `Camera`, `Downloads`, `Movies`, and more.
-- 🔍 **Instant Search**: Find any video across your entire indexed library in milliseconds.
-- 🔄 **Pull-to-Refresh**: Seamlessly rescan storage and rebuild your index on demand.
+## Screenshots
 
-### 🎬 Advanced Video Playback
+<p align="center">
+  <img src="screenshots/1774286272927.jpg" width="180" alt="Library screen">
+  <img src="screenshots/1774286272936.jpg" width="180" alt="Player screen">
+  <img src="screenshots/1774286272944.jpg" width="180" alt="Playback controls">
+  <img src="screenshots/1774286272958.jpg" width="180" alt="Settings screen">
+</p>
 
-> Powered by the robust `flutter_mpv` engine for uncompromising quality.
+## Architecture
 
-- 🚀 **Hardware Acceleration**: Deep tuning options for flawless playback.
-- 🛠️ **Expert Engine Mode**: Override underlying decoding, sync, and frame-dropping strategies.
-- 🤌 **Intuitive Gestures**:
-  - ↔️ _Horizontal Swipe_: Seek forward/backward
-  - ↕️ _Left Vertical Swipe_: Adjust Brightness
-  - ↕️ _Right Vertical Swipe_: Adjust Volume
-  - 👆 _Long Press_: 2x Speed playback
-  - ✌️ _Double Tap_: Quick seeking & pause/play
-- 📝 **Advanced Subtitles**: Full customization (size up to 72pt, colors, font types, background).
-- 🕒 **Watch History**: Automatically remembers where you left off.
+The project follows a feature-first structure with clear boundaries between presentation, controller, domain, and data responsibilities.
 
-### ⭐ Favorites & Personalization
-
-- ❤️ **One-Tap Favorites**: Curate your favorite videos with persistent SQLite storage.
-- 🎨 **Modern Material 3**: Beautiful, fluid, and responsive design with smooth animations.
-- ⚙️ **Deep Customization**: Control auto-resume, keep-awake behavior, cache management, and manual `mpv` parameters.
-
----
-
-## 🏗️ Clean & Scalable Architecture
-
-MPx Player is engineered with **Clean Architecture** principles and **Feature-Based** organization, making the codebase highly maintainable and scalable.
-
-```mermaid
-graph TD;
-    Presentation[Presentation Layer] --> Controller[Controller Layer];
-    Controller --> Domain[Domain Layer];
-    Domain --> Data[Data Layer];
+```text
+lib/
+  core/
+  features/
+    player/
+      controller/
+      data/
+      domain/
+      presentation/
+    downloader/
+    library/
+    reels/
+    settings/
 ```
 
-Explore our deep-dives:
+Useful references:
 
-- 📐 **[Architecture Overview](ARCHITECTURE.md)**
-- 🤝 **[Contributing Guide](CONTRIBUTING.md)**
+- `ARCHITECTURE.md`
+- `CONTRIBUTING.md`
 
----
+## Tech Stack
 
-## 🛠️ Tech Stack
+- Flutter
+- Dart
+- `flutter_mpv`, `flutter_mpv_video`, `flutter_mpv_libs_video`
+- `provider`
+- `sqflite`
+- `shared_preferences`
+- Chaquopy + `yt-dlp`
 
-| Domain                     | Technologies                                             |
-| -------------------------- | -------------------------------------------------------- |
-| **Core Framework**         | Flutter 3.0+, Dart 3.0+                                  |
-| **Video Engine**           | `flutter_mpv`, `flutter_mpv_video`                       |
-| **State Management**       | Provider                                                 |
-| **Database & Persistence** | `sqflite`, `shared_preferences`                          |
-| **UI & Animations**        | Material 3, Google Fonts, `flutter_staggered_animations` |
-
----
-
-## 🚀 Getting Started
-
-Follow these steps to build the project locally.
+## Getting Started
 
 ### Prerequisites
 
-- [Flutter SDK](https://flutter.dev/docs/get-started/install) 3.0.0 or higher
-- Android Studio / Xcode
-- Git
+- Flutter SDK
+- Android Studio with Android SDK
+- A physical Android device is strongly recommended for player work
+- Python 3 for Chaquopy-based Android builds
 
-### Installation
+### Setup
 
-1. **Clone the repository:**
+```bash
+git clone https://github.com/mohammedbakri123/MPx-player.git
+cd MPx-player/mpx
+flutter pub get
+flutter analyze
+flutter run
+```
 
-   ```bash
-   git clone https://github.com/mohammedbakri123/MPx-player.git
-   cd MPx-player
-   ```
+### Release Build
 
-2. **Install dependencies:**
+Current Android release packaging is optimized for `arm64-v8a`:
 
-   ```bash
-   flutter pub get
-   ```
+```bash
+flutter build apk --release --target-platform android-arm64
+```
 
-3. **Run the app:**
-   ```bash
-   flutter run
-   ```
+## Contributing
 
----
+MPx Player is actively shaped by improvements to performance, playback quality, UX polish, and architecture.
 
-## 🤝 Contributing
+Contributions are especially valuable in these areas:
 
-We welcome contributions from the community! Whether it's a bug fix, new feature, or UI polish, your help is appreciated.
+- playback reliability and performance
+- subtitle and audio handling
+- downloader robustness
+- library UX and search
+- tests, tooling, and architecture cleanup
+- documentation and onboarding
 
-Please check out our [**Contributing Guidelines**](CONTRIBUTING.md) to get started. Let's build the best local video player together!
+Start here: `CONTRIBUTING.md`
 
----
+## What Contributors Can Expect
 
-## 📄 License
+- a codebase with real product scope
+- meaningful performance and UX problems to solve
+- room for both small fixes and deep systems work
+- a project direction centered on user respect and technical quality
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## License
 
-<div align="center">
-  <p>Made with ❤️ using Flutter | 100% Offline | Zero Tracking</p>
-</div>
+This project is licensed under the MIT License. See `LICENSE`.
+
+## Final Note
+
+If you care about private, high-quality local media software, MPx Player is worth building with.
+
+Whether you want to refine gestures, improve playback internals, redesign library flows, or harden release quality, your contribution can move the product forward in visible ways.
