@@ -141,7 +141,7 @@ class _ReelPlayerItemState extends State<ReelPlayerItem> {
   void _seek(bool forward) {
     final currentPosition = _player.state.position;
     final newPosition = currentPosition +
-        (forward ? const Duration(seconds: 10) : const Duration(seconds: -10));
+        (forward ? const Duration(seconds: 5) : const Duration(seconds: -5));
     _player.seek(newPosition);
 
     setState(() {
@@ -220,7 +220,10 @@ class _ReelPlayerItemState extends State<ReelPlayerItem> {
               top: 0,
               bottom: 80,
               child: Center(
-                child: SeekFeedbackIndicator(isForward: true),
+                child: SeekFeedbackIndicator(
+                  isForward: true,
+                  forwardedTime: 5,
+                ),
               ),
             ),
           if (_showSeekBackward)
@@ -229,7 +232,10 @@ class _ReelPlayerItemState extends State<ReelPlayerItem> {
               top: 0,
               bottom: 80,
               child: Center(
-                child: SeekFeedbackIndicator(isForward: false),
+                child: SeekFeedbackIndicator(
+                  isForward: false,
+                  forwardedTime: 5,
+                ),
               ),
             ),
           if (_isLongPressing)

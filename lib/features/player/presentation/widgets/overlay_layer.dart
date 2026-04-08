@@ -41,12 +41,15 @@ class OverlayLayer extends StatelessWidget {
     if (!controller.showDoubleTapSeekLeft) {
       return const SizedBox.shrink();
     }
-    return const Positioned(
+    return Positioned(
       left: 24,
       top: 0,
       bottom: 80,
       child: Center(
-        child: SeekFeedbackIndicator(isForward: false),
+        child: SeekFeedbackIndicator(
+          isForward: false,
+          forwardedTime: controller.doubleTapSeekStep,
+        ),
       ),
     );
   }
@@ -55,33 +58,31 @@ class OverlayLayer extends StatelessWidget {
     if (!controller.showDoubleTapSeekRight) {
       return const SizedBox.shrink();
     }
-    return const Positioned(
+    return Positioned(
       right: 24,
       top: 0,
       bottom: 80,
       child: Center(
-        child: SeekFeedbackIndicator(isForward: true),
+        child: SeekFeedbackIndicator(
+          isForward: true,
+          forwardedTime: controller.doubleTapSeekStep,
+        ),
       ),
     );
   }
 
   Widget _buildSpeedIndicator() {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 200),
-      transitionBuilder: (child, animation) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-      child: controller.isLongPressing
-          ? const Positioned(
-              key: ValueKey<bool>(true),
-              top: 120,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: PlaybackSpeedIndicator(speed: 2.0),
-              ),
-            )
-          : const SizedBox.shrink(key: ValueKey<bool>(false)),
+    if (!controller.isLongPressing) {
+      return const SizedBox.shrink();
+    }
+
+    return const Positioned(
+      top: 120,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: PlaybackSpeedIndicator(speed: 2.0),
+      ),
     );
   }
 
