@@ -1,7 +1,7 @@
 # MPx Player
 
 <p align="center">
-  <img src="screenshots/1774286272927.jpg" width="220" alt="MPx Player preview">
+  <img src="screenshots/player.jpg" width="220" alt="MPx Player preview">
 </p>
 
 <p align="center">
@@ -80,10 +80,10 @@ These principles shape both features and code review:
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/1774286272927.jpg" width="170" alt="Library">
-  <img src="screenshots/1774286272936.jpg" width="170" alt="Player">
-  <img src="screenshots/1774286272944.jpg" width="170" alt="Controls">
-  <img src="screenshots/1774286272958.jpg" width="170" alt="Settings">
+  <img src="screenshots/library.jpg" width="170" alt="Library">
+  <img src="screenshots/player2.jpg" width="170" alt="Player">
+  <img src="screenshots/reels.jpg" width="170" alt="reels">
+  <img src="screenshots/settings.jpg" width="170" alt="Settings">
 </p>
 
 ## Tech Stack
