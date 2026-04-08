@@ -1,24 +1,25 @@
 # Contributing to MPx Player
 
-Thanks for considering a contribution.
+Thanks for being interested in MPx Player.
 
-MPx Player is not a demo app. It is a real product codebase focused on private, high-quality local media playback. That means contributions should improve the app in ways users can feel: smoother playback, clearer UI, stronger architecture, fewer regressions, and better reliability.
+This project is built like a real product, not a throwaway sample. That means contributions should improve the app in ways users can actually feel: faster playback, fewer regressions, better interaction quality, cleaner architecture, and clearer documentation.
 
-## What We Value
+## What This Project Optimizes For
 
 - Privacy: no analytics, no trackers, no ad tech
-- Performance: playback and gestures should feel immediate
-- Maintainability: features should fit the existing structure cleanly
-- Product quality: polish matters, not just functionality
+- Quality: features should feel intentional and complete
+- Performance: playback and gestures should stay responsive
+- Maintainability: code should fit the structure and remain understandable
 
-## Good First Contributions
+## Where Contributions Matter Most
 
-- fix playback or gesture regressions
-- improve subtitle, audio track, or history behavior
-- strengthen downloader error handling
-- add or improve tests
-- refine docs and developer onboarding
-- improve search, indexing, or library UX
+- player performance and gesture handling
+- subtitle and audio track behavior
+- downloader reliability and UX
+- library indexing and search
+- testing and regression protection
+- release engineering and APK size work
+- documentation and onboarding
 
 ## Development Setup
 
@@ -26,8 +27,8 @@ MPx Player is not a demo app. It is a real product codebase focused on private, 
 
 - Flutter SDK
 - Android Studio and Android SDK
-- Python 3 for Android builds using Chaquopy
-- A physical Android device for player-related testing when possible
+- Python 3 for Android builds that use Chaquopy
+- A physical Android device when testing player interactions
 
 ### Local Setup
 
@@ -40,11 +41,17 @@ flutter test
 flutter run
 ```
 
-## Project Shape
+### Release Verification
 
-The codebase is organized by feature, with internal separation between presentation, controller, domain, and data layers.
+If your change affects Android release behavior, verify the release build too:
 
-Typical feature layout:
+```bash
+flutter build apk --release --target-platform android-arm64
+```
+
+## Codebase Shape
+
+The project is feature-first.
 
 ```text
 lib/features/<feature>/
@@ -54,44 +61,43 @@ lib/features/<feature>/
   presentation/
 ```
 
-Use this structure when adding new work unless there is a strong reason not to.
+Follow the existing structure unless there is a strong architectural reason not to.
 
-## Working Principles
+## Working Rules
 
-### 1. Respect Layer Boundaries
+### Respect Boundaries
 
-- presentation code should stay UI-focused
-- business rules belong in controllers/domain logic
-- persistence and platform details belong in data/services
+- keep presentation code focused on UI
+- keep business behavior in controllers and domain logic
+- keep platform, storage, and service details in data or core services
 
-### 2. Preserve User Trust
+### Protect User Trust
 
 - do not add telemetry
 - do not add hidden network behavior
-- do not weaken offline-first behavior without a strong product reason
+- do not introduce dark patterns or intrusive flows
 
-### 3. Optimize for Responsiveness
+### Protect Performance
 
-- avoid unnecessary rebuilds in large widget trees
-- be careful with overlays, gestures, and animated layers on the player surface
-- test interaction-heavy changes on a real device when possible
+- be careful with overlays and gesture layers on top of video surfaces
+- avoid unnecessary rebuilds in large trees
+- test interaction-heavy changes on real hardware when possible
 
-### 4. Match Existing Style
+### Keep Changes Focused
 
-- use `snake_case` for files
-- use `PascalCase` for classes
-- use `camelCase` for fields and methods
-- prefer small, focused widgets and services
+- solve one clear problem per PR when possible
+- avoid mixing broad refactors with bug fixes unless necessary
+- leave the code easier to understand than you found it
 
-## Before You Open a PR
+## Before Opening a PR
 
-Please make sure your change does the following:
+Please make sure your change:
 
-- solves one clear problem well
-- keeps code readable
-- avoids unrelated refactors unless necessary
-- passes analysis and tests
-- includes manual verification notes for UI or playback changes
+- addresses a real problem clearly
+- matches existing naming and structure
+- passes `flutter analyze`
+- passes relevant tests
+- includes manual verification notes for playback or UI work
 
 Recommended checks:
 
@@ -100,39 +106,36 @@ flutter analyze
 flutter test
 ```
 
-If you changed Android release behavior, also verify a release build:
+## Pull Request Expectations
 
-```bash
-flutter build apk --release --target-platform android-arm64
-```
-
-## Pull Request Guidance
-
-When opening a PR, include:
+When you open a PR, include:
 
 - what changed
 - why it changed
-- screenshots or screen recordings for UI work
+- screenshots or recordings for UI changes
 - device and build mode used for testing when relevant
-- any known tradeoffs or follow-up work
+- any known follow-up work or tradeoffs
 
-Small, focused PRs are much easier to review and merge than broad mixed changes.
+Small, focused pull requests are much easier to review and merge.
 
-## Areas Where Contributors Can Have Big Impact
+## Good First Contributions
 
-- player performance and gesture quality
-- subtitle system improvements
-- downloader resilience and UX
-- release engineering and APK size optimization
-- architecture cleanup and test coverage
-- documentation that helps users and new contributors succeed
+- fix a reproducible playback or gesture bug
+- improve downloader error messages or handling
+- add tests around controller logic
+- improve docs for setup, release, or architecture
+- polish a feature without changing the project direction
 
-## If You Are Unsure Where to Start
+## Communication
 
-Open an issue, propose a focused improvement, or start with a bug fix in one of the high-impact areas above.
+If you are unsure where to start, open an issue or propose a focused improvement before investing in a large change.
 
-Strong contributions are not only large features. A well-executed fix for a frustrating playback bug can be just as valuable.
+Well-executed bug fixes, testing improvements, and docs work are absolutely valuable contributions.
+
+## License Reminder
+
+By contributing to this repository, you agree that your contributions will be licensed under the same MIT License that covers the project. See `LICENSE`.
 
 ## Thank You
 
-If you choose to spend time on MPx Player, you are helping build a more respectful kind of media app: fast, private, useful, and technically serious.
+Every solid contribution helps move MPx Player toward a better kind of media app: fast, private, useful, and technically serious.

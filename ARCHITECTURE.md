@@ -1,219 +1,193 @@
-# 🏗️ MPx Player - Architecture & Technical Design Document
+# MPx Player Architecture
 
-This document serves as the comprehensive, authoritative source for understanding the architecture, design patterns, data flows, and technical decisions behind MPx Player. It is intended for core maintainers and contributors.
+This document explains how MPx Player is organized, why the codebase is structured the way it is, and how new work should fit into the system.
 
----
+It is written for contributors and maintainers who need a practical mental model of the app, not just a list of folders.
 
-## 🧭 1. Architectural Philosophy
+## Architectural Intent
 
-MPx Player is built upon a strict **Feature-First Clean Architecture**. This approach ensures that the app is scalable, highly testable, and maintainable. 
+MPx Player is built around four goals:
 
-### Core Tenets:
-1. **Decoupled Layers:** UI code knows nothing about SQLite or video engines. Data code knows nothing about Flutter Widgets.
-2. **Feature Encapsulation:** Code is grouped by what it *does* (e.g., `player`, `library`), not by what it *is* (e.g., all controllers in one folder).
-3. **Offline-First Resilience:** The app assumes no network connectivity exists. All operations fail gracefully or rely on local caching.
-4. **Reactive State:** The UI is a pure function of state, driven by streams and `ChangeNotifier`s.
+- keep playback interactions responsive
+- keep features isolated enough to evolve safely
+- keep platform-specific details away from UI code
+- keep the app maintainable as product scope grows
 
----
+The result is a feature-first Flutter application with clean separation between presentation, controller, domain, and data responsibilities.
 
-## 📂 2. Directory Structure & Feature Modules
-
-The codebase is housed entirely in the `lib/` directory.
+## Top-Level Shape
 
 ```text
 lib/
-├── core/                               # App-wide shared infrastructure
-│   ├── database/                       # SQLite config, migrations, DB helper
-│   ├── errors/                         # Failure classes, Exceptions
-│   ├── services/                       # Singleton services (Logger, Permissions)
-│   ├── theme/                          # Colors, Typography, AppThemeTokens
-│   ├── utils/                          # Constants, Extensions, formatters
-│   └── widgets/                        # Dumb, reusable UI components
-│
-├── features/                           # Independent feature modules
-│   ├── library/                        # Core file browsing and indexing
-│   │   ├── controller/                 # FileBrowserController
-│   │   ├── data/                       # DirectoryBrowser, LibraryRepositoryImpl
-│   │   ├── domain/                     # Entities (VideoFile, VideoFolder)
-│   │   ├── presentation/               # Screens (Home, Search), UI lists
-│   │   └── services/                   # LibraryIndexService (DB interaction)
-│   │
-│   ├── player/                         # Video playback and controls
-│   │   ├── controller/                 # PlayerController, State Mixins
-│   │   ├── data/                       # MpvPlayerRepository (flutter_mpv wrapper)
-│   │   ├── domain/                     # PlayerRepository Interface
-│   │   └── presentation/               # VideoPlayerScreen, Gestures, Overlays
-│   │
-│   ├── favorites/                      # Curated favorites management
-│   ├── history/                        # Watch history and resume playback
-│   └── settings/                       # User preferences and app config
-│
-└── main.dart                           # App entry point, DI setup
+  core/
+  features/
+    downloader/
+    library/
+    player/
+    reels/
+    settings/
 ```
 
----
+## Layering Model
 
-## 🧅 3. The Clean Architecture Layers
+Most features follow this shape:
 
-Each feature module is divided into four distinct layers.
-
-### 3.1 Domain Layer (The Core)
-This is the innermost layer. It has **no dependencies** on Flutter or external packages.
-- **Entities:** Pure Dart classes representing business objects.
-  ```dart
-  class VideoFile extends FileItem {
-    final String path;
-    final Duration duration;
-    // ...
-  }
-  ```
-- **Repositories (Interfaces):** Abstract classes defining the contract for data operations.
-  ```dart
-  abstract class PlayerRepository {
-    Future<void> load(String path);
-    Stream<Duration> get positionStream;
-  }
-  ```
-
-### 3.2 Data Layer (Implementation)
-This layer implements Domain interfaces and interacts with APIs, engines, and databases.
-- **Data Sources:** Direct interaction with `sqflite`, `shared_preferences`, or `Directory.list()`.
-- **Repositories (Impl):** Implements the Domain repository interfaces, maps raw data to Domain entities, and handles low-level exceptions.
-
-### 3.3 Controller Layer (Business Logic)
-This layer bridges Domain and Presentation.
-- Uses `ChangeNotifier` to hold application state.
-- Executes business rules, calls Repository methods, and updates state.
-- **Example:** `PlayerController` starts the video, listens to the position stream, and updates `PlayerState.position`, calling `notifyListeners()`.
-
-### 3.4 Presentation Layer (UI)
-Flutter Widgets and Screens.
-- Reacts to state changes via `provider`.
-- Dispatches actions to controllers.
-- Contains absolutely zero business logic or data formatting.
-
----
-
-## 🗄️ 4. Data Storage & Schema Design
-
-MPx Player uses a robust multi-tier caching system backed by `sqflite` to ensure instantaneous library loads, even with thousands of videos.
-
-### SQLite Database Schema (`app_database.db`)
-
-**1. `videos`**
-Caches individual video metadata.
-- `id` (INTEGER PRIMARY KEY)
-- `path` (TEXT UNIQUE) - Absolute file path
-- `folder_path` (TEXT) - Parent directory
-- `title` (TEXT)
-- `duration` (INTEGER) - In milliseconds
-- `size` (INTEGER) - In bytes
-- `resolution` (TEXT)
-- `last_modified` (INTEGER)
-
-**2. `folders`**
-Caches directory metadata for instant folder listing.
-- `path` (TEXT PRIMARY KEY)
-- `name` (TEXT)
-- `video_count` (INTEGER)
-
-**3. `watch_history`**
-Tracks playback progress for the "Resume" feature.
-- `video_path` (TEXT PRIMARY KEY)
-- `position` (INTEGER) - Last played millisecond
-- `last_played_at` (INTEGER) - Timestamp
-
-**4. `favorites`**
-- `video_path` (TEXT PRIMARY KEY)
-- `added_at` (INTEGER)
-
-**5. `library_metadata`**
-Tracks the state of the indexing engine.
-- `id` (INTEGER PRIMARY KEY)
-- `last_scan_timestamp` (INTEGER)
-- `is_indexing` (INTEGER boolean)
-
-### Multi-Tier Caching Flow
-When `FileBrowserController` requests data:
-1. **L1 Cache (Memory):** Checks `LibraryIndexService._snapshots` (Dart `Map`). Returns `~0ms`.
-2. **L2 Cache (SQLite):** Queries the `videos` and `folders` tables. Returns `~50-150ms`.
-3. **L3 Cache (Disk Scan):** Uses `Directory.list()` to recursively scan storage, parse metadata, populate SQLite, and update Memory. Returns `~1-5s`.
-
----
-
-## 🎬 5. Video Engine Architecture (`flutter_mpv`)
-
-We use `flutter_mpv` (a wrapper for `libmpv`) for unparalleled format support and hardware acceleration.
-
-### Player Initialization Flow
-```mermaid
-sequenceDiagram
-    participant UI as VideoPlayerScreen
-    participant Ctrl as PlayerController
-    participant Repo as MpvPlayerRepository
-    participant Engine as MPV Engine
-
-    UI->>Ctrl: loadVideo(path)
-    Ctrl->>Repo: load(path)
-    Repo->>Engine: mpv_command("loadfile", path)
-    Engine-->>Repo: (Async Streams: position, duration, state)
-    Repo-->>Ctrl: yield streams
-    Ctrl-->>UI: notifyListeners() (60fps UI updates)
+```text
+lib/features/<feature>/
+  controller/
+  data/
+  domain/
+  presentation/
 ```
 
-### Stream Management
-The `MpvPlayerRepository` abstracts MPV's complex event loop into native Dart `Stream`s. `PlayerController` listens to these streams. To prevent memory leaks, **all stream subscriptions are explicitly canceled in `PlayerController.dispose()`**, which is triggered when `VideoPlayerScreen` is popped.
+### Presentation
 
----
+The presentation layer contains screens and widgets.
 
-## 🔄 6. State Management Deep Dive
+Responsibilities:
 
-We exclusively use the `provider` package (`ChangeNotifierProvider`, `Consumer`, `Selector`).
+- render state
+- dispatch user actions
+- coordinate visible UI behavior
 
-### Dependency Injection (DI)
-`main.dart` configures `MultiProvider` for global dependencies:
-```dart
-MultiProvider(
-  providers: [
-    ChangeNotifierProvider(create: (_) => SettingsController()),
-    ChangeNotifierProvider(create: (_) => FileBrowserController()),
-  ],
-  child: const MPxApp(),
-)
-```
+Avoid placing business rules or persistence logic here.
 
-### Mixin-Based Controllers
-To prevent massive "God Classes", complex controllers use Dart Mixins.
-`PlayerController` is defined as:
-```dart
-class PlayerController extends ChangeNotifier 
-    with PlaybackControlMixin, 
-         SubtitleManagerMixin, 
-         GestureHandlerMixin {
-    
-    final PlayerRepository _repository;
-    // Core state holds the current video, buffering status, etc.
-}
-```
-This isolates subtitle logic to `SubtitleManagerMixin`, making testing and maintenance drastically easier.
+### Controller
 
----
+Controllers coordinate feature behavior and hold mutable UI-facing state.
 
-## 🚦 7. Concurrency & Performance Optimization
+Responsibilities:
 
-- **Isolates:** Heavy JSON parsing or initial massive directory recursive scans (`Directory.list(recursive: true)`) are offloaded to Dart Isolates using `compute()` to prevent UI thread frame drops.
-- **Widget Granularity:** Instead of wrapping a whole screen in `Consumer<PlayerController>`, we wrap *only* the specific widgets that change.
-  *Example:* Only the `ProgressBar` widget is wrapped in a `Consumer` to react to the high-frequency `positionStream`, leaving the rest of the player UI completely static.
-- **Thumbnail Caching:** Thumbnails are generated asynchronously and cached to disk, with paths saved in the `videos` SQLite table.
+- respond to user actions
+- call repositories and services
+- manage view state and transitions
+- notify the UI efficiently
 
----
+MPx Player commonly uses `ChangeNotifier`-based controllers and selective rebuild patterns to keep interactions fast.
 
-## 🐛 8. Error Handling & App Stability
+### Domain
 
-- **Data Layer:** Catches `PlatformException`, `FileSystemException`, or `DatabaseException`.
-- **Domain Layer:** Converts these into strongly-typed `Failure` objects (e.g., `StoragePermissionFailure`, `EngineCrashFailure`).
-- **Controller Layer:** Receives the `Failure`, updates the state (`_state = ErrorState(msg)`), and notifies the UI.
-- **Presentation Layer:** Displays elegant error overlays or SnackBars.
+The domain layer defines feature concepts and contracts.
 
----
-*End of Architecture Document.*
+Responsibilities:
+
+- entities
+- repository interfaces
+- feature-level abstractions
+
+This layer should stay as independent as practical from Flutter-specific concerns.
+
+### Data
+
+The data layer implements domain contracts and talks to concrete systems.
+
+Responsibilities:
+
+- local storage
+- platform channels
+- media engines
+- downloader plumbing
+- repository implementations
+
+## Core Systems
+
+### Player Stack
+
+The player is one of the most interaction-sensitive areas of the codebase.
+
+Key characteristics:
+
+- built on `flutter_mpv` and related packages
+- gesture-heavy UI with multiple overlay layers
+- subtitle and audio controls
+- watch history and resume behavior
+- runtime state driven by controller updates and engine-backed data
+
+Because the player surface is sensitive to rebuild cost and overlay composition, changes here should be tested carefully in both debug and release modes.
+
+### Library Stack
+
+The library side focuses on quick discovery and predictable local browsing.
+
+Key characteristics:
+
+- indexed local media experience
+- search and folder browsing
+- metadata extraction and thumbnails
+- favorites and history integration
+
+### Downloader Stack
+
+The downloader combines Dart, Kotlin, Python, and Android packaging concerns.
+
+Key characteristics:
+
+- Flutter UI and controller flow in Dart
+- Android bridge code in Kotlin
+- `yt-dlp` runtime logic through Chaquopy Python integration
+- release-build sensitivity because obfuscation and packaging can break bridge calls
+
+Any downloader change should be considered across all four layers: Dart, platform bridge, Python runtime, and release build behavior.
+
+## State Management Approach
+
+MPx Player uses `provider` with `ChangeNotifier` patterns.
+
+Guidelines:
+
+- keep rebuild scopes narrow
+- prefer focused selectors and targeted listeners
+- avoid watching broad controller state high in large trees
+- treat the player surface as performance-sensitive UI
+
+## Performance Priorities
+
+This project is especially sensitive in these areas:
+
+- video surface overlays
+- gesture handling
+- subtitle rendering
+- library loading and search
+- downloader release behavior
+
+When touching those systems, prefer:
+
+- smaller rebuild scopes
+- explicit verification on real devices
+- release-build checks for Android-specific flows
+
+## Practical Rules for Contributors
+
+### Add New Features by Extending Existing Patterns
+
+New work should generally:
+
+- live inside a feature folder
+- define domain contracts before concrete implementations when appropriate
+- keep UI logic separate from persistence and platform behavior
+
+### Keep Platform Complexity Contained
+
+Android-specific build, bridge, or runtime details should stay out of general UI code unless there is no cleaner boundary.
+
+### Preserve Product Direction
+
+Architecture decisions should support the product principles in `README.md`:
+
+- privacy first
+- fast local playback
+- user control
+- maintainable growth
+
+## Important Documentation Links
+
+- `README.md`
+- `CONTRIBUTING.md`
+- `SECURITY.md`
+- `CHANGELOG.md`
+
+## Final Guidance
+
+If you are changing a system and it feels hard to explain in one or two paragraphs, that is often a sign that the design needs simplification.
+
+Good architecture in MPx Player should make feature work easier, not just look clean on paper.

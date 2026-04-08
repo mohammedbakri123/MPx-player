@@ -1,90 +1,90 @@
 # MPx Player
 
-MPx Player is a fast, privacy-first Flutter video player built for people who want full control over local playback without ads, trackers, or cloud lock-in.
+<p align="center">
+  <img src="screenshots/1774286272927.jpg" width="220" alt="MPx Player preview">
+</p>
 
-It combines an `mpv`-powered playback core with a polished mobile experience: gesture-driven seeking, subtitle controls, history, favorites, downloader tools, reels, and deep playback tuning.
+<p align="center">
+  <strong>A privacy-first Flutter media player built for serious local playback.</strong>
+</p>
 
-![MPx Player screenshot](screenshots/1774286272927.jpg)
+<p align="center">
+  MPx Player combines an <code>mpv</code>-powered playback core with a polished mobile interface,
+  rich gesture controls, subtitle customization, downloader tooling, reels-style browsing,
+  and a contributor-friendly architecture.
+</p>
 
-## Why It Stands Out
+<p align="center">
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="ARCHITECTURE.md">Architecture</a> ·
+  <a href="SECURITY.md">Security</a> ·
+  <a href="LICENSE">License</a>
+</p>
 
-- Privacy first: no analytics, no tracking, no ad SDKs
-- Playback focused: `mpv` engine, hardware acceleration, advanced seek and subtitle controls
-- Built for real use: library indexing, favorites, watch history, downloader flows, PiP, and configurable gestures
-- Contributor friendly: feature-based structure, clean separation of concerns, practical architecture
+## The Pitch
 
-## Feature Highlights
+Most media apps trade quality for convenience, or privacy for features.
 
-### Playback
+MPx Player is built around a different idea: local media software should feel fast, powerful, and respectful. No ad network. No analytics pipeline. No attention traps. Just a capable player with real product depth and room to grow.
 
-- `mpv`-backed video playback
-- Double-tap seek with configurable seek duration
+This is a project for users who care about control, and for contributors who want to work on something practical, performance-sensitive, and visible.
+
+## Why MPx Player
+
+- Private by default: no telemetry, no trackers, no ad SDKs
+- Playback first: `mpv` engine, gesture controls, subtitles, audio track support, history, and tuning
+- Product-minded: downloader support, library indexing, favorites, reels flow, PiP, and customization
+- Built to evolve: feature-first structure and clear separation of responsibilities
+
+## Core Features
+
+### Playback Experience
+
+- `mpv`-backed playback using `flutter_mpv`
+- Double-tap seek with configurable seek step
 - Horizontal drag scrubbing
-- Long press for temporary `2x` speed
-- Brightness and volume swipe controls
-- Aspect ratio controls and playback tuning
-- Resume playback and watch history
+- Long press for temporary `2x` playback
+- Swipe brightness and volume controls
+- Aspect ratio modes and expert playback tuning
+- Watch history and resume behavior
 
-### Subtitles and Audio
+### Subtitle and Audio Control
 
 - External subtitle loading
-- Subtitle size, color, weight, background, font, and position controls
-- Audio track selection and restoration
+- Subtitle font, size, weight, color, background, and placement controls
+- Audio track selection with restore behavior
 
-### Library Experience
+### Library and Organization
 
-- Indexed local library for fast loading
+- Indexed local media library
 - Folder browsing and search
-- Favorites management
-- Thumbnail support and metadata extraction
+- Favorites support
+- Thumbnail and metadata extraction
 
 ### Downloader and Reels
 
-- Integrated downloader flow with `yt-dlp` via Chaquopy
-- Share-target support
-- Reels-style playback surface for short-form browsing
+- Downloader flow powered by Chaquopy and `yt-dlp`
+- Share-target integration
+- Reels-style short-form playback surface
 
 ## Product Principles
 
-MPx Player is shaped by a few non-negotiables:
+These principles shape both features and code review:
 
-- Local-first by default
-- Fast interactions over flashy complexity
-- User control over hidden automation
-- Architecture that stays maintainable as features grow
+- Respect the user
+- Keep local playback fast
+- Prefer clarity over cleverness
+- Avoid hidden behavior
+- Build for long-term maintainability
 
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/1774286272927.jpg" width="180" alt="Library screen">
-  <img src="screenshots/1774286272936.jpg" width="180" alt="Player screen">
-  <img src="screenshots/1774286272944.jpg" width="180" alt="Playback controls">
-  <img src="screenshots/1774286272958.jpg" width="180" alt="Settings screen">
+  <img src="screenshots/1774286272927.jpg" width="170" alt="Library">
+  <img src="screenshots/1774286272936.jpg" width="170" alt="Player">
+  <img src="screenshots/1774286272944.jpg" width="170" alt="Controls">
+  <img src="screenshots/1774286272958.jpg" width="170" alt="Settings">
 </p>
-
-## Architecture
-
-The project follows a feature-first structure with clear boundaries between presentation, controller, domain, and data responsibilities.
-
-```text
-lib/
-  core/
-  features/
-    player/
-      controller/
-      data/
-      domain/
-      presentation/
-    downloader/
-    library/
-    reels/
-    settings/
-```
-
-Useful references:
-
-- `ARCHITECTURE.md`
-- `CONTRIBUTING.md`
 
 ## Tech Stack
 
@@ -96,61 +96,78 @@ Useful references:
 - `shared_preferences`
 - Chaquopy + `yt-dlp`
 
+## Project Structure
+
+```text
+lib/
+  core/
+  features/
+    downloader/
+    library/
+    player/
+    reels/
+    settings/
+```
+
+For a deeper overview, read `ARCHITECTURE.md`.
+
 ## Getting Started
 
-### Prerequisites
+### Requirements
 
 - Flutter SDK
-- Android Studio with Android SDK
-- A physical Android device is strongly recommended for player work
-- Python 3 for Chaquopy-based Android builds
+- Android Studio and Android SDK
+- Python 3 for Android builds using Chaquopy
+- A real Android device is recommended for playback and gesture work
 
-### Setup
+### Local Setup
 
 ```bash
 git clone https://github.com/mohammedbakri123/MPx-player.git
 cd MPx-player/mpx
 flutter pub get
 flutter analyze
+flutter test
 flutter run
 ```
 
-### Release Build
+### Android Release Build
 
-Current Android release packaging is optimized for `arm64-v8a`:
+The Android release flow is optimized for `arm64-v8a`:
 
 ```bash
 flutter build apk --release --target-platform android-arm64
 ```
 
-## Contributing
+## Contribution Guide
 
-MPx Player is actively shaped by improvements to performance, playback quality, UX polish, and architecture.
+Contributions are welcome across product, performance, UX, architecture, testing, and documentation.
 
-Contributions are especially valuable in these areas:
+High-impact areas include:
 
-- playback reliability and performance
+- playback reliability and responsiveness
+- gesture quality and overlay behavior
 - subtitle and audio handling
-- downloader robustness
-- library UX and search
-- tests, tooling, and architecture cleanup
-- documentation and onboarding
+- downloader stability
+- library search and indexing
+- release engineering and APK size work
+- contributor onboarding and docs
 
-Start here: `CONTRIBUTING.md`
+Start with `CONTRIBUTING.md`.
 
-## What Contributors Can Expect
+## Documentation Index
 
-- a codebase with real product scope
-- meaningful performance and UX problems to solve
-- room for both small fixes and deep systems work
-- a project direction centered on user respect and technical quality
+- `README.md`: product overview and onboarding
+- `ARCHITECTURE.md`: system design and codebase map
+- `CONTRIBUTING.md`: contributor workflow and expectations
+- `SECURITY.md`: reporting and security policy
+- `CHANGELOG.md`: release history
+- `LICENSE`: legal terms for use and contribution
 
 ## License
 
-This project is licensed under the MIT License. See `LICENSE`.
+This project is released under the MIT License. See `LICENSE`.
 
 ## Final Note
 
-If you care about private, high-quality local media software, MPx Player is worth building with.
-
-Whether you want to refine gestures, improve playback internals, redesign library flows, or harden release quality, your contribution can move the product forward in visible ways.
+If you care about private, high-quality local media software, MPx Player is a strong place to contribute. The problems here are real, the impact is visible, and thoughtful work makes the app better immediately.
