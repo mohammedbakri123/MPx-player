@@ -18,54 +18,50 @@ class OverlayLayer extends StatelessWidget {
         if (constraints.maxWidth < 200 || constraints.maxHeight < 120) {
           return const SizedBox.shrink();
         }
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            _buildDoubleTapSeekLeft(),
-            _buildDoubleTapSeekRight(),
-            _buildSpeedIndicator(),
-            _buildVolumeIndicator(context),
-            _buildBrightnessIndicator(context),
-            _buildSeekIndicator(),
-            _buildBufferingIndicator(),
-            _buildLockedIndicator(),
-          ],
+        return IgnorePointer(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _buildDoubleTapSeekLeft(),
+              _buildDoubleTapSeekRight(),
+              _buildSpeedIndicator(),
+              _buildVolumeIndicator(context),
+              _buildBrightnessIndicator(context),
+              _buildSeekIndicator(),
+              _buildBufferingIndicator(),
+              _buildLockedIndicator(),
+            ],
+          ),
         );
       },
     );
   }
 
   Widget _buildDoubleTapSeekLeft() {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 150),
-      child: controller.showDoubleTapSeekLeft
-          ? const Positioned(
-              key: ValueKey<bool>(true),
-              left: 24,
-              top: 0,
-              bottom: 80,
-              child: Center(
-                child: SeekFeedbackIndicator(isForward: false),
-              ),
-            )
-          : const SizedBox.shrink(key: ValueKey<bool>(false)),
+    if (!controller.showDoubleTapSeekLeft) {
+      return const SizedBox.shrink();
+    }
+    return const Positioned(
+      left: 24,
+      top: 0,
+      bottom: 80,
+      child: Center(
+        child: SeekFeedbackIndicator(isForward: false),
+      ),
     );
   }
 
   Widget _buildDoubleTapSeekRight() {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 150),
-      child: controller.showDoubleTapSeekRight
-          ? const Positioned(
-              key: ValueKey<bool>(true),
-              right: 24,
-              top: 0,
-              bottom: 80,
-              child: Center(
-                child: SeekFeedbackIndicator(isForward: true),
-              ),
-            )
-          : const SizedBox.shrink(key: ValueKey<bool>(false)),
+    if (!controller.showDoubleTapSeekRight) {
+      return const SizedBox.shrink();
+    }
+    return const Positioned(
+      right: 24,
+      top: 0,
+      bottom: 80,
+      child: Center(
+        child: SeekFeedbackIndicator(isForward: true),
+      ),
     );
   }
 
@@ -145,62 +141,55 @@ class OverlayLayer extends StatelessWidget {
             controller.duration.inMilliseconds
         : 0.0;
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 150),
-      transitionBuilder: (child, animation) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-      child: controller.showSeekIndicator
-          ? Positioned(
-              key: const ValueKey<bool>(true),
-              bottom: 100,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  width: 160,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        controller.formatDuration(controller.position),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: progress.clamp(0.0, 1.0),
-                          minHeight: 3,
-                          backgroundColor: Colors.white24,
-                          valueColor:
-                              const AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        controller.formatDuration(controller.duration),
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
+    if (!controller.showSeekIndicator) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      bottom: 100,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Container(
+          width: 160,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                controller.formatDuration(controller.position),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            )
-          : const SizedBox.shrink(key: ValueKey<bool>(false)),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  minHeight: 3,
+                  backgroundColor: Colors.white24,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                controller.formatDuration(controller.duration),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

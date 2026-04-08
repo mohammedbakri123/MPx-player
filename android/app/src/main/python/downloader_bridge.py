@@ -41,29 +41,61 @@ def _activate_runtime_wheel():
 
 _activate_runtime_wheel()
 
-import yt_dlp
-import yt_dlp.version
-from yt_dlp import YoutubeDL
+yt_dlp = None
+YoutubeDL = None
 
 
 class DownloadCancelled(Exception):
     pass
 
 
+def _is_cancelled(cancel_token):
+    for attr in ("isCancelled", "isCanceled"):
+        method = getattr(cancel_token, attr, None)
+        if callable(method):
+            return bool(method())
+    return False
+
+
 def get_yt_dlp_version():
+    _ensure_yt_dlp_loaded()
     return yt_dlp.version.__version__
+
+
+def _ensure_yt_dlp_loaded(required=True):
+    global yt_dlp, YoutubeDL
+
+    if yt_dlp is not None and YoutubeDL is not None:
+        return True
+
+    _activate_runtime_wheel()
+
+    try:
+        import yt_dlp as imported_module
+        from yt_dlp import YoutubeDL as imported_class
+    except Exception:
+        if required:
+            raise RuntimeError(
+                "yt-dlp is not available. Install or update the downloader engine and try again."
+            )
+        return False
+
+    yt_dlp = imported_module
+    YoutubeDL = imported_class
+    return True
 
 
 def get_runtime_status_json():
     latest_path = _activate_runtime_wheel()
-    version = get_yt_dlp_version()
+    available = _ensure_yt_dlp_loaded(required=False)
+    version = get_yt_dlp_version() if available else None
     return json.dumps(
         {
             "version": version,
             "latestVersion": None,
-            "ytDlpAvailable": True,
+            "ytDlpAvailable": available,
             "ffmpegAvailable": False,
-            "ytDlpPath": latest_path or "python:yt_dlp",
+            "ytDlpPath": (latest_path or "python:yt_dlp") if available else latest_path,
             "ffmpegPath": None,
             "updateAvailable": False,
             "updated": False,
@@ -74,19 +106,20 @@ def get_runtime_status_json():
 
 
 def install_or_update_yt_dlp_json(install_if_available=True):
-    current_version = get_yt_dlp_version()
+    available = _ensure_yt_dlp_loaded(required=False)
+    current_version = get_yt_dlp_version() if available else None
     latest_info = _fetch_latest_release_info()
     latest_version = latest_info["version"]
-    update_available = _compare_versions(current_version, latest_version) < 0
+    update_available = current_version is None or _compare_versions(current_version, latest_version) < 0
 
     if not install_if_available or not update_available:
         return json.dumps(
             {
                 "version": current_version,
                 "latestVersion": latest_version,
-                "ytDlpAvailable": True,
+                "ytDlpAvailable": available,
                 "ffmpegAvailable": False,
-                "ytDlpPath": _activate_runtime_wheel() or "python:yt_dlp",
+                "ytDlpPath": (_activate_runtime_wheel() or "python:yt_dlp") if available else _activate_runtime_wheel(),
                 "ffmpegPath": None,
                 "updateAvailable": update_available,
                 "updated": False,
@@ -118,6 +151,7 @@ def install_or_update_yt_dlp_json(install_if_available=True):
 
 def fetch_video_info(url, cookies_path=None):
     try:
+        _ensure_yt_dlp_loaded()
         with YoutubeDL(_build_options(cookies_path=cookies_path)) as ydl:  # type: ignore[arg-type]
             info = ydl.extract_info(url, download=False)
         return json.dumps(info, default=str)
@@ -135,7 +169,7 @@ def download_video(
     cancel_token,
 ):
     def progress_hook(data):
-        if cancel_token.isCancelled():
+        if _is_cancelled(cancel_token):
             raise DownloadCancelled("cancelled")
 
         status = data.get("status")
@@ -182,6 +216,7 @@ def download_video(
     logging.warning(f"[yt-dlp] format_selector = {format_selector}")
     logging.warning(f"[yt-dlp] output_path = {output_path}")
     try:
+        _ensure_yt_dlp_loaded()
         with YoutubeDL(options) as ydl:  # type: ignore[arg-type]
             info = ydl.extract_info(url, download=True)
             selected_format = info.get("format") or info.get("format_id") or "unknown"

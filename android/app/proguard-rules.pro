@@ -24,6 +24,10 @@
 # flutter_mpv native bindings
 -keep class com.mohammed.** { *; }
 
+# Chaquopy bridge objects accessed from Python
+-keep class com.example.mpx.CancelToken { *; }
+-keep class com.example.mpx.MainActivity$ProgressEmitter { *; }
+
 # Google Play Core (not used, but referenced by Flutter)
 -dontwarn com.google.android.play.core.**
 -keep class com.google.android.play.core.** { *; }

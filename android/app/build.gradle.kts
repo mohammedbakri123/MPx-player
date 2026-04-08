@@ -31,13 +31,16 @@ android {
         versionName = flutter.versionName
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            abiFilters += listOf("arm64-v8a")
         }
     }
 
     packagingOptions {
         jniLibs {
             excludes += setOf(
+                "**/x86/*.so",
+                "**/x86_64/*.so",
+                "**/armeabi-v7a/*.so",
                 "**/libvlc.so",
                 "**/libvlcjni.so",
                 "**/libVLCAll.so",
