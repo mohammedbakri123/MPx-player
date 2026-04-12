@@ -27,6 +27,7 @@
 # Chaquopy bridge objects accessed from Python
 -keep class com.example.mpx.CancelToken { *; }
 -keep class com.example.mpx.MainActivity$ProgressEmitter { *; }
+-keep class com.example.mpx.ServiceProgressEmitter { *; }
 
 # Google Play Core (not used, but referenced by Flutter)
 -dontwarn com.google.android.play.core.**
