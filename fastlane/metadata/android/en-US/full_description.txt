@@ -1,0 +1,9 @@
+MPx Player is a lightweight, open-source media player for Android.
+
+Features:
+- Based on mpv media player engine
+- Supports a wide range of video and audio formats
+- Minimal and clean interface
+- No ads, no tracking
+
+MPx Player focuses on simplicity, performance, and privacy.
