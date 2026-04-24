@@ -17,6 +17,8 @@ class BottomControls extends StatefulWidget {
   final String aspectRatioLabel;
   final VoidCallback? onTogglePip;
   final bool showPipButton;
+  final VoidCallback? onNext;
+  final VoidCallback? onPrevious;
 
   const BottomControls({
     super.key,
@@ -36,6 +38,8 @@ class BottomControls extends StatefulWidget {
     required this.aspectRatioLabel,
     this.onTogglePip,
     this.showPipButton = false,
+    this.onNext,
+    this.onPrevious,
   });
 
   @override
@@ -158,6 +162,13 @@ class _BottomControlsState extends State<BottomControls> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    if (widget.onPrevious != null) ...[
+                      _TransportButton(
+                        icon: Icons.skip_previous_rounded,
+                        onPressed: widget.onPrevious!,
+                      ),
+                      const SizedBox(width: 12),
+                    ],
                     _TransportButton(
                       icon: widget.isPlaying
                           ? Icons.pause_rounded
@@ -165,6 +176,13 @@ class _BottomControlsState extends State<BottomControls> {
                       onPressed: widget.onTogglePlayPause,
                       emphasized: true,
                     ),
+                    if (widget.onNext != null) ...[
+                      const SizedBox(width: 12),
+                      _TransportButton(
+                        icon: Icons.skip_next_rounded,
+                        onPressed: widget.onNext!,
+                      ),
+                    ],
                   ],
                 ),
               ),

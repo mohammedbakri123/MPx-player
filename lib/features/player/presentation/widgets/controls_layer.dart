@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../controller/player_controller.dart';
 import 'top_bar.dart';
 import 'bottom_controls.dart';
-import 'play_pause_button.dart';
 
 class ControlsLayer extends StatelessWidget {
   final PlayerController controller;
@@ -140,36 +139,7 @@ class ControlsLayer extends StatelessWidget {
                     onShowAudioTracks: null,
                   ),
                 ),
-                Align(
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (onPrevious != null)
-                        _SeekButton(
-                          icon: Icons.skip_previous,
-                          onTap: () {
-                            controller.registerControlsInteraction();
-                            onPrevious!();
-                          },
-                        ),
-                      if (onPrevious != null) const SizedBox(width: 24),
-                      PlayPauseButton(
-                        isPlaying: controller.isPlaying,
-                        onTap: controller.togglePlayPause,
-                      ),
-                      if (onNext != null) const SizedBox(width: 24),
-                      if (onNext != null)
-                        _SeekButton(
-                          icon: Icons.skip_next,
-                          onTap: () {
-                            controller.registerControlsInteraction();
-                            onNext!();
-                          },
-                        ),
-                    ],
-                  ),
-                ),
+
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: BottomControls(
@@ -196,6 +166,18 @@ class ControlsLayer extends StatelessWidget {
                         .getAspectRatioLabel(controller.aspectRatioMode),
                     onTogglePip: onTogglePip,
                     showPipButton: showPipButton,
+                    onNext: onNext != null
+                        ? () {
+                            controller.registerControlsInteraction();
+                            onNext!();
+                          }
+                        : null,
+                    onPrevious: onPrevious != null
+                        ? () {
+                            controller.registerControlsInteraction();
+                            onPrevious!();
+                          }
+                        : null,
                   ),
                 ),
               ],
@@ -207,36 +189,3 @@ class ControlsLayer extends StatelessWidget {
   }
 }
 
-class _SeekButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _SeekButton({
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.45),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.35),
-            width: 1.8,
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 28,
-        ),
-      ),
-    );
-  }
-}
