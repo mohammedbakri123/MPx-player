@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../../controller/file_browser_controller.dart';
+import '../../../controller/library_view_controller.dart';
 import '../../../domain/entities/file_item.dart';
+import '../../../domain/enums/library_view_mode.dart';
 import '../common/library_item_ui.dart';
 import '../common/library_item_details_sheet.dart';
 import '../home/home_empty_state.dart';
@@ -9,11 +11,13 @@ import '../home/home_error_state.dart';
 import '../home/home_skeleton_loader.dart';
 import '../video/lazy_thumbnail.dart';
 import 'file_list_item.dart';
+import 'library_tree_view.dart';
 
 class FileBrowserContent extends StatelessWidget {
   static const double _bottomClearance = 10;
 
   final FileBrowserController controller;
+  final LibraryViewController viewController;
   final void Function(String path) onVideoTap;
   final void Function(String path) onFolderTap;
   final void Function(String path)? onAddToFavorites;
@@ -23,6 +27,7 @@ class FileBrowserContent extends StatelessWidget {
   const FileBrowserContent({
     super.key,
     required this.controller,
+    required this.viewController,
     required this.onVideoTap,
     required this.onFolderTap,
     this.onAddToFavorites,
@@ -40,7 +45,7 @@ class FileBrowserContent extends StatelessWidget {
 
     // Show skeleton only during initial load (not initialized yet)
     if (!controller.isInitialized && items.isEmpty) {
-      return HomeSkeletonLoader(isGridView: controller.isGridView);
+      return HomeSkeletonLoader(viewMode: viewController.viewMode);
     }
 
     if (controller.error != null) {
@@ -74,52 +79,17 @@ class FileBrowserContent extends StatelessWidget {
       );
     }
 
-    final content = controller.isGridView
-        ? _buildGridView(items)
-        : RefreshIndicator(
-            onRefresh: () => controller.refresh(silent: true),
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, _bottomClearance),
-              controller: scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: items.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                final isSelected = controller.isSelected(item.path);
-
-                return FileListItem(
-                  item: item,
-                  isSelectionMode: controller.isSelectionMode,
-                  isSelected: isSelected,
-                  isFavorite: item.isVideo ? _isFavorite(item.path) : false,
-                  onTap: () {
-                    if (controller.isSelectionMode) {
-                      controller.toggleSelection(item.path);
-                    } else if (item.isDirectory) {
-                      onFolderTap(item.path);
-                    } else if (item.isVideo) {
-                      onVideoTap(item.path);
-                    }
-                  },
-                  onLongPress: () {
-                    controller.enterSelectionMode(item.path);
-                  },
-                  onSelectionToggle: () =>
-                      controller.toggleSelection(item.path),
-                  onAddToFavorites: item.isVideo && onAddToFavorites != null
-                      ? () => onAddToFavorites!(item.path)
-                      : null,
-                );
-              },
-            ),
-          );
+    final content = switch (viewController.viewMode) {
+      LibraryViewMode.list => _buildListView(items),
+      LibraryViewMode.list => _buildListView(items),
+      LibraryViewMode.grid => _buildGridView(items),
+    };
 
     final theme = Theme.of(context);
 
     return Stack(
       children: [
-        content,
+        RepaintBoundary(child: content),
         // Only show refresh indicator after initial load is complete
         if (controller.isLoading && controller.isInitialized)
           Positioned(
@@ -169,6 +139,64 @@ class FileBrowserContent extends StatelessWidget {
     );
   }
 
+  Widget _buildTreeView() {
+    return LibraryTreeView(
+      rootPath: controller.getRootPath,
+      onFolderTap: onFolderTap,
+      onVideoTap: onVideoTap,
+      onAddToFavorites: onAddToFavorites,
+      onLongPress: controller.enterSelectionMode,
+      onSelectionToggle: controller.toggleSelection,
+      isSelected: controller.isSelected,
+      isSelectionMode: controller.isSelectionMode,
+      favoriteIds: favoriteIds,
+      scrollController: scrollController,
+    );
+  }
+
+  Widget _buildListView(List<FileItem> items) {
+    return RefreshIndicator(
+      onRefresh: () => controller.refresh(silent: true),
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, _bottomClearance),
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: items.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final item = items[index];
+          final isSelected = controller.isSelected(item.path);
+
+          return RepaintBoundary(
+            child: FileListItem(
+              item: item,
+              isSelectionMode: controller.isSelectionMode,
+              isSelected: isSelected,
+              isFavorite: item.isVideo ? _isFavorite(item.path) : false,
+              onTap: () {
+                if (controller.isSelectionMode) {
+                  controller.toggleSelection(item.path);
+                } else if (item.isDirectory) {
+                  onFolderTap(item.path);
+                } else if (item.isVideo) {
+                  onVideoTap(item.path);
+                }
+              },
+              onLongPress: () {
+                controller.enterSelectionMode(item.path);
+              },
+              onSelectionToggle: () =>
+                  controller.toggleSelection(item.path),
+              onAddToFavorites: item.isVideo && onAddToFavorites != null
+                  ? () => onAddToFavorites!(item.path)
+                  : null,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildGridView(List<FileItem> items) {
     return RefreshIndicator(
       onRefresh: () => controller.refresh(silent: true),
@@ -201,28 +229,30 @@ class FileBrowserContent extends StatelessWidget {
               final item = items[index];
               final isSelected = controller.isSelected(item.path);
 
-              return _GridItem(
-                item: item,
-                isSelectionMode: controller.isSelectionMode,
-                isSelected: isSelected,
-                isFavorite: item.isVideo ? _isFavorite(item.path) : false,
-                previewHeight: previewHeight,
-                onTap: () {
-                  if (controller.isSelectionMode) {
-                    controller.toggleSelection(item.path);
-                  } else if (item.isDirectory) {
-                    onFolderTap(item.path);
-                  } else if (item.isVideo) {
-                    onVideoTap(item.path);
-                  }
-                },
-                onLongPress: () {
-                  controller.enterSelectionMode(item.path);
-                },
-                onSelectionToggle: () => controller.toggleSelection(item.path),
-                onAddToFavorites: item.isVideo && onAddToFavorites != null
-                    ? () => onAddToFavorites!(item.path)
-                    : null,
+              return RepaintBoundary(
+                child: _GridItem(
+                  item: item,
+                  isSelectionMode: controller.isSelectionMode,
+                  isSelected: isSelected,
+                  isFavorite: item.isVideo ? _isFavorite(item.path) : false,
+                  previewHeight: previewHeight,
+                  onTap: () {
+                    if (controller.isSelectionMode) {
+                      controller.toggleSelection(item.path);
+                    } else if (item.isDirectory) {
+                      onFolderTap(item.path);
+                    } else if (item.isVideo) {
+                      onVideoTap(item.path);
+                    }
+                  },
+                  onLongPress: () {
+                    controller.enterSelectionMode(item.path);
+                  },
+                  onSelectionToggle: () => controller.toggleSelection(item.path),
+                  onAddToFavorites: item.isVideo && onAddToFavorites != null
+                      ? () => onAddToFavorites!(item.path)
+                      : null,
+                ),
               );
             },
           );
@@ -494,9 +524,11 @@ class _GridItem extends StatelessWidget {
       return SizedBox(
         height: previewHeight,
         width: double.infinity,
-        child: LazyThumbnail(
-          video: video,
-          placeholder: const _GridThumbnailPlaceholder(),
+        child: RepaintBoundary(
+          child: LazyThumbnail(
+            video: video,
+            placeholder: const _GridThumbnailPlaceholder(),
+          ),
         ),
       );
     }

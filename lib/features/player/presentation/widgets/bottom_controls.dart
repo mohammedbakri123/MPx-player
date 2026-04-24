@@ -5,14 +5,12 @@ class BottomControls extends StatefulWidget {
   final Duration duration;
   final bool isPlaying;
   final bool isFullscreen;
-  final bool isLocked;
   final String Function(Duration) formatTime;
   final VoidCallback onSeekStart;
   final ValueChanged<double> onSeekChanged;
   final ValueChanged<double> onSeekEnd;
   final VoidCallback onTogglePlayPause;
   final VoidCallback onToggleFullscreen;
-  final VoidCallback onToggleLock;
   final VoidCallback onCycleAspectRatio;
   final String aspectRatioLabel;
   final VoidCallback? onTogglePip;
@@ -26,14 +24,12 @@ class BottomControls extends StatefulWidget {
     required this.duration,
     required this.isPlaying,
     required this.isFullscreen,
-    required this.isLocked,
     required this.formatTime,
     required this.onSeekStart,
     required this.onSeekChanged,
     required this.onSeekEnd,
     required this.onTogglePlayPause,
     required this.onToggleFullscreen,
-    required this.onToggleLock,
     required this.onCycleAspectRatio,
     required this.aspectRatioLabel,
     this.onTogglePip,
@@ -115,10 +111,14 @@ class _BottomControlsState extends State<BottomControls> {
               },
               onChanged: (value) {
                 setState(() => _dragValue = value);
-                widget.onSeekChanged(value);
+                // Snap to nearest second for precise seeking
+                final snapped = (value / 1000).round() * 1000.0;
+                widget.onSeekChanged(snapped);
               },
               onChangeEnd: (value) {
-                widget.onSeekEnd(value);
+                // Snap to nearest second before final seek
+                final snapped = (value / 1000).round() * 1000.0;
+                widget.onSeekEnd(snapped);
                 setState(() => _dragValue = null);
               },
             ),
@@ -134,14 +134,6 @@ class _BottomControlsState extends State<BottomControls> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              Text(
-                widget.formatTime(widget.duration),
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.72),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -150,12 +142,6 @@ class _BottomControlsState extends State<BottomControls> {
               _UtilityButton(
                 icon: _aspectRatioIcon(widget.aspectRatioLabel),
                 onPressed: widget.onCycleAspectRatio,
-              ),
-              const SizedBox(width: 8),
-              _UtilityButton(
-                icon: widget.isLocked ? Icons.lock : Icons.lock_open,
-                onPressed: widget.onToggleLock,
-                active: widget.isLocked,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -244,12 +230,10 @@ class _TransportButton extends StatelessWidget {
 class _UtilityButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
-  final bool active;
 
   const _UtilityButton({
     required this.icon,
     required this.onPressed,
-    this.active = false,
   });
 
   @override
@@ -258,9 +242,7 @@ class _UtilityButton extends StatelessWidget {
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: active
-            ? Colors.white.withValues(alpha: 0.18)
-            : Colors.white.withValues(alpha: 0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: IconButton(

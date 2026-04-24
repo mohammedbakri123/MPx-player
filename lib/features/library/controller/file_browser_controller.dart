@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import '../domain/entities/file_item.dart';
 import '../data/datasources/directory_browser.dart';
 import '../services/library_index_service.dart';
+import '../services/library_preferences_service.dart';
+import '../utils/sort_utils.dart';
 
 enum SortBy { name, date, size, videos }
 
@@ -13,6 +15,10 @@ class FileBrowserController extends ChangeNotifier {
   static String? _persistedCurrentPath;
   static List<String> _persistedPathHistory = <String>[];
 
+  static final FileBrowserController _instance = FileBrowserController._internal();
+  factory FileBrowserController() => _instance;
+  FileBrowserController._internal();
+
   final DirectoryBrowser _browser = DirectoryBrowser();
   final LibraryIndexService _indexService = LibraryIndexService();
 
@@ -21,8 +27,7 @@ class FileBrowserController extends ChangeNotifier {
   String _currentPath = '';
   bool _isLoading = false;
   bool _isInitialized = false;
-  bool _showOnlyVideos = true; // Default to TRUE as requested
-  bool _isGridView = false;
+  bool _showOnlyVideos = true;
   SortBy _sortBy = SortBy.name;
   SortOrder _sortOrder = SortOrder.ascending;
   String? _error;
@@ -42,7 +47,6 @@ class FileBrowserController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
   bool get showOnlyVideos => _showOnlyVideos;
-  bool get isGridView => _isGridView;
   SortBy get sortBy => _sortBy;
   SortOrder get sortOrder => _sortOrder;
   String? get error => _error;
@@ -55,6 +59,10 @@ class FileBrowserController extends ChangeNotifier {
   String get getRootPath => _browser.getRootPath();
 
   Future<void> initialize() async {
+    _showOnlyVideos = LibraryPreferencesService.showOnlyVideos;
+    _sortBy = LibraryPreferencesService.sortBy;
+    _sortOrder = LibraryPreferencesService.sortOrder;
+
     final rootPath = _browser.getRootPath();
     _currentPath = _resolveInitialPath(rootPath);
     _pathHistory
@@ -97,7 +105,7 @@ class FileBrowserController extends ChangeNotifier {
 
     _items = filtered;
 
-    _sortItems();
+    await _sortItems();
     if (!silent) _isLoading = false;
     notifyListeners();
 
@@ -178,13 +186,12 @@ class FileBrowserController extends ChangeNotifier {
           foldersToHide.add(item);
         }
       }));
+    }
 
-      // Update UI after each batch
-      if (_currentPath == path && _showOnlyVideos && foldersToHide.isNotEmpty) {
-        _items = _items.where((item) => !foldersToHide.contains(item)).toList();
-        notifyListeners();
-        foldersToHide.clear();
-      }
+    // Notify once after entire batch completes
+    if (_currentPath == path && _showOnlyVideos && foldersToHide.isNotEmpty) {
+      _items = _items.where((item) => !foldersToHide.contains(item)).toList();
+      notifyListeners();
     }
   }
 
@@ -220,7 +227,7 @@ class FileBrowserController extends ChangeNotifier {
     _persistNavigationState();
     final items = await _browser.listDirectory(previousPath);
     _items = _prepareVisibleItems(items);
-    _sortItems();
+    await _sortItems();
     notifyListeners();
     _startWatching(previousPath);
     _scheduleFolderHydration(previousPath, items);
@@ -252,14 +259,10 @@ class FileBrowserController extends ChangeNotifier {
 
   void toggleShowOnlyVideos() {
     _showOnlyVideos = !_showOnlyVideos;
+    unawaited(LibraryPreferencesService.setShowOnlyVideos(_showOnlyVideos));
     _browser.invalidatePath(_currentPath);
     _indexService.invalidate(_browser.getRootPath());
     loadDirectory(_currentPath, addToHistory: false);
-  }
-
-  void toggleViewMode() {
-    _isGridView = !_isGridView;
-    notifyListeners();
   }
 
   void setSortBy(SortBy sortBy) {
@@ -271,6 +274,8 @@ class FileBrowserController extends ChangeNotifier {
       _sortBy = sortBy;
       _sortOrder = _defaultOrderFor(sortBy);
     }
+    unawaited(LibraryPreferencesService.setSortBy(_sortBy));
+    unawaited(LibraryPreferencesService.setSortOrder(_sortOrder));
     _sortItems();
     notifyListeners();
   }
@@ -286,29 +291,8 @@ class FileBrowserController extends ChangeNotifier {
     }
   }
 
-  void _sortItems() {
-    _items.sort((a, b) {
-      if (a.isDirectory && !b.isDirectory) return -1;
-      if (!a.isDirectory && b.isDirectory) return 1;
-
-      int result;
-      switch (_sortBy) {
-        case SortBy.name:
-          result = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-          break;
-        case SortBy.date:
-          result = a.modified.compareTo(b.modified);
-          break;
-        case SortBy.size:
-          result = a.size.compareTo(b.size);
-          break;
-        case SortBy.videos:
-          result = (a.videoCount ?? (a.isDirectory ? -1 : 0))
-              .compareTo(b.videoCount ?? (b.isDirectory ? -1 : 0));
-          break;
-      }
-      return _sortOrder == SortOrder.ascending ? result : -result;
-    });
+  Future<void> _sortItems() async {
+    _items = await sortFileItemsIsolate(_items, _sortBy, _sortOrder);
   }
 
   Future<void> refresh({bool silent = false}) async {
@@ -409,7 +393,7 @@ class FileBrowserController extends ChangeNotifier {
     // Reload directory listing silently (no spinner)
     final items = await _browser.listDirectory(watchedPath);
     _items = _prepareVisibleItems(items);
-    _sortItems();
+    await _sortItems();
     notifyListeners();
   }
 

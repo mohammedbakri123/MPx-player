@@ -1,21 +1,63 @@
 import 'package:flutter/material.dart';
+import '../../../domain/enums/library_view_mode.dart';
 
 /// Skeleton loading screen for home with shimmer effect
 /// Matches the exact layout of the actual content
 class HomeSkeletonLoader extends StatelessWidget {
-  final bool isGridView;
+  final LibraryViewMode viewMode;
   final int itemCount;
 
   const HomeSkeletonLoader({
     super.key,
-    this.isGridView = false,
+    this.viewMode = LibraryViewMode.list,
     this.itemCount = 8,
   });
 
   @override
   Widget build(BuildContext context) {
-    return isGridView ? _buildGridView(context) : _buildListView(context);
+    return switch (viewMode) {
+      LibraryViewMode.list => _buildListView(context),
+      LibraryViewMode.grid => _buildGridView(context),
+    };
   }
+
+  // Widget _buildTreeView(BuildContext context) {
+  //   return ListView.builder(
+  //     padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+  //     itemCount: itemCount,
+  //     itemBuilder: (context, index) {
+  //       return _buildTreeSkeleton(indentLevel: index % 3);
+  //     },
+  //   );
+  // }
+
+  // Widget _buildTreeSkeleton({required int indentLevel}) {
+  //   return Padding(
+  //     padding: EdgeInsets.only(left: 16.0 * indentLevel, bottom: 12),
+  //     child: Row(
+  //       children: [
+  //         const ShimmerWidget(width: 16, height: 16, borderRadius: 2),
+  //         const SizedBox(width: 8),
+  //         const ShimmerWidget(width: 20, height: 20, borderRadius: 4),
+  //         const SizedBox(width: 10),
+  //         Expanded(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               ShimmerWidget(
+  //                 width: 120 + (indentLevel * 40).toDouble(),
+  //                 height: 14,
+  //                 borderRadius: 4,
+  //               ),
+  //               const SizedBox(height: 6),
+  //               const ShimmerWidget(width: 60, height: 10, borderRadius: 4),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildGridView(BuildContext context) {
     return LayoutBuilder(

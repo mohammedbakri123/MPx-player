@@ -10,6 +10,9 @@ import 'features/settings/services/app_settings_service.dart';
 import 'features/settings/services/subtitle_settings_service.dart';
 import 'features/favorites/services/favorites_service.dart';
 import 'features/library/services/thumbnail_cache.dart';
+import 'features/library/services/library_preferences_service.dart';
+import 'features/library/controller/file_browser_controller.dart';
+import 'features/library/controller/library_view_controller.dart';
 import 'features/library/presentation/widgets/home/home_fab.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'features/reels/controllers/reels_controller.dart';
@@ -23,6 +26,7 @@ Future<void> main() async {
     SubtitleSettingsService.init(),
     FavoritesService.init(),
     DownloaderSettingsService.init(),
+    LibraryPreferencesService.init(),
   ]);
 
   ThumbnailCache().cleanup();
@@ -71,6 +75,8 @@ class _MPxPlayerState extends State<MPxPlayer> {
         ChangeNotifierProvider.value(value: _settingsController!),
         ChangeNotifierProvider(create: (_) => DownloaderController()),
         ChangeNotifierProvider(create: (_) => ReelsController()),
+        ChangeNotifierProvider.value(value: FileBrowserController()),
+        ChangeNotifierProvider(create: (_) => LibraryViewController()),
       ],
       child: Consumer<AppSettingsController>(
         builder: (context, settings, _) {

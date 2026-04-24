@@ -220,14 +220,6 @@ class OverlayLayer extends StatelessWidget {
                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                controller.formatDuration(controller.duration),
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 11,
-                ),
-              ),
             ],
           ),
         ),

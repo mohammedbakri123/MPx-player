@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme_tokens.dart';
 import '../../controller/file_browser_controller.dart';
+import '../../controller/library_view_controller.dart';
 import '../../domain/entities/video_file.dart';
 import '../widgets/file_browser/file_browser_content.dart';
 import '../widgets/file_browser/path_breadcrumb.dart';
@@ -14,7 +15,7 @@ import '../widgets/home/home_sort_sheet.dart';
 import '../../../player/presentation/screens/video_player_screen.dart';
 import '../../../favorites/services/favorites_service.dart';
 import '../../../../features/reels/controllers/reels_controller.dart';
-import '../../../../features/reels/presentation/screens/reels_screen.dart'; // Import ReelsScreen
+import '../../../../features/reels/presentation/screens/reels_screen.dart';
 import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,18 +25,23 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  late FileBrowserController _controller;
+class _HomeScreenState extends State<HomeScreen>
+    with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
   bool _isFabVisible = true;
   Set<String> _favoriteIds = {};
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
-    _controller = FileBrowserController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.initialize();
+      final controller = context.read<FileBrowserController>();
+      if (!controller.isInitialized) {
+        controller.initialize();
+      }
       _loadFavorites();
     });
     _scrollController.addListener(_onScroll);
@@ -45,23 +51,21 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _controller.dispose();
     super.dispose();
   }
 
   Future<void> _importCurrentFolderToReels() async {
     final reelsController =
         Provider.of<ReelsController>(context, listen: false);
-    final currentPath = _controller.currentPath;
+    final controller = context.read<FileBrowserController>();
+    final currentPath = controller.currentPath;
 
     if (currentPath.isEmpty) {
       _showSnackBar('Please navigate to a folder first.', Colors.orange);
       return;
     }
 
-    // Check if the current path is the root path. We don't want to add the entire device.
-    if (currentPath == _controller.getRootPath) {
-      // Corrected to use getter
+    if (currentPath == controller.getRootPath) {
       _showSnackBar(
           'Cannot import root directory. Please navigate to a specific folder.',
           Colors.red);
@@ -87,9 +91,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _playCurrentFolderAsReels() {
-    final currentPath = _controller.currentPath;
+    final controller = context.read<FileBrowserController>();
+    final currentPath = controller.currentPath;
 
-    if (currentPath.isEmpty || currentPath == _controller.getRootPath) {
+    if (currentPath.isEmpty || currentPath == controller.getRootPath) {
       _showSnackBar('Please navigate to a specific folder to play as Reels.',
           Colors.orange);
       return;
@@ -105,99 +110,97 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final theme = Theme.of(context);
-    return ChangeNotifierProvider.value(
-      value: _controller,
-      child: Consumer<FileBrowserController>(
-        builder: (context, controller, child) {
-          final shouldIntercept =
-              controller.isSelectionMode || controller.canGoBack;
-          return PopScope(
-            canPop: !shouldIntercept,
-            onPopInvokedWithResult: (didPop, _) {
-              if (didPop) return;
-              if (controller.isSelectionMode) {
-                controller.exitSelectionMode();
-                return;
-              }
-              if (controller.canGoBack) {
-                controller.goBack();
-                return;
-              }
-            },
-            child: Scaffold(
-              backgroundColor: theme.appBackground,
-              floatingActionButtonLocation:
-                  FloatingActionButtonLocation.endFloat,
-              body: SafeArea(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [theme.appBackground, theme.appBackgroundAlt],
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      if (!controller.isSelectionMode)
-                        HomeHeader(
-                          isGridView: controller.isGridView,
-                          onSortTap: () =>
-                              showHomeSortSheet(context, controller),
-                          onToggleViewTap: controller.toggleViewMode,
-                          onSearchTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const SearchScreen()),
-                          ),
-                          onAddReelTap: _importCurrentFolderToReels,
-                          onPlayFolderAsReelsTap:
-                              _playCurrentFolderAsReels, // Pass the new callback
-                        )
-                      else
-                        HomeSelectionHeader(
-                          controller: controller,
-                          onClose: controller.exitSelectionMode,
-                          onDelete: () => _confirmAndDelete(controller),
-                          onSelectAll: controller.selectAll,
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                        child: PathBreadcrumb(
-                          currentPath: controller.currentPath,
-                          onPathTap: (path) => controller.loadDirectory(path,
-                              addToHistory: true),
-                        ),
-                      ),
-                      Expanded(
-                        child: FileBrowserContent(
-                          controller: controller,
-                          favoriteIds: _favoriteIds,
-                          onVideoTap: _openVideo,
-                          onFolderTap: (path) => controller.loadDirectory(path,
-                              addToHistory: true),
-                          onAddToFavorites: _addToFavorites,
-                          scrollController: _scrollController,
-                        ),
-                      ),
-                    ],
+    return Consumer2<FileBrowserController, LibraryViewController>(
+      builder: (context, controller, viewController, child) {
+        final shouldIntercept =
+            controller.isSelectionMode || controller.canGoBack;
+        return PopScope(
+          canPop: !shouldIntercept,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            if (controller.isSelectionMode) {
+              controller.exitSelectionMode();
+              return;
+            }
+            if (controller.canGoBack) {
+              controller.goBack();
+              return;
+            }
+          },
+          child: Scaffold(
+            backgroundColor: theme.appBackground,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.endFloat,
+            body: SafeArea(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [theme.appBackground, theme.appBackgroundAlt],
                   ),
                 ),
-              ),
-              floatingActionButton: AnimatedOpacity(
-                opacity: _isFabVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                child: IgnorePointer(
-                  ignoring: !_isFabVisible,
-                  child: const HomeFAB(),
+                child: Column(
+                  children: [
+                    if (!controller.isSelectionMode)
+                      HomeHeader(
+                        viewMode: viewController.viewMode,
+                        onSortTap: () =>
+                            showHomeSortSheet(context, controller),
+                        onViewModeChanged: viewController.setViewMode,
+                        onSearchTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SearchScreen()),
+                        ),
+                        onAddReelTap: _importCurrentFolderToReels,
+                        onPlayFolderAsReelsTap: _playCurrentFolderAsReels,
+                      )
+                    else
+                      HomeSelectionHeader(
+                        controller: controller,
+                        onClose: controller.exitSelectionMode,
+                        onDelete: () => _confirmAndDelete(controller),
+                        onSelectAll: controller.selectAll,
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                      child: PathBreadcrumb(
+                        currentPath: controller.currentPath,
+                        onPathTap: (path) => controller.loadDirectory(path,
+                            addToHistory: true),
+                      ),
+                    ),
+                    Expanded(
+                      child: FileBrowserContent(
+                        controller: controller,
+                        viewController: viewController,
+                        favoriteIds: _favoriteIds,
+                        onVideoTap: _openVideo,
+                        onFolderTap: (path) => controller.loadDirectory(path,
+                            addToHistory: true),
+                        onAddToFavorites: _addToFavorites,
+                        scrollController: _scrollController,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          );
-        },
-      ),
+            floatingActionButton: AnimatedOpacity(
+              opacity: _isFabVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: IgnorePointer(
+                ignoring: !_isFabVisible,
+                child: const HomeFAB(),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

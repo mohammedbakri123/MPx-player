@@ -66,6 +66,11 @@ class TopBar extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           _MinimalIconButton(
+            icon: isLocked ? Icons.lock : Icons.lock_open,
+            onPressed: onToggleLock,
+          ),
+          const SizedBox(width: 8),
+          _MinimalIconButton(
             icon: Icons.settings_outlined,
             onPressed: onSettings,
           ),

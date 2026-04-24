@@ -139,7 +139,6 @@ class ControlsLayer extends StatelessWidget {
                     onShowAudioTracks: null,
                   ),
                 ),
-
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: BottomControls(
@@ -147,7 +146,6 @@ class ControlsLayer extends StatelessWidget {
                     duration: controller.duration,
                     isPlaying: controller.isPlaying,
                     isFullscreen: controller.isFullscreen,
-                    isLocked: controller.isLocked,
                     formatTime: controller.formatDuration,
                     onSeekStart: controller.beginControlsInteraction,
                     onSeekChanged: (value) {
@@ -160,7 +158,6 @@ class ControlsLayer extends StatelessWidget {
                     },
                     onTogglePlayPause: controller.togglePlayPause,
                     onToggleFullscreen: controller.toggleFullscreen,
-                    onToggleLock: controller.toggleLock,
                     onCycleAspectRatio: controller.cycleAspectRatio,
                     aspectRatioLabel: controller
                         .getAspectRatioLabel(controller.aspectRatioMode),
@@ -188,4 +185,3 @@ class ControlsLayer extends StatelessWidget {
     );
   }
 }
-
