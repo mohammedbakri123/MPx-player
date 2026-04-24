@@ -11,7 +11,7 @@ import '../home/home_error_state.dart';
 import '../home/home_skeleton_loader.dart';
 import '../video/lazy_thumbnail.dart';
 import 'file_list_item.dart';
-import 'library_tree_view.dart';
+// import 'library_tree_view.dart';
 
 class FileBrowserContent extends StatelessWidget {
   static const double _bottomClearance = 10;
@@ -81,7 +81,6 @@ class FileBrowserContent extends StatelessWidget {
 
     final content = switch (viewController.viewMode) {
       LibraryViewMode.list => _buildListView(items),
-      LibraryViewMode.list => _buildListView(items),
       LibraryViewMode.grid => _buildGridView(items),
     };
 
@@ -139,20 +138,20 @@ class FileBrowserContent extends StatelessWidget {
     );
   }
 
-  Widget _buildTreeView() {
-    return LibraryTreeView(
-      rootPath: controller.getRootPath,
-      onFolderTap: onFolderTap,
-      onVideoTap: onVideoTap,
-      onAddToFavorites: onAddToFavorites,
-      onLongPress: controller.enterSelectionMode,
-      onSelectionToggle: controller.toggleSelection,
-      isSelected: controller.isSelected,
-      isSelectionMode: controller.isSelectionMode,
-      favoriteIds: favoriteIds,
-      scrollController: scrollController,
-    );
-  }
+  // Widget _buildTreeView() {
+  //   return LibraryTreeView(
+  //     rootPath: controller.getRootPath,
+  //     onFolderTap: onFolderTap,
+  //     onVideoTap: onVideoTap,
+  //     onAddToFavorites: onAddToFavorites,
+  //     onLongPress: controller.enterSelectionMode,
+  //     onSelectionToggle: controller.toggleSelection,
+  //     isSelected: controller.isSelected,
+  //     isSelectionMode: controller.isSelectionMode,
+  //     favoriteIds: favoriteIds,
+  //     scrollController: scrollController,
+  //   );
+  // }
 
   Widget _buildListView(List<FileItem> items) {
     return RefreshIndicator(
@@ -185,8 +184,7 @@ class FileBrowserContent extends StatelessWidget {
               onLongPress: () {
                 controller.enterSelectionMode(item.path);
               },
-              onSelectionToggle: () =>
-                  controller.toggleSelection(item.path),
+              onSelectionToggle: () => controller.toggleSelection(item.path),
               onAddToFavorites: item.isVideo && onAddToFavorites != null
                   ? () => onAddToFavorites!(item.path)
                   : null,
@@ -248,7 +246,8 @@ class FileBrowserContent extends StatelessWidget {
                   onLongPress: () {
                     controller.enterSelectionMode(item.path);
                   },
-                  onSelectionToggle: () => controller.toggleSelection(item.path),
+                  onSelectionToggle: () =>
+                      controller.toggleSelection(item.path),
                   onAddToFavorites: item.isVideo && onAddToFavorites != null
                       ? () => onAddToFavorites!(item.path)
                       : null,
