@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../history/services/history_service.dart';
-import '../../../settings/services/app_settings_service.dart';
 import '../../controller/player_controller.dart';
 
 /// Helper class for managing resume playback functionality.
@@ -18,10 +17,6 @@ class ResumePlaybackHelper {
     required Duration totalDuration,
     required String videoId,
   }) async {
-    if (!AppSettingsService.autoResumePlayback) {
-      return null;
-    }
-
     // Wait for duration to be loaded (max 10 seconds)
     var attempts = 0;
     var effectiveDuration = totalDuration;

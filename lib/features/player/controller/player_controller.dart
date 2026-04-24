@@ -372,12 +372,7 @@ class PlayerController extends ChangeNotifier
   }
 
   Future<void> syncKeepScreenAwakePreference() async {
-    if (AppSettingsService.keepScreenAwake) {
-      await WakelockPlus.enable();
-      return;
-    }
-
-    await WakelockPlus.disable();
+    await WakelockPlus.enable();
   }
 
   // @override

@@ -12,7 +12,6 @@ import '../../../history/services/history_service.dart';
 import '../../../library/domain/entities/video_file.dart';
 import '../../../library/data/datasources/directory_browser.dart';
 import '../../../library/domain/entities/file_item.dart';
-import '../../../settings/services/app_settings_service.dart';
 import '../../controller/player_controller.dart';
 import '../../data/repositories/mpv_player_repository.dart';
 import '../widgets/player_view.dart';
@@ -79,9 +78,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         final repository = MpvPlayerRepository();
         final controller = PlayerController(repository);
         controller.loadVideoFile(widget.video);
-        if (AppSettingsService.keepScreenAwake) {
-          WakelockPlus.enable();
-        }
+        WakelockPlus.enable();
         controller.startHideTimer();
         return controller;
       },

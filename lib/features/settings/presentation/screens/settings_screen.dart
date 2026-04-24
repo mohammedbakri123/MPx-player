@@ -11,7 +11,6 @@ import '../helpers/settings_helpers.dart';
 import '../widgets/settings_header.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/form_rows.dart';
-import '../widgets/advanced_playback_settings_section.dart';
 import '../widgets/expert_engine_settings_section.dart';
 import '../widgets/subtitle_settings_section.dart';
 
@@ -67,13 +66,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     accent: const Color(0xFFEA580C),
                     colors: colors,
                     child: const _SubtitleSection(),
-                  ),
-                  _buildExpandableSection(
-                    index: 2,
-                    title: 'Playback',
-                    icon: Icons.play_circle_outline,
-                    colors: colors,
-                    child: _PlaybackSection(settings: settings),
                   ),
                   _buildExpandableSection(
                     index: 3,
@@ -273,32 +265,6 @@ class _SubtitleSection extends StatelessWidget {
   }
 }
 
-class _PlaybackSection extends StatelessWidget {
-  final AppSettingsController settings;
-
-  const _PlaybackSection({required this.settings});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Control resume, wake lock, gestures.',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 12),
-          AdvancedPlaybackSettingsSection(settings: settings),
-        ],
-      ),
-    );
-  }
-}
 
 class _EngineSection extends StatelessWidget {
   final AppSettingsController settings;

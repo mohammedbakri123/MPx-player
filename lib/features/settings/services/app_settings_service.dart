@@ -183,13 +183,8 @@ class ExpertEngineSettings {
 class AppSettingsService {
   static const String _themePreferenceKey = 'app_theme_preference';
   static const String _playerPresetKey = 'player_preset';
-  static const String _advancedOptionsEnabledKey = 'advanced_options_enabled';
   static const String _videoPerformancePresetKey = 'advanced_video_performance';
   static const String _expertEngineEnabledKey = 'expert_engine_enabled';
-  static const String _autoResumePlaybackKey = 'advanced_auto_resume';
-  static const String _keepScreenAwakeKey = 'advanced_keep_screen_awake';
-  static const String _swipeGesturesKey = 'advanced_swipe_gestures';
-  static const String _holdToBoostKey = 'advanced_hold_to_boost';
   static const String _expertHardwareDecodingKey = 'expert_hwdec';
   static const String _expertDecoderThreadsKey = 'expert_decoder_threads';
   static const String _expertFrameDroppingKey = 'expert_frame_dropping';
@@ -257,8 +252,6 @@ class AppSettingsService {
     }
   }
 
-  static bool get advancedOptionsEnabled =>
-      _prefs.getBool(_advancedOptionsEnabledKey) ?? false;
 
   static VideoPerformancePreset get videoPerformancePreset {
     final value = _prefs.getString(_videoPerformancePresetKey);
@@ -311,24 +304,13 @@ class AppSettingsService {
         hwdecCodecs: _prefs.getString(_expertHwdecCodecsKey) ?? 'all',
       );
 
-  static bool get autoResumePlaybackSetting =>
-      _prefs.getBool(_autoResumePlaybackKey) ?? true;
+  static bool get autoResumePlayback => true;
 
-  static bool get keepScreenAwakeSetting =>
-      _prefs.getBool(_keepScreenAwakeKey) ?? true;
+  static bool get keepScreenAwake => true;
 
-  static bool get swipeGesturesSetting =>
-      _prefs.getBool(_swipeGesturesKey) ?? true;
+  static bool get swipeGesturesEnabled => true;
 
-  static bool get holdToBoostSetting => _prefs.getBool(_holdToBoostKey) ?? true;
-
-  static bool get autoResumePlayback => autoResumePlaybackSetting;
-
-  static bool get keepScreenAwake => keepScreenAwakeSetting;
-
-  static bool get swipeGesturesEnabled => swipeGesturesSetting;
-
-  static bool get holdToBoostEnabled => holdToBoostSetting;
+  static bool get holdToBoostEnabled => true;
 
   static VideoPerformanceConfiguration videoPerformancePresetToConfiguration(
     VideoPerformancePreset preset,
@@ -400,9 +382,6 @@ class AppSettingsService {
     return _prefs.setString(_playerPresetKey, value.name);
   }
 
-  static Future<bool> setAdvancedOptionsEnabled(bool value) {
-    return _prefs.setBool(_advancedOptionsEnabledKey, value);
-  }
 
   static Future<bool> setVideoPerformancePreset(VideoPerformancePreset value) {
     return _prefs.setString(_videoPerformancePresetKey, value.name);
@@ -441,21 +420,6 @@ class AppSettingsService {
     await _prefs.setString(_expertHwdecCodecsKey, value.hwdecCodecs);
   }
 
-  static Future<bool> setAutoResumePlayback(bool value) {
-    return _prefs.setBool(_autoResumePlaybackKey, value);
-  }
-
-  static Future<bool> setKeepScreenAwake(bool value) {
-    return _prefs.setBool(_keepScreenAwakeKey, value);
-  }
-
-  static Future<bool> setSwipeGesturesSetting(bool value) {
-    return _prefs.setBool(_swipeGesturesKey, value);
-  }
-
-  static Future<bool> setHoldToBoostSetting(bool value) {
-    return _prefs.setBool(_holdToBoostKey, value);
-  }
 
   static int get doubleTapSeekStep {
     return _prefs.getInt(_doubleTapSeekStepKey) ?? 10;

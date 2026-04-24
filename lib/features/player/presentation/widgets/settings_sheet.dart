@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mpx/core/theme/app_theme_tokens.dart';
-import 'package:provider/provider.dart';
-import 'package:mpx/features/settings/controllers/app_settings_controller.dart';
-import 'package:mpx/features/settings/presentation/widgets/advanced_playback_settings_section.dart';
 import '../../controller/player_controller.dart';
 import 'helpers/bottom_sheet_handle.dart';
 
@@ -228,25 +225,6 @@ class SettingsSheet extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
-                  Consumer<AppSettingsController>(
-                    builder: (context, settings, _) {
-                      return _SettingsSection(
-                        title: 'Player Behavior',
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          child: AdvancedPlaybackSettingsSection(
-                            settings: settings,
-                            onAdvancedOptionsChanged: (_) =>
-                                controller.syncKeepScreenAwakePreference(),
-                            onKeepScreenAwakeChanged: (_) =>
-                                controller.syncKeepScreenAwakePreference(),
-                            footerText:
-                                'Engine tuning lives on the main Settings screen so it does not conflict with playback presets.',
-                          ),
-                        ),
-                      );
-                    },
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
