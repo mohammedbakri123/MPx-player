@@ -146,30 +146,71 @@ class OverlayLayer extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final delta = controller.seekDelta;
+    final hasDelta = delta.inMilliseconds.abs() > 0;
+    final isForward = delta.inMilliseconds >= 0;
+    final deltaColor = isForward ? Colors.greenAccent : Colors.orangeAccent;
+
     return Positioned(
       bottom: 100,
       left: 0,
       right: 0,
       child: Center(
         child: Container(
-          width: 160,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          width: 180,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(12),
+            color: Colors.black.withValues(alpha: 0.75),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Seek delta badge — clear feedback on how many seconds dragged
+              if (hasDelta)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: deltaColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: deltaColor.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isForward
+                            ? Icons.fast_forward_rounded
+                            : Icons.fast_rewind_rounded,
+                        color: deltaColor,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${isForward ? '+' : ''}${_formatSeekDelta(delta)}',
+                        style: TextStyle(
+                          color: deltaColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Text(
                 controller.formatDuration(controller.position),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
@@ -179,7 +220,7 @@ class OverlayLayer extends StatelessWidget {
                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 controller.formatDuration(controller.duration),
                 style: TextStyle(
@@ -192,6 +233,16 @@ class OverlayLayer extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatSeekDelta(Duration delta) {
+    final totalSeconds = delta.inSeconds.abs();
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    }
+    return '${seconds}s';
   }
 
   Widget _buildBufferingIndicator() {

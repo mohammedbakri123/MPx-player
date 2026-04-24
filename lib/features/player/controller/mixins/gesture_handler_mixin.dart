@@ -52,9 +52,14 @@ mixin GestureHandlerMixin on ChangeNotifier {
     _coordShouldProcessLongPress = shouldProcessLongPress;
   }
 
+  /// Minimum horizontal drag distance (in logical pixels) before seek activates.
+  /// This prevents accidental seeks from tiny touches.
+  static const double _kMinDragThreshold = 12.0;
+
   void onHorizontalDragStart(double startX) {
     state.dragStartX = startX;
     state.seekStartPosition = state.position;
+    state.seekDelta = Duration.zero;
     state.isDraggingX = true;
     state.showSeekIndicator = true;
     _coordOnSeekStart();
@@ -63,7 +68,17 @@ mixin GestureHandlerMixin on ChangeNotifier {
 
   void onHorizontalDragUpdate(double currentX, double screenWidth) {
     final deltaX = currentX - state.dragStartX;
-    final seekPercent = (deltaX / screenWidth) * state.dragSeekSensitivity;
+
+    // Prevent accidental seeks: ignore tiny movements
+    if (deltaX.abs() < _kMinDragThreshold) {
+      // Still dragging but below threshold — keep indicator visible
+      // without changing position
+      return;
+    }
+
+    final effectiveDeltaX = deltaX;
+    final seekPercent =
+        (effectiveDeltaX / screenWidth) * state.dragSeekSensitivity;
     final seekMs = (seekPercent * state.duration.inMilliseconds).toInt();
     final newPosition =
         state.seekStartPosition + Duration(milliseconds: seekMs);
@@ -72,7 +87,8 @@ mixin GestureHandlerMixin on ChangeNotifier {
       milliseconds:
           newPosition.inMilliseconds.clamp(0, state.duration.inMilliseconds),
     );
-    state.seekDirection = deltaX > 0 ? 'forward' : 'back';
+    state.seekDelta = Duration(milliseconds: seekMs);
+    state.seekDirection = effectiveDeltaX > 0 ? 'forward' : 'back';
     notifyListeners();
   }
 
@@ -80,6 +96,7 @@ mixin GestureHandlerMixin on ChangeNotifier {
     repository.seek(state.position);
     state.isDraggingX = false;
     state.showSeekIndicator = false;
+    state.seekDelta = Duration.zero;
     _coordOnSeekEnd();
     notifyListeners();
     startHideTimer();

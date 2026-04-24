@@ -48,7 +48,8 @@ class GestureLayer extends StatelessWidget {
             onVerticalDragUpdate: (details) =>
                 controller.onVerticalDragUpdate(details.delta.dy),
             onVerticalDragEnd: (_) => controller.onVerticalDragEnd(),
-            onHorizontalDragStart: (_) => controller.onHorizontalDragStart(0),
+            onHorizontalDragStart: (details) =>
+                controller.onHorizontalDragStart(details.globalPosition.dx),
             onHorizontalDragUpdate: (details) => controller
                 .onHorizontalDragUpdate(details.globalPosition.dx, screenWidth),
             onHorizontalDragEnd: (_) => controller.onHorizontalDragEnd(),
@@ -81,8 +82,8 @@ class GestureLayer extends StatelessWidget {
             onVerticalDragUpdate: (details) =>
                 controller.onVerticalDragUpdate(details.delta.dy),
             onVerticalDragEnd: (_) => controller.onVerticalDragEnd(),
-            onHorizontalDragStart: (_) =>
-                controller.onHorizontalDragStart(screenWidth),
+            onHorizontalDragStart: (details) =>
+                controller.onHorizontalDragStart(details.globalPosition.dx),
             onHorizontalDragUpdate: (details) => controller
                 .onHorizontalDragUpdate(details.globalPosition.dx, screenWidth),
             onHorizontalDragEnd: (_) => controller.onHorizontalDragEnd(),

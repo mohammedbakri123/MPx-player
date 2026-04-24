@@ -56,6 +56,7 @@ class PlayerState {
 
   bool showSeekIndicator = false;
   String seekDirection = '';
+  Duration seekDelta = Duration.zero;
   bool showVolumeIndicator = false;
   bool showBrightnessIndicator = false;
   double brightnessValue = 100.0;

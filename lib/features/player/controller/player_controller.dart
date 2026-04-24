@@ -101,6 +101,7 @@ class PlayerController extends ChangeNotifier
   Duration get seekStartPosition => _state.seekStartPosition;
   bool get showSeekIndicator => _state.showSeekIndicator;
   String get seekDirection => _state.seekDirection;
+  Duration get seekDelta => _state.seekDelta;
   bool get showVolumeIndicator => _state.showVolumeIndicator;
   bool get showBrightnessIndicator => _state.showBrightnessIndicator;
   double get brightnessValue => _state.brightnessValue;
