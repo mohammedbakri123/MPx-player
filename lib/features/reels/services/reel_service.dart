@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import '../../../core/services/storage_path_service.dart';
+import '../../../core/services/permission_service.dart';
 import '../../library/domain/entities/video_file.dart';
 import '../../library/domain/entities/file_item.dart'; // Import FileItem
 
@@ -14,18 +15,43 @@ class ReelService {
       return _reelsDirectory!;
     }
 
-    // Use app-specific directory to avoid Scoped Storage and Secure Folder issues.
-    // On Android, this resolves to:
-    //   /storage/emulated/[userId]/Android/data/<package>/files/mpxReels
-    // This automatically works for main profile, Secure Folder, and work profiles.
-    final baseDir = await StoragePathService.getAppExternalDirectory();
+    // Resolve correct user profile path (works for main, secure folder, work profiles)
+    final appExternalDir = await StoragePathService.getAppExternalDirectory();
+    // Extract user's base storage path (e.g /storage/emulated/[userId]/) by splitting off Android app directory
+    final userBasePath = appExternalDir.path.split(RegExp(r'Android'))[0];
+    final publicReelsPath = p.join(userBasePath, 'Movies', _reelsFolderName);
 
-    final reelsDir = Directory(p.join(baseDir.path, _reelsFolderName));
-    if (!await reelsDir.exists()) {
-      await reelsDir.create(recursive: true);
+    // Check if we have permission to access public storage
+    final hasManageStorage =
+        await PermissionService.checkManageExternalStorage();
+
+    Directory targetDir;
+    if (hasManageStorage) {
+      // Use public Movies/mpxReels path when permission is granted
+      targetDir = Directory(publicReelsPath);
+    } else {
+      // Fallback to app-specific directory to avoid breaking the app
+      targetDir = Directory(p.join(appExternalDir.path, _reelsFolderName));
     }
-    _reelsDirectory = reelsDir;
-    return reelsDir;
+
+    if (!await targetDir.exists()) {
+      try {
+        await targetDir.create(recursive: true);
+      } catch (e) {
+        // If public path creation fails, fallback to app-specific directory
+        if (targetDir.path == publicReelsPath) {
+          targetDir = Directory(p.join(appExternalDir.path, _reelsFolderName));
+          if (!await targetDir.exists()) {
+            await targetDir.create(recursive: true);
+          }
+        } else {
+          rethrow;
+        }
+      }
+    }
+
+    _reelsDirectory = targetDir;
+    return targetDir;
   }
 
   // Returns the path of the Reels folder for user display
