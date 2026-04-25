@@ -157,23 +157,13 @@ class FileListItem extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (item.isVideo)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Icon(
-                          Icons.play_circle_outline,
-                          color: accent.withValues(alpha: 0.75),
-                          size: 28,
-                        ),
-                      )
-                    else if (item.isDirectory)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Icon(
-                          Icons.chevron_right,
-                          color: theme.faintText,
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: theme.faintText,
                       ),
+                    ),
                   ],
                 ),
             ],
