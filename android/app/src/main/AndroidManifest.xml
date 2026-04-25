@@ -1,16 +1,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     
     <!-- Storage Permissions -->
-    <!-- For Android 13+ (API 33+) -->
+    <!-- For Android 13+ (API 33+): Granular media permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     
-    <!-- For Android 10-12 (API 29-32) -->
+    <!-- For Android 10-12 (API 29-32): Broad storage read access -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     
-    <!-- For older Android versions -->
+    <!-- For older Android versions: Write access needed for pre-scoped storage -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    
+    <!-- MANAGE_EXTERNAL_STORAGE: Required for direct file system access on Android 11+ (API 30+).
+         This grants "All files access" which bypasses Scoped Storage restrictions.
+         WARNING: Google Play requires justification for this permission.
+         Alternative: Use MediaStore API (photo_manager package) for video discovery. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     
     <!-- Internet permission for loading online videos -->
     <uses-permission android:name="android.permission.INTERNET" />

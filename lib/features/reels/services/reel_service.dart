@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import '../../../core/services/storage_path_service.dart';
 import '../../library/domain/entities/video_file.dart';
 import '../../library/domain/entities/file_item.dart'; // Import FileItem
 
@@ -14,17 +14,11 @@ class ReelService {
       return _reelsDirectory!;
     }
 
-    Directory baseDir;
-    if (Platform.isAndroid) {
-      // Use public Movies directory on Android so users can easily access it via file managers
-      baseDir = Directory('/storage/emulated/0/Movies');
-      if (!await baseDir.exists()) {
-        baseDir = Directory(
-            '/storage/emulated/0'); // Fallback to root external storage
-      }
-    } else {
-      baseDir = await getApplicationDocumentsDirectory();
-    }
+    // Use app-specific directory to avoid Scoped Storage and Secure Folder issues.
+    // On Android, this resolves to:
+    //   /storage/emulated/[userId]/Android/data/<package>/files/mpxReels
+    // This automatically works for main profile, Secure Folder, and work profiles.
+    final baseDir = await StoragePathService.getAppExternalDirectory();
 
     final reelsDir = Directory(p.join(baseDir.path, _reelsFolderName));
     if (!await reelsDir.exists()) {

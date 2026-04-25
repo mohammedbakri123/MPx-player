@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:mpx/core/services/permission_service.dart';
 import 'package:mpx/core/theme/app_theme_tokens.dart';
 import 'package:mpx/features/downloader/presentation/screens/downloader_settings_screen.dart';
 import 'package:mpx/features/downloader/presentation/screens/downloads_manager_screen.dart';
@@ -83,6 +86,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     colors: colors,
                     child: const _DownloaderSection(),
                   ),
+                  if (Platform.isAndroid)
+                    _buildExpandableSection(
+                      index: 5,
+                      title: 'Storage & Permissions',
+                      icon: Icons.folder_outlined,
+                      accent: const Color(0xFF7C3AED),
+                      colors: colors,
+                      child: const _StoragePermissionSection(),
+                    ),
                   SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
                 ],
               ),
@@ -337,6 +349,134 @@ class _DownloaderSection extends StatelessWidget {
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoragePermissionSection extends StatefulWidget {
+  const _StoragePermissionSection();
+
+  @override
+  State<_StoragePermissionSection> createState() =>
+      _StoragePermissionSectionState();
+}
+
+class _StoragePermissionSectionState extends State<_StoragePermissionSection> {
+  bool _hasFullAccess = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermission();
+  }
+
+  Future<void> _checkPermission() async {
+    final hasAccess = await PermissionService.checkManageExternalStorage();
+    setState(() {
+      _hasFullAccess = hasAccess;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _requestFullAccess() async {
+    setState(() => _isLoading = true);
+    final granted = await PermissionService.requestManageExternalStorage();
+    setState(() {
+      _hasFullAccess = granted;
+      _isLoading = false;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            granted
+                ? 'All files access granted. Restart the app if files still don\'t appear.'
+                : 'Permission not granted. Some features may be limited.',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Control how MPx accesses files on your device. Required for full file browsing.',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else
+            Column(
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    _hasFullAccess
+                        ? Icons.check_circle
+                        : Icons.folder_off_outlined,
+                    color: _hasFullAccess ? Colors.green : null,
+                  ),
+                  title: const Text('All files access'),
+                  subtitle: Text(
+                    _hasFullAccess
+                        ? 'Granted - MPx can access all files'
+                        : 'Not granted - File browsing is limited. Tap to enable.',
+                  ),
+                  trailing: _hasFullAccess
+                      ? null
+                      : TextButton(
+                          onPressed: _requestFullAccess,
+                          child: const Text('Enable'),
+                        ),
+                  onTap: _hasFullAccess ? null : _requestFullAccess,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.amber.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 18,
+                        color: Colors.amber,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Samsung Secure Folder: Files inside Secure Folder are isolated. MPx can only access files within the same Secure Folder profile. To access main storage files, install MPx outside Secure Folder or copy files into Secure Folder.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.amber,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
