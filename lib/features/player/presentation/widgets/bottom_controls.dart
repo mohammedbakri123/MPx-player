@@ -44,6 +44,7 @@ class BottomControls extends StatefulWidget {
 
 class _BottomControlsState extends State<BottomControls> {
   double? _dragValue;
+  bool _showTimeRemaining = false;
 
   double get _sliderMax => widget.duration.inMilliseconds.toDouble()._max(1);
 
@@ -132,6 +133,20 @@ class _BottomControlsState extends State<BottomControls> {
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
+                ),
+              ),
+              GestureDetector(
+                onTap: () =>
+                    setState(() => _showTimeRemaining = !_showTimeRemaining),
+                child: Text(
+                  _showTimeRemaining
+                      ? '-${widget.formatTime(widget.duration - _effectivePosition)}'
+                      : widget.formatTime(widget.duration),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
