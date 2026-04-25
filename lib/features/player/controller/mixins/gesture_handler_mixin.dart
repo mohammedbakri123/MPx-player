@@ -55,6 +55,9 @@ mixin GestureHandlerMixin on ChangeNotifier {
   /// This prevents accidental seeks from tiny touches.
   static const double _kMinDragThreshold = 12.0;
 
+  int _lastHorizontalDragNotifyMs = 0;
+  int _lastVerticalDragNotifyMs = 0;
+
   void onHorizontalDragStart(double startX) {
     state.dragStartX = startX;
     state.seekStartPosition = state.position;
@@ -88,7 +91,11 @@ mixin GestureHandlerMixin on ChangeNotifier {
     );
     state.seekDelta = Duration(milliseconds: seekMs);
     state.seekDirection = effectiveDeltaX > 0 ? 'forward' : 'back';
-    notifyListeners();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastHorizontalDragNotifyMs >= 100) {
+      _lastHorizontalDragNotifyMs = now;
+      notifyListeners();
+    }
   }
 
   void onHorizontalDragEnd() {
@@ -129,7 +136,12 @@ mixin GestureHandlerMixin on ChangeNotifier {
       // Delegate to VolumeManagerMixin
       adjustVolumeByDrag(delta);
     }
-    notifyListeners();
+    // Throttle the additional notify to avoid double-firing with adjust methods
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastVerticalDragNotifyMs >= 100) {
+      _lastVerticalDragNotifyMs = now;
+      notifyListeners();
+    }
   }
 
   void onVerticalDragEnd() {

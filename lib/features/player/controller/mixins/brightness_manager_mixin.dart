@@ -17,6 +17,8 @@ mixin BrightnessManagerMixin on ChangeNotifier {
   ///
   /// [delta] - The drag delta value (negative for up, positive for down).
   /// Drag UP increases brightness, drag DOWN decreases brightness.
+  int _lastBrightnessDragNotifyMs = 0;
+
   void adjustBrightnessByDrag(double delta) {
     // Negate delta so dragging UP increases brightness (natural gesture)
     final brightnessUpdate = -delta / 200;
@@ -25,7 +27,11 @@ mixin BrightnessManagerMixin on ChangeNotifier {
     state.brightnessValue = newBrightness;
     SystemBrightnessService.setBrightnessFromPercent(newBrightness);
     state.showBrightnessIndicator = true;
-    notifyListeners();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastBrightnessDragNotifyMs >= 100) {
+      _lastBrightnessDragNotifyMs = now;
+      notifyListeners();
+    }
   }
 
   /// Current brightness level (0.0 to 100.0).

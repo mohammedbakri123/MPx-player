@@ -323,9 +323,15 @@ mixin PlaybackControlMixin on ChangeNotifier {
     notifyListeners();
   }
 
+  int _lastPreviewSeekNotifyMs = 0;
+
   void previewSeek(Duration position) {
     registerControlsInteraction();
     state.position = position;
-    notifyListeners();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastPreviewSeekNotifyMs >= 250) {
+      _lastPreviewSeekNotifyMs = now;
+      notifyListeners();
+    }
   }
 }

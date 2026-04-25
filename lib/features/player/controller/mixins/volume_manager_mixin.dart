@@ -16,6 +16,8 @@ mixin VolumeManagerMixin on ChangeNotifier {
   /// Adjusts volume based on vertical drag gesture.
   ///
   /// [delta] - The drag delta value (negative for up, positive for down).
+  int _lastVolumeDragNotifyMs = 0;
+
   void adjustVolumeByDrag(double delta) {
     final volumeUpdate = -delta / 200;
     final newVolume = (state.volume + volumeUpdate * 100).clamp(0.0, 100.0);
@@ -23,7 +25,11 @@ mixin VolumeManagerMixin on ChangeNotifier {
     repository.setVolume(newVolume);
     SystemVolumeService.setVolumeFromPercent(newVolume);
     state.showVolumeIndicator = true;
-    notifyListeners();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastVolumeDragNotifyMs >= 100) {
+      _lastVolumeDragNotifyMs = now;
+      notifyListeners();
+    }
   }
 
   /// Current volume level (0.0 to 100.0).
