@@ -73,86 +73,49 @@ class _ViewModeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return PopupMenuButton<LibraryViewMode>(
-      tooltip: 'Change view',
-      initialValue: viewMode,
-      onSelected: onChanged,
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: LibraryViewMode.list,
-          child: _ViewModeItem(
-            icon: Icons.view_list_rounded,
-            label: 'List',
-            isSelected: viewMode == LibraryViewMode.list,
+    return Material(
+      color: theme.subtleSurface,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () {
+          if (onChanged != null) {
+            final nextMode = viewMode == LibraryViewMode.list
+                ? LibraryViewMode.grid
+                : LibraryViewMode.list;
+            onChanged!(nextMode);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.view_list_rounded,
+                size: 18,
+                color: viewMode == LibraryViewMode.list
+                    ? theme.colorScheme.primary
+                    : theme.mutedText,
+              ),
+              const SizedBox(width: 4),
+              Container(
+                width: 1,
+                height: 18,
+                color: theme.softBorder,
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.grid_view_rounded,
+                size: 18,
+                color: viewMode == LibraryViewMode.grid
+                    ? theme.colorScheme.primary
+                    : theme.mutedText,
+              ),
+            ],
           ),
-        ),
-        PopupMenuItem(
-          value: LibraryViewMode.grid,
-          child: _ViewModeItem(
-            icon: Icons.grid_view_rounded,
-            label: 'Grid',
-            isSelected: viewMode == LibraryViewMode.grid,
-          ),
-        ),
-      ],
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Icon(
-          _iconFor(viewMode),
-          color: theme.colorScheme.primary,
         ),
       ),
-    );
-  }
-
-  IconData _iconFor(LibraryViewMode mode) {
-    switch (mode) {
-      case LibraryViewMode.list:
-        return Icons.view_list_rounded;
-      case LibraryViewMode.grid:
-        return Icons.grid_view_rounded;
-    }
-  }
-}
-
-class _ViewModeItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-
-  const _ViewModeItem({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: isSelected ? theme.colorScheme.primary : theme.mutedText,
-        ),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? theme.colorScheme.primary : theme.strongText,
-          ),
-        ),
-        if (isSelected) ...[
-          const SizedBox(width: 8),
-          Icon(
-            Icons.check_rounded,
-            size: 16,
-            color: theme.colorScheme.primary,
-          ),
-        ],
-      ],
     );
   }
 }

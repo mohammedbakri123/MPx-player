@@ -356,8 +356,8 @@ class _GridItem extends StatelessWidget {
                                         )
                                       : item.formattedSize,
                                   color: item.isDirectory
-                                      ? const Color(0xFF2563EB)
-                                      : const Color(0xFFEA580C),
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.secondary,
                                 ),
                               ),
                               if (item.isVideo) ...[
@@ -552,18 +552,23 @@ class _GridThumbnailPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF334155), Color(0xFF0F172A), Color(0xFF1E293B)],
+          colors: [
+            theme.colorScheme.primary.withValues(alpha: 0.2),
+            theme.colorScheme.secondary.withValues(alpha: 0.15),
+            theme.subtleSurface,
+          ],
         ),
       ),
-      child: const Center(
+      child: Center(
         child: Icon(
           Icons.play_circle_outline_rounded,
-          color: Colors.white24,
+          color: theme.mutedText.withValues(alpha: 0.4),
           size: 34,
         ),
       ),
