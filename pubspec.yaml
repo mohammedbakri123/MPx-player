@@ -31,6 +31,13 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # State management
+  provider: ^6.1.5
+
+  # Library scanning (MediaStore on Android / PhotoKit on iOS)
+  photo_manager: ^3.8.0
+  path: ^1.9.0
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
