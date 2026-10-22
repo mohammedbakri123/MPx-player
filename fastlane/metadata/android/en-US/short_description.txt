@@ -1,1 +1,0 @@
-Simple open-source media player based on mpv

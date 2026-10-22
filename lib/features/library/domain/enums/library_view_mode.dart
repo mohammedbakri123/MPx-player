@@ -1,4 +1,0 @@
-enum LibraryViewMode {
-  list,
-  grid,
-}
