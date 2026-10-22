@@ -11,6 +11,7 @@ class VideoListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String folderName = video.folderPath.split('/').last;
+    final bool hasDuration = video.durationMs > 0;
     return ListTile(
       leading: const Icon(Icons.play_circle_outline, size: 40),
       title: Text(
@@ -18,7 +19,11 @@ class VideoListItem extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text('$folderName • ${formatDuration(video.durationMs)}'),
+      subtitle: Text(
+        hasDuration
+            ? '$folderName • ${formatDuration(video.durationMs)}'
+            : folderName,
+      ),
       onTap: () {},
     );
   }
