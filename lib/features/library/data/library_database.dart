@@ -6,6 +6,7 @@ import 'package:xdg_directories/xdg_directories.dart';
 
 import '../models/file_item.dart';
 import '../models/folder_item.dart';
+import '../models/library_sort_option.dart';
 
 class LibraryDatabase {
   LibraryDatabase({
@@ -98,8 +99,19 @@ class LibraryDatabase {
     }
   }
 
-  Future<List<FolderItem>> getFolders({int? parentId}) async {
+  Future<List<FolderItem>> getFolders({
+    int? parentId,
+    LibrarySortOption sortBy = LibrarySortOption.name,
+    bool ascending = true,
+  }) async {
     final Database db = await database;
+    final String dir = ascending ? 'ASC' : 'DESC';
+    final String orderClause = switch (sortBy) {
+      LibrarySortOption.name => 'f.name COLLATE NOCASE $dir',
+      LibrarySortOption.date => 'f.created_at $dir',
+      LibrarySortOption.size => 'file_count $dir',
+    };
+
     final List<Map<String, dynamic>> rows = await db.rawQuery(
       '''
       SELECT f.*,
@@ -107,7 +119,7 @@ class LibraryDatabase {
         (SELECT COUNT(*) FROM files fi WHERE fi.folder_id = f.id) AS file_count
       FROM folders f
       WHERE ${parentId == null ? 'f.parent_id IS NULL' : 'f.parent_id = ?'}
-      ORDER BY f.name COLLATE NOCASE ASC
+      ORDER BY $orderClause
       ''',
       parentId == null ? <Object?>[] : <Object?>[parentId],
     );
@@ -133,13 +145,24 @@ class LibraryDatabase {
     return FolderItem.fromMap(rows.first);
   }
 
-  Future<List<FileItem>> getFiles(int folderId) async {
+  Future<List<FileItem>> getFiles(
+    int folderId, {
+    LibrarySortOption sortBy = LibrarySortOption.name,
+    bool ascending = true,
+  }) async {
     final Database db = await database;
+    final String dir = ascending ? 'ASC' : 'DESC';
+    final String orderClause = switch (sortBy) {
+      LibrarySortOption.name => 'name COLLATE NOCASE $dir',
+      LibrarySortOption.date => 'created_at $dir',
+      LibrarySortOption.size => 'size_bytes $dir',
+    };
+
     final List<Map<String, dynamic>> rows = await db.query(
       'files',
       where: 'folder_id = ?',
       whereArgs: <Object?>[folderId],
-      orderBy: 'name COLLATE NOCASE ASC',
+      orderBy: orderClause,
     );
 
     return rows.map(FileItem.fromMap).toList();

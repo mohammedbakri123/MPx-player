@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../models/folder_item.dart';
 
 class BreadcrumbBar extends StatelessWidget {
@@ -15,15 +17,16 @@ class BreadcrumbBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: theme.appBackgroundAlt.withValues(alpha: theme.isDarkMode ? 0.6 : 0.8),
         border: Border(
           bottom: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 0.4),
+            color: scheme.outlineVariant.withValues(alpha: theme.isDarkMode ? 0.3 : 0.6),
           ),
         ),
       ),
@@ -32,45 +35,49 @@ class BreadcrumbBar extends StatelessWidget {
           if (breadcrumbs.isNotEmpty) ...<Widget>[
             IconButton(
               icon: const Icon(Icons.arrow_back_rounded, size: 20),
-              tooltip: 'Back',
-              visualDensity: VisualDensity.compact,
+              tooltip: 'Go back',
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              style: IconButton.styleFrom(
+                backgroundColor: scheme.surfaceContainerHigh.withValues(alpha: 0.5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: onBack,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
           ],
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               child: Row(
                 children: <Widget>[
+                  // Root Library button
                   InkWell(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                     onTap: () => onSelect(null),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: breadcrumbs.isEmpty
+                            ? scheme.primary.withValues(alpha: 0.15)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           Icon(
                             Icons.home_rounded,
-                            size: 18,
-                            color: breadcrumbs.isEmpty
-                                ? scheme.primary
-                                : scheme.onSurfaceVariant,
+                            size: 16,
+                            color: breadcrumbs.isEmpty ? scheme.primary : theme.mutedText,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
                           Text(
                             'Library',
                             style: TextStyle(
-                              fontWeight: breadcrumbs.isEmpty
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: breadcrumbs.isEmpty
-                                  ? scheme.primary
-                                  : scheme.onSurfaceVariant,
+                              fontSize: 13,
+                              fontWeight: breadcrumbs.isEmpty ? FontWeight.w700 : FontWeight.w500,
+                              color: breadcrumbs.isEmpty ? scheme.primary : theme.mutedText,
                             ),
                           ),
                         ],
@@ -78,28 +85,35 @@ class BreadcrumbBar extends StatelessWidget {
                     ),
                   ),
                   for (int i = 0; i < breadcrumbs.length; i++) ...<Widget>[
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: scheme.outline,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: theme.faintText,
+                      ),
                     ),
                     InkWell(
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(8),
                       onTap: () => onSelect(breadcrumbs[i]),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: i == breadcrumbs.length - 1
+                              ? scheme.primary.withValues(alpha: 0.15)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           breadcrumbs[i].name,
                           style: TextStyle(
+                            fontSize: 13,
                             fontWeight: i == breadcrumbs.length - 1
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             color: i == breadcrumbs.length - 1
                                 ? scheme.primary
-                                : scheme.onSurfaceVariant,
+                                : theme.mutedText,
                           ),
                         ),
                       ),

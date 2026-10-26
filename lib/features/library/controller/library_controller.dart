@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../data/library_database.dart';
 import '../models/file_item.dart';
 import '../models/folder_item.dart';
+import '../models/library_sort_option.dart';
 
 class LibraryController extends ChangeNotifier {
   LibraryController({LibraryDatabase? database})
@@ -21,6 +22,15 @@ class LibraryController extends ChangeNotifier {
   List<FileItem> _searchResults = <FileItem>[];
   FileKind? _filterKind;
 
+  LibrarySortOption _sortOption = LibrarySortOption.name;
+  bool _sortAscending = true;
+  bool _isGridView = false;
+
+  // Active playback state for Now Playing Dock
+  FileItem? _activeFile;
+  bool _isPlaying = false;
+  double _playbackProgress = 0.0;
+
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   FolderItem? get currentFolder => _currentFolder;
@@ -29,6 +39,14 @@ class LibraryController extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   List<FileItem> get searchResults => List<FileItem>.unmodifiable(_searchResults);
   FileKind? get filterKind => _filterKind;
+
+  LibrarySortOption get sortOption => _sortOption;
+  bool get sortAscending => _sortAscending;
+  bool get isGridView => _isGridView;
+
+  FileItem? get activeFile => _activeFile;
+  bool get isPlaying => _isPlaying;
+  double get playbackProgress => _playbackProgress;
 
   List<FileItem> get files {
     if (_filterKind == null) {
@@ -50,12 +68,24 @@ class LibraryController extends ChangeNotifier {
       if (folderId != null) {
         _currentFolder = await _database.getFolderById(folderId);
         _breadcrumbs = await _database.getBreadcrumbs(folderId);
-        _folders = await _database.getFolders(parentId: folderId);
-        _files = await _database.getFiles(folderId);
+        _folders = await _database.getFolders(
+          parentId: folderId,
+          sortBy: _sortOption,
+          ascending: _sortAscending,
+        );
+        _files = await _database.getFiles(
+          folderId,
+          sortBy: _sortOption,
+          ascending: _sortAscending,
+        );
       } else {
         _currentFolder = null;
         _breadcrumbs = <FolderItem>[];
-        _folders = await _database.getFolders(parentId: null);
+        _folders = await _database.getFolders(
+          parentId: null,
+          sortBy: _sortOption,
+          ascending: _sortAscending,
+        );
         _files = <FileItem>[];
       }
     } catch (e) {
@@ -133,6 +163,45 @@ class LibraryController extends ChangeNotifier {
     }
   }
 
+  void toggleViewMode() {
+    _isGridView = !_isGridView;
+    notifyListeners();
+  }
+
+  Future<void> setSortOption(LibrarySortOption option) async {
+    if (_sortOption == option) {
+      _sortAscending = !_sortAscending;
+    } else {
+      _sortOption = option;
+      _sortAscending = true;
+    }
+    await refresh();
+  }
+
+  void playFile(FileItem file) {
+    _activeFile = file;
+    _isPlaying = true;
+    _playbackProgress = 0.28;
+    notifyListeners();
+  }
+
+  void togglePlayPause() {
+    _isPlaying = !_isPlaying;
+    notifyListeners();
+  }
+
+  void stopPlayback() {
+    _activeFile = null;
+    _isPlaying = false;
+    _playbackProgress = 0.0;
+    notifyListeners();
+  }
+
+  void seek(double progress) {
+    _playbackProgress = progress.clamp(0.0, 1.0);
+    notifyListeners();
+  }
+
   Future<void> addFolder(String name) async {
     if (name.trim().isEmpty) return;
     try {
@@ -156,6 +225,9 @@ class LibraryController extends ChangeNotifier {
 
   Future<void> deleteFile(int id) async {
     try {
+      if (_activeFile?.id == id) {
+        stopPlayback();
+      }
       await _database.deleteFile(id);
       await refresh();
     } catch (e) {
