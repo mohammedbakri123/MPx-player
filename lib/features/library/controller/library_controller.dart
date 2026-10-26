@@ -1,99 +1,183 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/utils/logger.dart';
-import '../domain/entities/video_file.dart';
-import '../domain/repositories/library_repository.dart';
-
-enum LibraryStatus { loading, needsPermission, empty, ready, failure }
-
-@immutable
-class LibraryState {
-  const LibraryState({
-    this.status = LibraryStatus.loading,
-    this.videos = const <VideoFile>[],
-    this.error,
-  });
-
-  final LibraryStatus status;
-  final List<VideoFile> videos;
-  final String? error;
-
-  LibraryState copyWith({
-    LibraryStatus? status,
-    List<VideoFile>? videos,
-    String? error,
-  }) {
-    return LibraryState(
-      status: status ?? this.status,
-      videos: videos ?? this.videos,
-      error: error ?? this.error,
-    );
-  }
-}
+import '../data/library_database.dart';
+import '../models/file_item.dart';
+import '../models/folder_item.dart';
 
 class LibraryController extends ChangeNotifier {
-  static const String _tag = 'LibraryController';
+  LibraryController({LibraryDatabase? database})
+      : _database = database ?? LibraryDatabase();
 
-  LibraryController(this._repository);
+  final LibraryDatabase _database;
 
-  final LibraryRepository _repository;
+  bool _isLoading = false;
+  String? _errorMessage;
+  FolderItem? _currentFolder;
+  List<FolderItem> _breadcrumbs = <FolderItem>[];
+  List<FolderItem> _folders = <FolderItem>[];
+  List<FileItem> _files = <FileItem>[];
 
-  LibraryState _state = const LibraryState();
-  bool _disposed = false;
+  String _searchQuery = '';
+  List<FileItem> _searchResults = <FileItem>[];
+  FileKind? _filterKind;
 
-  LibraryState get state => _state;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  FolderItem? get currentFolder => _currentFolder;
+  List<FolderItem> get breadcrumbs => List<FolderItem>.unmodifiable(_breadcrumbs);
+  List<FolderItem> get folders => List<FolderItem>.unmodifiable(_folders);
+  String get searchQuery => _searchQuery;
+  List<FileItem> get searchResults => List<FileItem>.unmodifiable(_searchResults);
+  FileKind? get filterKind => _filterKind;
 
-  LibraryStatus get status => _state.status;
-
-  List<VideoFile> get videos => _state.videos;
-
-  Future<void> load() async {
-    _update(const LibraryState());
-    try {
-      final bool hasAccess = await _repository.hasAccess();
-      if (_disposed) return;
-      if (!hasAccess) {
-        final bool granted = await _repository.requestAccess();
-        if (_disposed) return;
-        if (!granted) {
-          _update(const LibraryState(status: LibraryStatus.needsPermission));
-          return;
-        }
-      }
-      await _fetchVideos();
-    } catch (e, s) {
-      AppLogger.e(_tag, 'Failed to load library: $e', s);
-      if (_disposed) return;
-      _update(
-        LibraryState(
-          status: LibraryStatus.failure,
-          error: e.toString(),
-        ),
-      );
+  List<FileItem> get files {
+    if (_filterKind == null) {
+      return List<FileItem>.unmodifiable(_files);
     }
-  }
-
-  Future<void> _fetchVideos() async {
-    final List<VideoFile> videos = await _repository.fetchVideos();
-    if (_disposed) return;
-    if (videos.isEmpty) {
-      _update(const LibraryState(status: LibraryStatus.empty));
-      return;
-    }
-    _update(
-      LibraryState(status: LibraryStatus.ready, videos: videos),
+    return List<FileItem>.unmodifiable(
+      _files.where((FileItem f) => f.kind == _filterKind),
     );
   }
 
-  void _update(LibraryState state) {
-    _state = state;
-    if (_disposed) return;
+  bool get isRoot => _currentFolder == null;
+
+  Future<void> load({int? folderId}) async {
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      if (folderId != null) {
+        _currentFolder = await _database.getFolderById(folderId);
+        _breadcrumbs = await _database.getBreadcrumbs(folderId);
+        _folders = await _database.getFolders(parentId: folderId);
+        _files = await _database.getFiles(folderId);
+      } else {
+        _currentFolder = null;
+        _breadcrumbs = <FolderItem>[];
+        _folders = await _database.getFolders(parentId: null);
+        _files = <FileItem>[];
+      }
+    } catch (e) {
+      _errorMessage = 'Failed to load library: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  @override
-  void dispose() {
-    _disposed = true;
-    super.dispose();
+  Future<void> openFolder(FolderItem folder) async {
+    _searchQuery = '';
+    _searchResults = <FileItem>[];
+    await load(folderId: folder.id);
+  }
+
+  Future<void> navigateUp() async {
+    if (_breadcrumbs.isEmpty || _currentFolder == null) {
+      return;
+    }
+    if (_breadcrumbs.length <= 1) {
+      await load(folderId: null);
+    } else {
+      final FolderItem parent = _breadcrumbs[_breadcrumbs.length - 2];
+      await load(folderId: parent.id);
+    }
+  }
+
+  Future<void> navigateToBreadcrumb(FolderItem? folder) async {
+    _searchQuery = '';
+    _searchResults = <FileItem>[];
+    if (folder == null) {
+      await load(folderId: null);
+    } else {
+      await load(folderId: folder.id);
+    }
+  }
+
+  Future<void> setSearchQuery(String query) async {
+    _searchQuery = query;
+    if (query.trim().isEmpty) {
+      _searchResults = <FileItem>[];
+      notifyListeners();
+      return;
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final List<FileItem> results = await _database.searchFiles(query);
+      if (_filterKind != null) {
+        _searchResults = results.where((FileItem f) => f.kind == _filterKind).toList();
+      } else {
+        _searchResults = results;
+      }
+    } catch (e) {
+      _errorMessage = 'Search error: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void setFilterKind(FileKind? kind) {
+    if (_filterKind == kind) {
+      _filterKind = null;
+    } else {
+      _filterKind = kind;
+    }
+    if (_searchQuery.isNotEmpty) {
+      setSearchQuery(_searchQuery);
+    } else {
+      notifyListeners();
+    }
+  }
+
+  Future<void> addFolder(String name) async {
+    if (name.trim().isEmpty) return;
+    try {
+      await _database.insertFolder(name, parentId: _currentFolder?.id);
+      await refresh();
+    } catch (e) {
+      _errorMessage = 'Could not create folder: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteFolder(int id) async {
+    try {
+      await _database.deleteFolder(id);
+      await refresh();
+    } catch (e) {
+      _errorMessage = 'Could not delete folder: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteFile(int id) async {
+    try {
+      await _database.deleteFile(id);
+      await refresh();
+    } catch (e) {
+      _errorMessage = 'Could not delete file: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> resetDummyData() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _database.seedDummyData(force: true);
+      await load(folderId: null);
+    } catch (e) {
+      _errorMessage = 'Could not reset dummy data: $e';
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> refresh() async {
+    await load(folderId: _currentFolder?.id);
   }
 }

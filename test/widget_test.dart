@@ -1,11 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:mpx/app/app.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  testWidgets('app builds and shows library placeholder', (tester) async {
-    await tester.pumpWidget(const MPxApp());
+  setUpAll(() {
+    sqfliteFfiInit();
+  });
 
-    expect(find.text('MPx'), findsOneWidget);
+  testWidgets('app builds and shows MPx Library', (WidgetTester tester) async {
+    await tester.pumpWidget(const MPxApp());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('MPx Library'), findsOneWidget);
   });
 }
