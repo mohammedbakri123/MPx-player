@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../features/favorites/presentation/screens/favorites_screen.dart';
-import '../features/history/presentation/screens/history_screen.dart';
 import '../features/library/presentation/screens/home_screen.dart';
+import '../features/me/presentation/screens/me_screen.dart';
+import '../features/music/presentation/screens/music_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
+import '../features/transfer/presentation/screens/transfer_screen.dart';
 
-/// Bottom-navigation shell: Library, Favourites, History, Settings.
+/// Bottom-navigation shell, MX structure: Local, Music,
+/// Transfer, Me.
 ///
-/// Pages are kept in an [IndexedStack] so the Library keeps its
-/// scroll position and state when the user switches tabs.
-/// Favourites, History, and Settings are still UI shells: they
-/// receive empty display data for now, and their real data comes
-/// from controllers in a later step. The Player is NOT a tab:
-/// it opens as a full-screen route from the mini player dock.
+/// This replaces the old Library / Favourites / History /
+/// Settings tabs, which did not match MX's pages. Pages are
+/// kept in an [IndexedStack] so Local keeps its scroll
+/// position and state when the user switches tabs.
+/// The Player is NOT a tab: it opens as a full-screen
+/// route from the mini player dock. Settings is NOT a tab
+/// either: it opens as a route from the Me page.
 class MpxMainShell extends StatefulWidget {
   const MpxMainShell({
     super.key,
-    this.themeMode = ThemeMode.system,
+    this.themeMode = ThemeMode.dark,
     this.onThemeModeChanged,
   });
 
@@ -70,22 +73,38 @@ class _MpxMainShellState extends State<MpxMainShell> {
     widget.onThemeModeChanged?.call(next);
   }
 
+  void _openSettings() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => const SettingsScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: <Widget>[
-          const HomeScreen(),
-          FavoritesScreen(
-            onOpenTitle: (_) {},
+          HomeScreen(
+            onMusicTap: () {
+              setState(() {
+                _currentIndex = 1;
+              });
+            },
           ),
-          HistoryScreen(
-            onOpenTitle: (_) {},
-          ),
-          SettingsScreen(
+          const MusicScreen(),
+          const TransferScreen(),
+          MeScreen(
             themeChoice: _themeChoice,
             onThemeTap: _cycleTheme,
+            onSettingsTap: _openSettings,
+            onMusicTap: () {
+              setState(() {
+                _currentIndex = 1;
+              });
+            },
             onAboutTap: _showAbout,
           ),
         ],
@@ -101,22 +120,22 @@ class _MpxMainShellState extends State<MpxMainShell> {
           NavigationDestination(
             icon: Icon(Icons.folder_outlined),
             selectedIcon: Icon(Icons.folder_rounded),
-            label: 'Library',
+            label: 'Local',
           ),
           NavigationDestination(
-            icon: Icon(Icons.star_border_rounded),
-            selectedIcon: Icon(Icons.star_rounded),
-            label: 'Favourites',
+            icon: Icon(Icons.music_note_outlined),
+            selectedIcon: Icon(Icons.music_note_rounded),
+            label: 'Music',
           ),
           NavigationDestination(
-            icon: Icon(Icons.history_rounded),
-            selectedIcon: Icon(Icons.history_rounded),
-            label: 'History',
+            icon: Icon(Icons.swap_horiz_outlined),
+            selectedIcon: Icon(Icons.swap_horiz_rounded),
+            label: 'Transfer',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Settings',
+            icon: Icon(Icons.person_outlined),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: 'Me',
           ),
         ],
       ),

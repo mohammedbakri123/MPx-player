@@ -1,72 +1,45 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/ui/mpx_section_header.dart';
-
-/// Settings page. The Theme row is wired: tapping it cycles
-/// System -> Dark -> Light, and the choice takes effect
-/// immediately (persistence belongs to a settings service
-/// later). The "Coming soon" playback rows are honest
-/// placeholders, not fake controls.
+/// Settings page, MX structure in MPx's own code.
+///
+/// A plain black list, as in MX's Settings screenshot:
+/// List, Player, Decoder, Audio, Subtitle, General,
+/// Development, App Language. None of these sub-pages
+/// exists in MPx yet, so every row is an honest disabled
+/// "Coming soon" row — not a fake settings page.
+/// Theme is changed from the Me page's App Theme row.
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({
-    super.key,
-    this.themeChoice = 'System',
-    required this.onThemeTap,
-    required this.onAboutTap,
-  });
+  const SettingsScreen({super.key});
 
-  final String themeChoice;
-  final VoidCallback onThemeTap;
-  final VoidCallback onAboutTap;
+  static const List<({IconData icon, String label})> _rows =
+      <({IconData icon, String label})>[
+    (icon: Icons.list_rounded, label: 'List'),
+    (icon: Icons.play_circle_outline_rounded, label: 'Player'),
+    (icon: Icons.memory_rounded, label: 'Decoder'),
+    (icon: Icons.music_note_outlined, label: 'Audio'),
+    (icon: Icons.subtitles_outlined, label: 'Subtitle'),
+    (icon: Icons.error_outline_rounded, label: 'General'),
+    (icon: Icons.code_rounded, label: 'Development'),
+    (icon: Icons.language_outlined, label: 'App Language'),
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        children: <Widget>[
-          const MpxSectionHeader(title: 'APPEARANCE', count: 1),
-          ListTile(
-            leading: const Icon(Icons.dark_mode_outlined),
-            title: const Text('Theme'),
-            subtitle: Text(themeChoice),
-            onTap: onThemeTap,
-          ),
-          const MpxSectionHeader(title: 'LIBRARY', count: 1),
-          const ListTile(
-            leading: Icon(Icons.folder_outlined),
-            title: Text('Default view'),
-            subtitle: Text('Grid'),
-          ),
-          const MpxSectionHeader(title: 'PLAYBACK', count: 3),
-          const ListTile(
-            leading: Icon(Icons.speed_rounded),
-            title: Text('Playback speed'),
-            subtitle: Text('Coming soon'),
+      body: ListView.builder(
+        itemCount: _rows.length,
+        itemBuilder: (BuildContext ctx, int index) {
+          final row = _rows[index];
+          return ListTile(
+            leading: Icon(row.label == 'List' ? Icons.list_rounded : row.icon,
+                color: scheme.primary),
+            title: Text(row.label),
+            subtitle: const Text('Coming soon'),
             enabled: false,
-          ),
-          const ListTile(
-            leading: Icon(Icons.subtitles_outlined),
-            title: Text('Subtitles'),
-            subtitle: Text('Coming soon'),
-            enabled: false,
-          ),
-          const ListTile(
-            leading: Icon(Icons.memory_rounded),
-            title: Text('Decoder'),
-            subtitle: Text('Coming soon'),
-            enabled: false,
-          ),
-          const MpxSectionHeader(title: 'ABOUT', count: 1),
-          ListTile(
-            leading: const Icon(Icons.info_outline_rounded),
-            title: const Text('About MPx'),
-            subtitle: const Text(
-              'A local player — your files never leave your device.',
-            ),
-            onTap: onAboutTap,
-          ),
-        ],
+          );
+        },
       ),
     );
   }

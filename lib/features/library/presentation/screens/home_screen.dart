@@ -20,15 +20,62 @@ import '../widgets/file_grid_card.dart';
 import '../widgets/file_list_item.dart';
 import '../widgets/folder_card.dart';
 import '../widgets/mini_player_dock.dart';
+import '../widgets/mpx_sort_dialog.dart';
 
+/// Local / Media page, MX structure in MPx's own code.
+/// Header "Media", shortcut chips, then Folders / Files.
+/// Previously this was the "Library" tab; the nav now
+/// calls it Local, as in MX.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.onMusicTap});
+
+  final VoidCallback? onMusicTap;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Presentation-only view mode for the sort dialog:
+  // 'all', 'files', or 'folders'. It only filters what
+  // this screen renders; it changes no controller data.
+  String _viewMode = 'all';
+
+  void _showSortDialog(BuildContext context, LibraryController controller) {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return MpxSortDialog(
+          viewMode: _viewMode,
+          isGridView: controller.isGridView,
+          sortOption: controller.sortOption,
+          sortAscending: controller.sortAscending,
+          onViewMode: (String mode) {
+            setState(() {
+              _viewMode = mode;
+            });
+          },
+          onLayout: (bool grid) {
+            if (grid != controller.isGridView) {
+              controller.toggleViewMode();
+            }
+          },
+          onSort: (LibrarySortOption option) {
+            if (option != controller.sortOption) {
+              controller.setSortOption(option);
+            }
+          },
+          onAscending: (bool ascending) {
+            if (ascending != controller.sortAscending) {
+              // setSortOption toggles direction when the
+              // option is unchanged, so this flips it once.
+              controller.setSortOption(controller.sortOption);
+            }
+          },
+        );
+      },
+    );
+  }
   @override
   void initState() {
     super.initState();
@@ -168,33 +215,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final LibraryController controller = context.watch<LibraryController>();
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: Row(
-                children: <Widget>[
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: <Color>[scheme.primary, scheme.secondary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius:
-                          BorderRadius.circular(MpxRadius.md),
-                    ),
-                    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('MPx Player'),
-                ],
-              ),
+        title: const Text('Media'),
         actions: <Widget>[
+          IconButton(
+            tooltip: 'New Folder',
+            icon: const Icon(Icons.create_new_folder_outlined),
+            onPressed: () => _showCreateFolderDialog(context),
+          ),
           IconButton(
             tooltip: 'Search library',
             icon: const Icon(Icons.search_rounded),
@@ -207,48 +238,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             onPressed: () => controller.toggleViewMode(),
           ),
-          PopupMenuButton<LibrarySortOption>(
-            tooltip: 'Sort by',
-            icon: const Icon(Icons.sort_rounded),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(MpxRadius.lg),
-            ),
-            initialValue: controller.sortOption,
-            onSelected: (LibrarySortOption option) => controller.setSortOption(option),
-            itemBuilder: (BuildContext ctx) => LibrarySortOption.values.map(
-              (LibrarySortOption option) {
-                final bool isSelected = controller.sortOption == option;
-                return PopupMenuItem<LibrarySortOption>(
-                  value: option,
-                  child: Row(
-                    children: <Widget>[
-                      Icon(
-                        isSelected
-                            ? (controller.sortAscending
-                                ? Icons.arrow_upward_rounded
-                                : Icons.arrow_downward_rounded)
-                            : Icons.check,
-                        size: 16,
-                        color: isSelected ? scheme.primary : Colors.transparent,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        option.label,
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? scheme.primary : theme.strongText,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ).toList(),
-          ),
           IconButton(
-            tooltip: 'New Folder',
-            icon: const Icon(Icons.create_new_folder_outlined),
-            onPressed: () => _showCreateFolderDialog(context),
+            tooltip: 'Sort and view',
+            icon: const Icon(Icons.sort_rounded),
+            onPressed: () => _showSortDialog(context, controller),
           ),
           PopupMenuButton<String>(
             tooltip: 'More options',
@@ -288,8 +281,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: controller.activeFile != null ? 'Resume' : 'Play first file',
+        onPressed: controller.activeFile != null
+            ? () => controller.togglePlayPause()
+            : controller.files.isNotEmpty
+                ? () => controller.playFile(controller.files.first)
+                : null,
+        child: Icon(
+          controller.isPlaying
+              ? Icons.pause_rounded
+              : Icons.play_arrow_rounded,
+        ),
+      ),
       body: Column(
         children: <Widget>[
+          _buildShortcutChips(context),
           BreadcrumbBar(
               breadcrumbs: controller.breadcrumbs,
               onSelect: (FolderItem? folder) => controller.navigateToBreadcrumb(folder),
@@ -317,6 +324,39 @@ class _HomeScreenState extends State<HomeScreen> {
               onClose: () => controller.stopPlayback(),
               onTap: () => _openPlayer(context, controller),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShortcutChips(BuildContext context) {
+    // MX shortcut row, MPx's own labels. Only Music is
+    // wired (it switches to the Music tab); the rest are
+    // disabled chips until their features exist.
+    final List<({String label, VoidCallback? onTap})> chips =
+        <({String label, VoidCallback? onTap})>[
+      (label: 'Music', onTap: widget.onMusicTap),
+      (label: 'File Transfer', onTap: null),
+      (label: 'Status Saver', onTap: null),
+      (label: 'My Playlists', onTap: null),
+      (label: 'Cleaner', onTap: null),
+      (label: 'Privacy', onTap: null),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(
+        horizontal: MpxSpacing.page,
+        vertical: MpxSpacing.sm,
+      ),
+      child: Row(
+        children: <Widget>[
+          for (final chip in chips) ...<Widget>[
+            ActionChip(
+              label: Text(chip.label),
+              onPressed: chip.onTap,
+            ),
+            const SizedBox(width: 8),
+          ],
         ],
       ),
     );
@@ -391,8 +431,10 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final List<FolderItem> folders = controller.folders;
-    final List<FileItem> files = controller.files;
+    final List<FolderItem> folders =
+        _viewMode == 'files' ? const <FolderItem>[] : controller.folders;
+    final List<FileItem> files =
+        _viewMode == 'folders' ? const <FileItem>[] : controller.files;
 
     if (folders.isEmpty && files.isEmpty) {
       return _buildEmptyState(context);
