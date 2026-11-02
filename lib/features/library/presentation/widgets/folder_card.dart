@@ -81,12 +81,12 @@ class FolderCard extends StatelessWidget {
         splashColor: gradient.first.withValues(alpha: 0.12),
         highlightColor: gradient.first.withValues(alpha: 0.06),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: <Widget>[
               Container(
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: gradient,
@@ -105,7 +105,7 @@ class FolderCard extends StatelessWidget {
                 child: Icon(
                   iconData,
                   color: Colors.white,
-                  size: 24,
+                  size: 28,
                 ),
               ),
               const SizedBox(width: 14),
@@ -120,7 +120,7 @@ class FolderCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14.5,
+                        fontSize: 16,
                         letterSpacing: -0.2,
                       ),
                     ),

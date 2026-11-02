@@ -400,14 +400,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return LayoutBuilder(
       builder: (BuildContext ctx, BoxConstraints constraints) {
-        final int folderColumns = constraints.maxWidth > 900
-            ? 4
-            : constraints.maxWidth > 600
-                ? 3
-                : constraints.maxWidth > 400
-                    ? 2
-                    : 1;
-
         // MX-style grid: fewer, larger thumbnails, so the
         // artwork is the hero instead of a small icon.
         final int fileColumns = constraints.maxWidth > 900
@@ -484,7 +476,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
-            // Folders section
+            // Folders section: MX-style full-width list rows,
+            // not grid cards — a media list reads top to bottom.
             if (folders.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
                 child: MpxSectionHeader(
@@ -493,21 +486,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: folderColumns,
-                    mainAxisExtent: 74,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                  ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (BuildContext ctx, int index) {
                       final FolderItem folder = folders[index];
-                      return FolderCard(
-                        folder: folder,
-                        onTap: () => controller.openFolder(folder),
-                        onDelete: () => controller.deleteFolder(folder.id),
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: FolderCard(
+                          folder: folder,
+                          onTap: () => controller.openFolder(folder),
+                          onDelete: () => controller.deleteFolder(folder.id),
+                        ),
                       );
                     },
                     childCount: folders.length,

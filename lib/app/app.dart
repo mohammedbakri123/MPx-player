@@ -13,7 +13,9 @@ class MPxApp extends StatefulWidget {
 }
 
 class _MPxAppState extends State<MPxApp> {
-  ThemeMode _themeMode = ThemeMode.system;
+  // MX-style dark-first: the player opens dark, like MX.
+  // The user can still switch to Light or System in Settings.
+  ThemeMode _themeMode = ThemeMode.dark;
 
   @override
   Widget build(BuildContext context) {
