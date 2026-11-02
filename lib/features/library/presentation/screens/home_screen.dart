@@ -5,6 +5,7 @@ import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/theme/mpx_ui_tokens.dart';
 import '../../../../core/ui/mpx_empty_state.dart';
 import '../../../../core/ui/mpx_section_header.dart';
+import '../../../../core/ui/mpx_status_bar.dart';
 import '../../../../core/ui/mpx_skeleton.dart';
 import '../../../../core/utils/time_formatter.dart';
 import '../../../player/presentation/screens/player_screen.dart';
@@ -301,6 +302,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _buildBody(context, controller),
             ),
           ),
+          if (controller.folders.isNotEmpty ||
+              controller.files.isNotEmpty)
+            MpxStatusBar(
+              label:
+                  '${controller.folders.length} folders • ${controller.files.length} files',
+            ),
           if (controller.activeFile != null)
             MiniPlayerDock(
               file: controller.activeFile!,
