@@ -6,6 +6,8 @@ import '../../../../core/theme/mpx_ui_tokens.dart';
 import '../../../../core/ui/mpx_empty_state.dart';
 import '../../../../core/ui/mpx_section_header.dart';
 import '../../../../core/ui/mpx_skeleton.dart';
+import '../../../../core/utils/time_formatter.dart';
+import '../../../player/presentation/screens/player_screen.dart';
 import '../../controller/library_controller.dart';
 import '../../models/file_item.dart';
 import '../../models/folder_item.dart';
@@ -77,6 +79,38 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         );
       },
+    );
+  }
+
+  void _openPlayer(BuildContext context, LibraryController controller) {
+    final FileItem? file = controller.activeFile;
+    if (file == null) {
+      return;
+    }
+    final int positionMs =
+        (controller.playbackProgress * file.durationMs).round();
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) {
+          return PlayerScreen(
+            title: file.name,
+            subtitle: '${file.extension.toUpperCase()} • ${file.formattedSize}',
+            isAudio: file.isAudio,
+            isPlaying: controller.isPlaying,
+            progress: controller.playbackProgress,
+            positionLabel: formatDuration(positionMs),
+            durationLabel: file.formattedDuration,
+            upNextTitles: const <String>[],
+            onClose: () => Navigator.of(context).pop(),
+            onTogglePlay: () => controller.togglePlayPause(),
+            // TODO: previous / next need a queue in the controller.
+            // They are no-ops until that lands, not fake navigation.
+            onPrevious: () {},
+            onNext: () {},
+            onSeek: (double progress) => controller.seek(progress),
+          );
+        },
+      ),
     );
   }
 
@@ -260,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
               progress: controller.playbackProgress,
               onTogglePlay: () => controller.togglePlayPause(),
               onClose: () => controller.stopPlayback(),
-              onTap: () => _showFileDetails(context, controller.activeFile!),
+              onTap: () => _openPlayer(context, controller),
             ),
         ],
       ),

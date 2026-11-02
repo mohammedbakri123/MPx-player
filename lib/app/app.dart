@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/library/controller/library_controller.dart';
-import '../features/library/presentation/screens/home_screen.dart';
+import 'main_shell.dart';
 
 class MPxApp extends StatelessWidget {
   const MPxApp({super.key});
@@ -17,7 +17,7 @@ class MPxApp extends StatelessWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
-        home: const HomeScreen(),
+        home: const MpxMainShell(),
       ),
     );
   }
