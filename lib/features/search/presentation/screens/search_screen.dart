@@ -5,10 +5,10 @@ import '../../../../core/ui/mpx_section_header.dart';
 
 /// Search page, presentation only.
 ///
-/// The query, results, and recents are display props only;
-/// filtering and debouncing belong to a controller later.
-/// Not wired into navigation yet: HomeScreen still uses its
-/// in-app-bar search mode, which this screen will replace.
+/// The query and results come from the library controller
+/// (via HomeScreen's search button); filtering and debouncing
+/// belong to that controller. Recents are still an empty
+/// placeholder until search history is stored.
 class SearchScreen extends StatelessWidget {
   const SearchScreen({
     super.key,

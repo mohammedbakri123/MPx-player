@@ -14,7 +14,14 @@ import '../features/settings/presentation/screens/settings_screen.dart';
 /// from controllers in a later step. The Player is NOT a tab:
 /// it opens as a full-screen route from the mini player dock.
 class MpxMainShell extends StatefulWidget {
-  const MpxMainShell({super.key});
+  const MpxMainShell({
+    super.key,
+    this.themeMode = ThemeMode.system,
+    this.onThemeModeChanged,
+  });
+
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode>? onThemeModeChanged;
 
   @override
   State<MpxMainShell> createState() => _MpxMainShellState();
@@ -22,6 +29,26 @@ class MpxMainShell extends StatefulWidget {
 
 class _MpxMainShellState extends State<MpxMainShell> {
   int _currentIndex = 0;
+
+  String get _themeChoice {
+    switch (widget.themeMode) {
+      case ThemeMode.dark:
+        return 'Dark';
+      case ThemeMode.light:
+        return 'Light';
+      case ThemeMode.system:
+        return 'System';
+    }
+  }
+
+  void _cycleTheme() {
+    final ThemeMode next = switch (widget.themeMode) {
+      ThemeMode.system => ThemeMode.dark,
+      ThemeMode.dark => ThemeMode.light,
+      ThemeMode.light => ThemeMode.system,
+    };
+    widget.onThemeModeChanged?.call(next);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +64,8 @@ class _MpxMainShellState extends State<MpxMainShell> {
             onOpenTitle: (_) {},
           ),
           SettingsScreen(
-            onThemeTap: () {},
+            themeChoice: _themeChoice,
+            onThemeTap: _cycleTheme,
             onAboutTap: () {},
           ),
         ],

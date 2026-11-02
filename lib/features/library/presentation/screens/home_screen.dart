@@ -8,6 +8,7 @@ import '../../../../core/ui/mpx_section_header.dart';
 import '../../../../core/ui/mpx_skeleton.dart';
 import '../../../../core/utils/time_formatter.dart';
 import '../../../player/presentation/screens/player_screen.dart';
+import '../../../search/presentation/screens/search_screen.dart';
 import '../../controller/library_controller.dart';
 import '../../models/file_item.dart';
 import '../../models/folder_item.dart';
@@ -27,9 +28,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  bool _isSearching = false;
-
   @override
   void initState() {
     super.initState();
@@ -40,10 +38,37 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  void _openSearch(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) {
+          return Consumer<LibraryController>(
+            builder: (BuildContext ctx, LibraryController controller, _) {
+              return SearchScreen(
+                query: controller.searchQuery,
+                fileResults: controller.searchResults
+                    .map((FileItem file) => file.name)
+                    .toList(),
+                onQueryChanged: (String query) =>
+                    controller.setSearchQuery(query),
+                onOpenResult: (String title) {
+                  final Iterable<FileItem> matches = controller.searchResults
+                      .where((FileItem file) => file.name == title);
+                  if (matches.isNotEmpty) {
+                    controller.playFile(matches.first);
+                  }
+                  Navigator.of(ctx).pop();
+                },
+                onClose: () {
+                  controller.setSearchQuery('');
+                  Navigator.of(ctx).pop();
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 
   void _showCreateFolderDialog(BuildContext context) {
@@ -89,6 +114,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     final int positionMs =
         (controller.playbackProgress * file.durationMs).round();
+    final List<FileItem> allFiles = controller.files;
+    final int activeIndex =
+        allFiles.indexWhere((FileItem item) => item.id == file.id);
+    final List<String> upNext = activeIndex >= 0
+        ? allFiles
+            .skip(activeIndex + 1)
+            .take(3)
+            .map((FileItem item) => item.name)
+            .toList()
+        : const <String>[];
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (BuildContext context) {
@@ -100,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
             progress: controller.playbackProgress,
             positionLabel: formatDuration(positionMs),
             durationLabel: file.formattedDuration,
-            upNextTitles: const <String>[],
+            upNextTitles: upNext,
             onClose: () => Navigator.of(context).pop(),
             onTogglePlay: () => controller.togglePlayPause(),
             // TODO: previous / next need a queue in the controller.
@@ -138,22 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: TextStyle(color: theme.strongText, fontSize: 16),
-                decoration: InputDecoration(
-                  hintText: 'Search files across library...',
-                  filled: false,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  hintStyle: TextStyle(color: theme.mutedText),
-                ),
-                onChanged: (String val) => controller.setSearchQuery(val),
-              )
-            : Row(
+        title: Row(
                 children: <Widget>[
                   Container(
                     width: 32,
@@ -175,17 +195,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
         actions: <Widget>[
           IconButton(
-            tooltip: _isSearching ? 'Close search' : 'Search library',
-            icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchController.clear();
-                  controller.setSearchQuery('');
-                }
-              });
-            },
+            tooltip: 'Search library',
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () => _openSearch(context),
           ),
           IconButton(
             tooltip: controller.isGridView ? 'List View' : 'Grid View',
@@ -277,8 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: <Widget>[
-          if (!_isSearching)
-            BreadcrumbBar(
+          BreadcrumbBar(
               breadcrumbs: controller.breadcrumbs,
               onSelect: (FolderItem? folder) => controller.navigateToBreadcrumb(folder),
               onBack: () => controller.navigateUp(),
@@ -368,10 +379,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (_isSearching && controller.searchQuery.isNotEmpty) {
-      return _buildSearchResults(context, controller);
-    }
-
     final List<FolderItem> folders = controller.folders;
     final List<FileItem> files = controller.files;
 
@@ -400,6 +407,71 @@ class _HomeScreenState extends State<HomeScreen> {
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: <Widget>[
+            // Folder header: when inside a folder, the screen
+            // is that folder, so name it and count its contents.
+            if (!controller.isRoot) ...<Widget>[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    MpxSpacing.page,
+                    MpxSpacing.lg,
+                    MpxSpacing.page,
+                    MpxSpacing.sm,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(MpxSpacing.lg),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: <Color>[
+                          scheme.primary,
+                          scheme.secondary,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(MpxRadius.xl),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.folder_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                        const SizedBox(width: MpxSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                controller.breadcrumbs.last.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${folders.length} folders • ${files.length} files',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
             // Folders section
             if (folders.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
@@ -502,43 +574,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
             const SliverToBoxAdapter(child: SizedBox(height: 28)),
           ],
-        );
-      },
-    );
-  }
-
-  Widget _buildSearchResults(
-    BuildContext context,
-    LibraryController controller,
-  ) {
-    final List<FileItem> results = controller.searchResults;
-    if (results.isEmpty) {
-      return MpxEmptyState(
-        icon: Icons.search_off_rounded,
-        title: 'No results',
-        message: 'No files matching "${controller.searchQuery}"',
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      itemCount: results.length,
-      itemBuilder: (BuildContext ctx, int index) {
-        final FileItem file = results[index];
-        final bool isPlaying =
-            controller.activeFile?.id == file.id && controller.isPlaying;
-        return FileListItem(
-          file: file,
-          isPlaying: isPlaying,
-          onTap: () => _showFileDetails(context, file),
-          onPlay: () {
-            if (isPlaying) {
-              controller.togglePlayPause();
-            } else {
-              controller.playFile(file);
-            }
-          },
-          onDelete: () => controller.deleteFile(file.id),
         );
       },
     );

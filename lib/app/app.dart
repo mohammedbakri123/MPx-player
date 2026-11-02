@@ -5,8 +5,15 @@ import '../core/theme/app_theme.dart';
 import '../features/library/controller/library_controller.dart';
 import 'main_shell.dart';
 
-class MPxApp extends StatelessWidget {
+class MPxApp extends StatefulWidget {
   const MPxApp({super.key});
+
+  @override
+  State<MPxApp> createState() => _MPxAppState();
+}
+
+class _MPxAppState extends State<MPxApp> {
+  ThemeMode _themeMode = ThemeMode.system;
 
   @override
   Widget build(BuildContext context) {
@@ -16,8 +23,15 @@ class MPxApp extends StatelessWidget {
         title: 'MPx',
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system,
-        home: const MpxMainShell(),
+        themeMode: _themeMode,
+        home: MpxMainShell(
+          themeMode: _themeMode,
+          onThemeModeChanged: (ThemeMode mode) {
+            setState(() {
+              _themeMode = mode;
+            });
+          },
+        ),
       ),
     );
   }

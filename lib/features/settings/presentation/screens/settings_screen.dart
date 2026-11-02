@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/ui/mpx_section_header.dart';
 
-/// Settings page, presentation only.
-///
-/// Rows are display props only: theme choice, default view,
-/// and "Coming soon" playback rows are honest placeholders,
-/// not fake controls. No persistence here — that belongs to
-/// a settings service later. Not wired into navigation yet.
+/// Settings page. The Theme row is wired: tapping it cycles
+/// System -> Dark -> Light, and the choice takes effect
+/// immediately (persistence belongs to a settings service
+/// later). The "Coming soon" playback rows are honest
+/// placeholders, not fake controls.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({
     super.key,
