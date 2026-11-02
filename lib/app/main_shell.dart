@@ -41,6 +41,26 @@ class _MpxMainShellState extends State<MpxMainShell> {
     }
   }
 
+  void _showAbout() {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: const Text('MPx Player'),
+          content: const Text(
+            'A local media player — your files never leave your device.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _cycleTheme() {
     final ThemeMode next = switch (widget.themeMode) {
       ThemeMode.system => ThemeMode.dark,
@@ -66,7 +86,7 @@ class _MpxMainShellState extends State<MpxMainShell> {
           SettingsScreen(
             themeChoice: _themeChoice,
             onThemeTap: _cycleTheme,
-            onAboutTap: () {},
+            onAboutTap: _showAbout,
           ),
         ],
       ),

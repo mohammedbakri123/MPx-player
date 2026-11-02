@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/mpx_ui_tokens.dart';
 import '../../models/file_item.dart';
 
 class MiniPlayerDock extends StatelessWidget {
@@ -28,10 +29,10 @@ class MiniPlayerDock extends StatelessWidget {
     final bool isAudio = file.isAudio;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      margin: const EdgeInsets.fromLTRB(MpxSpacing.lg, 0, MpxSpacing.lg, MpxSpacing.lg),
       decoration: BoxDecoration(
         color: theme.elevatedSurface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(MpxRadius.xl),
         border: Border.all(
           color: scheme.outlineVariant.withValues(alpha: theme.isDarkMode ? 0.4 : 0.8),
         ),

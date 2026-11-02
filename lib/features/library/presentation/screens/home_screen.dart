@@ -296,7 +296,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           _buildFilterBar(context, controller),
           Expanded(
-            child: _buildBody(context, controller),
+            child: RefreshIndicator(
+              onRefresh: () => controller.refresh(),
+              child: _buildBody(context, controller),
+            ),
           ),
           if (controller.activeFile != null)
             MiniPlayerDock(
