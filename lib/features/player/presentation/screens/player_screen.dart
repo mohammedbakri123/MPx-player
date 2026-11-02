@@ -11,8 +11,11 @@ import '../../../../core/theme/mpx_ui_tokens.dart';
 /// ARCHITECTURE.md, and this screen must be wireable later without
 /// a redesign.
 ///
-/// Not wired into navigation yet: opening it from the mini player
-/// dock is a separate, deliberate step once the shell is approved.
+/// MX-inspired gestures, in MPx's own code: double-tap the
+/// artwork toggles play/pause, and a horizontal drag on the
+/// artwork seeks. Brightness / volume swipes are deliberately
+/// NOT faked here — they need a real engine and system
+/// controls, which do not exist yet.
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({
     super.key,
@@ -79,9 +82,21 @@ class PlayerScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               // Artwork: large, rounded, gradient glow behind it.
-              AspectRatio(
-                aspectRatio: 1,
-                child: Container(
+              // MX-style gesture surface: double-tap = play/pause,
+              // horizontal drag = seek. No fake brightness/volume.
+              GestureDetector(
+                onDoubleTap: onTogglePlay,
+                onHorizontalDragUpdate: (DragUpdateDetails details) {
+                  final double width =
+                      MediaQuery.of(context).size.width;
+                  final double next =
+                      (progress + (details.primaryDelta ?? 0) / width * 0.5)
+                          .clamp(0.0, 1.0);
+                  onSeek(next);
+                },
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: gradient,
@@ -105,6 +120,7 @@ class PlayerScreen extends StatelessWidget {
                     color: Colors.white,
                     size: 96,
                   ),
+                ),
                 ),
               ),
               const SizedBox(height: MpxSpacing.xxl),

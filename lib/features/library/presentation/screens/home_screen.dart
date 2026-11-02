@@ -401,13 +401,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? 2
                     : 1;
 
+        // MX-style grid: fewer, larger thumbnails, so the
+        // artwork is the hero instead of a small icon.
         final int fileColumns = constraints.maxWidth > 900
-            ? 5
+            ? 4
             : constraints.maxWidth > 650
-                ? 4
-                : constraints.maxWidth > 450
-                    ? 3
-                    : 2;
+                ? 3
+                : 2;
 
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
