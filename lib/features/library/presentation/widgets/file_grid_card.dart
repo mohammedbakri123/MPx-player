@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/mpx_ui_tokens.dart';
 import '../../models/file_item.dart';
 
 class FileGridCard extends StatelessWidget {
@@ -41,7 +42,7 @@ class FileGridCard extends StatelessWidget {
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(MpxRadius.lg),
         side: BorderSide(
           color: isPlaying
               ? scheme.primary
@@ -189,7 +190,7 @@ class FileGridCard extends StatelessWidget {
                           Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(MpxRadius.lg),
                               onTap: onPlay,
                               child: Container(
                                 padding: const EdgeInsets.all(4),

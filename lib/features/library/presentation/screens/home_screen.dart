@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/mpx_ui_tokens.dart';
+import '../../../../core/ui/mpx_empty_state.dart';
+import '../../../../core/ui/mpx_section_header.dart';
+import '../../../../core/ui/mpx_skeleton.dart';
 import '../../controller/library_controller.dart';
 import '../../models/file_item.dart';
 import '../../models/folder_item.dart';
@@ -126,7 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius:
+                          BorderRadius.circular(MpxRadius.md),
                     ),
                     child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
                   ),
@@ -158,7 +163,9 @@ class _HomeScreenState extends State<HomeScreen> {
           PopupMenuButton<LibrarySortOption>(
             tooltip: 'Sort by',
             icon: const Icon(Icons.sort_rounded),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(MpxRadius.lg),
+            ),
             initialValue: controller.sortOption,
             onSelected: (LibrarySortOption option) => controller.setSortOption(option),
             itemBuilder: (BuildContext ctx) => LibrarySortOption.values.map(
@@ -199,7 +206,9 @@ class _HomeScreenState extends State<HomeScreen> {
           PopupMenuButton<String>(
             tooltip: 'More options',
             icon: const Icon(Icons.more_vert_rounded),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(MpxRadius.lg),
+            ),
             itemBuilder: (BuildContext ctx) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
                 value: 'refresh',
@@ -263,7 +272,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final ColorScheme scheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: MpxSpacing.page,
+        vertical: MpxSpacing.sm,
+      ),
       child: Row(
         children: <Widget>[
           FilterChip(
@@ -304,30 +316,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBody(BuildContext context, LibraryController controller) {
     if (controller.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return controller.isGridView
+          ? const MpxSkeletonGrid()
+          : const MpxSkeletonList();
     }
 
     if (controller.errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
-              const SizedBox(height: 12),
-              Text(
-                controller.errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.redAccent),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: () => controller.refresh(),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+      return MpxEmptyState(
+        icon: Icons.error_outline_rounded,
+        title: 'Something went wrong',
+        message: controller.errorMessage!,
+        isError: true,
+        action: FilledButton.tonal(
+          onPressed: () => controller.refresh(),
+          child: const Text('Retry'),
         ),
       );
     }
@@ -367,36 +369,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // Folders section
             if (folders.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: Row(
-                    children: <Widget>[
-                      const Text(
-                        'FOLDERS',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${folders.length}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                child: MpxSectionHeader(
+                  title: 'FOLDERS',
+                  count: folders.length,
                 ),
               ),
               SliverPadding(
@@ -425,36 +400,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // Files section
             if (files.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-                  child: Row(
-                    children: <Widget>[
-                      const Text(
-                        'FILES',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${files.length}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                child: MpxSectionHeader(
+                  title: 'FILES',
+                  count: files.length,
                 ),
               ),
               if (controller.isGridView)
@@ -531,24 +479,10 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     final List<FileItem> results = controller.searchResults;
     if (results.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(
-              Icons.search_off_rounded,
-              size: 48,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No files matching "${controller.searchQuery}"',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+      return MpxEmptyState(
+        icon: Icons.search_off_rounded,
+        title: 'No results',
+        message: 'No files matching "${controller.searchQuery}"',
       );
     }
 
@@ -577,47 +511,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.folder_open_rounded,
-              size: 48,
-              color: scheme.outline,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'This folder is empty',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Create a subfolder or reset seed data from options.',
-            style: TextStyle(
-              fontSize: 13,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.tonalIcon(
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add Subfolder'),
-            onPressed: () => _showCreateFolderDialog(context),
-          ),
-        ],
+    return MpxEmptyState(
+      icon: Icons.folder_open_rounded,
+      title: 'This folder is empty',
+      message: 'Create a subfolder or reset seed data from options.',
+      action: FilledButton.tonalIcon(
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Subfolder'),
+        onPressed: () => _showCreateFolderDialog(context),
       ),
     );
   }

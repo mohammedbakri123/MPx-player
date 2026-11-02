@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/mpx_ui_tokens.dart';
 import '../../models/folder_item.dart';
 
 class BreadcrumbBar extends StatelessWidget {
@@ -53,7 +54,7 @@ class BreadcrumbBar extends StatelessWidget {
                 children: <Widget>[
                   // Root Library button
                   InkWell(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(MpxRadius.sm),
                     onTap: () => onSelect(null),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -61,7 +62,7 @@ class BreadcrumbBar extends StatelessWidget {
                         color: breadcrumbs.isEmpty
                             ? scheme.primary.withValues(alpha: 0.15)
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(MpxRadius.sm),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -94,7 +95,7 @@ class BreadcrumbBar extends StatelessWidget {
                       ),
                     ),
                     InkWell(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(MpxRadius.sm),
                       onTap: () => onSelect(breadcrumbs[i]),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -102,7 +103,7 @@ class BreadcrumbBar extends StatelessWidget {
                           color: i == breadcrumbs.length - 1
                               ? scheme.primary.withValues(alpha: 0.15)
                               : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(MpxRadius.sm),
                         ),
                         child: Text(
                           breadcrumbs[i].name,

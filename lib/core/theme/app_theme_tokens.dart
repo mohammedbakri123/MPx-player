@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 extension AppThemeTokens on ThemeData {
   bool get isDarkMode => brightness == Brightness.dark;
 
+  /// Midnight dark: near-black background, elevated midnight surfaces.
+  /// Paper light: clean off-white background, white cards.
   Color get appBackground =>
-      isDarkMode ? const Color(0xFF090B10) : const Color(0xFFF6F8FC);
+      isDarkMode ? const Color(0xFF07080C) : const Color(0xFFF6F7FB);
 
   Color get appBackgroundAlt =>
-      isDarkMode ? const Color(0xFF0F1420) : const Color(0xFFEDF2F9);
+      isDarkMode ? const Color(0xFF0E1118) : const Color(0xFFEDF2F9);
 
   Color get elevatedSurface =>
-      isDarkMode ? const Color(0xFF141A29) : const Color(0xFFFFFFFF);
+      isDarkMode ? const Color(0xFF151A24) : const Color(0xFFFFFFFF);
 
   Color get surfaceHighlight =>
       isDarkMode ? const Color(0xFF1B2338) : const Color(0xFFF1F5F9);
@@ -20,8 +22,8 @@ extension AppThemeTokens on ThemeData {
       : const Color(0xFFEEF3FA);
 
   Color get softBorder => isDarkMode
-      ? const Color(0x1FFFFFFF)
-      : const Color(0xFFDCE4EE);
+      ? const Color(0x14FFFFFF)
+      : const Color(0xFFE2E8F0);
 
   Color get strongText =>
       isDarkMode ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);

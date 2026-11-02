@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/mpx_ui_tokens.dart';
 import '../../models/file_item.dart';
 
 class FileDetailsSheet extends StatelessWidget {
@@ -66,7 +67,7 @@ class FileDetailsSheet extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(MpxRadius.lg),
                     boxShadow: <BoxShadow>[
                       BoxShadow(
                         color: accentColor.withValues(alpha: 0.3),
@@ -145,7 +146,7 @@ class FileDetailsSheet extends StatelessWidget {
                   ),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MpxRadius.lg)),
                   ),
                   onPressed: () {
                     Navigator.of(context).pop();
@@ -158,7 +159,7 @@ class FileDetailsSheet extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 color: theme.subtleSurface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(MpxRadius.lg),
                 border: Border.all(
                   color: scheme.outlineVariant.withValues(alpha: theme.isDarkMode ? 0.3 : 0.6),
                 ),

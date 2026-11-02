@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/mpx_ui_tokens.dart';
 import '../../models/file_item.dart';
 
 class FileListItem extends StatelessWidget {
@@ -43,7 +44,7 @@ class FileListItem extends StatelessWidget {
         color: isPlaying
             ? scheme.primaryContainer.withValues(alpha: theme.isDarkMode ? 0.35 : 0.45)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(MpxRadius.lg),
         border: Border.all(
           color: isPlaying
               ? scheme.primary.withValues(alpha: 0.4)
@@ -55,7 +56,7 @@ class FileListItem extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(MpxRadius.lg),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
@@ -70,7 +71,7 @@ class FileListItem extends StatelessWidget {
                         : isAudio
                             ? scheme.primaryContainer.withValues(alpha: 0.5)
                             : scheme.tertiaryContainer.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(MpxRadius.md),
                   ),
                   child: Stack(
                     alignment: Alignment.center,
@@ -182,7 +183,7 @@ class FileListItem extends StatelessWidget {
                     ),
                     tooltip: 'More actions',
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(MpxRadius.md),
                     ),
                     itemBuilder: (BuildContext ctx) => <PopupMenuEntry<String>>[
                       const PopupMenuItem<String>(

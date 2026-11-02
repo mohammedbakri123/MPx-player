@@ -28,10 +28,10 @@ class MiniPlayerDock extends StatelessWidget {
     final bool isAudio = file.isAudio;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
         color: theme.elevatedSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: scheme.outlineVariant.withValues(alpha: theme.isDarkMode ? 0.4 : 0.8),
         ),

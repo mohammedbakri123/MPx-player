@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/mpx_ui_tokens.dart';
 import '../../models/folder_item.dart';
 
 class FolderCard extends StatelessWidget {
@@ -70,7 +71,7 @@ class FolderCard extends StatelessWidget {
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(MpxRadius.lg),
         side: BorderSide(
           color: scheme.outlineVariant.withValues(alpha: theme.isDarkMode ? 0.4 : 0.7),
         ),
@@ -92,7 +93,7 @@ class FolderCard extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(MpxRadius.md),
                   boxShadow: <BoxShadow>[
                     BoxShadow(
                       color: gradient.first.withValues(alpha: 0.35),
