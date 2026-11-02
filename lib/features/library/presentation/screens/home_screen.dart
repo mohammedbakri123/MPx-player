@@ -360,6 +360,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBody(BuildContext context, LibraryController controller) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
     if (controller.isLoading) {
       return controller.isGridView
           ? const MpxSkeletonGrid()
