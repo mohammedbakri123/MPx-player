@@ -1,5 +1,12 @@
 package com.mpx.player.ui.screens.player
 
+import android.content.Intent
+import android.graphics.Typeface
+import android.net.Uri
+import android.util.TypedValue
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -30,9 +37,12 @@ import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
@@ -45,9 +55,13 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Slider
@@ -66,11 +80,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.mpx.player.domain.model.FavouriteItem
-import com.mpx.player.domain.model.PlaylistItem
-import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
-import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -84,10 +93,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.mpx.player.domain.model.FavouriteItem
+import com.mpx.player.domain.model.PlaylistItem
+import com.mpx.player.domain.settings.AppSettings
+import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
+import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.player.formatTimeMs
 import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxPrimary
@@ -95,15 +112,53 @@ import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
 import com.mpx.player.util.PipUtils
+import com.mpx.player.util.SubtitleUtils
+import com.mpx.player.util.SubtitleValidationResult
+import kotlinx.coroutines.launch
 
 @Composable
 fun PlayerScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     playbackManager: PlaybackManager = PlaybackManager.getInstance(LocalContext.current),
+    settingsRepository: AppSettingsRepository? = null,
 ) {
     val context = LocalContext.current
+    val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
+    var currentSettings by remember { mutableStateOf(realSettingsRepo.load()) }
     val state by playbackManager.playbackState.collectAsState()
+
+    var subtitleErrorDialogText by remember { mutableStateOf<String?>(null) }
+
+    val openSubtitleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            } catch (_: Exception) {
+            }
+
+            when (val validation = SubtitleUtils.validateSubtitleFile(context, uri)) {
+                is SubtitleValidationResult.Supported -> {
+                    val loaded = playbackManager.loadExternalSubtitle(
+                        uri = validation.uri,
+                        displayName = validation.displayName,
+                        mimeType = validation.mimeType,
+                    )
+                    if (loaded) {
+                        Toast.makeText(context, "Loaded subtitle: ${validation.displayName}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                is SubtitleValidationResult.Unsupported -> {
+                    subtitleErrorDialogText = "Cannot load '${validation.fileName}':\n\n${validation.reason}"
+                }
+            }
+        }
+    }
 
     // Initialize default video queue if opened empty
     LaunchedEffect(Unit) {
@@ -220,10 +275,13 @@ fun PlayerScreen(
                         AspectRatioMode.FOUR_THREE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
                         AspectRatioMode.ORIGINAL -> AspectRatioFrameLayout.RESIZE_MODE_FIT
                     }
+                    applySubtitleSettings(this, currentSettings)
                 }
             },
             update = { playerView ->
-                playerView.player = playbackManager.player
+                if (playerView.player !== playbackManager.player) {
+                    playerView.player = playbackManager.player
+                }
                 playerView.resizeMode = when (state.aspectRatio) {
                     AspectRatioMode.FIT -> AspectRatioFrameLayout.RESIZE_MODE_FIT
                     AspectRatioMode.FILL -> AspectRatioFrameLayout.RESIZE_MODE_FILL
@@ -232,6 +290,7 @@ fun PlayerScreen(
                     AspectRatioMode.FOUR_THREE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
                     AspectRatioMode.ORIGINAL -> AspectRatioFrameLayout.RESIZE_MODE_FIT
                 }
+                applySubtitleSettings(playerView, currentSettings)
             },
             modifier = Modifier.fillMaxSize(),
         )
@@ -352,6 +411,47 @@ fun PlayerScreen(
             }
         }
 
+        // Platform Decoder Fallback Notice Banner
+        state.decoderFallbackNote?.let { fallbackMsg ->
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = if (state.resumedFromMs != null) 124.dp else 72.dp, start = 16.dp, end = 16.dp),
+                color = Color.Black.copy(alpha = 0.90f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color(0xFFFFB74D)),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = null,
+                        tint = Color(0xFFFFB74D),
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = fallbackMsg,
+                        color = Color(0xFFFFE082),
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Dismiss",
+                        tint = MpxTextSecondary,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clickable { playbackManager.clearDecoderFallbackNote() },
+                    )
+                }
+            }
+        }
+
         // Single floating unlock button when screen is locked
         if (state.isLocked) {
             AnimatedVisibility(
@@ -439,6 +539,9 @@ fun PlayerScreen(
                                         DecoderMode.SW -> DecoderMode.HW
                                     }
                                     playbackManager.setDecoderMode(nextDecoder)
+                                    realSettingsRepo.save(realSettingsRepo.load().copy(decoderMode = nextDecoder.label))
+                                    currentSettings = realSettingsRepo.load()
+                                    Toast.makeText(context, "Decoder: ${nextDecoder.title}", Toast.LENGTH_SHORT).show()
                                 },
                             color = MpxPrimary.copy(alpha = 0.25f),
                             shape = RoundedCornerShape(6.dp),
@@ -818,20 +921,62 @@ fun PlayerScreen(
         )
     }
 
-    // Subtitles Selection Dialog (Real Media3 Subtitle Tracks)
+    // Subtitles Selection Dialog (Real Media3 Subtitle Tracks & SAF External Loading)
     if (activeDialog == "Subtitles") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
             containerColor = MpxSurfaceElevated,
             title = {
-                Text(
-                    text = "Subtitle Selection",
-                    color = MpxTextPrimary,
-                    fontWeight = FontWeight.Bold,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxPrimary)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Subtitle Selection",
+                        color = MpxTextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             },
             text = {
-                Column {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Button to launch SAF File Picker for external SRT/VTT
+                    OutlinedButton(
+                        onClick = {
+                            activeDialog = null
+                            openSubtitleLauncher.launch(arrayOf("*/*"))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(1.dp, MpxPrimary),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.FileUpload,
+                            contentDescription = null,
+                            tint = MpxPrimary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "Open Subtitle File (SRT / VTT)...",
+                            color = MpxPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = "Available Tracks",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MpxTextSecondary,
+                    )
+                    Spacer(Modifier.height(4.dp))
+
                     // Turn Off option
                     Row(
                         modifier = Modifier
@@ -840,7 +985,7 @@ fun PlayerScreen(
                                 playbackManager.selectSubtitleTrack(null, null)
                                 activeDialog = null
                             }
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
@@ -860,11 +1005,11 @@ fun PlayerScreen(
                     }
 
                     if (state.subtitleTracks.isEmpty()) {
-                        Spacer(Modifier.height(8.dp))
                         Text(
-                            text = "No subtitle tracks available in this media.",
+                            text = "No subtitle tracks found in media. Use 'Open Subtitle File' above to load .srt or .vtt.",
                             color = MpxTextSecondary,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 32.dp, top = 2.dp, bottom = 6.dp),
                         )
                     } else {
                         state.subtitleTracks.forEach { track ->
@@ -875,7 +1020,7 @@ fun PlayerScreen(
                                         playbackManager.selectSubtitleTrack(track.groupIndex, track.trackIndex)
                                         activeDialog = null
                                     }
-                                    .padding(vertical = 8.dp),
+                                    .padding(vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 RadioButton(
@@ -888,11 +1033,28 @@ fun PlayerScreen(
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Column {
-                                    Text(
-                                        text = track.label,
-                                        color = MpxTextPrimary,
-                                        fontWeight = if (track.isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = track.label,
+                                            color = MpxTextPrimary,
+                                            fontWeight = if (track.isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        )
+                                        if (track.isExternal) {
+                                            Spacer(Modifier.width(6.dp))
+                                            Surface(
+                                                color = MpxPrimary.copy(alpha = 0.2f),
+                                                shape = RoundedCornerShape(4.dp),
+                                            ) {
+                                                Text(
+                                                    text = "External",
+                                                    color = MpxPrimary,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                                )
+                                            }
+                                        }
+                                    }
                                     Text(
                                         text = "Language: ${track.language}",
                                         color = MpxTextSecondary,
@@ -902,11 +1064,204 @@ fun PlayerScreen(
                             }
                         }
                     }
+
+                    Spacer(Modifier.height(10.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                    Spacer(Modifier.height(8.dp))
+
+                    // Subtitle Size Controls (from settings)
+                    Text("Subtitle Text Size", style = MaterialTheme.typography.labelMedium, color = MpxTextSecondary)
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        listOf("Small", "Normal", "Large").forEach { size ->
+                            val isSelected = currentSettings.subtitleSize.equals(size, ignoreCase = true)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    val updated = currentSettings.copy(subtitleSize = size)
+                                    currentSettings = updated
+                                    realSettingsRepo.save(updated)
+                                },
+                                label = { Text(size, fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MpxPrimary,
+                                    selectedLabelColor = Color.White,
+                                ),
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(6.dp))
+                    // Subtitle Style Controls (from settings)
+                    Text("Subtitle Style / Color", style = MaterialTheme.typography.labelMedium, color = MpxTextSecondary)
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        listOf(
+                            "White" to "White",
+                            "Yellow" to "Yellow",
+                            "Cyan" to "Cyan",
+                            "Default" to "Default",
+                        ).forEach { (styleKey, styleLabel) ->
+                            val isSelected = currentSettings.subtitleStyle.equals(styleKey, ignoreCase = true)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    val updated = currentSettings.copy(subtitleStyle = styleKey)
+                                    currentSettings = updated
+                                    realSettingsRepo.save(updated)
+                                },
+                                label = { Text(styleLabel, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MpxPrimary,
+                                    selectedLabelColor = Color.White,
+                                ),
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
                     Text("Close", color = MpxPrimary)
+                }
+            },
+        )
+    }
+
+    // Decoder Selection Dialog
+    if (activeDialog == "Decoder") {
+        AlertDialog(
+            onDismissRequest = { activeDialog = null },
+            containerColor = MpxSurfaceElevated,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxPrimary)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Decoder Selection",
+                        color = MpxTextPrimary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            text = {
+                Column {
+                    DecoderMode.values().forEach { mode ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    playbackManager.setDecoderMode(mode)
+                                    val updated = realSettingsRepo.load().copy(decoderMode = mode.label)
+                                    realSettingsRepo.save(updated)
+                                    currentSettings = updated
+                                    activeDialog = null
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = state.decoderMode == mode,
+                                onClick = {
+                                    playbackManager.setDecoderMode(mode)
+                                    val updated = realSettingsRepo.load().copy(decoderMode = mode.label)
+                                    realSettingsRepo.save(updated)
+                                    currentSettings = updated
+                                    activeDialog = null
+                                },
+                                colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = mode.title,
+                                    color = MpxTextPrimary,
+                                    fontWeight = if (state.decoderMode == mode) FontWeight.Bold else FontWeight.Normal,
+                                )
+                                Text(
+                                    text = mode.description,
+                                    color = MpxTextSecondary,
+                                    fontSize = 12.sp,
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = "Active Video Codec: ${state.activeDecoderName ?: "Initializing / waiting for video frame..."}",
+                        color = MpxPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+
+                    state.decoderFallbackNote?.let { note ->
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            color = Color(0x33FFB74D),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Color(0xFFFFB74D)),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.Top) {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFB74D),
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = note,
+                                    color = Color(0xFFFFE082),
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { activeDialog = null }) {
+                    Text("Close", color = MpxPrimary)
+                }
+            },
+        )
+    }
+
+    // Unsupported Subtitle Format Dialog
+    if (subtitleErrorDialogText != null) {
+        AlertDialog(
+            onDismissRequest = { subtitleErrorDialogText = null },
+            containerColor = MpxSurfaceElevated,
+            title = {
+                Text(
+                    text = "Unsupported Subtitle Format",
+                    color = Color(0xFFFF6B6B),
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Text(
+                    text = subtitleErrorDialogText!!,
+                    color = MpxTextPrimary,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { subtitleErrorDialogText = null }) {
+                    Text("OK", color = MpxPrimary)
                 }
             },
         )
@@ -926,6 +1281,17 @@ fun PlayerScreen(
             },
             text = {
                 Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { activeDialog = "Decoder" }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Decoder Mode (${state.decoderMode.label})", color = MpxTextPrimary)
+                    }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1091,4 +1457,56 @@ fun PlayerScreen(
             },
         )
     }
+}
+
+private fun applySubtitleSettings(playerView: PlayerView, settings: AppSettings) {
+    val subtitleView = playerView.subtitleView ?: return
+    when (settings.subtitleSize.lowercase()) {
+        "small" -> subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+        "large" -> subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+        else -> subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+    }
+
+    when (settings.subtitleStyle.lowercase()) {
+        "yellow" -> {
+            subtitleView.setStyle(
+                CaptionStyleCompat(
+                    android.graphics.Color.YELLOW,
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                    CaptionStyleCompat.EDGE_TYPE_OUTLINE,
+                    android.graphics.Color.BLACK,
+                    Typeface.DEFAULT_BOLD,
+                )
+            )
+        }
+        "cyan" -> {
+            subtitleView.setStyle(
+                CaptionStyleCompat(
+                    android.graphics.Color.CYAN,
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                    CaptionStyleCompat.EDGE_TYPE_OUTLINE,
+                    android.graphics.Color.BLACK,
+                    Typeface.DEFAULT_BOLD,
+                )
+            )
+        }
+        "default" -> {
+            subtitleView.setUserDefaultStyle()
+        }
+        else -> { // "white"
+            subtitleView.setStyle(
+                CaptionStyleCompat(
+                    android.graphics.Color.WHITE,
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                    CaptionStyleCompat.EDGE_TYPE_OUTLINE,
+                    android.graphics.Color.BLACK,
+                    Typeface.DEFAULT_BOLD,
+                )
+            )
+        }
+    }
+    subtitleView.setApplyEmbeddedStyles(true)
 }

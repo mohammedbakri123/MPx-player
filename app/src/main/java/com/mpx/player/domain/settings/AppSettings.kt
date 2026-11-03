@@ -14,6 +14,7 @@ data class AppSettings(
     val decoderMode: String = "HW", // HW, HW+, SW
     val audioBoost: Boolean = false,
     val subtitleSize: String = "Normal", // Small, Normal, Large
+    val subtitleStyle: String = "White", // White, Yellow, Cyan, Default
     val appTheme: String = "Midnight", // Midnight, Dark, Classic, Light
     val popupPlayEnabled: Boolean = true,
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10
