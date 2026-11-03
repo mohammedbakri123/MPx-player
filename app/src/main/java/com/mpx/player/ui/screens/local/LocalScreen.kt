@@ -52,6 +52,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -63,6 +65,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,6 +74,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -414,6 +418,17 @@ fun LocalScreen(
         val q = folderSearchQuery.trim()
         if (q.isBlank()) sortedFolderVideos
         else sortedFolderVideos.filter { it.title.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
+    }
+
+    val pullRefreshState = rememberPullToRefreshState()
+    if (pullRefreshState.isRefreshing) {
+        LaunchedEffect(pullRefreshState.isRefreshing) {
+            val folder = currentFolder
+            if (folder != null) refreshFolderVideos(folder.id) else refreshFolders()
+        }
+    }
+    LaunchedEffect(isLoading, isFolderLoading) {
+        if (!isLoading && !isFolderLoading) pullRefreshState.endRefresh()
     }
 
     Scaffold(
@@ -793,11 +808,15 @@ fun LocalScreen(
             }
         },
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .nestedScroll(pullRefreshState.nestedScrollConnection),
         ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+            ) {
             if (currentFolder != null) {
                 // ==================== FOLDER VIEW (Drilled-Down Contents) ====================
                 if (isFolderLoading) {
@@ -1370,6 +1389,11 @@ fun LocalScreen(
                     }
                 }
             }
+            }
+            PullToRefreshContainer(
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
         }
     }
 
