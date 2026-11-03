@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,6 +41,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -105,8 +108,23 @@ fun LocalScreen(
     var showSortDialog by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
     var featureDialogMessage by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearching by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    fun playFolder(folder: MediaFolder) {
+        scope.launch(Dispatchers.IO) {
+            val videos = repository.getVideosInFolder(folder.id)
+            withContext(Dispatchers.Main) {
+                if (videos.isEmpty()) {
+                    scope.launch { snackbarHostState.showSnackbar("No playable videos in ${folder.name}.") }
+                } else {
+                    playbackManager?.playVideoFiles(videos)
+                    onOpenPlayer()
+                }
+            }
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -127,6 +145,7 @@ fun LocalScreen(
     }
 
     fun refreshFolders() {
+        if (isLoading) return
         if (MediaPermissions.hasVideoPermission(context)) {
             hasPermission = true
             scope.launch(Dispatchers.IO) {
@@ -178,6 +197,12 @@ fun LocalScreen(
         }
     }
 
+    val filteredFolders = remember(sortedFolders, searchQuery) {
+        val q = searchQuery.trim()
+        if (q.isBlank()) sortedFolders
+        else sortedFolders.filter { it.name.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MpxBlack,
@@ -185,19 +210,43 @@ fun LocalScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Media",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                        ),
-                        color = MpxTextPrimary,
-                    )
+                    if (isSearching) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Search folders...", color = MpxTextSecondary, fontSize = 14.sp) },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MpxSurfaceElevated,
+                                unfocusedContainerColor = MpxSurfaceElevated,
+                                focusedBorderColor = MpxPrimary,
+                                unfocusedBorderColor = MpxBorder,
+                                focusedTextColor = MpxTextPrimary,
+                                unfocusedTextColor = MpxTextPrimary,
+                            ),
+                        )
+                    } else {
+                        Text(
+                            text = "Media",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                            ),
+                            color = MpxTextPrimary,
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MpxSurface,
                 ),
                 actions = {
+                    if (isSearching) {
+                        IconButton(onClick = { isSearching = false; searchQuery = "" }) {
+                            Icon(imageVector = Icons.Filled.Close, contentDescription = "Close search", tint = MpxTextPrimary)
+                        }
+                    }
                     IconButton(onClick = {
                         viewMode = if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
                     }) {
@@ -207,11 +256,7 @@ fun LocalScreen(
                             tint = MpxTextPrimary,
                         )
                     }
-                    IconButton(onClick = {
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Search indexing will be active in Phase 1")
-                        }
-                    }) {
+                    IconButton(onClick = { isSearching = true }) {
                         Icon(
                             imageVector = Icons.Filled.Search,
                             contentDescription = "Search",
@@ -262,8 +307,8 @@ fun LocalScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                                playbackManager?.playVideoQueue()
-                                onOpenPlayer()
+                                val first = filteredFolders.firstOrNull()
+                                if (first != null) playFolder(first)
                             },
                 containerColor = MpxPrimary,
                 contentColor = MpxTextPrimary,
@@ -315,7 +360,15 @@ fun LocalScreen(
                 ) {
                     CircularProgressIndicator(color = MpxPrimary)
                 }
-            } else if (sortedFolders.isEmpty()) {
+            } else if (filteredFolders.isEmpty() && searchQuery.isNotBlank()) {
+                EmptyStateView(
+                    title = "No Matches Found",
+                    message = "No folders match \"$searchQuery\".",
+                    icon = Icons.Filled.Folder,
+                    actionLabel = "Clear search",
+                    onActionClick = { searchQuery = "" },
+                )
+            } else if (filteredFolders.isEmpty()) {
                 EmptyStateView(
                     title = "No Videos Found",
                     message = "No video folders found on this device. Videos you record or download will appear here.",
@@ -349,7 +402,7 @@ fun LocalScreen(
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                         ) {
                             Text(
-                                text = "${sortedFolders.size}",
+                                text = "${filteredFolders.size}",
                                 color = MpxTextSecondary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
@@ -379,13 +432,10 @@ fun LocalScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 80.dp),
                     ) {
-                        items(sortedFolders, key = { it.id }) { folder ->
+                        items(filteredFolders, key = { it.id }) { folder ->
                             FolderItemRow(
                                 folder = folder,
-                                onClick = {
-                                playbackManager?.playVideoQueue()
-                                onOpenPlayer()
-                            },
+                                onClick = { playFolder(folder) },
                                 onMenuClick = {
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Folder options for ${folder.name}")
@@ -407,13 +457,10 @@ fun LocalScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        items(sortedFolders, key = { it.id }) { folder ->
+                        items(filteredFolders, key = { it.id }) { folder ->
                             FolderItemGridCard(
                                 folder = folder,
-                                onClick = {
-                                playbackManager?.playVideoQueue()
-                                onOpenPlayer()
-                            },
+                                onClick = { playFolder(folder) },
                             )
                         }
                     }

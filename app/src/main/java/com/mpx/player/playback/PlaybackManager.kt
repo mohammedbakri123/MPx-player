@@ -151,6 +151,22 @@ class PlaybackManager private constructor(context: Context) {
         playQueue(getDefaultVideoQueue(), startIndex = 0, autoPlay = true)
     }
 
+    /** Play real video files from a MediaStore folder. Empty list = no-op, caller shows an honest empty state. */
+    fun playVideoFiles(videos: List<com.mpx.player.domain.model.VideoFile>, startIndex: Int = 0) {
+        if (videos.isEmpty()) return
+        val items = videos.map { video ->
+            PlayableMedia(
+                id = video.id,
+                title = video.title,
+                subtitle = "",
+                uri = video.path,
+                isVideo = true,
+                durationMs = video.durationMs,
+            )
+        }
+        playQueue(items, startIndex, autoPlay = true)
+    }
+
     fun getDefaultVideoQueue(): List<PlayableMedia> = listOf(
         PlayableMedia(
             id = "sample_video_1080p",
