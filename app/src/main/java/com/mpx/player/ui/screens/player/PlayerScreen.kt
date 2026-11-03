@@ -1261,7 +1261,7 @@ fun PlayerScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text = "Double-tap: -10s (L) / Play-Pause / +10s (R) • Swipe H: Seek • Swipe V: Brightness (L) / Volume (R)",
+                                    text = stringResource(R.string.player_gesture_hint),
                                     color = Color.White.copy(alpha = 0.85f),
                                     fontSize = 11.sp,
                                 )

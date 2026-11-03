@@ -679,4 +679,5 @@
     <string name="player_sleep_timer_cancel">Cancel sleep timer</string>
     <string name="player_sleep_timer_set_toast">Sleep timer set for %1$d minutes</string>
     <string name="player_sleep_timer_canceled_toast">Sleep timer turned off</string>
+    <string name="player_gesture_hint">Double-tap: -10s (L) / Play-Pause / +10s (R) • Swipe H: Seek • Swipe V: Brightness (L) / Volume (R)</string>
 </resources>
