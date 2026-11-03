@@ -134,4 +134,6 @@ data class PlaybackState(
     val resumedFromMs: Long? = null,
     val isBackgroundPlaying: Boolean = false,
     val isVideoBackgroundActive: Boolean = false,
+    val sleepTimerMinutes: Int? = null,
+    val sleepTimerRemainingSeconds: Long? = null,
 )
