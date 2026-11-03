@@ -132,4 +132,6 @@ data class PlaybackState(
     val selectedSubtitleTrackIndex: Int = -1, // -1 means subtitles off
     val isLocked: Boolean = false,
     val resumedFromMs: Long? = null,
+    val isBackgroundPlaying: Boolean = false,
+    val isVideoBackgroundActive: Boolean = false,
 )

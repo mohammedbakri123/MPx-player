@@ -41,7 +41,7 @@ class PlaybackManager private constructor(context: Context) {
     val database: MpxDatabase = MpxDatabase.getInstance(appContext)
     val persistenceRepository: MediaPersistenceRepository = RoomMediaPersistenceRepository(database)
     val resumeManager = PlaybackResumeManager(persistenceRepository)
-    private val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
+    val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private var tickerJob: Job? = null
@@ -62,6 +62,7 @@ class PlaybackManager private constructor(context: Context) {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _playbackState.update { it.copy(isPlaying = isPlaying) }
             if (isPlaying) {
+                PlaybackService.start(appContext)
                 startTicker()
             } else {
                 stopTicker()
@@ -543,15 +544,34 @@ class PlaybackManager private constructor(context: Context) {
     fun stop() {
         player.stop()
         stopTicker()
+        PlaybackService.stop(appContext)
         _playbackState.update {
             it.copy(
                 currentItem = null,
                 queue = emptyList(),
                 isPlaying = false,
+                isBackgroundPlaying = false,
+                isVideoBackgroundActive = false,
                 currentPositionMs = 0L,
                 durationMs = 0L,
             )
         }
+    }
+
+    fun setVideoBackgroundActive(active: Boolean) {
+        _playbackState.update {
+            it.copy(
+                isVideoBackgroundActive = active,
+                isBackgroundPlaying = active,
+                userNotification = if (active) {
+                    "Video background playback active: continuing audio only (video rendering paused)."
+                } else null,
+            )
+        }
+    }
+
+    fun setBackgroundPlaying(active: Boolean) {
+        _playbackState.update { it.copy(isBackgroundPlaying = active) }
     }
 
     fun clearResumedNotification() {
