@@ -1,15 +1,19 @@
 package com.mpx.player.playback
 
 import android.content.Context
+import android.net.Uri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.repository.MediaPersistenceRepository
@@ -28,23 +32,33 @@ import kotlinx.coroutines.launch
  * Central controller for Media3 ExoPlayer playback in MPx Player.
  * Manages the ExoPlayer instance, queue state, real position ticker,
  * Room database-backed persistent resume tracking, playback history recording,
- * and audio/subtitle stream track switching.
+ * audio stream switching, real external subtitle loading (SRT/VTT via SAF),
+ * and actual ExoPlayer HW / HW+ / SW renderer decoder selection.
  */
 class PlaybackManager private constructor(context: Context) {
 
-    val database: MpxDatabase = MpxDatabase.getInstance(context)
+    private val appContext: Context = context.applicationContext
+    val database: MpxDatabase = MpxDatabase.getInstance(appContext)
     val persistenceRepository: MediaPersistenceRepository = RoomMediaPersistenceRepository(database)
-    val player: ExoPlayer = ExoPlayer.Builder(context).build()
     val resumeManager = PlaybackResumeManager(persistenceRepository)
+    private val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private var tickerJob: Job? = null
     private var currentQueue: List<PlayableMedia> = emptyList()
+    private var pendingSubtitleTrackLabel: String? = null
 
-    private val _playbackState = MutableStateFlow(PlaybackState())
+    private val initialDecoderMode: DecoderMode = resolveInitialDecoderMode()
+
+    private val _playbackState = MutableStateFlow(
+        PlaybackState(decoderMode = initialDecoderMode)
+    )
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
-    private val listener = object : Player.Listener {
+    var player: ExoPlayer = createPlayer(initialDecoderMode)
+        private set
+
+    private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _playbackState.update { it.copy(isPlaying = isPlaying) }
             if (isPlaying) {
@@ -94,7 +108,8 @@ class PlaybackManager private constructor(context: Context) {
             val current = currentQueue.getOrNull(index)
 
             val savedPos = current?.let { resumeManager.getResumePosition(it.id) }
-            val shouldResume = savedPos != null && savedPos > 2_000L
+            val shouldResume = reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO &&
+                    savedPos != null && savedPos > 2_000L
 
             if (shouldResume && savedPos != null) {
                 player.seekTo(savedPos)
@@ -135,6 +150,14 @@ class PlaybackManager private constructor(context: Context) {
 
         override fun onTracksChanged(tracks: Tracks) {
             updateTracksState()
+            pendingSubtitleTrackLabel?.let { targetLabel ->
+                val subtitleTracks = _playbackState.value.subtitleTracks
+                val match = subtitleTracks.find { it.label == targetLabel }
+                if (match != null) {
+                    selectSubtitleTrack(match.groupIndex, match.trackIndex)
+                    pendingSubtitleTrackLabel = null
+                }
+            }
         }
 
         override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
@@ -142,8 +165,67 @@ class PlaybackManager private constructor(context: Context) {
         }
     }
 
-    init {
-        player.addListener(listener)
+    private val analyticsListener = object : AnalyticsListener {
+        override fun onVideoDecoderInitialized(
+            eventTime: AnalyticsListener.EventTime,
+            decoderName: String,
+            initializedTimestampMs: Long,
+            initializationDurationMs: Long,
+        ) {
+            val currentMode = _playbackState.value.decoderMode
+            val isSoftware = MpxMediaCodecSelector.isSoftwareCodecName(decoderName)
+
+            val fallbackNote = when {
+                (currentMode == DecoderMode.HW || currentMode == DecoderMode.HW_PLUS) && isSoftware -> {
+                    "Platform override: Hardware decoder unavailable for this format on this device. Fallback to software decoder ($decoderName)."
+                }
+                currentMode == DecoderMode.SW && !isSoftware -> {
+                    "Platform override: Software decoder unavailable for this format. Fallback to hardware decoder ($decoderName)."
+                }
+                else -> null
+            }
+
+            _playbackState.update {
+                it.copy(
+                    activeDecoderName = decoderName,
+                    decoderFallbackNote = fallbackNote,
+                )
+            }
+        }
+    }
+
+    private fun resolveInitialDecoderMode(): DecoderMode {
+        return try {
+            val savedModeStr = settingsRepository.load().decoderMode
+            DecoderMode.values().find { it.label == savedModeStr } ?: DecoderMode.HW
+        } catch (_: Exception) {
+            DecoderMode.HW
+        }
+    }
+
+    private fun createPlayer(mode: DecoderMode): ExoPlayer {
+        val selector = MpxMediaCodecSelector(mode)
+        val renderersFactory = DefaultRenderersFactory(appContext).apply {
+            setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
+            setEnableDecoderFallback(true)
+            setMediaCodecSelector(selector)
+            when (mode) {
+                DecoderMode.HW -> {
+                    forceDisableMediaCodecAsynchronousQueueing()
+                }
+                DecoderMode.HW_PLUS -> {
+                    forceEnableMediaCodecAsynchronousQueueing()
+                    setAllowedVideoJoiningTimeMs(0)
+                }
+                DecoderMode.SW -> {
+                    forceDisableMediaCodecAsynchronousQueueing()
+                }
+            }
+        }
+        val newPlayer = ExoPlayer.Builder(appContext, renderersFactory).build()
+        newPlayer.addListener(playerListener)
+        newPlayer.addAnalyticsListener(analyticsListener)
+        return newPlayer
     }
 
     fun playQueue(items: List<PlayableMedia>, startIndex: Int = 0, autoPlay: Boolean = true) {
@@ -221,7 +303,7 @@ class PlaybackManager private constructor(context: Context) {
         playQueue(getDefaultVideoQueue(), startIndex = 0, autoPlay = true)
     }
 
-    /** Play real video files from a MediaStore folder. Empty list = no-op, caller shows an honest empty state. */
+    /** Play real video files from a MediaStore folder. Empty list = no-op. */
     fun playVideoFiles(videos: List<com.mpx.player.domain.model.VideoFile>, startIndex: Int = 0) {
         if (videos.isEmpty()) return
         val items = videos.map { video ->
@@ -315,8 +397,50 @@ class PlaybackManager private constructor(context: Context) {
         _playbackState.update { it.copy(aspectRatio = mode) }
     }
 
+    /**
+     * Changes the ExoPlayer decoder mode (HW, HW+, SW).
+     * Rebuilds the underlying ExoPlayer instance with the requested [MpxMediaCodecSelector]
+     * and [DefaultRenderersFactory] configuration, restoring playback position, speed,
+     * queue, and track selections seamlessly.
+     */
     fun setDecoderMode(mode: DecoderMode) {
-        _playbackState.update { it.copy(decoderMode = mode) }
+        if (_playbackState.value.decoderMode == mode) return
+
+        val wasPlaying = player.isPlaying
+        val currentPos = player.currentPosition.coerceAtLeast(0L)
+        val currentIndex = player.currentMediaItemIndex
+        val currentSpeed = _playbackState.value.speed
+        val hasQueue = currentQueue.isNotEmpty()
+
+        // 1. Release previous player instance
+        player.removeListener(playerListener)
+        player.stop()
+        player.release()
+
+        // 2. Build new player with new decoder configuration
+        val newPlayer = createPlayer(mode)
+        player = newPlayer
+        newPlayer.setPlaybackSpeed(currentSpeed)
+
+        // 3. Update state
+        _playbackState.update {
+            it.copy(
+                decoderMode = mode,
+                activeDecoderName = null,
+                decoderFallbackNote = null,
+            )
+        }
+
+        // 4. Restore active queue and timeline position
+        if (hasQueue) {
+            val mediaItems = currentQueue.map { it.toMediaItem() }
+            val targetIndex = currentIndex.coerceIn(0, currentQueue.lastIndex)
+            newPlayer.setMediaItems(mediaItems, targetIndex, currentPos)
+            newPlayer.prepare()
+            if (wasPlaying) {
+                newPlayer.play()
+            }
+        }
     }
 
     fun setLocked(locked: Boolean) {
@@ -354,6 +478,66 @@ class PlaybackManager private constructor(context: Context) {
                 .build()
         }
         updateTracksState()
+    }
+
+    /**
+     * Loads an external subtitle file (SRT / VTT) into the currently playing media item.
+     * Replaces the media item in ExoPlayer so the new sidecar subtitle track is loaded,
+     * maintaining the current playback position and state, and marks the track to be auto-selected.
+     */
+    fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean {
+        val currentItem = _playbackState.value.currentItem ?: return false
+        val index = player.currentMediaItemIndex
+        if (index < 0 || index >= currentQueue.size) return false
+
+        val ext = ExternalSubtitle(
+            uri = uri.toString(),
+            name = displayName,
+            mimeType = mimeType,
+        )
+
+        // Avoid duplicate entry of the same URI
+        val existingSubs = currentItem.externalSubtitles.filter { it.uri != ext.uri }
+        val updatedSubs = existingSubs + ext
+        val updatedItem = currentItem.copy(externalSubtitles = updatedSubs)
+
+        val updatedQueue = currentQueue.toMutableList()
+        updatedQueue[index] = updatedItem
+        currentQueue = updatedQueue
+
+        val currentPos = player.currentPosition
+        val wasPlaying = player.isPlaying
+
+        // Replace current media item in ExoPlayer timeline
+        val newMediaItem = updatedItem.toMediaItem()
+        player.replaceMediaItem(index, newMediaItem)
+
+        if (currentPos > 0L) {
+            player.seekTo(index, currentPos)
+        }
+        if (wasPlaying && !player.isPlaying) {
+            player.play()
+        }
+
+        // Set pending label to auto-select this track once onTracksChanged fires
+        pendingSubtitleTrackLabel = displayName
+
+        _playbackState.update {
+            it.copy(
+                currentItem = updatedItem,
+                queue = updatedQueue,
+                userNotification = "External subtitle loaded: $displayName",
+            )
+        }
+        return true
+    }
+
+    fun clearDecoderFallbackNote() {
+        _playbackState.update { it.copy(decoderFallbackNote = null) }
+    }
+
+    fun clearUserNotification() {
+        _playbackState.update { it.copy(userNotification = null) }
     }
 
     fun stop() {
@@ -425,6 +609,8 @@ class PlaybackManager private constructor(context: Context) {
         var selectedAudioIdx = -1
         var selectedSubtitleIdx = -1
 
+        val externalNames = _playbackState.value.currentItem?.externalSubtitles?.map { it.name } ?: emptyList()
+
         for (groupIndex in 0 until tracks.groups.size) {
             val group = tracks.groups[groupIndex]
             val trackType = group.type
@@ -448,6 +634,7 @@ class PlaybackManager private constructor(context: Context) {
                     )
                 } else if (trackType == C.TRACK_TYPE_TEXT) {
                     if (isSelected) selectedSubtitleIdx = subtitleList.size
+                    val isExt = externalNames.any { it.equals(label, ignoreCase = true) }
                     subtitleList.add(
                         SubtitleTrackInfo(
                             groupIndex = groupIndex,
@@ -455,6 +642,7 @@ class PlaybackManager private constructor(context: Context) {
                             label = label,
                             language = language,
                             isSelected = isSelected,
+                            isExternal = isExt,
                         )
                     )
                 }

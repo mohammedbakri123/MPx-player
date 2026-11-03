@@ -6,10 +6,22 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
 
-enum class DecoderMode(val label: String) {
-    HW("HW"),
-    HW_PLUS("HW+"),
-    SW("SW"),
+enum class DecoderMode(val label: String, val title: String, val description: String) {
+    HW(
+        label = "HW",
+        title = "Hardware (HW)",
+        description = "Standard device hardware acceleration via Android MediaCodec chipset decoders.",
+    ),
+    HW_PLUS(
+        label = "HW+",
+        title = "Hardware Plus (HW+)",
+        description = "Enhanced hardware decoding pipeline with asynchronous queuing and low-latency joining.",
+    ),
+    SW(
+        label = "SW",
+        title = "Software (SW)",
+        description = "Direct CPU software decoding (Google/Android software codecs) for maximum compatibility.",
+    ),
 }
 
 enum class AspectRatioMode(val label: String) {
@@ -21,6 +33,12 @@ enum class AspectRatioMode(val label: String) {
     ORIGINAL("100%"),
 }
 
+data class ExternalSubtitle(
+    val uri: String,
+    val name: String,
+    val mimeType: String,
+)
+
 data class PlayableMedia(
     val id: String,
     val title: String,
@@ -29,6 +47,7 @@ data class PlayableMedia(
     val isVideo: Boolean = true,
     val durationMs: Long = 0L,
     val subtitleUri: String? = null,
+    val externalSubtitles: List<ExternalSubtitle> = emptyList(),
 ) {
     fun toMediaItem(): MediaItem {
         val builder = MediaItem.Builder()
@@ -41,17 +60,32 @@ data class PlayableMedia(
                     .build()
             )
 
+        val subConfigs = mutableListOf<MediaItem.SubtitleConfiguration>()
+
         subtitleUri?.let { subUri ->
-            builder.setSubtitleConfigurations(
-                listOf(
-                    MediaItem.SubtitleConfiguration.Builder(Uri.parse(subUri))
-                        .setMimeType(MimeTypes.TEXT_VTT)
-                        .setLanguage("en")
-                        .setLabel("English (CC)")
-                        .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
-                        .build()
-                )
+            subConfigs.add(
+                MediaItem.SubtitleConfiguration.Builder(Uri.parse(subUri))
+                    .setMimeType(MimeTypes.TEXT_VTT)
+                    .setLanguage("en")
+                    .setLabel("Sample Subtitles (VTT)")
+                    .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
+                    .build()
             )
+        }
+
+        externalSubtitles.forEach { ext ->
+            val label = if (ext.name.isNotBlank()) ext.name else "External Subtitle"
+            subConfigs.add(
+                MediaItem.SubtitleConfiguration.Builder(Uri.parse(ext.uri))
+                    .setMimeType(ext.mimeType)
+                    .setLanguage("und")
+                    .setLabel(label)
+                    .build()
+            )
+        }
+
+        if (subConfigs.isNotEmpty()) {
+            builder.setSubtitleConfigurations(subConfigs)
         }
 
         return builder.build()
@@ -72,6 +106,7 @@ data class SubtitleTrackInfo(
     val label: String,
     val language: String,
     val isSelected: Boolean,
+    val isExternal: Boolean = false,
 )
 
 data class PlaybackState(
@@ -86,6 +121,9 @@ data class PlaybackState(
     val speed: Float = 1.0f,
     val aspectRatio: AspectRatioMode = AspectRatioMode.FIT,
     val decoderMode: DecoderMode = DecoderMode.HW,
+    val activeDecoderName: String? = null,
+    val decoderFallbackNote: String? = null,
+    val userNotification: String? = null,
     val hasPrevious: Boolean = false,
     val hasNext: Boolean = false,
     val audioTracks: List<AudioTrackInfo> = emptyList(),

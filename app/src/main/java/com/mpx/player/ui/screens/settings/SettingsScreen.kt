@@ -196,11 +196,16 @@ fun SettingsScreen(
                                     ToggleRow("Gestures (double-tap, drag seek)", settings.gesturesEnabled) { update(settings.copy(gesturesEnabled = it)) }
                                 }
                                 "decoder" -> {
-                                    listOf("HW", "HW+", "SW").forEach { mode ->
-                                        ChoiceRow(mode, settings.decoderMode == mode) { update(settings.copy(decoderMode = mode)) }
+                                    listOf(
+                                        "HW" to "HW (Hardware - Android MediaCodec hardware acceleration)",
+                                        "HW+" to "HW+ (Hardware Plus - Asynchronous buffer pipeline)",
+                                        "SW" to "SW (Software - CPU decoding fallback)",
+                                    ).forEach { (mode, label) ->
+                                        ChoiceRow(label, settings.decoderMode == mode) { update(settings.copy(decoderMode = mode)) }
                                     }
+                                    Spacer(Modifier.height(4.dp))
                                     Text(
-                                        "Selects default player decoder preference. HW uses device hardware codecs; SW provides software fallback.",
+                                        "Selects default player decoder preference. HW uses device chipset hardware codecs; SW provides software fallback. Where Android does not allow the requested decoder (e.g. unsupported codec), MPx honestly displays a fallback note.",
                                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
@@ -208,8 +213,24 @@ fun SettingsScreen(
                                     ToggleRow("Volume boost", settings.audioBoost) { update(settings.copy(audioBoost = it)) }
                                 }
                                 "subtitle" -> {
-                                    listOf("Small", "Normal", "Large").forEach { size ->
-                                        ChoiceRow(size, settings.subtitleSize == size) { update(settings.copy(subtitleSize = size)) }
+                                    Text("Subtitle Text Size:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "Small" to "Small (14sp)",
+                                        "Normal" to "Normal (18sp)",
+                                        "Large" to "Large (24sp)",
+                                    ).forEach { (size, label) ->
+                                        ChoiceRow(label, settings.subtitleSize == size) { update(settings.copy(subtitleSize = size)) }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text("Subtitle Style & Color:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "White" to "White text, black outline (Classic)",
+                                        "Yellow" to "Yellow text, black outline (High contrast)",
+                                        "Cyan" to "Cyan text, black outline",
+                                        "Default" to "System default caption style",
+                                    ).forEach { (styleKey, styleLabel) ->
+                                        ChoiceRow(styleLabel, settings.subtitleStyle == styleKey) { update(settings.copy(subtitleStyle = styleKey)) }
                                     }
                                 }
                                 "general" -> {

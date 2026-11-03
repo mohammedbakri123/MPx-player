@@ -236,6 +236,7 @@ fun MpxApp(
                 PlayerScreen(
                     onClose = { navController.popBackStack() },
                     playbackManager = playbackManager,
+                    settingsRepository = realSettingsRepo,
                 )
             }
         }
