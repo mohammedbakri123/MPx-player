@@ -158,6 +158,15 @@
     <string name="tool_transfer_desc">Transferência P2P</string>
     <string name="tool_equalizer_title">Equalizador</string>
     <string name="tool_equalizer_desc">Ajuste de som do sistema</string>
+    <string name="tool_local_network_title">Rede local</string>
+    <string name="tool_local_network_desc">Explorar partilhas SMB</string>
+    <string name="local_network_dialog_body">Explore pastas partilhadas na sua rede local (SMB) e reproduza multimédia a partir delas. A exploração SMB ainda não foi implementada, por isso nenhuma partilha é analisada nem é mostrada aqui qualquer lista de partilhas.</string>
+    <string name="tool_cloud_title">Unidade na nuvem</string>
+    <string name="tool_cloud_desc">Nuvem via plug-ins</string>
+    <string name="cloud_dialog_body">O armazenamento na nuvem funciona através de plug-ins: um fornecedor é adicionado instalando o seu plug-in. Neste momento não há nenhum plug-in instalado, por isso não é mostrada aqui nenhuma conta nem ficheiros.</string>
+    <string name="tool_badge_soon">Em breve</string>
+    <string name="tool_badge_plugin">Plug-in</string>
+    <string name="tool_badge_planned">Planeado</string>
     <string name="tool_status_title">Salvar status</string>
     <string name="tool_status_desc">Status do WhatsApp</string>
     <string name="tool_private_title">Pasta privada</string>

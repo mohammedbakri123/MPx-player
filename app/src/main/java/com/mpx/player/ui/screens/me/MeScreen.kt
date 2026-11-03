@@ -31,6 +31,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudQueue
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
@@ -163,11 +165,13 @@ fun MeScreen(
     var showLegalDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showLocalNetworkDialog by remember { mutableStateOf(false) }
+    var showCloudDriveDialog by remember { mutableStateOf(false) }
 
     var issue32Tool by remember { mutableStateOf<MeTool?>(null) }
     var equalizerMessage by remember { mutableStateOf<String?>(null) }
 
-    // 12 Tools: 8 Real Features + 4 Issue 32 Honest Placeholders
+    // 14 Tools: 8 Real Features + 2 New Honest Entries (Local Network, Cloud Drive) + 4 Issue 32 Honest Placeholders
     val tools = listOf(
         // Row 1: Real library navigation & Room data
         MeTool(
@@ -236,6 +240,22 @@ fun MeScreen(
             badge = null,
             isAvailable = true,
         ),
+        MeTool(
+            id = "local_network",
+            title = stringResource(R.string.tool_local_network_title),
+            description = stringResource(R.string.tool_local_network_desc),
+            icon = Icons.Filled.Wifi,
+            badge = stringResource(R.string.tool_badge_soon),
+            isAvailable = false,
+        ),
+        MeTool(
+            id = "cloud_drive",
+            title = stringResource(R.string.tool_cloud_title),
+            description = stringResource(R.string.tool_cloud_desc),
+            icon = Icons.Filled.CloudQueue,
+            badge = stringResource(R.string.tool_badge_plugin),
+            isAvailable = false,
+        ),
 
         // Row 3: Issue 32 Honest Placeholders
         MeTool(
@@ -243,7 +263,9 @@ fun MeScreen(
             title = stringResource(R.string.tool_status_title),
             description = stringResource(R.string.tool_status_desc),
             icon = Icons.Filled.SaveAlt,
-            badge = "Issue 32",
+            // Honest state, not a count: Status Saver is planned, not built.
+            // (MX's own badge here is a NEW tip, not a saved-count badge.)
+            badge = stringResource(R.string.tool_badge_planned),
             isAvailable = false,
         ),
         MeTool(
@@ -288,6 +310,8 @@ fun MeScreen(
                     equalizerMessage = context.getString(R.string.equalizer_dialog_msg)
                 }
             }
+            "local_network" -> showLocalNetworkDialog = true
+            "cloud_drive" -> showCloudDriveDialog = true
             "status", "private", "manager", "bin" -> {
                 issue32Tool = tool
             }
@@ -391,7 +415,7 @@ fun MeScreen(
                 )
             }
 
-            // Tools 4-column Grid (MX Player signature tools section, 3 rows)
+            // Tools 4-column Grid (MX Player signature tools section, chunked rows)
             item {
                 Card(
                     modifier = Modifier
@@ -402,50 +426,20 @@ fun MeScreen(
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        val row1 = tools.subList(0, 4)
-                        val row2 = tools.subList(4, 8)
-                        val row3 = tools.subList(8, 12)
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceAround,
-                        ) {
-                            row1.forEach { tool ->
-                                ToolGridItem(
-                                    tool = tool,
-                                    onClick = { onToolClick(tool) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(14.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceAround,
-                        ) {
-                            row2.forEach { tool ->
-                                ToolGridItem(
-                                    tool = tool,
-                                    onClick = { onToolClick(tool) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(14.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceAround,
-                        ) {
-                            row3.forEach { tool ->
-                                ToolGridItem(
-                                    tool = tool,
-                                    onClick = { onToolClick(tool) },
-                                    modifier = Modifier.weight(1f),
-                                )
+                        // 4-column rows, chunked so the grid grows with the tool list
+                        tools.chunked(4).forEachIndexed { rowIndex, row ->
+                            if (rowIndex > 0) Spacer(Modifier.height(14.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceAround,
+                            ) {
+                                row.forEach { tool ->
+                                    ToolGridItem(
+                                        tool = tool,
+                                        onClick = { onToolClick(tool) },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
                             }
                         }
                     }
@@ -919,7 +913,85 @@ fun MeScreen(
         )
     }
 
-    // 12. Issue 32 Honest Placeholder Dialog
+    // 12. Local Network Honest Entry Screen (SMB browsing not yet built — no fake share list)
+    if (showLocalNetworkDialog) {
+        AlertDialog(
+            onDismissRequest = { showLocalNetworkDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
+            icon = { Icon(Icons.Filled.Wifi, null, tint = MaterialTheme.colorScheme.tertiary) },
+            title = {
+                Text(
+                    text = stringResource(R.string.tool_local_network_title),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.local_network_dialog_body),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.issue32_status_honest),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLocalNetworkDialog = false }) {
+                    Text(stringResource(R.string.action_understood), color = MaterialTheme.colorScheme.primary)
+                }
+            },
+        )
+    }
+
+    // 13. Cloud Drive Plugin Point (no plugin installed — no account or files shown)
+    if (showCloudDriveDialog) {
+        AlertDialog(
+            onDismissRequest = { showCloudDriveDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
+            icon = { Icon(Icons.Filled.CloudQueue, null, tint = MaterialTheme.colorScheme.tertiary) },
+            title = {
+                Text(
+                    text = stringResource(R.string.tool_cloud_title),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.cloud_dialog_body),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.issue32_status_honest),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCloudDriveDialog = false }) {
+                    Text(stringResource(R.string.action_understood), color = MaterialTheme.colorScheme.primary)
+                }
+            },
+        )
+    }
+
+    // 14. Issue 32 Honest Placeholder Dialog
     if (issue32Tool != null) {
         val tool = issue32Tool!!
         AlertDialog(

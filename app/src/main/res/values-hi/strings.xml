@@ -158,6 +158,15 @@
     <string name="tool_transfer_desc">P2P ट्रांसफ़र</string>
     <string name="tool_equalizer_title">इक्वलाइज़र</string>
     <string name="tool_equalizer_desc">सिस्टम साउंड ट्यूनर</string>
+    <string name="tool_local_network_title">स्थानीय नेटवर्क</string>
+    <string name="tool_local_network_desc">SMB शेयर ब्राउज़ करें</string>
+    <string name="local_network_dialog_body">अपने स्थानीय नेटवर्क (SMB) पर साझा फ़ोल्डर ब्राउज़ करें और उनसे मीडिया चलाएँ। SMB ब्राउज़िंग अभी बनी नहीं है, इसलिए कोई शेयर स्कैन नहीं किया जाता और यहाँ कोई शेयर सूची नहीं दिखाई जाती।</string>
+    <string name="tool_cloud_title">क्लाउड ड्राइव</string>
+    <string name="tool_cloud_desc">प्लगइन के ज़रिए क्लाउड</string>
+    <string name="cloud_dialog_body">क्लाउड स्टोरेज प्लगइन के ज़रिए काम करता है: प्रदाता उसका प्लगइन इंस्टॉल करके जोड़ा जाता है। अभी कोई प्लगइन इंस्टॉल नहीं है, इसलिए यहाँ कोई खाता या फ़ाइल नहीं दिखाई जाती।</string>
+    <string name="tool_badge_soon">जल्द ही</string>
+    <string name="tool_badge_plugin">प्लगइन</string>
+    <string name="tool_badge_planned">नियोजित</string>
     <string name="tool_status_title">स्टेटस सेवर</string>
     <string name="tool_status_desc">WhatsApp स्टेटस</string>
     <string name="tool_private_title">प्राइवेट फ़ोल्डर</string>
