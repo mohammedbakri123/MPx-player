@@ -20,6 +20,13 @@ interface MediaRepository {
     fun getAllVideos(showAll: Boolean): List<VideoFile> = getAllVideos()
     fun getAudioTracks(): List<AudioTrack>
     fun getPlaylists(): List<Playlist>
+    /**
+     * Returns the library tracks that belong to a device (MediaStore) playlist,
+     * in the playlist's own member order. Returns an empty list for an unknown
+     * id or a playlist with no resolvable members. Custom (Room) playlists are
+     * not covered here; they go through MediaPersistenceRepository.
+     */
+    fun getPlaylistTracks(playlistId: String): List<AudioTrack> = emptyList()
     fun getAudioAlbums(): List<AudioAlbum>
     fun getAudioArtists(): List<AudioArtist>
     fun getAudioFolders(): List<AudioFolder>

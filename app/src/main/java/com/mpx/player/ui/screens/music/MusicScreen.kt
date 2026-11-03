@@ -626,8 +626,19 @@ fun MusicScreen(
                                     playlistItemsForDialog = persistenceRepository.getPlaylistItems(custom.id)
                                 }
                             } else {
-                                playbackManager?.playAudioQueue(tracks, startIndex = 0)
-                                onOpenPlayer()
+                                // Device (MediaStore) playlist: queue exactly its
+                                // member tracks, in playlist order. An empty
+                                // member list queues nothing instead of
+                                // falling back to the whole library.
+                                scope.launch(Dispatchers.IO) {
+                                    val memberTracks = repository.getPlaylistTracks(playlist.id)
+                                    withContext(Dispatchers.Main) {
+                                        if (memberTracks.isNotEmpty()) {
+                                            playbackManager?.playAudioQueue(memberTracks, startIndex = 0)
+                                            onOpenPlayer()
+                                        }
+                                    }
+                                }
                             }
                         },
                     )
