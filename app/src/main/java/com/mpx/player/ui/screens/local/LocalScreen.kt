@@ -1,7 +1,7 @@
 package com.mpx.player.ui.screens.local
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -121,7 +121,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalScreen(
-    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    permissionLauncher: ActivityResultLauncher<String>,
     permissionResultHandler: ActivityResultHandler<Boolean>,
     onOpenPlayer: () -> Unit,
     onOpenMusic: () -> Unit,

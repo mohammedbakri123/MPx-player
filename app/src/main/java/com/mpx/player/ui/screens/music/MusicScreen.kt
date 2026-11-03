@@ -1,6 +1,6 @@
 package com.mpx.player.ui.screens.music
 
-import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -157,7 +157,7 @@ enum class MusicTab(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicScreen(
-    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    permissionLauncher: ActivityResultLauncher<String>,
     permissionResultHandler: ActivityResultHandler<Boolean>,
     onOpenPlayer: () -> Unit,
     playbackManager: PlaybackManager? = null,

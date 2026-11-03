@@ -9,7 +9,7 @@ import android.graphics.Typeface
 import android.net.Uri
 import android.util.TypedValue
 import android.widget.Toast
-import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -139,7 +139,7 @@ private fun Context.findActivity(): Activity? {
 
 @Composable
 fun PlayerScreen(
-    subtitleLauncher: ManagedActivityResultLauncher<Array<String>, android.net.Uri?>,
+    subtitleLauncher: ActivityResultLauncher<Array<String>>,
     subtitleResultHandler: ActivityResultHandler<android.net.Uri?>,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,

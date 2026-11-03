@@ -8,8 +8,8 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -75,6 +75,22 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission(),
     ) { _ -> }
 
+    // Activity-result launchers MUST be Activity properties (registerForActivityResult).
+    // rememberLauncherForActivityResult crashes in this app even above the NavHost:
+    // LocalActivityResultRegistryOwner is not provided in this composition.
+    val localPermissionHandler = ActivityResultHandler<Boolean>()
+    val musicPermissionHandler = ActivityResultHandler<Boolean>()
+    val subtitleHandler = ActivityResultHandler<android.net.Uri?>()
+    val localPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> localPermissionHandler.invoke(granted) }
+    val musicPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> musicPermissionHandler.invoke(granted) }
+    val subtitleLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri -> subtitleHandler.invoke(uri) }
+
     override fun attachBaseContext(newBase: Context) {
         val lang = LocaleHelper.getPersistedLanguage(newBase)
         val locale = LocaleHelper.getLocale(lang)
@@ -123,6 +139,12 @@ class MainActivity : ComponentActivity() {
             ) {
                 MpxTheme(appTheme = currentTheme) {
                     MpxApp(
+                        localPermissionLauncher = localPermissionLauncher,
+                        localPermissionHandler = localPermissionHandler,
+                        musicPermissionLauncher = musicPermissionLauncher,
+                        musicPermissionHandler = musicPermissionHandler,
+                        subtitleLauncher = subtitleLauncher,
+                        subtitleHandler = subtitleHandler,
                         isInPipMode = isInPipMode,
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
@@ -217,6 +239,12 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MpxApp(
+    localPermissionLauncher: ActivityResultLauncher<String>,
+    localPermissionHandler: ActivityResultHandler<Boolean>,
+    musicPermissionLauncher: ActivityResultLauncher<String>,
+    musicPermissionHandler: ActivityResultHandler<Boolean>,
+    subtitleLauncher: ActivityResultLauncher<Array<String>>,
+    subtitleHandler: ActivityResultHandler<android.net.Uri?>,
     isInPipMode: Boolean = false,
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
@@ -230,20 +258,6 @@ fun MpxApp(
     val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     val navController = rememberNavController()
 
-    // Activity-result launchers MUST live here, above the NavHost: destinations
-    // have no ActivityResultRegistryOwner and crash if they create their own.
-    val localPermissionHandler = remember { ActivityResultHandler<Boolean>() }
-    val localPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> localPermissionHandler.invoke(granted) }
-    val musicPermissionHandler = remember { ActivityResultHandler<Boolean>() }
-    val musicPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> musicPermissionHandler.invoke(granted) }
-    val subtitleHandler = remember { ActivityResultHandler<android.net.Uri?>() }
-    val subtitleLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri -> subtitleHandler.invoke(uri) }
 
     LaunchedEffect(openPlayerRequested) {
         if (openPlayerRequested) {
