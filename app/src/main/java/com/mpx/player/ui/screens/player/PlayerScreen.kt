@@ -129,6 +129,7 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackService
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.player.formatTimeMs
@@ -1794,6 +1795,11 @@ fun PlayerScreen(
                                 val updated = currentSettings.copy(backgroundPlay = nextBackgroundPlay)
                                 currentSettings = updated
                                 realSettingsRepo.save(updated)
+                                if (!nextBackgroundPlay) {
+                                    PlaybackService.stop(context)
+                                    playbackManager.setVideoBackgroundActive(false)
+                                    playbackManager.setBackgroundPlaying(false)
+                                }
                                 val note = if (nextBackgroundPlay) {
                                     if (state.currentItem?.isVideo == true) {
                                         "Background play enabled: audio continues in background (video rendering pauses)."

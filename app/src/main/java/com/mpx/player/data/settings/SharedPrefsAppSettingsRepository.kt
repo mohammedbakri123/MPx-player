@@ -29,7 +29,11 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         showHiddenFiles = prefs.getBoolean("show_hidden_files", false),
         showThumbnails = prefs.getBoolean("show_thumbnails", true),
         resumePlayback = prefs.getBoolean("resume_playback", true),
-        backgroundPlay = prefs.getBoolean("background_play", false),
+        backgroundPlay = if (prefs.contains("background_play")) {
+            prefs.getBoolean("background_play", false)
+        } else {
+            prefs.getBoolean("backgroundPlay", false)
+        },
         gesturesEnabled = prefs.getBoolean("gestures_enabled", true),
         decoderMode = prefs.getString("decoder_mode", "HW") ?: "HW",
         audioBoost = prefs.getBoolean("audio_boost", false),

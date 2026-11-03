@@ -188,19 +188,35 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (isFinishing) {
+            val settings = settingsRepository.load()
+            if (!settings.backgroundPlay) {
+                val playbackManager = PlaybackManager.getInstance(this)
+                if (playbackManager.playbackState.value.isPlaying) {
+                    playbackManager.pause()
+                }
+                playbackManager.setVideoBackgroundActive(false)
+                playbackManager.setBackgroundPlaying(false)
+                PlaybackService.stop(this)
+            }
+        }
+    }
+
     override fun onStop() {
         super.onStop()
-        if (isInPipMode) return
-
         val settings = settingsRepository.load()
         val playbackManager = PlaybackManager.getInstance(this)
         val state = playbackManager.playbackState.value
 
-        if (!settings.backgroundPlay) {
-            // off = playback stops when leaving
+        if (!settings.backgroundPlay || isFinishing) {
+            // off = playback MUST stop when leaving the foreground
             if (state.isPlaying) {
                 playbackManager.pause()
             }
+            playbackManager.setVideoBackgroundActive(false)
+            playbackManager.setBackgroundPlaying(false)
             PlaybackService.stop(this)
         } else {
             // on = service keeps it alive
@@ -215,18 +231,44 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        val settings = settingsRepository.load()
+        if (!settings.backgroundPlay || isFinishing) {
+            val playbackManager = PlaybackManager.getInstance(this)
+            if (playbackManager.playbackState.value.isPlaying) {
+                playbackManager.pause()
+            }
+            playbackManager.setVideoBackgroundActive(false)
+            playbackManager.setBackgroundPlaying(false)
+            PlaybackService.stop(this)
+        }
+    }
+
     override fun onPictureInPictureModeChanged(
         isInPictureInPictureMode: Boolean,
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         isInPipMode = isInPictureInPictureMode
+        if (!isInPictureInPictureMode) {
+            val settings = settingsRepository.load()
+            if (!settings.backgroundPlay && !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
+                val playbackManager = PlaybackManager.getInstance(this)
+                if (playbackManager.playbackState.value.isPlaying) {
+                    playbackManager.pause()
+                }
+                playbackManager.setVideoBackgroundActive(false)
+                playbackManager.setBackgroundPlaying(false)
+                PlaybackService.stop(this)
+            }
+        }
     }
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         val settings = settingsRepository.load()
-        if (settings.popupPlayEnabled) {
+        if (settings.backgroundPlay && settings.popupPlayEnabled) {
             val playbackManager = PlaybackManager.getInstance(this)
             val state = playbackManager.playbackState.value
             if (state.isPlaying && state.currentItem?.isVideo == true) {

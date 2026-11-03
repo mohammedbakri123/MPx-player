@@ -164,7 +164,7 @@ object PipUtils {
 
         // 4. Android 12+ (API 31+) platform integration
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            builder.setAutoEnterEnabled(settings.popupPlayEnabled)
+            builder.setAutoEnterEnabled(settings.backgroundPlay && settings.popupPlayEnabled)
             builder.setSeamlessResizeEnabled(true)
         }
 

@@ -66,6 +66,8 @@ import com.mpx.player.R
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackService
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import kotlinx.coroutines.launch
@@ -315,7 +317,15 @@ fun SettingsScreen(
                                 }
                                 "player" -> {
                                     ToggleRow(stringResource(R.string.player_resume_playback), settings.resumePlayback) { update(settings.copy(resumePlayback = it)) }
-                                    ToggleRow(stringResource(R.string.player_background_play), settings.backgroundPlay) { update(settings.copy(backgroundPlay = it)) }
+                                    ToggleRow(stringResource(R.string.player_background_play), settings.backgroundPlay) { enabled ->
+                                        update(settings.copy(backgroundPlay = enabled))
+                                        if (!enabled) {
+                                            PlaybackService.stop(context)
+                                            val pm = PlaybackManager.getInstance(context)
+                                            pm.setVideoBackgroundActive(false)
+                                            pm.setBackgroundPlaying(false)
+                                        }
+                                    }
                                     Text(
                                         stringResource(R.string.player_background_play_desc),
                                         style = MaterialTheme.typography.bodySmall,

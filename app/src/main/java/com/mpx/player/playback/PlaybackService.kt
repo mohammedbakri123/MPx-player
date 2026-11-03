@@ -18,6 +18,7 @@ import androidx.media.app.NotificationCompat as MediaNotificationCompat
 import androidx.media.session.MediaButtonReceiver
 import com.mpx.player.MainActivity
 import com.mpx.player.R
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -94,6 +95,8 @@ class PlaybackService : Service() {
 
                 override fun onStop() {
                     playbackManager.pause()
+                    playbackManager.setVideoBackgroundActive(false)
+                    playbackManager.setBackgroundPlaying(false)
                     stopForegroundInternal(removeNotification = true)
                     stopSelf()
                 }
@@ -127,17 +130,32 @@ class PlaybackService : Service() {
             ACTION_SEEK_BACKWARD_10 -> playbackManager.skipBackward(10_000L)
             ACTION_STOP -> {
                 playbackManager.pause()
+                playbackManager.setVideoBackgroundActive(false)
+                playbackManager.setBackgroundPlaying(false)
                 stopForegroundInternal(removeNotification = true)
                 stopSelf()
             }
             ACTION_START -> {
-                updateSessionAndNotification(playbackManager.playbackState.value)
+                val settings = playbackManager.settingsRepository.load()
+                if (settings.backgroundPlay) {
+                    updateSessionAndNotification(playbackManager.playbackState.value)
+                } else {
+                    stopForegroundInternal(removeNotification = true)
+                    stopSelf()
+                }
             }
         }
         return START_NOT_STICKY
     }
 
     private fun updateSessionAndNotification(state: PlaybackState) {
+        val settings = playbackManager.settingsRepository.load()
+        if (!settings.backgroundPlay) {
+            stopForegroundInternal(removeNotification = true)
+            stopSelf()
+            return
+        }
+
         val currentItem = state.currentItem
         if (currentItem == null) {
             if (!state.isPlaying) {
@@ -309,6 +327,10 @@ class PlaybackService : Service() {
             @Suppress("DEPRECATION")
             stopForeground(removeNotification)
         }
+        if (removeNotification) {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.cancel(NOTIFICATION_ID)
+        }
         isForegroundActive = false
     }
 
@@ -318,6 +340,8 @@ class PlaybackService : Service() {
         val settings = playbackManager.settingsRepository.load()
         if (!settings.backgroundPlay || !state.isPlaying) {
             playbackManager.pause()
+            playbackManager.setVideoBackgroundActive(false)
+            playbackManager.setBackgroundPlaying(false)
             stopForegroundInternal(removeNotification = true)
             stopSelf()
         }
@@ -350,6 +374,10 @@ class PlaybackService : Service() {
         const val EXTRA_OPEN_PLAYER = "open_player"
 
         fun start(context: Context) {
+            val settings = SharedPrefsAppSettingsRepository(context).load()
+            if (!settings.backgroundPlay) {
+                return
+            }
             try {
                 val intent = Intent(context, PlaybackService::class.java).apply {
                     action = ACTION_START
