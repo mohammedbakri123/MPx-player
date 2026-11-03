@@ -80,6 +80,7 @@ fun TransferScreen(
     var urlText by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -212,11 +213,18 @@ fun TransferScreen(
                                 },
                                 trailingIcon = {
                                     IconButton(onClick = {
-                                        urlText = "https://example.com/media/sample_video.mp4"
+                                        val pasted = clipboardManager.getText()?.text.orEmpty()
+                                        if (pasted.startsWith("http")) {
+                                            urlText = pasted
+                                        } else {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Clipboard does not contain a URL.")
+                                            }
+                                        }
                                     }) {
                                         Icon(
                                             imageVector = Icons.Filled.ContentPaste,
-                                            contentDescription = "Paste sample",
+                                            contentDescription = "Paste from clipboard",
                                             tint = MpxPrimary,
                                         )
                                     }
