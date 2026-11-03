@@ -78,6 +78,8 @@
     <string name="pip_controls_prev_next">السابق / التالي (افتراضي)</string>
     <string name="pip_controls_seek10">تقديم / إرجاع سريع (10 ثوانٍ)</string>
 
+    <string name="list_show_all_folders">إظهار كافة المجلدات</string>
+    <string name="list_show_all_folders_desc">إظهار كافة المجلدات المفحوصة بما فيها المجلدات الفارغة والمخفية</string>
     <string name="list_show_hidden">إظهار الملفات المخفية</string>
     <string name="list_show_thumbnails">إظهار الصور المصغرة</string>
 

@@ -14,6 +14,7 @@ import com.mpx.player.domain.model.Playlist
  */
 interface MediaRepository {
     fun getMediaFolders(): List<MediaFolder>
+    fun getMediaFolders(showAllFolders: Boolean): List<MediaFolder> = getMediaFolders()
     fun getVideosInFolder(bucketId: String): List<VideoFile> = emptyList()
     fun getAudioTracks(): List<AudioTrack>
     fun getPlaylists(): List<Playlist>

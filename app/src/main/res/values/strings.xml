@@ -78,6 +78,8 @@
     <string name="pip_controls_prev_next">Previous / Next (Default)</string>
     <string name="pip_controls_seek10">Fast Forward / Rewind (10s)</string>
 
+    <string name="list_show_all_folders">Show all folders</string>
+    <string name="list_show_all_folders_desc">Show every scanned folder including empty and hidden folders</string>
     <string name="list_show_hidden">Show hidden files</string>
     <string name="list_show_thumbnails">Show thumbnails</string>
 

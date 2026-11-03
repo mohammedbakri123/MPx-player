@@ -19,6 +19,7 @@ data class AppSettings(
     val popupPlayEnabled: Boolean = true,
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10
     val appLanguage: String = "system", // system, en, ar
+    val showAllFolders: Boolean = false,
 )
 
 interface AppSettingsRepository {

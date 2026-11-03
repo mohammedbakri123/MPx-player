@@ -26,6 +26,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         popupPlayEnabled = prefs.getBoolean("popup_play_enabled", true),
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
         appLanguage = prefs.getString("app_language", "system") ?: "system",
+        showAllFolders = prefs.getBoolean("show_all_folders", false),
     )
 
     override fun save(settings: AppSettings) {
@@ -44,6 +45,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("popup_play_enabled", settings.popupPlayEnabled)
             .putString("popup_play_controls", settings.popupPlayControls)
             .putString("app_language", settings.appLanguage)
+            .putBoolean("show_all_folders", settings.showAllFolders)
             .apply()
     }
 }

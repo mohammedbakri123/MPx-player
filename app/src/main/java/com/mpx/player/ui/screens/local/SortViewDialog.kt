@@ -12,6 +12,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -20,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
@@ -40,8 +43,10 @@ enum class ViewMode(val label: String) {
 fun SortViewDialog(
     currentSort: SortField,
     currentView: ViewMode,
+    showAllFolders: Boolean = false,
     onSortChange: (SortField) -> Unit,
     onViewChange: (ViewMode) -> Unit,
+    onShowAllFoldersChange: ((Boolean) -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -106,6 +111,47 @@ fun SortViewDialog(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(field.label, color = MpxTextPrimary)
+                    }
+                }
+
+                if (onShowAllFoldersChange != null) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MpxBorder,
+                    )
+
+                    Text(
+                        text = "FOLDERS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MpxTextSecondary,
+                        fontSize = 11.sp,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onShowAllFoldersChange(!showAllFolders) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Switch(
+                            checked = showAllFolders,
+                            onCheckedChange = onShowAllFoldersChange,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MpxPrimary,
+                                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                            ),
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("Show all folders", color = MpxTextPrimary)
+                            Text(
+                                "Include empty and hidden folders",
+                                color = MpxTextSecondary,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 11.sp,
+                            )
+                        }
                     }
                 }
             }
