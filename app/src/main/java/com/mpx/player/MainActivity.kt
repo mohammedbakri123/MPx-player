@@ -1,5 +1,6 @@
 package com.mpx.player
 
+import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -15,12 +16,17 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -40,32 +46,72 @@ import com.mpx.player.ui.screens.music.MusicScreen
 import com.mpx.player.ui.screens.player.PlayerScreen
 import com.mpx.player.ui.screens.settings.SettingsScreen
 import com.mpx.player.ui.screens.transfer.TransferScreen
-import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private var isInPipMode by mutableStateOf(false)
     private lateinit var settingsRepository: SharedPrefsAppSettingsRepository
     private var currentTheme by mutableStateOf("Midnight")
+    private var currentLanguage by mutableStateOf(LocaleHelper.LANGUAGE_SYSTEM)
+
+    override fun attachBaseContext(newBase: Context) {
+        val lang = LocaleHelper.getPersistedLanguage(newBase)
+        val locale = LocaleHelper.getLocale(lang)
+        Locale.setDefault(locale)
+        val localized = LocaleHelper.createLocalizedContext(newBase, locale)
+        super.attachBaseContext(localized)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         settingsRepository = SharedPrefsAppSettingsRepository(this)
-        currentTheme = settingsRepository.load().appTheme
+        val initialSettings = settingsRepository.load()
+        currentTheme = initialSettings.appTheme
+        currentLanguage = initialSettings.appLanguage
 
         setContent {
-            MpxTheme(appTheme = currentTheme) {
-                MpxApp(
-                    isInPipMode = isInPipMode,
-                    settingsRepository = settingsRepository,
-                    onThemeChanged = { newTheme ->
-                        currentTheme = newTheme
-                    },
-                )
+            val targetLocale = remember(currentLanguage) {
+                LocaleHelper.getLocale(currentLanguage)
+            }
+            val isRtl = remember(targetLocale) {
+                LocaleHelper.isRtl(targetLocale)
+            }
+            val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+            val localizedContext = remember(this, targetLocale) {
+                LocaleHelper.createLocalizedContext(this, targetLocale)
+            }
+            val localizedConfig = remember(this, targetLocale) {
+                Configuration(resources.configuration).apply {
+                    setLocale(targetLocale)
+                    setLayoutDirection(targetLocale)
+                }
+            }
+
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalConfiguration provides localizedConfig,
+                LocalLayoutDirection provides layoutDirection,
+            ) {
+                MpxTheme(appTheme = currentTheme) {
+                    MpxApp(
+                        isInPipMode = isInPipMode,
+                        settingsRepository = settingsRepository,
+                        currentLanguage = currentLanguage,
+                        onLanguageChanged = { newLang ->
+                            currentLanguage = newLang
+                            val s = settingsRepository.load()
+                            settingsRepository.save(s.copy(appLanguage = newLang))
+                            LocaleHelper.applyAppLocale(this@MainActivity, newLang)
+                        },
+                        onThemeChanged = { newTheme ->
+                            currentTheme = newTheme
+                        },
+                    )
+                }
             }
         }
     }
@@ -95,6 +141,8 @@ class MainActivity : ComponentActivity() {
 fun MpxApp(
     isInPipMode: Boolean = false,
     settingsRepository: AppSettingsRepository? = null,
+    currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
+    onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -143,10 +191,10 @@ fun MpxApp(
                             icon = {
                                 Icon(
                                     imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
-                                    contentDescription = tab.label,
+                                    contentDescription = stringResource(tab.labelRes),
                                 )
                             },
-                            label = { Text(tab.label) },
+                            label = { Text(stringResource(tab.labelRes)) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MpxPrimary,
                                 selectedTextColor = MpxPrimary,
@@ -223,6 +271,8 @@ fun MpxApp(
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
                     onThemeChanged = onThemeChanged,
+                    currentLanguage = currentLanguage,
+                    onLanguageChanged = onLanguageChanged,
                 )
             }
             composable(Screen.Settings.route) {
@@ -230,6 +280,8 @@ fun MpxApp(
                     onNavigateBack = { navController.popBackStack() },
                     settingsRepository = realSettingsRepo,
                     onThemeChanged = onThemeChanged,
+                    currentLanguage = currentLanguage,
+                    onLanguageChanged = onLanguageChanged,
                 )
             }
             composable(Screen.Player.route) {

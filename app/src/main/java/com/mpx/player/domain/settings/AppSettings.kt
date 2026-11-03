@@ -18,6 +18,7 @@ data class AppSettings(
     val appTheme: String = "Midnight", // Midnight, Dark, Classic, Light
     val popupPlayEnabled: Boolean = true,
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10
+    val appLanguage: String = "system", // system, en, ar
 )
 
 interface AppSettingsRepository {

@@ -26,9 +26,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.ContentPaste
@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.FolderSpecial
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
@@ -87,11 +88,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mpx.player.R
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.MeTool
@@ -111,6 +114,7 @@ import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import java.util.Locale
 import kotlinx.coroutines.launch
@@ -126,6 +130,8 @@ fun MeScreen(
     playbackManager: PlaybackManager? = null,
     settingsRepository: AppSettingsRepository? = null,
     onThemeChanged: ((String) -> Unit)? = null,
+    currentLanguage: String = "system",
+    onLanguageChanged: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -142,6 +148,7 @@ fun MeScreen(
 
     // Settings state
     var appSettings by remember { mutableStateOf(realSettingsRepo.load()) }
+    val activeLanguage = currentLanguage.ifBlank { appSettings.appLanguage }
 
     // Dialog navigation states
     var showFavouritesDialog by remember { mutableStateOf(false) }
@@ -158,6 +165,7 @@ fun MeScreen(
     var showHelpDialog by remember { mutableStateOf(false) }
     var showLegalDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
 
     var issue32Tool by remember { mutableStateOf<MeTool?>(null) }
     var equalizerMessage by remember { mutableStateOf<String?>(null) }
@@ -167,32 +175,32 @@ fun MeScreen(
         // Row 1: Real library navigation & Room data
         MeTool(
             id = "local",
-            title = "Local Videos",
-            description = "Video folders",
+            title = stringResource(R.string.tool_local_title),
+            description = stringResource(R.string.tool_local_desc),
             icon = Icons.Filled.Movie,
             badge = null,
             isAvailable = true,
         ),
         MeTool(
             id = "music",
-            title = "Music",
-            description = "Audio library",
+            title = stringResource(R.string.tool_music_title),
+            description = stringResource(R.string.tool_music_desc),
             icon = Icons.Filled.MusicNote,
             badge = null,
             isAvailable = true,
         ),
         MeTool(
             id = "playlists",
-            title = "Playlists",
-            description = "Custom collections",
+            title = stringResource(R.string.tool_playlists_title),
+            description = stringResource(R.string.tool_playlists_desc),
             icon = Icons.AutoMirrored.Filled.PlaylistPlay,
             badge = if (customPlaylists.isNotEmpty()) "${customPlaylists.size}" else null,
             isAvailable = true,
         ),
         MeTool(
             id = "favourites",
-            title = "Favourites",
-            description = "Starred media",
+            title = stringResource(R.string.tool_favourites_title),
+            description = stringResource(R.string.tool_favourites_desc),
             icon = Icons.Filled.Favorite,
             badge = if (favourites.isNotEmpty()) "${favourites.size}" else null,
             isAvailable = true,
@@ -201,32 +209,32 @@ fun MeScreen(
         // Row 2: Real playback, streaming & system integration
         MeTool(
             id = "history",
-            title = "History",
-            description = "Recently played",
+            title = stringResource(R.string.tool_history_title),
+            description = stringResource(R.string.tool_history_desc),
             icon = Icons.Filled.History,
             badge = if (history.isNotEmpty()) "${history.size}" else null,
             isAvailable = true,
         ),
         MeTool(
             id = "network",
-            title = "Network Stream",
-            description = "Play stream URL",
+            title = stringResource(R.string.tool_network_title),
+            description = stringResource(R.string.tool_network_desc),
             icon = Icons.Filled.Cloud,
             badge = "Real",
             isAvailable = true,
         ),
         MeTool(
             id = "transfer",
-            title = "File Transfer",
-            description = "P2P transfer",
+            title = stringResource(R.string.tool_transfer_title),
+            description = stringResource(R.string.tool_transfer_desc),
             icon = Icons.Filled.SwapHoriz,
             badge = null,
             isAvailable = true,
         ),
         MeTool(
             id = "equalizer",
-            title = "Equalizer",
-            description = "System sound tuner",
+            title = stringResource(R.string.tool_equalizer_title),
+            description = stringResource(R.string.tool_equalizer_desc),
             icon = Icons.Filled.Equalizer,
             badge = null,
             isAvailable = true,
@@ -235,32 +243,32 @@ fun MeScreen(
         // Row 3: Issue 32 Honest Placeholders
         MeTool(
             id = "status",
-            title = "Status Saver",
-            description = "WhatsApp status",
+            title = stringResource(R.string.tool_status_title),
+            description = stringResource(R.string.tool_status_desc),
             icon = Icons.Filled.SaveAlt,
             badge = "Issue 32",
             isAvailable = false,
         ),
         MeTool(
             id = "private",
-            title = "Private Folder",
-            description = "PIN vault",
+            title = stringResource(R.string.tool_private_title),
+            description = stringResource(R.string.tool_private_desc),
             icon = Icons.Filled.Lock,
             badge = "Issue 32",
             isAvailable = false,
         ),
         MeTool(
             id = "manager",
-            title = "Media Manager",
-            description = "Storage cleaner",
+            title = stringResource(R.string.tool_manager_title),
+            description = stringResource(R.string.tool_manager_desc),
             icon = Icons.Filled.FolderSpecial,
             badge = "Issue 32",
             isAvailable = false,
         ),
         MeTool(
             id = "bin",
-            title = "Recycle Bin",
-            description = "Deleted files",
+            title = stringResource(R.string.tool_bin_title),
+            description = stringResource(R.string.tool_bin_desc),
             icon = Icons.Filled.Delete,
             badge = "Issue 32",
             isAvailable = false,
@@ -280,7 +288,7 @@ fun MeScreen(
                 val audioSessionId = realPlaybackManager.player.audioSessionId
                 val launched = PipUtils.launchSystemEqualizer(context, audioSessionId)
                 if (!launched) {
-                    equalizerMessage = "System Equalizer: No audio effect control panel (e.g. MusicFX or system equalizer app) was found on this device. Audio uses standard flat output."
+                    equalizerMessage = context.getString(R.string.equalizer_dialog_msg)
                 }
             }
             "status", "private", "manager", "bin" -> {
@@ -297,7 +305,7 @@ fun MeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Me",
+                        text = stringResource(R.string.me_title),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
@@ -349,7 +357,7 @@ fun MeScreen(
 
                         Column {
                             Text(
-                                text = "MPx Local User",
+                                text = stringResource(R.string.me_profile_user),
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
@@ -358,7 +366,7 @@ fun MeScreen(
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                text = "Private on-device media player",
+                                text = stringResource(R.string.me_profile_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -369,7 +377,7 @@ fun MeScreen(
 
             item {
                 HonestStatusBanner(
-                    text = "Me tools grid: real features wired to Local, Music, Playlists, Favourites, History, Network Stream. Placeholders honestly marked for Issue 32.",
+                    text = stringResource(R.string.me_status_banner),
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
@@ -377,7 +385,7 @@ fun MeScreen(
             // Tools Section Header
             item {
                 Text(
-                    text = "TOOLS",
+                    text = stringResource(R.string.section_tools),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
@@ -450,7 +458,7 @@ fun MeScreen(
             // Preferences Section
             item {
                 Text(
-                    text = "PREFERENCES",
+                    text = stringResource(R.string.section_preferences),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
@@ -469,8 +477,8 @@ fun MeScreen(
                     Column {
                         PreferenceRow(
                             icon = Icons.Filled.MusicNote,
-                            title = "Music Player",
-                            subtitle = "Open local audio library",
+                            title = stringResource(R.string.pref_music_player),
+                            subtitle = stringResource(R.string.pref_music_player_desc),
                             onClick = onOpenMusic,
                         )
                         HorizontalDivider(
@@ -480,8 +488,8 @@ fun MeScreen(
                         )
                         PreferenceRow(
                             icon = Icons.Filled.Movie,
-                            title = "Video Library",
-                            subtitle = "Browse folders and video collections",
+                            title = stringResource(R.string.pref_video_library),
+                            subtitle = stringResource(R.string.pref_video_library_desc),
                             onClick = onOpenLocal,
                         )
                         HorizontalDivider(
@@ -491,12 +499,12 @@ fun MeScreen(
                         )
                         PreferenceRow(
                             icon = Icons.Filled.ColorLens,
-                            title = "App Theme",
+                            title = stringResource(R.string.pref_app_theme),
                             subtitle = when (appSettings.appTheme.lowercase(Locale.US)) {
-                                "dark", "dark slate", "slate" -> "Dark Slate (Charcoal)"
-                                "classic", "classic navy", "navy" -> "Classic MX Navy"
-                                "light", "light cinema" -> "Light Cinema (Clean White)"
-                                else -> "Midnight OLED (Pure Black)"
+                                "dark", "dark slate", "slate" -> stringResource(R.string.theme_dark)
+                                "classic", "classic navy", "navy" -> stringResource(R.string.theme_classic)
+                                "light", "light cinema" -> stringResource(R.string.theme_light)
+                                else -> stringResource(R.string.theme_midnight)
                             },
                             onClick = { showThemeDialog = true },
                         )
@@ -506,16 +514,34 @@ fun MeScreen(
                             thickness = 0.5.dp,
                         )
                         PreferenceRow(
+                            icon = Icons.Filled.Language,
+                            title = stringResource(R.string.pref_app_language),
+                            subtitle = when (activeLanguage.lowercase()) {
+                                LocaleHelper.LANGUAGE_ARABIC -> stringResource(R.string.lang_arabic)
+                                LocaleHelper.LANGUAGE_ENGLISH -> stringResource(R.string.lang_english)
+                                else -> stringResource(R.string.lang_system_default)
+                            },
+                            onClick = { showLanguageDialog = true },
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 56.dp),
+                            color = MaterialTheme.colorScheme.outline,
+                            thickness = 0.5.dp,
+                        )
+                        PreferenceRow(
                             icon = Icons.Filled.PictureInPictureAlt,
-                            title = "Custom Pop-up Play",
+                            title = stringResource(R.string.pref_popup_play),
                             subtitle = if (PipUtils.isPipSupported(context)) {
                                 if (appSettings.popupPlayEnabled) {
-                                    "PiP Enabled • ${if (appSettings.popupPlayControls == "Seek10") "Fast Seek (10s)" else "Previous/Next"}"
+                                    stringResource(
+                                        R.string.pip_status_enabled,
+                                        if (appSettings.popupPlayControls == "Seek10") stringResource(R.string.pip_controls_seek10) else stringResource(R.string.pip_controls_prev_next),
+                                    )
                                 } else {
-                                    "Pop-up Play Disabled"
+                                    stringResource(R.string.pip_status_disabled)
                                 }
                             } else {
-                                "Device does not support PiP (Android 8.0+ required)"
+                                stringResource(R.string.pip_status_unsupported)
                             },
                             onClick = { showPopupPlayDialog = true },
                         )
@@ -526,8 +552,8 @@ fun MeScreen(
                         )
                         PreferenceRow(
                             icon = Icons.Filled.Settings,
-                            title = "Settings",
-                            subtitle = "Player, decoder, list, and subtitle options",
+                            title = stringResource(R.string.pref_settings),
+                            subtitle = stringResource(R.string.pref_settings_desc),
                             onClick = onOpenSettings,
                         )
                     }
@@ -539,7 +565,7 @@ fun MeScreen(
             // About & Legal Section (Real in-app pages, no fake external links)
             item {
                 Text(
-                    text = "ABOUT & LEGAL",
+                    text = stringResource(R.string.section_about_legal),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
@@ -558,8 +584,8 @@ fun MeScreen(
                     Column {
                         PreferenceRow(
                             icon = Icons.Filled.Security,
-                            title = "Privacy & Security",
-                            subtitle = "100% on-device. Zero telemetry, no ads, no trackers.",
+                            title = stringResource(R.string.pref_privacy),
+                            subtitle = stringResource(R.string.pref_privacy_desc),
                             onClick = { showPrivacyDialog = true },
                         )
                         HorizontalDivider(
@@ -569,8 +595,8 @@ fun MeScreen(
                         )
                         PreferenceRow(
                             icon = Icons.AutoMirrored.Filled.HelpOutline,
-                            title = "Help & Feedback",
-                            subtitle = "Player gesture guide, tutorials, and device diagnostics",
+                            title = stringResource(R.string.pref_help),
+                            subtitle = stringResource(R.string.pref_help_desc),
                             onClick = { showHelpDialog = true },
                         )
                         HorizontalDivider(
@@ -580,8 +606,8 @@ fun MeScreen(
                         )
                         PreferenceRow(
                             icon = Icons.Filled.Gavel,
-                            title = "Legal & Open Source",
-                            subtitle = "Software licenses, terms, and inspiration disclosure",
+                            title = stringResource(R.string.pref_legal),
+                            subtitle = stringResource(R.string.pref_legal_desc),
                             onClick = { showLegalDialog = true },
                         )
                         HorizontalDivider(
@@ -591,8 +617,8 @@ fun MeScreen(
                         )
                         PreferenceRow(
                             icon = Icons.Filled.Info,
-                            title = "MPx Player Native",
-                            subtitle = "Version 0.1.0-native • Jetpack Compose • Media3",
+                            title = stringResource(R.string.pref_about_mpx),
+                            subtitle = stringResource(R.string.pref_about_mpx_desc),
                             onClick = { showAboutDialog = true },
                         )
                     }
@@ -790,7 +816,30 @@ fun MeScreen(
                 onThemeChanged?.invoke(selectedTheme)
                 showThemeDialog = false
                 scope.launch {
-                    snackbarHostState.showSnackbar("Theme applied: $selectedTheme")
+                    snackbarHostState.showSnackbar(context.getString(R.string.theme_applied_snackbar, selectedTheme))
+                }
+            },
+        )
+    }
+
+    // 5b. App Language Dialog (Real Immediate Language Switching)
+    if (showLanguageDialog) {
+        AppLanguageDialog(
+            currentLanguage = activeLanguage,
+            onDismiss = { showLanguageDialog = false },
+            onSelectLanguage = { selectedLang ->
+                val updated = appSettings.copy(appLanguage = selectedLang)
+                appSettings = updated
+                realSettingsRepo.save(updated)
+                onLanguageChanged?.invoke(selectedLang)
+                showLanguageDialog = false
+                scope.launch {
+                    val langName = when (selectedLang.lowercase()) {
+                        LocaleHelper.LANGUAGE_ARABIC -> "العربية"
+                        LocaleHelper.LANGUAGE_ENGLISH -> "English"
+                        else -> context.getString(R.string.lang_system_default)
+                    }
+                    snackbarHostState.showSnackbar(context.getString(R.string.lang_applied_msg, langName))
                 }
             },
         )
@@ -812,9 +861,9 @@ fun MeScreen(
                 val entered = PipUtils.enterPip(context)
                 if (!entered) {
                     val msg = if (!PipUtils.isPipSupported(context)) {
-                        "Picture-in-Picture is not supported by your device/OS environment (requires Android 8.0+ with FEATURE_PICTURE_IN_PICTURE)."
+                        context.getString(R.string.pip_not_supported)
                     } else {
-                        "Unable to enter PiP mode right now. Try playing a video in the player first."
+                        context.getString(R.string.pip_test_fail_playing)
                     }
                     scope.launch { snackbarHostState.showSnackbar(msg) }
                 }
@@ -848,11 +897,11 @@ fun MeScreen(
             onDismissRequest = { equalizerMessage = null },
             containerColor = MaterialTheme.colorScheme.surface,
             icon = { Icon(Icons.Filled.Equalizer, null, tint = MpxPrimary) },
-            title = { Text("Equalizer", color = MaterialTheme.colorScheme.onSurface) },
+            title = { Text(stringResource(R.string.tool_equalizer_title), color = MaterialTheme.colorScheme.onSurface) },
             text = { Text(equalizerMessage ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(onClick = { equalizerMessage = null }) {
-                    Text("OK", color = MpxPrimary)
+                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
                 }
             },
         )
@@ -867,22 +916,22 @@ fun MeScreen(
             icon = { Icon(tool.icon, null, tint = MpxAccentAmber) },
             title = {
                 Text(
-                    text = "${tool.title} (Issue 32)",
+                    text = stringResource(R.string.issue32_dialog_header, tool.title),
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                 )
             },
             text = {
                 val detail = when (tool.id) {
-                    "status" -> "WhatsApp Status Saver requires scoped storage directory access. It will scan and save downloaded video and image statuses once built."
-                    "private" -> "Private Folder requires an encrypted SQLite or file vault protected by a PIN or biometric auth to hide sensitive media."
-                    "manager" -> "Media Manager & Storage Cleaner will analyze device storage, identify duplicate videos, large files, and temporary cache."
-                    "bin" -> "Recycle Bin will preserve deleted files in an app-managed holding directory for 30 days before permanent deletion."
+                    "status" -> stringResource(R.string.issue32_status_detail)
+                    "private" -> stringResource(R.string.issue32_private_detail)
+                    "manager" -> stringResource(R.string.issue32_manager_detail)
+                    "bin" -> stringResource(R.string.issue32_bin_detail)
                     else -> tool.description
                 }
                 Column {
                     Text(
-                        text = "This feature is scheduled for Issue 32.",
+                        text = stringResource(R.string.issue32_status_notice),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -894,7 +943,7 @@ fun MeScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        text = "Status: Honest placeholder — not faked.",
+                        text = stringResource(R.string.issue32_status_honest),
                         color = MpxAccentAmber,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
@@ -903,7 +952,7 @@ fun MeScreen(
             },
             confirmButton = {
                 TextButton(onClick = { issue32Tool = null }) {
-                    Text("Understood", color = MpxPrimary)
+                    Text(stringResource(R.string.action_understood), color = MpxPrimary)
                 }
             },
         )
@@ -1018,7 +1067,7 @@ private fun PreferenceRow(
         }
 
         Icon(
-            imageVector = Icons.Filled.ChevronRight,
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
             tint = MpxTextMuted,
             modifier = Modifier.size(20.dp),
@@ -1059,7 +1108,7 @@ private fun NetworkStreamDialog(
                 Icon(Icons.Filled.Cloud, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Network Stream",
+                    text = stringResource(R.string.dialog_network_title),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -1068,7 +1117,7 @@ private fun NetworkStreamDialog(
         text = {
             Column {
                 Text(
-                    text = "Enter any HTTP, HTTPS, or HLS stream URL to play directly in Media3 ExoPlayer:",
+                    text = stringResource(R.string.dialog_network_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1079,7 +1128,7 @@ private fun NetworkStreamDialog(
                     placeholder = { Text("https://example.com/video.mp4", color = MpxTextMuted, fontSize = 13.sp) },
                     trailingIcon = {
                         IconButton(onClick = { pasteClipboard() }) {
-                            Icon(Icons.Filled.ContentPaste, "Paste", tint = MpxPrimary)
+                            Icon(Icons.Filled.ContentPaste, stringResource(R.string.action_paste), tint = MpxPrimary)
                         }
                     },
                     singleLine = true,
@@ -1090,7 +1139,7 @@ private fun NetworkStreamDialog(
                     ),
                 )
                 Spacer(Modifier.height(12.dp))
-                Text("Sample Public Streams:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.dialog_network_samples), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(6.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
@@ -1116,12 +1165,12 @@ private fun NetworkStreamDialog(
                 enabled = urlText.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = MpxPrimary),
             ) {
-                Text("Play Stream")
+                Text(stringResource(R.string.dialog_network_play))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
     )
@@ -1139,32 +1188,32 @@ private fun AppThemeDialog(
     val themes = listOf(
         ThemeOption(
             key = "Midnight",
-            name = "Midnight OLED (Pure Black)",
-            description = "True OLED #000000 cinema contrast. Maximum battery savings.",
+            name = stringResource(R.string.theme_midnight),
+            description = stringResource(R.string.theme_midnight_desc),
             bgColor = Color(0xFF000000),
             surfaceColor = Color(0xFF0D1117),
             primaryColor = Color(0xFF3B82F6),
         ),
         ThemeOption(
             key = "Dark",
-            name = "Dark Slate (Charcoal)",
-            description = "Smooth modern dark theme with softer slate #0F172A contrast.",
+            name = stringResource(R.string.theme_dark),
+            description = stringResource(R.string.theme_dark_desc),
             bgColor = Color(0xFF0F172A),
             surfaceColor = Color(0xFF1E293B),
             primaryColor = Color(0xFF38BDF8),
         ),
         ThemeOption(
             key = "Classic",
-            name = "Classic MX Navy",
-            description = "Deep blue-black #0A0F1D inspired by utility-first classic players.",
+            name = stringResource(R.string.theme_classic),
+            description = stringResource(R.string.theme_classic_desc),
             bgColor = Color(0xFF0A0F1D),
             surfaceColor = Color(0xFF131D31),
             primaryColor = Color(0xFF4895EF),
         ),
         ThemeOption(
             key = "Light",
-            name = "Light Cinema (Clean White)",
-            description = "High-visibility daylight palette for bright environments.",
+            name = stringResource(R.string.theme_light),
+            description = stringResource(R.string.theme_light_desc),
             bgColor = Color(0xFFF8FAFC),
             surfaceColor = Color(0xFFFFFFFF),
             primaryColor = Color(0xFF2563EB),
@@ -1179,7 +1228,7 @@ private fun AppThemeDialog(
                 Icon(Icons.Filled.ColorLens, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Select App Theme",
+                    text = stringResource(R.string.dialog_theme_title),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -1234,7 +1283,98 @@ private fun AppThemeDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MpxPrimary)
+            }
+        },
+    )
+}
+
+/**
+ * Real In-App Language selector with instant switching and RTL preview.
+ */
+@Composable
+private fun AppLanguageDialog(
+    currentLanguage: String,
+    onDismiss: () -> Unit,
+    onSelectLanguage: (String) -> Unit,
+) {
+    val languages = listOf(
+        Triple(
+            LocaleHelper.LANGUAGE_SYSTEM,
+            stringResource(R.string.lang_system_default),
+            stringResource(R.string.lang_system_default_desc),
+        ),
+        Triple(
+            LocaleHelper.LANGUAGE_ENGLISH,
+            stringResource(R.string.lang_english),
+            stringResource(R.string.lang_english_desc),
+        ),
+        Triple(
+            LocaleHelper.LANGUAGE_ARABIC,
+            stringResource(R.string.lang_arabic),
+            stringResource(R.string.lang_arabic_desc),
+        ),
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Language, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.lang_dialog_title),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                languages.forEach { (langKey, langTitle, langDesc) ->
+                    val isSelected = currentLanguage.equals(langKey, ignoreCase = true)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { onSelectLanguage(langKey) }
+                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = { onSelectLanguage(langKey) },
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = langTitle,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = langDesc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.lang_settings_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_close), color = MpxPrimary)
             }
         },
     )
@@ -1273,7 +1413,7 @@ private fun CustomPopupPlayDialog(
                 Icon(Icons.Filled.PictureInPictureAlt, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Custom Pop-up Play",
+                    text = stringResource(R.string.dialog_popup_play_title),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -1294,7 +1434,7 @@ private fun CustomPopupPlayDialog(
                         Icon(Icons.Filled.CheckCircle, null, tint = MpxPrimary, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Device supports Android Picture-in-Picture mode.",
+                            text = stringResource(R.string.pip_banner_supported),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -1311,7 +1451,7 @@ private fun CustomPopupPlayDialog(
                         Icon(Icons.Filled.Warning, null, tint = MpxAccentAmber, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "PiP unsupported: requires Android 8.0+ and system FEATURE_PICTURE_IN_PICTURE support. Settings stay honest.",
+                            text = stringResource(R.string.pip_banner_unsupported),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -1327,12 +1467,12 @@ private fun CustomPopupPlayDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Auto Pop-up Play",
+                            text = stringResource(R.string.pip_auto_title),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = "Enter floating window when leaving app during video playback",
+                            text = stringResource(R.string.pip_auto_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1346,7 +1486,7 @@ private fun CustomPopupPlayDialog(
 
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    text = "PiP Window Controls:",
+                    text = stringResource(R.string.pip_window_controls_header),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -1365,7 +1505,7 @@ private fun CustomPopupPlayDialog(
                         colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Previous / Next (Default)", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.pip_controls_prev_next), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
                 }
 
                 Row(
@@ -1381,7 +1521,7 @@ private fun CustomPopupPlayDialog(
                         colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Fast Forward / Rewind (10s)", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.pip_controls_seek10), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
                 }
 
                 Spacer(Modifier.height(10.dp))
@@ -1392,7 +1532,7 @@ private fun CustomPopupPlayDialog(
                 ) {
                     Icon(Icons.Filled.PictureInPictureAlt, null, modifier = Modifier.size(16.dp), tint = MpxPrimary)
                     Spacer(Modifier.width(8.dp))
-                    Text("Test Pop-up Play Mode", color = MpxPrimary)
+                    Text(stringResource(R.string.pip_test_button), color = MpxPrimary)
                 }
             }
         },
@@ -1401,12 +1541,12 @@ private fun CustomPopupPlayDialog(
                 onClick = { onUpdateSettings(currentEnabled, currentControls) },
                 colors = ButtonDefaults.buttonColors(containerColor = MpxPrimary),
             ) {
-                Text("Save")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
     )
@@ -1424,40 +1564,40 @@ private fun PrivacySecurityDialog(onDismiss: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Security, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Privacy & Security", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.dialog_privacy_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         text = {
             LazyColumn(modifier = Modifier.heightIn(max = 380.dp)) {
                 item {
-                    Text("100% On-Device Architecture", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.privacy_sec1_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "MPx Player is an offline-first media player. Media indexing, metadata extraction, and playback happen exclusively on your device. Your file library is never uploaded to any remote server.",
+                        stringResource(R.string.privacy_sec1_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text("Zero Telemetry & No Analytics", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.privacy_sec2_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "No tracking SDKs, no advertising identifiers, and no user surveillance frameworks are embedded in MPx Player. Your playback habits and files remain strictly your own.",
+                        stringResource(R.string.privacy_sec2_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text("Local SQLite Sandbox", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.privacy_sec3_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Favourites, custom playlists, and playback resume points are stored in a private Room SQLite database (mpx_player.db) inside the Android protected application sandbox.",
+                        stringResource(R.string.privacy_sec3_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text("Transparent Permissions", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.privacy_sec4_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "• READ_MEDIA_VIDEO / AUDIO: Discovering local media files.\n• INTERNET: Optional, used solely when you paste a stream URL in Network Stream.",
+                        stringResource(R.string.privacy_sec4_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1465,7 +1605,7 @@ private fun PrivacySecurityDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close", color = MpxPrimary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close), color = MpxPrimary) }
         },
     )
 }
@@ -1482,29 +1622,29 @@ private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.AutoMirrored.Filled.HelpOutline, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Help & Player Guide", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.dialog_help_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         text = {
             LazyColumn(modifier = Modifier.heightIn(max = 380.dp)) {
                 item {
-                    Text("Player Gestures", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.help_sec1_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "• Double-tap left side: Seek back 10 seconds\n• Double-tap right side: Seek forward 10 seconds\n• Horizontal drag: Smooth precision scrub through video\n• Lock button: Prevent accidental touches while watching\n• Aspect ratio: Cycle through Fit, Stretch, 16:9, and Original",
+                        stringResource(R.string.help_sec1_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text("Audio & Subtitle Tracks", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.help_sec2_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "• Audio Icon: Switch between discrete audio tracks (dual-audio, commentary)\n• Subtitle Icon: Select embedded or sidecar .vtt / .srt subtitle tracks\n• Subtitle Size: Configurable under Settings (Small, Normal, Large)",
+                        stringResource(R.string.help_sec2_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text("Device Diagnostics (Live)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.help_sec3_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Box(
                         modifier = Modifier
@@ -1514,18 +1654,18 @@ private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
                             .padding(10.dp),
                     ) {
                         Column {
-                            Text("App: MPx Player 0.1.0-native", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
-                            Text("Android OS: SDK ${Build.VERSION.SDK_INT} (${Build.VERSION.RELEASE})", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
-                            Text("Device: ${Build.MANUFACTURER} ${Build.MODEL}", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
-                            Text("Engine: AndroidX Media3 ExoPlayer 1.3.1", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
-                            Text("Database: Room SQLite (mpx_player.db)", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.help_diag_app), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.help_diag_os, Build.VERSION.SDK_INT, Build.VERSION.RELEASE), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.help_diag_device, Build.MANUFACTURER, Build.MODEL), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.help_diag_engine), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.help_diag_db), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close", color = MpxPrimary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close), color = MpxPrimary) }
         },
     )
 }
@@ -1542,32 +1682,32 @@ private fun LegalLicensesDialog(onDismiss: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Gavel, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Legal & Open Source", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.dialog_legal_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         text = {
             LazyColumn(modifier = Modifier.heightIn(max = 380.dp)) {
                 item {
-                    Text("Open Source Licenses", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.legal_sec1_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "• AndroidX Media3 ExoPlayer: Apache License 2.0\n• Jetpack Compose & Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0",
+                        stringResource(R.string.legal_sec1_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text("Inspiration Attribution Notice", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.legal_sec2_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "MPx Player is an independent, clean-room native Android media player. Its organization and UX workflow are inspired by MX Player (per reverse-engineered layout specifications). All code, views, and styling are rewritten 100% from scratch in native Kotlin and Jetpack Compose. No proprietary assets, code, or trademarks are incorporated.",
+                        stringResource(R.string.legal_sec2_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text("Terms of Use", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.legal_sec3_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "MPx Player is provided 'as is' without warranty under the Apache 2.0 License. Users are responsible for their own media files.",
+                        stringResource(R.string.legal_sec3_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1575,7 +1715,7 @@ private fun LegalLicensesDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close", color = MpxPrimary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close), color = MpxPrimary) }
         },
     )
 }
@@ -1592,32 +1732,32 @@ private fun AboutAppDialog(onDismiss: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Info, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("MPx Player Native", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.pref_about_mpx), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         text = {
             Column {
                 Text(
-                    text = "Version 0.1.0-native",
+                    text = stringResource(R.string.app_version_name),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Pure native Kotlin rewrite with Jetpack Compose, AndroidX Media3 ExoPlayer, and Room SQLite persistence.",
+                    text = stringResource(R.string.dialog_about_body1),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "High-density, utility-first media management without cloud dependence, tracking, or ads.",
+                    text = stringResource(R.string.dialog_about_body2),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("OK", color = MpxPrimary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_ok), color = MpxPrimary) }
         },
     )
 }
