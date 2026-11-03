@@ -278,28 +278,23 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     fun playAudioQueue(tracks: List<AudioTrack>, startIndex: Int = 0) {
-        val items = tracks.map { track ->
-            val uri = if (track.path.isNotBlank()) track.path else when (track.id) {
-                "1" -> "asset:///media/midnight_drive.mp3"
-                "2" -> "asset:///media/electric_echoes.mp3"
-                "3" -> "asset:///media/acoustic_morning.mp3"
-                "4" -> "asset:///media/midnight_drive.mp3"
-                else -> "asset:///media/electric_echoes.mp3"
-            }
+        val playableTracks = tracks.filter { it.path.isNotBlank() }
+        if (playableTracks.isEmpty()) return
+        val items = playableTracks.map { track ->
             PlayableMedia(
                 id = track.id,
                 title = track.title,
                 subtitle = "${track.artist} • ${track.album}",
-                uri = uri,
+                uri = track.path,
                 isVideo = false,
-                durationMs = 15_000L,
+                durationMs = track.durationMs,
             )
         }
-        playQueue(items, startIndex, autoPlay = true)
+        playQueue(items, startIndex.coerceIn(0, items.lastIndex), autoPlay = true)
     }
 
     fun playVideoQueue(folderId: String = "camera") {
-        playQueue(getDefaultVideoQueue(), startIndex = 0, autoPlay = true)
+        // Fallback to sample video queue removed (issue #57). Real videos are played via playVideoFiles.
     }
 
     /** Play real video files from a MediaStore folder. Empty list = no-op. */
@@ -317,27 +312,6 @@ class PlaybackManager private constructor(context: Context) {
         }
         playQueue(items, startIndex, autoPlay = true)
     }
-
-    fun getDefaultVideoQueue(): List<PlayableMedia> = listOf(
-        PlayableMedia(
-            id = "sample_video_1080p",
-            title = "Big Buck Bunny Preview (720p Dual-Audio)",
-            subtitle = "Camera • 720p H.264",
-            uri = "asset:///media/sample_video.mp4",
-            isVideo = true,
-            durationMs = 30_000L,
-            subtitleUri = "asset:///media/sample_video.vtt",
-        ),
-        PlayableMedia(
-            id = "sample_video_clip2",
-            title = "MPx Engine Benchmark Clip",
-            subtitle = "Download • 720p H.264",
-            uri = "asset:///media/sample_video.mp4",
-            isVideo = true,
-            durationMs = 30_000L,
-            subtitleUri = "asset:///media/sample_video.vtt",
-        ),
-    )
 
     fun play() {
         engine.play()

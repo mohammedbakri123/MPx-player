@@ -67,7 +67,7 @@ data class PlayableMedia(
                 MediaItem.SubtitleConfiguration.Builder(Uri.parse(subUri))
                     .setMimeType(MimeTypes.TEXT_VTT)
                     .setLanguage("en")
-                    .setLabel("Sample Subtitles (VTT)")
+                    .setLabel("Subtitles (VTT)")
                     .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
                     .build()
             )

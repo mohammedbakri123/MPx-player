@@ -299,12 +299,7 @@ fun PlayerScreen(
         }
     }
 
-    // Initialize default video queue if opened empty
-    LaunchedEffect(Unit) {
-        if (state.currentItem == null) {
-            playbackManager.playVideoQueue("camera")
-        }
-    }
+    // Empty-player state: no auto-play when opened empty (issue #57)
 
     var controlsVisible by remember { mutableStateOf(true) }
     var activeDialog by remember { mutableStateOf<String?>(null) }
@@ -624,9 +619,44 @@ fun PlayerScreen(
             modifier = Modifier.fillMaxSize(),
         )
 
-        // Audio-only mode visual representation
+        // Empty-player state when opened without a queued video (issue #57)
         val currentMedia = state.currentItem
-        if (currentMedia != null && !currentMedia.isVideo) {
+        if (currentMedia == null) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.08f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp),
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "No video queued",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = Color.White,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Select a video from Local to start playback",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else if (!currentMedia.isVideo) {
+            // Audio-only mode visual representation
             Column(
                 modifier = Modifier
                     .align(Alignment.Center)
