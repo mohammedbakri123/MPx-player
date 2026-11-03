@@ -407,4 +407,13 @@
     <string name="empty_folders_desc">لم يتم العثور على مجلدات وسائط على وحدات التخزين. ستظهر المجلدات والوسائط هنا بمجرد إنشائها أو مزامنتها.</string>
     <string name="local_section_all_folders">كافة المجلدات</string>
     <string name="local_badge_show_all">إظهار الكل</string>
+
+    <!-- Separate View Layout (Issue 16) -->
+    <string name="settings_separate_view_title">تخطيط عرض منفصل</string>
+    <string name="settings_separate_view_desc">تذكر تخطيط العرض (قائمة أو شبكة) بشكل مستقل لشاشتي محلي والموسيقى</string>
+    <string name="sort_section_layout_settings">إعدادات التخطيط</string>
+    <string name="sort_separate_view_title">تخطيط عرض منفصل</string>
+    <string name="sort_separate_view_desc">تذكر تخطيط العرض بشكل مستقل لهذه الشاشة</string>
+    <string name="snackbar_separate_view_enabled">تم تفعيل تخطيط العرض المنفصل</string>
+    <string name="snackbar_separate_view_disabled">تم تعطيل تخطيط العرض المنفصل: التخطيطات متزامنة</string>
 </resources>

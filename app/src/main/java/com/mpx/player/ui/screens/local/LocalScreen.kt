@@ -131,8 +131,21 @@ fun LocalScreen(
     var folders by remember { mutableStateOf<List<MediaFolder>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    var viewMode by remember { mutableStateOf(ViewMode.LIST) }
+    var viewMode by remember {
+        mutableStateOf(if (appSettings.localViewMode == "GRID") ViewMode.GRID else ViewMode.LIST)
+    }
     var sortField by remember { mutableStateOf(SortField.DATE) }
+
+    fun updateViewMode(newMode: ViewMode) {
+        viewMode = newMode
+        val updated = if (appSettings.separateViewLayout) {
+            appSettings.copy(localViewMode = newMode.name)
+        } else {
+            appSettings.copy(localViewMode = newMode.name, musicViewMode = newMode.name)
+        }
+        realSettingsRepo.save(updated)
+        appSettings = updated
+    }
     var showSortDialog by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
     var featureDialogMessage by remember { mutableStateOf<String?>(null) }
@@ -217,6 +230,7 @@ fun LocalScreen(
                 hasPermission = currentPerm
                 val loadedSettings = realSettingsRepo.load()
                 appSettings = loadedSettings
+                viewMode = if (loadedSettings.localViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
                 if (currentPerm) {
                     scope.launch(Dispatchers.IO) {
                         isLoading = true
@@ -301,7 +315,7 @@ fun LocalScreen(
                         }
                     }
                     IconButton(onClick = {
-                        viewMode = if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
+                        updateViewMode(if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST)
                     }) {
                         Icon(
                             imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
@@ -643,11 +657,25 @@ fun LocalScreen(
             currentSort = sortField,
             currentView = viewMode,
             showAllFolders = appSettings.showAllFolders,
+            separateViewLayout = appSettings.separateViewLayout,
             onSortChange = {
                 sortField = it
             },
             onViewChange = {
-                viewMode = it
+                updateViewMode(it)
+            },
+            onSeparateViewLayoutChange = { isChecked ->
+                val updated = appSettings.copy(separateViewLayout = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+                scope.launch {
+                    val msg = if (isChecked) {
+                        context.getString(R.string.snackbar_separate_view_enabled)
+                    } else {
+                        context.getString(R.string.snackbar_separate_view_disabled)
+                    }
+                    snackbarHostState.showSnackbar(msg)
+                }
             },
             onShowAllFoldersChange = { isChecked ->
                 val updated = appSettings.copy(showAllFolders = isChecked)
@@ -656,9 +684,9 @@ fun LocalScreen(
                 refreshFolders(isChecked)
                 scope.launch {
                     val msg = if (isChecked) {
-                        "Showing all folders (including empty & hidden)"
+                        context.getString(R.string.local_snackbar_show_all)
                     } else {
-                        "Showing filtered folders view"
+                        context.getString(R.string.local_snackbar_filtered)
                     }
                     snackbarHostState.showSnackbar(msg)
                 }

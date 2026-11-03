@@ -324,6 +324,7 @@ fun MpxApp(
                 MusicScreen(
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     playbackManager = playbackManager,
+                    settingsRepository = realSettingsRepo,
                 )
             }
             composable(Screen.Transfer.route) {

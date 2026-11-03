@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -34,9 +35,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
@@ -47,7 +50,11 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -92,6 +99,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioFolder
@@ -100,8 +108,12 @@ import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.Playlist
 import com.mpx.player.domain.model.PlaylistItem
+import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.ui.screens.local.SortField
+import com.mpx.player.ui.screens.local.SortViewDialog
+import com.mpx.player.ui.screens.local.ViewMode
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
@@ -128,10 +140,15 @@ import kotlinx.coroutines.withContext
 fun MusicScreen(
     onOpenPlayer: () -> Unit,
     playbackManager: PlaybackManager? = null,
+    settingsRepository: AppSettingsRepository? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val repository = remember(context) { MediaStoreRepository(context) }
+    val realSettingsRepo = remember(settingsRepository, context) {
+        settingsRepository ?: SharedPrefsAppSettingsRepository(context)
+    }
+    var appSettings by remember { mutableStateOf(realSettingsRepo.load()) }
     var hasPermission by remember {
         mutableStateOf(MediaPermissions.hasAudioPermission(context))
     }
@@ -141,6 +158,24 @@ fun MusicScreen(
     var artists by remember { mutableStateOf<List<AudioArtist>>(emptyList()) }
     var folders by remember { mutableStateOf<List<AudioFolder>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+
+    var viewMode by remember {
+        mutableStateOf(if (appSettings.musicViewMode == "GRID") ViewMode.GRID else ViewMode.LIST)
+    }
+    var sortField by remember { mutableStateOf(SortField.NAME) }
+    var showSortDialog by remember { mutableStateOf(false) }
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    fun updateViewMode(newMode: ViewMode) {
+        viewMode = newMode
+        val updated = if (appSettings.separateViewLayout) {
+            appSettings.copy(musicViewMode = newMode.name)
+        } else {
+            appSettings.copy(musicViewMode = newMode.name, localViewMode = newMode.name)
+        }
+        realSettingsRepo.save(updated)
+        appSettings = updated
+    }
 
     val persistenceRepository = remember(context) {
         playbackManager?.persistenceRepository
@@ -240,6 +275,9 @@ fun MusicScreen(
             if (event == Lifecycle.Event.ON_RESUME) {
                 val currentPerm = MediaPermissions.hasAudioPermission(context)
                 hasPermission = currentPerm
+                val loadedSettings = realSettingsRepo.load()
+                appSettings = loadedSettings
+                viewMode = if (loadedSettings.musicViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
                 if (currentPerm) {
                     scope.launch(Dispatchers.IO) {
                         isLoading = true
@@ -284,6 +322,15 @@ fun MusicScreen(
         }
     }
 
+    val sortedTracks = remember(filteredTracks, sortField) {
+        when (sortField) {
+            SortField.NAME -> filteredTracks.sortedBy { it.title.lowercase(Locale.US) }
+            SortField.DATE -> filteredTracks.sortedByDescending { it.id }
+            SortField.SIZE -> filteredTracks.sortedByDescending { it.durationMs }
+            SortField.COUNT -> filteredTracks
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MpxBlack,
@@ -305,6 +352,15 @@ fun MusicScreen(
                 ),
                 actions = {
                     IconButton(onClick = {
+                        updateViewMode(if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST)
+                    }) {
+                        Icon(
+                            imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
+                            contentDescription = stringResource(R.string.cd_toggle_view),
+                            tint = MpxTextPrimary,
+                        )
+                    }
+                    IconButton(onClick = {
                         scope.launch {
                             snackbarHostState.showSnackbar(context.getString(R.string.music_equalizer_scheduled))
                         }
@@ -315,17 +371,36 @@ fun MusicScreen(
                             tint = MpxTextPrimary,
                         )
                     }
-                    IconButton(onClick = {
-                        refreshMusic()
-                        scope.launch {
-                            snackbarHostState.showSnackbar(context.getString(R.string.music_library_refreshed))
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = stringResource(R.string.action_more),
+                                tint = MpxTextPrimary,
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = stringResource(R.string.action_more),
-                            tint = MpxTextPrimary,
-                        )
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.local_menu_view_sort)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    showSortDialog = true
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.local_menu_refresh)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    refreshMusic()
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(context.getString(R.string.music_library_refreshed))
+                                    }
+                                },
+                            )
+                        }
                     }
                 },
             )
@@ -476,9 +551,10 @@ fun MusicScreen(
                             )
                         } else {
                             TracksTabContent(
-                                tracks = filteredTracks,
+                                tracks = sortedTracks,
+                                viewMode = viewMode,
                                 onTrackClick = { index ->
-                                    playbackManager?.playAudioQueue(filteredTracks, startIndex = index)
+                                    playbackManager?.playAudioQueue(sortedTracks, startIndex = index)
                                     onOpenPlayer()
                                 },
                                 onTrackOptionsClick = { track ->
@@ -543,10 +619,14 @@ fun MusicScreen(
                                 icon = Icons.Filled.Folder,
                             )
                         } else {
-                            FoldersTabContent(folders = folders, onFolderClick = {
-                                playbackManager?.playAudioQueue(tracks, startIndex = 0)
-                                onOpenPlayer()
-                            })
+                            FoldersTabContent(
+                                folders = folders,
+                                viewMode = viewMode,
+                                onFolderClick = {
+                                    playbackManager?.playAudioQueue(tracks, startIndex = 0)
+                                    onOpenPlayer()
+                                },
+                            )
                         }
                     }
                 }
@@ -815,6 +895,31 @@ fun MusicScreen(
             },
         )
     }
+
+    if (showSortDialog) {
+        SortViewDialog(
+            currentSort = sortField,
+            currentView = viewMode,
+            separateViewLayout = appSettings.separateViewLayout,
+            availableSortFields = listOf(SortField.NAME, SortField.DATE, SortField.SIZE),
+            onSortChange = { sortField = it },
+            onViewChange = { updateViewMode(it) },
+            onSeparateViewLayoutChange = { isChecked ->
+                val updated = appSettings.copy(separateViewLayout = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+                scope.launch {
+                    val msg = if (isChecked) {
+                        context.getString(R.string.snackbar_separate_view_enabled)
+                    } else {
+                        context.getString(R.string.snackbar_separate_view_disabled)
+                    }
+                    snackbarHostState.showSnackbar(msg)
+                }
+            },
+            onDismiss = { showSortDialog = false },
+        )
+    }
 }
 
 private fun getPlayableUri(track: AudioTrack): String {
@@ -832,103 +937,200 @@ private fun getPlayableUri(track: AudioTrack): String {
 @Composable
 private fun TracksTabContent(
     tracks: List<AudioTrack>,
+    viewMode: ViewMode = ViewMode.LIST,
     onTrackClick: (Int) -> Unit,
     onTrackOptionsClick: (AudioTrack) -> Unit,
 ) {
-    val listState = rememberLazyListState()
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp),
-        ) {
-            itemsIndexed(
-                items = tracks,
-                key = { index, track -> track.id.ifBlank { "${track.path}_$index" } },
-                contentType = { _, _ -> "track_row" },
-            ) { index, track ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onTrackClick(index) }
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
+    if (viewMode == ViewMode.LIST) {
+        val listState = rememberLazyListState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp),
+            ) {
+                itemsIndexed(
+                    items = tracks,
+                    key = { index, track -> track.id.ifBlank { "${track.path}_$index" } },
+                    contentType = { _, _ -> "track_row" },
+                ) { index, track ->
+                    Row(
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MpxSurfaceElevated),
-                        contentAlignment = Alignment.Center,
+                            .fillMaxWidth()
+                            .clickable { onTrackClick(index) }
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        AsyncAudioTrackThumbnail(
-                            track = track,
-                            modifier = Modifier.fillMaxSize(),
-                            iconSize = 24.dp,
-                        )
-                    }
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MpxSurfaceElevated),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            AsyncAudioTrackThumbnail(
+                                track = track,
+                                modifier = Modifier.fillMaxSize(),
+                                iconSize = 24.dp,
+                            )
+                        }
 
-                    Spacer(Modifier.width(14.dp))
+                        Spacer(Modifier.width(14.dp))
 
-                    Column(
-                        modifier = Modifier.weight(1f),
-                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(
+                                text = track.title,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp,
+                                ),
+                                color = MpxTextPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = "${track.artist} • ${track.album}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MpxTextSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+
                         Text(
-                            text = track.title,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 15.sp,
-                            ),
-                            color = MpxTextPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            text = "${track.artist} • ${track.album}",
+                            text = track.durationFormatted,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                            color = MpxTextMuted,
+                            fontSize = 12.sp,
                         )
+
+                        Spacer(Modifier.width(8.dp))
+
+                        IconButton(
+                            onClick = { onTrackOptionsClick(track) },
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = stringResource(R.string.music_cd_track_options, track.title),
+                                tint = MpxTextMuted,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
-
-                    Text(
-                        text = track.durationFormatted,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextMuted,
-                        fontSize = 12.sp,
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 78.dp),
+                        color = MpxBorder,
+                        thickness = 0.5.dp,
                     )
-
-                    Spacer(Modifier.width(8.dp))
-
-                    IconButton(
-                        onClick = { onTrackOptionsClick(track) },
-                        modifier = Modifier.size(48.dp),
+                }
+            }
+            FastScrollbar(
+                listState = listState,
+                itemCount = tracks.size,
+                getSectionText = { index ->
+                    tracks.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
+        }
+    } else {
+        val gridState = rememberLazyGridState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyVerticalGrid(
+                state = gridState,
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                itemsIndexed(
+                    items = tracks,
+                    key = { index, track -> track.id.ifBlank { "${track.path}_$index" } },
+                    contentType = { _, _ -> "track_grid_card" },
+                ) { index, track ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onTrackClick(index) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = stringResource(R.string.music_cd_track_options, track.title),
-                            tint = MpxTextMuted,
-                            modifier = Modifier.size(18.dp),
-                        )
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(110.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MpxSurfaceElevated),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                AsyncAudioTrackThumbnail(
+                                    track = track,
+                                    modifier = Modifier.fillMaxSize(),
+                                    iconSize = 44.dp,
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = track.title,
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MpxTextPrimary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        text = "${track.artist} • ${track.album}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MpxTextSecondary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { onTrackOptionsClick(track) },
+                                    modifier = Modifier.size(32.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.MoreVert,
+                                        contentDescription = stringResource(R.string.music_cd_track_options, track.title),
+                                        tint = MpxTextMuted,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = track.durationFormatted,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MpxTextMuted,
+                                fontSize = 11.sp,
+                            )
+                        }
                     }
                 }
-                HorizontalDivider(
-                    modifier = Modifier.padding(start = 78.dp),
-                    color = MpxBorder,
-                    thickness = 0.5.dp,
-                )
             }
+            GridFastScrollbar(
+                gridState = gridState,
+                itemCount = tracks.size,
+                getSectionText = { index ->
+                    tracks.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
         }
-        FastScrollbar(
-            listState = listState,
-            itemCount = tracks.size,
-            getSectionText = { index ->
-                tracks.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
-            },
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
     }
 }
 
@@ -1190,87 +1392,172 @@ private fun ArtistsTabContent(
 @Composable
 private fun FoldersTabContent(
     folders: List<AudioFolder>,
+    viewMode: ViewMode = ViewMode.LIST,
     onFolderClick: () -> Unit,
 ) {
-    val listState = rememberLazyListState()
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp),
-        ) {
-            items(
-                items = folders,
-                key = { it.id.ifBlank { it.path } },
-                contentType = { "audio_folder_row" },
-            ) { folder ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onFolderClick() }
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
+    if (viewMode == ViewMode.LIST) {
+        val listState = rememberLazyListState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp),
+            ) {
+                items(
+                    items = folders,
+                    key = { it.id.ifBlank { it.path } },
+                    contentType = { "audio_folder_row" },
+                ) { folder ->
+                    Row(
                         modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MpxSurfaceElevated),
-                        contentAlignment = Alignment.Center,
+                            .fillMaxWidth()
+                            .clickable { onFolderClick() }
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Folder,
-                            contentDescription = null,
-                            tint = MpxPrimary,
-                        )
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = folder.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MpxTextPrimary,
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MpxSurfaceElevated),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Folder,
+                                contentDescription = null,
+                                tint = MpxPrimary,
                             )
-                            if (folder.isStorageRemovable) {
-                                Spacer(Modifier.width(6.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .background(MpxPrimary.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
-                                        .padding(horizontal = 4.dp, vertical = 1.dp),
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.music_sd_card_badge),
-                                        color = MpxPrimary,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 9.sp,
-                                    )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = folder.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MpxTextPrimary,
+                                )
+                                if (folder.isStorageRemovable) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .background(MpxPrimary.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
+                                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.music_sd_card_badge),
+                                            color = MpxPrimary,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 9.sp,
+                                        )
+                                    }
                                 }
                             }
+                            Text(
+                                text = stringResource(R.string.music_folder_tracks_format, folder.trackCount, folder.path),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MpxTextSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
-                        Text(
-                            text = stringResource(R.string.music_folder_tracks_format, folder.trackCount, folder.path),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 76.dp),
+                        color = MpxBorder,
+                        thickness = 0.5.dp,
+                    )
+                }
+            }
+            FastScrollbar(
+                listState = listState,
+                itemCount = folders.size,
+                getSectionText = { index ->
+                    folders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
+        }
+    } else {
+        val gridState = rememberLazyGridState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyVerticalGrid(
+                state = gridState,
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(
+                    items = folders,
+                    key = { it.id.ifBlank { it.path } },
+                    contentType = { "audio_folder_grid" },
+                ) { folder ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onFolderClick() },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(96.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MpxSurfaceElevated),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Folder,
+                                    contentDescription = null,
+                                    tint = MpxPrimary,
+                                    modifier = Modifier.size(40.dp),
+                                )
+                                if (folder.isStorageRemovable) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopStart)
+                                            .padding(6.dp)
+                                            .background(MpxPrimary.copy(alpha = 0.85f), RoundedCornerShape(3.dp))
+                                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.music_sd_card_badge),
+                                            color = Color.Black,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 9.sp,
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = folder.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MpxTextPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(R.string.music_songs_count, folder.trackCount),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MpxTextSecondary,
+                            )
+                        }
                     }
                 }
-                HorizontalDivider(
-                    modifier = Modifier.padding(start = 76.dp),
-                    color = MpxBorder,
-                    thickness = 0.5.dp,
-                )
             }
+            GridFastScrollbar(
+                gridState = gridState,
+                itemCount = folders.size,
+                getSectionText = { index ->
+                    folders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
         }
-        FastScrollbar(
-            listState = listState,
-            itemCount = folders.size,
-            getSectionText = { index ->
-                folders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
-            },
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
     }
 }

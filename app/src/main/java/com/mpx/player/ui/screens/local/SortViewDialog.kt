@@ -46,9 +46,12 @@ fun SortViewDialog(
     currentSort: SortField,
     currentView: ViewMode,
     showAllFolders: Boolean = false,
+    separateViewLayout: Boolean = true,
+    availableSortFields: List<SortField> = SortField.values().toList(),
     onSortChange: (SortField) -> Unit,
     onViewChange: (ViewMode) -> Unit,
     onShowAllFoldersChange: ((Boolean) -> Unit)? = null,
+    onSeparateViewLayoutChange: ((Boolean) -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -87,6 +90,47 @@ fun SortViewDialog(
                     }
                 }
 
+                if (onSeparateViewLayoutChange != null) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MpxBorder,
+                    )
+
+                    Text(
+                        text = stringResource(R.string.sort_section_layout_settings),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MpxTextSecondary,
+                        fontSize = 11.sp,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSeparateViewLayoutChange(!separateViewLayout) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Switch(
+                            checked = separateViewLayout,
+                            onCheckedChange = onSeparateViewLayoutChange,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MpxPrimary,
+                                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                            ),
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(stringResource(R.string.sort_separate_view_title), color = MpxTextPrimary)
+                            Text(
+                                stringResource(R.string.sort_separate_view_desc),
+                                color = MpxTextSecondary,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 11.sp,
+                            )
+                        }
+                    }
+                }
+
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
                     color = MpxBorder,
@@ -99,7 +143,7 @@ fun SortViewDialog(
                     fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(6.dp))
-                SortField.values().forEach { field ->
+                availableSortFields.forEach { field ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -146,9 +190,9 @@ fun SortViewDialog(
                         )
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("Show all folders", color = MpxTextPrimary)
+                            Text(stringResource(R.string.list_show_all_folders), color = MpxTextPrimary)
                             Text(
-                                "Include empty and hidden folders",
+                                stringResource(R.string.list_show_all_folders_desc),
                                 color = MpxTextSecondary,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,

@@ -20,6 +20,9 @@ data class AppSettings(
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10
     val appLanguage: String = "system", // system, en, ar
     val showAllFolders: Boolean = false,
+    val separateViewLayout: Boolean = true,
+    val localViewMode: String = "LIST", // LIST, GRID
+    val musicViewMode: String = "LIST", // LIST, GRID
 )
 
 interface AppSettingsRepository {

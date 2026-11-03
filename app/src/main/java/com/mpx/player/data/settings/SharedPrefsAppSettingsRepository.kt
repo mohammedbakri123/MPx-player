@@ -27,6 +27,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
         appLanguage = prefs.getString("app_language", "system") ?: "system",
         showAllFolders = prefs.getBoolean("show_all_folders", false),
+        separateViewLayout = prefs.getBoolean("separate_view_layout", true),
+        localViewMode = prefs.getString("local_view_mode", "LIST") ?: "LIST",
+        musicViewMode = prefs.getString("music_view_mode", "LIST") ?: "LIST",
     )
 
     override fun save(settings: AppSettings) {
@@ -46,6 +49,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("popup_play_controls", settings.popupPlayControls)
             .putString("app_language", settings.appLanguage)
             .putBoolean("show_all_folders", settings.showAllFolders)
+            .putBoolean("separate_view_layout", settings.separateViewLayout)
+            .putString("local_view_mode", settings.localViewMode)
+            .putString("music_view_mode", settings.musicViewMode)
             .apply()
     }
 }
