@@ -23,7 +23,7 @@ data class AppSettings(
     val popupPlayPosition: String = "BottomRight", // BottomRight, BottomLeft, TopRight, TopLeft, Center, RememberLast
     val popupPlaySnapToEdge: Boolean = true,
     val popupPlayCloseOnDone: Boolean = true,
-    val appLanguage: String = "system", // system, en, ar, es, fr, hi
+    val appLanguage: String = "system", // system, en, ar, es, fr, hi, de
     val showAllFolders: Boolean = false,
     val folderViewMode: String = "LIST", // Global default folder contents view mode: LIST, GRID
     val localViewMode: String = "LIST", // Local root folders list view mode: LIST, GRID

@@ -153,6 +153,7 @@ fun SettingsScreen(
         LocaleHelper.LANGUAGE_SPANISH -> stringResource(R.string.lang_spanish)
         LocaleHelper.LANGUAGE_FRENCH -> stringResource(R.string.lang_french)
         LocaleHelper.LANGUAGE_HINDI -> stringResource(R.string.lang_hindi)
+        LocaleHelper.LANGUAGE_GERMAN -> stringResource(R.string.lang_german)
         else -> stringResource(R.string.lang_system_default)
     }
 
@@ -260,6 +261,11 @@ fun SettingsScreen(
                                             LocaleHelper.LANGUAGE_HINDI,
                                             stringResource(R.string.lang_hindi),
                                             stringResource(R.string.lang_hindi_desc),
+                                        ),
+                                        Triple(
+                                            LocaleHelper.LANGUAGE_GERMAN,
+                                            stringResource(R.string.lang_german),
+                                            stringResource(R.string.lang_german_desc),
                                         ),
                                     )
                                     languageOptions.forEach { (langCode, langTitle, langDesc) ->
