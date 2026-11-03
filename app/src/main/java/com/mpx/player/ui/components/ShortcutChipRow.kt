@@ -19,7 +19,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MusicNote
-import androidx.compose.material.icons.outlined.PlaylistPlay
+import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.Icon
@@ -32,8 +32,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mpx.player.R
 import com.mpx.player.ui.theme.MpxAccentAmber
 import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurfaceElevated
@@ -60,50 +62,50 @@ fun ShortcutChipRow(
     val chips = listOf(
         ShortcutChipData(
             id = "music",
-            label = "Music",
+            label = stringResource(R.string.nav_music),
             icon = Icons.Outlined.MusicNote,
             isPrimary = true,
             onClick = onOpenMusic,
         ),
         ShortcutChipData(
             id = "transfer",
-            label = "Transfer",
+            label = stringResource(R.string.nav_transfer),
             icon = Icons.Outlined.SwapHoriz,
             onClick = onOpenTransfer,
         ),
         ShortcutChipData(
             id = "private",
-            label = "Private",
+            label = stringResource(R.string.chip_private),
             icon = Icons.Outlined.Lock,
             onClick = { onChipClick("Private Folder") },
         ),
         ShortcutChipData(
             id = "favourites",
-            label = "Favourites",
+            label = stringResource(R.string.tool_favourites_title),
             icon = Icons.Outlined.FavoriteBorder,
             onClick = { onChipClick("Favourites") },
         ),
         ShortcutChipData(
             id = "history",
-            label = "History",
+            label = stringResource(R.string.tool_history_title),
             icon = Icons.Outlined.History,
             onClick = { onChipClick("History") },
         ),
         ShortcutChipData(
             id = "playlists",
-            label = "Playlists",
-            icon = Icons.Outlined.PlaylistPlay,
+            label = stringResource(R.string.tool_playlists_title),
+            icon = Icons.AutoMirrored.Outlined.PlaylistPlay,
             onClick = { onChipClick("Video Playlists") },
         ),
         ShortcutChipData(
             id = "status",
-            label = "Status Saver",
+            label = stringResource(R.string.tool_status_title),
             icon = Icons.Outlined.SaveAlt,
             onClick = { onChipClick("Status Saver") },
         ),
         ShortcutChipData(
             id = "network",
-            label = "Network",
+            label = stringResource(R.string.chip_network),
             icon = Icons.Outlined.Cloud,
             onClick = { onChipClick("Network Stream") },
         ),

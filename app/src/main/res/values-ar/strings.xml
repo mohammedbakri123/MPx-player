@@ -28,6 +28,7 @@
     <string name="action_ok">حسناً</string>
     <string name="action_paste">لصق</string>
     <string name="action_understood">مفهوم</string>
+    <string name="action_done">تم</string>
 
     <!-- Language Settings & Dialog -->
     <string name="pref_app_language">لغة التطبيق</string>
@@ -228,4 +229,71 @@
     <string name="issue32_private_detail">يتطلب المجلد الخاص خزينة ملفات أو SQLite مشفرة ومحمية برقم سري أو مصادقة حيوية لإخفاء الوسائط الحساسة.</string>
     <string name="issue32_manager_detail">سيقوم مدير الوسائط ومنظف التخزين بتحليل سعة تخزين الجهاز وتحديد مقاطع الفيديو المكررة والملفات الكبيرة وذاكرة التخزين المؤقت.</string>
     <string name="issue32_bin_detail">ستحتفظ سلة المحذوفات بالملفات المحذوفة في مجلد تحت إدارة التطبيق لمدة 30 يوماً قبل حذفها نهائياً.</string>
+
+    <!-- Local Screen -->
+    <string name="local_title">الوسائط</string>
+    <string name="local_search_placeholder">البحث في المجلدات…</string>
+    <string name="local_section_folders">المجلدات</string>
+    <string name="local_sort_label">الترتيب: %1$s</string>
+    <string name="local_status_banner">فحص MediaStore الحقيقي نشط. تعكس المجلدات وعدد مقاطع الفيديو وسائط الجهاز.</string>
+    <string name="local_menu_view_sort">خيارات العرض والترتيب</string>
+    <string name="local_menu_refresh">تحديث المكتبة</string>
+
+    <!-- Local Screen Content Descriptions -->
+    <string name="cd_close_search">إغلاق البحث</string>
+    <string name="cd_toggle_view">تبديل طريقة العرض</string>
+    <string name="cd_search">بحث</string>
+    <string name="cd_more_options">مزيد من الخيارات</string>
+    <string name="cd_quick_play">تشغيل سريع</string>
+
+    <!-- Shortcut Chips -->
+    <string name="chip_private">خاص</string>
+    <string name="chip_network">الشبكة</string>
+
+    <!-- Folder Item Row & Grid Card -->
+    <string name="badge_sd_card">بطاقة SD</string>
+    <string name="badge_new">جديد</string>
+    <string name="folder_item_videos_count">%1$d مقطع فيديو</string>
+    <string name="folder_item_videos_and_size">%1$d مقطع فيديو • %2$s</string>
+    <string name="folder_item_options_cd">خيارات المجلد لـ %1$s</string>
+
+    <!-- View & Sort Dialog -->
+    <string name="sort_dialog_title">خيارات العرض والترتيب</string>
+    <string name="sort_section_view_mode">وضع العرض</string>
+    <string name="sort_section_sort_by">ترتيب حسب</string>
+    <string name="view_mode_list">عرض كقائمة</string>
+    <string name="view_mode_grid">عرض كشبكة</string>
+    <string name="sort_field_name">العنوان / الاسم</string>
+    <string name="sort_field_date">تاريخ التعديل</string>
+    <string name="sort_field_size">حجم الملف</string>
+    <string name="sort_field_count">عدد مقاطع الفيديو</string>
+
+    <!-- Empty States -->
+    <string name="empty_permission_title">الإذن مطلوب</string>
+    <string name="empty_permission_desc">يحتاج MPx إلى إذن للوصول إلى مقاطع الفيديو الخاصة بك لعرض مكتبة الوسائط.</string>
+    <string name="empty_permission_action">منح الإذن</string>
+    <string name="empty_search_title">لم يتم العثور على نتائج</string>
+    <string name="empty_search_desc">لا توجد مجلدات تطابق \"%1$s\".</string>
+    <string name="empty_search_action">مسح البحث</string>
+    <string name="empty_videos_title">لم يتم العثور على مقاطع فيديو</string>
+    <string name="empty_videos_desc">لم يتم العثور على مجلدات فيديو على هذا الجهاز. ستظهر هنا مقاطع الفيديو التي تسجلها أو تنزلها.</string>
+    <string name="empty_videos_action">تحديث</string>
+
+    <!-- Snackbars -->
+    <string name="snackbar_no_playable_videos">لا توجد مقاطع فيديو قابلة للتشغيل في %1$s.</string>
+    <string name="snackbar_library_refreshed">تم تحديث المكتبة</string>
+    <string name="snackbar_folder_options">خيارات المجلد لـ %1$s</string>
+    <string name="snackbar_removed_favourites">تمت الإزالة من المفضلة</string>
+    <string name="snackbar_cleared_favourites">تم مسح المفضلة</string>
+    <string name="snackbar_cleared_history">تم مسح السجل</string>
+    <string name="snackbar_playlist_created">تم إنشاء قائمة التشغيل \"%1$s\"</string>
+    <string name="snackbar_playlist_deleted">تم حذف \"%1$s\"</string>
+
+    <!-- Feature Placeholder Dialog & Playlists -->
+    <string name="dialog_feature_placeholder_title">عنصر نائب للميزة</string>
+    <string name="feature_placeholder_msg">تم جدولة %1$s للمراحل اللاحقة. تتم حالياً معاينة التنسيق.</string>
+    <string name="dialog_video_playlists_title">قوائم تشغيل الفيديو (%1$d)</string>
+    <string name="dialog_new_playlist">قائمة تشغيل جديدة</string>
+    <string name="dialog_playlists_empty">لا توجد قوائم تشغيل مخصصة بعد. انقر على قائمة تشغيل جديدة لإنشاء واحدة.</string>
+    <string name="playlist_items_count">%1$d عناصر</string>
 </resources>

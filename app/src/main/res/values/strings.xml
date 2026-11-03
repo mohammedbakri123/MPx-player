@@ -28,6 +28,7 @@
     <string name="action_ok">OK</string>
     <string name="action_paste">Paste</string>
     <string name="action_understood">Understood</string>
+    <string name="action_done">Done</string>
 
     <!-- Language Settings & Dialog -->
     <string name="pref_app_language">App Language</string>
@@ -228,4 +229,71 @@
     <string name="issue32_private_detail">Private Folder requires an encrypted SQLite or file vault protected by a PIN or biometric auth to hide sensitive media.</string>
     <string name="issue32_manager_detail">Media Manager &amp; Storage Cleaner will analyze device storage, identify duplicate videos, large files, and temporary cache.</string>
     <string name="issue32_bin_detail">Recycle Bin will preserve deleted files in an app-managed holding directory for 30 days before permanent deletion.</string>
+
+    <!-- Local Screen -->
+    <string name="local_title">Media</string>
+    <string name="local_search_placeholder">Search folders…</string>
+    <string name="local_section_folders">FOLDERS</string>
+    <string name="local_sort_label">Sort: %1$s</string>
+    <string name="local_status_banner">Real MediaStore scanning active. Folders and video counts reflect device media.</string>
+    <string name="local_menu_view_sort">View &amp; Sort options</string>
+    <string name="local_menu_refresh">Refresh library</string>
+
+    <!-- Local Screen Content Descriptions -->
+    <string name="cd_close_search">Close search</string>
+    <string name="cd_toggle_view">Toggle view</string>
+    <string name="cd_search">Search</string>
+    <string name="cd_more_options">More options</string>
+    <string name="cd_quick_play">Quick play</string>
+
+    <!-- Shortcut Chips -->
+    <string name="chip_private">Private</string>
+    <string name="chip_network">Network</string>
+
+    <!-- Folder Item Row & Grid Card -->
+    <string name="badge_sd_card">SD CARD</string>
+    <string name="badge_new">NEW</string>
+    <string name="folder_item_videos_count">%1$d videos</string>
+    <string name="folder_item_videos_and_size">%1$d videos • %2$s</string>
+    <string name="folder_item_options_cd">Folder options for %1$s</string>
+
+    <!-- View & Sort Dialog -->
+    <string name="sort_dialog_title">View &amp; Sort Options</string>
+    <string name="sort_section_view_mode">VIEW MODE</string>
+    <string name="sort_section_sort_by">SORT BY</string>
+    <string name="view_mode_list">List view</string>
+    <string name="view_mode_grid">Grid view</string>
+    <string name="sort_field_name">Title / Name</string>
+    <string name="sort_field_date">Date modified</string>
+    <string name="sort_field_size">File size</string>
+    <string name="sort_field_count">Video count</string>
+
+    <!-- Empty States -->
+    <string name="empty_permission_title">Permission Required</string>
+    <string name="empty_permission_desc">MPx needs permission to access your videos to display your media library.</string>
+    <string name="empty_permission_action">Grant Permission</string>
+    <string name="empty_search_title">No Matches Found</string>
+    <string name="empty_search_desc">No folders match \"%1$s\".</string>
+    <string name="empty_search_action">Clear search</string>
+    <string name="empty_videos_title">No Videos Found</string>
+    <string name="empty_videos_desc">No video folders found on this device. Videos you record or download will appear here.</string>
+    <string name="empty_videos_action">Refresh</string>
+
+    <!-- Snackbars -->
+    <string name="snackbar_no_playable_videos">No playable videos in %1$s.</string>
+    <string name="snackbar_library_refreshed">Library refreshed</string>
+    <string name="snackbar_folder_options">Folder options for %1$s</string>
+    <string name="snackbar_removed_favourites">Removed from Favourites</string>
+    <string name="snackbar_cleared_favourites">Cleared Favourites</string>
+    <string name="snackbar_cleared_history">Cleared History</string>
+    <string name="snackbar_playlist_created">Playlist \"%1$s\" created</string>
+    <string name="snackbar_playlist_deleted">Deleted \"%1$s\"</string>
+
+    <!-- Feature Placeholder Dialog & Playlists -->
+    <string name="dialog_feature_placeholder_title">Feature Placeholder</string>
+    <string name="feature_placeholder_msg">%1$s is scheduled for subsequent phases. Currently previewing layout.</string>
+    <string name="dialog_video_playlists_title">Video Playlists (%1$d)</string>
+    <string name="dialog_new_playlist">New Playlist</string>
+    <string name="dialog_playlists_empty">No custom playlists yet. Tap New Playlist to create one.</string>
+    <string name="playlist_items_count">%1$d items</string>
 </resources>

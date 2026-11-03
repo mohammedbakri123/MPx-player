@@ -28,16 +28,16 @@ import com.mpx.player.ui.components.GridFastScrollbar
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -70,11 +70,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
@@ -136,7 +138,11 @@ fun LocalScreen(
             val videos = repository.getVideosInFolder(folder.id)
             withContext(Dispatchers.Main) {
                 if (videos.isEmpty()) {
-                    scope.launch { snackbarHostState.showSnackbar("No playable videos in ${folder.name}.") }
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            context.getString(R.string.snackbar_no_playable_videos, folder.name)
+                        )
+                    }
                 } else {
                     playbackManager?.playVideoFiles(videos)
                     onOpenPlayer()
@@ -249,7 +255,7 @@ fun LocalScreen(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Search folders...", color = MpxTextSecondary, fontSize = 14.sp) },
+                            placeholder = { Text(stringResource(R.string.local_search_placeholder), color = MpxTextSecondary, fontSize = 14.sp) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -263,7 +269,7 @@ fun LocalScreen(
                         )
                     } else {
                         Text(
-                            text = "Media",
+                            text = stringResource(R.string.local_title),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
@@ -278,22 +284,26 @@ fun LocalScreen(
                 actions = {
                     if (isSearching) {
                         IconButton(onClick = { isSearching = false; searchQuery = "" }) {
-                            Icon(imageVector = Icons.Filled.Close, contentDescription = "Close search", tint = MpxTextPrimary)
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.cd_close_search),
+                                tint = MpxTextPrimary,
+                            )
                         }
                     }
                     IconButton(onClick = {
                         viewMode = if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
                     }) {
                         Icon(
-                            imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.Filled.ViewList,
-                            contentDescription = "Toggle view",
+                            imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
+                            contentDescription = stringResource(R.string.cd_toggle_view),
                             tint = MpxTextPrimary,
                         )
                     }
                     IconButton(onClick = { isSearching = true }) {
                         Icon(
                             imageVector = Icons.Filled.Search,
-                            contentDescription = "Search",
+                            contentDescription = stringResource(R.string.cd_search),
                             tint = MpxTextPrimary,
                         )
                     }
@@ -301,7 +311,7 @@ fun LocalScreen(
                         IconButton(onClick = { menuExpanded = true }) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
-                                contentDescription = "More options",
+                                contentDescription = stringResource(R.string.cd_more_options),
                                 tint = MpxTextPrimary,
                             )
                         }
@@ -310,24 +320,26 @@ fun LocalScreen(
                             onDismissRequest = { menuExpanded = false },
                         ) {
                             DropdownMenuItem(
-                                text = { Text("View & Sort options") },
+                                text = { Text(stringResource(R.string.local_menu_view_sort)) },
                                 onClick = {
                                     menuExpanded = false
                                     showSortDialog = true
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Refresh library") },
+                                text = { Text(stringResource(R.string.local_menu_refresh)) },
                                 onClick = {
                                     menuExpanded = false
                                     refreshFolders()
                                     scope.launch {
-                                        snackbarHostState.showSnackbar("Library refreshed")
+                                        snackbarHostState.showSnackbar(
+                                            context.getString(R.string.snackbar_library_refreshed)
+                                        )
                                     }
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Settings") },
+                                text = { Text(stringResource(R.string.settings_title)) },
                                 onClick = {
                                     menuExpanded = false
                                     onOpenSettings()
@@ -341,16 +353,16 @@ fun LocalScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                                val first = filteredFolders.firstOrNull()
-                                if (first != null) playFolder(first)
-                            },
+                    val first = filteredFolders.firstOrNull()
+                    if (first != null) playFolder(first)
+                },
                 containerColor = MpxPrimary,
                 contentColor = MpxTextPrimary,
                 shape = RoundedCornerShape(16.dp),
             ) {
                 Icon(
                     imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = "Quick play",
+                    contentDescription = stringResource(R.string.cd_quick_play),
                     modifier = Modifier.size(28.dp),
                 )
             }
@@ -370,22 +382,37 @@ fun LocalScreen(
                         "Favourites" -> showFavouritesDialog = true
                         "History" -> showHistoryDialog = true
                         "Video Playlists" -> showPlaylistsDialog = true
-                        else -> featureDialogMessage = "$featureName is scheduled for subsequent phases. Currently previewing layout."
+                        "Private Folder" -> featureDialogMessage = context.getString(
+                            R.string.feature_placeholder_msg,
+                            context.getString(R.string.tool_private_title)
+                        )
+                        "Status Saver" -> featureDialogMessage = context.getString(
+                            R.string.feature_placeholder_msg,
+                            context.getString(R.string.tool_status_title)
+                        )
+                        "Network Stream" -> featureDialogMessage = context.getString(
+                            R.string.feature_placeholder_msg,
+                            context.getString(R.string.tool_network_title)
+                        )
+                        else -> featureDialogMessage = context.getString(
+                            R.string.feature_placeholder_msg,
+                            featureName
+                        )
                     }
                 },
             )
 
             // Honest milestone notice
             HonestStatusBanner(
-                text = "Real MediaStore scanning active. Folders and video counts reflect device media.",
+                text = stringResource(R.string.local_status_banner),
             )
 
             if (!hasPermission) {
                 EmptyStateView(
-                    title = "Permission Required",
-                    message = "MPx needs permission to access your videos to display your media library.",
+                    title = stringResource(R.string.empty_permission_title),
+                    message = stringResource(R.string.empty_permission_desc),
                     icon = Icons.Filled.Folder,
-                    actionLabel = "Grant Permission",
+                    actionLabel = stringResource(R.string.empty_permission_action),
                     onActionClick = {
                         permissionLauncher.launch(MediaPermissions.videoPermission())
                     },
@@ -401,18 +428,18 @@ fun LocalScreen(
                 }
             } else if (filteredFolders.isEmpty() && searchQuery.isNotBlank()) {
                 EmptyStateView(
-                    title = "No Matches Found",
-                    message = "No folders match \"$searchQuery\".",
+                    title = stringResource(R.string.empty_search_title),
+                    message = stringResource(R.string.empty_search_desc, searchQuery),
                     icon = Icons.Filled.Folder,
-                    actionLabel = "Clear search",
+                    actionLabel = stringResource(R.string.empty_search_action),
                     onActionClick = { searchQuery = "" },
                 )
             } else if (filteredFolders.isEmpty()) {
                 EmptyStateView(
-                    title = "No Videos Found",
-                    message = "No video folders found on this device. Videos you record or download will appear here.",
+                    title = stringResource(R.string.empty_videos_title),
+                    message = stringResource(R.string.empty_videos_desc),
                     icon = Icons.Filled.Folder,
-                    actionLabel = "Refresh",
+                    actionLabel = stringResource(R.string.empty_videos_action),
                     onActionClick = {
                         refreshFolders()
                     },
@@ -428,7 +455,7 @@ fun LocalScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "FOLDERS",
+                            text = stringResource(R.string.local_section_folders),
                             style = MaterialTheme.typography.labelSmall,
                             color = MpxTextSecondary,
                             fontSize = 12.sp,
@@ -457,7 +484,7 @@ fun LocalScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "Sort: ${sortField.label}",
+                            text = stringResource(R.string.local_sort_label, stringResource(sortField.labelRes)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxPrimary,
                             fontSize = 12.sp,
@@ -484,7 +511,9 @@ fun LocalScreen(
                                     onClick = { playFolder(folder) },
                                     onMenuClick = {
                                         scope.launch {
-                                            snackbarHostState.showSnackbar("Folder options for ${folder.name}")
+                                            snackbarHostState.showSnackbar(
+                                                context.getString(R.string.snackbar_folder_options, folder.name)
+                                            )
                                         }
                                     },
                                 )
@@ -558,11 +587,11 @@ fun LocalScreen(
         AlertDialog(
             onDismissRequest = { featureDialogMessage = null },
             containerColor = MpxSurface,
-            title = { Text("Feature Placeholder", color = MpxTextPrimary) },
+            title = { Text(stringResource(R.string.dialog_feature_placeholder_title), color = MpxTextPrimary) },
             text = { Text(featureDialogMessage ?: "", color = MpxTextSecondary) },
             confirmButton = {
                 TextButton(onClick = { featureDialogMessage = null }) {
-                    Text("OK", color = MpxPrimary)
+                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
                 }
             },
         )
@@ -591,13 +620,17 @@ fun LocalScreen(
             onRemoveFavourite = { uri ->
                 scope.launch {
                     persistenceRepository.removeFavourite(uri)
-                    snackbarHostState.showSnackbar("Removed from Favourites")
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.snackbar_removed_favourites)
+                    )
                 }
             },
             onClearAll = {
                 scope.launch {
                     persistenceRepository.clearFavourites()
-                    snackbarHostState.showSnackbar("Cleared Favourites")
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.snackbar_cleared_favourites)
+                    )
                 }
             },
         )
@@ -626,7 +659,9 @@ fun LocalScreen(
             onClearHistory = {
                 scope.launch {
                     persistenceRepository.clearHistory()
-                    snackbarHostState.showSnackbar("Cleared History")
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.snackbar_cleared_history)
+                    )
                 }
             },
         )
@@ -643,7 +678,7 @@ fun LocalScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "Video Playlists (${customPlaylists.size})",
+                        text = stringResource(R.string.dialog_video_playlists_title, customPlaylists.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MpxTextPrimary,
                     )
@@ -651,7 +686,7 @@ fun LocalScreen(
                         showPlaylistsDialog = false
                         showCreatePlaylistDialog = true
                     }) {
-                        Text("New Playlist", color = MpxPrimary, fontSize = 12.sp)
+                        Text(stringResource(R.string.dialog_new_playlist), color = MpxPrimary, fontSize = 12.sp)
                     }
                 }
             },
@@ -664,7 +699,7 @@ fun LocalScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "No custom playlists yet. Tap New Playlist to create one.",
+                            text = stringResource(R.string.dialog_playlists_empty),
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxTextMuted,
                         )
@@ -697,7 +732,7 @@ fun LocalScreen(
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Filled.QueueMusic,
+                                        imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                         contentDescription = null,
                                         tint = MpxPrimary,
                                         modifier = Modifier.size(20.dp),
@@ -706,7 +741,11 @@ fun LocalScreen(
                                 Spacer(Modifier.width(12.dp))
                                 Column {
                                     Text(text = pl.name, style = MaterialTheme.typography.bodyMedium, color = MpxTextPrimary)
-                                    Text(text = "${pl.itemCount} items", style = MaterialTheme.typography.bodySmall, color = MpxTextMuted)
+                                    Text(
+                                        text = stringResource(R.string.playlist_items_count, pl.itemCount),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MpxTextMuted,
+                                    )
                                 }
                             }
                             HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
@@ -716,7 +755,7 @@ fun LocalScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showPlaylistsDialog = false }) {
-                    Text("Close", color = MpxPrimary)
+                    Text(stringResource(R.string.action_close), color = MpxPrimary)
                 }
             },
         )
@@ -729,7 +768,9 @@ fun LocalScreen(
                 scope.launch {
                     persistenceRepository.createPlaylist(name, isVideoPlaylist = true)
                     showCreatePlaylistDialog = false
-                    snackbarHostState.showSnackbar("Playlist \"$name\" created")
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.snackbar_playlist_created, name)
+                    )
                 }
             },
         )
@@ -782,7 +823,9 @@ fun LocalScreen(
                 scope.launch {
                     persistenceRepository.deletePlaylist(pl.id)
                     selectedPlaylist = null
-                    snackbarHostState.showSnackbar("Deleted \"${pl.name}\"")
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.snackbar_playlist_deleted, pl.name)
+                    )
                 }
             },
         )
