@@ -229,7 +229,7 @@
     <string name="help_diag_app">App: MPx Player 0.1.0-beta (Build 2)</string>
     <string name="help_diag_os">Android: SDK %1$d (%2$s)</string>
     <string name="help_diag_device">Dispositivo: %1$s %2$s</string>
-    <string name="help_diag_engine">Mecanismo: AndroidX Media3 ExoPlayer 1.3.1</string>
+    <string name="help_diag_engine">Mecanismo: %1$s</string>
     <string name="help_diag_db">Banco de dados: Room SQLite (mpx_player.db)</string>
 
     <string name="dialog_legal_title">Legal e código aberto</string>
@@ -511,7 +511,7 @@
     <string name="about_beta_screen_title">Sobre e status beta</string>
     <string name="about_beta_badge">VERSÃO BETA</string>
     <string name="about_beta_tagline">Player de mídia nativo em Kotlin para Android com Media3 ExoPlayer e persistência Room.</string>
-    <string name="about_beta_build_info">Build 2 (VersionCode 2) • Branch: feature/beta-readiness</string>
+    <string name="about_beta_build_info">Build %1$d (VersionCode %1$d) • Branch: %2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">O QUE ESTÁ PRONTO NA BETA</string>

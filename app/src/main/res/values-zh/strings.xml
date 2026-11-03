@@ -229,7 +229,7 @@
     <string name="help_diag_app">应用：MPx Player 0.1.0-beta（构建 2）</string>
     <string name="help_diag_os">Android 系统：SDK %1$d（%2$s）</string>
     <string name="help_diag_device">设备：%1$s %2$s</string>
-    <string name="help_diag_engine">引擎：AndroidX Media3 ExoPlayer 1.3.1</string>
+    <string name="help_diag_engine">引擎：%1$s</string>
     <string name="help_diag_db">数据库：Room SQLite（mpx_player.db）</string>
 
     <string name="dialog_legal_title">法律与开源</string>
@@ -511,7 +511,7 @@
     <string name="about_beta_screen_title">关于与 Beta 状态</string>
     <string name="about_beta_badge">BETA 版本</string>
     <string name="about_beta_tagline">适用于 Android 的原生 Kotlin 媒体播放器，搭载 Media3 ExoPlayer 和 Room 持久化。</string>
-    <string name="about_beta_build_info">构建 2（VersionCode 2）• 分支：feature/beta-readiness</string>
+    <string name="about_beta_build_info">构建 %1$d（VersionCode %1$d）• 分支：%2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">BETA 版已就绪的内容</string>

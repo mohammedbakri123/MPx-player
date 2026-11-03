@@ -885,7 +885,7 @@ fun MeScreen(
 
     // 8. Help & Feedback In-App Info Page (Gesture guide & diagnostics)
     if (showHelpDialog) {
-        HelpFeedbackDialog(onDismiss = { showHelpDialog = false })
+        HelpFeedbackDialog(onDismiss = { showHelpDialog = false }, isMpv = realPlaybackManager.isMpv)
     }
 
     // 9. Legal & Open Source In-App Info Page
@@ -1621,7 +1621,7 @@ private fun PrivacySecurityDialog(onDismiss: () -> Unit) {
  * Real Help & Feedback In-App Info Page with gesture guides and device diagnostics.
  */
 @Composable
-private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
+private fun HelpFeedbackDialog(onDismiss: () -> Unit, isMpv: Boolean = false) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
@@ -1667,7 +1667,13 @@ private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
                             Text(stringResource(R.string.help_diag_app), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                             Text(stringResource(R.string.help_diag_os, Build.VERSION.SDK_INT, Build.VERSION.RELEASE), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                             Text(stringResource(R.string.help_diag_device, Build.MANUFACTURER, Build.MODEL), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
-                            Text(stringResource(R.string.help_diag_engine), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                stringResource(
+                                    R.string.help_diag_engine,
+                                    if (isMpv) "libmpv (mpv-android-lib 0.1.12)" else "AndroidX Media3 ExoPlayer 1.3.1",
+                                ),
+                                fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface,
+                            )
                             Text(stringResource(R.string.help_diag_db), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
