@@ -377,6 +377,7 @@ class MediaStoreRepository(
     override fun getVideosInFolder(bucketId: String): List<VideoFile> {
         val videos = mutableListOf<VideoFile>()
         val seenPaths = mutableSetOf<String>()
+        val sevenDaysAgoSec = (System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000L) / 1000L
         val projection = arrayOf(
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.TITLE,
@@ -384,6 +385,8 @@ class MediaStoreRepository(
             MediaStore.Video.Media.DURATION,
             MediaStore.Video.Media.SIZE,
             MediaStore.Video.Media.DATE_MODIFIED,
+            MediaStore.Video.Media.DATE_ADDED,
+            MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
         )
         val uris = getVideoContentUris()
         for (uri in uris) {
@@ -401,10 +404,16 @@ class MediaStoreRepository(
                     val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
                     val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
                     val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
+                    val dateAddedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED)
+                    val bucketNameCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
                     while (cursor.moveToNext()) {
                         val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
                         if (path.isNotBlank() && !seenPaths.add(path)) continue
+                        val file = if (path.isNotBlank()) File(path) else null
                         val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
+                        val title = rawTitle?.ifBlank { null }
+                            ?: file?.name?.ifBlank { "Video" }
+                            ?: "Video"
                         val rawId = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
                         val id = rawId.ifBlank { path }
                         val effectivePath = path.ifBlank {
@@ -412,19 +421,29 @@ class MediaStoreRepository(
                                 ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
                             } else ""
                         }
+                        val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
                         val sizeBytes = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
                         val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
+                        val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
+                        val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
+                        val folderName = rawBucketName?.ifBlank { null }
+                            ?: file?.parentFile?.name?.ifBlank { "Videos" }
+                            ?: "Videos"
                         videos.add(
                             VideoFile(
                                 id = id,
-                                title = rawTitle?.ifBlank {
-                                    if (path.isNotBlank()) File(path).name else "Video"
-                                } ?: if (path.isNotBlank()) File(path).name else "Video",
+                                title = title,
                                 path = effectivePath,
-                                durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L,
+                                durationMs = durationMs,
                                 sizeBytes = sizeBytes,
                                 sizeFormatted = formatSize(sizeBytes),
                                 dateModified = dateModified,
+                                bucketId = bucketId,
+                                folderName = folderName,
+                                formattedDuration = formatDuration(durationMs),
+                                formattedSize = formatSize(sizeBytes),
+                                isRemovable = isRemovablePath(path),
+                                isNew = dateAdded > sevenDaysAgoSec || dateModified > sevenDaysAgoSec,
                             )
                         )
                     }
@@ -436,6 +455,116 @@ class MediaStoreRepository(
             }
         }
         return videos.sortedBy { it.title.lowercase(Locale.US) }
+    }
+
+    override fun getAllVideos(): List<VideoFile> = getAllVideos(showAll = false)
+
+    override fun getAllVideos(showAll: Boolean): List<VideoFile> {
+        val videos = mutableListOf<VideoFile>()
+        val seenPaths = mutableSetOf<String>()
+        val projection = arrayOf(
+            MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.TITLE,
+            MediaStore.Video.Media.DATA,
+            MediaStore.Video.Media.DURATION,
+            MediaStore.Video.Media.SIZE,
+            MediaStore.Video.Media.DATE_MODIFIED,
+            MediaStore.Video.Media.DATE_ADDED,
+            MediaStore.Video.Media.BUCKET_ID,
+            MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
+        )
+        val sevenDaysAgoSec = (System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000L) / 1000L
+        val uris = getVideoContentUris()
+        for (uri in uris) {
+            try {
+                context.contentResolver.query(
+                    uri,
+                    projection,
+                    null,
+                    null,
+                    "${MediaStore.Video.Media.DATE_MODIFIED} DESC",
+                )?.use { cursor ->
+                    val idCol = cursor.getColumnIndex(MediaStore.Video.Media._ID)
+                    val titleCol = cursor.getColumnIndex(MediaStore.Video.Media.TITLE)
+                    val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
+                    val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
+                    val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
+                    val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
+                    val dateAddedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED)
+                    val bucketIdCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_ID)
+                    val bucketNameCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
+
+                    while (cursor.moveToNext()) {
+                        val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
+                        if (path.isNotBlank() && !seenPaths.add(path)) continue
+
+                        val file = if (path.isNotBlank()) File(path) else null
+                        val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
+                        val title = rawTitle?.ifBlank { null }
+                            ?: file?.name?.ifBlank { "Video" }
+                            ?: "Video"
+
+                        // Filter hidden files if showAll is false
+                        if (!showAll) {
+                            if (title.startsWith(".") ||
+                                path.split(File.separatorChar).any { it.startsWith(".") } ||
+                                path.contains("/Android/data") ||
+                                path.contains("/Android/obb")
+                            ) {
+                                continue
+                            }
+                        }
+
+                        val rawId = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
+                        val id = rawId.ifBlank { path }
+                        val effectivePath = path.ifBlank {
+                            if (idCol >= 0) {
+                                ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
+                            } else ""
+                        }
+                        val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
+                        val size = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
+                        val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
+                        val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
+
+                        val rawBucketId = if (bucketIdCol >= 0) cursor.getString(bucketIdCol) else null
+                        val bucketId = rawBucketId?.ifBlank { null }
+                            ?: file?.parentFile?.absolutePath?.ifBlank { "unknown" }?.hashCode()?.toString()
+                            ?: "unknown"
+
+                        val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
+                        val folderName = rawBucketName?.ifBlank { null }
+                            ?: file?.parentFile?.name?.ifBlank { "Videos" }
+                            ?: "Videos"
+
+                        val isRecent = dateAdded > sevenDaysAgoSec || dateModified > sevenDaysAgoSec
+                        val isRemovable = isRemovablePath(path)
+
+                        videos.add(
+                            VideoFile(
+                                id = id,
+                                title = title,
+                                path = effectivePath,
+                                durationMs = durationMs,
+                                sizeBytes = size,
+                                dateModified = dateModified,
+                                bucketId = bucketId,
+                                folderName = folderName,
+                                formattedDuration = formatDuration(durationMs),
+                                formattedSize = formatSize(size),
+                                isRemovable = isRemovable,
+                                isNew = isRecent,
+                            )
+                        )
+                    }
+                }
+            } catch (_: SecurityException) {
+                // Continue to next volume
+            } catch (_: Exception) {
+                // Continue to next volume
+            }
+        }
+        return videos
     }
 
     override fun getAudioTracks(): List<AudioTrack> {

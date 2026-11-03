@@ -138,6 +138,7 @@ fun LocalScreen(
     }
     var folders by remember { mutableStateOf<List<MediaFolder>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+    var allVideos by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
 
     // Root folder list view mode: loaded from persisted localViewMode
     var viewMode by remember {
@@ -241,6 +242,40 @@ fun LocalScreen(
         }
     }
 
+    fun playFolderById(bucketId: String, folderName: String) {
+        scope.launch(Dispatchers.IO) {
+            val vids = repository.getVideosInFolder(bucketId)
+            withContext(Dispatchers.Main) {
+                if (vids.isEmpty()) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            context.getString(R.string.snackbar_no_playable_videos, folderName)
+                        )
+                    }
+                } else {
+                    playbackManager?.playVideoFiles(vids)
+                    onOpenPlayer()
+                }
+            }
+        }
+    }
+
+    fun playVideoWithFolder(video: VideoFile) {
+        scope.launch(Dispatchers.IO) {
+            val vids = if (video.bucketId.isNotBlank()) {
+                val found = repository.getVideosInFolder(video.bucketId)
+                if (found.isNotEmpty()) found else listOf(video)
+            } else {
+                listOf(video)
+            }
+            val startIndex = vids.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
+            withContext(Dispatchers.Main) {
+                playbackManager?.playVideoFiles(vids, startIndex)
+                onOpenPlayer()
+            }
+        }
+    }
+
     val persistenceRepository = remember(context) {
         playbackManager?.persistenceRepository
             ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context))
@@ -263,8 +298,10 @@ fun LocalScreen(
             scope.launch(Dispatchers.IO) {
                 isLoading = true
                 val scanned = repository.getMediaFolders(showAll)
+                val scannedVideos = repository.getAllVideos(showAll)
                 withContext(Dispatchers.Main) {
                     folders = scanned
+                    allVideos = scannedVideos
                     isLoading = false
                 }
             }
@@ -282,8 +319,10 @@ fun LocalScreen(
             scope.launch(Dispatchers.IO) {
                 isLoading = true
                 val scanned = repository.getMediaFolders(appSettings.showAllFolders)
+                val scannedVideos = repository.getAllVideos(appSettings.showAllFolders)
                 withContext(Dispatchers.Main) {
                     folders = scanned
+                    allVideos = scannedVideos
                     isLoading = false
                 }
             }
@@ -305,8 +344,10 @@ fun LocalScreen(
                     scope.launch(Dispatchers.IO) {
                         isLoading = true
                         val scanned = repository.getMediaFolders(loadedSettings.showAllFolders)
+                        val scannedVideos = repository.getAllVideos(loadedSettings.showAllFolders)
                         withContext(Dispatchers.Main) {
                             folders = scanned
+                            allVideos = scannedVideos
                             isLoading = false
                         }
                     }
@@ -330,6 +371,7 @@ fun LocalScreen(
             SortField.DATE -> folders.sortedByDescending { it.lastModified }
             SortField.COUNT -> folders.sortedByDescending { it.videoCount }
             SortField.SIZE -> folders.sortedByDescending { it.totalSizeFormatted }
+            SortField.DURATION -> folders.sortedByDescending { it.lastModified }
         }
     }
 
@@ -339,6 +381,25 @@ fun LocalScreen(
         else sortedFolders.filter { it.name.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
     }
 
+    // File view: all videos ungrouped, sorted and filtered
+    val sortedVideos = remember(allVideos, sortField) {
+        when (sortField) {
+            SortField.NAME -> allVideos.sortedBy { it.title.lowercase(Locale.US) }
+            SortField.DATE -> allVideos.sortedByDescending { it.dateModified }
+            SortField.SIZE -> allVideos.sortedByDescending { it.sizeBytes }
+            SortField.COUNT -> allVideos
+            SortField.DURATION -> allVideos.sortedByDescending { it.durationMs }
+        }
+    }
+
+    val filteredVideos = remember(sortedVideos, searchQuery) {
+        val q = searchQuery.trim()
+        if (q.isBlank()) sortedVideos
+        else sortedVideos.filter { it.title.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
+    }
+
+    val rootEmpty = if (appSettings.fileView) filteredVideos.isEmpty() else filteredFolders.isEmpty()
+
     // Folder view sorted and filtered videos
     val sortedFolderVideos = remember(folderVideos, folderSortField) {
         when (folderSortField) {
@@ -346,6 +407,7 @@ fun LocalScreen(
             SortField.DATE -> folderVideos.sortedByDescending { it.dateModified }
             SortField.SIZE -> folderVideos.sortedByDescending { it.sizeBytes }
             SortField.COUNT -> folderVideos
+            SortField.DURATION -> folderVideos.sortedByDescending { it.durationMs }
         }
     }
 
@@ -621,6 +683,20 @@ fun LocalScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Text(
+                                            if (appSettings.fileView) stringResource(R.string.local_menu_folder_view)
+                                            else stringResource(R.string.local_menu_file_view)
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        val updated = appSettings.copy(fileView = !appSettings.fileView)
+                                        realSettingsRepo.save(updated)
+                                        appSettings = updated
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
                                             if (appSettings.showAllFolders) stringResource(R.string.local_menu_filtered_view)
                                             else stringResource(R.string.list_show_all_folders)
                                         )
@@ -674,6 +750,9 @@ fun LocalScreen(
                             playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
                             onOpenPlayer()
                         }
+                    } else if (appSettings.fileView) {
+                        val first = filteredVideos.firstOrNull()
+                        if (first != null) playVideoWithFolder(first)
                     } else {
                         val first = filteredFolders.firstOrNull()
                         if (first != null) playFolder(first)
@@ -921,7 +1000,7 @@ fun LocalScreen(
                     ) {
                         CircularProgressIndicator(color = MpxPrimary)
                     }
-                } else if (filteredFolders.isEmpty() && searchQuery.isNotBlank()) {
+                } else if (rootEmpty && searchQuery.isNotBlank()) {
                     EmptyStateView(
                         title = stringResource(R.string.empty_search_title),
                         message = stringResource(R.string.empty_search_desc, searchQuery),
@@ -929,7 +1008,7 @@ fun LocalScreen(
                         actionLabel = stringResource(R.string.empty_search_action),
                         onActionClick = { searchQuery = "" },
                     )
-                } else if (filteredFolders.isEmpty()) {
+                } else if (rootEmpty) {
                     if (!appSettings.showAllFolders) {
                         EmptyStateView(
                             title = stringResource(R.string.empty_videos_title),
@@ -958,6 +1037,179 @@ fun LocalScreen(
                                 refreshFolders(showAll = true)
                             },
                         )
+                    }
+                } else if (appSettings.fileView) {
+                    // Section Header: FILES + Sort Button
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(R.string.section_files_header),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MpxTextSecondary,
+                                fontSize = 12.sp,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MpxSurfaceElevated)
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                            ) {
+                                Text(
+                                    text = "${filteredVideos.size}",
+                                    color = MpxTextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { showSortDialog = true }
+                                .padding(horizontal = 6.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.local_sort_label, stringResource(sortField.labelRes)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MpxPrimary,
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
+                    if (viewMode == ViewMode.LIST) {
+                        val listState = rememberLazyListState()
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 80.dp),
+                            ) {
+                                items(
+                                    items = filteredVideos,
+                                    key = { it.id.ifBlank { it.path } },
+                                    contentType = { "video_item_row" },
+                                ) { video ->
+                                    val isFav = favourites.any { it.mediaUri == video.path }
+                                    VideoItemRow(
+                                        video = video,
+                                        isFavourite = isFav,
+                                        onClick = { playVideoWithFolder(video) },
+                                        onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
+                                        onAddToPlaylist = {
+                                            videoForPlaylistAdd = video
+                                            showAddToPlaylistDialog = true
+                                        },
+                                        onToggleFavourite = {
+                                            scope.launch {
+                                                if (isFav) {
+                                                    persistenceRepository.removeFavourite(video.path)
+                                                    snackbarHostState.showSnackbar(
+                                                        context.getString(R.string.snackbar_removed_favourites)
+                                                    )
+                                                } else {
+                                                    persistenceRepository.addFavourite(
+                                                        FavouriteItem(
+                                                            mediaId = video.id,
+                                                            title = video.title,
+                                                            subtitle = video.folderName,
+                                                            mediaUri = video.path,
+                                                            isVideo = true,
+                                                            durationMs = video.durationMs,
+                                                        )
+                                                    )
+                                                    snackbarHostState.showSnackbar(
+                                                        context.getString(R.string.snackbar_added_to_favourites)
+                                                    )
+                                                }
+                                            }
+                                        },
+                                    )
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 128.dp),
+                                        color = MpxBorder,
+                                        thickness = 0.5.dp,
+                                    )
+                                }
+                            }
+                            FastScrollbar(
+                                listState = listState,
+                                itemCount = filteredVideos.size,
+                                getSectionText = { index ->
+                                    filteredVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                                },
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                            )
+                        }
+                    } else {
+                        val gridState = rememberLazyGridState()
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyVerticalGrid(
+                                state = gridState,
+                                columns = GridCells.Fixed(2),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                items(
+                                    items = filteredVideos,
+                                    key = { it.id.ifBlank { it.path } },
+                                    contentType = { "video_item_grid" },
+                                ) { video ->
+                                    val isFav = favourites.any { it.mediaUri == video.path }
+                                    VideoItemGridCard(
+                                        video = video,
+                                        isFavourite = isFav,
+                                        onClick = { playVideoWithFolder(video) },
+                                        onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
+                                        onAddToPlaylist = {
+                                            videoForPlaylistAdd = video
+                                            showAddToPlaylistDialog = true
+                                        },
+                                        onToggleFavourite = {
+                                            scope.launch {
+                                                if (isFav) {
+                                                    persistenceRepository.removeFavourite(video.path)
+                                                    snackbarHostState.showSnackbar(
+                                                        context.getString(R.string.snackbar_removed_favourites)
+                                                    )
+                                                } else {
+                                                    persistenceRepository.addFavourite(
+                                                        FavouriteItem(
+                                                            mediaId = video.id,
+                                                            title = video.title,
+                                                            subtitle = video.folderName,
+                                                            mediaUri = video.path,
+                                                            isVideo = true,
+                                                            durationMs = video.durationMs,
+                                                        )
+                                                    )
+                                                    snackbarHostState.showSnackbar(
+                                                        context.getString(R.string.snackbar_added_to_favourites)
+                                                    )
+                                                }
+                                            }
+                                        },
+                                    )
+                                }
+                            }
+                            GridFastScrollbar(
+                                gridState = gridState,
+                                itemCount = filteredVideos.size,
+                                getSectionText = { index ->
+                                    filteredVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                                },
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                            )
+                        }
                     }
                 } else {
                     // Section Header: FOLDERS + Sort Button
@@ -1105,6 +1357,12 @@ fun LocalScreen(
             currentView = viewMode,
             showAllFolders = appSettings.showAllFolders,
             separateViewLayout = appSettings.separateViewLayout,
+            isFileView = appSettings.fileView,
+            onFileViewChange = { isChecked ->
+                val updated = appSettings.copy(fileView = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
             onSortChange = {
                 sortField = it
             },

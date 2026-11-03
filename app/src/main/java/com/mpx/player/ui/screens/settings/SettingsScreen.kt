@@ -269,6 +269,13 @@ fun SettingsScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(bottom = 6.dp),
                                     )
+                                    ToggleRow(stringResource(R.string.list_file_view), settings.fileView) { update(settings.copy(fileView = it)) }
+                                    Text(
+                                        stringResource(R.string.list_file_view_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                                    )
                                     ToggleRow(stringResource(R.string.list_show_all_folders), settings.showAllFolders) { update(settings.copy(showAllFolders = it)) }
                                     ToggleRow(stringResource(R.string.list_show_hidden), settings.showHiddenFiles) { update(settings.copy(showHiddenFiles = it)) }
                                     ToggleRow(stringResource(R.string.list_show_thumbnails), settings.showThumbnails) { update(settings.copy(showThumbnails = it)) }
@@ -282,6 +289,31 @@ fun SettingsScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
                                     )
+                                    ToggleRow(stringResource(R.string.player_auto_rotation), settings.autoScreenRotation) {
+                                        val nextOrient = if (it) "auto" else "landscape"
+                                        update(settings.copy(autoScreenRotation = it, screenOrientation = nextOrient))
+                                    }
+                                    Text(
+                                        stringResource(R.string.player_auto_rotation_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                                    )
+                                    if (!settings.autoScreenRotation) {
+                                        Text(
+                                            stringResource(R.string.player_locked_orientation_header),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
+                                        )
+                                        ChoiceRow(stringResource(R.string.player_orientation_landscape), settings.screenOrientation.equals("landscape", ignoreCase = true)) {
+                                            update(settings.copy(screenOrientation = "landscape"))
+                                        }
+                                        ChoiceRow(stringResource(R.string.player_orientation_portrait), settings.screenOrientation.equals("portrait", ignoreCase = true)) {
+                                            update(settings.copy(screenOrientation = "portrait"))
+                                        }
+                                        Spacer(Modifier.height(4.dp))
+                                    }
                                     ToggleRow(stringResource(R.string.player_gestures), settings.gesturesEnabled) { update(settings.copy(gesturesEnabled = it)) }
                                 }
                                 "decoder" -> {

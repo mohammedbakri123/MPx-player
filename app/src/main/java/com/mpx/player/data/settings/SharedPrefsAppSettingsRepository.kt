@@ -35,6 +35,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         localViewMode = prefs.getString("local_view_mode", "LIST") ?: "LIST",
         separateViewLayout = prefs.getBoolean("separate_view_layout", true),
         musicViewMode = prefs.getString("music_view_mode", "LIST") ?: "LIST",
+        fileView = prefs.getBoolean("file_view", false),
+        autoScreenRotation = prefs.getBoolean("auto_screen_rotation", true),
+        screenOrientation = prefs.getString("screen_orientation", "auto") ?: "auto",
     )
 
     override fun save(settings: AppSettings) {
@@ -62,6 +65,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("local_view_mode", settings.localViewMode)
             .putBoolean("separate_view_layout", settings.separateViewLayout)
             .putString("music_view_mode", settings.musicViewMode)
+            .putBoolean("file_view", settings.fileView)
+            .putBoolean("auto_screen_rotation", settings.autoScreenRotation)
+            .putString("screen_orientation", settings.screenOrientation)
             .apply()
     }
 

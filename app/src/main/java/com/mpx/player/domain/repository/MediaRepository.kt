@@ -16,6 +16,8 @@ interface MediaRepository {
     fun getMediaFolders(): List<MediaFolder>
     fun getMediaFolders(showAllFolders: Boolean): List<MediaFolder> = getMediaFolders()
     fun getVideosInFolder(bucketId: String): List<VideoFile> = emptyList()
+    fun getAllVideos(): List<VideoFile> = emptyList()
+    fun getAllVideos(showAll: Boolean): List<VideoFile> = getAllVideos()
     fun getAudioTracks(): List<AudioTrack>
     fun getPlaylists(): List<Playlist>
     fun getAudioAlbums(): List<AudioAlbum>

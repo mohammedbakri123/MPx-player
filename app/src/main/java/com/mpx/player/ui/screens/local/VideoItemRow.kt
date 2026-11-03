@@ -15,14 +15,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,58 +44,38 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.ui.components.AsyncVideoThumbnail
-import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxAccentAmber
+import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
-import java.util.Locale
-
-fun formatVideoDuration(durationMs: Long): String {
-    if (durationMs <= 0L) return "0:00"
-    val totalSeconds = durationMs / 1000
-    val seconds = totalSeconds % 60
-    val minutes = (totalSeconds / 60) % 60
-    val hours = totalSeconds / 3600
-    return if (hours > 0) {
-        String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format(Locale.US, "%d:%02d", minutes, seconds)
-    }
-}
-
-fun formatVideoSize(bytes: Long): String {
-    if (bytes <= 0L) return ""
-    val kb = bytes / 1024.0
-    val mb = kb / 1024.0
-    val gb = mb / 1024.0
-    return when {
-        gb >= 1.0 -> String.format(Locale.US, "%.1f GB", gb)
-        mb >= 1.0 -> String.format(Locale.US, "%.1f MB", mb)
-        kb >= 1.0 -> String.format(Locale.US, "%.1f KB", kb)
-        else -> "$bytes B"
-    }
-}
 
 @Composable
 fun VideoItemRow(
     video: VideoFile,
+    isFavourite: Boolean = false,
     onClick: () -> Unit,
-    onMenuClick: () -> Unit,
+    onPlayFolder: () -> Unit = {},
+    onAddToPlaylist: () -> Unit = {},
+    onToggleFavourite: () -> Unit = {},
+    onMenuClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 16:9 Thumbnail box with duration badge overlay
+        // Video thumbnail with duration overlay
         Box(
             modifier = Modifier
-                .size(width = 100.dp, height = 58.dp)
+                .size(width = 68.dp, height = 48.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(MpxSurfaceElevated),
             contentAlignment = Alignment.Center,
@@ -97,21 +86,19 @@ fun VideoItemRow(
                 iconSize = 24.dp,
             )
 
-            val durationStr = formatVideoDuration(video.durationMs)
-            if (durationStr.isNotBlank() && durationStr != "0:00") {
+            if (video.formattedDuration.isNotBlank()) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(4.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.Black.copy(alpha = 0.78f))
+                        .padding(3.dp)
+                        .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(3.dp))
                         .padding(horizontal = 4.dp, vertical = 1.dp),
                 ) {
                     Text(
-                        text = durationStr,
+                        text = video.formattedDuration,
                         color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
@@ -119,55 +106,131 @@ fun VideoItemRow(
 
         Spacer(Modifier.width(14.dp))
 
-        // Title and video metadata
+        // Title, folder name, and size
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(
-                text = video.title,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                ),
-                color = MpxTextPrimary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = video.title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                    ),
+                    color = MpxTextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+
+                if (video.isRemovable) {
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(MpxPrimary.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.badge_sd_card),
+                            color = MpxPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                        )
+                    }
+                }
+
+                if (video.isNew) {
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(MpxAccentAmber, RoundedCornerShape(3.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.badge_new),
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                        )
+                    }
+                }
+            }
 
             Spacer(Modifier.height(3.dp))
 
-            val sizeStr = video.sizeFormatted.ifBlank { formatVideoSize(video.sizeBytes) }
-            val durationStr = formatVideoDuration(video.durationMs)
-            val metadataStr = when {
-                durationStr != "0:00" && sizeStr.isNotBlank() -> "$durationStr • $sizeStr"
-                durationStr != "0:00" -> durationStr
-                sizeStr.isNotBlank() -> sizeStr
-                else -> ""
-            }
-
-            if (metadataStr.isNotBlank()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Folder,
+                    contentDescription = null,
+                    tint = MpxTextSecondary,
+                    modifier = Modifier.size(13.dp),
+                )
+                Spacer(Modifier.width(4.dp))
                 Text(
-                    text = metadataStr,
+                    text = video.folderName.ifBlank { "Videos" },
                     style = MaterialTheme.typography.bodySmall,
                     color = MpxTextSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = 12.sp,
                 )
+                if (video.formattedSize.isNotBlank()) {
+                    Text(
+                        text = " • ${video.formattedSize}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MpxTextSecondary,
+                        maxLines = 1,
+                    )
+                }
             }
         }
 
-        IconButton(
-            onClick = onMenuClick,
-            modifier = Modifier.size(48.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = stringResource(R.string.video_item_options_cd, video.title),
-                tint = MpxTextMuted,
-                modifier = Modifier.size(20.dp),
-            )
+        Box {
+            IconButton(
+                onClick = { if (onMenuClick != null) onMenuClick() else menuExpanded = true },
+                modifier = Modifier.size(48.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = stringResource(R.string.video_item_options_cd, video.title),
+                    tint = MpxTextMuted,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.video_menu_play)) },
+                    onClick = {
+                        menuExpanded = false
+                        onClick()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.video_menu_play_folder, video.folderName)) },
+                    onClick = {
+                        menuExpanded = false
+                        onPlayFolder()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.music_menu_add_to_playlist)) },
+                    onClick = {
+                        menuExpanded = false
+                        onAddToPlaylist()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.music_menu_toggle_favourite)) },
+                    onClick = {
+                        menuExpanded = false
+                        onToggleFavourite()
+                    },
+                )
+            }
         }
     }
 }
@@ -175,8 +238,12 @@ fun VideoItemRow(
 @Composable
 fun VideoItemGridCard(
     video: VideoFile,
+    isFavourite: Boolean = false,
     onClick: () -> Unit,
-    onMenuClick: () -> Unit = {},
+    onPlayFolder: () -> Unit = {},
+    onAddToPlaylist: () -> Unit = {},
+    onToggleFavourite: () -> Unit = {},
+    onMenuClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -186,93 +253,129 @@ fun VideoItemGridCard(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
     ) {
-        Column {
+        Column(
+            modifier = Modifier.padding(10.dp),
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(104.dp)
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                    .height(96.dp)
+                    .clip(RoundedCornerShape(8.dp))
                     .background(MpxSurfaceElevated),
                 contentAlignment = Alignment.Center,
             ) {
                 AsyncVideoThumbnail(
                     video = video,
                     modifier = Modifier.fillMaxSize(),
-                    iconSize = 32.dp,
+                    iconSize = 36.dp,
                 )
 
-                val durationStr = formatVideoDuration(video.durationMs)
-                if (durationStr.isNotBlank() && durationStr != "0:00") {
+                if (video.formattedDuration.isNotBlank()) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(6.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(Color.Black.copy(alpha = 0.8f))
+                            .padding(4.dp)
+                            .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(3.dp))
                             .padding(horizontal = 4.dp, vertical = 2.dp),
                     ) {
                         Text(
-                            text = durationStr,
+                            text = video.formattedDuration,
                             color = Color.White,
                             fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+
+                if (video.isRemovable) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .background(MpxPrimary.copy(alpha = 0.85f), RoundedCornerShape(3.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.badge_sd_card),
+                            color = Color.Black,
                             fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                        )
+                    }
+                }
+
+                if (video.isNew) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .background(MpxAccentAmber, RoundedCornerShape(3.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.badge_new),
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
                         )
                     }
                 }
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 10.dp, end = 2.dp, top = 6.dp, bottom = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                ) {
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = video.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MpxTextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Spacer(Modifier.height(2.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Folder,
+                    contentDescription = null,
+                    tint = MpxTextSecondary,
+                    modifier = Modifier.size(11.dp),
+                )
+                Spacer(Modifier.width(3.dp))
+                Text(
+                    text = video.folderName.ifBlank { "Videos" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MpxTextSecondary,
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (video.formattedSize.isNotBlank()) {
                     Text(
-                        text = video.title,
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 13.sp,
-                        ),
-                        color = MpxTextPrimary,
+                        text = " • ${video.formattedSize}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MpxTextSecondary,
+                        fontSize = 11.sp,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
-
-                    Spacer(Modifier.height(2.dp))
-
-                    val sizeStr = video.sizeFormatted.ifBlank { formatVideoSize(video.sizeBytes) }
-                    val durationStr = formatVideoDuration(video.durationMs)
-                    val metadataStr = when {
-                        durationStr != "0:00" && sizeStr.isNotBlank() -> "$durationStr • $sizeStr"
-                        durationStr != "0:00" -> durationStr
-                        sizeStr.isNotBlank() -> sizeStr
-                        else -> ""
-                    }
-
-                    if (metadataStr.isNotBlank()) {
-                        Text(
-                            text = metadataStr,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
-                            fontSize = 11.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                }
+                if (onMenuClick != null) {
+                    IconButton(onClick = onMenuClick, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = null,
+                            tint = MpxTextSecondary,
+                            modifier = Modifier.size(14.dp),
                         )
                     }
                 }
-
-                IconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier.size(32.dp),
-                ) {
+                IconButton(onClick = onToggleFavourite, modifier = Modifier.size(24.dp)) {
                     Icon(
-                        imageVector = Icons.Filled.MoreVert,
-                        contentDescription = stringResource(R.string.video_item_options_cd, video.title),
-                        tint = MpxTextMuted,
-                        modifier = Modifier.size(16.dp),
+                        imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = null,
+                        tint = if (isFavourite) MpxPrimary else MpxTextSecondary,
+                        modifier = Modifier.size(14.dp),
                     )
                 }
             }

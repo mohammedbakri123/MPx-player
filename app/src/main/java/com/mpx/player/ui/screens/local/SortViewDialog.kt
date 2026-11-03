@@ -35,6 +35,7 @@ enum class SortField(val labelRes: Int, val label: String) {
     DATE(R.string.sort_field_date, "Date modified"),
     SIZE(R.string.sort_field_size, "File size"),
     COUNT(R.string.sort_field_count, "Video count"),
+    DURATION(R.string.sort_field_duration, "Duration / Length"),
 }
 
 enum class ViewMode(val labelRes: Int, val label: String) {
@@ -46,11 +47,13 @@ enum class ViewMode(val labelRes: Int, val label: String) {
 fun SortViewDialog(
     currentSort: SortField,
     currentView: ViewMode,
+    isFileView: Boolean = false,
     showAllFolders: Boolean = false,
     separateViewLayout: Boolean = true,
     availableSortFields: List<SortField>? = null,
     onSortChange: (SortField) -> Unit,
     onViewChange: (ViewMode) -> Unit,
+    onFileViewChange: ((Boolean) -> Unit)? = null,
     onShowAllFoldersChange: ((Boolean) -> Unit)? = null,
     isFolderScope: Boolean = false,
     folderName: String? = null,
@@ -89,6 +92,49 @@ fun SortViewDialog(
         },
         text = {
             Column {
+                if (onFileViewChange != null) {
+                    Text(
+                        text = stringResource(R.string.sort_section_view_type),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MpxTextSecondary,
+                        fontSize = 11.sp,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onFileViewChange(false) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = !isFileView,
+                            onClick = { onFileViewChange(false) },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.view_type_folders), color = MpxTextPrimary)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onFileViewChange(true) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = isFileView,
+                            onClick = { onFileViewChange(true) },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.view_type_files), color = MpxTextPrimary)
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MpxBorder,
+                    )
+                }
+
                 Text(
                     text = stringResource(R.string.sort_section_view_mode),
                     style = MaterialTheme.typography.labelSmall,
@@ -214,7 +260,14 @@ fun SortViewDialog(
                     fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(6.dp))
-                (availableSortFields ?: sortOptions).forEach { field ->
+
+                val fieldsToShow = if (isFileView) {
+                    listOf(SortField.NAME, SortField.DATE, SortField.SIZE, SortField.DURATION)
+                } else {
+                    listOf(SortField.NAME, SortField.DATE, SortField.SIZE, SortField.COUNT)
+                }
+
+                (availableSortFields ?: fieldsToShow).forEach { field ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -238,7 +291,7 @@ fun SortViewDialog(
                     )
 
                     Text(
-                        text = "FOLDERS",
+                        text = if (isFileView) stringResource(R.string.section_files_header) else "FOLDERS",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
@@ -261,9 +314,14 @@ fun SortViewDialog(
                         )
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text(stringResource(R.string.list_show_all_folders), color = MpxTextPrimary)
                             Text(
-                                stringResource(R.string.list_show_all_folders_desc),
+                                text = if (isFileView) stringResource(R.string.list_show_all_files)
+                                    else stringResource(R.string.list_show_all_folders),
+                                color = MpxTextPrimary,
+                            )
+                            Text(
+                                text = if (isFileView) stringResource(R.string.list_show_all_files_desc)
+                                    else stringResource(R.string.list_show_all_folders_desc),
                                 color = MpxTextSecondary,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,

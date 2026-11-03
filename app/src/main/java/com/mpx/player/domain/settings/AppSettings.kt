@@ -28,6 +28,9 @@ data class AppSettings(
     val localViewMode: String = "LIST", // Local root folders list view mode: LIST, GRID
     val separateViewLayout: Boolean = true,
     val musicViewMode: String = "LIST", // LIST, GRID
+    val fileView: Boolean = false, // false = folder view, true = individual files view
+    val autoScreenRotation: Boolean = true, // true = follows sensor, false = locked orientation
+    val screenOrientation: String = "auto", // auto (sensor), landscape, portrait
 )
 
 interface AppSettingsRepository {
