@@ -1,5 +1,7 @@
 package com.mpx.player.ui.screens.music
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -51,6 +54,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,16 +64,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mpx.player.data.repository.MediaRepositoryStub
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioFolder
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.Playlist
+import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxBorder
@@ -80,7 +89,10 @@ import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.util.MediaPermissions
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,18 +100,132 @@ fun MusicScreen(
     onOpenPlayer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val repository = remember { MediaRepositoryStub() }
-    val tracks = remember { repository.getAudioTracks() }
-    val playlists = remember { repository.getPlaylists() }
-    val albums = remember { repository.getAudioAlbums() }
-    val artists = remember { repository.getAudioArtists() }
-    val folders = remember { repository.getAudioFolders() }
+    val context = LocalContext.current
+    val repository = remember(context) { MediaStoreRepository(context) }
+    var hasPermission by remember {
+        mutableStateOf(MediaPermissions.hasAudioPermission(context))
+    }
+    var tracks by remember { mutableStateOf<List<AudioTrack>>(emptyList()) }
+    var playlists by remember { mutableStateOf<List<Playlist>>(emptyList()) }
+    var albums by remember { mutableStateOf<List<AudioAlbum>>(emptyList()) }
+    var artists by remember { mutableStateOf<List<AudioArtist>>(emptyList()) }
+    var folders by remember { mutableStateOf<List<AudioFolder>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
 
     val tabs = listOf("Tracks", "Playlists", "Albums", "Artists", "Folders")
     var selectedTab by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { isGranted ->
+        hasPermission = isGranted
+        if (isGranted) {
+            scope.launch(Dispatchers.IO) {
+                isLoading = true
+                val t = repository.getAudioTracks()
+                val p = repository.getPlaylists()
+                val al = repository.getAudioAlbums()
+                val ar = repository.getAudioArtists()
+                val f = repository.getAudioFolders()
+                withContext(Dispatchers.Main) {
+                    tracks = t
+                    playlists = p
+                    albums = al
+                    artists = ar
+                    folders = f
+                    isLoading = false
+                }
+            }
+        } else {
+            tracks = emptyList()
+            playlists = emptyList()
+            albums = emptyList()
+            artists = emptyList()
+            folders = emptyList()
+        }
+    }
+
+    fun refreshMusic() {
+        if (MediaPermissions.hasAudioPermission(context)) {
+            hasPermission = true
+            scope.launch(Dispatchers.IO) {
+                isLoading = true
+                val t = repository.getAudioTracks()
+                val p = repository.getPlaylists()
+                val al = repository.getAudioAlbums()
+                val ar = repository.getAudioArtists()
+                val f = repository.getAudioFolders()
+                withContext(Dispatchers.Main) {
+                    tracks = t
+                    playlists = p
+                    albums = al
+                    artists = ar
+                    folders = f
+                    isLoading = false
+                }
+            }
+        } else {
+            hasPermission = false
+            tracks = emptyList()
+            playlists = emptyList()
+            albums = emptyList()
+            artists = emptyList()
+            folders = emptyList()
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val currentPerm = MediaPermissions.hasAudioPermission(context)
+                hasPermission = currentPerm
+                if (currentPerm) {
+                    scope.launch(Dispatchers.IO) {
+                        isLoading = true
+                        val t = repository.getAudioTracks()
+                        val p = repository.getPlaylists()
+                        val al = repository.getAudioAlbums()
+                        val ar = repository.getAudioArtists()
+                        val f = repository.getAudioFolders()
+                        withContext(Dispatchers.Main) {
+                            tracks = t
+                            playlists = p
+                            albums = al
+                            artists = ar
+                            folders = f
+                            isLoading = false
+                        }
+                    }
+                } else {
+                    tracks = emptyList()
+                    playlists = emptyList()
+                    albums = emptyList()
+                    artists = emptyList()
+                    folders = emptyList()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val filteredTracks = remember(tracks, searchQuery) {
+        if (searchQuery.isBlank()) {
+            tracks
+        } else {
+            tracks.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                    it.artist.contains(searchQuery, ignoreCase = true) ||
+                    it.album.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -133,8 +259,9 @@ fun MusicScreen(
                         )
                     }
                     IconButton(onClick = {
+                        refreshMusic()
                         scope.launch {
-                            snackbarHostState.showSnackbar("Music library scan wired in Phase 1")
+                            snackbarHostState.showSnackbar("Music library refreshed")
                         }
                     }) {
                         Icon(
@@ -250,16 +377,85 @@ fun MusicScreen(
 
             // Honest milestone notice
             HonestStatusBanner(
-                text = "Structure matches MX Music tabs. Tap any track or 'Shuffle All' to open the Player.",
+                text = "Real MediaStore scanning active. Audio tracks, albums, artists, and folders reflect device media.",
             )
 
             // Tab Content
-            when (selectedTab) {
-                0 -> TracksTabContent(tracks = tracks, onTrackClick = onOpenPlayer)
-                1 -> PlaylistsTabContent(playlists = playlists, onPlaylistClick = onOpenPlayer)
-                2 -> AlbumsTabContent(albums = albums, onAlbumClick = onOpenPlayer)
-                3 -> ArtistsTabContent(artists = artists, onArtistClick = onOpenPlayer)
-                4 -> FoldersTabContent(folders = folders, onFolderClick = onOpenPlayer)
+            if (!hasPermission) {
+                EmptyStateView(
+                    title = "Permission Required",
+                    message = "MPx needs permission to access your audio files to display your music library.",
+                    icon = Icons.Filled.MusicNote,
+                    actionLabel = "Grant Permission",
+                    onActionClick = {
+                        permissionLauncher.launch(MediaPermissions.audioPermission())
+                    },
+                )
+            } else if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(color = MpxPrimary)
+                }
+            } else {
+                when (selectedTab) {
+                    0 -> {
+                        if (tracks.isEmpty()) {
+                            EmptyStateView(
+                                title = "No Music Found",
+                                message = "No audio tracks were found on this device.",
+                                icon = Icons.Filled.MusicNote,
+                                actionLabel = "Refresh",
+                                onActionClick = { refreshMusic() },
+                            )
+                        } else if (filteredTracks.isEmpty()) {
+                            EmptyStateView(
+                                title = "No Matches Found",
+                                message = "No songs match \"$searchQuery\".",
+                                icon = Icons.Filled.Search,
+                            )
+                        } else {
+                            TracksTabContent(tracks = filteredTracks, onTrackClick = onOpenPlayer)
+                        }
+                    }
+                    1 -> PlaylistsTabContent(playlists = playlists, onPlaylistClick = onOpenPlayer)
+                    2 -> {
+                        if (albums.isEmpty()) {
+                            EmptyStateView(
+                                title = "No Albums Found",
+                                message = "No audio albums were found on this device.",
+                                icon = Icons.Filled.MusicNote,
+                            )
+                        } else {
+                            AlbumsTabContent(albums = albums, onAlbumClick = onOpenPlayer)
+                        }
+                    }
+                    3 -> {
+                        if (artists.isEmpty()) {
+                            EmptyStateView(
+                                title = "No Artists Found",
+                                message = "No music artists were found on this device.",
+                                icon = Icons.Filled.Person,
+                            )
+                        } else {
+                            ArtistsTabContent(artists = artists, onArtistClick = onOpenPlayer)
+                        }
+                    }
+                    4 -> {
+                        if (folders.isEmpty()) {
+                            EmptyStateView(
+                                title = "No Audio Folders Found",
+                                message = "No audio folders were found on this device.",
+                                icon = Icons.Filled.Folder,
+                            )
+                        } else {
+                            FoldersTabContent(folders = folders, onFolderClick = onOpenPlayer)
+                        }
+                    }
+                }
             }
         }
     }
@@ -399,6 +595,38 @@ private fun PlaylistsTabContent(
                 }
             }
             HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+        }
+
+        if (playlists.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 48.dp, bottom = 48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Filled.QueueMusic,
+                            contentDescription = null,
+                            tint = MpxTextMuted,
+                            modifier = Modifier.size(48.dp),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = "No Playlists Found",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MpxTextPrimary,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Playlists will appear here once created or synced.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MpxTextSecondary,
+                        )
+                    }
+                }
+            }
         }
 
         items(playlists, key = { it.id }) { playlist ->
