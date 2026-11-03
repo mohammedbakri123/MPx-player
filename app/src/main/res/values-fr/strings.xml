@@ -19,6 +19,9 @@
     <string name="mini_player_play">Lecture</string>
     <string name="mini_player_next">Piste suivante</string>
     <string name="mini_player_close">Fermer le lecteur</string>
+    <string name="mini_player_queue">File d’attente</string>
+    <string name="mini_player_queue_empty">La file d’attente est vide</string>
+    <string name="mini_player_queue_now_playing">En cours de lecture</string>
 
     <!-- Common Actions -->
     <string name="action_back">Retour</string>

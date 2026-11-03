@@ -19,6 +19,9 @@
     <string name="mini_player_play">Reproduzir</string>
     <string name="mini_player_next">Próxima faixa</string>
     <string name="mini_player_close">Fechar player</string>
+    <string name="mini_player_queue">Fila</string>
+    <string name="mini_player_queue_empty">A fila está vazia</string>
+    <string name="mini_player_queue_now_playing">Reproduzindo agora</string>
 
     <!-- Common Actions -->
     <string name="action_back">Voltar</string>

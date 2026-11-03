@@ -19,6 +19,9 @@
     <string name="mini_player_play">Abspielen</string>
     <string name="mini_player_next">Nächster Titel</string>
     <string name="mini_player_close">Player schließen</string>
+    <string name="mini_player_queue">Warteschlange</string>
+    <string name="mini_player_queue_empty">Die Warteschlange ist leer</string>
+    <string name="mini_player_queue_now_playing">Wird gerade gespielt</string>
 
     <!-- Common Actions -->
     <string name="action_back">Zurück</string>

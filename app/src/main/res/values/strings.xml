@@ -19,6 +19,9 @@
     <string name="mini_player_play">Play</string>
     <string name="mini_player_next">Next track</string>
     <string name="mini_player_close">Close player</string>
+    <string name="mini_player_queue">Queue</string>
+    <string name="mini_player_queue_empty">Queue is empty</string>
+    <string name="mini_player_queue_now_playing">Now playing</string>
 
     <!-- Common Actions -->
     <string name="action_back">Back</string>

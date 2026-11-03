@@ -19,6 +19,9 @@
     <string name="mini_player_play">Reproducir</string>
     <string name="mini_player_next">Pista siguiente</string>
     <string name="mini_player_close">Cerrar reproductor</string>
+    <string name="mini_player_queue">Cola</string>
+    <string name="mini_player_queue_empty">La cola está vacía</string>
+    <string name="mini_player_queue_now_playing">Reproduciendo ahora</string>
 
     <!-- Common Actions -->
     <string name="action_back">Atrás</string>
