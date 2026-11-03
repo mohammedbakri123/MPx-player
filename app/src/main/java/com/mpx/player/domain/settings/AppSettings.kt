@@ -17,7 +17,11 @@ data class AppSettings(
     val subtitleStyle: String = "White", // White, Yellow, Cyan, Default
     val appTheme: String = "Midnight", // Midnight, Dark, Classic, Light
     val popupPlayEnabled: Boolean = true,
-    val popupPlayControls: String = "PrevNext", // PrevNext, Seek10
+    val popupPlayControls: String = "PrevNext", // PrevNext, Seek10, PlayPauseOnly
+    val popupPlaySize: String = "Medium", // Small, Medium, Large, Auto
+    val popupPlayPosition: String = "BottomRight", // BottomRight, BottomLeft, TopRight, TopLeft, Center, RememberLast
+    val popupPlaySnapToEdge: Boolean = true,
+    val popupPlayCloseOnDone: Boolean = true,
     val appLanguage: String = "system", // system, en, ar
     val showAllFolders: Boolean = false,
 )

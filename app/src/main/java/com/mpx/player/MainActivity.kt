@@ -53,6 +53,7 @@ import com.mpx.player.ui.screens.me.MeScreen
 import com.mpx.player.ui.screens.music.MusicScreen
 import com.mpx.player.ui.screens.player.PlayerScreen
 import com.mpx.player.ui.screens.settings.SettingsScreen
+import com.mpx.player.ui.screens.settings.OverlaySettingsScreen
 import com.mpx.player.ui.screens.transfer.TransferScreen
 import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxTheme
@@ -364,10 +365,17 @@ fun MpxApp(
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
+                    onOpenOverlaySettings = { navController.navigate(Screen.OverlaySettings.route) },
                     settingsRepository = realSettingsRepo,
                     onThemeChanged = onThemeChanged,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
+                )
+            }
+            composable(Screen.OverlaySettings.route) {
+                OverlaySettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    settingsRepository = realSettingsRepo,
                 )
             }
             composable(Screen.Player.route) {
