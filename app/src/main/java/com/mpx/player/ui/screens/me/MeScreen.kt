@@ -282,7 +282,7 @@ fun MeScreen(
             "network" -> showNetworkStreamDialog = true
             "transfer" -> onOpenTransfer()
             "equalizer" -> {
-                val audioSessionId = realPlaybackManager.player.audioSessionId
+                val audioSessionId = realPlaybackManager.exoPlayer?.audioSessionId ?: 0
                 val launched = PipUtils.launchSystemEqualizer(context, audioSessionId)
                 if (!launched) {
                     equalizerMessage = context.getString(R.string.equalizer_dialog_msg)

@@ -16,6 +16,9 @@ android {
         versionName = "0.1.0-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     buildTypes {
@@ -65,6 +68,11 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
     implementation("androidx.media:media:1.7.0")
+    // MPV engine dependency (Issue #52)
+    implementation("io.github.abdallahmehiz:mpv-android-lib:0.1.12") {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "androidx.appcompat")
+    }
     // Data layer dependency (Room persistence)
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")

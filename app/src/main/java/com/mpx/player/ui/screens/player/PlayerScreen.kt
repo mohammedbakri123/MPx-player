@@ -11,6 +11,8 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.TypedValue
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -585,39 +587,66 @@ fun PlayerScreen(
                 )
             },
     ) {
-        // Video Surface via Media3 PlayerView
-        AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    this.player = playbackManager.player
-                    useController = false
-                    resizeMode = when (state.aspectRatio) {
-                        AspectRatioMode.FIT -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                        AspectRatioMode.FILL -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-                        AspectRatioMode.ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                        AspectRatioMode.SIXTEEN_NINE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                        AspectRatioMode.FOUR_THREE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                        AspectRatioMode.ORIGINAL -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+        // Video Surface via Media3 PlayerView or MPV SurfaceView
+        if (playbackManager.isMedia3) {
+            val exoPlayer = playbackManager.exoPlayer
+            if (exoPlayer != null) {
+                AndroidView(
+                    factory = { ctx ->
+                        PlayerView(ctx).apply {
+                            this.player = exoPlayer
+                            useController = false
+                            resizeMode = when (state.aspectRatio) {
+                                AspectRatioMode.FIT -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                                AspectRatioMode.FILL -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+                                AspectRatioMode.ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                                AspectRatioMode.SIXTEEN_NINE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                                AspectRatioMode.FOUR_THREE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                                AspectRatioMode.ORIGINAL -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                            }
+                            applySubtitleSettings(this, currentSettings)
+                        }
+                    },
+                    update = { playerView ->
+                        if (playerView.player !== exoPlayer) {
+                            playerView.player = exoPlayer
+                        }
+                        playerView.resizeMode = when (state.aspectRatio) {
+                            AspectRatioMode.FIT -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                            AspectRatioMode.FILL -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+                            AspectRatioMode.ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                            AspectRatioMode.SIXTEEN_NINE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                            AspectRatioMode.FOUR_THREE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                            AspectRatioMode.ORIGINAL -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+                        }
+                        applySubtitleSettings(playerView, currentSettings)
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        } else {
+            AndroidView(
+                factory = { ctx ->
+                    SurfaceView(ctx).apply {
+                        holder.addCallback(object : SurfaceHolder.Callback {
+                            override fun surfaceCreated(holder: SurfaceHolder) {
+                                playbackManager.attachSurface(holder.surface)
+                            }
+
+                            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
+
+                            override fun surfaceDestroyed(holder: SurfaceHolder) {
+                                // SYNCHRONOUS barrier:
+                                // Set vo=null and detach before surfaceDestroyed returns.
+                                playbackManager.detachSurface()
+                            }
+                        })
                     }
-                    applySubtitleSettings(this, currentSettings)
-                }
-            },
-            update = { playerView ->
-                if (playerView.player !== playbackManager.player) {
-                    playerView.player = playbackManager.player
-                }
-                playerView.resizeMode = when (state.aspectRatio) {
-                    AspectRatioMode.FIT -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                    AspectRatioMode.FILL -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-                    AspectRatioMode.ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                    AspectRatioMode.SIXTEEN_NINE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                    AspectRatioMode.FOUR_THREE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                    AspectRatioMode.ORIGINAL -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                }
-                applySubtitleSettings(playerView, currentSettings)
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
+                },
+                update = {},
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
 
         // Empty-player state when opened without a queued video (issue #57)
         val currentMedia = state.currentItem

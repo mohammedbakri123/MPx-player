@@ -114,6 +114,8 @@ fun SettingsScreen(
     fun update(next: AppSettings) {
         val oldTheme = settings.appTheme
         val oldLanguage = settings.appLanguage
+        val oldEngine = settings.playerEngine
+        val oldDecoder = settings.decoderMode
         settings = next
         settingsRepository.save(next)
         if (next.appTheme != oldTheme) {
@@ -121,6 +123,13 @@ fun SettingsScreen(
         }
         if (next.appLanguage != oldLanguage) {
             onLanguageChanged?.invoke(next.appLanguage)
+        }
+        if (next.playerEngine != oldEngine) {
+            actualPlaybackManager.setPlayerEngine(next.playerEngine)
+        }
+        if (next.decoderMode != oldDecoder) {
+            val decMode = com.mpx.player.playback.DecoderMode.values().find { it.label == next.decoderMode } ?: com.mpx.player.playback.DecoderMode.HW
+            actualPlaybackManager.setDecoderMode(decMode)
         }
     }
 
@@ -382,6 +391,27 @@ fun SettingsScreen(
                                     ToggleRow(stringResource(R.string.player_gestures), settings.gesturesEnabled) { update(settings.copy(gesturesEnabled = it)) }
                                 }
                                 "decoder" -> {
+                                    Text(
+                                        "Playback Engine",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(vertical = 4.dp),
+                                    )
+                                    listOf(
+                                        "MEDIA3" to "Media3 ExoPlayer (Default)",
+                                        "MPV" to "libmpv (Experimental Native Engine)",
+                                    ).forEach { (engine, label) ->
+                                        ChoiceRow(label, settings.playerEngine.equals(engine, ignoreCase = true)) {
+                                            update(settings.copy(playerEngine = engine))
+                                        }
+                                    }
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(
+                                        "Decoder Mode",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(vertical = 4.dp),
+                                    )
                                     listOf(
                                         "HW" to stringResource(R.string.decoder_hw),
                                         "HW+" to stringResource(R.string.decoder_hw_plus),
@@ -821,11 +851,11 @@ private fun DevelopmentSettingsSection(
 
         DiagnosticRow(
             label = stringResource(R.string.dev_label_engine_name),
-            value = "AndroidX Media3 ExoPlayer 1.3.1",
+            value = if (playbackManager.isMpv) "libmpv (mpv-android-lib 0.1.12)" else "AndroidX Media3 ExoPlayer 1.3.1",
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_engine_type),
-            value = "Native Kotlin/Java Core (Standalone)",
+            value = if (playbackManager.isMpv) "C/C++ Native libmpv Core" else "Native Kotlin/Java Core (Standalone)",
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_decoder_mode),

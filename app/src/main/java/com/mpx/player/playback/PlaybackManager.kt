@@ -11,7 +11,10 @@ import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.repository.MediaPersistenceRepository
+import android.util.Log
 import com.mpx.player.playback.engine.Media3PlayerEngine
+import com.mpx.player.playback.engine.MpvPlaybackException
+import com.mpx.player.playback.engine.MpvPlayerEngine
 import com.mpx.player.playback.engine.PlayerEngine
 import com.mpx.player.playback.engine.TrackType
 import kotlinx.coroutines.CoroutineScope
@@ -180,14 +183,34 @@ class PlaybackManager private constructor(context: Context) {
                 )
             }
         }
+
+        override fun onError(error: Exception) {
+            Log.e("PlaybackManager", "Engine error encountered", error)
+            if (isMpv) {
+                val codec = if (error is MpvPlaybackException) error.codecName else _playbackState.value.activeDecoderName
+                fallbackToMedia3(failedCodecName = codec ?: "unknown", reason = error.message)
+            } else {
+                _playbackState.update {
+                    it.copy(userNotification = "Playback error: ${error.message}")
+                }
+            }
+        }
     }
 
+    private var activeSurface: Surface? = null
+
     /**
-     * Active player engine instance. Currently delegates to [Media3PlayerEngine].
+     * Active player engine instance. Defaults to [Media3PlayerEngine] and supports
+     * switching to [MpvPlayerEngine] based on settings, keeping Media3 as fallback path.
      */
-    val engine: PlayerEngine = Media3PlayerEngine(appContext, initialDecoderMode).apply {
-        setListener(engineListener)
-    }
+    var engine: PlayerEngine = createEngine(resolveInitialEngineType(), initialDecoderMode)
+        private set
+
+    val isMedia3: Boolean
+        get() = engine is Media3PlayerEngine
+
+    val isMpv: Boolean
+        get() = engine is MpvPlayerEngine
 
     /**
      * Compatibility accessor exposing the underlying ExoPlayer instance for Media3-specific UI.
@@ -195,6 +218,35 @@ class PlaybackManager private constructor(context: Context) {
     val player: ExoPlayer
         get() = (engine as? Media3PlayerEngine)?.player
             ?: throw IllegalStateException("Current engine is not Media3PlayerEngine")
+
+    val exoPlayer: ExoPlayer?
+        get() = (engine as? Media3PlayerEngine)?.player
+
+    private fun resolveInitialEngineType(): String {
+        return try {
+            settingsRepository.load().playerEngine
+        } catch (_: Exception) {
+            "MEDIA3"
+        }
+    }
+
+    private fun createEngine(engineType: String, mode: DecoderMode): PlayerEngine {
+        return try {
+            when (engineType.uppercase()) {
+                "MPV" -> MpvPlayerEngine(appContext, mode).apply {
+                    setListener(engineListener)
+                }
+                else -> Media3PlayerEngine(appContext, mode).apply {
+                    setListener(engineListener)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("PlaybackManager", "Error instantiating engine $engineType, falling back to Media3", e)
+            Media3PlayerEngine(appContext, mode).apply {
+                setListener(engineListener)
+            }
+        }
+    }
 
     private fun resolveInitialDecoderMode(): DecoderMode {
         return try {
@@ -209,6 +261,7 @@ class PlaybackManager private constructor(context: Context) {
      * Attaches a native video surface to the active playback engine.
      */
     fun attachSurface(surface: Surface) {
+        activeSurface = surface
         engine.attachSurface(surface)
     }
 
@@ -216,7 +269,116 @@ class PlaybackManager private constructor(context: Context) {
      * Detaches the video surface from the active playback engine.
      */
     fun detachSurface() {
+        activeSurface = null
         engine.detachSurface()
+    }
+
+    /**
+     * Switches playback engine with a seamless live handover preserving active queue,
+     * timeline position, speed, and video surface.
+     */
+    fun setPlayerEngine(engineType: String) {
+        val target = engineType.uppercase()
+        val currentType = if (isMpv) "MPV" else "MEDIA3"
+        if (currentType == target) return
+
+        val wasPlaying = engine.isPlaying
+        val currentPos = engine.currentPosition.coerceAtLeast(0L)
+        val currentIndex = engine.currentMediaItemIndex
+        val currentSpeed = _playbackState.value.speed
+        val queue = currentQueue
+        val currentMode = _playbackState.value.decoderMode
+        val surface = activeSurface
+
+        // 1. Release previous engine
+        engine.setListener(null)
+        engine.stop()
+        engine.release()
+
+        // 2. Persist new engine setting
+        val settings = settingsRepository.load().copy(playerEngine = target)
+        settingsRepository.save(settings)
+
+        // 3. Create new engine and restore bindings
+        val newEngine = createEngine(target, currentMode)
+        engine = newEngine
+        newEngine.setSpeed(currentSpeed)
+
+        if (surface != null) {
+            newEngine.attachSurface(surface)
+        }
+
+        // 4. Restore active queue and timeline position
+        if (queue.isNotEmpty()) {
+            val targetIndex = currentIndex.coerceIn(0, queue.lastIndex)
+            newEngine.load(queue, targetIndex, currentPos)
+            if (wasPlaying) {
+                newEngine.play()
+            }
+        }
+
+        _playbackState.update {
+            it.copy(
+                activeDecoderName = null,
+                decoderFallbackNote = null,
+                userNotification = "Switched engine to $target",
+            )
+        }
+        updatePosition()
+        updateTracksState()
+    }
+
+    /**
+     * Fallback to Media3 on hard failure from MPV engine, surfacing a real error
+     * naming the codec (never a silent stall) and preserving playback state.
+     */
+    fun fallbackToMedia3(failedCodecName: String = "unknown", reason: String? = null) {
+        if (isMedia3) return
+
+        val wasPlaying = engine.isPlaying
+        val currentPos = engine.currentPosition.coerceAtLeast(0L)
+        val currentIndex = engine.currentMediaItemIndex
+        val currentSpeed = _playbackState.value.speed
+        val queue = currentQueue
+        val currentMode = _playbackState.value.decoderMode
+        val surface = activeSurface
+
+        Log.e("PlaybackManager", "Hard failure in MPV for codec '$failedCodecName': $reason. Falling back to Media3.")
+
+        // Release failing MPV engine
+        engine.setListener(null)
+        engine.stop()
+        engine.release()
+
+        // Create Media3 engine fallback
+        val fallbackEngine = Media3PlayerEngine(appContext, currentMode).apply {
+            setListener(engineListener)
+        }
+        engine = fallbackEngine
+        fallbackEngine.setSpeed(currentSpeed)
+
+        if (surface != null) {
+            fallbackEngine.attachSurface(surface)
+        }
+
+        // Restore playback state
+        if (queue.isNotEmpty()) {
+            val targetIndex = currentIndex.coerceIn(0, queue.lastIndex)
+            fallbackEngine.load(queue, targetIndex, currentPos)
+            if (wasPlaying) {
+                fallbackEngine.play()
+            }
+        }
+
+        _playbackState.update {
+            it.copy(
+                activeDecoderName = null,
+                decoderFallbackNote = null,
+                userNotification = "MPV decoder failed for codec '$failedCodecName'. Switched to Media3 engine.",
+            )
+        }
+        updatePosition()
+        updateTracksState()
     }
 
     /**
@@ -357,6 +519,9 @@ class PlaybackManager private constructor(context: Context) {
 
     fun setAspectRatio(mode: AspectRatioMode) {
         _playbackState.update { it.copy(aspectRatio = mode) }
+        if (isMpv) {
+            (engine as? MpvPlayerEngine)?.setAspectRatio(mode)
+        }
     }
 
     /**
