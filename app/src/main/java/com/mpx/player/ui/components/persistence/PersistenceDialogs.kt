@@ -17,14 +17,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,10 +47,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mpx.player.R
 import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.PlaybackHistoryItem
@@ -96,14 +98,14 @@ fun FavouritesDialog(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Favourites (${favourites.size})",
+                        text = stringResource(R.string.favourites_dialog_title, favourites.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MpxTextPrimary,
                     )
                 }
                 if (favourites.isNotEmpty()) {
                     TextButton(onClick = onClearAll) {
-                        Text("Clear All", color = MpxTextMuted, fontSize = 12.sp)
+                        Text(stringResource(R.string.action_clear_all), color = MpxTextMuted, fontSize = 12.sp)
                     }
                 }
             }
@@ -125,13 +127,13 @@ fun FavouritesDialog(
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = "No Favourites Yet",
+                            text = stringResource(R.string.favourites_empty_title),
                             style = MaterialTheme.typography.titleMedium,
                             color = MpxTextPrimary,
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Tap the heart icon in the player or track options to add favourites.",
+                            text = stringResource(R.string.favourites_empty_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxTextSecondary,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -154,9 +156,9 @@ fun FavouritesDialog(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(MpxSurfaceElevated),
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MpxSurfaceElevated),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
@@ -191,7 +193,7 @@ fun FavouritesDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Delete,
-                                    contentDescription = "Remove favourite",
+                                    contentDescription = stringResource(R.string.favourites_cd_remove),
                                     tint = MpxTextMuted,
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -204,7 +206,7 @@ fun FavouritesDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MpxPrimary)
             }
         },
     )
@@ -240,14 +242,14 @@ fun PlaybackHistoryDialog(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Playback History (${history.size})",
+                        text = stringResource(R.string.history_dialog_title, history.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MpxTextPrimary,
                     )
                 }
                 if (history.isNotEmpty()) {
                     TextButton(onClick = onClearHistory) {
-                        Text("Clear All", color = MpxTextMuted, fontSize = 12.sp)
+                        Text(stringResource(R.string.action_clear_all), color = MpxTextMuted, fontSize = 12.sp)
                     }
                 }
             }
@@ -269,13 +271,13 @@ fun PlaybackHistoryDialog(
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = "No History Recorded",
+                            text = stringResource(R.string.history_empty_title),
                             style = MaterialTheme.typography.titleMedium,
                             color = MpxTextPrimary,
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Media played in MPx Player will be saved here automatically.",
+                            text = stringResource(R.string.history_empty_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxTextSecondary,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -333,7 +335,7 @@ fun PlaybackHistoryDialog(
                                         if (item.playbackPositionMs > 1_500L) {
                                             Spacer(Modifier.width(6.dp))
                                             Text(
-                                                text = "• Resume at ${formatTime(item.playbackPositionMs)}",
+                                                text = stringResource(R.string.history_resume_at, formatTime(item.playbackPositionMs)),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MpxPrimary,
                                                 fontSize = 11.sp,
@@ -343,7 +345,7 @@ fun PlaybackHistoryDialog(
                                 }
                                 Icon(
                                     imageVector = Icons.Filled.PlayArrow,
-                                    contentDescription = "Resume play",
+                                    contentDescription = stringResource(R.string.history_cd_resume),
                                     tint = MpxPrimary,
                                     modifier = Modifier.size(24.dp),
                                 )
@@ -351,7 +353,7 @@ fun PlaybackHistoryDialog(
                             if (progress > 0f) {
                                 Spacer(Modifier.height(6.dp))
                                 LinearProgressIndicator(
-                                    progress = progress,
+                                    progress = { progress },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(3.dp)
@@ -368,7 +370,7 @@ fun PlaybackHistoryDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MpxPrimary)
             }
         },
     )
@@ -390,7 +392,7 @@ fun CreatePlaylistDialog(
         containerColor = MpxSurface,
         title = {
             Text(
-                text = "New Playlist",
+                text = stringResource(R.string.playlist_create_dialog_title),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MpxTextPrimary,
             )
@@ -398,7 +400,7 @@ fun CreatePlaylistDialog(
         text = {
             Column {
                 Text(
-                    text = "Enter a name for this custom playlist:",
+                    text = stringResource(R.string.playlist_create_dialog_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MpxTextSecondary,
                 )
@@ -406,7 +408,7 @@ fun CreatePlaylistDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    placeholder = { Text("Playlist name") },
+                    placeholder = { Text(stringResource(R.string.playlist_name_placeholder)) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MpxPrimary,
@@ -428,12 +430,12 @@ fun CreatePlaylistDialog(
                 enabled = name.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = MpxPrimary),
             ) {
-                Text("Create")
+                Text(stringResource(R.string.action_create))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MpxTextSecondary)
+                Text(stringResource(R.string.action_cancel), color = MpxTextSecondary)
             }
         },
     )
@@ -455,7 +457,7 @@ fun AddToPlaylistDialog(
         containerColor = MpxSurface,
         title = {
             Text(
-                text = "Add to Playlist",
+                text = stringResource(R.string.playlist_add_dialog_title),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MpxTextPrimary,
             )
@@ -463,7 +465,7 @@ fun AddToPlaylistDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Add \"$mediaTitle\" to:",
+                    text = stringResource(R.string.playlist_add_to_header, mediaTitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = MpxTextSecondary,
                     maxLines = 1,
@@ -480,14 +482,14 @@ fun AddToPlaylistDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.PlaylistAdd,
+                        imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                         contentDescription = null,
                         tint = MpxPrimary,
                         modifier = Modifier.size(24.dp),
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = "Create New Playlist...",
+                        text = stringResource(R.string.playlist_create_new_action),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MpxPrimary,
                     )
@@ -503,7 +505,7 @@ fun AddToPlaylistDialog(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "No custom playlists created yet.",
+                            text = stringResource(R.string.playlist_no_custom_playlists),
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxTextMuted,
                         )
@@ -524,7 +526,7 @@ fun AddToPlaylistDialog(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.QueueMusic,
+                                    imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                     contentDescription = null,
                                     tint = MpxTextSecondary,
                                     modifier = Modifier.size(22.dp),
@@ -537,7 +539,7 @@ fun AddToPlaylistDialog(
                                         color = MpxTextPrimary,
                                     )
                                     Text(
-                                        text = "${pl.itemCount} songs",
+                                        text = stringResource(R.string.music_songs_count, pl.itemCount),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MpxTextMuted,
                                         fontSize = 11.sp,
@@ -551,7 +553,7 @@ fun AddToPlaylistDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MpxTextSecondary)
+                Text(stringResource(R.string.action_cancel), color = MpxTextSecondary)
             }
         },
     )
@@ -588,7 +590,7 @@ fun PlaylistDetailsDialog(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = "${items.size} items • Custom Playlist",
+                        text = stringResource(R.string.playlist_items_subtitle, items.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MpxTextSecondary,
                     )
@@ -596,7 +598,7 @@ fun PlaylistDetailsDialog(
                 IconButton(onClick = onDeletePlaylist) {
                     Icon(
                         imageVector = Icons.Filled.Delete,
-                        contentDescription = "Delete playlist",
+                        contentDescription = stringResource(R.string.playlist_cd_delete),
                         tint = MpxTextMuted,
                     )
                 }
@@ -614,7 +616,7 @@ fun PlaylistDetailsDialog(
                     ) {
                         Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Play All")
+                        Text(stringResource(R.string.playlist_play_all))
                     }
                 }
 
@@ -627,19 +629,19 @@ fun PlaylistDetailsDialog(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                imageVector = Icons.Filled.QueueMusic,
+                                imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                 contentDescription = null,
                                 tint = MpxTextMuted.copy(alpha = 0.5f),
                                 modifier = Modifier.size(40.dp),
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                text = "Playlist is Empty",
+                                text = stringResource(R.string.playlist_empty_title),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MpxTextPrimary,
                             )
                             Text(
-                                text = "Add tracks using the options menu on any track.",
+                                text = stringResource(R.string.playlist_empty_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MpxTextMuted,
                             )
@@ -698,7 +700,7 @@ fun PlaylistDetailsDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Delete,
-                                        contentDescription = "Remove item",
+                                        contentDescription = stringResource(R.string.playlist_cd_remove_item),
                                         tint = MpxTextMuted,
                                         modifier = Modifier.size(16.dp),
                                     )
@@ -712,7 +714,7 @@ fun PlaylistDetailsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MpxPrimary)
             }
         },
     )
@@ -751,14 +753,14 @@ fun PlaylistsDialog(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Filled.QueueMusic,
+                        imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                         contentDescription = null,
                         tint = MpxPrimary,
                         modifier = Modifier.size(24.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Playlists (${playlists.size})",
+                        text = stringResource(R.string.playlists_dialog_title, playlists.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -767,7 +769,7 @@ fun PlaylistsDialog(
                     onDismiss()
                     onCreateNewPlaylist()
                 }) {
-                    Text("+ New", color = MpxPrimary, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.playlists_btn_new), color = MpxPrimary, fontWeight = FontWeight.Bold)
                 }
             }
         },
@@ -780,7 +782,7 @@ fun PlaylistsDialog(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "No custom playlists yet.\nTap '+ New' to create one.",
+                        text = stringResource(R.string.playlists_empty_msg),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MpxTextSecondary,
                     )
@@ -810,7 +812,7 @@ fun PlaylistsDialog(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.QueueMusic,
+                                    imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                     contentDescription = null,
                                     tint = MpxPrimary,
                                     modifier = Modifier.size(20.dp),
@@ -826,8 +828,13 @@ fun PlaylistsDialog(
                                     overflow = TextOverflow.Ellipsis,
                                 )
                                 Spacer(Modifier.height(2.dp))
+                                val mediaType = if (pl.isVideoPlaylist) {
+                                    stringResource(R.string.media_type_video)
+                                } else {
+                                    stringResource(R.string.media_type_audio)
+                                }
                                 Text(
-                                    text = "${pl.itemCount} items • ${if (pl.isVideoPlaylist) "Video" else "Audio"}",
+                                    text = stringResource(R.string.playlist_items_type_format, pl.itemCount, mediaType),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MpxTextSecondary,
                                 )
@@ -840,7 +847,7 @@ fun PlaylistsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MpxPrimary)
             }
         },
     )

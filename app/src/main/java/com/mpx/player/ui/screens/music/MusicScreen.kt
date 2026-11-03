@@ -32,6 +32,8 @@ import java.util.Locale
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
@@ -40,8 +42,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.AlertDialog
@@ -81,10 +81,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mpx.player.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.data.local.db.MpxDatabase
@@ -159,7 +161,15 @@ fun MusicScreen(
     var selectedCustomPlaylist by remember { mutableStateOf<CustomPlaylist?>(null) }
     var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
 
-    val tabs = listOf("Tracks", "Playlists", "Albums", "Artists", "Folders")
+    val tabs = remember {
+        listOf(
+            R.string.music_tab_tracks,
+            R.string.music_tab_playlists,
+            R.string.music_tab_albums,
+            R.string.music_tab_artists,
+            R.string.music_tab_folders,
+        )
+    }
     var selectedTab by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -282,7 +292,7 @@ fun MusicScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Music",
+                        text = stringResource(R.string.music_screen_title),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
@@ -296,24 +306,24 @@ fun MusicScreen(
                 actions = {
                     IconButton(onClick = {
                         scope.launch {
-                            snackbarHostState.showSnackbar("Equalizer is scheduled for audio phase")
+                            snackbarHostState.showSnackbar(context.getString(R.string.music_equalizer_scheduled))
                         }
                     }) {
                         Icon(
                             imageVector = Icons.Filled.Equalizer,
-                            contentDescription = "Equalizer",
+                            contentDescription = stringResource(R.string.music_cd_equalizer),
                             tint = MpxTextPrimary,
                         )
                     }
                     IconButton(onClick = {
                         refreshMusic()
                         scope.launch {
-                            snackbarHostState.showSnackbar("Music library refreshed")
+                            snackbarHostState.showSnackbar(context.getString(R.string.music_library_refreshed))
                         }
                     }) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "More",
+                            contentDescription = stringResource(R.string.action_more),
                             tint = MpxTextPrimary,
                         )
                     }
@@ -342,13 +352,13 @@ fun MusicScreen(
                     HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
                 },
             ) {
-                tabs.forEachIndexed { index, title ->
+                tabs.forEachIndexed { index, titleResId ->
                     Tab(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
                         text = {
                             Text(
-                                text = title,
+                                text = stringResource(titleResId),
                                 style = MaterialTheme.typography.titleSmall.copy(
                                     fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium,
                                 ),
@@ -372,7 +382,7 @@ fun MusicScreen(
                     modifier = Modifier.weight(1f),
                     placeholder = {
                         Text(
-                            "Search songs...",
+                            stringResource(R.string.music_search_placeholder),
                             color = MpxTextMuted,
                             fontSize = 14.sp,
                         )
@@ -415,7 +425,7 @@ fun MusicScreen(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        "Shuffle All",
+                        stringResource(R.string.music_shuffle_all),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -424,16 +434,16 @@ fun MusicScreen(
 
             // Honest milestone notice
             HonestStatusBanner(
-                text = "Real MediaStore scanning active. Audio tracks, albums, artists, and folders reflect device media.",
+                text = stringResource(R.string.music_banner_scanning),
             )
 
             // Tab Content
             if (!hasPermission) {
                 EmptyStateView(
-                    title = "Permission Required",
-                    message = "MPx needs permission to access your audio files to display your music library.",
+                    title = stringResource(R.string.music_permission_required_title),
+                    message = stringResource(R.string.music_permission_required_desc),
                     icon = Icons.Filled.MusicNote,
-                    actionLabel = "Grant Permission",
+                    actionLabel = stringResource(R.string.music_permission_grant_button),
                     onActionClick = {
                         permissionLauncher.launch(MediaPermissions.audioPermission())
                     },
@@ -452,16 +462,16 @@ fun MusicScreen(
                     0 -> {
                         if (tracks.isEmpty()) {
                             EmptyStateView(
-                                title = "No Music Found",
-                                message = "No audio tracks were found on this device.",
+                                title = stringResource(R.string.music_empty_tracks_title),
+                                message = stringResource(R.string.music_empty_tracks_desc),
                                 icon = Icons.Filled.MusicNote,
-                                actionLabel = "Refresh",
+                                actionLabel = stringResource(R.string.music_empty_refresh_action),
                                 onActionClick = { refreshMusic() },
                             )
                         } else if (filteredTracks.isEmpty()) {
                             EmptyStateView(
-                                title = "No Matches Found",
-                                message = "No songs match \"$searchQuery\".",
+                                title = stringResource(R.string.music_search_no_matches_title),
+                                message = stringResource(R.string.music_search_no_matches_desc, searchQuery),
                                 icon = Icons.Filled.Search,
                             )
                         } else {
@@ -500,8 +510,8 @@ fun MusicScreen(
                     2 -> {
                         if (albums.isEmpty()) {
                             EmptyStateView(
-                                title = "No Albums Found",
-                                message = "No audio albums were found on this device.",
+                                title = stringResource(R.string.music_empty_albums_title),
+                                message = stringResource(R.string.music_empty_albums_desc),
                                 icon = Icons.Filled.MusicNote,
                             )
                         } else {
@@ -514,8 +524,8 @@ fun MusicScreen(
                     3 -> {
                         if (artists.isEmpty()) {
                             EmptyStateView(
-                                title = "No Artists Found",
-                                message = "No music artists were found on this device.",
+                                title = stringResource(R.string.music_empty_artists_title),
+                                message = stringResource(R.string.music_empty_artists_desc),
                                 icon = Icons.Filled.Person,
                             )
                         } else {
@@ -528,8 +538,8 @@ fun MusicScreen(
                     4 -> {
                         if (folders.isEmpty()) {
                             EmptyStateView(
-                                title = "No Audio Folders Found",
-                                message = "No audio folders were found on this device.",
+                                title = stringResource(R.string.music_empty_folders_title),
+                                message = stringResource(R.string.music_empty_folders_desc),
                                 icon = Icons.Filled.Folder,
                             )
                         } else {
@@ -551,7 +561,7 @@ fun MusicScreen(
                 scope.launch {
                     persistenceRepository.createPlaylist(name)
                     showCreatePlaylistDialog = false
-                    snackbarHostState.showSnackbar("Playlist \"$name\" created")
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_playlist_created_msg, name))
                 }
             },
         )
@@ -577,7 +587,7 @@ fun MusicScreen(
                         )
                     )
                     trackForPlaylistAdd = null
-                    snackbarHostState.showSnackbar("Added to \"${pl.name}\"")
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_added_to_playlist_msg, pl.name))
                 }
             },
             onCreateNewPlaylist = {
@@ -627,7 +637,7 @@ fun MusicScreen(
                     ) {
                         Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Play Track", color = MpxTextPrimary)
+                        Text(stringResource(R.string.music_menu_play_track), color = MpxTextPrimary)
                     }
 
                     Row(
@@ -648,7 +658,11 @@ fun MusicScreen(
                                         )
                                     )
                                     snackbarHostState.showSnackbar(
-                                        if (added) "Added to Favourites" else "Removed from Favourites"
+                                        if (added) {
+                                            context.getString(R.string.music_added_to_favourites)
+                                        } else {
+                                            context.getString(R.string.music_removed_from_favourites)
+                                        }
                                     )
                                 }
                             }
@@ -657,7 +671,7 @@ fun MusicScreen(
                     ) {
                         Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color(0xFFFF5252))
                         Spacer(Modifier.width(12.dp))
-                        Text("Toggle Favourite", color = MpxTextPrimary)
+                        Text(stringResource(R.string.music_menu_toggle_favourite), color = MpxTextPrimary)
                     }
 
                     Row(
@@ -671,15 +685,15 @@ fun MusicScreen(
                             .padding(vertical = 10.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.PlaylistAdd, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Add to Playlist...", color = MpxTextPrimary)
+                        Text(stringResource(R.string.music_menu_add_to_playlist), color = MpxTextPrimary)
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { trackForOptions = null }) {
-                    Text("Close", color = MpxPrimary)
+                    Text(stringResource(R.string.action_close), color = MpxPrimary)
                 }
             },
         )
@@ -732,7 +746,7 @@ fun MusicScreen(
                 scope.launch {
                     persistenceRepository.deletePlaylist(pl.id)
                     selectedCustomPlaylist = null
-                    snackbarHostState.showSnackbar("Deleted \"${pl.name}\"")
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_deleted_playlist_msg, pl.name))
                 }
             },
         )
@@ -761,13 +775,13 @@ fun MusicScreen(
             onRemoveFavourite = { uri ->
                 scope.launch {
                     persistenceRepository.removeFavourite(uri)
-                    snackbarHostState.showSnackbar("Removed from Favourites")
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_removed_from_favourites))
                 }
             },
             onClearAll = {
                 scope.launch {
                     persistenceRepository.clearFavourites()
-                    snackbarHostState.showSnackbar("Cleared Favourites")
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_cleared_favourites_msg))
                 }
             },
         )
@@ -796,7 +810,7 @@ fun MusicScreen(
             onClearHistory = {
                 scope.launch {
                     persistenceRepository.clearHistory()
-                    snackbarHostState.showSnackbar("Cleared History")
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_cleared_history_msg))
                 }
             },
         )
@@ -889,12 +903,12 @@ private fun TracksTabContent(
                     Spacer(Modifier.width(8.dp))
 
                     IconButton(
-                        onClick = { onTrackClick(index) },
+                        onClick = { onTrackOptionsClick(track) },
                         modifier = Modifier.size(48.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "Track options for ${track.title}",
+                            contentDescription = stringResource(R.string.music_cd_track_options, track.title),
                             tint = MpxTextMuted,
                             modifier = Modifier.size(18.dp),
                         )
@@ -950,12 +964,12 @@ private fun PlaylistsTabContent(
                             .background(MpxPrimary.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(imageVector = Icons.Filled.PlaylistAdd, contentDescription = null, tint = MpxPrimary)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxPrimary)
                     }
                     Spacer(Modifier.width(14.dp))
                     Column {
-                        Text(text = "New Playlist", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, color = MpxPrimary))
-                        Text(text = "Create custom playlist", style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
+                        Text(text = stringResource(R.string.music_new_playlist_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, color = MpxPrimary))
+                        Text(text = stringResource(R.string.music_new_playlist_subtitle), style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
                     }
                 }
                 HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
@@ -970,8 +984,8 @@ private fun PlaylistsTabContent(
                     }
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Favourites", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MpxTextPrimary)
-                        Text(text = "$favouritesCount songs", style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
+                        Text(text = stringResource(R.string.music_favourites_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MpxTextPrimary)
+                        Text(text = stringResource(R.string.music_songs_count, favouritesCount), style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
                     }
                 }
                 HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
@@ -986,8 +1000,8 @@ private fun PlaylistsTabContent(
                     }
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Recently Played", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MpxTextPrimary)
-                        Text(text = "$historyCount songs", style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
+                        Text(text = stringResource(R.string.music_recently_played_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MpxTextPrimary)
+                        Text(text = stringResource(R.string.music_songs_count, historyCount), style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
                     }
                 }
                 HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
@@ -996,11 +1010,11 @@ private fun PlaylistsTabContent(
                 item(key = "empty_playlists", contentType = "empty_state") {
                     Box(modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 48.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(imageVector = Icons.Filled.QueueMusic, contentDescription = null, tint = MpxTextMuted, modifier = Modifier.size(48.dp))
+                            Icon(imageVector = Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MpxTextMuted, modifier = Modifier.size(48.dp))
                             Spacer(Modifier.height(12.dp))
-                            Text(text = "No Playlists Found", style = MaterialTheme.typography.titleMedium, color = MpxTextPrimary)
+                            Text(text = stringResource(R.string.music_empty_playlists_title), style = MaterialTheme.typography.titleMedium, color = MpxTextPrimary)
                             Spacer(Modifier.height(4.dp))
-                            Text(text = "Playlists will appear here once created or synced.", style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
+                            Text(text = stringResource(R.string.music_empty_playlists_desc), style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
                         }
                     }
                 }
@@ -1011,12 +1025,12 @@ private fun PlaylistsTabContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(modifier = Modifier.size(46.dp).clip(RoundedCornerShape(8.dp)).background(MpxSurfaceElevated), contentAlignment = Alignment.Center) {
-                        Icon(imageVector = Icons.Filled.QueueMusic, contentDescription = null, tint = MpxPrimary)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MpxPrimary)
                     }
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = playlist.title, style = MaterialTheme.typography.titleMedium, color = MpxTextPrimary)
-                        Text(text = "${playlist.itemCount} songs • ${playlist.subtitle}", style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
+                        Text(text = stringResource(R.string.music_playlist_songs_subtitle, playlist.itemCount, playlist.subtitle), style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary)
                     }
                 }
                 HorizontalDivider(modifier = Modifier.padding(start = 76.dp), color = MpxBorder, thickness = 0.5.dp)
@@ -1083,7 +1097,7 @@ private fun AlbumsTabContent(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = "${album.artist} • ${album.trackCount} tracks",
+                        text = stringResource(R.string.music_album_tracks_format, album.artist, album.trackCount),
                         style = MaterialTheme.typography.bodySmall,
                         color = MpxTextSecondary,
                         maxLines = 1,
@@ -1149,7 +1163,7 @@ private fun ArtistsTabContent(
                             color = MpxTextPrimary,
                         )
                         Text(
-                            text = "${artist.trackCount} tracks • ${artist.albumCount} album",
+                            text = stringResource(R.string.music_artist_details_format, artist.trackCount, artist.albumCount),
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxTextSecondary,
                         )
@@ -1226,7 +1240,7 @@ private fun FoldersTabContent(
                                         .padding(horizontal = 4.dp, vertical = 1.dp),
                                 ) {
                                     Text(
-                                        text = "SD CARD",
+                                        text = stringResource(R.string.music_sd_card_badge),
                                         color = MpxPrimary,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 9.sp,
@@ -1235,7 +1249,7 @@ private fun FoldersTabContent(
                             }
                         }
                         Text(
-                            text = "${folder.trackCount} tracks • ${folder.path}",
+                            text = stringResource(R.string.music_folder_tracks_format, folder.trackCount, folder.path),
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxTextSecondary,
                             maxLines = 1,
