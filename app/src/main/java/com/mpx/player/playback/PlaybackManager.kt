@@ -59,7 +59,10 @@ class PlaybackManager private constructor(context: Context) {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _playbackState.update { it.copy(isPlaying = isPlaying) }
             if (isPlaying) {
-                PlaybackService.start(appContext)
+                val settings = settingsRepository.load()
+                if (settings.backgroundPlay) {
+                    PlaybackService.start(appContext)
+                }
                 startTicker()
             } else {
                 stopTicker()
