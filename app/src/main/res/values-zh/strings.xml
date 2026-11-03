@@ -430,6 +430,8 @@
     <!-- Shortcut Chips -->
     <string name="chip_private">私密</string>
     <string name="chip_network">网络</string>
+    <string name="chip_cleaner">清理</string>
+    <string name="chip_privacy">隐私</string>
 
     <!-- Folder Item Row & Grid Card -->
     <string name="badge_sd_card">SD 卡</string>

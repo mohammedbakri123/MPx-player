@@ -430,6 +430,8 @@
     <!-- Shortcut Chips -->
     <string name="chip_private">Личное</string>
     <string name="chip_network">Сеть</string>
+    <string name="chip_cleaner">Очистка</string>
+    <string name="chip_privacy">Конфиденциальность</string>
 
     <!-- Folder Item Row & Grid Card -->
     <string name="badge_sd_card">SD-КАРТА</string>

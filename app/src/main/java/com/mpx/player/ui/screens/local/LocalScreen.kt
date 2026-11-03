@@ -798,6 +798,25 @@ fun LocalScreen(
                             }
                         }
                         IconButton(onClick = {
+                            // Header Play action (confirmed in MX's decoded Local
+                            // menu as the always-visible Play action): plays the
+                            // first visible folder, or the first video's folder
+                            // in file view — the same path as the quick-play FAB.
+                            if (appSettings.fileView) {
+                                val first = filteredVideos.firstOrNull()
+                                if (first != null) playVideoWithFolder(first)
+                            } else {
+                                val first = filteredFolders.firstOrNull()
+                                if (first != null) playFolder(first)
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = stringResource(R.string.cd_quick_play),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        IconButton(onClick = {
                             updateViewMode(if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST)
                         }) {
                             Icon(
@@ -1162,6 +1181,14 @@ fun LocalScreen(
                             "Network Stream" -> featureDialogMessage = context.getString(
                                 R.string.feature_placeholder_msg,
                                 context.getString(R.string.tool_network_title)
+                            )
+                            "Cleaner" -> featureDialogMessage = context.getString(
+                                R.string.feature_placeholder_msg,
+                                context.getString(R.string.chip_cleaner)
+                            )
+                            "Privacy" -> featureDialogMessage = context.getString(
+                                R.string.feature_placeholder_msg,
+                                context.getString(R.string.chip_privacy)
                             )
                             else -> featureDialogMessage = context.getString(
                                 R.string.feature_placeholder_msg,

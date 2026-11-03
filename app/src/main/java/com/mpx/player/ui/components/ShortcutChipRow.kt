@@ -15,10 +15,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -102,6 +104,24 @@ fun ShortcutChipRow(
             label = stringResource(R.string.chip_network),
             icon = Icons.Outlined.Cloud,
             onClick = { onChipClick("Network Stream") },
+        ),
+        // Cleaner / Privacy complete the MX shortcut set. Both are honest
+        // placeholders (same standing as the Issue 32 tools): tapping one
+        // shows the "scheduled for subsequent phases" dialog, never a fake
+        // feature. Pills are kept as-is — the paged circular-icon control
+        // is screenshot-only (unverified in the decoded layouts), so it is
+        // not rebuilt here.
+        ShortcutChipData(
+            id = "cleaner",
+            label = stringResource(R.string.chip_cleaner),
+            icon = Icons.Outlined.DeleteSweep,
+            onClick = { onChipClick("Cleaner") },
+        ),
+        ShortcutChipData(
+            id = "privacy",
+            label = stringResource(R.string.chip_privacy),
+            icon = Icons.Outlined.PrivacyTip,
+            onClick = { onChipClick("Privacy") },
         ),
     )
 
