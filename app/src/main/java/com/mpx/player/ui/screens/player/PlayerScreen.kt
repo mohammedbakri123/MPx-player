@@ -1224,7 +1224,7 @@ fun PlayerScreen(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .padding(start = 16.dp)
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.6f)),
                 ) {
@@ -1232,7 +1232,7 @@ fun PlayerScreen(
                         imageVector = Icons.Filled.LockOpen,
                         contentDescription = "Lock controls",
                         tint = Color.White,
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(24.dp),
                     )
                 }
 
@@ -1365,7 +1365,7 @@ fun PlayerScreen(
                                     imageVector = Icons.Filled.SkipPrevious,
                                     contentDescription = "Previous track",
                                     tint = if (state.hasPrevious) Color.White else Color.White.copy(alpha = 0.3f),
-                                    modifier = Modifier.size(26.dp),
+                                    modifier = Modifier.size(28.dp),
                                 )
                             }
 
@@ -1414,7 +1414,7 @@ fun PlayerScreen(
                                     imageVector = Icons.Filled.SkipNext,
                                     contentDescription = "Next track",
                                     tint = if (state.hasNext) Color.White else Color.White.copy(alpha = 0.3f),
-                                    modifier = Modifier.size(26.dp),
+                                    modifier = Modifier.size(28.dp),
                                 )
                             }
 
