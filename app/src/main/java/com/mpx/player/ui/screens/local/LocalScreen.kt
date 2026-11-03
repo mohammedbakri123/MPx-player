@@ -1,5 +1,7 @@
 package com.mpx.player.ui.screens.local
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,12 +23,14 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,10 +56,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mpx.player.data.repository.MediaRepositoryStub
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.mpx.player.data.repository.MediaStoreRepository
+import com.mpx.player.domain.model.MediaFolder
+import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.ShortcutChipRow
 import com.mpx.player.ui.theme.MpxBlack
@@ -62,10 +73,13 @@ import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurface
 import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.util.MediaPermissions
+import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,8 +90,14 @@ fun LocalScreen(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val repository = remember { MediaRepositoryStub() }
-    val folders = remember { repository.getMediaFolders() }
+    val context = LocalContext.current
+    val repository = remember(context) { MediaStoreRepository(context) }
+    var hasPermission by remember {
+        mutableStateOf(MediaPermissions.hasVideoPermission(context))
+    }
+    var folders by remember { mutableStateOf<List<MediaFolder>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+
     var viewMode by remember { mutableStateOf(ViewMode.LIST) }
     var sortField by remember { mutableStateOf(SortField.DATE) }
     var showSortDialog by remember { mutableStateOf(false) }
@@ -85,6 +105,76 @@ fun LocalScreen(
     var featureDialogMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { isGranted ->
+        hasPermission = isGranted
+        if (isGranted) {
+            scope.launch(Dispatchers.IO) {
+                isLoading = true
+                val scanned = repository.getMediaFolders()
+                withContext(Dispatchers.Main) {
+                    folders = scanned
+                    isLoading = false
+                }
+            }
+        } else {
+            folders = emptyList()
+        }
+    }
+
+    fun refreshFolders() {
+        if (MediaPermissions.hasVideoPermission(context)) {
+            hasPermission = true
+            scope.launch(Dispatchers.IO) {
+                isLoading = true
+                val scanned = repository.getMediaFolders()
+                withContext(Dispatchers.Main) {
+                    folders = scanned
+                    isLoading = false
+                }
+            }
+        } else {
+            hasPermission = false
+            folders = emptyList()
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val currentPerm = MediaPermissions.hasVideoPermission(context)
+                hasPermission = currentPerm
+                if (currentPerm) {
+                    scope.launch(Dispatchers.IO) {
+                        isLoading = true
+                        val scanned = repository.getMediaFolders()
+                        withContext(Dispatchers.Main) {
+                            folders = scanned
+                            isLoading = false
+                        }
+                    }
+                } else {
+                    folders = emptyList()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val sortedFolders = remember(folders, sortField) {
+        when (sortField) {
+            SortField.NAME -> folders.sortedBy { it.name.lowercase(Locale.US) }
+            SortField.DATE -> folders.sortedByDescending { it.lastModified }
+            SortField.COUNT -> folders.sortedByDescending { it.videoCount }
+            SortField.SIZE -> folders.sortedByDescending { it.totalSizeFormatted }
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -149,8 +239,9 @@ fun LocalScreen(
                                 text = { Text("Refresh library") },
                                 onClick = {
                                     menuExpanded = false
+                                    refreshFolders()
                                     scope.launch {
-                                        snackbarHostState.showSnackbar("Library refresh is wired in Phase 1")
+                                        snackbarHostState.showSnackbar("Library refreshed")
                                     }
                                 },
                             )
@@ -197,92 +288,123 @@ fun LocalScreen(
 
             // Honest milestone notice
             HonestStatusBanner(
-                text = "Structure matches MX Player layout. Real MediaStore scanning connects in Phase 1.",
+                text = "Real MediaStore scanning active. Folders and video counts reflect device media.",
             )
 
-            // Section Header: FOLDERS + Sort Button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "FOLDERS",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MpxTextSecondary,
-                        fontSize = 12.sp,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MpxSurfaceElevated)
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text = "${folders.size}",
-                            color = MpxTextSecondary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
+            if (!hasPermission) {
+                EmptyStateView(
+                    title = "Permission Required",
+                    message = "MPx needs permission to access your videos to display your media library.",
+                    icon = Icons.Filled.Folder,
+                    actionLabel = "Grant Permission",
+                    onActionClick = {
+                        permissionLauncher.launch(MediaPermissions.videoPermission())
+                    },
+                )
+            } else if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(color = MpxPrimary)
                 }
-
+            } else if (sortedFolders.isEmpty()) {
+                EmptyStateView(
+                    title = "No Videos Found",
+                    message = "No video folders found on this device. Videos you record or download will appear here.",
+                    icon = Icons.Filled.Folder,
+                    actionLabel = "Refresh",
+                    onActionClick = {
+                        refreshFolders()
+                    },
+                )
+            } else {
+                // Section Header: FOLDERS + Sort Button
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable { showSortDialog = true }
-                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "Sort: ${sortField.label}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MpxPrimary,
-                        fontSize = 12.sp,
-                    )
-                }
-            }
-
-            // Folder list / grid
-            if (viewMode == ViewMode.LIST) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 80.dp),
-                ) {
-                    items(folders, key = { it.id }) { folder ->
-                        FolderItemRow(
-                            folder = folder,
-                            onClick = onOpenPlayer,
-                            onMenuClick = {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Folder options for ${folder.name}")
-                                }
-                            },
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "FOLDERS",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MpxTextSecondary,
+                            fontSize = 12.sp,
                         )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 76.dp),
-                            color = MpxBorder,
-                            thickness = 0.5.dp,
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MpxSurfaceElevated)
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = "${sortedFolders.size}",
+                                color = MpxTextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { showSortDialog = true }
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Sort: ${sortField.label}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MpxPrimary,
+                            fontSize = 12.sp,
                         )
                     }
                 }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    items(folders, key = { it.id }) { folder ->
-                        FolderItemGridCard(
-                            folder = folder,
-                            onClick = onOpenPlayer,
-                        )
+
+                // Folder list / grid
+                if (viewMode == ViewMode.LIST) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 80.dp),
+                    ) {
+                        items(sortedFolders, key = { it.id }) { folder ->
+                            FolderItemRow(
+                                folder = folder,
+                                onClick = onOpenPlayer,
+                                onMenuClick = {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Folder options for ${folder.name}")
+                                    }
+                                },
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 76.dp),
+                                color = MpxBorder,
+                                thickness = 0.5.dp,
+                            )
+                        }
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(sortedFolders, key = { it.id }) { folder ->
+                            FolderItemGridCard(
+                                folder = folder,
+                                onClick = onOpenPlayer,
+                            )
+                        }
                     }
                 }
             }
