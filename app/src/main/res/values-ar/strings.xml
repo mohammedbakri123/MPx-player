@@ -407,4 +407,31 @@
     <string name="empty_folders_desc">لم يتم العثور على مجلدات وسائط على وحدات التخزين. ستظهر المجلدات والوسائط هنا بمجرد إنشائها أو مزامنتها.</string>
     <string name="local_section_all_folders">كافة المجلدات</string>
     <string name="local_badge_show_all">إظهار الكل</string>
+
+    <!-- وضع عرض المجلد ومحتويات المجلد -->
+    <string name="folder_view_mode">وضع عرض المجلد</string>
+    <string name="pref_default_folder_view_mode">وضع عرض المجلد الافتراضي</string>
+    <string name="pref_default_folder_view_mode_desc">التخطيط الافتراضي لعرض ملفات الفيديو داخل المجلدات</string>
+    <string name="folder_view_subtitle">%1$d مقاطع فيديو • %2$s</string>
+    <string name="folder_view_subtitle_single">فيديو واحد • %1$s</string>
+    <string name="folder_view_search_placeholder">البحث عن مقاطع الفيديو في المجلد…</string>
+    <string name="folder_view_empty_title">لا توجد مقاطع فيديو في المجلد</string>
+    <string name="folder_view_empty_desc">لم يتم العثور على ملفات فيديو داخل هذا المجلد.</string>
+    <string name="folder_view_search_empty_title">لم يتم العثور على مقاطع فيديو</string>
+    <string name="folder_view_search_empty_desc">لا توجد مقاطع فيديو تطابق \"%1$s\".</string>
+    <string name="folder_menu_play_all">تشغيل الكل</string>
+    <string name="folder_menu_open">فتح المجلد</string>
+    <string name="folder_view_dialog_title">عرض وترتيب المجلد</string>
+    <string name="folder_view_set_as_default">تعيين كافتراضي لجميع المجلدات</string>
+    <string name="folder_view_set_as_default_desc">ستستخدم المجلدات الجديدة وضع العرض هذا</string>
+    <string name="folder_view_reset_default">إعادة التعيين للافتراضي العام</string>
+    <string name="folder_view_reset_default_snackbar">تمت إعادة تعيين عرض المجلد للافتراضي (%1$s)</string>
+    <string name="view_mode_switched_list">تم التبديل إلى عرض القائمة</string>
+    <string name="view_mode_switched_grid">تم التبديل إلى عرض الشبكة</string>
+    <string name="video_item_options_cd">خيارات %1$s</string>
+    <string name="video_item_play">تشغيل</string>
+    <string name="video_item_add_to_playlist">إضافة إلى قائمة تشغيل…</string>
+    <string name="video_item_favourite">إضافة إلى المفضلة</string>
+    <string name="video_item_unfavourite">إزالة من المفضلة</string>
+    <string name="action_back_to_folders">الرجوع إلى المجلدات</string>
 </resources>

@@ -1,9 +1,9 @@
 package com.mpx.player.ui.screens.local
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,14 +22,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import com.mpx.player.ui.components.FastScrollbar
-import com.mpx.player.ui.components.GridFastScrollbar
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Close
@@ -40,7 +41,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -50,9 +50,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -74,6 +74,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -84,20 +85,28 @@ import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.CustomPlaylist
+import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.PlaylistItem
+import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
+import com.mpx.player.ui.components.FastScrollbar
+import com.mpx.player.ui.components.GridFastScrollbar
 import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.ShortcutChipRow
+import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.FavouritesDialog
 import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
 import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
+import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxSurface
+import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
@@ -130,7 +139,16 @@ fun LocalScreen(
     var folders by remember { mutableStateOf<List<MediaFolder>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    var viewMode by remember { mutableStateOf(ViewMode.LIST) }
+    // Root folder list view mode: loaded from persisted localViewMode
+    var viewMode by remember {
+        mutableStateOf(
+            try {
+                ViewMode.valueOf(appSettings.localViewMode)
+            } catch (_: Exception) {
+                ViewMode.LIST
+            }
+        )
+    }
     var sortField by remember { mutableStateOf(SortField.DATE) }
     var showSortDialog by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
@@ -139,6 +157,61 @@ fun LocalScreen(
     var isSearching by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Folder view mode state (drilled-down folder contents view)
+    var currentFolder by remember { mutableStateOf<MediaFolder?>(null) }
+    var folderVideos by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
+    var isFolderLoading by remember { mutableStateOf(false) }
+    var folderViewMode by remember { mutableStateOf(ViewMode.LIST) }
+    var folderSortField by remember { mutableStateOf(SortField.DATE) }
+    var folderSearchQuery by remember { mutableStateOf("") }
+    var isFolderSearching by remember { mutableStateOf(false) }
+    var showFolderSortDialog by remember { mutableStateOf(false) }
+    var folderMenuExpanded by remember { mutableStateOf(false) }
+    var folderForMenu by remember { mutableStateOf<MediaFolder?>(null) }
+    var videoForMenu by remember { mutableStateOf<VideoFile?>(null) }
+    var videoForPlaylistAdd by remember { mutableStateOf<VideoFile?>(null) }
+    var showAddToPlaylistDialog by remember { mutableStateOf(false) }
+
+    // Intercept back button when viewing a folder to navigate back to folder list
+    BackHandler(enabled = currentFolder != null) {
+        currentFolder = null
+        isFolderSearching = false
+        folderSearchQuery = ""
+    }
+
+    fun openFolder(folder: MediaFolder) {
+        currentFolder = folder
+        isFolderSearching = false
+        folderSearchQuery = ""
+        // Global-with-override: retrieve per-folder override or fall back to global folderViewMode
+        val modeName = realSettingsRepo.getFolderViewMode(folder.id)
+        folderViewMode = try {
+            ViewMode.valueOf(modeName)
+        } catch (_: Exception) {
+            ViewMode.LIST
+        }
+        scope.launch(Dispatchers.IO) {
+            isFolderLoading = true
+            val vids = repository.getVideosInFolder(folder.id)
+            withContext(Dispatchers.Main) {
+                folderVideos = vids
+                isFolderLoading = false
+            }
+        }
+    }
+
+    fun refreshFolderVideos(folderId: String) {
+        scope.launch(Dispatchers.IO) {
+            isFolderLoading = true
+            val vids = repository.getVideosInFolder(folderId)
+            withContext(Dispatchers.Main) {
+                folderVideos = vids
+                isFolderLoading = false
+            }
+        }
+    }
+
     fun playFolder(folder: MediaFolder) {
         scope.launch(Dispatchers.IO) {
             val videos = repository.getVideosInFolder(folder.id)
@@ -228,6 +301,9 @@ fun LocalScreen(
                 } else {
                     folders = emptyList()
                 }
+                currentFolder?.let { cf ->
+                    refreshFolderVideos(cf.id)
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -251,141 +327,349 @@ fun LocalScreen(
         else sortedFolders.filter { it.name.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
     }
 
+    // Folder view sorted and filtered videos
+    val sortedFolderVideos = remember(folderVideos, folderSortField) {
+        when (folderSortField) {
+            SortField.NAME -> folderVideos.sortedBy { it.title.lowercase(Locale.US) }
+            SortField.DATE -> folderVideos.sortedByDescending { it.dateModified }
+            SortField.SIZE -> folderVideos.sortedByDescending { it.sizeBytes }
+            SortField.COUNT -> folderVideos
+        }
+    }
+
+    val filteredFolderVideos = remember(sortedFolderVideos, folderSearchQuery) {
+        val q = folderSearchQuery.trim()
+        if (q.isBlank()) sortedFolderVideos
+        else sortedFolderVideos.filter { it.title.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MpxBlack,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    if (isSearching) {
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text(stringResource(R.string.local_search_placeholder), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            ),
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(R.string.local_title),
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-                actions = {
-                    if (isSearching) {
-                        IconButton(onClick = { isSearching = false; searchQuery = "" }) {
+            if (currentFolder != null) {
+                // Folder View Top Bar
+                val folder = currentFolder!!
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            currentFolder = null
+                            isFolderSearching = false
+                            folderSearchQuery = ""
+                        }) {
                             Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = stringResource(R.string.cd_close_search),
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back_to_folders),
                                 tint = MpxTextPrimary,
                             )
                         }
-                    }
-                    IconButton(onClick = {
-                        viewMode = if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
-                    }) {
-                        Icon(
-                            imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
-                            contentDescription = stringResource(R.string.cd_toggle_view),
-                            tint = MpxTextPrimary,
-                        )
-                    }
-                    IconButton(onClick = { isSearching = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.cd_search),
-                            tint = MpxTextPrimary,
-                        )
-                    }
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = stringResource(R.string.cd_more_options),
-                                tint = MpxTextPrimary,
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.local_menu_view_sort)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    showSortDialog = true
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = {
+                    },
+                    title = {
+                        if (isFolderSearching) {
+                            OutlinedTextField(
+                                value = folderSearchQuery,
+                                onValueChange = { folderSearchQuery = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = {
                                     Text(
-                                        if (appSettings.showAllFolders) stringResource(R.string.local_menu_filtered_view)
-                                        else stringResource(R.string.list_show_all_folders)
+                                        stringResource(R.string.folder_view_search_placeholder),
+                                        color = MpxTextSecondary,
+                                        fontSize = 14.sp,
                                     )
                                 },
-                                onClick = {
-                                    menuExpanded = false
-                                    val updated = appSettings.copy(showAllFolders = !appSettings.showAllFolders)
-                                    realSettingsRepo.save(updated)
-                                    appSettings = updated
-                                    refreshFolders(updated.showAllFolders)
-                                    scope.launch {
-                                        val msg = if (updated.showAllFolders) {
-                                            context.getString(R.string.local_snackbar_show_all)
-                                        } else {
-                                            context.getString(R.string.local_snackbar_filtered)
-                                        }
-                                        snackbarHostState.showSnackbar(msg)
-                                    }
-                                },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MpxSurfaceElevated,
+                                    unfocusedContainerColor = MpxSurfaceElevated,
+                                    focusedBorderColor = MpxPrimary,
+                                    unfocusedBorderColor = MpxBorder,
+                                    focusedTextColor = MpxTextPrimary,
+                                    unfocusedTextColor = MpxTextPrimary,
+                                ),
                             )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.local_menu_refresh)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    refreshFolders()
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            context.getString(R.string.snackbar_library_refreshed)
-                                        )
-                                    }
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.settings_title)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onOpenSettings()
-                                },
+                        } else {
+                            Column {
+                                Text(
+                                    text = folder.name,
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp,
+                                    ),
+                                    color = MpxTextPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                val count = filteredFolderVideos.size
+                                val sizeStr = folder.totalSizeFormatted
+                                val subText = if (count == 1) {
+                                    stringResource(R.string.folder_view_subtitle_single, sizeStr)
+                                } else {
+                                    stringResource(R.string.folder_view_subtitle, count, sizeStr)
+                                }
+                                Text(
+                                    text = subText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MpxTextSecondary,
+                                    fontSize = 11.sp,
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MpxSurface),
+                    actions = {
+                        if (isFolderSearching) {
+                            IconButton(onClick = { isFolderSearching = false; folderSearchQuery = "" }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = stringResource(R.string.cd_close_search),
+                                    tint = MpxTextPrimary,
+                                )
+                            }
+                        }
+
+                        // Toggle folder view mode (LIST <-> GRID)
+                        IconButton(onClick = {
+                            val nextMode = if (folderViewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
+                            folderViewMode = nextMode
+                            realSettingsRepo.setFolderViewMode(folder.id, nextMode.name)
+                            scope.launch {
+                                val msg = if (nextMode == ViewMode.GRID) {
+                                    context.getString(R.string.view_mode_switched_grid)
+                                } else {
+                                    context.getString(R.string.view_mode_switched_list)
+                                }
+                                snackbarHostState.showSnackbar(msg)
+                            }
+                        }) {
+                            Icon(
+                                imageVector = if (folderViewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
+                                contentDescription = stringResource(R.string.cd_toggle_view),
+                                tint = MpxTextPrimary,
                             )
                         }
-                    }
-                },
-            )
+
+                        IconButton(onClick = { isFolderSearching = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = stringResource(R.string.cd_search),
+                                tint = MpxTextPrimary,
+                            )
+                        }
+
+                        Box {
+                            IconButton(onClick = { folderMenuExpanded = true }) {
+                                Icon(
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = stringResource(R.string.cd_more_options),
+                                    tint = MpxTextPrimary,
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = folderMenuExpanded,
+                                onDismissRequest = { folderMenuExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.folder_view_dialog_title)) },
+                                    onClick = {
+                                        folderMenuExpanded = false
+                                        showFolderSortDialog = true
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.folder_menu_play_all)) },
+                                    onClick = {
+                                        folderMenuExpanded = false
+                                        if (filteredFolderVideos.isNotEmpty()) {
+                                            playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
+                                            onOpenPlayer()
+                                        }
+                                    },
+                                )
+                                if (realSettingsRepo.hasFolderViewModeOverride(folder.id)) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.folder_view_reset_default)) },
+                                        onClick = {
+                                            folderMenuExpanded = false
+                                            realSettingsRepo.clearFolderViewModeOverride(folder.id)
+                                            val globalMode = try {
+                                                ViewMode.valueOf(realSettingsRepo.load().folderViewMode)
+                                            } catch (_: Exception) {
+                                                ViewMode.LIST
+                                            }
+                                            folderViewMode = globalMode
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    context.getString(
+                                                        R.string.folder_view_reset_default_snackbar,
+                                                        context.getString(globalMode.labelRes)
+                                                    )
+                                                )
+                                            }
+                                        },
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.local_menu_refresh)) },
+                                    onClick = {
+                                        folderMenuExpanded = false
+                                        refreshFolderVideos(folder.id)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                context.getString(R.string.snackbar_library_refreshed)
+                                            )
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    },
+                )
+            } else {
+                // Root Folders List Top Bar
+                TopAppBar(
+                    title = {
+                        if (isSearching) {
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.local_search_placeholder), color = MpxTextSecondary, fontSize = 14.sp) },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MpxSurfaceElevated,
+                                    unfocusedContainerColor = MpxSurfaceElevated,
+                                    focusedBorderColor = MpxPrimary,
+                                    unfocusedBorderColor = MpxBorder,
+                                    focusedTextColor = MpxTextPrimary,
+                                    unfocusedTextColor = MpxTextPrimary,
+                                ),
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.local_title),
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp,
+                                ),
+                                color = MpxTextPrimary,
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MpxSurface,
+                    ),
+                    actions = {
+                        if (isSearching) {
+                            IconButton(onClick = { isSearching = false; searchQuery = "" }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = stringResource(R.string.cd_close_search),
+                                    tint = MpxTextPrimary,
+                                )
+                            }
+                        }
+                        IconButton(onClick = {
+                            val nextMode = if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
+                            viewMode = nextMode
+                            val updated = appSettings.copy(localViewMode = nextMode.name)
+                            realSettingsRepo.save(updated)
+                            appSettings = updated
+                        }) {
+                            Icon(
+                                imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
+                                contentDescription = stringResource(R.string.cd_toggle_view),
+                                tint = MpxTextPrimary,
+                            )
+                        }
+                        IconButton(onClick = { isSearching = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = stringResource(R.string.cd_search),
+                                tint = MpxTextPrimary,
+                            )
+                        }
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = stringResource(R.string.cd_more_options),
+                                    tint = MpxTextPrimary,
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.local_menu_view_sort)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showSortDialog = true
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (appSettings.showAllFolders) stringResource(R.string.local_menu_filtered_view)
+                                            else stringResource(R.string.list_show_all_folders)
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        val updated = appSettings.copy(showAllFolders = !appSettings.showAllFolders)
+                                        realSettingsRepo.save(updated)
+                                        appSettings = updated
+                                        refreshFolders(updated.showAllFolders)
+                                        scope.launch {
+                                            val msg = if (updated.showAllFolders) {
+                                                context.getString(R.string.local_snackbar_show_all)
+                                            } else {
+                                                context.getString(R.string.local_snackbar_filtered)
+                                            }
+                                            snackbarHostState.showSnackbar(msg)
+                                        }
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.local_menu_refresh)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        refreshFolders()
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                context.getString(R.string.snackbar_library_refreshed)
+                                            )
+                                        }
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.settings_title)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onOpenSettings()
+                                    },
+                                )
+                            }
+                        }
+                    },
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val first = filteredFolders.firstOrNull()
-                    if (first != null) playFolder(first)
+                    if (currentFolder != null) {
+                        if (filteredFolderVideos.isNotEmpty()) {
+                            playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
+                            onOpenPlayer()
+                        }
+                    } else {
+                        val first = filteredFolders.firstOrNull()
+                        if (first != null) playFolder(first)
+                    }
                 },
                 containerColor = MpxPrimary,
                 contentColor = MpxTextPrimary,
@@ -404,241 +688,410 @@ fun LocalScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            // Shortcut Chips Row (Music, Transfer, Private, Playlists, etc.)
-            ShortcutChipRow(
-                onOpenMusic = onOpenMusic,
-                onOpenTransfer = onOpenTransfer,
-                onChipClick = { featureName ->
-                    when (featureName) {
-                        "Favourites" -> showFavouritesDialog = true
-                        "History" -> showHistoryDialog = true
-                        "Video Playlists" -> showPlaylistsDialog = true
-                        "Private Folder" -> featureDialogMessage = context.getString(
-                            R.string.feature_placeholder_msg,
-                            context.getString(R.string.tool_private_title)
-                        )
-                        "Status Saver" -> featureDialogMessage = context.getString(
-                            R.string.feature_placeholder_msg,
-                            context.getString(R.string.tool_status_title)
-                        )
-                        "Network Stream" -> featureDialogMessage = context.getString(
-                            R.string.feature_placeholder_msg,
-                            context.getString(R.string.tool_network_title)
-                        )
-                        else -> featureDialogMessage = context.getString(
-                            R.string.feature_placeholder_msg,
-                            featureName
-                        )
+            if (currentFolder != null) {
+                // ==================== FOLDER VIEW (Drilled-Down Contents) ====================
+                if (isFolderLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(color = MpxPrimary)
                     }
-                },
-            )
-
-            // Honest milestone notice
-            HonestStatusBanner(
-                text = stringResource(R.string.local_status_banner),
-            )
-
-            if (!hasPermission) {
-                EmptyStateView(
-                    title = stringResource(R.string.empty_permission_title),
-                    message = stringResource(R.string.empty_permission_desc),
-                    icon = Icons.Filled.Folder,
-                    actionLabel = stringResource(R.string.empty_permission_action),
-                    onActionClick = {
-                        permissionLauncher.launch(MediaPermissions.videoPermission())
-                    },
-                )
-            } else if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(color = MpxPrimary)
-                }
-            } else if (filteredFolders.isEmpty() && searchQuery.isNotBlank()) {
-                EmptyStateView(
-                    title = stringResource(R.string.empty_search_title),
-                    message = stringResource(R.string.empty_search_desc, searchQuery),
-                    icon = Icons.Filled.Folder,
-                    actionLabel = stringResource(R.string.empty_search_action),
-                    onActionClick = { searchQuery = "" },
-                )
-            } else if (filteredFolders.isEmpty()) {
-                if (!appSettings.showAllFolders) {
+                } else if (filteredFolderVideos.isEmpty() && folderSearchQuery.isNotBlank()) {
                     EmptyStateView(
-                        title = stringResource(R.string.empty_videos_title),
-                        message = stringResource(R.string.empty_videos_desc),
-                        icon = Icons.Filled.Folder,
-                        actionLabel = stringResource(R.string.list_show_all_folders),
-                        onActionClick = {
-                            val updated = appSettings.copy(showAllFolders = true)
-                            realSettingsRepo.save(updated)
-                            appSettings = updated
-                            refreshFolders(showAll = true)
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    context.getString(R.string.local_snackbar_show_all)
-                                )
-                            }
-                        },
+                        title = stringResource(R.string.folder_view_search_empty_title),
+                        message = stringResource(R.string.folder_view_search_empty_desc, folderSearchQuery),
+                        icon = Icons.Filled.PlayArrow,
+                        actionLabel = stringResource(R.string.empty_search_action),
+                        onActionClick = { folderSearchQuery = "" },
+                    )
+                } else if (filteredFolderVideos.isEmpty()) {
+                    EmptyStateView(
+                        title = stringResource(R.string.folder_view_empty_title),
+                        message = stringResource(R.string.folder_view_empty_desc),
+                        icon = Icons.Filled.PlayArrow,
+                        actionLabel = stringResource(R.string.action_back_to_folders),
+                        onActionClick = { currentFolder = null },
                     )
                 } else {
-                    EmptyStateView(
-                        title = stringResource(R.string.empty_folders_title),
-                        message = stringResource(R.string.empty_folders_desc),
-                        icon = Icons.Filled.Folder,
-                        actionLabel = stringResource(R.string.empty_videos_action),
-                        onActionClick = {
-                            refreshFolders(showAll = true)
-                        },
-                    )
-                }
-            } else {
-                // Section Header: FOLDERS + Sort Button
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = if (appSettings.showAllFolders) stringResource(R.string.local_section_all_folders)
-                                else stringResource(R.string.local_section_folders),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MpxTextSecondary,
-                            fontSize = 12.sp,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.surface)
-                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
+                    // Folder contents section header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "${filteredFolders.size}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
+                                text = stringResource(R.string.mini_player_video).uppercase(Locale.US),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MpxTextSecondary,
+                                fontSize = 12.sp,
                             )
-                        }
-                        if (appSettings.showAllFolders) {
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.width(8.dp))
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(MpxPrimary.copy(alpha = 0.2f))
-                                    .padding(horizontal = 6.dp, vertical = 1.dp),
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MpxSurfaceElevated)
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
                             ) {
                                 Text(
-                                    text = stringResource(R.string.local_badge_show_all),
-                                    color = MpxPrimary,
-                                    fontSize = 10.sp,
+                                    text = "${filteredFolderVideos.size}",
+                                    color = MpxTextSecondary,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
                             }
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { showSortDialog = true }
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.local_sort_label, stringResource(sortField.labelRes)),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MpxPrimary,
-                            fontSize = 12.sp,
-                        )
-                    }
-                }
-
-                // Folder list / grid with smooth LazyColumn/LazyGrid, stable keys and fast scrollbar
-                if (viewMode == ViewMode.LIST) {
-                    val listState = rememberLazyListState()
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 80.dp),
-                        ) {
-                            items(
-                                items = filteredFolders,
-                                key = { it.id.ifBlank { it.path } },
-                                contentType = { "folder_item_row" },
-                            ) { folder ->
-                                FolderItemRow(
-                                    folder = folder,
-                                    onClick = { playFolder(folder) },
-                                    onMenuClick = {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                context.getString(R.string.snackbar_folder_options, folder.name)
-                                            )
-                                        }
-                                    },
-                                )
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(start = 76.dp),
-                                    color = MpxBorder,
-                                    thickness = 0.5.dp,
-                                )
+                            if (realSettingsRepo.hasFolderViewModeOverride(currentFolder!!.id)) {
+                                Spacer(Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(MpxPrimary.copy(alpha = 0.2f))
+                                        .padding(horizontal = 6.dp, vertical = 1.dp),
+                                ) {
+                                    Text(
+                                        text = stringResource(folderViewMode.labelRes),
+                                        color = MpxPrimary,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
                             }
                         }
-                        FastScrollbar(
-                            listState = listState,
-                            itemCount = filteredFolders.size,
-                            getSectionText = { index ->
-                                filteredFolders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { showFolderSortDialog = true }
+                                .padding(horizontal = 6.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.local_sort_label, stringResource(folderSortField.labelRes)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MpxPrimary,
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
+
+                    // Video list or grid based on folderViewMode
+                    if (folderViewMode == ViewMode.LIST) {
+                        val videoListState = rememberLazyListState()
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                state = videoListState,
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 80.dp),
+                            ) {
+                                itemsIndexed(
+                                    items = filteredFolderVideos,
+                                    key = { _, video -> video.id.ifBlank { video.path } },
+                                    contentType = { _, _ -> "video_item_row" },
+                                ) { index, video ->
+                                    VideoItemRow(
+                                        video = video,
+                                        onClick = {
+                                            playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
+                                            onOpenPlayer()
+                                        },
+                                        onMenuClick = {
+                                            videoForMenu = video
+                                        },
+                                    )
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 130.dp),
+                                        color = MpxBorder,
+                                        thickness = 0.5.dp,
+                                    )
+                                }
+                            }
+                            FastScrollbar(
+                                listState = videoListState,
+                                itemCount = filteredFolderVideos.size,
+                                getSectionText = { index ->
+                                    filteredFolderVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                                },
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                            )
+                        }
+                    } else {
+                        val videoGridState = rememberLazyGridState()
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyVerticalGrid(
+                                state = videoGridState,
+                                columns = GridCells.Fixed(2),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                itemsIndexed(
+                                    items = filteredFolderVideos,
+                                    key = { _, video -> video.id.ifBlank { video.path } },
+                                    contentType = { _, _ -> "video_item_grid" },
+                                ) { index, video ->
+                                    VideoItemGridCard(
+                                        video = video,
+                                        onClick = {
+                                            playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
+                                            onOpenPlayer()
+                                        },
+                                        onMenuClick = {
+                                            videoForMenu = video
+                                        },
+                                    )
+                                }
+                            }
+                            GridFastScrollbar(
+                                gridState = videoGridState,
+                                itemCount = filteredFolderVideos.size,
+                                getSectionText = { index ->
+                                    filteredFolderVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                                },
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                            )
+                        }
+                    }
+                }
+            } else {
+                // ==================== ROOT FOLDERS VIEW ====================
+                // Shortcut Chips Row (Music, Transfer, Private, Playlists, etc.)
+                ShortcutChipRow(
+                    onOpenMusic = onOpenMusic,
+                    onOpenTransfer = onOpenTransfer,
+                    onChipClick = { featureName ->
+                        when (featureName) {
+                            "Favourites" -> showFavouritesDialog = true
+                            "History" -> showHistoryDialog = true
+                            "Video Playlists" -> showPlaylistsDialog = true
+                            "Private Folder" -> featureDialogMessage = context.getString(
+                                R.string.feature_placeholder_msg,
+                                context.getString(R.string.tool_private_title)
+                            )
+                            "Status Saver" -> featureDialogMessage = context.getString(
+                                R.string.feature_placeholder_msg,
+                                context.getString(R.string.tool_status_title)
+                            )
+                            "Network Stream" -> featureDialogMessage = context.getString(
+                                R.string.feature_placeholder_msg,
+                                context.getString(R.string.tool_network_title)
+                            )
+                            else -> featureDialogMessage = context.getString(
+                                R.string.feature_placeholder_msg,
+                                featureName
+                            )
+                        }
+                    },
+                )
+
+                // Honest milestone notice
+                HonestStatusBanner(
+                    text = stringResource(R.string.local_status_banner),
+                )
+
+                if (!hasPermission) {
+                    EmptyStateView(
+                        title = stringResource(R.string.empty_permission_title),
+                        message = stringResource(R.string.empty_permission_desc),
+                        icon = Icons.Filled.Folder,
+                        actionLabel = stringResource(R.string.empty_permission_action),
+                        onActionClick = {
+                            permissionLauncher.launch(MediaPermissions.videoPermission())
+                        },
+                    )
+                } else if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(color = MpxPrimary)
+                    }
+                } else if (filteredFolders.isEmpty() && searchQuery.isNotBlank()) {
+                    EmptyStateView(
+                        title = stringResource(R.string.empty_search_title),
+                        message = stringResource(R.string.empty_search_desc, searchQuery),
+                        icon = Icons.Filled.Folder,
+                        actionLabel = stringResource(R.string.empty_search_action),
+                        onActionClick = { searchQuery = "" },
+                    )
+                } else if (filteredFolders.isEmpty()) {
+                    if (!appSettings.showAllFolders) {
+                        EmptyStateView(
+                            title = stringResource(R.string.empty_videos_title),
+                            message = stringResource(R.string.empty_videos_desc),
+                            icon = Icons.Filled.Folder,
+                            actionLabel = stringResource(R.string.list_show_all_folders),
+                            onActionClick = {
+                                val updated = appSettings.copy(showAllFolders = true)
+                                realSettingsRepo.save(updated)
+                                appSettings = updated
+                                refreshFolders(showAll = true)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        context.getString(R.string.local_snackbar_show_all)
+                                    )
+                                }
                             },
-                            modifier = Modifier.align(Alignment.CenterEnd),
+                        )
+                    } else {
+                        EmptyStateView(
+                            title = stringResource(R.string.empty_folders_title),
+                            message = stringResource(R.string.empty_folders_desc),
+                            icon = Icons.Filled.Folder,
+                            actionLabel = stringResource(R.string.empty_videos_action),
+                            onActionClick = {
+                                refreshFolders(showAll = true)
+                            },
                         )
                     }
                 } else {
-                    val gridState = rememberLazyGridState()
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        LazyVerticalGrid(
-                            state = gridState,
-                            columns = GridCells.Fixed(2),
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            items(
-                                items = filteredFolders,
-                                key = { it.id.ifBlank { it.path } },
-                                contentType = { "folder_item_grid" },
-                            ) { folder ->
-                                FolderItemGridCard(
-                                    folder = folder,
-                                    onClick = { playFolder(folder) },
+                    // Section Header: FOLDERS + Sort Button
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (appSettings.showAllFolders) stringResource(R.string.local_section_all_folders)
+                                else stringResource(R.string.local_section_folders),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MpxTextSecondary,
+                                fontSize = 12.sp,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MpxSurfaceElevated)
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                            ) {
+                                Text(
+                                    text = "${filteredFolders.size}",
+                                    color = MpxTextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
                                 )
                             }
+                            if (appSettings.showAllFolders) {
+                                Spacer(Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(MpxPrimary.copy(alpha = 0.2f))
+                                        .padding(horizontal = 6.dp, vertical = 1.dp),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.local_badge_show_all),
+                                        color = MpxPrimary,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
+                            }
                         }
-                        GridFastScrollbar(
-                            gridState = gridState,
-                            itemCount = filteredFolders.size,
-                            getSectionText = { index ->
-                                filteredFolders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
-                            },
-                            modifier = Modifier.align(Alignment.CenterEnd),
-                        )
+
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { showSortDialog = true }
+                                .padding(horizontal = 6.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.local_sort_label, stringResource(sortField.labelRes)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MpxPrimary,
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
+
+                    // Folder list / grid with smooth LazyColumn/LazyGrid, stable keys and fast scrollbar
+                    if (viewMode == ViewMode.LIST) {
+                        val listState = rememberLazyListState()
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 80.dp),
+                            ) {
+                                items(
+                                    items = filteredFolders,
+                                    key = { it.id.ifBlank { it.path } },
+                                    contentType = { "folder_item_row" },
+                                ) { folder ->
+                                    FolderItemRow(
+                                        folder = folder,
+                                        onClick = { openFolder(folder) },
+                                        onMenuClick = {
+                                            folderForMenu = folder
+                                        },
+                                    )
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 76.dp),
+                                        color = MpxBorder,
+                                        thickness = 0.5.dp,
+                                    )
+                                }
+                            }
+                            FastScrollbar(
+                                listState = listState,
+                                itemCount = filteredFolders.size,
+                                getSectionText = { index ->
+                                    filteredFolders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+                                },
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                            )
+                        }
+                    } else {
+                        val gridState = rememberLazyGridState()
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyVerticalGrid(
+                                state = gridState,
+                                columns = GridCells.Fixed(2),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                items(
+                                    items = filteredFolders,
+                                    key = { it.id.ifBlank { it.path } },
+                                    contentType = { "folder_item_grid" },
+                                ) { folder ->
+                                    FolderItemGridCard(
+                                        folder = folder,
+                                        onClick = { openFolder(folder) },
+                                    )
+                                }
+                            }
+                            GridFastScrollbar(
+                                gridState = gridState,
+                                itemCount = filteredFolders.size,
+                                getSectionText = { index ->
+                                    filteredFolders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+                                },
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                            )
+                        }
                     }
                 }
             }
         }
     }
 
-    if (showSortDialog) {
+    // SortViewDialog for Root Folders List
+    if (showSortDialog && currentFolder == null) {
         SortViewDialog(
             currentSort = sortField,
             currentView = viewMode,
@@ -648,6 +1101,9 @@ fun LocalScreen(
             },
             onViewChange = {
                 viewMode = it
+                val updated = appSettings.copy(localViewMode = it.name)
+                realSettingsRepo.save(updated)
+                appSettings = updated
             },
             onShowAllFoldersChange = { isChecked ->
                 val updated = appSettings.copy(showAllFolders = isChecked)
@@ -656,9 +1112,9 @@ fun LocalScreen(
                 refreshFolders(isChecked)
                 scope.launch {
                     val msg = if (isChecked) {
-                        "Showing all folders (including empty & hidden)"
+                        context.getString(R.string.local_snackbar_show_all)
                     } else {
-                        "Showing filtered folders view"
+                        context.getString(R.string.local_snackbar_filtered)
                     }
                     snackbarHostState.showSnackbar(msg)
                 }
@@ -667,17 +1123,257 @@ fun LocalScreen(
         )
     }
 
+    // SortViewDialog for Folder Contents View
+    if (showFolderSortDialog && currentFolder != null) {
+        val folder = currentFolder!!
+        var isSetAsDefault by remember { mutableStateOf(false) }
+        SortViewDialog(
+            currentSort = folderSortField,
+            currentView = folderViewMode,
+            isFolderScope = true,
+            folderName = folder.name,
+            hasFolderOverride = realSettingsRepo.hasFolderViewModeOverride(folder.id),
+            isSetAsDefault = isSetAsDefault,
+            onSetAsDefaultChange = { isSetAsDefault = it },
+            onViewChange = { newMode ->
+                folderViewMode = newMode
+                if (isSetAsDefault) {
+                    val updated = appSettings.copy(folderViewMode = newMode.name)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                    realSettingsRepo.setFolderViewMode(folder.id, newMode.name)
+                } else {
+                    realSettingsRepo.setFolderViewMode(folder.id, newMode.name)
+                }
+            },
+            onSortChange = {
+                folderSortField = it
+            },
+            onResetToDefault = {
+                realSettingsRepo.clearFolderViewModeOverride(folder.id)
+                val globalMode = try {
+                    ViewMode.valueOf(realSettingsRepo.load().folderViewMode)
+                } catch (_: Exception) {
+                    ViewMode.LIST
+                }
+                folderViewMode = globalMode
+                showFolderSortDialog = false
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        context.getString(
+                            R.string.folder_view_reset_default_snackbar,
+                            context.getString(globalMode.labelRes)
+                        )
+                    )
+                }
+            },
+            onDismiss = {
+                if (isSetAsDefault) {
+                    val updated = appSettings.copy(folderViewMode = folderViewMode.name)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                }
+                showFolderSortDialog = false
+            },
+        )
+    }
+
+    // Context menu for a folder in the folder list
+    if (folderForMenu != null) {
+        val f = folderForMenu!!
+        AlertDialog(
+            onDismissRequest = { folderForMenu = null },
+            containerColor = MpxSurface,
+            title = {
+                Text(text = f.name, color = MpxTextPrimary, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.folder_item_videos_and_size, f.videoCount, f.totalSizeFormatted),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MpxTextSecondary,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                folderForMenu = null
+                                openFolder(f)
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Folder, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.folder_menu_open), color = MpxTextPrimary)
+                    }
+                    HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                folderForMenu = null
+                                playFolder(f)
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.folder_menu_play_all), color = MpxTextPrimary)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { folderForMenu = null }) {
+                    Text(stringResource(R.string.action_close), color = MpxPrimary)
+                }
+            },
+        )
+    }
+
+    // Context menu for a video in the folder view
+    if (videoForMenu != null) {
+        val vid = videoForMenu!!
+        val isFav = favourites.any { it.mediaUri == vid.path || it.mediaId == vid.id }
+        AlertDialog(
+            onDismissRequest = { videoForMenu = null },
+            containerColor = MpxSurface,
+            title = {
+                Text(
+                    text = vid.title,
+                    color = MpxTextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            text = {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                videoForMenu = null
+                                playbackManager?.playVideoFiles(listOf(vid))
+                                onOpenPlayer()
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.video_item_play), color = MpxTextPrimary)
+                    }
+                    HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                videoForPlaylistAdd = vid
+                                videoForMenu = null
+                                showAddToPlaylistDialog = true
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.video_item_add_to_playlist), color = MpxTextPrimary)
+                    }
+                    HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                videoForMenu = null
+                                scope.launch {
+                                    val favItem = FavouriteItem(
+                                        mediaUri = vid.path,
+                                        mediaId = vid.id,
+                                        title = vid.title,
+                                        subtitle = currentFolder?.name ?: "",
+                                        isVideo = true,
+                                        durationMs = vid.durationMs,
+                                    )
+                                    val favResult = persistenceRepository.toggleFavourite(favItem)
+                                    val msg = if (favResult) {
+                                        context.getString(R.string.music_added_to_favourites)
+                                    } else {
+                                        context.getString(R.string.snackbar_removed_favourites)
+                                    }
+                                    snackbarHostState.showSnackbar(msg)
+                                }
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Favorite, contentDescription = null, tint = if (isFav) MpxPrimary else MpxTextMuted)
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = if (isFav) stringResource(R.string.video_item_unfavourite) else stringResource(R.string.video_item_favourite),
+                            color = MpxTextPrimary,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { videoForMenu = null }) {
+                    Text(stringResource(R.string.action_close), color = MpxPrimary)
+                }
+            },
+        )
+    }
+
+    // Add Video to Playlist Dialog
+    if (showAddToPlaylistDialog && videoForPlaylistAdd != null) {
+        val vid = videoForPlaylistAdd!!
+        val videoPlaylists = customPlaylists.filter { it.isVideoPlaylist }
+        AddToPlaylistDialog(
+            playlists = videoPlaylists,
+            mediaTitle = vid.title,
+            onDismiss = {
+                showAddToPlaylistDialog = false
+                videoForPlaylistAdd = null
+            },
+            onSelectPlaylist = { pl ->
+                scope.launch {
+                    persistenceRepository.addItemToPlaylist(
+                        PlaylistItem(
+                            playlistId = pl.id,
+                            mediaUri = vid.path,
+                            mediaId = vid.id,
+                            title = vid.title,
+                            subtitle = currentFolder?.name ?: "",
+                            isVideo = true,
+                            durationMs = vid.durationMs,
+                        )
+                    )
+                    showAddToPlaylistDialog = false
+                    videoForPlaylistAdd = null
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.music_added_to_playlist_msg, pl.name)
+                    )
+                }
+            },
+            onCreateNewPlaylist = {
+                showAddToPlaylistDialog = false
+                showCreatePlaylistDialog = true
+            },
+        )
+    }
+
     if (featureDialogMessage != null) {
         AlertDialog(
             onDismissRequest = { featureDialogMessage = null },
-            containerColor = MaterialTheme.colorScheme.surface,
-            tonalElevation = 0.dp,
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
-            title = { Text(stringResource(R.string.dialog_feature_placeholder_title), color = MaterialTheme.colorScheme.onSurface) },
-            text = { Text(featureDialogMessage ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            containerColor = MpxSurface,
+            title = { Text(stringResource(R.string.dialog_feature_placeholder_title), color = MpxTextPrimary) },
+            text = { Text(featureDialogMessage ?: "", color = MpxTextSecondary) },
             confirmButton = {
                 TextButton(onClick = { featureDialogMessage = null }) {
-                    Text(stringResource(R.string.action_ok), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
                 }
             },
         )
@@ -756,9 +1452,7 @@ fun LocalScreen(
     if (showPlaylistsDialog) {
         AlertDialog(
             onDismissRequest = { showPlaylistsDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            tonalElevation = 0.dp,
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
+            containerColor = MpxSurface,
             title = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -768,13 +1462,13 @@ fun LocalScreen(
                     Text(
                         text = stringResource(R.string.dialog_video_playlists_title, customPlaylists.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                     )
                     TextButton(onClick = {
                         showPlaylistsDialog = false
                         showCreatePlaylistDialog = true
                     }) {
-                        Text(stringResource(R.string.dialog_new_playlist), color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                        Text(stringResource(R.string.dialog_new_playlist), color = MpxPrimary, fontSize = 12.sp)
                     }
                 }
             },
@@ -789,7 +1483,7 @@ fun LocalScreen(
                         Text(
                             text = stringResource(R.string.dialog_playlists_empty),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MpxTextMuted,
                         )
                     }
                 } else {
@@ -816,20 +1510,19 @@ fun LocalScreen(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(MaterialTheme.colorScheme.surface)
-                                        .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)),
+                                        .background(MpxSurfaceElevated),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = MpxPrimary,
                                         modifier = Modifier.size(20.dp),
                                     )
                                 }
                                 Spacer(Modifier.width(12.dp))
                                 Column {
-                                    Text(text = pl.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(text = pl.name, style = MaterialTheme.typography.bodyMedium, color = MpxTextPrimary)
                                     Text(
                                         text = stringResource(R.string.playlist_items_count, pl.itemCount),
                                         style = MaterialTheme.typography.bodySmall,
