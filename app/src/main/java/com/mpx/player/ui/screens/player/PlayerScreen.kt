@@ -157,6 +157,11 @@ private enum class DragGestureMode {
     VERTICAL_VOLUME
 }
 
+private enum class SideSeekDirection {
+    BACKWARD,
+    FORWARD
+}
+
 private fun getScreenBrightness(context: Context, activity: Activity?): Float {
     val windowBrightness = activity?.window?.attributes?.screenBrightness ?: -1f
     return if (windowBrightness in 0f..1f) {
@@ -369,6 +374,10 @@ fun PlayerScreen(
     }
     var hideVolumeJob by remember { mutableStateOf<Job?>(null) }
 
+    // Double-tap side seek gesture state
+    var sideSeekDirection by remember { mutableStateOf<SideSeekDirection?>(null) }
+    var hideSideSeekJob by remember { mutableStateOf<Job?>(null) }
+
     val currentDuration = state.durationMs.coerceAtLeast(0L)
     val displayedCurrentTime = if (isScrubbingSlider && currentDuration > 0) {
         (scrubFraction * currentDuration).toLong()
@@ -388,15 +397,55 @@ fun PlayerScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            // Tap gestures: single tap toggles controls, double tap toggles play/pause
+            // Tap gestures: single tap toggles controls, double tap zones (left: -10s, center: play/pause, right: +10s)
             .pointerInput(state.isLocked) {
                 detectTapGestures(
                     onTap = {
                         controlsVisible = !controlsVisible
+                        if (sideSeekDirection != null) {
+                            hideSideSeekJob?.cancel()
+                            sideSeekDirection = null
+                        }
                     },
-                    onDoubleTap = {
+                    onDoubleTap = { offset ->
                         if (!state.isLocked) {
-                            playbackManager.togglePlayPause()
+                            val oneThird = size.width / 3f
+                            val twoThirds = size.width * (2f / 3f)
+                            when {
+                                offset.x < oneThird -> {
+                                    playbackManager.skipBackward(10_000L)
+                                    sideSeekDirection = SideSeekDirection.BACKWARD
+                                    hideBrightnessJob?.cancel()
+                                    showBrightnessIndicator = false
+                                    hideVolumeJob?.cancel()
+                                    showVolumeIndicator = false
+                                    hideSideSeekJob?.cancel()
+                                    hideSideSeekJob = scope.launch {
+                                        delay(1000)
+                                        sideSeekDirection = null
+                                    }
+                                }
+                                offset.x > twoThirds -> {
+                                    playbackManager.skipForward(10_000L)
+                                    sideSeekDirection = SideSeekDirection.FORWARD
+                                    hideBrightnessJob?.cancel()
+                                    showBrightnessIndicator = false
+                                    hideVolumeJob?.cancel()
+                                    showVolumeIndicator = false
+                                    hideSideSeekJob?.cancel()
+                                    hideSideSeekJob = scope.launch {
+                                        delay(1000)
+                                        sideSeekDirection = null
+                                    }
+                                }
+                                else -> {
+                                    playbackManager.togglePlayPause()
+                                    if (sideSeekDirection != null) {
+                                        hideSideSeekJob?.cancel()
+                                        sideSeekDirection = null
+                                    }
+                                }
+                            }
                         }
                     },
                 )
@@ -407,6 +456,8 @@ fun PlayerScreen(
 
                 detectDragGestures(
                     onDragStart = { offset ->
+                        hideSideSeekJob?.cancel()
+                        sideSeekDirection = null
                         currentDragMode = DragGestureMode.NONE
                         dragStartOffset = offset
                         totalDragX = 0f
@@ -731,6 +782,48 @@ fun PlayerScreen(
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
+                    )
+                }
+            }
+        }
+
+        // Side Seek HUD Indicator (Double-tap left -10s / right +10s feedback)
+        sideSeekDirection?.let { direction ->
+            val isBackward = direction == SideSeekDirection.BACKWARD
+            Surface(
+                color = Color.Black.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+                modifier = Modifier
+                    .align(if (isBackward) Alignment.CenterStart else Alignment.CenterEnd)
+                    .padding(start = if (isBackward) 48.dp else 0.dp, end = if (!isBackward) 48.dp else 0.dp),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        imageVector = if (isBackward) Icons.Filled.Replay10 else Icons.Filled.Forward10,
+                        contentDescription = if (isBackward) "Back 10 seconds" else "Forward 10 seconds",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = if (isBackward) "-10s" else "+10s",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = if (currentDuration > 0) {
+                            "${formatTimeMs(state.currentPositionMs)} / ${formatTimeMs(currentDuration)}"
+                        } else {
+                            formatTimeMs(state.currentPositionMs)
+                        },
+                        color = Color.White,
+                        fontSize = 12.sp,
                     )
                 }
             }
@@ -1107,7 +1200,7 @@ fun PlayerScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text = "Double-tap: Play/Pause • Swipe H: Seek • Swipe V: Brightness (L) / Volume (R)",
+                                    text = "Double-tap: -10s (L) / Play-Pause / +10s (R) • Swipe H: Seek • Swipe V: Brightness (L) / Volume (R)",
                                     color = Color.White.copy(alpha = 0.85f),
                                     fontSize = 11.sp,
                                 )
