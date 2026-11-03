@@ -1,5 +1,6 @@
 package com.mpx.player.ui.screens.local
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -23,11 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
-import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurfaceVariant
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
 
 enum class SortField(val labelRes: Int, val label: String) {
     NAME(R.string.sort_field_name, "Title / Name"),
@@ -53,12 +51,14 @@ fun SortViewDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MpxSurfaceVariant,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Text(
                 text = stringResource(R.string.sort_dialog_title),
                 style = MaterialTheme.typography.titleLarge,
-                color = MpxTextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         },
         text = {
@@ -66,7 +66,7 @@ fun SortViewDialog(
                 Text(
                     text = stringResource(R.string.sort_section_view_mode),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MpxTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(6.dp))
@@ -83,19 +83,19 @@ fun SortViewDialog(
                             onClick = { onViewChange(mode) },
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(mode.labelRes), color = MpxTextPrimary)
+                        Text(stringResource(mode.labelRes), color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
-                    color = MpxBorder,
+                    color = MaterialTheme.colorScheme.outline,
                 )
 
                 Text(
                     text = stringResource(R.string.sort_section_sort_by),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MpxTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(6.dp))
@@ -112,20 +112,20 @@ fun SortViewDialog(
                             onClick = { onSortChange(field) },
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(field.labelRes), color = MpxTextPrimary)
+                        Text(stringResource(field.labelRes), color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
                 if (onShowAllFoldersChange != null) {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 12.dp),
-                        color = MpxBorder,
+                        color = MaterialTheme.colorScheme.outline,
                     )
 
                     Text(
                         text = "FOLDERS",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MpxTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
                     )
                     Spacer(Modifier.height(6.dp))
@@ -146,10 +146,10 @@ fun SortViewDialog(
                         )
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("Show all folders", color = MpxTextPrimary)
+                            Text("Show all folders", color = MaterialTheme.colorScheme.onSurface)
                             Text(
                                 "Include empty and hidden folders",
-                                color = MpxTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,
                             )

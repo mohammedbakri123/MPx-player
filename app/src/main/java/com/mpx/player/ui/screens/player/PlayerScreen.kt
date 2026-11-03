@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -55,6 +56,7 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -108,7 +110,6 @@ import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.player.formatTimeMs
 import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
 import com.mpx.player.util.PipUtils
@@ -905,7 +906,9 @@ fun PlayerScreen(
     if (activeDialog == "Audio Tracks") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxSurfaceElevated,
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Text(
                     text = "Select Audio Track",
@@ -970,7 +973,9 @@ fun PlayerScreen(
     if (activeDialog == "Subtitles") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxSurfaceElevated,
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1183,7 +1188,9 @@ fun PlayerScreen(
     if (activeDialog == "Decoder") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxSurfaceElevated,
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxPrimary)
@@ -1288,7 +1295,9 @@ fun PlayerScreen(
     if (subtitleErrorDialogText != null) {
         AlertDialog(
             onDismissRequest = { subtitleErrorDialogText = null },
-            containerColor = MpxSurfaceElevated,
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Text(
                     text = "Unsupported Subtitle Format",
@@ -1316,7 +1325,9 @@ fun PlayerScreen(
     if (activeDialog == "Player Menu") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxSurfaceElevated,
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Text(
                     text = "Playback Settings",

@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -48,7 +49,6 @@ import com.mpx.player.R
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
@@ -99,8 +99,9 @@ fun MiniPlayer(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onOpenPlayer() },
-            color = MpxSurfaceElevated,
-            tonalElevation = 6.dp,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Real live progress indicator bar
@@ -109,8 +110,8 @@ fun MiniPlayer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(2.5.dp),
-                    color = MpxPrimary,
-                    trackColor = MpxBorder,
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.outline,
                 )
 
                 Row(
@@ -145,7 +146,7 @@ fun MiniPlayer(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.5.sp,
                             ),
-                            color = MpxTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -154,7 +155,7 @@ fun MiniPlayer(
                         Text(
                             text = if (item.subtitle.isNotBlank()) "${item.subtitle} • $timeFormatted" else timeFormatted,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = MpxTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )

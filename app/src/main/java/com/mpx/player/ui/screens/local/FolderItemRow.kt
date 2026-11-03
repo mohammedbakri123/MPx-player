@@ -1,6 +1,8 @@
 package com.mpx.player.ui.screens.local
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,8 +39,6 @@ import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.ui.components.AsyncFolderThumbnail
 import com.mpx.player.ui.theme.MpxAccentAmber
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
@@ -62,7 +62,8 @@ fun FolderItemRow(
             modifier = Modifier
                 .size(52.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(MpxSurfaceElevated),
+                .background(MaterialTheme.colorScheme.surface)
+                .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center,
         ) {
             AsyncFolderThumbnail(
@@ -163,7 +164,8 @@ fun FolderItemGridCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -173,7 +175,8 @@ fun FolderItemGridCard(
                     .fillMaxWidth()
                     .height(96.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MpxSurfaceElevated),
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 AsyncFolderThumbnail(

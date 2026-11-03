@@ -3,6 +3,7 @@ package com.mpx.player.ui.screens.music
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +46,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -109,12 +111,8 @@ import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.FavouritesDialog
 import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
 import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
-import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurface
-import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
@@ -286,7 +284,7 @@ fun MusicScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MpxBlack,
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -297,11 +295,11 @@ fun MusicScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MpxSurface,
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
                 actions = {
                     IconButton(onClick = {
@@ -312,7 +310,7 @@ fun MusicScreen(
                         Icon(
                             imageVector = Icons.Filled.Equalizer,
                             contentDescription = stringResource(R.string.music_cd_equalizer),
-                            tint = MpxTextPrimary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     IconButton(onClick = {
@@ -324,7 +322,7 @@ fun MusicScreen(
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
                             contentDescription = stringResource(R.string.action_more),
-                            tint = MpxTextPrimary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 },
@@ -339,7 +337,7 @@ fun MusicScreen(
             // Scrollable 5-Tab Bar
             ScrollableTabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = MpxSurface,
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MpxPrimary,
                 edgePadding = 16.dp,
                 indicator = { tabPositions ->
@@ -398,12 +396,12 @@ fun MusicScreen(
                     singleLine = true,
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MpxSurfaceElevated,
-                        unfocusedContainerColor = MpxSurfaceVariant,
-                        focusedBorderColor = MpxPrimary,
-                        unfocusedBorderColor = MpxBorder,
-                        focusedTextColor = MpxTextPrimary,
-                        unfocusedTextColor = MpxTextPrimary,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     ),
                 )
 
@@ -601,12 +599,14 @@ fun MusicScreen(
         val targetTrack = trackForOptions!!
         AlertDialog(
             onDismissRequest = { trackForOptions = null },
-            containerColor = MpxSurface,
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Text(
                     text = targetTrack.title,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MpxTextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -616,7 +616,7 @@ fun MusicScreen(
                     Text(
                         text = "${targetTrack.artist} • ${targetTrack.album}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -858,7 +858,8 @@ private fun TracksTabContent(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MpxSurfaceElevated),
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         AsyncAudioTrackThumbnail(
@@ -1024,7 +1025,7 @@ private fun PlaylistsTabContent(
                     modifier = Modifier.fillMaxWidth().clickable { onPlaylistClick(playlist) }.padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(modifier = Modifier.size(46.dp).clip(RoundedCornerShape(8.dp)).background(MpxSurfaceElevated), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.size(46.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surface).border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MpxPrimary)
                     }
                     Spacer(Modifier.width(14.dp))
@@ -1070,7 +1071,8 @@ private fun AlbumsTabContent(
                 Column(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
-                        .background(MpxSurfaceVariant)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
                         .clickable { onAlbumClick() }
                         .padding(10.dp),
                 ) {
@@ -1079,7 +1081,8 @@ private fun AlbumsTabContent(
                             .fillMaxWidth()
                             .height(110.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MpxSurfaceElevated),
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         AsyncAlbumThumbnail(
@@ -1145,7 +1148,8 @@ private fun ArtistsTabContent(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(MpxSurfaceElevated),
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(0.5.dp, MaterialTheme.colorScheme.outline, CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -1215,7 +1219,8 @@ private fun FoldersTabContent(
                         modifier = Modifier
                             .size(46.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MpxSurfaceElevated),
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(

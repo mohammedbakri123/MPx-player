@@ -38,10 +38,6 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.ui.theme.MpxAccentAmber
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxSurfaceVariant
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
 
 data class ShortcutChipData(
     val id: String,
@@ -120,15 +116,16 @@ fun ShortcutChipRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         chips.forEach { chip ->
-            val bg = if (chip.isPrimary) MpxPrimary.copy(alpha = 0.2f) else MpxSurfaceVariant
-            val fg = if (chip.isPrimary) MpxPrimary else MpxTextPrimary
-            val border = if (chip.isPrimary) MpxPrimary.copy(alpha = 0.6f) else Color.Transparent
+            val bg = if (chip.isPrimary) MpxPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant
+            val fg = if (chip.isPrimary) MpxPrimary else MaterialTheme.colorScheme.onSurface
+            val border = if (chip.isPrimary) MpxPrimary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline
 
             Surface(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
                     .clickable { chip.onClick() },
                 color = bg,
+                tonalElevation = 0.dp,
                 shape = RoundedCornerShape(20.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, border),
             ) {
