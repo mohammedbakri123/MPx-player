@@ -55,9 +55,6 @@ class PlaybackManager private constructor(context: Context) {
     )
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
-    var player: ExoPlayer = createPlayer(initialDecoderMode)
-        private set
-
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _playbackState.update { it.copy(isPlaying = isPlaying) }
@@ -194,6 +191,13 @@ class PlaybackManager private constructor(context: Context) {
             }
         }
     }
+
+    // NOTE: player MUST be declared after playerListener and analyticsListener:
+    // Kotlin initializes properties in declaration order, and createPlayer() calls
+    // addListener()/addAnalyticsListener() with them. Declaring player first passed
+    // null listeners to ExoPlayer and crashed on start (issue #42).
+    var player: ExoPlayer = createPlayer(initialDecoderMode)
+        private set
 
     private fun resolveInitialDecoderMode(): DecoderMode {
         return try {
