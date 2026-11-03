@@ -48,6 +48,7 @@ import com.mpx.player.playback.PlaybackService
 import com.mpx.player.ui.components.player.MiniPlayer
 import com.mpx.player.ui.navigation.Screen
 import com.mpx.player.ui.navigation.navigationTabs
+import com.mpx.player.ui.screens.about.AboutBetaScreen
 import com.mpx.player.ui.screens.local.LocalScreen
 import com.mpx.player.ui.screens.me.MeScreen
 import com.mpx.player.ui.screens.music.MusicScreen
@@ -240,8 +241,8 @@ fun MpxApp(
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = backStackEntry?.destination
 
-            // Hide bottom navigation in PiP mode or on full-screen routes (Player, Settings)
-            if (isInPipMode || currentDestination?.route in listOf(Screen.Player.route, Screen.Settings.route)) {
+            // Hide bottom navigation in PiP mode or on full-screen routes (Player, Settings, AboutBeta)
+            if (isInPipMode || currentDestination?.route in listOf(Screen.Player.route, Screen.Settings.route, Screen.AboutBeta.route)) {
                 return@Scaffold
             }
 
@@ -354,6 +355,7 @@ fun MpxApp(
                     },
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                    onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
                     onThemeChanged = onThemeChanged,
@@ -364,10 +366,16 @@ fun MpxApp(
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
+                    onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
                     settingsRepository = realSettingsRepo,
                     onThemeChanged = onThemeChanged,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
+                )
+            }
+            composable(Screen.AboutBeta.route) {
+                AboutBetaScreen(
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
             composable(Screen.Player.route) {

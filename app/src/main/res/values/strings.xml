@@ -2,8 +2,8 @@
 <resources>
     <!-- App & General -->
     <string name="app_name">MPx Player</string>
-    <string name="app_version_name">Version 0.1.0-native</string>
-    <string name="app_version_full">MPx Player 0.1.0-native</string>
+    <string name="app_version_name">Version 0.1.0-beta</string>
+    <string name="app_version_full">MPx Player 0.1.0-beta</string>
 
     <!-- Navigation Tabs -->
     <string name="nav_local">Local</string>
@@ -64,7 +64,7 @@
     <string name="settings_category_general">General</string>
     <string name="settings_category_general_sub">Reset all preferences to defaults</string>
     <string name="settings_category_about">About</string>
-    <string name="settings_category_about_sub">Version 0.1.0-native</string>
+    <string name="settings_category_about_sub">Version 0.1.0-beta • Beta Status &amp; Feedback</string>
 
     <!-- Settings Category Options -->
     <string name="theme_midnight">Midnight OLED (Pure Black)</string>
@@ -112,7 +112,7 @@
     <string name="general_reset_done">All settings have been reset to default values.</string>
     <string name="general_language_hint">App language can be changed in the App Language section or from the Me screen.</string>
 
-    <string name="about_app_description">MPx Player 0.1.0-native. Native Kotlin rewrite, MX-inspired layout built entirely in MPx\'s own code and styling.</string>
+    <string name="about_app_description">MPx Player 0.1.0-beta. Native Kotlin rewrite, MX-inspired layout built entirely in MPx\'s own code and styling.</string>
 
     <!-- Me Screen Headers & Profile -->
     <string name="me_title">Me</string>
@@ -169,8 +169,8 @@
     <string name="pref_help_desc">Player gesture guide, tutorials, and device diagnostics</string>
     <string name="pref_legal">Legal &amp; Open Source</string>
     <string name="pref_legal_desc">Software licenses, terms, and inspiration disclosure</string>
-    <string name="pref_about_mpx">MPx Player Native</string>
-    <string name="pref_about_mpx_desc">Version 0.1.0-native • Jetpack Compose • Media3</string>
+    <string name="pref_about_mpx">About MPx Player (Beta)</string>
+    <string name="pref_about_mpx_desc">Version 0.1.0-beta • Status, Placeholders &amp; Feedback</string>
 
     <!-- Me Screen Dialogs Content -->
     <string name="dialog_theme_title">Select App Theme</string>
@@ -208,7 +208,7 @@
     <string name="help_sec2_title">Audio &amp; Subtitle Tracks</string>
     <string name="help_sec2_body">• Audio Icon: Switch between discrete audio tracks (dual-audio, commentary)\n• Subtitle Icon: Select embedded or sidecar .vtt / .srt subtitle tracks\n• Subtitle Size: Configurable under Settings (Small, Normal, Large)</string>
     <string name="help_sec3_title">Device Diagnostics (Live)</string>
-    <string name="help_diag_app">App: MPx Player 0.1.0-native</string>
+    <string name="help_diag_app">App: MPx Player 0.1.0-beta (Build 2)</string>
     <string name="help_diag_os">Android OS: SDK %1$d (%2$s)</string>
     <string name="help_diag_device">Device: %1$s %2$s</string>
     <string name="help_diag_engine">Engine: AndroidX Media3 ExoPlayer 1.3.1</string>
@@ -407,4 +407,56 @@
     <string name="empty_folders_desc">No media folders found on storage volumes. Folders and media will appear here once created or synced.</string>
     <string name="local_section_all_folders">ALL FOLDERS</string>
     <string name="local_badge_show_all">SHOW ALL</string>
+
+    <!-- Beta & About Screen -->
+    <string name="about_beta_screen_title">About &amp; Beta Status</string>
+    <string name="about_beta_badge">BETA RELEASE</string>
+    <string name="about_beta_tagline">Native Kotlin media player for Android with Media3 ExoPlayer and Room persistence.</string>
+    <string name="about_beta_build_info">Build 2 (VersionCode 2) • Branch: feature/beta-readiness</string>
+
+    <!-- What is Ready in Beta -->
+    <string name="about_beta_section_ready">WHAT IS READY IN BETA</string>
+    <string name="about_beta_ready_subtitle">Core offline playback and library features are fully functional native implementations:</string>
+    <string name="about_beta_feat_player_title">Media3 Video Playback Engine</string>
+    <string name="about_beta_feat_player_desc">Hardware (HW/HW+) and Software (SW) decoding via AndroidX Media3 ExoPlayer. Video gestures (double-tap 10s seek, horizontal drag scrub), aspect ratio controls (Fit/Stretch/16:9/Original), embedded and external subtitles (.srt, .vtt), and multi-audio track switching.</string>
+    <string name="about_beta_feat_bg_pip_title">Background Play &amp; Pop-up Play (PiP)</string>
+    <string name="about_beta_feat_bg_pip_desc">Picture-in-Picture floating mode with custom window controls on Android 8.0+. Real background audio playback for videos and music via foreground service.</string>
+    <string name="about_beta_feat_music_title">Music Player &amp; Audio Library</string>
+    <string name="about_beta_feat_music_desc">Full MediaStore scanning for local tracks, albums, artists, and audio folders. Shuffle playback, track queue, and persistent MiniPlayer across all main tabs.</string>
+    <string name="about_beta_feat_persistence_title">On-Device Room SQLite Persistence</string>
+    <string name="about_beta_feat_persistence_desc">Custom playlists, starred favourites, and playback history with precise resume timestamps saved locally in mpx_player.db.</string>
+    <string name="about_beta_feat_themes_title">Themes &amp; True Dark Mode</string>
+    <string name="about_beta_feat_themes_desc">Four themes: Midnight OLED (#000000 cinema black), Dark Slate, Classic Navy, and Light Cinema. Immediate runtime theme application.</string>
+    <string name="about_beta_feat_i18n_title">Full English &amp; Modern Standard Arabic (RTL)</string>
+    <string name="about_beta_feat_i18n_desc">Bidirectional interface with full Right-to-Left (RTL) mirroring, mirrored icons, and instant language switching without app restarts.</string>
+
+    <!-- What is Placeholder -->
+    <string name="about_beta_section_placeholders">WHAT IS STILL PLACEHOLDER</string>
+    <string name="about_beta_placeholders_subtitle">In accordance with our honest development principles, the following features are non-functional UI placeholders with no simulated or faked operations:</string>
+    <string name="about_beta_holder_downloader_title">URL Downloader (Transfer tab)</string>
+    <string name="about_beta_holder_downloader_desc">Status: UI shell only. No fake downloads or artificial progress bars. Real background download engine will be integrated in Phase 5.</string>
+    <string name="about_beta_holder_transfer_title">Direct File Transfer (Transfer tab)</string>
+    <string name="about_beta_holder_transfer_desc">Status: UI placeholder. Offline peer-to-peer (P2P / Wi-Fi Direct) file sharing protocol will connect in Phase 5.</string>
+    <string name="about_beta_holder_status_title">Status Saver (Me tools grid)</string>
+    <string name="about_beta_holder_status_desc">Status: Honest placeholder (Issue 32). WhatsApp status directory scanning and saving will connect when scoped storage directory permission flow is implemented.</string>
+    <string name="about_beta_holder_private_title">Private Folder (Me tools grid)</string>
+    <string name="about_beta_holder_private_desc">Status: Honest placeholder (Issue 32). Encrypted media vault with biometric / PIN authentication is scheduled for Issue 32.</string>
+    <string name="about_beta_holder_manager_title">Media Manager &amp; Storage Cleaner (Me tools grid)</string>
+    <string name="about_beta_holder_manager_desc">Status: Honest placeholder (Issue 32). Duplicate media detection, large file identification, and cache analyzer are scheduled for Issue 32.</string>
+    <string name="about_beta_holder_bin_title">Recycle Bin (Me tools grid)</string>
+    <string name="about_beta_holder_bin_desc">Status: Honest placeholder (Issue 32). App-managed temporary holding directory for deleted files (30-day retention) is scheduled for Issue 32.</string>
+
+    <!-- Privacy & Integrity -->
+    <string name="about_beta_section_privacy">PRIVACY &amp; TELEMETRY INTEGRITY</string>
+    <string name="about_beta_privacy_body">MPx Player contains NO fake crash reporting, NO third-party telemetry, NO ad frameworks, and NO tracking SDKs. Your media playback history, favourites, and settings are strictly private and never leave your device.</string>
+
+    <!-- Feedback & GitHub Issues -->
+    <string name="about_beta_section_feedback">FEEDBACK &amp; BUG REPORTS</string>
+    <string name="about_beta_feedback_body">We welcome bug reports, regression findings, and feature suggestions on our public GitHub repository. Your feedback directly shapes upcoming releases.</string>
+    <string name="about_beta_open_github">Open GitHub Issues</string>
+    <string name="about_beta_copy_github_url">Copy Issues Link</string>
+    <string name="about_beta_issues_url">https://github.com/mohammedbakri123/MPx-player/issues</string>
+    <string name="about_beta_copied_snackbar">GitHub issues URL copied to clipboard</string>
+    <string name="about_beta_browser_error">Unable to open web browser. The URL has been copied to your clipboard.</string>
+    <string name="about_beta_open_page_button">View Beta Details &amp; Feedback</string>
 </resources>

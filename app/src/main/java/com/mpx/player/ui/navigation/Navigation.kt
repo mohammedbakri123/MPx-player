@@ -20,6 +20,7 @@ sealed class Screen(val route: String) {
     data object Me : Screen("me")
     data object Player : Screen("player")
     data object Settings : Screen("settings")
+    data object AboutBeta : Screen("about_beta")
 }
 
 data class BottomNavItem(
