@@ -292,11 +292,11 @@ fun PlayerScreen(
                         mimeType = validation.mimeType,
                     )
                     if (loaded) {
-                        Toast.makeText(context, "Loaded subtitle: ${validation.displayName}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.player_toast_subtitle_loaded, validation.displayName), Toast.LENGTH_SHORT).show()
                     }
                 }
                 is SubtitleValidationResult.Unsupported -> {
-                    subtitleErrorDialogText = "Cannot load '${validation.fileName}':\n\n${validation.reason}"
+                    subtitleErrorDialogText = context.getString(R.string.player_subtitle_load_error, validation.fileName, validation.reason)
                 }
             }
         }
@@ -678,13 +678,13 @@ fun PlayerScreen(
                 }
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = "No video queued",
+                    text = stringResource(R.string.player_empty_no_video),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = Color.White,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Select a video from Local to start playback",
+                    text = stringResource(R.string.player_empty_select_video),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -706,7 +706,7 @@ fun PlayerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.MusicNote,
-                        contentDescription = "Audio track",
+                        contentDescription = stringResource(R.string.player_cd_audio_track),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(52.dp),
                     )
@@ -745,7 +745,7 @@ fun PlayerScreen(
                     val deltaStr = String.format("%s%02d:%02d", sign, absSeconds / 60, absSeconds % 60)
 
                     Text(
-                        text = "Scrub $deltaStr",
+                        text = stringResource(R.string.player_hud_scrub, deltaStr),
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
@@ -782,7 +782,7 @@ fun PlayerScreen(
                     }
                     Icon(
                         imageVector = icon,
-                        contentDescription = "Brightness",
+                        contentDescription = stringResource(R.string.player_cd_brightness),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp),
                     )
@@ -828,7 +828,7 @@ fun PlayerScreen(
                     }
                     Icon(
                         imageVector = icon,
-                        contentDescription = "Volume",
+                        contentDescription = stringResource(R.string.player_cd_volume),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp),
                     )
@@ -868,7 +868,7 @@ fun PlayerScreen(
                 ) {
                     Icon(
                         imageVector = if (isBackward) Icons.Filled.Replay10 else Icons.Filled.Forward10,
-                        contentDescription = if (isBackward) "Back 10 seconds" else "Forward 10 seconds",
+                        contentDescription = if (isBackward) stringResource(R.string.player_cd_seek_back) else stringResource(R.string.player_cd_seek_forward),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(32.dp),
                     )
@@ -908,14 +908,14 @@ fun PlayerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Resumed from ${formatTimeMs(resumeMs)}",
+                        text = stringResource(R.string.player_resumed_from, formatTimeMs(resumeMs)),
                         color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Start Over",
+                        text = stringResource(R.string.player_start_over),
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -927,7 +927,7 @@ fun PlayerScreen(
                     Spacer(Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Filled.Close,
-                        contentDescription = "Dismiss",
+                        contentDescription = stringResource(R.string.player_cd_dismiss),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .size(16.dp)
@@ -968,7 +968,7 @@ fun PlayerScreen(
                     Spacer(Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Filled.Close,
-                        contentDescription = "Dismiss",
+                        contentDescription = stringResource(R.string.player_cd_dismiss),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .size(18.dp)
@@ -1013,7 +1013,7 @@ fun PlayerScreen(
                     Spacer(Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Filled.Close,
-                        contentDescription = "Dismiss",
+                        contentDescription = stringResource(R.string.player_cd_dismiss),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .size(18.dp)
@@ -1042,7 +1042,7 @@ fun PlayerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Lock,
-                        contentDescription = "Unlock controls",
+                        contentDescription = stringResource(R.string.player_cd_unlock),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp),
                     )
@@ -1078,7 +1078,7 @@ fun PlayerScreen(
                         IconButton(onClick = onClose) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = stringResource(R.string.player_cd_back),
                                 tint = Color.White,
                             )
                         }
@@ -1127,7 +1127,7 @@ fun PlayerScreen(
                                     playbackManager.setDecoderMode(nextDecoder)
                                     realSettingsRepo.save(realSettingsRepo.load().copy(decoderMode = nextDecoder.label))
                                     currentSettings = realSettingsRepo.load()
-                                    Toast.makeText(context, "Decoder: ${nextDecoder.title}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.player_toast_decoder, nextDecoder.title), Toast.LENGTH_SHORT).show()
                                 },
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
                             shape = RoundedCornerShape(6.dp),
@@ -1160,7 +1160,7 @@ fun PlayerScreen(
                         }) {
                             Icon(
                                 imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = if (isFavourite) "Remove favourite" else "Add favourite",
+                                contentDescription = if (isFavourite) stringResource(R.string.player_cd_favourite_remove) else stringResource(R.string.player_cd_favourite_add),
                                 tint = if (isFavourite) Color(0xFFFF5252) else Color.White,
                             )
                         }
@@ -1168,7 +1168,7 @@ fun PlayerScreen(
                         IconButton(onClick = { activeDialog = "Audio Tracks" }) {
                             Icon(
                                 imageVector = Icons.Filled.Audiotrack,
-                                contentDescription = "Audio track",
+                                contentDescription = stringResource(R.string.player_cd_audio_track),
                                 tint = if (state.audioTracks.size > 1) MaterialTheme.colorScheme.primary else Color.White,
                             )
                         }
@@ -1176,7 +1176,7 @@ fun PlayerScreen(
                         IconButton(onClick = { activeDialog = "Subtitles" }) {
                             Icon(
                                 imageVector = Icons.Filled.Subtitles,
-                                contentDescription = "Subtitles",
+                                contentDescription = stringResource(R.string.player_cd_subtitles),
                                 tint = if (state.selectedSubtitleTrackIndex != -1) MaterialTheme.colorScheme.primary else Color.White,
                             )
                         }
@@ -1185,16 +1185,16 @@ fun PlayerScreen(
                             val entered = PipUtils.enterPip(context)
                             if (!entered) {
                                 val msg = if (!PipUtils.isPipSupported(context)) {
-                                    "Pop-up Play (PiP) is not supported on this device"
+                                    context.getString(R.string.player_pip_unsupported)
                                 } else {
-                                    "Unable to enter Picture-in-Picture mode"
+                                    context.getString(R.string.player_pip_unable)
                                 }
                                 android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                             }
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.PictureInPictureAlt,
-                                contentDescription = "Pop-up Play (PiP)",
+                                contentDescription = stringResource(R.string.player_cd_popup_play),
                                 tint = Color.White,
                             )
                         }
@@ -1229,7 +1229,7 @@ fun PlayerScreen(
                         IconButton(onClick = { activeDialog = "Player Menu" }) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
-                                contentDescription = "More",
+                                contentDescription = stringResource(R.string.player_cd_more),
                                 tint = Color.White,
                             )
                         }
@@ -1248,7 +1248,7 @@ fun PlayerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.LockOpen,
-                        contentDescription = "Lock controls",
+                        contentDescription = stringResource(R.string.player_cd_lock),
                         tint = Color.White,
                         modifier = Modifier.size(24.dp),
                     )
@@ -1290,7 +1290,7 @@ fun PlayerScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Close,
-                                        contentDescription = "Dismiss hint",
+                                        contentDescription = stringResource(R.string.player_cd_dismiss_hint),
                                         tint = Color.White.copy(alpha = 0.7f),
                                         modifier = Modifier.size(14.dp),
                                     )
@@ -1382,7 +1382,7 @@ fun PlayerScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.SkipPrevious,
-                                    contentDescription = "Previous track",
+                                    contentDescription = stringResource(R.string.player_cd_previous),
                                     tint = if (state.hasPrevious) Color.White else Color.White.copy(alpha = 0.3f),
                                     modifier = Modifier.size(28.dp),
                                 )
@@ -1392,7 +1392,7 @@ fun PlayerScreen(
                             IconButton(onClick = { playbackManager.skipBackward(10_000L) }) {
                                 Icon(
                                     imageVector = Icons.Filled.Replay10,
-                                    contentDescription = "Back 10 seconds",
+                                    contentDescription = stringResource(R.string.player_cd_seek_back),
                                     tint = Color.White,
                                     modifier = Modifier.size(28.dp),
                                 )
@@ -1408,7 +1408,7 @@ fun PlayerScreen(
                             ) {
                                 Icon(
                                     imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                                    contentDescription = if (state.isPlaying) "Pause" else "Play",
+                                    contentDescription = if (state.isPlaying) stringResource(R.string.player_cd_pause) else stringResource(R.string.player_cd_play),
                                     tint = Color.White,
                                     modifier = Modifier.size(34.dp),
                                 )
@@ -1418,7 +1418,7 @@ fun PlayerScreen(
                             IconButton(onClick = { playbackManager.skipForward(10_000L) }) {
                                 Icon(
                                     imageVector = Icons.Filled.Forward10,
-                                    contentDescription = "Forward 10 seconds",
+                                    contentDescription = stringResource(R.string.player_cd_seek_forward),
                                     tint = Color.White,
                                     modifier = Modifier.size(28.dp),
                                 )
@@ -1431,7 +1431,7 @@ fun PlayerScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.SkipNext,
-                                    contentDescription = "Next track",
+                                    contentDescription = stringResource(R.string.player_cd_next),
                                     tint = if (state.hasNext) Color.White else Color.White.copy(alpha = 0.3f),
                                     modifier = Modifier.size(28.dp),
                                 )
@@ -1540,7 +1540,7 @@ fun PlayerScreen(
             modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Text(
-                    text = "Select Audio Track",
+                    text = stringResource(R.string.player_dialog_audio_tracks),
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                 )
@@ -1548,7 +1548,7 @@ fun PlayerScreen(
             text = {
                 if (state.audioTracks.isEmpty()) {
                     Text(
-                        text = "No discrete audio tracks available in this media stream (default audio output).",
+                        text = stringResource(R.string.player_audio_no_tracks),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 } else {
@@ -1580,7 +1580,7 @@ fun PlayerScreen(
                                         fontWeight = if (track.isSelected) FontWeight.Bold else FontWeight.Normal,
                                     )
                                     Text(
-                                        text = "Language: ${track.language}",
+                                        text = stringResource(R.string.player_track_language, track.language),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 12.sp,
                                     )
@@ -1592,7 +1592,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text("Close", color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -1613,7 +1613,7 @@ fun PlayerScreen(
                     Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Subtitle Selection",
+                        text = stringResource(R.string.player_dialog_subtitle_selection),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f),
@@ -1639,7 +1639,7 @@ fun PlayerScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Open Subtitle File (SRT / VTT)...",
+                            text = stringResource(R.string.player_subtitle_open_file),
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -1650,7 +1650,7 @@ fun PlayerScreen(
                     Spacer(Modifier.height(8.dp))
 
                     Text(
-                        text = "Available Tracks",
+                        text = stringResource(R.string.player_subtitle_available_tracks),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1677,7 +1677,7 @@ fun PlayerScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Off (Disable subtitles)",
+                            text = stringResource(R.string.player_subtitle_off),
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = if (state.selectedSubtitleTrackIndex == -1) FontWeight.Bold else FontWeight.Normal,
                         )
@@ -1685,7 +1685,7 @@ fun PlayerScreen(
 
                     if (state.subtitleTracks.isEmpty()) {
                         Text(
-                            text = "No subtitle tracks found in media. Use 'Open Subtitle File' above to load .srt or .vtt.",
+                            text = stringResource(R.string.player_subtitle_no_tracks),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 32.dp, top = 2.dp, bottom = 6.dp),
@@ -1725,7 +1725,7 @@ fun PlayerScreen(
                                                 shape = RoundedCornerShape(4.dp),
                                             ) {
                                                 Text(
-                                                    text = "External",
+                                                    text = stringResource(R.string.player_subtitle_external),
                                                     color = MaterialTheme.colorScheme.primary,
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
@@ -1735,7 +1735,7 @@ fun PlayerScreen(
                                         }
                                     }
                                     Text(
-                                        text = "Language: ${track.language}",
+                                        text = stringResource(R.string.player_track_language, track.language),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 12.sp,
                                     )
@@ -1749,13 +1749,17 @@ fun PlayerScreen(
                     Spacer(Modifier.height(8.dp))
 
                     // Subtitle Size Controls (from settings)
-                    Text("Subtitle Text Size", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.player_subtitle_text_size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        listOf("Small", "Normal", "Large").forEach { size ->
+                        listOf(
+                            "Small" to R.string.player_subtitle_size_small,
+                            "Normal" to R.string.player_subtitle_size_normal,
+                            "Large" to R.string.player_subtitle_size_large,
+                        ).forEach { (size, sizeRes) ->
                             val isSelected = currentSettings.subtitleSize.equals(size, ignoreCase = true)
                             FilterChip(
                                 selected = isSelected,
@@ -1764,7 +1768,7 @@ fun PlayerScreen(
                                     currentSettings = updated
                                     realSettingsRepo.save(updated)
                                 },
-                                label = { Text(size, fontSize = 12.sp) },
+                                label = { Text(stringResource(sizeRes), fontSize = 12.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                                     selectedLabelColor = Color.White,
@@ -1775,18 +1779,18 @@ fun PlayerScreen(
 
                     Spacer(Modifier.height(6.dp))
                     // Subtitle Style Controls (from settings)
-                    Text("Subtitle Style / Color", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.player_subtitle_style_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         listOf(
-                            "White" to "White",
-                            "Yellow" to "Yellow",
-                            "Cyan" to "Cyan",
-                            "Default" to "Default",
-                        ).forEach { (styleKey, styleLabel) ->
+                            "White" to R.string.player_subtitle_style_white,
+                            "Yellow" to R.string.player_subtitle_style_yellow,
+                            "Cyan" to R.string.player_subtitle_style_cyan,
+                            "Default" to R.string.player_subtitle_style_default,
+                        ).forEach { (styleKey, styleRes) ->
                             val isSelected = currentSettings.subtitleStyle.equals(styleKey, ignoreCase = true)
                             FilterChip(
                                 selected = isSelected,
@@ -1795,7 +1799,7 @@ fun PlayerScreen(
                                     currentSettings = updated
                                     realSettingsRepo.save(updated)
                                 },
-                                label = { Text(styleLabel, fontSize = 11.sp) },
+                                label = { Text(stringResource(styleRes), fontSize = 11.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
                                     selectedLabelColor = Color.White,
@@ -1807,7 +1811,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text("Close", color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -1825,7 +1829,7 @@ fun PlayerScreen(
                     Icon(Icons.Filled.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Decoder Selection",
+                        text = stringResource(R.string.player_dialog_decoder_selection),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                     )
@@ -1879,7 +1883,7 @@ fun PlayerScreen(
                     Spacer(Modifier.height(8.dp))
 
                     Text(
-                        text = "Active Video Codec: ${state.activeDecoderName ?: "Initializing / waiting for video frame..."}",
+                        text = stringResource(R.string.player_active_codec, state.activeDecoderName ?: stringResource(R.string.player_codec_initializing)),
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -1914,7 +1918,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text("Close", color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -1929,7 +1933,7 @@ fun PlayerScreen(
             modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Text(
-                    text = "Unsupported Subtitle Format",
+                    text = stringResource(R.string.player_dialog_unsupported_subtitle),
                     color = Color(0xFFFF6B6B),
                     fontWeight = FontWeight.Bold,
                 )
@@ -1944,7 +1948,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { subtitleErrorDialogText = null }) {
-                    Text("OK", color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_ok), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -1959,7 +1963,7 @@ fun PlayerScreen(
             modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Text(
-                    text = "Playback Settings",
+                    text = stringResource(R.string.player_menu_title),
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                 )
@@ -1975,7 +1979,7 @@ fun PlayerScreen(
                     ) {
                         Icon(Icons.Filled.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Decoder Mode (${state.decoderMode.label})", color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_decoder_mode, state.decoderMode.label), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(
                         modifier = Modifier
@@ -1986,7 +1990,7 @@ fun PlayerScreen(
                     ) {
                         Icon(Icons.Filled.Audiotrack, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Audio Tracks (${state.audioTracks.size})", color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_audio_tracks, state.audioTracks.size), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(
                         modifier = Modifier
@@ -1997,7 +2001,7 @@ fun PlayerScreen(
                     ) {
                         Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Subtitles (${if (state.selectedSubtitleTrackIndex == -1) "Off" else "Active"})", color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_subtitles, if (state.selectedSubtitleTrackIndex == -1) stringResource(R.string.player_state_off) else stringResource(R.string.player_state_on)), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(
                         modifier = Modifier
@@ -2007,9 +2011,9 @@ fun PlayerScreen(
                                 val entered = PipUtils.enterPip(context)
                                 if (!entered) {
                                     val msg = if (!PipUtils.isPipSupported(context)) {
-                                        "Pop-up Play (PiP) is not supported on this device"
+                                        context.getString(R.string.player_pip_unsupported)
                                     } else {
-                                        "Unable to enter Picture-in-Picture mode"
+                                        context.getString(R.string.player_pip_unable)
                                     }
                                     android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                                 }
@@ -2019,7 +2023,7 @@ fun PlayerScreen(
                     ) {
                         Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Pop-up Play (PiP Mode)", color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_popup_play), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(
                         modifier = Modifier
@@ -2036,12 +2040,12 @@ fun PlayerScreen(
                                 }
                                 val note = if (nextBackgroundPlay) {
                                     if (state.currentItem?.isVideo == true) {
-                                        "Background play enabled: audio continues in background (video rendering pauses)."
+                                        context.getString(R.string.player_bg_enabled_video)
                                     } else {
-                                        "Background play enabled: audio continues when leaving app."
+                                        context.getString(R.string.player_bg_enabled_audio)
                                     }
                                 } else {
-                                    "Background play disabled: playback pauses when leaving app."
+                                    context.getString(R.string.player_bg_disabled)
                                 }
                                 Toast.makeText(context, note, Toast.LENGTH_SHORT).show()
                             }
@@ -2056,14 +2060,14 @@ fun PlayerScreen(
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "Background Play: ${if (currentSettings.backgroundPlay) "On" else "Off"}",
+                                stringResource(R.string.player_menu_background_play_row, if (currentSettings.backgroundPlay) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)),
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
                                 if (state.currentItem?.isVideo == true) {
-                                    "Audio continues when app minimized; video rendering pauses"
+                                    stringResource(R.string.player_bg_desc_video)
                                 } else {
-                                    "Audio continues when screen is off or app minimized"
+                                    stringResource(R.string.player_bg_desc_audio)
                                 },
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp,
@@ -2088,7 +2092,7 @@ fun PlayerScreen(
                     ) {
                         Icon(Icons.Filled.Speed, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Playback Speed: ${state.speed}x", color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_speed, "${state.speed}x"), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(
                         modifier = Modifier
@@ -2109,7 +2113,7 @@ fun PlayerScreen(
                     ) {
                         Icon(Icons.Filled.AspectRatio, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Aspect Ratio: ${state.aspectRatio.label}", color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_aspect, state.aspectRatio.label), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(
                         modifier = Modifier
@@ -2127,7 +2131,7 @@ fun PlayerScreen(
                         } else {
                             stringResource(R.string.player_orientation_landscape)
                         }
-                        Text("Screen Rotation ($rotationLabel)", color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_rotation, rotationLabel), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(
                         modifier = Modifier
@@ -2165,13 +2169,13 @@ fun PlayerScreen(
                     ) {
                         Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text("Add to Playlist...", color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_add_playlist), color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text("OK", color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_ok), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
