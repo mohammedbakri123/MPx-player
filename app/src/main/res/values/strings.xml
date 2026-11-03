@@ -83,6 +83,9 @@
 
     <string name="player_resume_playback">Resume playback</string>
     <string name="player_background_play">Background play</string>
+    <string name="player_background_play_desc">Keeps audio playing when the app is backgrounded or screen is turned off. For videos, audio playback continues honestly while video rendering pauses.</string>
+    <string name="player_menu_background_play">Background play (audio only for video)</string>
+    <string name="player_background_active_banner">Background play active: continuing audio playback (video rendering paused)</string>
     <string name="player_gestures">Gestures (double-tap, drag seek)</string>
 
     <string name="decoder_hw">HW (Hardware - Android MediaCodec hardware acceleration)</string>

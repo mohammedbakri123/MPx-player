@@ -452,6 +452,51 @@ fun PlayerScreen(
             }
         }
 
+        // Honest User Notification Banner (Background play status, external subtitle notice, etc.)
+        state.userNotification?.let { userMsg ->
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(
+                        top = if (state.decoderFallbackNote != null) 160.dp else if (state.resumedFromMs != null) 124.dp else 72.dp,
+                        start = 16.dp,
+                        end = 16.dp,
+                    ),
+                color = Color.Black.copy(alpha = 0.90f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MpxPrimary),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = null,
+                        tint = MpxPrimary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = userMsg,
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Dismiss",
+                        tint = MpxTextSecondary,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clickable { playbackManager.clearUserNotification() },
+                    )
+                }
+            }
+        }
+
         // Single floating unlock button when screen is locked
         if (state.isLocked) {
             AnimatedVisibility(
@@ -1335,6 +1380,50 @@ fun PlayerScreen(
                         Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
                         Text("Pop-up Play (PiP Mode)", color = MpxTextPrimary)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val nextBackgroundPlay = !currentSettings.backgroundPlay
+                                val updated = currentSettings.copy(backgroundPlay = nextBackgroundPlay)
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                                val note = if (nextBackgroundPlay) {
+                                    if (state.currentItem?.isVideo == true) {
+                                        "Background play enabled: audio continues in background (video rendering pauses)."
+                                    } else {
+                                        "Background play enabled: audio continues when leaving app."
+                                    }
+                                } else {
+                                    "Background play disabled: playback pauses when leaving app."
+                                }
+                                Toast.makeText(context, note, Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PlayArrow,
+                            contentDescription = null,
+                            tint = if (currentSettings.backgroundPlay) MpxPrimary else Color.Gray,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Background Play: ${if (currentSettings.backgroundPlay) "On" else "Off"}",
+                                color = MpxTextPrimary,
+                            )
+                            Text(
+                                if (state.currentItem?.isVideo == true) {
+                                    "Audio continues when app minimized; video rendering pauses"
+                                } else {
+                                    "Audio continues when screen is off or app minimized"
+                                },
+                                color = MpxTextSecondary,
+                                fontSize = 11.sp,
+                            )
+                        }
                     }
                     Row(
                         modifier = Modifier

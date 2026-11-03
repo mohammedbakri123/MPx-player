@@ -1,10 +1,15 @@
 package com.mpx.player
 
+import android.Manifest
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
@@ -17,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +34,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -37,6 +44,7 @@ import androidx.navigation.compose.rememberNavController
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackService
 import com.mpx.player.ui.components.player.MiniPlayer
 import com.mpx.player.ui.navigation.Screen
 import com.mpx.player.ui.navigation.navigationTabs
@@ -57,6 +65,11 @@ class MainActivity : ComponentActivity() {
     private lateinit var settingsRepository: SharedPrefsAppSettingsRepository
     private var currentTheme by mutableStateOf("Midnight")
     private var currentLanguage by mutableStateOf(LocaleHelper.LANGUAGE_SYSTEM)
+    private var openPlayerOnStart by mutableStateOf(false)
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { _ -> }
 
     override fun attachBaseContext(newBase: Context) {
         val lang = LocaleHelper.getPersistedLanguage(newBase)
@@ -72,6 +85,14 @@ class MainActivity : ComponentActivity() {
         val initialSettings = settingsRepository.load()
         currentTheme = initialSettings.appTheme
         currentLanguage = initialSettings.appLanguage
+
+        checkOpenPlayerIntent(intent)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         setContent {
             val targetLocale = remember(currentLanguage) {
@@ -101,6 +122,8 @@ class MainActivity : ComponentActivity() {
                         isInPipMode = isInPipMode,
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
+                        openPlayerRequested = openPlayerOnStart,
+                        onResetOpenPlayer = { openPlayerOnStart = false },
                         onLanguageChanged = { newLang ->
                             currentLanguage = newLang
                             val s = settingsRepository.load()
@@ -112,6 +135,57 @@ class MainActivity : ComponentActivity() {
                         },
                     )
                 }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        checkOpenPlayerIntent(intent)
+    }
+
+    private fun checkOpenPlayerIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(PlaybackService.EXTRA_OPEN_PLAYER, false) == true ||
+            intent?.action == PlaybackService.ACTION_OPEN_PLAYER
+        ) {
+            openPlayerOnStart = true
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val playbackManager = PlaybackManager.getInstance(this)
+        val state = playbackManager.playbackState.value
+        if (state.isVideoBackgroundActive || state.isBackgroundPlaying) {
+            playbackManager.setVideoBackgroundActive(false)
+            playbackManager.setBackgroundPlaying(false)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (isInPipMode) return
+
+        val settings = settingsRepository.load()
+        val playbackManager = PlaybackManager.getInstance(this)
+        val state = playbackManager.playbackState.value
+
+        if (!settings.backgroundPlay) {
+            // off = playback stops when leaving
+            if (state.isPlaying) {
+                playbackManager.pause()
+            }
+            PlaybackService.stop(this)
+        } else {
+            // on = service keeps it alive
+            if (state.isPlaying) {
+                if (state.currentItem?.isVideo == true) {
+                    playbackManager.setVideoBackgroundActive(true)
+                } else {
+                    playbackManager.setBackgroundPlaying(true)
+                }
+                PlaybackService.start(this)
             }
         }
     }
@@ -142,6 +216,8 @@ fun MpxApp(
     isInPipMode: Boolean = false,
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
+    openPlayerRequested: Boolean = false,
+    onResetOpenPlayer: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
 ) {
@@ -149,6 +225,15 @@ fun MpxApp(
     val playbackManager = remember { PlaybackManager.getInstance(context) }
     val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     val navController = rememberNavController()
+
+    LaunchedEffect(openPlayerRequested) {
+        if (openPlayerRequested) {
+            navController.navigate(Screen.Player.route) {
+                launchSingleTop = true
+            }
+            onResetOpenPlayer?.invoke()
+        }
+    }
 
     Scaffold(
         bottomBar = {

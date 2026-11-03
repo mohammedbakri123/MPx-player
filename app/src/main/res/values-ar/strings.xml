@@ -83,6 +83,9 @@
 
     <string name="player_resume_playback">استئناف التشغيل</string>
     <string name="player_background_play">التشغيل في الخلفية</string>
+    <string name="player_background_play_desc">يستمر تشغيل الصوت عند مغادرة التطبيق أو إيقاف تشغيل الشاشة. بالنسبة لمقاطع الفيديو، يستمر تشغيل الصوت فقط بينما يتوقف عرض الفيديو مؤقتاً.</string>
+    <string name="player_menu_background_play">التشغيل في الخلفية (صوت فقط للفيديو)</string>
+    <string name="player_background_active_banner">التشغيل في الخلفية مفعّل: يستمر تشغيل الصوت بينما يتوقف عرض الفيديو مؤقتاً</string>
     <string name="player_gestures">الإيماءات (النقر المزدوج، السحب للتقديم والتأخير)</string>
 
     <string name="decoder_hw">HW (عتاد - تسريع عتاد Android MediaCodec)</string>

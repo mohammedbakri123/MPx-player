@@ -243,6 +243,12 @@ fun SettingsScreen(
                                 "player" -> {
                                     ToggleRow(stringResource(R.string.player_resume_playback), settings.resumePlayback) { update(settings.copy(resumePlayback = it)) }
                                     ToggleRow(stringResource(R.string.player_background_play), settings.backgroundPlay) { update(settings.copy(backgroundPlay = it)) }
+                                    Text(
+                                        stringResource(R.string.player_background_play_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                                    )
                                     ToggleRow(stringResource(R.string.player_gestures), settings.gesturesEnabled) { update(settings.copy(gesturesEnabled = it)) }
                                 }
                                 "decoder" -> {
