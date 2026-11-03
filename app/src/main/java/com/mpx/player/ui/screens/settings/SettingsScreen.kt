@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Subtitles
+import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -39,6 +40,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -49,6 +52,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +70,7 @@ import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,6 +87,8 @@ fun SettingsScreen(
     val context = LocalContext.current
     var settings by remember { mutableStateOf(settingsRepository.load()) }
     var expandedId by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     fun update(next: AppSettings) {
         val oldTheme = settings.appTheme
@@ -96,6 +103,19 @@ fun SettingsScreen(
         }
     }
 
+    fun toggleMusicTab(tabId: String, currentVal: Boolean) {
+        if (currentVal && settings.visibleMusicTabsCount <= 1) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    context.getString(R.string.settings_tab_min_one_required)
+                )
+            }
+            return
+        }
+        val next = settings.withMusicTabToggled(tabId, !currentVal)
+        update(next)
+    }
+
     val activeLanguage = currentLanguage.ifBlank { settings.appLanguage }
     val languageSubtitle = when (activeLanguage.lowercase()) {
         LocaleHelper.LANGUAGE_ARABIC -> stringResource(R.string.lang_arabic)
@@ -107,6 +127,7 @@ fun SettingsScreen(
         SettingCategory("language", stringResource(R.string.settings_category_language), languageSubtitle, Icons.Filled.Language),
         SettingCategory("theme", stringResource(R.string.settings_category_theme), stringResource(R.string.settings_category_theme_sub), Icons.Filled.ColorLens),
         SettingCategory("pip", stringResource(R.string.settings_category_pip), stringResource(R.string.settings_category_pip_sub), Icons.Filled.PictureInPictureAlt),
+        SettingCategory("tabs", stringResource(R.string.settings_category_tabs), stringResource(R.string.settings_category_tabs_sub), Icons.Filled.Tab),
         SettingCategory("list", stringResource(R.string.settings_category_list), stringResource(R.string.settings_category_list_sub), Icons.AutoMirrored.Filled.FormatListBulleted),
         SettingCategory("player", stringResource(R.string.settings_category_player), stringResource(R.string.settings_category_player_sub), Icons.Filled.PlayCircleOutline),
         SettingCategory("decoder", stringResource(R.string.settings_category_decoder), stringResource(R.string.settings_category_decoder_sub), Icons.Filled.Memory),
@@ -119,6 +140,7 @@ fun SettingsScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -246,6 +268,9 @@ fun SettingsScreen(
                                         update(settings.copy(popupPlayControls = "Seek10"))
                                     }
                                 }
+                                "tabs" -> {
+                                    MusicTabsSettingsSection(settings = settings, onToggleTab = ::toggleMusicTab)
+                                }
                                 "list" -> {
                                     Text(
                                         stringResource(R.string.pref_default_folder_view_mode),
@@ -279,6 +304,16 @@ fun SettingsScreen(
                                     ToggleRow(stringResource(R.string.list_show_all_folders), settings.showAllFolders) { update(settings.copy(showAllFolders = it)) }
                                     ToggleRow(stringResource(R.string.list_show_hidden), settings.showHiddenFiles) { update(settings.copy(showHiddenFiles = it)) }
                                     ToggleRow(stringResource(R.string.list_show_thumbnails), settings.showThumbnails) { update(settings.copy(showThumbnails = it)) }
+                                    Spacer(Modifier.height(10.dp))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 0.5.dp)
+                                    Spacer(Modifier.height(10.dp))
+                                    Text(
+                                        text = stringResource(R.string.settings_tabs_header),
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(bottom = 4.dp),
+                                    )
+                                    MusicTabsSettingsSection(settings = settings, onToggleTab = ::toggleMusicTab)
                                 }
                                 "player" -> {
                                     ToggleRow(stringResource(R.string.player_resume_playback), settings.resumePlayback) { update(settings.copy(resumePlayback = it)) }
@@ -452,5 +487,98 @@ private fun ChoiceRowWithSubtitle(title: String, subtitle: String, selected: Boo
             Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
             Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
         }
+    }
+}
+
+@Composable
+private fun MusicTabsSettingsSection(
+    settings: AppSettings,
+    onToggleTab: (tabId: String, currentVal: Boolean) -> Unit,
+) {
+    Text(
+        text = stringResource(R.string.settings_tabs_desc),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+
+    val lastActiveSub = stringResource(R.string.settings_tab_last_active_sub)
+    val isOnlyOneVisible = settings.visibleMusicTabsCount <= 1
+
+    TabToggleRow(
+        label = stringResource(R.string.music_tab_tracks),
+        checked = settings.showMusicTracksTab,
+        isLastVisible = isOnlyOneVisible && settings.showMusicTracksTab,
+        subtitle = lastActiveSub,
+        onToggle = { onToggleTab("tracks", settings.showMusicTracksTab) },
+    )
+    TabToggleRow(
+        label = stringResource(R.string.music_tab_playlists),
+        checked = settings.showMusicPlaylistsTab,
+        isLastVisible = isOnlyOneVisible && settings.showMusicPlaylistsTab,
+        subtitle = lastActiveSub,
+        onToggle = { onToggleTab("playlists", settings.showMusicPlaylistsTab) },
+    )
+    TabToggleRow(
+        label = stringResource(R.string.music_tab_albums),
+        checked = settings.showMusicAlbumsTab,
+        isLastVisible = isOnlyOneVisible && settings.showMusicAlbumsTab,
+        subtitle = lastActiveSub,
+        onToggle = { onToggleTab("albums", settings.showMusicAlbumsTab) },
+    )
+    TabToggleRow(
+        label = stringResource(R.string.music_tab_artists),
+        checked = settings.showMusicArtistsTab,
+        isLastVisible = isOnlyOneVisible && settings.showMusicArtistsTab,
+        subtitle = lastActiveSub,
+        onToggle = { onToggleTab("artists", settings.showMusicArtistsTab) },
+    )
+    TabToggleRow(
+        label = stringResource(R.string.music_tab_folders),
+        checked = settings.showMusicFoldersTab,
+        isLastVisible = isOnlyOneVisible && settings.showMusicFoldersTab,
+        subtitle = lastActiveSub,
+        onToggle = { onToggleTab("folders", settings.showMusicFoldersTab) },
+    )
+}
+
+@Composable
+private fun TabToggleRow(
+    label: String,
+    checked: Boolean,
+    isLastVisible: Boolean = false,
+    subtitle: String? = null,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle(!checked) }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+            )
+            if (isLastVisible && subtitle != null) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = { onToggle(it) },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MpxPrimary,
+                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+            ),
+        )
     }
 }

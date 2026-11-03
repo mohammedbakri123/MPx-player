@@ -12,7 +12,20 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
     private val prefs = context.applicationContext
         .getSharedPreferences("mpx_settings", Context.MODE_PRIVATE)
 
-    override fun load(): AppSettings = AppSettings(
+    override fun load(): AppSettings {
+        var tracks = prefs.getBoolean("show_music_tracks_tab", true)
+        val playlists = prefs.getBoolean("show_music_playlists_tab", true)
+        val albums = prefs.getBoolean("show_music_albums_tab", true)
+        val artists = prefs.getBoolean("show_music_artists_tab", true)
+        val folders = prefs.getBoolean("show_music_folders_tab", true)
+
+        // Honest fallback: at least one tab must always be kept visible
+        if (!tracks && !playlists && !albums && !artists && !folders) {
+            tracks = true
+        }
+
+        return AppSettings(
+
         showHiddenFiles = prefs.getBoolean("show_hidden_files", false),
         showThumbnails = prefs.getBoolean("show_thumbnails", true),
         resumePlayback = prefs.getBoolean("resume_playback", true),
@@ -38,7 +51,13 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         fileView = prefs.getBoolean("file_view", false),
         autoScreenRotation = prefs.getBoolean("auto_screen_rotation", true),
         screenOrientation = prefs.getString("screen_orientation", "auto") ?: "auto",
-    )
+                showMusicTracksTab = tracks,
+            showMusicPlaylistsTab = playlists,
+            showMusicAlbumsTab = albums,
+            showMusicArtistsTab = artists,
+            showMusicFoldersTab = folders,
+        )
+    }
 
     override fun save(settings: AppSettings) {
         prefs.edit()
@@ -67,7 +86,11 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("music_view_mode", settings.musicViewMode)
             .putBoolean("file_view", settings.fileView)
             .putBoolean("auto_screen_rotation", settings.autoScreenRotation)
-            .putString("screen_orientation", settings.screenOrientation)
+            .putString("screen_orientation", settings.screenOrientation)            .putBoolean("show_music_tracks_tab", settings.showMusicTracksTab)
+            .putBoolean("show_music_playlists_tab", settings.showMusicPlaylistsTab)
+            .putBoolean("show_music_albums_tab", settings.showMusicAlbumsTab)
+            .putBoolean("show_music_artists_tab", settings.showMusicArtistsTab)
+            .putBoolean("show_music_folders_tab", settings.showMusicFoldersTab)
             .apply()
     }
 
