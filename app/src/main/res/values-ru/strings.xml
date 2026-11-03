@@ -158,6 +158,15 @@
     <string name="tool_transfer_desc">P2P-передача</string>
     <string name="tool_equalizer_title">Эквалайзер</string>
     <string name="tool_equalizer_desc">Системный настройщик звука</string>
+    <string name="tool_local_network_title">Локальная сеть</string>
+    <string name="tool_local_network_desc">Просмотр SMB-ресурсов</string>
+    <string name="local_network_dialog_body">Просматривайте общие папки в локальной сети (SMB) и воспроизводите медиа из них. Просмотр SMB ещё не реализован, поэтому ресурсы не сканируются и список ресурсов здесь не показывается.</string>
+    <string name="tool_cloud_title">Облачный диск</string>
+    <string name="tool_cloud_desc">Облако через плагины</string>
+    <string name="cloud_dialog_body">Облачное хранилище работает через плагины: провайдер добавляется установкой его плагина. Сейчас плагины не установлены, поэтому здесь не показаны ни учётные записи, ни файлы.</string>
+    <string name="tool_badge_soon">Скоро</string>
+    <string name="tool_badge_plugin">Плагин</string>
+    <string name="tool_badge_planned">Запланировано</string>
     <string name="tool_status_title">Сохранение статусов</string>
     <string name="tool_status_desc">Статусы WhatsApp</string>
     <string name="tool_private_title">Личная папка</string>
