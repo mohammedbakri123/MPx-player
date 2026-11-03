@@ -533,7 +533,16 @@ fun MusicScreen(
                 Spacer(Modifier.width(10.dp))
 
                 Button(
-                    onClick = onOpenPlayer,
+                    onClick = {
+                        // Shuffle All (#64): shuffle the currently visible/filtered
+                        // track list and start playback from it via the existing
+                        // audio queue path, so next/previous follow shuffled order.
+                        // No-op on an empty list instead of opening an empty player.
+                        if (sortedTracks.isNotEmpty()) {
+                            playbackManager?.playAudioQueue(sortedTracks.shuffled(), startIndex = 0)
+                            onOpenPlayer()
+                        }
+                    },
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
