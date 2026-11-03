@@ -2,21 +2,18 @@ package com.mpx.player.playback
 
 import android.content.Context
 import android.net.Uri
-import androidx.media3.common.C
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackParameters
+import android.view.Surface
 import androidx.media3.common.Player
-import androidx.media3.common.TrackSelectionOverride
-import androidx.media3.common.Tracks
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.analytics.AnalyticsListener
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.repository.MediaPersistenceRepository
+import com.mpx.player.playback.engine.Media3PlayerEngine
+import com.mpx.player.playback.engine.PlayerEngine
+import com.mpx.player.playback.engine.TrackType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,11 +26,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
- * Central controller for Media3 ExoPlayer playback in MPx Player.
- * Manages the ExoPlayer instance, queue state, real position ticker,
+ * Central controller for playback orchestration in MPx Player.
+ * Manages the high-level playback state, playlist queue, real position ticker,
  * Room database-backed persistent resume tracking, playback history recording,
- * audio stream switching, real external subtitle loading (SRT/VTT via SAF),
- * and actual ExoPlayer HW / HW+ / SW renderer decoder selection.
+ * and delegates underlying playback engine operations to [PlayerEngine].
  */
 class PlaybackManager private constructor(context: Context) {
 
@@ -55,7 +51,7 @@ class PlaybackManager private constructor(context: Context) {
     )
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
-    private val playerListener = object : Player.Listener {
+    private val engineListener = object : PlayerEngine.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _playbackState.update { it.copy(isPlaying = isPlaying) }
             if (isPlaying) {
@@ -68,8 +64,8 @@ class PlaybackManager private constructor(context: Context) {
                 stopTicker()
                 updatePosition()
                 _playbackState.value.currentItem?.let { item ->
-                    val pos = player.currentPosition.coerceAtLeast(0L)
-                    val dur = player.duration.coerceAtLeast(0L)
+                    val pos = engine.currentPosition
+                    val dur = engine.duration
                     if (pos > 1_500L) {
                         scope.launch(Dispatchers.IO) {
                             try {
@@ -104,16 +100,14 @@ class PlaybackManager private constructor(context: Context) {
             }
         }
 
-        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-            val index = player.currentMediaItemIndex
+        override fun onMediaItemTransition(index: Int, isAuto: Boolean) {
             val current = currentQueue.getOrNull(index)
 
             val savedPos = current?.let { resumeManager.getResumePosition(it.id) }
-            val shouldResume = reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO &&
-                    savedPos != null && savedPos > 2_000L
+            val shouldResume = isAuto && savedPos != null && savedPos > 2_000L
 
             if (shouldResume && savedPos != null) {
-                player.seekTo(savedPos)
+                engine.seekTo(savedPos)
             }
 
             current?.let { item ->
@@ -140,8 +134,8 @@ class PlaybackManager private constructor(context: Context) {
                 it.copy(
                     currentItem = current,
                     currentIndex = index,
-                    hasPrevious = player.hasPreviousMediaItem(),
-                    hasNext = player.hasNextMediaItem(),
+                    hasPrevious = engine.hasPreviousMediaItem,
+                    hasNext = engine.hasNextMediaItem,
                     resumedFromMs = if (shouldResume) savedPos else null,
                 )
             }
@@ -149,7 +143,7 @@ class PlaybackManager private constructor(context: Context) {
             updatePosition()
         }
 
-        override fun onTracksChanged(tracks: Tracks) {
+        override fun onTracksChanged() {
             updateTracksState()
             pendingSubtitleTrackLabel?.let { targetLabel ->
                 val subtitleTracks = _playbackState.value.subtitleTracks
@@ -161,18 +155,11 @@ class PlaybackManager private constructor(context: Context) {
             }
         }
 
-        override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
-            _playbackState.update { it.copy(speed = playbackParameters.speed) }
+        override fun onPlaybackParametersChanged(speed: Float) {
+            _playbackState.update { it.copy(speed = speed) }
         }
-    }
 
-    private val analyticsListener = object : AnalyticsListener {
-        override fun onVideoDecoderInitialized(
-            eventTime: AnalyticsListener.EventTime,
-            decoderName: String,
-            initializedTimestampMs: Long,
-            initializationDurationMs: Long,
-        ) {
+        override fun onVideoDecoderInitialized(decoderName: String) {
             val currentMode = _playbackState.value.decoderMode
             val isSoftware = MpxMediaCodecSelector.isSoftwareCodecName(decoderName)
 
@@ -195,12 +182,19 @@ class PlaybackManager private constructor(context: Context) {
         }
     }
 
-    // NOTE: player MUST be declared after playerListener and analyticsListener:
-    // Kotlin initializes properties in declaration order, and createPlayer() calls
-    // addListener()/addAnalyticsListener() with them. Declaring player first passed
-    // null listeners to ExoPlayer and crashed on start (issue #42).
-    var player: ExoPlayer = createPlayer(initialDecoderMode)
-        private set
+    /**
+     * Active player engine instance. Currently delegates to [Media3PlayerEngine].
+     */
+    val engine: PlayerEngine = Media3PlayerEngine(appContext, initialDecoderMode).apply {
+        setListener(engineListener)
+    }
+
+    /**
+     * Compatibility accessor exposing the underlying ExoPlayer instance for Media3-specific UI.
+     */
+    val player: ExoPlayer
+        get() = (engine as? Media3PlayerEngine)?.player
+            ?: throw IllegalStateException("Current engine is not Media3PlayerEngine")
 
     private fun resolveInitialDecoderMode(): DecoderMode {
         return try {
@@ -211,29 +205,28 @@ class PlaybackManager private constructor(context: Context) {
         }
     }
 
-    private fun createPlayer(mode: DecoderMode): ExoPlayer {
-        val selector = MpxMediaCodecSelector(mode)
-        val renderersFactory = DefaultRenderersFactory(appContext).apply {
-            setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
-            setEnableDecoderFallback(true)
-            setMediaCodecSelector(selector)
-            when (mode) {
-                DecoderMode.HW -> {
-                    forceDisableMediaCodecAsynchronousQueueing()
-                }
-                DecoderMode.HW_PLUS -> {
-                    forceEnableMediaCodecAsynchronousQueueing()
-                    setAllowedVideoJoiningTimeMs(0)
-                }
-                DecoderMode.SW -> {
-                    forceDisableMediaCodecAsynchronousQueueing()
-                }
-            }
+    /**
+     * Attaches a native video surface to the active playback engine.
+     */
+    fun attachSurface(surface: Surface) {
+        engine.attachSurface(surface)
+    }
+
+    /**
+     * Detaches the video surface from the active playback engine.
+     */
+    fun detachSurface() {
+        engine.detachSurface()
+    }
+
+    /**
+     * Loads a single media item with optional resume position and begins playback.
+     */
+    fun load(media: PlayableMedia, resumeMs: Long = 0L) {
+        if (resumeMs > 0L) {
+            resumeManager.saveResumePosition(media.id, resumeMs, media.uri, media.durationMs)
         }
-        val newPlayer = ExoPlayer.Builder(appContext, renderersFactory).build()
-        newPlayer.addListener(playerListener)
-        newPlayer.addAnalyticsListener(analyticsListener)
-        return newPlayer
+        playQueue(listOf(media), startIndex = 0, autoPlay = true)
     }
 
     fun playQueue(items: List<PlayableMedia>, startIndex: Int = 0, autoPlay: Boolean = true) {
@@ -245,11 +238,9 @@ class PlaybackManager private constructor(context: Context) {
         val savedPos = resumeManager.getResumePosition(targetItem.id) ?: 0L
         val shouldResume = savedPos > 2_000L
 
-        val mediaItems = items.map { it.toMediaItem() }
-        player.setMediaItems(mediaItems, targetIndex, if (shouldResume) savedPos else 0L)
-        player.prepare()
+        engine.load(items, targetIndex, if (shouldResume) savedPos else 0L)
         if (autoPlay) {
-            player.play()
+            engine.play()
         }
 
         targetItem.let { item ->
@@ -277,8 +268,8 @@ class PlaybackManager private constructor(context: Context) {
                 currentItem = targetItem,
                 queue = items,
                 currentIndex = targetIndex,
-                hasPrevious = player.hasPreviousMediaItem(),
-                hasNext = player.hasNextMediaItem(),
+                hasPrevious = engine.hasPreviousMediaItem,
+                hasNext = engine.hasNextMediaItem,
                 resumedFromMs = if (shouldResume) savedPos else null,
             )
         }
@@ -349,55 +340,44 @@ class PlaybackManager private constructor(context: Context) {
     )
 
     fun play() {
-        player.play()
+        engine.play()
     }
 
     fun pause() {
-        player.pause()
+        engine.pause()
     }
 
     fun togglePlayPause() {
-        if (player.isPlaying) {
-            player.pause()
+        if (engine.isPlaying) {
+            engine.pause()
         } else {
-            if (player.playbackState == Player.STATE_IDLE) {
-                player.prepare()
-            }
-            player.play()
+            engine.play()
         }
     }
 
     fun seekTo(positionMs: Long) {
-        val duration = player.duration.coerceAtLeast(0L)
-        val target = if (duration > 0) positionMs.coerceIn(0L, duration) else positionMs.coerceAtLeast(0L)
-        player.seekTo(target)
+        engine.seekTo(positionMs)
         updatePosition()
     }
 
     fun skipForward(deltaMs: Long = 10_000L) {
-        seekTo(player.currentPosition + deltaMs)
+        seekTo(engine.currentPosition + deltaMs)
     }
 
     fun skipBackward(deltaMs: Long = 10_000L) {
-        seekTo(player.currentPosition - deltaMs)
+        seekTo(engine.currentPosition - deltaMs)
     }
 
     fun skipNext() {
-        if (player.hasNextMediaItem()) {
-            player.seekToNextMediaItem()
-        }
+        engine.seekToNextMediaItem()
     }
 
     fun skipPrevious() {
-        if (player.hasPreviousMediaItem()) {
-            player.seekToPreviousMediaItem()
-        } else {
-            seekTo(0L)
-        }
+        engine.seekToPreviousMediaItem()
     }
 
     fun setSpeed(speed: Float) {
-        player.setPlaybackSpeed(speed)
+        engine.setSpeed(speed)
         _playbackState.update { it.copy(speed = speed) }
     }
 
@@ -406,31 +386,16 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     /**
-     * Changes the ExoPlayer decoder mode (HW, HW+, SW).
-     * Rebuilds the underlying ExoPlayer instance with the requested [MpxMediaCodecSelector]
-     * and [DefaultRenderersFactory] configuration, restoring playback position, speed,
+     * Changes the decoder mode (HW, HW+, SW).
+     * Rebuilds the underlying ExoPlayer instance in [Media3PlayerEngine] with the requested
+     * [MpxMediaCodecSelector] configuration, restoring playback position, speed,
      * queue, and track selections seamlessly.
      */
     fun setDecoderMode(mode: DecoderMode) {
         if (_playbackState.value.decoderMode == mode) return
 
-        val wasPlaying = player.isPlaying
-        val currentPos = player.currentPosition.coerceAtLeast(0L)
-        val currentIndex = player.currentMediaItemIndex
-        val currentSpeed = _playbackState.value.speed
-        val hasQueue = currentQueue.isNotEmpty()
+        engine.setDecoderMode(mode)
 
-        // 1. Release previous player instance
-        player.removeListener(playerListener)
-        player.stop()
-        player.release()
-
-        // 2. Build new player with new decoder configuration
-        val newPlayer = createPlayer(mode)
-        player = newPlayer
-        newPlayer.setPlaybackSpeed(currentSpeed)
-
-        // 3. Update state
         _playbackState.update {
             it.copy(
                 decoderMode = mode,
@@ -438,64 +403,35 @@ class PlaybackManager private constructor(context: Context) {
                 decoderFallbackNote = null,
             )
         }
-
-        // 4. Restore active queue and timeline position
-        if (hasQueue) {
-            val mediaItems = currentQueue.map { it.toMediaItem() }
-            val targetIndex = currentIndex.coerceIn(0, currentQueue.lastIndex)
-            newPlayer.setMediaItems(mediaItems, targetIndex, currentPos)
-            newPlayer.prepare()
-            if (wasPlaying) {
-                newPlayer.play()
-            }
-        }
     }
 
     fun setLocked(locked: Boolean) {
         _playbackState.update { it.copy(isLocked = locked) }
     }
 
+    fun selectTrack(type: TrackType, id: String?) {
+        engine.selectTrack(type, id)
+        updateTracksState()
+    }
+
     fun selectAudioTrack(groupIndex: Int, trackIndex: Int) {
-        val tracks = player.currentTracks
-        val group = tracks.groups.getOrNull(groupIndex) ?: return
-        player.trackSelectionParameters = player.trackSelectionParameters
-            .buildUpon()
-            .setOverrideForType(
-                TrackSelectionOverride(group.mediaTrackGroup, listOf(trackIndex))
-            )
-            .build()
+        engine.selectAudioTrack(groupIndex, trackIndex)
         updateTracksState()
     }
 
     fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {
-        if (groupIndex == null || trackIndex == null) {
-            player.trackSelectionParameters = player.trackSelectionParameters
-                .buildUpon()
-                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-                .clearOverridesOfType(C.TRACK_TYPE_TEXT)
-                .build()
-        } else {
-            val tracks = player.currentTracks
-            val group = tracks.groups.getOrNull(groupIndex) ?: return
-            player.trackSelectionParameters = player.trackSelectionParameters
-                .buildUpon()
-                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                .setOverrideForType(
-                    TrackSelectionOverride(group.mediaTrackGroup, listOf(trackIndex))
-                )
-                .build()
-        }
+        engine.selectSubtitleTrack(groupIndex, trackIndex)
         updateTracksState()
     }
 
     /**
      * Loads an external subtitle file (SRT / VTT) into the currently playing media item.
-     * Replaces the media item in ExoPlayer so the new sidecar subtitle track is loaded,
+     * Replaces the media item in the engine so the new sidecar subtitle track is loaded,
      * maintaining the current playback position and state, and marks the track to be auto-selected.
      */
     fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean {
         val currentItem = _playbackState.value.currentItem ?: return false
-        val index = player.currentMediaItemIndex
+        val index = engine.currentMediaItemIndex
         if (index < 0 || index >= currentQueue.size) return false
 
         val ext = ExternalSubtitle(
@@ -513,18 +449,17 @@ class PlaybackManager private constructor(context: Context) {
         updatedQueue[index] = updatedItem
         currentQueue = updatedQueue
 
-        val currentPos = player.currentPosition
-        val wasPlaying = player.isPlaying
+        val currentPos = engine.currentPosition
+        val wasPlaying = engine.isPlaying
 
-        // Replace current media item in ExoPlayer timeline
-        val newMediaItem = updatedItem.toMediaItem()
-        player.replaceMediaItem(index, newMediaItem)
+        // Replace current media item in engine timeline
+        engine.replaceMediaItem(index, updatedItem)
 
         if (currentPos > 0L) {
-            player.seekTo(index, currentPos)
+            engine.seekTo(index, currentPos)
         }
-        if (wasPlaying && !player.isPlaying) {
-            player.play()
+        if (wasPlaying && !engine.isPlaying) {
+            engine.play()
         }
 
         // Set pending label to auto-select this track once onTracksChanged fires
@@ -549,7 +484,7 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     fun stop() {
-        player.stop()
+        engine.stop()
         stopTicker()
         PlaybackService.stop(appContext)
         _playbackState.update {
@@ -563,6 +498,12 @@ class PlaybackManager private constructor(context: Context) {
                 durationMs = 0L,
             )
         }
+    }
+
+    fun release() {
+        engine.release()
+        stopTicker()
+        PlaybackService.stop(appContext)
     }
 
     fun setVideoBackgroundActive(active: Boolean) {
@@ -601,9 +542,9 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     private fun updatePosition() {
-        val current = player.currentPosition.coerceAtLeast(0L)
-        val duration = player.duration.coerceAtLeast(0L)
-        val buffered = player.bufferedPosition.coerceAtLeast(0L)
+        val current = engine.currentPosition
+        val duration = engine.duration
+        val buffered = engine.bufferedPosition
 
         // Save position into persistent resume store
         _playbackState.value.currentItem?.let { item ->
@@ -622,59 +563,24 @@ class PlaybackManager private constructor(context: Context) {
                 currentPositionMs = current,
                 durationMs = duration,
                 bufferedPositionMs = buffered,
-                hasPrevious = player.hasPreviousMediaItem(),
-                hasNext = player.hasNextMediaItem(),
+                hasPrevious = engine.hasPreviousMediaItem,
+                hasNext = engine.hasNextMediaItem,
             )
         }
     }
 
     private fun updateTracksState() {
-        val tracks = player.currentTracks
-        val audioList = mutableListOf<AudioTrackInfo>()
-        val subtitleList = mutableListOf<SubtitleTrackInfo>()
-
-        var selectedAudioIdx = -1
-        var selectedSubtitleIdx = -1
-
+        val audioList = engine.getAudioTracks().toMutableList()
+        val rawSubtitles = engine.getSubtitleTracks()
         val externalNames = _playbackState.value.currentItem?.externalSubtitles?.map { it.name } ?: emptyList()
 
-        for (groupIndex in 0 until tracks.groups.size) {
-            val group = tracks.groups[groupIndex]
-            val trackType = group.type
+        val subtitleList = rawSubtitles.map { track ->
+            val isExt = externalNames.any { it.equals(track.label, ignoreCase = true) }
+            if (isExt) track.copy(isExternal = true) else track
+        }.toMutableList()
 
-            for (trackIndex in 0 until group.length) {
-                val isSelected = group.isTrackSelected(trackIndex)
-                val format = group.getTrackFormat(trackIndex)
-                val label = format.label ?: format.language ?: "Track ${trackIndex + 1}"
-                val language = format.language ?: "und"
-
-                if (trackType == C.TRACK_TYPE_AUDIO) {
-                    if (isSelected) selectedAudioIdx = audioList.size
-                    audioList.add(
-                        AudioTrackInfo(
-                            groupIndex = groupIndex,
-                            trackIndex = trackIndex,
-                            label = label,
-                            language = language,
-                            isSelected = isSelected,
-                        )
-                    )
-                } else if (trackType == C.TRACK_TYPE_TEXT) {
-                    if (isSelected) selectedSubtitleIdx = subtitleList.size
-                    val isExt = externalNames.any { it.equals(label, ignoreCase = true) }
-                    subtitleList.add(
-                        SubtitleTrackInfo(
-                            groupIndex = groupIndex,
-                            trackIndex = trackIndex,
-                            label = label,
-                            language = language,
-                            isSelected = isSelected,
-                            isExternal = isExt,
-                        )
-                    )
-                }
-            }
-        }
+        val selectedAudioIdx = audioList.indexOfFirst { it.isSelected }
+        val selectedSubtitleIdx = subtitleList.indexOfFirst { it.isSelected }
 
         _playbackState.update {
             it.copy(
