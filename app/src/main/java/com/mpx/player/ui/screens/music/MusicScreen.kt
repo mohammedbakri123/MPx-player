@@ -650,7 +650,7 @@ fun MusicScreen(
                                 icon = Icons.Filled.MusicNote,
                             )
                         } else {
-                            AlbumsTabContent(albums = albums, onAlbumClick = {
+                            AlbumsTabContent(albums = albums, showThumbnails = appSettings.showThumbnails, onAlbumClick = {
                                 playbackManager?.playAudioQueue(tracks, startIndex = 0)
                                 onOpenPlayer()
                             })
@@ -1433,6 +1433,7 @@ private fun PlaylistsTabContent(
 @Composable
 private fun AlbumsTabContent(
     albums: List<AudioAlbum>,
+    showThumbnails: Boolean = true,
     onAlbumClick: () -> Unit,
 ) {
     val gridState = rememberLazyGridState()
@@ -1469,6 +1470,7 @@ private fun AlbumsTabContent(
                             album = album,
                             modifier = Modifier.fillMaxSize(),
                             iconSize = 48.dp,
+                            showThumbnails = showThumbnails,
                         )
                     }
                     Spacer(Modifier.height(8.dp))

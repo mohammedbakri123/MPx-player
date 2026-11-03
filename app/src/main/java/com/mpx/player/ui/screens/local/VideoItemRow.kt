@@ -63,6 +63,7 @@ fun VideoItemRow(
     showDate: Boolean = false,
     showDuration: Boolean = true,
     showLocation: Boolean = true,
+    showThumbnails: Boolean = true,
     onClick: () -> Unit,
     onPlayFolder: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
@@ -91,6 +92,7 @@ fun VideoItemRow(
                 video = video,
                 modifier = Modifier.fillMaxSize(),
                 iconSize = 24.dp,
+                showThumbnails = showThumbnails,
             )
 
             if (showDuration && video.formattedDuration.isNotBlank()) {
@@ -265,6 +267,7 @@ fun VideoItemGridCard(
     showDate: Boolean = false,
     showDuration: Boolean = true,
     showLocation: Boolean = true,
+    showThumbnails: Boolean = true,
     onClick: () -> Unit,
     onPlayFolder: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
@@ -294,6 +297,7 @@ fun VideoItemGridCard(
                     video = video,
                     modifier = Modifier.fillMaxSize(),
                     iconSize = 36.dp,
+                    showThumbnails = showThumbnails,
                 )
 
                 if (showDuration && video.formattedDuration.isNotBlank()) {
