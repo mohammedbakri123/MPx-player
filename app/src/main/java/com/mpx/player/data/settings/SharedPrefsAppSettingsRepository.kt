@@ -55,7 +55,21 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         fileView = prefs.getBoolean("file_view", false),
         autoScreenRotation = prefs.getBoolean("auto_screen_rotation", true),
         screenOrientation = prefs.getString("screen_orientation", "auto") ?: "auto",
-                showMusicTracksTab = tracks,
+        primarySortField = prefs.getString("primary_sort_field", "DATE") ?: "DATE",
+        secondarySortField = prefs.getString("secondary_sort_field", "NAME") ?: "NAME",
+        folderPrimarySortField = prefs.getString("folder_primary_sort_field", "DATE") ?: "DATE",
+        folderSecondarySortField = prefs.getString("folder_secondary_sort_field", "NAME") ?: "NAME",
+        sortReverse = prefs.getBoolean("sort_reverse", false),
+        sortSecondaryReverse = prefs.getBoolean("sort_secondary_reverse", false),
+        sortNumeric = prefs.getBoolean("sort_numeric", true),
+        sortCaseSensitive = prefs.getBoolean("sort_case_sensitive", false),
+        sortIgnoreExtension = prefs.getBoolean("sort_ignore_extension", true),
+        showFieldSize = prefs.getBoolean("show_field_size", true),
+        showFieldDate = prefs.getBoolean("show_field_date", false),
+        showFieldDuration = prefs.getBoolean("show_field_duration", true),
+        showFieldLocation = prefs.getBoolean("show_field_location", true),
+        showFieldCount = prefs.getBoolean("show_field_count", true),
+        showMusicTracksTab = tracks,
             showMusicPlaylistsTab = playlists,
             showMusicAlbumsTab = albums,
             showMusicArtistsTab = artists,
@@ -90,7 +104,22 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("music_view_mode", settings.musicViewMode)
             .putBoolean("file_view", settings.fileView)
             .putBoolean("auto_screen_rotation", settings.autoScreenRotation)
-            .putString("screen_orientation", settings.screenOrientation)            .putBoolean("show_music_tracks_tab", settings.showMusicTracksTab)
+            .putString("screen_orientation", settings.screenOrientation)
+            .putString("primary_sort_field", settings.primarySortField)
+            .putString("secondary_sort_field", settings.secondarySortField)
+            .putString("folder_primary_sort_field", settings.folderPrimarySortField)
+            .putString("folder_secondary_sort_field", settings.folderSecondarySortField)
+            .putBoolean("sort_reverse", settings.sortReverse)
+            .putBoolean("sort_secondary_reverse", settings.sortSecondaryReverse)
+            .putBoolean("sort_numeric", settings.sortNumeric)
+            .putBoolean("sort_case_sensitive", settings.sortCaseSensitive)
+            .putBoolean("sort_ignore_extension", settings.sortIgnoreExtension)
+            .putBoolean("show_field_size", settings.showFieldSize)
+            .putBoolean("show_field_date", settings.showFieldDate)
+            .putBoolean("show_field_duration", settings.showFieldDuration)
+            .putBoolean("show_field_location", settings.showFieldLocation)
+            .putBoolean("show_field_count", settings.showFieldCount)
+            .putBoolean("show_music_tracks_tab", settings.showMusicTracksTab)
             .putBoolean("show_music_playlists_tab", settings.showMusicPlaylistsTab)
             .putBoolean("show_music_albums_tab", settings.showMusicAlbumsTab)
             .putBoolean("show_music_artists_tab", settings.showMusicArtistsTab)

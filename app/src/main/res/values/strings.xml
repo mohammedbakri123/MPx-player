@@ -637,4 +637,29 @@
     <string name="dev_val_codec_hw">Hardware Accelerated (MediaCodec)</string>
     <string name="dev_val_codec_sw">Software (CPU)</string>
     <string name="dev_label_last_updated">Last updated: %1$s</string>
+    <!-- Issue 59: Secondary Sort, Fields, and Advanced Sort Options -->
+    <string name="sort_section_secondary_sort">SECOND SORT</string>
+    <string name="sort_secondary_sort_desc">Applied as tie-breaker when primary values tie</string>
+    <string name="sort_field_none">None</string>
+    <string name="sort_section_fields">Fields</string>
+    <string name="sort_fields_dialog_title">Fields</string>
+    <string name="sort_fields_desc">Select metadata columns to display in list rows</string>
+    <string name="sort_field_show_size">File size</string>
+    <string name="sort_field_show_date">Date modified</string>
+    <string name="sort_field_show_duration">Duration / Length</string>
+    <string name="sort_field_show_location">Location / Folder</string>
+    <string name="sort_field_show_count">Video count</string>
+    <string name="sort_section_advanced">Advanced</string>
+    <string name="sort_advanced_dialog_title">Advanced Sort Options</string>
+    <string name="sort_advanced_reverse_order">Reverse primary sort order</string>
+    <string name="sort_advanced_reverse_order_desc">Switch between ascending and descending order</string>
+    <string name="sort_advanced_secondary_reverse">Reverse secondary sort order</string>
+    <string name="sort_advanced_secondary_reverse_desc">Switch secondary sort between ascending and descending</string>
+    <string name="sort_advanced_numeric">Natural numeric sorting</string>
+    <string name="sort_advanced_numeric_desc">Sort \'2\' before \'10\' in names</string>
+    <string name="sort_advanced_case_sensitive">Case-sensitive sorting</string>
+    <string name="sort_advanced_case_sensitive_desc">Distinguish between uppercase and lowercase letters</string>
+    <string name="sort_advanced_ignore_extension">Ignore file extensions</string>
+    <string name="sort_advanced_ignore_extension_desc">Sort by file title without considering file extension</string>
+    <string name="sort_advanced_summary_default">Standard sort options</string>
 </resources>

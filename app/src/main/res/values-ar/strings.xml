@@ -637,4 +637,29 @@
     <string name="dev_val_codec_hw">تسريع العتاد (MediaCodec)</string>
     <string name="dev_val_codec_sw">برمجي (معالج CPU)</string>
     <string name="dev_label_last_updated">آخر تحديث: %1$s</string>
+    <!-- Issue 59: Secondary Sort, Fields, and Advanced Sort Options -->
+    <string name="sort_section_secondary_sort">الترتيب الثانوي</string>
+    <string name="sort_secondary_sort_desc">يُطبق لحسم التعادل عندما تتساوى القيم الأساسية</string>
+    <string name="sort_field_none">بلا</string>
+    <string name="sort_section_fields">الحقول</string>
+    <string name="sort_fields_dialog_title">الحقول</string>
+    <string name="sort_fields_desc">اختر أعمدة البيانات الوصفية لعرضها في صفوف القائمة</string>
+    <string name="sort_field_show_size">حجم الملف</string>
+    <string name="sort_field_show_date">تاريخ التعديل</string>
+    <string name="sort_field_show_duration">المدة / الطول</string>
+    <string name="sort_field_show_location">الموقع / المجلد</string>
+    <string name="sort_field_show_count">عدد مقاطع الفيديو</string>
+    <string name="sort_section_advanced">خيارات متقدمة</string>
+    <string name="sort_advanced_dialog_title">خيارات الترتيب المتقدمة</string>
+    <string name="sort_advanced_reverse_order">عكس اتجاه الترتيب الأساسي</string>
+    <string name="sort_advanced_reverse_order_desc">التبديل بين الترتيب التصاعدي والتنازلي</string>
+    <string name="sort_advanced_secondary_reverse">عكس اتجاه الترتيب الثانوي</string>
+    <string name="sort_advanced_secondary_reverse_desc">تبديل الترتيب الثانوي بين تصاعدي وتنازلي</string>
+    <string name="sort_advanced_numeric">الترتيب الرقمي الطبيعي</string>
+    <string name="sort_advanced_numeric_desc">ترتيب \'2\' قبل \'10\' في الأسماء</string>
+    <string name="sort_advanced_case_sensitive">ترتيب حساس لحالة الأحرف</string>
+    <string name="sort_advanced_case_sensitive_desc">التمييز بين الحروف الكبيرة والصغيرة</string>
+    <string name="sort_advanced_ignore_extension">تجاهل امتدادات الملفات</string>
+    <string name="sort_advanced_ignore_extension_desc">الترتيب حسب عنوان الملف دون مراعاة الامتداد</string>
+    <string name="sort_advanced_summary_default">خيارات الترتيب القياسية</string>
 </resources>
