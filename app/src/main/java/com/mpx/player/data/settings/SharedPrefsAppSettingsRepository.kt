@@ -25,6 +25,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         appTheme = prefs.getString("app_theme", "Midnight") ?: "Midnight",
         popupPlayEnabled = prefs.getBoolean("popup_play_enabled", true),
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
+        appLanguage = prefs.getString("app_language", "system") ?: "system",
     )
 
     override fun save(settings: AppSettings) {
@@ -42,6 +43,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("app_theme", settings.appTheme)
             .putBoolean("popup_play_enabled", settings.popupPlayEnabled)
             .putString("popup_play_controls", settings.popupPlayControls)
+            .putString("app_language", settings.appLanguage)
             .apply()
     }
 }

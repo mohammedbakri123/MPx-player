@@ -39,10 +39,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mpx.player.R
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
@@ -127,7 +129,7 @@ fun MiniPlayer(
                     ) {
                         Icon(
                             imageVector = if (item.isVideo) Icons.Filled.Movie else Icons.Filled.MusicNote,
-                            contentDescription = if (item.isVideo) "Video" else "Audio",
+                            contentDescription = if (item.isVideo) stringResource(R.string.mini_player_video) else stringResource(R.string.mini_player_audio),
                             tint = MpxPrimary,
                             modifier = Modifier.size(24.dp),
                         )
@@ -168,7 +170,7 @@ fun MiniPlayer(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipPrevious,
-                                contentDescription = "Previous track",
+                                contentDescription = stringResource(R.string.mini_player_prev),
                                 tint = MpxTextPrimary,
                                 modifier = Modifier.size(20.dp),
                             )
@@ -181,7 +183,7 @@ fun MiniPlayer(
                     ) {
                         Icon(
                             imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = if (state.isPlaying) "Pause" else "Play",
+                            contentDescription = if (state.isPlaying) stringResource(R.string.mini_player_pause) else stringResource(R.string.mini_player_play),
                             tint = MpxPrimary,
                             modifier = Modifier.size(28.dp),
                         )
@@ -194,7 +196,7 @@ fun MiniPlayer(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipNext,
-                                contentDescription = "Next track",
+                                contentDescription = stringResource(R.string.mini_player_next),
                                 tint = MpxTextPrimary,
                                 modifier = Modifier.size(20.dp),
                             )
@@ -207,7 +209,7 @@ fun MiniPlayer(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Close,
-                            contentDescription = "Close player",
+                            contentDescription = stringResource(R.string.mini_player_close),
                             tint = MpxTextMuted,
                             modifier = Modifier.size(18.dp),
                         )

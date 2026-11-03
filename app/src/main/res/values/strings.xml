@@ -1,4 +1,231 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App & General -->
     <string name="app_name">MPx Player</string>
+    <string name="app_version_name">Version 0.1.0-native</string>
+    <string name="app_version_full">MPx Player 0.1.0-native</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_local">Local</string>
+    <string name="nav_music">Music</string>
+    <string name="nav_transfer">Transfer</string>
+    <string name="nav_me">Me</string>
+
+    <!-- Mini Player -->
+    <string name="mini_player_video">Video</string>
+    <string name="mini_player_audio">Audio</string>
+    <string name="mini_player_prev">Previous track</string>
+    <string name="mini_player_pause">Pause</string>
+    <string name="mini_player_play">Play</string>
+    <string name="mini_player_next">Next track</string>
+    <string name="mini_player_close">Close player</string>
+
+    <!-- Common Actions -->
+    <string name="action_back">Back</string>
+    <string name="action_close">Close</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_ok">OK</string>
+    <string name="action_paste">Paste</string>
+    <string name="action_understood">Understood</string>
+
+    <!-- Language Settings & Dialog -->
+    <string name="pref_app_language">App Language</string>
+    <string name="pref_app_language_desc">Switch between English, Arabic, and System default</string>
+    <string name="lang_dialog_title">Select App Language</string>
+    <string name="lang_system_default">System Default</string>
+    <string name="lang_system_default_desc">Follow system language settings</string>
+    <string name="lang_english">English</string>
+    <string name="lang_english_desc">English interface (LTR layout)</string>
+    <string name="lang_arabic">العربية (Arabic)</string>
+    <string name="lang_arabic_desc">Arabic interface with full Right-to-Left (RTL) layout</string>
+    <string name="lang_applied_msg">Language updated: %s</string>
+    <string name="lang_settings_note">Select your preferred app language. Language and layout direction apply immediately without restarting.</string>
+
+    <!-- Settings Screen Categories -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_category_language">App Language</string>
+    <string name="settings_category_language_sub">English, العربية, System Default</string>
+    <string name="settings_category_theme">App Theme</string>
+    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
+    <string name="settings_category_pip">Custom Pop-up Play</string>
+    <string name="settings_category_pip_sub">Picture-in-Picture controls and background play</string>
+    <string name="settings_category_list">List</string>
+    <string name="settings_category_list_sub">Folder view, hidden files, thumbnails</string>
+    <string name="settings_category_player">Player</string>
+    <string name="settings_category_player_sub">Resume playback, background play, gestures</string>
+    <string name="settings_category_decoder">Decoder</string>
+    <string name="settings_category_decoder_sub">Hardware acceleration (HW / HW+), Software (SW)</string>
+    <string name="settings_category_audio">Audio</string>
+    <string name="settings_category_audio_sub">Volume boost</string>
+    <string name="settings_category_subtitle">Subtitle</string>
+    <string name="settings_category_subtitle_sub">Subtitle size and color style</string>
+    <string name="settings_category_general">General</string>
+    <string name="settings_category_general_sub">Reset all preferences to defaults</string>
+    <string name="settings_category_about">About</string>
+    <string name="settings_category_about_sub">Version 0.1.0-native</string>
+
+    <!-- Settings Category Options -->
+    <string name="theme_midnight">Midnight OLED (Pure Black)</string>
+    <string name="theme_dark">Dark Slate (Charcoal)</string>
+    <string name="theme_classic">Classic MX Navy</string>
+    <string name="theme_light">Light Cinema (Clean White)</string>
+    <string name="theme_applied_snackbar">Theme applied: %s</string>
+
+    <string name="pip_not_supported">Note: Picture-in-Picture mode is not supported on this device/environment (requires Android 8.0+ with FEATURE_PICTURE_IN_PICTURE).</string>
+    <string name="pip_enable_toggle">Enable Pop-up Play (PiP)</string>
+    <string name="pip_window_controls_header">PiP Window Controls:</string>
+    <string name="pip_controls_prev_next">Previous / Next (Default)</string>
+    <string name="pip_controls_seek10">Fast Forward / Rewind (10s)</string>
+
+    <string name="list_show_hidden">Show hidden files</string>
+    <string name="list_show_thumbnails">Show thumbnails</string>
+
+    <string name="player_resume_playback">Resume playback</string>
+    <string name="player_background_play">Background play</string>
+    <string name="player_gestures">Gestures (double-tap, drag seek)</string>
+
+    <string name="decoder_hw">HW (Hardware - Android MediaCodec hardware acceleration)</string>
+    <string name="decoder_hw_plus">HW+ (Hardware Plus - Asynchronous buffer pipeline)</string>
+    <string name="decoder_sw">SW (Software - CPU decoding fallback)</string>
+    <string name="decoder_explanation">Selects default player decoder preference. HW uses device chipset hardware codecs; SW provides software fallback. Where Android does not allow the requested decoder (e.g. unsupported codec), MPx honestly displays a fallback note.</string>
+
+    <string name="audio_volume_boost">Volume boost</string>
+
+    <string name="subtitle_size_header">Subtitle Text Size:</string>
+    <string name="subtitle_size_small">Small (14sp)</string>
+    <string name="subtitle_size_normal">Normal (18sp)</string>
+    <string name="subtitle_size_large">Large (24sp)</string>
+    <string name="subtitle_style_header">Subtitle Style &amp; Color:</string>
+    <string name="subtitle_style_white">White text, black outline (Classic)</string>
+    <string name="subtitle_style_yellow">Yellow text, black outline (High contrast)</string>
+    <string name="subtitle_style_cyan">Cyan text, black outline</string>
+    <string name="subtitle_style_default">System default caption style</string>
+
+    <string name="general_reset_button">Reset all to defaults</string>
+    <string name="general_reset_done">All settings have been reset to default values.</string>
+    <string name="general_language_hint">App language can be changed in the App Language section or from the Me screen.</string>
+
+    <string name="about_app_description">MPx Player 0.1.0-native. Native Kotlin rewrite, MX-inspired layout built entirely in MPx\'s own code and styling.</string>
+
+    <!-- Me Screen Headers & Profile -->
+    <string name="me_title">Me</string>
+    <string name="me_profile_user">MPx Local User</string>
+    <string name="me_profile_desc">Private on-device media player</string>
+    <string name="me_status_banner">Me tools grid: real features wired to Local, Music, Playlists, Favourites, History, Network Stream. Placeholders honestly marked for Issue 32.</string>
+    <string name="section_tools">TOOLS</string>
+    <string name="section_preferences">PREFERENCES</string>
+    <string name="section_about_legal">ABOUT &amp; LEGAL</string>
+
+    <!-- Me Screen Tools -->
+    <string name="tool_local_title">Local Videos</string>
+    <string name="tool_local_desc">Video folders</string>
+    <string name="tool_music_title">Music</string>
+    <string name="tool_music_desc">Audio library</string>
+    <string name="tool_playlists_title">Playlists</string>
+    <string name="tool_playlists_desc">Custom collections</string>
+    <string name="tool_favourites_title">Favourites</string>
+    <string name="tool_favourites_desc">Starred media</string>
+    <string name="tool_history_title">History</string>
+    <string name="tool_history_desc">Recently played</string>
+    <string name="tool_network_title">Network Stream</string>
+    <string name="tool_network_desc">Play stream URL</string>
+    <string name="tool_transfer_title">File Transfer</string>
+    <string name="tool_transfer_desc">P2P transfer</string>
+    <string name="tool_equalizer_title">Equalizer</string>
+    <string name="tool_equalizer_desc">System sound tuner</string>
+    <string name="tool_status_title">Status Saver</string>
+    <string name="tool_status_desc">WhatsApp status</string>
+    <string name="tool_private_title">Private Folder</string>
+    <string name="tool_private_desc">PIN vault</string>
+    <string name="tool_manager_title">Media Manager</string>
+    <string name="tool_manager_desc">Storage cleaner</string>
+    <string name="tool_bin_title">Recycle Bin</string>
+    <string name="tool_bin_desc">Deleted files</string>
+
+    <!-- Me Screen Preferences -->
+    <string name="pref_music_player">Music Player</string>
+    <string name="pref_music_player_desc">Open local audio library</string>
+    <string name="pref_video_library">Video Library</string>
+    <string name="pref_video_library_desc">Browse folders and video collections</string>
+    <string name="pref_app_theme">App Theme</string>
+    <string name="pref_popup_play">Custom Pop-up Play</string>
+    <string name="pip_status_enabled">PiP Enabled • %s</string>
+    <string name="pip_status_disabled">Pop-up Play Disabled</string>
+    <string name="pip_status_unsupported">Device does not support PiP (Android 8.0+ required)</string>
+    <string name="pref_settings">Settings</string>
+    <string name="pref_settings_desc">Player, decoder, list, and subtitle options</string>
+
+    <!-- Me Screen About & Legal Rows -->
+    <string name="pref_privacy">Privacy &amp; Security</string>
+    <string name="pref_privacy_desc">100% on-device. Zero telemetry, no ads, no trackers.</string>
+    <string name="pref_help">Help &amp; Feedback</string>
+    <string name="pref_help_desc">Player gesture guide, tutorials, and device diagnostics</string>
+    <string name="pref_legal">Legal &amp; Open Source</string>
+    <string name="pref_legal_desc">Software licenses, terms, and inspiration disclosure</string>
+    <string name="pref_about_mpx">MPx Player Native</string>
+    <string name="pref_about_mpx_desc">Version 0.1.0-native • Jetpack Compose • Media3</string>
+
+    <!-- Me Screen Dialogs Content -->
+    <string name="dialog_theme_title">Select App Theme</string>
+    <string name="theme_midnight_desc">True OLED #000000 cinema contrast. Maximum battery savings.</string>
+    <string name="theme_dark_desc">Smooth modern dark theme with softer slate #0F172A contrast.</string>
+    <string name="theme_classic_desc">Deep blue-black #0A0F1D inspired by utility-first classic players.</string>
+    <string name="theme_light_desc">High-visibility daylight palette for bright environments.</string>
+
+    <string name="dialog_popup_play_title">Custom Pop-up Play</string>
+    <string name="pip_banner_supported">Device supports Android Picture-in-Picture mode.</string>
+    <string name="pip_banner_unsupported">PiP unsupported: requires Android 8.0+ and system FEATURE_PICTURE_IN_PICTURE support. Settings stay honest.</string>
+    <string name="pip_auto_title">Auto Pop-up Play</string>
+    <string name="pip_auto_desc">Enter floating window when leaving app during video playback</string>
+    <string name="pip_test_button">Test Pop-up Play Mode</string>
+    <string name="pip_test_fail_playing">Unable to enter PiP mode right now. Try playing a video in the player first.</string>
+
+    <string name="dialog_network_title">Network Stream</string>
+    <string name="dialog_network_desc">Enter any HTTP, HTTPS, or HLS stream URL to play directly in Media3 ExoPlayer:</string>
+    <string name="dialog_network_samples">Sample Public Streams:</string>
+    <string name="dialog_network_play">Play Stream</string>
+
+    <string name="dialog_privacy_title">Privacy &amp; Security</string>
+    <string name="privacy_sec1_title">100% On-Device Architecture</string>
+    <string name="privacy_sec1_body">MPx Player is an offline-first media player. Media indexing, metadata extraction, and playback happen exclusively on your device. Your file library is never uploaded to any remote server.</string>
+    <string name="privacy_sec2_title">Zero Telemetry &amp; No Analytics</string>
+    <string name="privacy_sec2_body">No tracking SDKs, no advertising identifiers, and no user surveillance frameworks are embedded in MPx Player. Your playback habits and files remain strictly your own.</string>
+    <string name="privacy_sec3_title">Local SQLite Sandbox</string>
+    <string name="privacy_sec3_body">Favourites, custom playlists, and playback resume points are stored in a private Room SQLite database (mpx_player.db) inside the Android protected application sandbox.</string>
+    <string name="privacy_sec4_title">Transparent Permissions</string>
+    <string name="privacy_sec4_body">• READ_MEDIA_VIDEO / AUDIO: Discovering local media files.\n• INTERNET: Optional, used solely when you paste a stream URL in Network Stream.</string>
+
+    <string name="dialog_help_title">Help &amp; Player Guide</string>
+    <string name="help_sec1_title">Player Gestures</string>
+    <string name="help_sec1_body">• Double-tap left side: Seek back 10 seconds\n• Double-tap right side: Seek forward 10 seconds\n• Horizontal drag: Smooth precision scrub through video\n• Lock button: Prevent accidental touches while watching\n• Aspect ratio: Cycle through Fit, Stretch, 16:9, and Original</string>
+    <string name="help_sec2_title">Audio &amp; Subtitle Tracks</string>
+    <string name="help_sec2_body">• Audio Icon: Switch between discrete audio tracks (dual-audio, commentary)\n• Subtitle Icon: Select embedded or sidecar .vtt / .srt subtitle tracks\n• Subtitle Size: Configurable under Settings (Small, Normal, Large)</string>
+    <string name="help_sec3_title">Device Diagnostics (Live)</string>
+    <string name="help_diag_app">App: MPx Player 0.1.0-native</string>
+    <string name="help_diag_os">Android OS: SDK %1$d (%2$s)</string>
+    <string name="help_diag_device">Device: %1$s %2$s</string>
+    <string name="help_diag_engine">Engine: AndroidX Media3 ExoPlayer 1.3.1</string>
+    <string name="help_diag_db">Database: Room SQLite (mpx_player.db)</string>
+
+    <string name="dialog_legal_title">Legal &amp; Open Source</string>
+    <string name="legal_sec1_title">Open Source Licenses</string>
+    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: Apache License 2.0\n• Jetpack Compose &amp; Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0</string>
+    <string name="legal_sec2_title">Inspiration Attribution Notice</string>
+    <string name="legal_sec2_body">MPx Player is an independent, clean-room native Android media player. Its organization and UX workflow are inspired by MX Player (per reverse-engineered layout specifications). All code, views, and styling are rewritten 100% from scratch in native Kotlin and Jetpack Compose. No proprietary assets, code, or trademarks are incorporated.</string>
+    <string name="legal_sec3_title">Terms of Use</string>
+    <string name="legal_sec3_body">MPx Player is provided \'as is\' without warranty under the Apache 2.0 License. Users are responsible for their own media files.</string>
+
+    <string name="dialog_about_body1">Pure native Kotlin rewrite with Jetpack Compose, AndroidX Media3 ExoPlayer, and Room SQLite persistence.</string>
+    <string name="dialog_about_body2">High-density, utility-first media management without cloud dependence, tracking, or ads.</string>
+
+    <string name="equalizer_dialog_msg">System Equalizer: No audio effect control panel (e.g. MusicFX or system equalizer app) was found on this device. Audio uses standard flat output.</string>
+
+    <string name="issue32_dialog_header">%s (Issue 32)</string>
+    <string name="issue32_status_notice">This feature is scheduled for Issue 32.</string>
+    <string name="issue32_status_honest">Status: Honest placeholder — not faked.</string>
+    <string name="issue32_status_detail">WhatsApp Status Saver requires scoped storage directory access. It will scan and save downloaded video and image statuses once built.</string>
+    <string name="issue32_private_detail">Private Folder requires an encrypted SQLite or file vault protected by a PIN or biometric auth to hide sensitive media.</string>
+    <string name="issue32_manager_detail">Media Manager &amp; Storage Cleaner will analyze device storage, identify duplicate videos, large files, and temporary cache.</string>
+    <string name="issue32_bin_detail">Recycle Bin will preserve deleted files in an app-managed holding directory for 30 days before permanent deletion.</string>
 </resources>

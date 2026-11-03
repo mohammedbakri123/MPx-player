@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">MPx Player</string>
+    <string name="app_version_name">الإصدار 0.1.0-native</string>
+    <string name="app_version_full">مشغل MPx الإصدار 0.1.0-native</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_local">محلي</string>
+    <string name="nav_music">موسيقى</string>
+    <string name="nav_transfer">نقل</string>
+    <string name="nav_me">أنا</string>
+
+    <!-- Mini Player -->
+    <string name="mini_player_video">فيديو</string>
+    <string name="mini_player_audio">صوت</string>
+    <string name="mini_player_prev">المسار السابق</string>
+    <string name="mini_player_pause">إيقاف مؤقت</string>
+    <string name="mini_player_play">تشغيل</string>
+    <string name="mini_player_next">المسار التالي</string>
+    <string name="mini_player_close">إغلاق المشغل</string>
+
+    <!-- Common Actions -->
+    <string name="action_back">رجوع</string>
+    <string name="action_close">إغلاق</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_save">حفظ</string>
+    <string name="action_ok">حسناً</string>
+    <string name="action_paste">لصق</string>
+    <string name="action_understood">مفهوم</string>
+
+    <!-- Language Settings & Dialog -->
+    <string name="pref_app_language">لغة التطبيق</string>
+    <string name="pref_app_language_desc">التبديل بين الإنجليزية، العربية، والافتراضي للنظام</string>
+    <string name="lang_dialog_title">اختر لغة التطبيق</string>
+    <string name="lang_system_default">الافتراضي للنظام</string>
+    <string name="lang_system_default_desc">اتباع إعدادات لغة النظام</string>
+    <string name="lang_english">English (الإنجليزية)</string>
+    <string name="lang_english_desc">واجهة باللغة الإنجليزية (تخطيط LTR)</string>
+    <string name="lang_arabic">العربية (Arabic)</string>
+    <string name="lang_arabic_desc">واجهة باللغة العربية مع دعم كامل لتخطيط اليمين لليسار (RTL)</string>
+    <string name="lang_applied_msg">تم تحديث اللغة: %s</string>
+    <string name="lang_settings_note">اختر لغة التطبيق المفضلة. يتم تطبيق اللغة واتجاه الواجهة فوراً دون الحاجة لإعادة تشغيل التطبيق.</string>
+
+    <!-- Settings Screen Categories -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_category_language">لغة التطبيق</string>
+    <string name="settings_category_language_sub">الإنجليزية، العربية، الافتراضي للنظام</string>
+    <string name="settings_category_theme">مظهر التطبيق</string>
+    <string name="settings_category_theme_sub">شاشات أوليد الليلية، حجر داكن، كحلي كلاسيكي، فاتح</string>
+    <string name="settings_category_pip">التشغيل في نافذة منبثقة</string>
+    <string name="settings_category_pip_sub">عناصر التحكم بالصورة في الصورة والتشغيل في الخلفية</string>
+    <string name="settings_category_list">القائمة</string>
+    <string name="settings_category_list_sub">عرض المجلدات، الملفات المخفية، الصور المصغرة</string>
+    <string name="settings_category_player">المشغل</string>
+    <string name="settings_category_player_sub">استئناف التشغيل، التشغيل في الخلفية، الإيماءات</string>
+    <string name="settings_category_decoder">فك الترميز</string>
+    <string name="settings_category_decoder_sub">تسريع العتاد (HW / HW+)، البرمجيات (SW)</string>
+    <string name="settings_category_audio">الصوت</string>
+    <string name="settings_category_audio_sub">تضخيم مستوى الصوت</string>
+    <string name="settings_category_subtitle">الترجمة</string>
+    <string name="settings_category_subtitle_sub">حجم خط الترجمة ونمط اللون</string>
+    <string name="settings_category_general">عام</string>
+    <string name="settings_category_general_sub">إعادة تعيين كافة التفضيلات إلى الإعدادات الافتراضية</string>
+    <string name="settings_category_about">حول</string>
+    <string name="settings_category_about_sub">الإصدار 0.1.0-native</string>
+
+    <!-- Settings Category Options -->
+    <string name="theme_midnight">شاشات أوليد الليلية (أسود نقي)</string>
+    <string name="theme_dark">حجر داكن (فحمي)</string>
+    <string name="theme_classic">كحلي كلاسيكي</string>
+    <string name="theme_light">سينما فاتح (أبيض ناصع)</string>
+    <string name="theme_applied_snackbar">تم تطبيق المظهر: %s</string>
+
+    <string name="pip_not_supported">ملاحظة: وضع صورة في صورة غير مدعوم على هذا الجهاز أو البيئة (يتطلب أندرويد 8.0 أو أحدث مع ميزة FEATURE_PICTURE_IN_PICTURE).</string>
+    <string name="pip_enable_toggle">تفعيل التشغيل في نافذة منبثقة (صورة في صورة)</string>
+    <string name="pip_window_controls_header">عناصر التحكم بنافذة صورة في صورة:</string>
+    <string name="pip_controls_prev_next">السابق / التالي (افتراضي)</string>
+    <string name="pip_controls_seek10">تقديم / إرجاع سريع (10 ثوانٍ)</string>
+
+    <string name="list_show_hidden">إظهار الملفات المخفية</string>
+    <string name="list_show_thumbnails">إظهار الصور المصغرة</string>
+
+    <string name="player_resume_playback">استئناف التشغيل</string>
+    <string name="player_background_play">التشغيل في الخلفية</string>
+    <string name="player_gestures">الإيماءات (النقر المزدوج، السحب للتقديم والتأخير)</string>
+
+    <string name="decoder_hw">HW (عتاد - تسريع عتاد Android MediaCodec)</string>
+    <string name="decoder_hw_plus">HW+ (عتاد بلس - مسار مخزن مؤقت غير متزامن)</string>
+    <string name="decoder_sw">SW (برمجي - بديل فك الترميز عبر المعالج)</string>
+    <string name="decoder_explanation">يحدد تفضيل فك ترميز المشغل الافتراضي. يستخدم HW برامج فك الترميز العتادية لمجموعة شرائح الجهاز؛ بينما يوفر SW بديلاً برمجياً. عندما لا يسمح نظام أندرويد ببرنامج فك الترميز المطلوب (مثل برنامج ترميز غير مدعوم)، يعرض MPx ملاحظة البديل بصدق.</string>
+
+    <string name="audio_volume_boost">تضخيم مستوى الصوت</string>
+
+    <string name="subtitle_size_header">حجم نص الترجمة:</string>
+    <string name="subtitle_size_small">صغير (14sp)</string>
+    <string name="subtitle_size_normal">عادي (18sp)</string>
+    <string name="subtitle_size_large">كبير (24sp)</string>
+    <string name="subtitle_style_header">نمط ولون الترجمة:</string>
+    <string name="subtitle_style_white">نص أبيض، إطار أسود (كلاسيكي)</string>
+    <string name="subtitle_style_yellow">نص أصفر، إطار أسود (تباين عالٍ)</string>
+    <string name="subtitle_style_cyan">نص سماوي، إطار أسود</string>
+    <string name="subtitle_style_default">نمط التسميات التوضيحية الافتراضي للنظام</string>
+
+    <string name="general_reset_button">إعادة تعيين الكل للافتراضي</string>
+    <string name="general_reset_done">تمت إعادة تعيين جميع الإعدادات إلى القيم الافتراضية.</string>
+    <string name="general_language_hint">يمكن تغيير إعداد لغة التطبيق في قسم لغة التطبيق أعلاه أو من شاشة \'أنا\'.</string>
+
+    <string name="about_app_description">مشغل MPx 0.1.0-native. إعادة كتابة أصلية بلغة كوتلن، تصميم مستوحى من MX ومبني بالكامل بأكواد وتنسيق MPx الخاص.</string>
+
+    <!-- Me Screen Headers & Profile -->
+    <string name="me_title">أنا</string>
+    <string name="me_profile_user">مستخدم MPx المحلي</string>
+    <string name="me_profile_desc">مشغل وسائط خاص على جهازك</string>
+    <string name="me_status_banner">شبكة أدوات \'أنا\': ميزات حقيقية متصلة بالمحلي، الموسيقى، قوائم التشغيل، المفضلة، السجل، البث الشبكي. تم تمييز العناصر النائبة بصدق للمسألة 32.</string>
+    <string name="section_tools">الأدوات</string>
+    <string name="section_preferences">التفضيلات</string>
+    <string name="section_about_legal">حول ومعلومات قانونية</string>
+
+    <!-- Me Screen Tools -->
+    <string name="tool_local_title">مقاطع الفيديو المحلية</string>
+    <string name="tool_local_desc">مجلدات الفيديو</string>
+    <string name="tool_music_title">الموسيقى</string>
+    <string name="tool_music_desc">مكتبة الصوت</string>
+    <string name="tool_playlists_title">قوائم التشغيل</string>
+    <string name="tool_playlists_desc">مجموعات مخصصة</string>
+    <string name="tool_favourites_title">المفضلة</string>
+    <string name="tool_favourites_desc">الوسائط المميزة بنجمة</string>
+    <string name="tool_history_title">السجل</string>
+    <string name="tool_history_desc">تم تشغيلها مؤخراً</string>
+    <string name="tool_network_title">بث شبكي</string>
+    <string name="tool_network_desc">تشغيل رابط بث</string>
+    <string name="tool_transfer_title">نقل الملفات</string>
+    <string name="tool_transfer_desc">نقل مباشر P2P</string>
+    <string name="tool_equalizer_title">معادل الصوت</string>
+    <string name="tool_equalizer_desc">معدل صوت النظام</string>
+    <string name="tool_status_title">حفظ الحالة</string>
+    <string name="tool_status_desc">حالة واتساب</string>
+    <string name="tool_private_title">المجلد الخاص</string>
+    <string name="tool_private_desc">خزينة برقم سري</string>
+    <string name="tool_manager_title">مدير الوسائط</string>
+    <string name="tool_manager_desc">تنظيف مساحة التخزين</string>
+    <string name="tool_bin_title">سلة المحذوفات</string>
+    <string name="tool_bin_desc">الملفات المحذوفة</string>
+
+    <!-- Me Screen Preferences -->
+    <string name="pref_music_player">مشغل الموسيقى</string>
+    <string name="pref_music_player_desc">فتح مكتبة الصوت المحلية</string>
+    <string name="pref_video_library">مكتبة الفيديو</string>
+    <string name="pref_video_library_desc">تصفح المجلدات ومجموعات الفيديو</string>
+    <string name="pref_app_theme">مظهر التطبيق</string>
+    <string name="pref_popup_play">التشغيل في نافذة منبثقة</string>
+    <string name="pip_status_enabled">صورة في صورة مفعّلة • %s</string>
+    <string name="pip_status_disabled">التشغيل المنبثق معطل</string>
+    <string name="pip_status_unsupported">الجهاز لا يدعم وضع صورة في صورة (يتطلب أندرويد 8.0+)</string>
+    <string name="pref_settings">الإعدادات</string>
+    <string name="pref_settings_desc">خيارات المشغل، فك الترميز، القائمة، والترجمة</string>
+
+    <!-- Me Screen About & Legal Rows -->
+    <string name="pref_privacy">الخصوصية والأمان</string>
+    <string name="pref_privacy_desc">100% على الجهاز. بدون قياس عن بعد، بدون إعلانات، وبدون متتبعات.</string>
+    <string name="pref_help">المساعدة والتعليقات</string>
+    <string name="pref_help_desc">دليل إيماءات المشغل، شروحات تعليمية، وتشخيصات الجهاز</string>
+    <string name="pref_legal">المعلومات القانونية والمصادر المفتوحة</string>
+    <string name="pref_legal_desc">تراخيص البرمجيات، الشروط، وإشعار الاستلهام</string>
+    <string name="pref_about_mpx">مشغل MPx الأصلي</string>
+    <string name="pref_about_mpx_desc">الإصدار 0.1.0-native • Jetpack Compose • Media3</string>
+
+    <!-- Me Screen Dialogs Content -->
+    <string name="dialog_theme_title">اختر مظهر التطبيق</string>
+    <string name="theme_midnight_desc">تباين سينمائي حقيقي لشاشات OLED #000000. أقصى توفير للبطارية.</string>
+    <string name="theme_dark_desc">مظهر داكن حديث وسلس مع تباين أهدأ من الحجر الداكن #0F172A.</string>
+    <string name="theme_classic_desc">أزرق مسود عميق #0A0F1D مستوحى من المشغلات الكلاسيكية العملية.</string>
+    <string name="theme_light_desc">ألوان نهارية عالية الوضوح للبيئات الساطعة.</string>
+
+    <string name="dialog_popup_play_title">التشغيل في نافذة منبثقة</string>
+    <string name="pip_banner_supported">يدعم الجهاز وضع صورة في صورة في أندرويد.</string>
+    <string name="pip_banner_unsupported">صورة في صورة غير مدعومة: تتطلب أندرويد 8.0+ ودعم النظام لميزة FEATURE_PICTURE_IN_PICTURE. تبقى الإعدادات صادقة.</string>
+    <string name="pip_auto_title">تشغيل منبثق تلقائي</string>
+    <string name="pip_auto_desc">الدخول في نافذة عائمة عند مغادرة التطبيق أثناء تشغيل الفيديو</string>
+    <string name="pip_test_button">اختبار وضع التشغيل المنبثق</string>
+    <string name="pip_test_fail_playing">تعذر الدخول في وضع صورة في صورة حالياً. جرب تشغيل فيديو في المشغل أولاً.</string>
+
+    <string name="dialog_network_title">بث شبكي</string>
+    <string name="dialog_network_desc">أدخل أي رابط بث HTTP أو HTTPS أو HLS للتشغيل مباشرة في Media3 ExoPlayer:</string>
+    <string name="dialog_network_samples">روابط بث عامة تجريبية:</string>
+    <string name="dialog_network_play">تشغيل البث</string>
+
+    <string name="dialog_privacy_title">الخصوصية والأمان</string>
+    <string name="privacy_sec1_title">بنية برمجية تعمل 100% على الجهاز</string>
+    <string name="privacy_sec1_body">مشغل MPx هو مشغل وسائط يعمل محلياً في المقام الأول. تتم فهرسة الوسائط واستخراج بياناتها الوصفية وتشغيلها حصرياً على جهازك. لا يتم رفع مكتبة ملفاتك أبداً إلى أي خادم بعيد.</string>
+    <string name="privacy_sec2_title">بدون قياس عن بعد وبدون تحليلات</string>
+    <string name="privacy_sec2_body">لا توجد حزم تتبع، ولا معرفات إعلانية، ولا أنظمة مراقبة للمستخدم مدمجة في مشغل MPx. تبقى عادات التشغيل وملفاتك ملكاً لك وحدك.</string>
+    <string name="privacy_sec3_title">بيئة معزولة محلية عبر SQLite</string>
+    <string name="privacy_sec3_body">يتم حفظ المفضلة وقوائم التشغيل المخصصة ونقاط استئناف التشغيل في قاعدة بيانات Room SQLite خاصة (mpx_player.db) داخل بيئة تطبيق أندرويد المعزولة والمحمية.</string>
+    <string name="privacy_sec4_title">أذونات شفافة</string>
+    <string name="privacy_sec4_body">• READ_MEDIA_VIDEO / AUDIO: لاكتشاف ملفات الوسائط المحلية.\n• INTERNET: اختياري، يُستخدم فقط عندما تلصق رابط بث في البث الشبكي.</string>
+
+    <string name="dialog_help_title">المساعدة ودليل المشغل</string>
+    <string name="help_sec1_title">إيماءات المشغل</string>
+    <string name="help_sec1_body">• النقر المزدوج على الجانب الأيسر: تأخير 10 ثوانٍ\n• النقر المزدوج على الجانب الأيمن: تقديم 10 ثوانٍ\n• السحب الأفقي: تمرير سلس ودقيق عبر الفيديو\n• زر القفل: منع اللمسات غير المقصودة أثناء المشاهدة\n• نسبة الارتفاع إلى العرض: التبديل بين ملاءمة، وتمديد، و16:9، والأصلي</string>
+    <string name="help_sec2_title">المسارات الصوتية ومسارات الترجمة</string>
+    <string name="help_sec2_body">• أيقونة الصوت: التبديل بين المسارات الصوتية المستقلة (صوت ثنائي، تعليق)\n• أيقونة الترجمة: اختيار مسارات الترجمة المدمجة أو الخارجية بتنسيق vtt. أو srt.\n• حجم الترجمة: قابل للضبط من الإعدادات (صغير، عادي، كبير)</string>
+    <string name="help_sec3_title">تشخيصات الجهاز (مباشرة)</string>
+    <string name="help_diag_app">التطبيق: مشغل MPx 0.1.0-native</string>
+    <string name="help_diag_os">نظام أندرويد: SDK %1$d (%2$s)</string>
+    <string name="help_diag_device">الجهاز: %1$s %2$s</string>
+    <string name="help_diag_engine">المحرك: AndroidX Media3 ExoPlayer 1.3.1</string>
+    <string name="help_diag_db">قاعدة البيانات: Room SQLite (mpx_player.db)</string>
+
+    <string name="dialog_legal_title">المعلومات القانونية والمصادر المفتوحة</string>
+    <string name="legal_sec1_title">تراخيص المصادر المفتوحة</string>
+    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: رخصة أباتشي 2.0\n• Jetpack Compose &amp; Material 3: رخصة أباتشي 2.0\n• AndroidX Room Persistence Library: رخصة أباتشي 2.0\n• Kotlin Coroutines: رخصة أباتشي 2.0</string>
+    <string name="legal_sec2_title">إشعار نسبة الاستلهام</string>
+    <string name="legal_sec2_body">مشغل MPx هو مشغل وسائط أصلي ومستقل لنظام أندرويد. تم استلهام تنظيمه وتجربة الاستخدام فيه من MX Player (وفقاً لمواصفات التصميم العكسي). تمت إعادة كتابة جميع الأكواد والواجهات والتنسيقات بنسبة 100% من الصفر بلغة كوتلن الأصلية وJetpack Compose. لا يتضمن التطبيق أي أصول أو أكواد أو علامات تجارية خاصة بجهات أخرى.</string>
+    <string name="legal_sec3_title">شروط الاستخدام</string>
+    <string name="legal_sec3_body">يتم توفير مشغل MPx \'كما هو\' دون أي ضمان بموجب رخصة أباتشي 2.0. المستخدمون مسؤولون عن ملفات الوسائط الخاصة بهم.</string>
+
+    <string name="dialog_about_body1">إعادة كتابة أصلية بالكامل بلغة كوتلن مع Jetpack Compose، وAndroidX Media3 ExoPlayer، وحفظ دائم عبر Room SQLite.</string>
+    <string name="dialog_about_body2">إدارة وسائط عملية عالية الكثافة دون الاعتماد على السحابة، وبدون تتبع أو إعلانات.</string>
+
+    <string name="equalizer_dialog_msg">معادل صوت النظام: لم يتم العثور على لوحة تحكم في المؤثرات الصوتية (مثل تطبيق MusicFX أو معادل صوت النظام) على هذا الجهاز. يستخدم الصوت إخراجاً قياسياً مسطحاً.</string>
+
+    <string name="issue32_dialog_header">%s (المسألة 32)</string>
+    <string name="issue32_status_notice">هذه الميزة مجدولة للمسألة 32.</string>
+    <string name="issue32_status_honest">الحالة: عنصر نائب صادق — غير زائف.</string>
+    <string name="issue32_status_detail">تتطلب ميزة حفظ حالة واتساب إذناً للوصول إلى المجلد في التخزين المخصص. ستقوم بفحص وحفظ حالات الفيديو والصور المنزلة بمجرد بنائها.</string>
+    <string name="issue32_private_detail">يتطلب المجلد الخاص خزينة ملفات أو SQLite مشفرة ومحمية برقم سري أو مصادقة حيوية لإخفاء الوسائط الحساسة.</string>
+    <string name="issue32_manager_detail">سيقوم مدير الوسائط ومنظف التخزين بتحليل سعة تخزين الجهاز وتحديد مقاطع الفيديو المكررة والملفات الكبيرة وذاكرة التخزين المؤقت.</string>
+    <string name="issue32_bin_detail">ستحتفظ سلة المحذوفات بالملفات المحذوفة في مجلد تحت إدارة التطبيق لمدة 30 يوماً قبل حذفها نهائياً.</string>
+</resources>

@@ -17,12 +17,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
+        android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.MPx">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:supportsPictureInPicture="true"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|locale|layoutDirection"
             android:theme="@style/Theme.MPx">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
