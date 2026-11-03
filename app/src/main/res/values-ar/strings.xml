@@ -667,4 +667,16 @@
     <string name="continue_watching_dismiss">إزالة من متابعة المشاهدة</string>
     <string name="continue_watching_dismissed">تمت إزالة \"%1$s\" من متابعة المشاهدة</string>
     <string name="continue_watching_resume_at">استئناف عند %1$s</string>
+    <!-- Issue 54: Sleep Timer -->
+    <string name="player_sleep_timer">مؤقت النوم</string>
+    <string name="player_sleep_timer_off">إيقاف</string>
+    <string name="player_sleep_timer_15">15 دقيقة</string>
+    <string name="player_sleep_timer_30">30 دقيقة</string>
+    <string name="player_sleep_timer_45">45 دقيقة</string>
+    <string name="player_sleep_timer_60">60 دقيقة</string>
+    <string name="player_sleep_timer_dialog_title">مؤقت النوم</string>
+    <string name="player_sleep_timer_chip">النوم: %1$s</string>
+    <string name="player_sleep_timer_cancel">إلغاء مؤقت النوم</string>
+    <string name="player_sleep_timer_set_toast">تم ضبط مؤقت النوم على %1$d دقيقة</string>
+    <string name="player_sleep_timer_canceled_toast">تم إيقاف مؤقت النوم</string>
 </resources>

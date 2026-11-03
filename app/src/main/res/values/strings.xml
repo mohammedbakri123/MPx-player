@@ -667,4 +667,16 @@
     <string name="continue_watching_dismiss">Remove from Continue Watching</string>
     <string name="continue_watching_dismissed">Removed \"%1$s\" from Continue Watching</string>
     <string name="continue_watching_resume_at">Resume at %1$s</string>
+    <!-- Issue 54: Sleep Timer -->
+    <string name="player_sleep_timer">Sleep timer</string>
+    <string name="player_sleep_timer_off">Off</string>
+    <string name="player_sleep_timer_15">15 minutes</string>
+    <string name="player_sleep_timer_30">30 minutes</string>
+    <string name="player_sleep_timer_45">45 minutes</string>
+    <string name="player_sleep_timer_60">60 minutes</string>
+    <string name="player_sleep_timer_dialog_title">Sleep Timer</string>
+    <string name="player_sleep_timer_chip">Sleep: %1$s</string>
+    <string name="player_sleep_timer_cancel">Cancel sleep timer</string>
+    <string name="player_sleep_timer_set_toast">Sleep timer set for %1$d minutes</string>
+    <string name="player_sleep_timer_canceled_toast">Sleep timer turned off</string>
 </resources>

@@ -73,6 +73,7 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subtitles
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.FilterChip
@@ -141,6 +142,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import com.mpx.player.util.SubtitleUtils
 import com.mpx.player.util.SubtitleValidationResult
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 private fun Context.findActivity(): Activity? {
@@ -1443,6 +1445,67 @@ fun PlayerScreen(
                                 )
                             }
                         }
+
+                        // Sleep Timer active chip near controls
+                        if (state.sleepTimerRemainingSeconds != null) {
+                            val remaining = state.sleepTimerRemainingSeconds ?: 0L
+                            val hours = remaining / 3600
+                            val mins = (remaining % 3600) / 60
+                            val secs = remaining % 60
+                            val timeFormatted = if (hours > 0) {
+                                String.format(Locale.getDefault(), "%d:%02d:%02d", hours, mins, secs)
+                            } else {
+                                String.format(Locale.getDefault(), "%02d:%02d", mins, secs)
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                            ) {
+                                Surface(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { activeDialog = "Sleep Timer" },
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Timer,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(14.dp),
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            text = stringResource(R.string.player_sleep_timer_chip, timeFormatted),
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Icon(
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = stringResource(R.string.player_sleep_timer_cancel),
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier
+                                                .size(14.dp)
+                                                .clickable {
+                                                    playbackManager.cancelSleepTimer()
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.player_sleep_timer_canceled_toast),
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
+                                                },
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -2050,6 +2113,30 @@ fun PlayerScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clickable { activeDialog = "Sleep Timer" }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(12.dp))
+                        val sleepTimerSubtext = if (state.sleepTimerRemainingSeconds != null) {
+                            val remaining = state.sleepTimerRemainingSeconds ?: 0L
+                            val hours = remaining / 3600
+                            val mins = (remaining % 3600) / 60
+                            val secs = remaining % 60
+                            if (hours > 0) {
+                                String.format(Locale.getDefault(), "%d:%02d:%02d", hours, mins, secs)
+                            } else {
+                                String.format(Locale.getDefault(), "%02d:%02d", mins, secs)
+                            }
+                        } else {
+                            stringResource(R.string.player_sleep_timer_off)
+                        }
+                        Text("${stringResource(R.string.player_sleep_timer)} ($sleepTimerSubtext)", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .clickable {
                                 activeDialog = null
                                 showAddToPlaylistDialog = true
@@ -2206,6 +2293,85 @@ fun PlayerScreen(
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
                     Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
+                }
+            },
+        )
+    }
+
+    if (activeDialog == "Sleep Timer") {
+        AlertDialog(
+            onDismissRequest = { activeDialog = null },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.player_sleep_timer_dialog_title),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            text = {
+                Column {
+                    val choices = listOf(
+                        15 to stringResource(R.string.player_sleep_timer_15),
+                        30 to stringResource(R.string.player_sleep_timer_30),
+                        45 to stringResource(R.string.player_sleep_timer_45),
+                        60 to stringResource(R.string.player_sleep_timer_60),
+                        0 to stringResource(R.string.player_sleep_timer_off),
+                    )
+
+                    choices.forEach { (mins, label) ->
+                        val isSelected = if (mins == 0) {
+                            state.sleepTimerMinutes == null
+                        } else {
+                            state.sleepTimerMinutes == mins
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (mins == 0) {
+                                        playbackManager.cancelSleepTimer()
+                                        Toast.makeText(context, context.getString(R.string.player_sleep_timer_canceled_toast), Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        playbackManager.setSleepTimer(mins)
+                                        Toast.makeText(context, context.getString(R.string.player_sleep_timer_set_toast, mins), Toast.LENGTH_SHORT).show()
+                                    }
+                                    activeDialog = null
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = {
+                                    if (mins == 0) {
+                                        playbackManager.cancelSleepTimer()
+                                        Toast.makeText(context, context.getString(R.string.player_sleep_timer_canceled_toast), Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        playbackManager.setSleepTimer(mins)
+                                        Toast.makeText(context, context.getString(R.string.player_sleep_timer_set_toast, mins), Toast.LENGTH_SHORT).show()
+                                    }
+                                    activeDialog = null
+                                },
+                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = label,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { activeDialog = null }) {
+                    Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )

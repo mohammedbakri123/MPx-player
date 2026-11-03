@@ -2,6 +2,7 @@ package com.mpx.player.playback
 
 import android.content.Context
 import android.net.Uri
+import android.os.SystemClock
 import android.view.Surface
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -44,6 +45,7 @@ class PlaybackManager private constructor(context: Context) {
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private var tickerJob: Job? = null
+    private var sleepTimerJob: Job? = null
     private var currentQueue: List<PlayableMedia> = emptyList()
     private var pendingSubtitleTrackLabel: String? = null
 
@@ -622,7 +624,56 @@ class PlaybackManager private constructor(context: Context) {
         _playbackState.update { it.copy(userNotification = null) }
     }
 
+    fun setSleepTimer(minutes: Int) {
+        sleepTimerJob?.cancel()
+        if (minutes <= 0) {
+            cancelSleepTimer()
+            return
+        }
+        val durationMs = minutes * 60 * 1000L
+        val targetElapsedRealtime = SystemClock.elapsedRealtime() + durationMs
+        _playbackState.update {
+            it.copy(
+                sleepTimerMinutes = minutes,
+                sleepTimerRemainingSeconds = durationMs / 1000L,
+            )
+        }
+        sleepTimerJob = scope.launch {
+            while (isActive) {
+                delay(1000L)
+                val remainingMs = targetElapsedRealtime - SystemClock.elapsedRealtime()
+                if (remainingMs <= 0L) {
+                    _playbackState.update {
+                        it.copy(
+                            sleepTimerMinutes = null,
+                            sleepTimerRemainingSeconds = null,
+                        )
+                    }
+                    pause()
+                    break
+                } else {
+                    val remainingSec = (remainingMs + 999L) / 1000L
+                    _playbackState.update {
+                        it.copy(sleepTimerRemainingSeconds = remainingSec)
+                    }
+                }
+            }
+        }
+    }
+
+    fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        _playbackState.update {
+            it.copy(
+                sleepTimerMinutes = null,
+                sleepTimerRemainingSeconds = null,
+            )
+        }
+    }
+
     fun stop() {
+        cancelSleepTimer()
         engine.stop()
         stopTicker()
         PlaybackService.stop(appContext)
@@ -640,6 +691,7 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     fun release() {
+        cancelSleepTimer()
         engine.release()
         stopTicker()
         PlaybackService.stop(appContext)
