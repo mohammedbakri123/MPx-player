@@ -1,0 +1,691 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">MPx Player</string>
+    <string name="app_version_name">版本 0.1.0-beta</string>
+    <string name="app_version_full">MPx Player 0.1.0-beta</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_local">本地</string>
+    <string name="nav_music">音乐</string>
+    <string name="nav_transfer">传输</string>
+    <string name="nav_me">我的</string>
+
+    <!-- Mini Player -->
+    <string name="mini_player_video">视频</string>
+    <string name="mini_player_audio">音频</string>
+    <string name="mini_player_prev">上一曲</string>
+    <string name="mini_player_pause">暂停</string>
+    <string name="mini_player_play">播放</string>
+    <string name="mini_player_next">下一曲</string>
+    <string name="mini_player_close">关闭播放器</string>
+
+    <!-- Common Actions -->
+    <string name="action_back">返回</string>
+    <string name="action_close">关闭</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_save">保存</string>
+    <string name="action_ok">确定</string>
+    <string name="action_paste">粘贴</string>
+    <string name="action_understood">知道了</string>
+    <string name="action_done">完成</string>
+
+    <!-- Language Settings & Dialog -->
+    <string name="pref_app_language">应用语言</string>
+    <string name="pref_app_language_desc">在英语、阿拉伯语、西班牙语、印地语和系统默认之间切换</string>
+    <string name="lang_dialog_title">选择应用语言</string>
+    <string name="lang_system_default">系统默认</string>
+    <string name="lang_system_default_desc">跟随系统语言设置</string>
+    <string name="lang_english">English</string>
+    <string name="lang_english_desc">英文界面（LTR 布局）</string>
+    <string name="lang_arabic">العربية (Arabic)</string>
+    <string name="lang_arabic_desc">阿拉伯文界面，完整从右至左（RTL）布局</string>
+    <string name="lang_spanish">Español (Spanish)</string>
+    <string name="lang_spanish_desc">西班牙文界面（LTR 布局）</string>
+    <string name="lang_french">Français (French)</string>
+    <string name="lang_french_desc">法文界面（LTR 布局）</string>
+    <string name="lang_hindi">हिन्दी (Hindi)</string>
+    <string name="lang_hindi_desc">印地文界面（LTR 布局）</string>
+    <string name="lang_chinese">中文 (Chinese)</string>
+    <string name="lang_chinese_desc">中文界面（LTR 布局）</string>
+    <string name="lang_applied_msg">语言已更新：%s</string>
+    <string name="lang_settings_note">选择您偏好的应用语言。语言和布局方向会立即生效，无需重启应用。</string>
+
+    <!-- Settings Screen Categories -->
+    <string name="settings_title">设置</string>
+    <string name="settings_category_language">应用语言</string>
+    <string name="settings_category_language_sub">English, العربية, Español, Français, हिन्दी, 系统默认</string>
+    <string name="settings_category_theme">应用主题</string>
+    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
+    <string name="settings_category_pip">自定义画中画播放</string>
+    <string name="settings_category_pip_sub">画中画控制和后台播放</string>
+    <string name="settings_category_tabs">音乐标签页</string>
+    <string name="settings_category_tabs_sub">显示或隐藏曲目、播放列表、专辑、艺术家、文件夹</string>
+    <string name="settings_category_list">列表</string>
+    <string name="settings_category_list_sub">文件夹视图、隐藏文件、缩略图、音乐标签页</string>
+    <string name="settings_category_player">播放器</string>
+    <string name="settings_category_player_sub">续播、后台播放、手势</string>
+    <string name="settings_category_decoder">解码器</string>
+    <string name="settings_category_decoder_sub">硬件加速（HW / HW+）、软件（SW）</string>
+    <string name="settings_category_audio">音频</string>
+    <string name="settings_category_audio_sub">音量增强</string>
+    <string name="settings_category_subtitle">字幕</string>
+    <string name="settings_category_subtitle_sub">字幕大小和颜色样式</string>
+    <string name="settings_category_general">通用</string>
+    <string name="settings_category_general_sub">将所有偏好设置恢复为默认值</string>
+    <string name="settings_category_development">开发</string>
+    <string name="settings_category_development_sub">诊断、数据库状态、扫描指标和播放引擎</string>
+    <string name="settings_category_about">关于</string>
+    <string name="settings_category_about_sub">版本 0.1.0-beta • Beta 状态与反馈</string>
+
+    <!-- Settings Category Options -->
+    <string name="theme_midnight">Midnight OLED（纯黑）</string>
+    <string name="theme_dark">Dark Slate（炭灰）</string>
+    <string name="theme_classic">Classic MX Navy</string>
+    <string name="theme_light">Light Cinema（纯白）</string>
+    <string name="theme_applied_snackbar">主题已应用：%s</string>
+
+    <string name="pip_not_supported">注意：此设备/环境不支持画中画模式（需要 Android 8.0+ 并支持 FEATURE_PICTURE_IN_PICTURE）。</string>
+    <string name="pip_enable_toggle">启用画中画播放（PiP）</string>
+    <string name="pip_window_controls_header">PiP 窗口控制：</string>
+    <string name="pip_controls_prev_next">上一曲 / 下一曲（默认）</string>
+    <string name="pip_controls_seek10">快进 / 快退（10 秒）</string>
+
+    <string name="list_show_all_folders">显示所有文件夹</string>
+    <string name="list_show_all_folders_desc">显示所有已扫描的文件夹，包括空文件夹和隐藏文件夹</string>
+    <string name="list_show_hidden">显示隐藏文件</string>
+    <string name="list_show_thumbnails">显示缩略图</string>
+
+    <string name="player_resume_playback">续播</string>
+    <string name="player_background_play">后台播放</string>
+    <string name="player_background_play_desc">当应用转入后台或屏幕关闭时，音频会继续播放。对于视频，视频渲染暂停时音频播放仍会如实继续。</string>
+    <string name="player_menu_background_play">后台播放（视频仅播放音频）</string>
+    <string name="player_background_active_banner">后台播放进行中：音频播放继续（视频渲染已暂停）</string>
+    <string name="player_gestures">手势（双击、拖动快进）</string>
+
+    <string name="decoder_hw">HW（硬件 - Android MediaCodec 硬件加速）</string>
+    <string name="decoder_hw_plus">HW+（硬件增强 - 异步缓冲流水线）</string>
+    <string name="decoder_sw">SW（软件 - CPU 解码后备）</string>
+    <string name="decoder_explanation">选择默认播放器解码器偏好。HW 使用设备芯片组的硬件编解码器；SW 提供软件后备。在 Android 不允许所请求的解码器时（例如不支持的编解码器），MPx 会如实显示后备提示。</string>
+
+    <string name="audio_volume_boost">音量增强</string>
+
+    <string name="subtitle_size_header">字幕文字大小：</string>
+    <string name="subtitle_size_small">小（14sp）</string>
+    <string name="subtitle_size_normal">标准（18sp）</string>
+    <string name="subtitle_size_large">大（24sp）</string>
+    <string name="subtitle_style_header">字幕样式与颜色：</string>
+    <string name="subtitle_style_white">白色文字，黑色描边（经典）</string>
+    <string name="subtitle_style_yellow">黄色文字，黑色描边（高对比）</string>
+    <string name="subtitle_style_cyan">青色文字，黑色描边</string>
+    <string name="subtitle_style_default">系统默认字幕样式</string>
+
+    <string name="general_reset_button">全部恢复默认值</string>
+    <string name="general_reset_done">所有设置已恢复为默认值。</string>
+    <string name="general_language_hint">应用语言可以在“应用语言”部分或“我的”屏幕中更改。</string>
+
+    <string name="about_app_description">MPx Player 0.1.0-beta。原生 Kotlin 重写，MX 风格布局，全部使用 MPx 自己的代码和样式构建。</string>
+
+    <!-- Me Screen Headers & Profile -->
+    <string name="me_title">我的</string>
+    <string name="me_profile_user">MPx 本地用户</string>
+    <string name="me_profile_desc">私人本机媒体播放器</string>
+    <string name="me_status_banner">“我的”工具网格：已接入本地、音乐、播放列表、收藏、历史记录、网络串流等真实功能。Issue 32 的占位功能已如实标注。</string>
+    <string name="section_tools">工具</string>
+    <string name="section_preferences">偏好设置</string>
+    <string name="section_about_legal">关于与法律</string>
+
+    <!-- Me Screen Tools -->
+    <string name="tool_local_title">本地视频</string>
+    <string name="tool_local_desc">视频文件夹</string>
+    <string name="tool_music_title">音乐</string>
+    <string name="tool_music_desc">音频库</string>
+    <string name="tool_playlists_title">播放列表</string>
+    <string name="tool_playlists_desc">自定义合集</string>
+    <string name="tool_favourites_title">收藏</string>
+    <string name="tool_favourites_desc">已加星标的媒体</string>
+    <string name="tool_history_title">历史记录</string>
+    <string name="tool_history_desc">最近播放</string>
+    <string name="tool_network_title">网络串流</string>
+    <string name="tool_network_desc">播放串流 URL</string>
+    <string name="tool_transfer_title">文件传输</string>
+    <string name="tool_transfer_desc">P2P 传输</string>
+    <string name="tool_equalizer_title">均衡器</string>
+    <string name="tool_equalizer_desc">系统音效调节</string>
+    <string name="tool_status_title">状态保存</string>
+    <string name="tool_status_desc">WhatsApp 状态</string>
+    <string name="tool_private_title">私密文件夹</string>
+    <string name="tool_private_desc">PIN 保险库</string>
+    <string name="tool_manager_title">媒体管理</string>
+    <string name="tool_manager_desc">存储清理</string>
+    <string name="tool_bin_title">回收站</string>
+    <string name="tool_bin_desc">已删除的文件</string>
+
+    <!-- Me Screen Preferences -->
+    <string name="pref_music_player">音乐播放器</string>
+    <string name="pref_music_player_desc">打开本地音频库</string>
+    <string name="pref_video_library">视频库</string>
+    <string name="pref_video_library_desc">浏览文件夹和视频合集</string>
+    <string name="pref_app_theme">应用主题</string>
+    <string name="pref_popup_play">自定义画中画播放</string>
+    <string name="pip_status_enabled">PiP 已启用 • %s</string>
+    <string name="pip_status_disabled">画中画播放已禁用</string>
+    <string name="pip_status_unsupported">设备不支持 PiP（需要 Android 8.0+）</string>
+    <string name="pref_settings">设置</string>
+    <string name="pref_settings_desc">播放器、解码器、列表和字幕选项</string>
+
+    <!-- Me Screen About & Legal Rows -->
+    <string name="pref_privacy">隐私与安全</string>
+    <string name="pref_privacy_desc">100% 本机处理。零遥测、无广告、无追踪器。</string>
+    <string name="pref_help">帮助与反馈</string>
+    <string name="pref_help_desc">播放器手势指南、教程和设备诊断</string>
+    <string name="pref_legal">法律与开源</string>
+    <string name="pref_legal_desc">软件许可证、条款和灵感来源说明</string>
+    <string name="pref_about_mpx">关于 MPx Player（Beta）</string>
+    <string name="pref_about_mpx_desc">版本 0.1.0-beta • 状态、占位功能与反馈</string>
+
+    <!-- Me Screen Dialogs Content -->
+    <string name="dialog_theme_title">选择应用主题</string>
+    <string name="theme_midnight_desc">真正的 OLED #000000 影院对比度。最大程度省电。</string>
+    <string name="theme_dark_desc">采用更柔和的 slate #0F172A 对比度的流畅现代深色主题。</string>
+    <string name="theme_classic_desc">受实用至上经典播放器启发的深蓝黑色 #0A0F1D。</string>
+    <string name="theme_light_desc">适用于明亮环境的高可见度日光配色。</string>
+
+    <string name="dialog_popup_play_title">自定义画中画播放</string>
+    <string name="pip_banner_supported">设备支持 Android 画中画模式。</string>
+    <string name="pip_banner_unsupported">不支持 PiP：需要 Android 8.0+ 和系统 FEATURE_PICTURE_IN_PICTURE 支持。设置保持如实显示。</string>
+    <string name="pip_auto_title">自动画中画播放</string>
+    <string name="pip_auto_desc">在视频播放期间离开应用时进入悬浮窗口</string>
+    <string name="pip_test_button">测试画中画播放模式</string>
+    <string name="pip_test_fail_playing">目前无法进入 PiP 模式。请先在播放器中播放一段视频再试。</string>
+
+    <string name="dialog_network_title">网络串流</string>
+    <string name="dialog_network_desc">输入任意 HTTP、HTTPS 或 HLS 串流 URL，即可在 Media3 ExoPlayer 中直接播放：</string>
+    <string name="dialog_network_samples">公开串流示例：</string>
+    <string name="dialog_network_play">播放串流</string>
+
+    <string name="dialog_privacy_title">隐私与安全</string>
+    <string name="privacy_sec1_title">100% 本机架构</string>
+    <string name="privacy_sec1_body">MPx Player 是一款离线优先的媒体播放器。媒体索引、元数据提取和播放完全在您的设备上进行。您的文件库永远不会上传到任何远程服务器。</string>
+    <string name="privacy_sec2_title">零遥测与无分析</string>
+    <string name="privacy_sec2_body">MPx Player 中没有嵌入任何追踪 SDK、广告标识符和用户监控框架。您的播放习惯和文件完全属于您自己。</string>
+    <string name="privacy_sec3_title">本地 SQLite 沙箱</string>
+    <string name="privacy_sec3_body">收藏、自定义播放列表和播放续播点都保存在 Android 受保护应用沙箱内的私人 Room SQLite 数据库（mpx_player.db）中。</string>
+    <string name="privacy_sec4_title">透明的权限</string>
+    <string name="privacy_sec4_body">• READ_MEDIA_VIDEO / AUDIO：发现本地媒体文件。\n• INTERNET：可选，仅在您于网络串流中粘贴串流 URL 时使用。</string>
+
+    <string name="dialog_help_title">帮助与播放器指南</string>
+    <string name="help_sec1_title">播放器手势</string>
+    <string name="help_sec1_body">• 双击左侧：快退 10 秒\n• 双击右侧：快进 10 秒\n• 水平拖动：在视频中平滑精确拖动进度\n• 锁定按钮：观看时防止误触\n• 画面比例：在 Fit、Stretch、16:9 和 Original 之间循环切换</string>
+    <string name="help_sec2_title">音频与字幕轨道</string>
+    <string name="help_sec2_body">• 音频图标：在不同的音频轨道之间切换（双音频、解说）\n• 字幕图标：选择内嵌或外挂 .vtt / .srt 字幕轨道\n• 字幕大小：可在设置中配置（小、标准、大）</string>
+    <string name="help_sec3_title">设备诊断（实时）</string>
+    <string name="help_diag_app">应用：MPx Player 0.1.0-beta（构建 2）</string>
+    <string name="help_diag_os">Android 系统：SDK %1$d（%2$s）</string>
+    <string name="help_diag_device">设备：%1$s %2$s</string>
+    <string name="help_diag_engine">引擎：AndroidX Media3 ExoPlayer 1.3.1</string>
+    <string name="help_diag_db">数据库：Room SQLite（mpx_player.db）</string>
+
+    <string name="dialog_legal_title">法律与开源</string>
+    <string name="legal_sec1_title">开源许可证</string>
+    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer：Apache License 2.0\n• Jetpack Compose 与 Material 3：Apache License 2.0\n• AndroidX Room Persistence Library：Apache License 2.0\n• Kotlin Coroutines：Apache License 2.0</string>
+    <string name="legal_sec2_title">灵感来源声明</string>
+    <string name="legal_sec2_body">MPx Player 是一款独立的、净室开发的原生 Android 媒体播放器。其组织结构和 UX 流程受到 MX Player 的启发（依据逆向工程得出的布局规范）。所有代码、视图和样式均使用原生 Kotlin 和 Jetpack Compose 从零重写。未包含任何专有资产、代码或商标。</string>
+    <string name="legal_sec3_title">使用条款</string>
+    <string name="legal_sec3_body">MPx Player 依据 Apache 2.0 许可证按“现状”提供，不作任何保证。用户需对自己的媒体文件负责。</string>
+
+    <string name="dialog_about_body1">使用 Jetpack Compose、AndroidX Media3 ExoPlayer 和 Room SQLite 持久化的纯原生 Kotlin 重写。</string>
+    <string name="dialog_about_body2">无需依赖云端、追踪或广告的高密度、实用至上的媒体管理。</string>
+
+    <string name="equalizer_dialog_msg">系统均衡器：在此设备上未找到音频效果控制面板（例如 MusicFX 或系统均衡器应用）。音频使用标准平直输出。</string>
+
+    <string name="issue32_dialog_header">%s（Issue 32）</string>
+    <string name="issue32_status_notice">此功能已排期至 Issue 32。</string>
+    <string name="issue32_status_honest">状态：如实占位 — 并非伪造。</string>
+    <string name="issue32_status_detail">WhatsApp 状态保存需要分区存储目录访问权限。构建完成后，它将扫描并保存已下载的视频和图片状态。</string>
+    <string name="issue32_private_detail">私密文件夹需要由 PIN 或生物识别验证保护的加密 SQLite 或文件保险库，以隐藏敏感媒体。</string>
+    <string name="issue32_manager_detail">媒体管理与存储清理将分析设备存储，识别重复视频、大文件和临时缓存。</string>
+    <string name="issue32_bin_detail">回收站将在应用管理的暂存目录中保留已删除的文件 30 天，之后永久删除。</string>
+
+    <!-- Music Screen -->
+    <string name="music_screen_title">音乐</string>
+    <string name="music_cd_equalizer">均衡器</string>
+    <string name="music_equalizer_scheduled">均衡器已排期至音频阶段</string>
+    <string name="music_library_refreshed">音乐库已刷新</string>
+    <string name="music_search_placeholder">搜索歌曲…</string>
+    <string name="music_shuffle_all">全部随机播放</string>
+    <string name="music_banner_scanning">真实 MediaStore 扫描进行中。音频曲目、专辑、艺术家和文件夹均反映设备媒体。</string>
+
+    <!-- Music Tabs -->
+    <string name="music_tab_tracks">曲目</string>
+    <string name="music_tab_playlists">播放列表</string>
+    <string name="music_tab_albums">专辑</string>
+    <string name="music_tab_artists">艺术家</string>
+    <string name="music_tab_folders">文件夹</string>
+    <string name="settings_tabs_header">音乐标签页</string>
+    <string name="settings_tabs_desc">选择在音乐屏幕上显示哪些标签页。至少必须保持一个标签页可见。</string>
+    <string name="settings_tab_min_one_required">至少必须保持一个标签页可见。</string>
+    <string name="settings_tab_last_active_sub">必须保持可见（至少需要一个标签页）</string>
+    <string name="music_menu_manage_tabs">管理标签页</string>
+    <string name="music_dialog_tabs_title">可见的音乐标签页</string>
+    <string name="music_dialog_tabs_desc">选择在音乐屏幕上显示哪些标签页：</string>
+
+    <!-- Music Permission & Empty States -->
+    <string name="music_permission_required_title">需要权限</string>
+    <string name="music_permission_required_desc">MPx 需要访问您的音频文件的权限，才能显示您的音乐库。</string>
+    <string name="music_permission_grant_button">授予权限</string>
+    <string name="music_empty_tracks_title">未找到音乐</string>
+    <string name="music_empty_tracks_desc">在此设备上未找到音频曲目。</string>
+    <string name="music_empty_refresh_action">刷新</string>
+    <string name="music_search_no_matches_title">未找到匹配项</string>
+    <string name="music_search_no_matches_desc">没有与“%s”匹配的歌曲。</string>
+    <string name="music_empty_albums_title">未找到专辑</string>
+    <string name="music_empty_albums_desc">在此设备上未找到音频专辑。</string>
+    <string name="music_empty_artists_title">未找到艺术家</string>
+    <string name="music_empty_artists_desc">在此设备上未找到音乐艺术家。</string>
+    <string name="music_empty_folders_title">未找到音频文件夹</string>
+    <string name="music_empty_folders_desc">在此设备上未找到音频文件夹。</string>
+    <string name="music_empty_playlists_title">未找到播放列表</string>
+    <string name="music_empty_playlists_desc">创建或同步后，播放列表将显示在此处。</string>
+
+    <!-- Music Content Rows & Subtitles -->
+    <string name="music_new_playlist_title">新建播放列表</string>
+    <string name="music_new_playlist_subtitle">创建自定义播放列表</string>
+    <string name="music_favourites_title">收藏</string>
+    <string name="music_recently_played_title">最近播放</string>
+    <string name="music_songs_count">%d 首歌曲</string>
+    <string name="music_playlist_songs_subtitle">%1$d 首歌曲 • %2$s</string>
+    <string name="music_album_tracks_format">%1$s • %2$d 首曲目</string>
+    <string name="music_artist_details_format">%1$d 首曲目 • %2$d 张专辑</string>
+    <string name="music_sd_card_badge">SD 卡</string>
+    <string name="music_folder_tracks_format">%1$d 首曲目 • %2$s</string>
+
+    <!-- Music Track Menu & Feedback -->
+    <string name="music_cd_track_options">%s 的曲目选项</string>
+    <string name="music_menu_play_track">播放曲目</string>
+    <string name="music_menu_toggle_favourite">切换收藏</string>
+    <string name="music_menu_add_to_playlist">添加到播放列表…</string>
+    <string name="music_added_to_favourites">已添加到收藏</string>
+    <string name="music_removed_from_favourites">已从收藏中移除</string>
+    <string name="music_cleared_favourites_msg">已清空收藏</string>
+    <string name="music_cleared_history_msg">已清空历史记录</string>
+    <string name="music_playlist_created_msg">播放列表“%s”已创建</string>
+    <string name="music_added_to_playlist_msg">已添加到“%s”</string>
+    <string name="music_deleted_playlist_msg">已删除“%s”</string>
+
+    <!-- Playlist & Persistence Dialogs -->
+    <string name="action_create">创建</string>
+    <string name="action_clear_all">全部清除</string>
+    <string name="action_more">更多</string>
+    <string name="media_type_video">视频</string>
+    <string name="media_type_audio">音频</string>
+    <string name="favourites_dialog_title">收藏（%d）</string>
+    <string name="favourites_empty_title">暂无收藏</string>
+    <string name="favourites_empty_desc">点击播放器或曲目选项中的爱心图标即可添加收藏。</string>
+    <string name="favourites_cd_remove">移除收藏</string>
+    <string name="history_dialog_title">播放历史（%d）</string>
+    <string name="history_empty_title">暂无历史记录</string>
+    <string name="history_empty_desc">在 MPx Player 中播放的媒体将自动保存在此处。</string>
+    <string name="history_resume_at">• 从 %s 处续播</string>
+    <string name="history_cd_resume">续播</string>
+    <string name="playlist_create_dialog_title">新建播放列表</string>
+    <string name="playlist_create_dialog_desc">为此自定义播放列表输入一个名称：</string>
+    <string name="playlist_name_placeholder">播放列表名称</string>
+    <string name="playlist_add_dialog_title">添加到播放列表</string>
+    <string name="playlist_add_to_header">将“%s”添加到：</string>
+    <string name="playlist_create_new_action">创建新的播放列表…</string>
+    <string name="playlist_no_custom_playlists">尚未创建自定义播放列表。</string>
+    <string name="playlist_items_subtitle">%d 个项目 • 自定义播放列表</string>
+    <string name="playlist_cd_delete">删除播放列表</string>
+    <string name="playlist_play_all">全部播放</string>
+    <string name="playlist_empty_title">播放列表为空</string>
+    <string name="playlist_empty_desc">使用任意曲目选项菜单添加曲目。</string>
+    <string name="playlist_cd_remove_item">移除项目</string>
+    <string name="playlists_dialog_title">播放列表（%d）</string>
+    <string name="playlists_btn_new">+ 新建</string>
+    <string name="playlists_empty_msg">暂无自定义播放列表。\n点击“+ 新建”创建一个。</string>
+    <string name="playlist_items_type_format">%1$d 个项目 • %2$s</string>
+
+    <!-- Sort & Menu Options -->
+    <string name="menu_sort_by">排序方式</string>
+    <string name="sort_name">标题 / 名称</string>
+    <string name="sort_date">修改日期</string>
+    <string name="sort_size">文件大小</string>
+    <string name="sort_artist">艺术家</string>
+    <string name="sort_album">专辑</string>
+    <!-- Local Screen -->
+    <string name="local_title">媒体</string>
+    <string name="local_search_placeholder">搜索文件夹…</string>
+    <string name="local_section_folders">文件夹</string>
+    <string name="local_sort_label">排序：%1$s</string>
+    <string name="local_status_banner">真实 MediaStore 扫描进行中。文件夹和视频数量均反映设备媒体。</string>
+    <string name="local_menu_view_sort">视图与排序选项</string>
+    <string name="local_menu_refresh">刷新媒体库</string>
+
+    <!-- Local Screen Content Descriptions -->
+    <string name="cd_close_search">关闭搜索</string>
+    <string name="cd_toggle_view">切换视图</string>
+    <string name="cd_search">搜索</string>
+    <string name="cd_more_options">更多选项</string>
+    <string name="cd_quick_play">快速播放</string>
+
+    <!-- Shortcut Chips -->
+    <string name="chip_private">私密</string>
+    <string name="chip_network">网络</string>
+
+    <!-- Folder Item Row & Grid Card -->
+    <string name="badge_sd_card">SD 卡</string>
+    <string name="badge_new">新</string>
+    <string name="folder_item_videos_count">%1$d 个视频</string>
+    <string name="folder_item_videos_and_size">%1$d 个视频 • %2$s</string>
+    <string name="local_status_strip">%1$d 个文件夹 • %2$d 个视频</string>
+    <string name="folder_item_options_cd">%1$s 的文件夹选项</string>
+
+    <!-- View & Sort Dialog -->
+    <string name="sort_dialog_title">视图与排序选项</string>
+    <string name="sort_section_view_mode">视图模式</string>
+    <string name="sort_section_sort_by">排序方式</string>
+    <string name="view_mode_list">列表视图</string>
+    <string name="view_mode_grid">网格视图</string>
+    <string name="sort_field_name">标题 / 名称</string>
+    <string name="sort_field_date">修改日期</string>
+    <string name="sort_field_size">文件大小</string>
+    <string name="sort_field_count">视频数量</string>
+
+    <!-- Empty States -->
+    <string name="empty_permission_title">需要权限</string>
+    <string name="empty_permission_desc">MPx 需要访问您的视频的权限，才能显示您的媒体库。</string>
+    <string name="empty_permission_action">授予权限</string>
+    <string name="empty_search_title">未找到匹配项</string>
+    <string name="empty_search_desc">没有与“%1$s”匹配的文件夹。</string>
+    <string name="empty_search_action">清除搜索</string>
+    <string name="empty_videos_title">未找到视频</string>
+    <string name="empty_videos_desc">在此设备上未找到视频文件夹。您录制或下载的视频将显示在此处。</string>
+    <string name="empty_videos_action">刷新</string>
+
+    <!-- Snackbars -->
+    <string name="snackbar_no_playable_videos">%1$s 中没有可播放的视频。</string>
+    <string name="snackbar_library_refreshed">媒体库已刷新</string>
+    <string name="snackbar_folder_options">%1$s 的文件夹选项</string>
+    <string name="snackbar_removed_favourites">已从收藏中移除</string>
+    <string name="snackbar_cleared_favourites">已清空收藏</string>
+    <string name="snackbar_cleared_history">已清空历史记录</string>
+    <string name="snackbar_playlist_created">播放列表“%1$s”已创建</string>
+    <string name="snackbar_playlist_deleted">已删除“%1$s”</string>
+
+    <!-- Feature Placeholder Dialog & Playlists -->
+    <string name="dialog_feature_placeholder_title">功能占位</string>
+    <string name="feature_placeholder_msg">%1$s 已排期至后续阶段。目前仅预览布局。</string>
+    <string name="dialog_video_playlists_title">视频播放列表（%1$d）</string>
+    <string name="dialog_new_playlist">新建播放列表</string>
+    <string name="dialog_playlists_empty">暂无自定义播放列表。点击“新建播放列表”创建一个。</string>
+    <string name="playlist_items_count">%1$d 个项目</string>
+    <string name="local_menu_filtered_view">已筛选的文件夹视图</string>
+    <string name="local_snackbar_show_all">正在显示所有文件夹（包括空文件夹和隐藏文件夹）</string>
+    <string name="local_snackbar_filtered">正在显示已筛选的文件夹视图</string>
+    <string name="empty_folders_title">未找到文件夹</string>
+    <string name="empty_folders_desc">在存储卷上未找到媒体文件夹。创建或同步后，文件夹和媒体将显示在此处。</string>
+    <string name="local_section_all_folders">所有文件夹</string>
+    <string name="local_badge_show_all">显示全部</string>
+
+    <!-- Folder View Mode & Folder Contents -->
+    <string name="folder_view_mode">文件夹视图模式</string>
+    <string name="pref_default_folder_view_mode">默认文件夹视图模式</string>
+    <string name="pref_default_folder_view_mode_desc">在文件夹内查看视频文件的默认布局</string>
+    <string name="folder_view_subtitle">%1$d 个视频 • %2$s</string>
+    <string name="folder_view_subtitle_single">1 个视频 • %1$s</string>
+    <string name="folder_view_search_placeholder">在文件夹中搜索视频…</string>
+    <string name="folder_view_empty_title">文件夹中没有视频</string>
+    <string name="folder_view_empty_desc">在此文件夹中未找到视频文件。</string>
+    <string name="folder_view_search_empty_title">未找到视频</string>
+    <string name="folder_view_search_empty_desc">没有与“%1$s”匹配的视频。</string>
+    <string name="folder_menu_play_all">全部播放</string>
+    <string name="folder_menu_open">打开文件夹</string>
+    <string name="folder_view_dialog_title">文件夹视图与排序</string>
+    <string name="folder_view_set_as_default">设为所有文件夹的默认值</string>
+    <string name="folder_view_set_as_default_desc">新文件夹将使用此视图模式</string>
+    <string name="folder_view_reset_default">重置为全局默认值</string>
+    <string name="folder_view_reset_default_snackbar">文件夹视图已重置为默认值（%1$s）</string>
+    <string name="view_mode_switched_list">已切换到列表视图</string>
+    <string name="view_mode_switched_grid">已切换到网格视图</string>
+    <string name="video_item_options_cd">%1$s 的选项</string>
+    <string name="video_item_play">播放</string>
+    <string name="video_item_add_to_playlist">添加到播放列表…</string>
+    <string name="video_item_favourite">添加到收藏</string>
+    <string name="video_item_unfavourite">从收藏中移除</string>
+    <string name="action_back_to_folders">返回文件夹</string>
+    <string name="overlay_settings_title">悬浮设置</string>
+    <string name="overlay_section_trigger">何时显示</string>
+    <string name="overlay_section_behavior">行为</string>
+    <string name="pip_banner_supported_details">您的设备支持画中画。MPx 可以在小型悬浮窗口中继续播放。</string>
+    <string name="pip_banner_unsupported_reason">此设备或 Android 版本不支持画中画。</string>
+    <string name="pip_window_controls_desc">选择悬浮窗口上显示的控制按钮。</string>
+    <string name="pip_controls_prev_next_desc">播放/暂停旁边的上一曲和下一曲按钮。</string>
+    <string name="pip_controls_seek10_desc">快退和快进 10 秒。</string>
+    <string name="pip_controls_play_pause_only">仅播放 / 暂停</string>
+    <string name="pip_controls_play_pause_only_desc">悬浮窗口上仅显示播放/暂停按钮。</string>
+    <string name="pip_size_header">窗口大小</string>
+    <string name="pip_size_desc">悬浮窗口应为多大。</string>
+    <string name="pip_size_small">小</string>
+    <string name="pip_size_small_desc">一个紧凑的悬浮窗口。</string>
+    <string name="pip_size_medium">中</string>
+    <string name="pip_size_medium_desc">大小适中的悬浮窗口。</string>
+    <string name="pip_size_large">大</string>
+    <string name="pip_size_large_desc">一个较大的悬浮窗口。</string>
+    <string name="pip_size_auto">自动</string>
+    <string name="pip_size_auto_desc">让系统选择窗口大小。</string>
+    <string name="pip_position_header">窗口位置</string>
+    <string name="pip_position_desc">悬浮窗口首次出现的位置。系统可能会移动它。</string>
+    <string name="pip_position_bottom_right">右下角</string>
+    <string name="pip_position_bottom_right_desc">从右下角开始。</string>
+    <string name="pip_position_bottom_left">左下角</string>
+    <string name="pip_position_bottom_left_desc">从左下角开始。</string>
+    <string name="pip_position_top_right">右上角</string>
+    <string name="pip_position_top_right_desc">从右上角开始。</string>
+    <string name="pip_position_top_left">左上角</string>
+    <string name="pip_position_top_left_desc">从左上角开始。</string>
+    <string name="pip_position_center">居中</string>
+    <string name="pip_position_center_desc">从屏幕中央开始。</string>
+    <string name="pip_position_remember_last">记住上次位置</string>
+    <string name="pip_position_remember_last_desc">下次在您上次离开的位置重新打开窗口。</string>
+    <string name="pip_snap_edge_title">贴靠边缘</string>
+    <string name="pip_snap_edge_desc">松开时将悬浮窗口贴靠到最近的屏幕边缘。</string>
+    <string name="pip_close_on_done_title">播放结束时关闭</string>
+    <string name="pip_close_on_done_desc">播放结束时自动关闭悬浮窗口。</string>
+    <string name="pip_limits_title">系统限制</string>
+    <string name="pip_limit_hardware_title">硬件支持</string>
+    <string name="pip_limit_hardware_desc">某些设备出于性能或电池原因禁用画中画。</string>
+    <string name="pip_limit_sandboxing_title">应用限制</string>
+    <string name="pip_limit_sandboxing_desc">电池优化或受限的应用设置可能会阻止悬浮窗口。</string>
+    <string name="pip_limit_window_manager_title">窗口管理器</string>
+    <string name="pip_limit_window_manager_desc">系统控制最终的大小和位置，因此 MPx 的请求可能会被调整。</string>
+    <string name="pip_limit_actions_title">可用操作</string>
+    <string name="pip_limit_actions_desc">悬浮窗口上只能显示 Android 允许的操作。</string>
+    <!-- Beta & About Screen -->
+    <string name="about_beta_screen_title">关于与 Beta 状态</string>
+    <string name="about_beta_badge">BETA 版本</string>
+    <string name="about_beta_tagline">适用于 Android 的原生 Kotlin 媒体播放器，搭载 Media3 ExoPlayer 和 Room 持久化。</string>
+    <string name="about_beta_build_info">构建 2（VersionCode 2）• 分支：feature/beta-readiness</string>
+
+    <!-- What is Ready in Beta -->
+    <string name="about_beta_section_ready">BETA 版已就绪的内容</string>
+    <string name="about_beta_ready_subtitle">核心离线播放和媒体库功能均为功能完备的原生实现：</string>
+    <string name="about_beta_feat_player_title">Media3 视频播放引擎</string>
+    <string name="about_beta_feat_player_desc">通过 AndroidX Media3 ExoPlayer 实现硬件（HW/HW+）和软件（SW）解码。视频手势（双击快进/快退 10 秒、水平拖动精确拖动进度）、画面比例控制（Fit/Stretch/16:9/Original）、内嵌和外挂字幕（.srt、.vtt）以及多音频轨道切换。</string>
+    <string name="about_beta_feat_bg_pip_title">后台播放与画中画播放（PiP）</string>
+    <string name="about_beta_feat_bg_pip_desc">Android 8.0+ 上带自定义窗口控制的画中画悬浮模式。通过前台服务为视频和音乐提供真正的后台音频播放。</string>
+    <string name="about_beta_feat_music_title">音乐播放器与音频库</string>
+    <string name="about_beta_feat_music_desc">对本地曲目、专辑、艺术家和音频文件夹进行完整的 MediaStore 扫描。随机播放、曲目队列，以及跨所有主标签页的常驻 MiniPlayer。</string>
+    <string name="about_beta_feat_persistence_title">本机 Room SQLite 持久化</string>
+    <string name="about_beta_feat_persistence_desc">自定义播放列表、加星收藏和带精确续播时间戳的播放历史均保存在本地的 mpx_player.db 中。</string>
+    <string name="about_beta_feat_themes_title">主题与真正的深色模式</string>
+    <string name="about_beta_feat_themes_desc">四种主题：Midnight OLED（#000000 影院黑）、Dark Slate、Classic Navy 和 Light Cinema。运行时立即应用主题。</string>
+    <string name="about_beta_feat_i18n_title">完整的英语与现代标准阿拉伯语（RTL）</string>
+    <string name="about_beta_feat_i18n_desc">双向界面，完整从右至左（RTL）镜像、镜像图标，无需重启应用即可即时切换语言。</string>
+
+    <!-- What is Placeholder -->
+    <string name="about_beta_section_placeholders">仍为占位的内容</string>
+    <string name="about_beta_placeholders_subtitle">根据我们诚实的开发原则，以下功能为非功能性界面占位，不含任何模拟或伪造的操作：</string>
+    <string name="about_beta_holder_downloader_title">URL 下载器（传输标签页）</string>
+    <string name="about_beta_holder_downloader_desc">状态：仅界面外壳。无虚假下载或人工进度条。真正的后台下载引擎将于第 5 阶段集成。</string>
+    <string name="about_beta_holder_transfer_title">直接文件传输（传输标签页）</string>
+    <string name="about_beta_holder_transfer_desc">状态：界面占位。离线点对点（P2P / Wi-Fi Direct）文件共享协议将于第 5 阶段接入。</string>
+    <string name="about_beta_holder_status_title">状态保存（“我的”工具网格）</string>
+    <string name="about_beta_holder_status_desc">状态：如实占位（Issue 32）。实现分区存储目录权限流程后，将接入 WhatsApp 状态目录扫描与保存。</string>
+    <string name="about_beta_holder_private_title">私密文件夹（“我的”工具网格）</string>
+    <string name="about_beta_holder_private_desc">状态：如实占位（Issue 32）。带生物识别 / PIN 验证的加密媒体保险库已排期至 Issue 32。</string>
+    <string name="about_beta_holder_manager_title">媒体管理与存储清理（“我的”工具网格）</string>
+    <string name="about_beta_holder_manager_desc">状态：如实占位（Issue 32）。重复媒体检测、大文件识别和缓存分析器已排期至 Issue 32。</string>
+    <string name="about_beta_holder_bin_title">回收站（“我的”工具网格）</string>
+    <string name="about_beta_holder_bin_desc">状态：如实占位（Issue 32）。应用管理的已删除文件临时暂存目录（保留 30 天）已排期至 Issue 32。</string>
+
+    <!-- Privacy & Integrity -->
+    <string name="about_beta_section_privacy">隐私与遥测完整性</string>
+    <string name="about_beta_privacy_body">MPx Player 不含任何虚假崩溃报告、第三方遥测、广告框架和追踪 SDK。您的媒体播放历史、收藏和设置严格保密，永远不会离开您的设备。</string>
+
+    <!-- Feedback & GitHub Issues -->
+    <string name="about_beta_section_feedback">反馈与 BUG 报告</string>
+    <string name="about_beta_feedback_body">我们欢迎您在公开的 GitHub 仓库中提交 Bug 报告、回归发现和功能建议。您的反馈将直接影响后续版本。</string>
+    <string name="about_beta_open_github">打开 GitHub Issues</string>
+    <string name="about_beta_copy_github_url">复制 Issues 链接</string>
+    <string name="about_beta_issues_url">https://github.com/mohammedbakri123/MPx-player/issues</string>
+    <string name="about_beta_copied_snackbar">GitHub Issues 链接已复制到剪贴板</string>
+    <string name="about_beta_browser_error">无法打开网络浏览器。该链接已复制到您的剪贴板。</string>
+    <string name="about_beta_open_page_button">查看 Beta 详情与反馈</string>
+    <!-- Separate View Layout (Issue 16) -->
+    <string name="settings_separate_view_title">独立视图布局</string>
+    <string name="settings_separate_view_desc">分别为本地和音乐屏幕记住视图布局（列表或网格）</string>
+    <string name="sort_section_layout_settings">布局设置</string>
+    <string name="sort_separate_view_title">独立视图布局</string>
+    <string name="sort_separate_view_desc">为此屏幕独立记住布局</string>
+    <string name="snackbar_separate_view_enabled">独立视图布局已启用</string>
+    <string name="snackbar_separate_view_disabled">独立视图布局已禁用：布局已同步</string>
+    <!-- File View (Issue 19) -->
+    <string name="sort_section_view_type">视图类型</string>
+    <string name="view_type_folders">文件夹（按文件夹分组）</string>
+    <string name="view_type_files">全部文件（单个文件）</string>
+    <string name="sort_field_duration">时长</string>
+    <string name="section_files_header">文件</string>
+    <string name="list_file_view">文件视图</string>
+    <string name="list_file_view_desc">在本地视图中列出单个视频文件，而不是按文件夹分组</string>
+    <string name="list_show_all_files">显示所有文件</string>
+    <string name="list_show_all_files_desc">包括隐藏文件和内部存储路径</string>
+    <string name="local_section_videos">视频</string>
+    <string name="local_section_all_videos">全部视频</string>
+    <string name="local_search_placeholder_files">搜索视频…</string>
+    <string name="local_menu_switch_to_files">切换到文件视图</string>
+    <string name="local_menu_switch_to_folders">切换到文件夹视图</string>
+    <string name="local_snackbar_file_view">已切换到文件视图</string>
+    <string name="local_snackbar_folder_view">已切换到文件夹视图</string>
+    <string name="video_menu_play">播放视频</string>
+    <string name="video_menu_play_folder">播放文件夹（%1$s）</string>
+
+    <!-- Auto Screen Rotation (Issue 19) -->
+    <string name="player_auto_rotation">自动屏幕旋转</string>
+    <string name="player_auto_rotation_desc">在播放器中通过传感器跟随设备方向，或锁定为横屏/竖屏</string>
+    <string name="player_locked_orientation_header">锁定的方向：</string>
+    <string name="player_rotation_dialog_title">屏幕旋转</string>
+    <string name="player_rotation_auto">自动旋转（传感器）</string>
+    <string name="player_rotation_auto_desc">播放器自动跟随设备方向</string>
+    <string name="player_orientation_landscape">横屏</string>
+    <string name="player_orientation_landscape_desc">将屏幕锁定为水平横屏模式</string>
+    <string name="player_orientation_portrait">竖屏</string>
+    <string name="player_orientation_portrait_desc">将屏幕锁定为垂直竖屏模式</string>
+    <string name="toast_rotation_auto">自动屏幕旋转已启用（传感器）</string>
+    <string name="toast_rotation_landscape">屏幕已锁定为横屏</string>
+    <string name="toast_rotation_portrait">屏幕已锁定为竖屏</string>
+    <string name="cd_screen_rotation">屏幕旋转</string>
+    <string name="local_menu_folder_view">文件夹视图</string>
+    <string name="local_menu_file_view">文件视图</string>
+    <string name="snackbar_added_to_favourites">已添加到收藏</string>
+
+    <!-- Development Category Diagnostics (Issue 60) -->
+    <string name="dev_section_app_build">应用与构建</string>
+    <string name="dev_section_database">Room SQLite 数据库</string>
+    <string name="dev_section_media_scan">MediaStore 媒体库扫描</string>
+    <string name="dev_section_playback_engine">解码器与播放引擎</string>
+    <string name="dev_label_package">应用 ID</string>
+    <string name="dev_label_version">版本</string>
+    <string name="dev_label_build_code">版本代码</string>
+    <string name="dev_label_build_type">构建类型</string>
+    <string name="dev_label_target_sdk">目标 SDK</string>
+    <string name="dev_label_min_sdk">最低 SDK</string>
+    <string name="dev_label_device">设备</string>
+    <string name="dev_label_os_version">Android 系统</string>
+    <string name="dev_label_db_name">数据库名称</string>
+    <string name="dev_label_db_path">数据库路径</string>
+    <string name="dev_label_db_size">数据库大小</string>
+    <string name="dev_label_db_wal_size">WAL 日志大小</string>
+    <string name="dev_label_db_records">数据库记录</string>
+    <string name="dev_label_db_not_created">尚未创建（0 B）</string>
+    <string name="dev_label_permissions">媒体权限</string>
+    <string name="dev_label_scan_volumes">存储卷</string>
+    <string name="dev_label_video_folders">视频文件夹</string>
+    <string name="dev_label_scanned_videos">已扫描的视频</string>
+    <string name="dev_label_audio_tracks">音频曲目</string>
+    <string name="dev_label_audio_folders">音频文件夹</string>
+    <string name="dev_label_audio_albums">音频专辑</string>
+    <string name="dev_label_audio_artists">音频艺术家</string>
+    <string name="dev_label_playlists">播放列表</string>
+    <string name="dev_label_engine_name">播放引擎</string>
+    <string name="dev_label_engine_type">引擎架构</string>
+    <string name="dev_label_decoder_mode">已配置的解码器</string>
+    <string name="dev_label_active_decoder">当前视频解码器</string>
+    <string name="dev_label_codec_type">编解码器实现</string>
+    <string name="dev_label_player_state">播放器状态</string>
+    <string name="dev_label_active_media">当前媒体</string>
+    <string name="dev_label_decoder_fallback">解码器后备</string>
+    <string name="dev_btn_refresh_diagnostics">刷新诊断</string>
+    <string name="dev_val_refreshing">正在刷新…</string>
+    <string name="dev_val_none_idle">无（播放器空闲）</string>
+    <string name="dev_val_direct_codec">直接（无需后备）</string>
+    <string name="dev_val_perm_video">视频：%1$s • 音频：%2$s</string>
+    <string name="dev_val_perm_granted">已授予</string>
+    <string name="dev_val_perm_denied">已拒绝</string>
+    <string name="dev_val_codec_hw">硬件加速（MediaCodec）</string>
+    <string name="dev_val_codec_sw">软件（CPU）</string>
+    <string name="dev_label_last_updated">上次更新：%1$s</string>
+    <!-- Issue 59: Secondary Sort, Fields, and Advanced Sort Options -->
+    <string name="sort_section_secondary_sort">第二排序</string>
+    <string name="sort_secondary_sort_desc">当主排序值相同时作为决胜依据</string>
+    <string name="sort_field_none">无</string>
+    <string name="sort_section_fields">字段</string>
+    <string name="sort_fields_dialog_title">字段</string>
+    <string name="sort_fields_desc">选择要在列表行中显示的元数据列</string>
+    <string name="sort_field_show_size">文件大小</string>
+    <string name="sort_field_show_date">修改日期</string>
+    <string name="sort_field_show_duration">时长</string>
+    <string name="sort_field_show_location">位置 / 文件夹</string>
+    <string name="sort_field_show_count">视频数量</string>
+    <string name="sort_section_advanced">高级</string>
+    <string name="sort_advanced_dialog_title">高级排序选项</string>
+    <string name="sort_advanced_reverse_order">反转主排序顺序</string>
+    <string name="sort_advanced_reverse_order_desc">在升序和降序之间切换</string>
+    <string name="sort_advanced_secondary_reverse">反转第二排序顺序</string>
+    <string name="sort_advanced_secondary_reverse_desc">将第二排序在升序和降序之间切换</string>
+    <string name="sort_advanced_numeric">自然数字排序</string>
+    <string name="sort_advanced_numeric_desc">在名称中将“2”排在“10”之前</string>
+    <string name="sort_advanced_case_sensitive">区分大小写排序</string>
+    <string name="sort_advanced_case_sensitive_desc">区分大写字母和小写字母</string>
+    <string name="sort_advanced_ignore_extension">忽略文件扩展名</string>
+    <string name="sort_advanced_ignore_extension_desc">按文件标题排序，不考虑文件扩展名</string>
+    <string name="sort_advanced_summary_default">标准排序选项</string>
+    <!-- Issue 55: Continue Watching Row -->
+    <string name="continue_watching_title">继续观看</string>
+    <string name="continue_watching_dismiss">从“继续观看”中移除</string>
+    <string name="continue_watching_dismissed">已从“继续观看”中移除“%1$s”</string>
+    <string name="continue_watching_resume_at">从 %1$s 处续播</string>
+    <!-- Issue 54: Sleep Timer -->
+    <string name="player_sleep_timer">睡眠定时器</string>
+    <string name="player_sleep_timer_off">关闭</string>
+    <string name="player_sleep_timer_15">15 分钟</string>
+    <string name="player_sleep_timer_30">30 分钟</string>
+    <string name="player_sleep_timer_45">45 分钟</string>
+    <string name="player_sleep_timer_60">60 分钟</string>
+    <string name="player_sleep_timer_dialog_title">睡眠定时器</string>
+    <string name="player_sleep_timer_chip">睡眠：%1$s</string>
+    <string name="player_sleep_timer_cancel">取消睡眠定时器</string>
+    <string name="player_sleep_timer_set_toast">睡眠定时器已设为 %1$d 分钟</string>
+    <string name="player_sleep_timer_canceled_toast">睡眠定时器已关闭</string>
+    <string name="player_gesture_hint">双击：-10 秒（左）/ 播放-暂停 / +10 秒（右） • 水平滑动：拖动进度 • 垂直滑动：亮度（左）/ 音量（右）</string>
+</resources>

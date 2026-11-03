@@ -46,6 +46,8 @@
     <string name="lang_french_desc">फ़्रेंच इंटरफ़ेस (LTR लेआउट)</string>
     <string name="lang_hindi">हिन्दी (Hindi)</string>
     <string name="lang_hindi_desc">हिंदी इंटरफ़ेस (LTR लेआउट)</string>
+    <string name="lang_chinese">चीनी (Chinese)</string>
+    <string name="lang_chinese_desc">चीनी इंटरफ़ेस (LTR लेआउट)</string>
     <string name="lang_applied_msg">भाषा अपडेट हुई: %s</string>
     <string name="lang_settings_note">अपनी पसंदीदा ऐप भाषा चुनें। भाषा और लेआउट दिशा ऐप पुनः आरंभ किए बिना तुरंत लागू होती है।</string>
 
