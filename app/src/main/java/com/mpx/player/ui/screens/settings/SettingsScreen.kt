@@ -150,6 +150,7 @@ fun SettingsScreen(
     val languageSubtitle = when (activeLanguage.lowercase()) {
         LocaleHelper.LANGUAGE_ARABIC -> stringResource(R.string.lang_arabic)
         LocaleHelper.LANGUAGE_ENGLISH -> stringResource(R.string.lang_english)
+        LocaleHelper.LANGUAGE_SPANISH -> stringResource(R.string.lang_spanish)
         else -> stringResource(R.string.lang_system_default)
     }
 
@@ -242,6 +243,11 @@ fun SettingsScreen(
                                             LocaleHelper.LANGUAGE_ARABIC,
                                             stringResource(R.string.lang_arabic),
                                             stringResource(R.string.lang_arabic_desc),
+                                        ),
+                                        Triple(
+                                            LocaleHelper.LANGUAGE_SPANISH,
+                                            stringResource(R.string.lang_spanish),
+                                            stringResource(R.string.lang_spanish_desc),
                                         ),
                                     )
                                     languageOptions.forEach { (langCode, langTitle, langDesc) ->
