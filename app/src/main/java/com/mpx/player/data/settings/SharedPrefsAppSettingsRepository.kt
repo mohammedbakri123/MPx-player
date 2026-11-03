@@ -21,6 +21,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         decoderMode = prefs.getString("decoder_mode", "HW") ?: "HW",
         audioBoost = prefs.getBoolean("audio_boost", false),
         subtitleSize = prefs.getString("subtitle_size", "Normal") ?: "Normal",
+        appTheme = prefs.getString("app_theme", "Midnight") ?: "Midnight",
+        popupPlayEnabled = prefs.getBoolean("popup_play_enabled", true),
+        popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
     )
 
     override fun save(settings: AppSettings) {
@@ -33,6 +36,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("decoder_mode", settings.decoderMode)
             .putBoolean("audio_boost", settings.audioBoost)
             .putString("subtitle_size", settings.subtitleSize)
+            .putString("app_theme", settings.appTheme)
+            .putBoolean("popup_play_enabled", settings.popupPlayEnabled)
+            .putString("popup_play_controls", settings.popupPlayControls)
             .apply()
     }
 }

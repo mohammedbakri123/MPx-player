@@ -17,15 +17,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -48,41 +50,46 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurface
-import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.util.PipUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     settingsRepository: AppSettingsRepository,
+    onThemeChanged: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     var settings by remember { mutableStateOf(settingsRepository.load()) }
     var expandedId by remember { mutableStateOf<String?>(null) }
 
     fun update(next: AppSettings) {
         settings = next
         settingsRepository.save(next)
+        if (next.appTheme != settings.appTheme) {
+            onThemeChanged?.invoke(next.appTheme)
+        }
     }
 
     val categories = listOf(
-        SettingCategory("list", "List", "Folder view, hidden files, thumbnails", Icons.Filled.FormatListBulleted),
+        SettingCategory("theme", "App Theme", "Midnight OLED, Dark Slate, Classic Navy, Light", Icons.Filled.ColorLens),
+        SettingCategory("pip", "Custom Pop-up Play", "Picture-in-Picture controls and background play", Icons.Filled.PictureInPictureAlt),
+        SettingCategory("list", "List", "Folder view, hidden files, thumbnails", Icons.AutoMirrored.Filled.FormatListBulleted),
         SettingCategory("player", "Player", "Resume playback, background play, gestures", Icons.Filled.PlayCircleOutline),
         SettingCategory("decoder", "Decoder", "Hardware acceleration (HW / HW+), Software (SW)", Icons.Filled.Memory),
-        SettingCategory("audio", "Audio", "Volume boost", Icons.Filled.VolumeUp),
+        SettingCategory("audio", "Audio", "Volume boost", Icons.AutoMirrored.Filled.VolumeUp),
         SettingCategory("subtitle", "Subtitle", "Subtitle size", Icons.Filled.Subtitles),
         SettingCategory("general", "General", "Reset all preferences to defaults", Icons.Filled.Tune),
         SettingCategory("about", "About", "Version 0.1.0-native", Icons.Filled.Info),
@@ -90,22 +97,22 @@ fun SettingsScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MpxBlack,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         text = "Settings",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Filled.ArrowBack, "Back", tint = MpxTextPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MpxSurface),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
             )
         },
     ) { padding ->
@@ -126,16 +133,16 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(MpxSurfaceElevated),
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(category.icon, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
                         }
                         Spacer(Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(category.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp), color = MpxTextPrimary)
+                            Text(category.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp), color = MaterialTheme.colorScheme.onSurface)
                             Spacer(Modifier.height(2.dp))
-                            Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary, lineHeight = 16.sp)
+                            Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
                         }
                         Spacer(Modifier.width(8.dp))
                         Icon(Icons.Filled.ChevronRight, null, tint = MpxTextMuted, modifier = Modifier.size(20.dp))
@@ -144,6 +151,41 @@ fun SettingsScreen(
                     if (expandedId == category.id) {
                         Column(modifier = Modifier.padding(start = 74.dp, end = 16.dp, bottom = 12.dp)) {
                             when (category.id) {
+                                "theme" -> {
+                                    listOf(
+                                        "Midnight" to "Midnight OLED (Pure Black)",
+                                        "Dark" to "Dark Slate (Charcoal)",
+                                        "Classic" to "Classic MX Navy",
+                                        "Light" to "Light Cinema (Clean White)",
+                                    ).forEach { (themeKey, themeLabel) ->
+                                        ChoiceRow(themeLabel, settings.appTheme.equals(themeKey, ignoreCase = true)) {
+                                            update(settings.copy(appTheme = themeKey))
+                                            onThemeChanged?.invoke(themeKey)
+                                        }
+                                    }
+                                }
+                                "pip" -> {
+                                    val isSupported = PipUtils.isPipSupported(context)
+                                    if (!isSupported) {
+                                        Text(
+                                            text = "Note: Picture-in-Picture mode is not supported on this device/environment (requires Android 8.0+ with FEATURE_PICTURE_IN_PICTURE).",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.padding(bottom = 8.dp),
+                                        )
+                                    }
+                                    ToggleRow("Enable Pop-up Play (PiP)", settings.popupPlayEnabled) {
+                                        update(settings.copy(popupPlayEnabled = it))
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("PiP Window Controls:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    ChoiceRow("Previous / Next (Default)", settings.popupPlayControls == "PrevNext") {
+                                        update(settings.copy(popupPlayControls = "PrevNext"))
+                                    }
+                                    ChoiceRow("Fast Forward / Rewind (10s)", settings.popupPlayControls == "Seek10") {
+                                        update(settings.copy(popupPlayControls = "Seek10"))
+                                    }
+                                }
                                 "list" -> {
                                     ToggleRow("Show hidden files", settings.showHiddenFiles) { update(settings.copy(showHiddenFiles = it)) }
                                     ToggleRow("Show thumbnails", settings.showThumbnails) { update(settings.copy(showThumbnails = it)) }
@@ -158,8 +200,8 @@ fun SettingsScreen(
                                         ChoiceRow(mode, settings.decoderMode == mode) { update(settings.copy(decoderMode = mode)) }
                                     }
                                     Text(
-                                        "Note: this selects the decoder preference. Real decoder wiring arrives with the playback worktree.",
-                                        style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary,
+                                        "Selects default player decoder preference. HW uses device hardware codecs; SW provides software fallback.",
+                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                                 "audio" -> {
@@ -171,26 +213,30 @@ fun SettingsScreen(
                                     }
                                 }
                                 "general" -> {
-                                    OutlinedButton(onClick = { update(AppSettings()) }) {
+                                    OutlinedButton(onClick = {
+                                        val defaultSettings = AppSettings()
+                                        update(defaultSettings)
+                                        onThemeChanged?.invoke(defaultSettings.appTheme)
+                                    }) {
                                         Text("Reset all to defaults", color = MpxPrimary)
                                     }
                                     Spacer(Modifier.height(6.dp))
                                     Text(
                                         "App language follows the system language for now.",
-                                        style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary,
+                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                                 "about" -> {
                                     Text(
-                                        "MPx Player 0.1.0-native. Native Kotlin rewrite, MX-inspired layout built in MPx's own code.",
-                                        style = MaterialTheme.typography.bodyMedium, color = MpxTextSecondary,
+                                        "MPx Player 0.1.0-native. Native Kotlin rewrite, MX-inspired layout built entirely in MPx's own code and styling.",
+                                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }
                         }
                     }
                 }
-                HorizontalDivider(modifier = Modifier.padding(start = 74.dp), color = MpxBorder, thickness = 0.5.dp)
+                HorizontalDivider(modifier = Modifier.padding(start = 74.dp), color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
             }
         }
     }
@@ -202,7 +248,7 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, modifier = Modifier.weight(1f), color = MpxTextPrimary, style = MaterialTheme.typography.bodyMedium)
+        Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
         Switch(
             checked = checked,
             onCheckedChange = onChange,
@@ -223,6 +269,6 @@ private fun ChoiceRow(label: String, selected: Boolean, onClick: () -> Unit) {
             colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
         )
         Spacer(Modifier.width(8.dp))
-        Text(label, color = MpxTextPrimary, style = MaterialTheme.typography.bodyMedium)
+        Text(label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
     }
 }
