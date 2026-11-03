@@ -703,6 +703,9 @@ class MediaStoreRepository(
     override fun getPlaylists(): List<Playlist> {
         val playlists = mutableListOf<Playlist>()
         val seenNames = mutableSetOf<String>()
+        // One library scan shared by every playlist below, so the displayed
+        // count is exactly the number of member tracks that will play on tap.
+        val tracksById = getAudioTracks().associateBy { it.id }
         val projection = arrayOf(
             MediaStore.Audio.Playlists._ID,
             MediaStore.Audio.Playlists.NAME,
@@ -723,11 +726,14 @@ class MediaStoreRepository(
                         val id = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
                         val name = if (nameCol >= 0) cursor.getString(nameCol) ?: "Playlist" else "Playlist"
                         if (seenNames.add(name)) {
+                            val memberTracks = id.toLongOrNull()?.let { playlistId ->
+                                resolvePlaylistTracks(playlistId, tracksById)
+                            }.orEmpty()
                             playlists.add(
                                 Playlist(
                                     id = id,
                                     title = name,
-                                    itemCount = 0,
+                                    itemCount = memberTracks.size,
                                     subtitle = "Device Playlist",
                                 )
                             )
@@ -739,6 +745,84 @@ class MediaStoreRepository(
             }
         }
         return playlists
+    }
+
+    override fun getPlaylistTracks(playlistId: String): List<AudioTrack> {
+        val id = playlistId.toLongOrNull() ?: return emptyList()
+        return resolvePlaylistTracks(id, getAudioTracks().associateBy { it.id })
+    }
+
+    /**
+     * Resolves a device playlist's members to library tracks, preserving the
+     * playlist's own member order. Members whose audio id is not in the
+     * library (removed file, non-music entry, path dedupe) are skipped, so
+     * the result is exactly what tapping the playlist will queue.
+     */
+    private fun resolvePlaylistTracks(
+        playlistId: Long,
+        tracksById: Map<String, AudioTrack>,
+    ): List<AudioTrack> {
+        return getPlaylistMemberAudioIds(playlistId).mapNotNull { audioId ->
+            tracksById[audioId.toString()]
+        }
+    }
+
+    /**
+     * Reads the MediaStore members table for one device playlist, in
+     * PLAY_ORDER. Tries each storage volume in turn and returns the first
+     * non-empty member list; playlist ids are only unique per volume, and
+     * getPlaylists() keeps the first volume's id for a duplicated name.
+     */
+    private fun getPlaylistMemberAudioIds(playlistId: Long): List<Long> {
+        val memberUris = mutableListOf<Uri>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            for (volume in getExternalVolumeNames()) {
+                try {
+                    memberUris.add(
+                        MediaStore.Audio.Playlists.Members.getContentUri(volume, playlistId)
+                    )
+                } catch (_: Exception) {
+                    // Skip volumes that cannot build a members URI
+                }
+            }
+        }
+        if (memberUris.isEmpty()) {
+            try {
+                memberUris.add(
+                    MediaStore.Audio.Playlists.Members.getContentUri("external", playlistId)
+                )
+            } catch (_: Exception) {
+                return emptyList()
+            }
+        }
+        val projection = arrayOf(
+            MediaStore.Audio.Playlists.Members.AUDIO_ID,
+            MediaStore.Audio.Playlists.Members.PLAY_ORDER,
+        )
+        for (uri in memberUris) {
+            try {
+                context.contentResolver.query(
+                    uri,
+                    projection,
+                    null,
+                    null,
+                    "${MediaStore.Audio.Playlists.Members.PLAY_ORDER} ASC",
+                )?.use { cursor ->
+                    val audioIdCol = cursor.getColumnIndex(
+                        MediaStore.Audio.Playlists.Members.AUDIO_ID
+                    )
+                    if (audioIdCol < 0) return@use
+                    val ids = mutableListOf<Long>()
+                    while (cursor.moveToNext()) {
+                        ids.add(cursor.getLong(audioIdCol))
+                    }
+                    if (ids.isNotEmpty()) return ids
+                }
+            } catch (_: Exception) {
+                // This volume has no such playlist; try the next one
+            }
+        }
+        return emptyList()
     }
 
     private fun formatSize(bytes: Long): String {
