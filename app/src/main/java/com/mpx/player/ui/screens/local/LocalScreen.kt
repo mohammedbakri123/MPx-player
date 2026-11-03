@@ -20,7 +20,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.mpx.player.ui.components.FastScrollbar
+import com.mpx.player.ui.components.GridFastScrollbar
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
@@ -373,49 +377,81 @@ fun LocalScreen(
                     }
                 }
 
-                // Folder list / grid
+                // Folder list / grid with smooth LazyColumn/LazyGrid, stable keys and fast scrollbar
                 if (viewMode == ViewMode.LIST) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 80.dp),
-                    ) {
-                        items(sortedFolders, key = { it.id }) { folder ->
-                            FolderItemRow(
-                                folder = folder,
-                                onClick = {
-                                playbackManager?.playVideoQueue()
-                                onOpenPlayer()
-                            },
-                                onMenuClick = {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Folder options for ${folder.name}")
-                                    }
-                                },
-                            )
-                            HorizontalDivider(
-                                modifier = Modifier.padding(start = 76.dp),
-                                color = MpxBorder,
-                                thickness = 0.5.dp,
-                            )
+                    val listState = rememberLazyListState()
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 80.dp),
+                        ) {
+                            items(
+                                items = sortedFolders,
+                                key = { it.id.ifBlank { it.path } },
+                                contentType = { "folder_item_row" },
+                            ) { folder ->
+                                FolderItemRow(
+                                    folder = folder,
+                                    onClick = {
+                                        playbackManager?.playVideoQueue()
+                                        onOpenPlayer()
+                                    },
+                                    onMenuClick = {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Folder options for ${folder.name}")
+                                        }
+                                    },
+                                )
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(start = 84.dp),
+                                    color = MpxBorder,
+                                    thickness = 0.5.dp,
+                                )
+                            }
                         }
+                        FastScrollbar(
+                            listState = listState,
+                            itemCount = sortedFolders.size,
+                            getSectionText = { index ->
+                                sortedFolders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+                            },
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                        )
                     }
                 } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(sortedFolders, key = { it.id }) { folder ->
-                            FolderItemGridCard(
-                                folder = folder,
-                                onClick = {
-                                playbackManager?.playVideoQueue()
-                                onOpenPlayer()
-                            },
-                            )
+                    val gridState = rememberLazyGridState()
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        LazyVerticalGrid(
+                            state = gridState,
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            items(
+                                items = sortedFolders,
+                                key = { it.id.ifBlank { it.path } },
+                                contentType = { "folder_item_grid" },
+                            ) { folder ->
+                                FolderItemGridCard(
+                                    folder = folder,
+                                    onClick = {
+                                        playbackManager?.playVideoQueue()
+                                        onOpenPlayer()
+                                    },
+                                )
+                            }
                         }
+                        GridFastScrollbar(
+                            gridState = gridState,
+                            itemCount = sortedFolders.size,
+                            getSectionText = { index ->
+                                sortedFolders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+                            },
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                        )
                     }
                 }
             }

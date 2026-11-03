@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,9 +32,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.domain.model.MediaFolder
+import com.mpx.player.ui.components.AsyncFolderThumbnail
 import com.mpx.player.ui.theme.MpxAccentAmber
-import com.mpx.player.ui.theme.MpxBorder
-import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextMuted
@@ -51,23 +50,22 @@ fun FolderItemRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Folder Icon Container (MX-inspired high-contrast tile)
+        // Real MediaStore folder thumbnail with honest vector fallback and caching
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(52.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(MpxSurfaceElevated),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = Icons.Filled.Folder,
-                contentDescription = null,
-                tint = MpxPrimary,
-                modifier = Modifier.size(28.dp),
+            AsyncFolderThumbnail(
+                folder = folder,
+                modifier = Modifier.fillMaxSize(),
+                iconSize = 28.dp,
             )
         }
 
@@ -123,11 +121,11 @@ fun FolderItemRow(
 
         IconButton(
             onClick = onMenuClick,
-            modifier = Modifier.size(36.dp),
+            modifier = Modifier.size(48.dp), // 48dp Android touch target standard
         ) {
             Icon(
                 imageVector = Icons.Filled.MoreVert,
-                contentDescription = "Folder options",
+                contentDescription = "Folder options for ${folder.name}",
                 tint = MpxTextMuted,
                 modifier = Modifier.size(20.dp),
             )
@@ -144,7 +142,7 @@ fun FolderItemGridCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
     ) {
@@ -154,16 +152,15 @@ fun FolderItemGridCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .height(96.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MpxSurfaceElevated),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Folder,
-                    contentDescription = null,
-                    tint = MpxPrimary,
-                    modifier = Modifier.size(40.dp),
+                AsyncFolderThumbnail(
+                    folder = folder,
+                    modifier = Modifier.fillMaxSize(),
+                    iconSize = 40.dp,
                 )
                 if (folder.isNew) {
                     Box(
