@@ -12,4 +12,5 @@ data class MediaFolder(
     val totalSizeFormatted: String,
     val isNew: Boolean = false,
     val lastModified: Long = 0L,
+    val isStorageRemovable: Boolean = false,
 )

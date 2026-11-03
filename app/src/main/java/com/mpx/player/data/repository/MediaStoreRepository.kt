@@ -1,6 +1,10 @@
 package com.mpx.player.data.repository
 
+import android.content.ContentUris
 import android.content.Context
+import android.net.Uri
+import android.os.Build
+import android.os.storage.StorageManager
 import android.provider.MediaStore
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
@@ -17,10 +21,125 @@ import java.util.Locale
  * Real repository backed by the Android MediaStore content provider.
  * Scans video folders with actual video counts and aggregate byte sizes,
  * and audio tracks with accurate title, artist, album, and duration metadata.
+ *
+ * Fully supports multi-volume scanning across both primary internal storage
+ * and removable external storage (SD cards, USB OTG) using volume-specific
+ * MediaStore content URIs ([MediaStore.getExternalVolumeNames]).
  */
 class MediaStoreRepository(
     private val context: Context,
 ) : MediaRepository {
+
+    /**
+     * Resolves all active external storage volume names available on the device.
+     * On Android 10+ (API 29+), includes [MediaStore.VOLUME_EXTERNAL_PRIMARY] and
+     * unique volume UUIDs of mounted removable SD cards or USB OTG drives.
+     * On Android 11+ (API 30+), also inspects [StorageManager.getStorageVolumes]
+     * to guarantee all mounted volumes known to the system are covered.
+     */
+    fun getExternalVolumeNames(): Set<String> {
+        val volumeNames = LinkedHashSet<String>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                volumeNames.addAll(MediaStore.getExternalVolumeNames(context))
+            } catch (_: Exception) {
+                // MediaStore provider may throw on early boot or restricted sandbox
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as? StorageManager
+                storageManager?.storageVolumes?.forEach { volume ->
+                    volume.mediaStoreVolumeName?.let { volumeNames.add(it) }
+                }
+            } catch (_: Exception) {
+                // Storage service access fallback
+            }
+        }
+        return volumeNames
+    }
+
+    /**
+     * Builds list of [Uri]s for querying video content across all external storage volumes.
+     * Falls back to [MediaStore.Video.Media.EXTERNAL_CONTENT_URI] on API < 29 or when
+     * volume discovery returns empty.
+     */
+    fun getVideoContentUris(): List<Uri> {
+        val volumeNames = getExternalVolumeNames()
+        if (volumeNames.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val uris = mutableListOf<Uri>()
+            for (name in volumeNames) {
+                try {
+                    uris.add(MediaStore.Video.Media.getContentUri(name))
+                } catch (_: Exception) {}
+            }
+            if (uris.isNotEmpty()) return uris
+        }
+        return listOf(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+    }
+
+    /**
+     * Builds list of [Uri]s for querying audio content across all external storage volumes.
+     * Falls back to [MediaStore.Audio.Media.EXTERNAL_CONTENT_URI] on API < 29 or when
+     * volume discovery returns empty.
+     */
+    fun getAudioContentUris(): List<Uri> {
+        val volumeNames = getExternalVolumeNames()
+        if (volumeNames.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val uris = mutableListOf<Uri>()
+            for (name in volumeNames) {
+                try {
+                    uris.add(MediaStore.Audio.Media.getContentUri(name))
+                } catch (_: Exception) {}
+            }
+            if (uris.isNotEmpty()) return uris
+        }
+        return listOf(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+    }
+
+    /**
+     * Builds list of [Uri]s for querying playlists across all external storage volumes.
+     */
+    fun getPlaylistContentUris(): List<Uri> {
+        val volumeNames = getExternalVolumeNames()
+        if (volumeNames.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val uris = mutableListOf<Uri>()
+            for (name in volumeNames) {
+                try {
+                    uris.add(MediaStore.Audio.Playlists.getContentUri(name))
+                } catch (_: Exception) {}
+            }
+            if (uris.isNotEmpty()) return uris
+        }
+        return listOf(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI)
+    }
+
+    /**
+     * Returns true if the path points to secondary/removable storage (e.g. physical SD card).
+     */
+    fun isRemovablePath(path: String): Boolean {
+        if (path.isBlank()) return false
+        // Primary emulated internal storage is /storage/emulated/0
+        // Removable SD cards are typically mounted under /storage/XXXX-XXXX or /mnt/media_rw/XXXX-XXXX
+        if (path.startsWith("/storage/emulated/")) return false
+        if (path.startsWith("/storage/") || path.startsWith("/mnt/media_rw/")) return true
+
+        try {
+            val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as? StorageManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                storageManager?.storageVolumes?.forEach { volume ->
+                    if (volume.isRemovable) {
+                        val uuid = volume.uuid
+                        if (!uuid.isNullOrBlank() && path.contains(uuid, ignoreCase = true)) {
+                            return true
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+
+        return false
+    }
 
     override fun getMediaFolders(): List<MediaFolder> {
         val folderMap = mutableMapOf<String, FolderAccumulator>()
@@ -34,64 +153,72 @@ class MediaStoreRepository(
             MediaStore.Video.Media.DATE_ADDED,
         )
 
-        try {
-            context.contentResolver.query(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                null,
-                null,
-                "${MediaStore.Video.Media.DATE_MODIFIED} DESC",
-            )?.use { cursor ->
-                val bucketIdCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_ID)
-                val bucketNameCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
-                val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
-                val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
-                val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
-                val dateAddedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED)
+        val sevenDaysAgoSec = (System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000L) / 1000L
+        val uris = getVideoContentUris()
 
-                val sevenDaysAgoSec = (System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000L) / 1000L
+        for (uri in uris) {
+            try {
+                context.contentResolver.query(
+                    uri,
+                    projection,
+                    null,
+                    null,
+                    "${MediaStore.Video.Media.DATE_MODIFIED} DESC",
+                )?.use { cursor ->
+                    val bucketIdCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_ID)
+                    val bucketNameCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
+                    val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
+                    val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
+                    val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
+                    val dateAddedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED)
 
-                while (cursor.moveToNext()) {
-                    val dataPath = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
-                    val parentFile = if (dataPath.isNotBlank()) File(dataPath).parentFile else null
-                    val parentPath = parentFile?.absolutePath.orEmpty()
+                    while (cursor.moveToNext()) {
+                        val dataPath = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
+                        val parentFile = if (dataPath.isNotBlank()) File(dataPath).parentFile else null
+                        val parentPath = parentFile?.absolutePath.orEmpty()
 
-                    val rawBucketId = if (bucketIdCol >= 0) cursor.getString(bucketIdCol) else null
-                    val bucketId = rawBucketId?.ifBlank { null }
-                        ?: parentPath.ifBlank { "unknown" }.hashCode().toString()
+                        val rawBucketId = if (bucketIdCol >= 0) cursor.getString(bucketIdCol) else null
+                        val bucketId = rawBucketId?.ifBlank { null }
+                            ?: parentPath.ifBlank { "unknown" }.hashCode().toString()
 
-                    val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
-                    val folderName = rawBucketName?.ifBlank { null }
-                        ?: parentFile?.name?.ifBlank { "Videos" }
-                        ?: "Videos"
+                        val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
+                        val folderName = rawBucketName?.ifBlank { null }
+                            ?: parentFile?.name?.ifBlank { "Videos" }
+                            ?: "Videos"
 
-                    val size = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
-                    val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
-                    val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
+                        val size = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
+                        val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
+                        val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
 
-                    val isRecent = dateAdded > sevenDaysAgoSec || dateModified > sevenDaysAgoSec
+                        val isRecent = dateAdded > sevenDaysAgoSec || dateModified > sevenDaysAgoSec
+                        val isRemovable = isRemovablePath(dataPath.ifBlank { parentPath })
 
-                    val acc = folderMap.getOrPut(bucketId) {
-                        FolderAccumulator(
-                            id = bucketId,
-                            name = folderName,
-                            path = parentPath,
-                        )
-                    }
-                    acc.count += 1
-                    acc.totalSizeBytes += size
-                    if (dateModified > acc.lastModified) {
-                        acc.lastModified = dateModified
-                    }
-                    if (isRecent) {
-                        acc.isNew = true
+                        val acc = folderMap.getOrPut(bucketId) {
+                            FolderAccumulator(
+                                id = bucketId,
+                                name = folderName,
+                                path = parentPath,
+                                isRemovable = isRemovable,
+                            )
+                        }
+                        acc.count += 1
+                        acc.totalSizeBytes += size
+                        if (dateModified > acc.lastModified) {
+                            acc.lastModified = dateModified
+                        }
+                        if (isRecent) {
+                            acc.isNew = true
+                        }
+                        if (isRemovable) {
+                            acc.isRemovable = true
+                        }
                     }
                 }
+            } catch (_: SecurityException) {
+                // Skip volume if permission error
+            } catch (_: Exception) {
+                // Skip volume if query fails
             }
-        } catch (_: SecurityException) {
-            return emptyList()
-        } catch (_: Exception) {
-            return emptyList()
         }
 
         return folderMap.values.map { acc ->
@@ -103,54 +230,69 @@ class MediaStoreRepository(
                 totalSizeFormatted = formatSize(acc.totalSizeBytes),
                 isNew = acc.isNew,
                 lastModified = acc.lastModified,
+                isStorageRemovable = acc.isRemovable,
             )
         }.sortedBy { it.name.lowercase(Locale.US) }
     }
 
     override fun getVideosInFolder(bucketId: String): List<VideoFile> {
         val videos = mutableListOf<VideoFile>()
+        val seenPaths = mutableSetOf<String>()
         val projection = arrayOf(
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.TITLE,
             MediaStore.Video.Media.DATA,
             MediaStore.Video.Media.DURATION,
         )
-        try {
-            context.contentResolver.query(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                "${MediaStore.Video.Media.BUCKET_ID} = ?",
-                arrayOf(bucketId),
-                "${MediaStore.Video.Media.TITLE} COLLATE NOCASE ASC",
-            )?.use { cursor ->
-                val idCol = cursor.getColumnIndex(MediaStore.Video.Media._ID)
-                val titleCol = cursor.getColumnIndex(MediaStore.Video.Media.TITLE)
-                val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
-                val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
-                while (cursor.moveToNext()) {
-                    val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
-                    if (path.isBlank()) continue
-                    val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
-                    videos.add(
-                        VideoFile(
-                            id = if (idCol >= 0) cursor.getLong(idCol).toString() else path,
-                            title = rawTitle?.ifBlank { File(path).name } ?: File(path).name,
-                            path = path,
-                            durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L,
+        val uris = getVideoContentUris()
+        for (uri in uris) {
+            try {
+                context.contentResolver.query(
+                    uri,
+                    projection,
+                    "${MediaStore.Video.Media.BUCKET_ID} = ?",
+                    arrayOf(bucketId),
+                    "${MediaStore.Video.Media.TITLE} COLLATE NOCASE ASC",
+                )?.use { cursor ->
+                    val idCol = cursor.getColumnIndex(MediaStore.Video.Media._ID)
+                    val titleCol = cursor.getColumnIndex(MediaStore.Video.Media.TITLE)
+                    val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
+                    val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
+                    while (cursor.moveToNext()) {
+                        val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
+                        if (path.isNotBlank() && !seenPaths.add(path)) continue
+                        val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
+                        val rawId = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
+                        val id = rawId.ifBlank { path }
+                        val effectivePath = path.ifBlank {
+                            if (idCol >= 0) {
+                                ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
+                            } else ""
+                        }
+                        videos.add(
+                            VideoFile(
+                                id = id,
+                                title = rawTitle?.ifBlank {
+                                    if (path.isNotBlank()) File(path).name else "Video"
+                                } ?: if (path.isNotBlank()) File(path).name else "Video",
+                                path = effectivePath,
+                                durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L,
+                            )
                         )
-                    )
+                    }
                 }
+            } catch (_: SecurityException) {
+                // Continue to next volume
+            } catch (_: Exception) {
+                // Continue to next volume
             }
-        } catch (_: SecurityException) {
-            return emptyList()
-        } catch (_: Exception) {
-            return emptyList()
         }
-        return videos
+        return videos.sortedBy { it.title.lowercase(Locale.US) }
     }
 
     override fun getAudioTracks(): List<AudioTrack> {
         val tracks = mutableListOf<AudioTrack>()
+        val seenPaths = mutableSetOf<String>()
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
@@ -160,63 +302,73 @@ class MediaStoreRepository(
             MediaStore.Audio.Media.DATA,
         )
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+        val uris = getAudioContentUris()
 
-        try {
-            context.contentResolver.query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                selection,
-                null,
-                "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC",
-            )?.use { cursor ->
-                val idCol = cursor.getColumnIndex(MediaStore.Audio.Media._ID)
-                val titleCol = cursor.getColumnIndex(MediaStore.Audio.Media.TITLE)
-                val artistCol = cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST)
-                val albumCol = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM)
-                val durationCol = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION)
-                val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+        for (uri in uris) {
+            try {
+                context.contentResolver.query(
+                    uri,
+                    projection,
+                    selection,
+                    null,
+                    "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC",
+                )?.use { cursor ->
+                    val idCol = cursor.getColumnIndex(MediaStore.Audio.Media._ID)
+                    val titleCol = cursor.getColumnIndex(MediaStore.Audio.Media.TITLE)
+                    val artistCol = cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST)
+                    val albumCol = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM)
+                    val durationCol = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION)
+                    val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
 
-                while (cursor.moveToNext()) {
-                    val id = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
-                    val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
-                    val title = rawTitle?.ifBlank { "Unknown Track" } ?: "Unknown Track"
+                    while (cursor.moveToNext()) {
+                        val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
+                        if (path.isNotBlank() && !seenPaths.add(path)) continue
 
-                    val rawArtist = if (artistCol >= 0) cursor.getString(artistCol) else null
-                    val artist = if (rawArtist.isNullOrBlank() || rawArtist == "<unknown>") {
-                        "Unknown Artist"
-                    } else {
-                        rawArtist
-                    }
+                        val id = if (idCol >= 0) cursor.getLong(idCol).toString() else path
+                        val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
+                        val title = rawTitle?.ifBlank { "Unknown Track" } ?: "Unknown Track"
 
-                    val rawAlbum = if (albumCol >= 0) cursor.getString(albumCol) else null
-                    val album = if (rawAlbum.isNullOrBlank() || rawAlbum == "<unknown>") {
-                        "Unknown Album"
-                    } else {
-                        rawAlbum
-                    }
+                        val rawArtist = if (artistCol >= 0) cursor.getString(artistCol) else null
+                        val artist = if (rawArtist.isNullOrBlank() || rawArtist == "<unknown>") {
+                            "Unknown Artist"
+                        } else {
+                            rawArtist
+                        }
 
-                    val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
-                    val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
+                        val rawAlbum = if (albumCol >= 0) cursor.getString(albumCol) else null
+                        val album = if (rawAlbum.isNullOrBlank() || rawAlbum == "<unknown>") {
+                            "Unknown Album"
+                        } else {
+                            rawAlbum
+                        }
 
-                    tracks.add(
-                        AudioTrack(
-                            id = id,
-                            title = title,
-                            artist = artist,
-                            album = album,
-                            durationFormatted = formatDuration(durationMs),
-                            path = path,
+                        val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
+                        val effectivePath = path.ifBlank {
+                            if (idCol >= 0) {
+                                ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
+                            } else ""
+                        }
+
+                        tracks.add(
+                            AudioTrack(
+                                id = id,
+                                title = title,
+                                artist = artist,
+                                album = album,
+                                durationFormatted = formatDuration(durationMs),
+                                path = effectivePath,
+                            )
                         )
-                    )
+                    }
                 }
+            } catch (_: SecurityException) {
+                // Continue to next volume
+            } catch (_: Exception) {
+                // Continue to next volume
             }
-        } catch (_: SecurityException) {
-            return emptyList()
-        } catch (_: Exception) {
-            return emptyList()
         }
 
-        return tracks
+        return tracks.sortedBy { it.title.lowercase(Locale.US) }
     }
 
     override fun getAudioAlbums(): List<AudioAlbum> {
@@ -265,41 +417,48 @@ class MediaStoreRepository(
                 name = name,
                 path = path,
                 trackCount = folderTracks.size,
+                isStorageRemovable = isRemovablePath(path),
             )
         }.sortedBy { it.name.lowercase(Locale.US) }
     }
 
     override fun getPlaylists(): List<Playlist> {
         val playlists = mutableListOf<Playlist>()
-        try {
-            val projection = arrayOf(
-                MediaStore.Audio.Playlists._ID,
-                MediaStore.Audio.Playlists.NAME,
-            )
-            context.contentResolver.query(
-                MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-                projection,
-                null,
-                null,
-                "${MediaStore.Audio.Playlists.NAME} ASC",
-            )?.use { cursor ->
-                val idCol = cursor.getColumnIndex(MediaStore.Audio.Playlists._ID)
-                val nameCol = cursor.getColumnIndex(MediaStore.Audio.Playlists.NAME)
-                while (cursor.moveToNext()) {
-                    val id = cursor.getLong(idCol).toString()
-                    val name = cursor.getString(nameCol) ?: "Playlist"
-                    playlists.add(
-                        Playlist(
-                            id = id,
-                            title = name,
-                            itemCount = 0,
-                            subtitle = "Device Playlist",
-                        )
-                    )
+        val seenNames = mutableSetOf<String>()
+        val projection = arrayOf(
+            MediaStore.Audio.Playlists._ID,
+            MediaStore.Audio.Playlists.NAME,
+        )
+        val uris = getPlaylistContentUris()
+        for (uri in uris) {
+            try {
+                context.contentResolver.query(
+                    uri,
+                    projection,
+                    null,
+                    null,
+                    "${MediaStore.Audio.Playlists.NAME} ASC",
+                )?.use { cursor ->
+                    val idCol = cursor.getColumnIndex(MediaStore.Audio.Playlists._ID)
+                    val nameCol = cursor.getColumnIndex(MediaStore.Audio.Playlists.NAME)
+                    while (cursor.moveToNext()) {
+                        val id = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
+                        val name = if (nameCol >= 0) cursor.getString(nameCol) ?: "Playlist" else "Playlist"
+                        if (seenNames.add(name)) {
+                            playlists.add(
+                                Playlist(
+                                    id = id,
+                                    title = name,
+                                    itemCount = 0,
+                                    subtitle = "Device Playlist",
+                                )
+                            )
+                        }
+                    }
                 }
+            } catch (_: Exception) {
+                // Playlists may be restricted or unsupported on newer Android targets
             }
-        } catch (_: Exception) {
-            // Playlists may be restricted or unsupported on newer Android targets
         }
         return playlists
     }
@@ -334,6 +493,7 @@ class MediaStoreRepository(
         val id: String,
         val name: String,
         val path: String,
+        var isRemovable: Boolean = false,
     ) {
         var count: Int = 0
         var totalSizeBytes: Long = 0L
