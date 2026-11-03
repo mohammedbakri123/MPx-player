@@ -12,6 +12,7 @@ data class AppSettings(
     val backgroundPlay: Boolean = false,
     val gesturesEnabled: Boolean = true,
     val decoderMode: String = "HW", // HW, HW+, SW
+    val playerEngine: String = "MEDIA3", // MEDIA3, MPV
     val audioBoost: Boolean = false,
     val subtitleSize: String = "Normal", // Small, Normal, Large
     val subtitleStyle: String = "White", // White, Yellow, Cyan, Default
