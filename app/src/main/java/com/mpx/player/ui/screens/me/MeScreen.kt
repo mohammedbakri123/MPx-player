@@ -1094,7 +1094,7 @@ private fun PreferenceRow(
 // --- DIALOG IMPLEMENTATIONS ---
 
 /**
- * Real Network Stream player dialog allowing direct stream input and sample playback.
+ * Real Network Stream player dialog allowing direct stream input.
  */
 @Composable
 private fun NetworkStreamDialog(
@@ -1156,25 +1156,6 @@ private fun NetworkStreamDialog(
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                     ),
                 )
-                Spacer(Modifier.height(12.dp))
-                Text(stringResource(R.string.dialog_network_samples), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(6.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { urlText = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                    ) {
-                        Text("Big Buck Bunny", fontSize = 11.sp, maxLines = 1, color = MaterialTheme.colorScheme.primary)
-                    }
-                    OutlinedButton(
-                        onClick = { urlText = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" },
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                    ) {
-                        Text("Elephants Dream", fontSize = 11.sp, maxLines = 1, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
             }
         },
         confirmButton = {

@@ -1102,17 +1102,7 @@ private fun MusicTabDialogToggleRow(
     }
 }
 
-private fun getPlayableUri(track: AudioTrack): String {
-    return if (track.path.isNotBlank()) {
-        track.path
-    } else {
-        when (track.id) {
-            "1" -> "asset:///media/midnight_drive.mp3"
-            "2" -> "asset:///media/electric_echoes.mp3"
-            else -> "asset:///media/sample_video.mp4"
-        }
-    }
-}
+private fun getPlayableUri(track: AudioTrack): String = track.path
 
 @Composable
 private fun TracksTabContent(
