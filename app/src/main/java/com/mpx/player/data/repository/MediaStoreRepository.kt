@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.provider.MediaStore
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioFolder
@@ -118,6 +119,24 @@ class MediaStoreRepository(
     /**
      * Returns true if the path points to secondary/removable storage (e.g. physical SD card).
      */
+    /**
+     * "Show hidden files" setting, read fresh per scan so a toggle change in
+     * Settings applies to the next library refresh. Falls back to hiding
+     * hidden files if settings cannot be read.
+     */
+    private fun showHiddenFiles(): Boolean = try {
+        SharedPrefsAppSettingsRepository(context).load().showHiddenFiles
+    } catch (_: Exception) {
+        false
+    }
+
+    /** A file or folder counts as hidden when its own name or any parent
+     * directory name starts with '.'. System cache directories
+     * (/Android/data, /Android/obb) are excluded separately and always. */
+    private fun isHiddenPath(path: String, title: String = ""): Boolean =
+        title.startsWith(".") ||
+            path.split(File.separatorChar).any { it.startsWith(".") }
+
     fun isRemovablePath(path: String): Boolean {
         if (path.isBlank()) return false
         // Primary emulated internal storage is /storage/emulated/0
@@ -346,15 +365,20 @@ class MediaStoreRepository(
             }
         }
 
+        val showHidden = showHiddenFiles()
         val foldersToDisplay = if (showAllFolders) {
-            folderMap.values
+            // "Show all" still honours the hidden-files toggle: hidden folders
+            // only appear when the user asked to see hidden files.
+            folderMap.values.filter { acc ->
+                showHidden || !isHiddenPath(acc.path, acc.name)
+            }
         } else {
             // Keep current filtered view: only folders containing videos, excluding
-            // hidden folders (starting with '.') and internal system cache directories
+            // hidden folders (unless the toggle is on) and internal system cache
+            // directories (always excluded).
             folderMap.values.filter { acc ->
                 acc.count > 0 &&
-                !acc.name.startsWith(".") &&
-                !acc.path.split(File.separatorChar).any { it.startsWith(".") } &&
+                (showHidden || !isHiddenPath(acc.path, acc.name)) &&
                 !acc.path.contains("/Android/data") &&
                 !acc.path.contains("/Android/obb")
             }
@@ -375,6 +399,7 @@ class MediaStoreRepository(
     }
 
     override fun getVideosInFolder(bucketId: String): List<VideoFile> {
+        val showHidden = showHiddenFiles()
         val videos = mutableListOf<VideoFile>()
         val seenPaths = mutableSetOf<String>()
         val sevenDaysAgoSec = (System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000L) / 1000L
@@ -414,6 +439,7 @@ class MediaStoreRepository(
                         val title = rawTitle?.ifBlank { null }
                             ?: file?.name?.ifBlank { "Video" }
                             ?: "Video"
+                        if (!showHidden && isHiddenPath(path, title)) continue
                         val rawId = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
                         val id = rawId.ifBlank { path }
                         val effectivePath = path.ifBlank {
@@ -461,6 +487,7 @@ class MediaStoreRepository(
 
     override fun getAllVideos(showAll: Boolean): List<VideoFile> {
         val videos = mutableListOf<VideoFile>()
+        val showHidden = showHiddenFiles()
         val seenPaths = mutableSetOf<String>()
         val projection = arrayOf(
             MediaStore.Video.Media._ID,
@@ -504,10 +531,11 @@ class MediaStoreRepository(
                             ?: file?.name?.ifBlank { "Video" }
                             ?: "Video"
 
-                        // Filter hidden files if showAll is false
+                        // Filter hidden files if showAll is false and the
+                        // user has not enabled "Show hidden files". System
+                        // cache directories stay excluded regardless.
                         if (!showAll) {
-                            if (title.startsWith(".") ||
-                                path.split(File.separatorChar).any { it.startsWith(".") } ||
+                            if ((isHiddenPath(path, title) && !showHidden) ||
                                 path.contains("/Android/data") ||
                                 path.contains("/Android/obb")
                             ) {
@@ -569,6 +597,7 @@ class MediaStoreRepository(
 
     override fun getAudioTracks(): List<AudioTrack> {
         val tracks = mutableListOf<AudioTrack>()
+        val showHidden = showHiddenFiles()
         val seenPaths = mutableSetOf<String>()
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
@@ -604,6 +633,7 @@ class MediaStoreRepository(
                         val id = if (idCol >= 0) cursor.getLong(idCol).toString() else path
                         val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
                         val title = rawTitle?.ifBlank { "Unknown Track" } ?: "Unknown Track"
+                        if (!showHidden && isHiddenPath(path, title)) continue
 
                         val rawArtist = if (artistCol >= 0) cursor.getString(artistCol) else null
                         val artist = if (rawArtist.isNullOrBlank() || rawArtist == "<unknown>") {

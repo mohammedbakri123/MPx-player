@@ -49,12 +49,13 @@ fun AsyncThumbnail(
     modifier: Modifier = Modifier,
     iconSize: Dp = 26.dp,
     contentDescription: String? = null,
+    showThumbnails: Boolean = true,
 ) {
     val cachedBitmap = remember(cacheKey) { ThumbnailLoader.getCached(cacheKey) }
     var bitmap by remember(cacheKey) { mutableStateOf(cachedBitmap) }
 
-    LaunchedEffect(cacheKey) {
-        if (cachedBitmap == null) {
+    LaunchedEffect(cacheKey, showThumbnails) {
+        if (showThumbnails && cachedBitmap == null) {
             val loaded = withContext(Dispatchers.IO) {
                 loadBitmap()
             }
@@ -64,8 +65,11 @@ fun AsyncThumbnail(
         }
     }
 
+    // With thumbnails off, always show the honest placeholder icon, even for
+    // media whose thumbnail is already in the in-memory cache.
+    val displayBitmap = if (showThumbnails) bitmap else null
     Crossfade(
-        targetState = bitmap,
+        targetState = displayBitmap,
         animationSpec = tween(durationMillis = 180),
         label = "thumbnailCrossfade",
         modifier = modifier,
@@ -100,6 +104,7 @@ fun AsyncFolderThumbnail(
     folder: MediaFolder,
     modifier: Modifier = Modifier,
     iconSize: Dp = 28.dp,
+    showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
     val cacheKey = "folder_${folder.id.ifBlank { folder.path }}"
@@ -119,6 +124,7 @@ fun AsyncFolderThumbnail(
         modifier = modifier,
         iconSize = iconSize,
         contentDescription = "Folder ${folder.name}",
+        showThumbnails = showThumbnails,
     )
 }
 
@@ -127,6 +133,7 @@ fun AsyncAudioTrackThumbnail(
     track: AudioTrack,
     modifier: Modifier = Modifier,
     iconSize: Dp = 24.dp,
+    showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
     val cacheKey = "audio_track_${track.id.ifBlank { track.path }}"
@@ -146,6 +153,7 @@ fun AsyncAudioTrackThumbnail(
         modifier = modifier,
         iconSize = iconSize,
         contentDescription = "Track ${track.title}",
+        showThumbnails = showThumbnails,
     )
 }
 
@@ -154,6 +162,7 @@ fun AsyncAlbumThumbnail(
     album: AudioAlbum,
     modifier: Modifier = Modifier,
     iconSize: Dp = 44.dp,
+    showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
     val cacheKey = "album_${album.title}"
@@ -172,6 +181,7 @@ fun AsyncAlbumThumbnail(
         modifier = modifier,
         iconSize = iconSize,
         contentDescription = "Album ${album.title}",
+        showThumbnails = showThumbnails,
     )
 }
 
@@ -180,6 +190,7 @@ fun AsyncVideoThumbnail(
     video: VideoFile,
     modifier: Modifier = Modifier,
     iconSize: Dp = 28.dp,
+    showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
     val cacheKey = "video_${video.id.ifBlank { video.path }}"
@@ -200,6 +211,7 @@ fun AsyncVideoThumbnail(
         modifier = modifier,
         iconSize = iconSize,
         contentDescription = "Video ${video.title}",
+        showThumbnails = showThumbnails,
     )
 }
 
@@ -210,6 +222,7 @@ fun AsyncVideoThumbnail(
     title: String = "",
     modifier: Modifier = Modifier,
     iconSize: Dp = 28.dp,
+    showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
     val cacheKey = "video_${mediaId.ifBlank { mediaUri }}"
@@ -230,5 +243,6 @@ fun AsyncVideoThumbnail(
         modifier = modifier,
         iconSize = iconSize,
         contentDescription = if (title.isNotBlank()) "Video $title" else null,
+        showThumbnails = showThumbnails,
     )
 }

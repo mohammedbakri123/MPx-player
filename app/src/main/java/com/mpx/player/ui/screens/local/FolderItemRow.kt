@@ -54,6 +54,7 @@ fun FolderItemRow(
     showCount: Boolean = true,
     showSize: Boolean = true,
     showDate: Boolean = false,
+    showThumbnails: Boolean = true,
     onClick: () -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -78,6 +79,7 @@ fun FolderItemRow(
                 folder = folder,
                 modifier = Modifier.fillMaxSize(),
                 iconSize = 28.dp,
+                showThumbnails = showThumbnails,
             )
         }
 
@@ -182,6 +184,7 @@ fun FolderItemGridCard(
     showCount: Boolean = true,
     showSize: Boolean = true,
     showDate: Boolean = false,
+    showThumbnails: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -209,6 +212,7 @@ fun FolderItemGridCard(
                     folder = folder,
                     modifier = Modifier.fillMaxSize(),
                     iconSize = 40.dp,
+                    showThumbnails = showThumbnails,
                 )
                 if (folder.isStorageRemovable) {
                     Box(

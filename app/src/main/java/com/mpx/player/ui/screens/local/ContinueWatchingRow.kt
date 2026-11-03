@@ -68,6 +68,7 @@ fun ContinueWatchingRow(
     items: List<ContinueWatchingItem>,
     onItemClick: (ContinueWatchingItem) -> Unit,
     onDismissItem: (ContinueWatchingItem) -> Unit,
+    showThumbnails: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     if (items.isEmpty()) return
@@ -122,6 +123,7 @@ fun ContinueWatchingRow(
                     item = item,
                     onClick = { onItemClick(item) },
                     onDismiss = { onDismissItem(item) },
+                    showThumbnails = showThumbnails,
                 )
             }
         }
@@ -133,6 +135,7 @@ fun ContinueWatchingCard(
     item: ContinueWatchingItem,
     onClick: () -> Unit,
     onDismiss: () -> Unit,
+    showThumbnails: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -156,6 +159,7 @@ fun ContinueWatchingCard(
                 title = item.title,
                 modifier = Modifier.fillMaxSize(),
                 iconSize = 26.dp,
+                showThumbnails = showThumbnails,
             )
 
             // Centered subtle play icon overlay

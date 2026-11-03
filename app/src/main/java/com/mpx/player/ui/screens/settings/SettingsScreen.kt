@@ -168,7 +168,6 @@ fun SettingsScreen(
         SettingCategory("list", stringResource(R.string.settings_category_list), stringResource(R.string.settings_category_list_sub), Icons.AutoMirrored.Filled.FormatListBulleted),
         SettingCategory("player", stringResource(R.string.settings_category_player), stringResource(R.string.settings_category_player_sub), Icons.Filled.PlayCircleOutline),
         SettingCategory("decoder", stringResource(R.string.settings_category_decoder), stringResource(R.string.settings_category_decoder_sub), Icons.Filled.Memory),
-        SettingCategory("audio", stringResource(R.string.settings_category_audio), stringResource(R.string.settings_category_audio_sub), Icons.AutoMirrored.Filled.VolumeUp),
         SettingCategory("subtitle", stringResource(R.string.settings_category_subtitle), stringResource(R.string.settings_category_subtitle_sub), Icons.Filled.Subtitles),
         SettingCategory("general", stringResource(R.string.settings_category_general), stringResource(R.string.settings_category_general_sub), Icons.Filled.Tune),
         SettingCategory("development", stringResource(R.string.settings_category_development), stringResource(R.string.settings_category_development_sub), Icons.Filled.DeveloperMode),
@@ -466,9 +465,6 @@ fun SettingsScreen(
                                         stringResource(R.string.decoder_explanation),
                                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
-                                }
-                                "audio" -> {
-                                    ToggleRow(stringResource(R.string.audio_volume_boost), settings.audioBoost) { update(settings.copy(audioBoost = it)) }
                                 }
                                 "subtitle" -> {
                                     Text(stringResource(R.string.subtitle_size_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)

@@ -407,7 +407,7 @@ fun PlayerScreen(
                         }
                     },
                     onDoubleTap = { offset ->
-                        if (!state.isLocked) {
+                        if (!state.isLocked && realSettingsRepo.load().gesturesEnabled) {
                             val oneThird = size.width / 3f
                             val twoThirds = size.width * (2f / 3f)
                             when {
@@ -520,7 +520,10 @@ fun PlayerScreen(
                         }
                         currentDragMode = DragGestureMode.NONE
                     },
-                    onDrag = { change, dragAmount ->
+                    onDrag = drag@{ change, dragAmount ->
+                        // Gestures toggle off: ignore drags entirely (do not even
+                        // consume the change, so taps still reach the tap handler).
+                        if (!realSettingsRepo.load().gesturesEnabled) return@drag
                         change.consume()
                         totalDragX += dragAmount.x
                         totalDragY += dragAmount.y
@@ -1264,8 +1267,9 @@ fun PlayerScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        // Gesture hint banner
-                        if (showGestureHint) {
+                        // Gesture hint banner (hidden when gestures are off,
+                        // since the legend would describe disabled controls)
+                        if (showGestureHint && realSettingsRepo.load().gesturesEnabled) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

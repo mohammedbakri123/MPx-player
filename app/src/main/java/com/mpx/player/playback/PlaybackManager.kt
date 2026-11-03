@@ -109,7 +109,8 @@ class PlaybackManager private constructor(context: Context) {
             val current = currentQueue.getOrNull(index)
 
             val savedPos = current?.let { resumeManager.getResumePosition(it.id) }
-            val shouldResume = isAuto && savedPos != null && savedPos > 2_000L
+            val shouldResume = settingsRepository.load().resumePlayback &&
+                isAuto && savedPos != null && savedPos > 2_000L
 
             if (shouldResume && savedPos != null) {
                 engine.seekTo(savedPos)
@@ -385,22 +386,31 @@ class PlaybackManager private constructor(context: Context) {
 
     /**
      * Loads a single media item with optional resume position and begins playback.
+     * An explicit [resumeMs] is a direct user request (e.g. tapping a Continue
+     * Watching card), so it bypasses the automatic-resume toggle; plain queue
+     * playback still honours the resumePlayback setting.
      */
     fun load(media: PlayableMedia, resumeMs: Long = 0L) {
         if (resumeMs > 0L) {
             resumeManager.saveResumePosition(media.id, resumeMs, media.uri, media.durationMs)
         }
-        playQueue(listOf(media), startIndex = 0, autoPlay = true)
+        playQueue(listOf(media), startIndex = 0, autoPlay = true, forceResume = resumeMs > 0L)
     }
 
-    fun playQueue(items: List<PlayableMedia>, startIndex: Int = 0, autoPlay: Boolean = true) {
+    fun playQueue(
+        items: List<PlayableMedia>,
+        startIndex: Int = 0,
+        autoPlay: Boolean = true,
+        forceResume: Boolean = false,
+    ) {
         if (items.isEmpty()) return
         currentQueue = items
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
         val targetItem = items[targetIndex]
         val savedPos = resumeManager.getResumePosition(targetItem.id) ?: 0L
-        val shouldResume = savedPos > 2_000L
+        val shouldResume = (forceResume || settingsRepository.load().resumePlayback) &&
+            savedPos > 2_000L
 
         engine.load(items, targetIndex, if (shouldResume) savedPos else 0L)
         if (autoPlay) {

@@ -1067,6 +1067,7 @@ fun LocalScreen(
                                 ) { index, video ->
                                     VideoItemRow(
                                         video = video,
+                                        showThumbnails = appSettings.showThumbnails,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
@@ -1113,6 +1114,7 @@ fun LocalScreen(
                                 ) { index, video ->
                                     VideoItemGridCard(
                                         video = video,
+                                        showThumbnails = appSettings.showThumbnails,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
@@ -1178,6 +1180,7 @@ fun LocalScreen(
                 if (continueWatchingItems.isNotEmpty() && searchQuery.isBlank() && hasPermission && !isLoading) {
                     ContinueWatchingRow(
                         items = continueWatchingItems,
+                        showThumbnails = appSettings.showThumbnails,
                         onItemClick = { item -> resumeVideo(item) },
                         onDismissItem = { item -> dismissContinueWatching(item) },
                     )
@@ -1307,6 +1310,7 @@ fun LocalScreen(
                                     val isFav = favourites.any { it.mediaUri == video.path }
                                     VideoItemRow(
                                         video = video,
+                                        showThumbnails = appSettings.showThumbnails,
                                         isFavourite = isFav,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
@@ -1378,6 +1382,7 @@ fun LocalScreen(
                                     val isFav = favourites.any { it.mediaUri == video.path }
                                     VideoItemGridCard(
                                         video = video,
+                                        showThumbnails = appSettings.showThumbnails,
                                         isFavourite = isFav,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
@@ -1512,6 +1517,7 @@ fun LocalScreen(
                                 ) { folder ->
                                     FolderItemRow(
                                         folder = folder,
+                                        showThumbnails = appSettings.showThumbnails,
                                         showCount = appSettings.showFieldCount,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
@@ -1554,6 +1560,7 @@ fun LocalScreen(
                                 ) { folder ->
                                     FolderItemGridCard(
                                         folder = folder,
+                                        showThumbnails = appSettings.showThumbnails,
                                         showCount = appSettings.showFieldCount,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
