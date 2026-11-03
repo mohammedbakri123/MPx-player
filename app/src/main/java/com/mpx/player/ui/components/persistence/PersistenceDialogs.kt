@@ -533,7 +533,7 @@ fun AddToPlaylistDialog(
                                     imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(22.dp),
+                                    modifier = Modifier.size(20.dp),
                                 )
                                 Spacer(Modifier.width(12.dp))
                                 Column {
@@ -620,7 +620,7 @@ fun PlaylistDetailsDialog(
                             .fillMaxWidth()
                             .padding(bottom = 12.dp),
                     ) {
-                        Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
+                        Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.playlist_play_all))
                     }
@@ -638,7 +638,7 @@ fun PlaylistDetailsDialog(
                                 imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f).copy(alpha = 0.5f),
-                                modifier = Modifier.size(40.dp),
+                                modifier = Modifier.size(48.dp),
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
@@ -679,7 +679,7 @@ fun PlaylistDetailsDialog(
                                         imageVector = if (item.isVideo) Icons.Filled.Movie else Icons.Filled.MusicNote,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(20.dp),
                                     )
                                 }
                                 Spacer(Modifier.width(10.dp))
@@ -709,7 +709,7 @@ fun PlaylistDetailsDialog(
                                         imageVector = Icons.Filled.Delete,
                                         contentDescription = stringResource(R.string.playlist_cd_remove_item),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
                             }
