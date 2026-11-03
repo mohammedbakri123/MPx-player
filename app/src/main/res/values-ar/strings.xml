@@ -679,4 +679,5 @@
     <string name="player_sleep_timer_cancel">إلغاء مؤقت النوم</string>
     <string name="player_sleep_timer_set_toast">تم ضبط مؤقت النوم على %1$d دقيقة</string>
     <string name="player_sleep_timer_canceled_toast">تم إيقاف مؤقت النوم</string>
+    <string name="player_gesture_hint">النقر المزدوج: -10 ث (يسار) / تشغيل-إيقاف / +10 ث (يمين) • السحب أفقيًا: التقديم • السحب عموديًا: السطوع (يسار) / الصوت (يمين)</string>
 </resources>
