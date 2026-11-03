@@ -1,6 +1,6 @@
 package com.mpx.player.ui.screens.music
 
-import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.mpx.player.ui.components.AsyncAlbumThumbnail
+import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.components.AsyncAudioTrackThumbnail
 import com.mpx.player.ui.components.FastScrollbar
 import com.mpx.player.ui.components.GridFastScrollbar
@@ -79,6 +80,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -155,6 +157,8 @@ enum class MusicTab(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicScreen(
+    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    permissionResultHandler: ActivityResultHandler<Boolean>,
     onOpenPlayer: () -> Unit,
     playbackManager: PlaybackManager? = null,
     settingsRepository: AppSettingsRepository? = null,
@@ -245,9 +249,11 @@ fun MusicScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
+    DisposableEffect(permissionResultHandler) {
+        onDispose { permissionResultHandler.callback = null }
+    }
+    SideEffect {
+        permissionResultHandler.callback = { isGranted ->
         hasPermission = isGranted
         if (isGranted) {
             scope.launch(Dispatchers.IO) {
@@ -272,6 +278,7 @@ fun MusicScreen(
             albums = emptyList()
             artists = emptyList()
             folders = emptyList()
+        }
         }
     }
 

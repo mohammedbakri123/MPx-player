@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -49,6 +50,7 @@ import com.mpx.player.ui.components.player.MiniPlayer
 import com.mpx.player.ui.navigation.Screen
 import com.mpx.player.ui.navigation.navigationTabs
 import com.mpx.player.ui.screens.about.AboutBetaScreen
+import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.screens.local.LocalScreen
 import com.mpx.player.ui.screens.me.MeScreen
 import com.mpx.player.ui.screens.music.MusicScreen
@@ -228,6 +230,21 @@ fun MpxApp(
     val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     val navController = rememberNavController()
 
+    // Activity-result launchers MUST live here, above the NavHost: destinations
+    // have no ActivityResultRegistryOwner and crash if they create their own.
+    val localPermissionHandler = remember { ActivityResultHandler<Boolean>() }
+    val localPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> localPermissionHandler.invoke(granted) }
+    val musicPermissionHandler = remember { ActivityResultHandler<Boolean>() }
+    val musicPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> musicPermissionHandler.invoke(granted) }
+    val subtitleHandler = remember { ActivityResultHandler<android.net.Uri?>() }
+    val subtitleLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri -> subtitleHandler.invoke(uri) }
+
     LaunchedEffect(openPlayerRequested) {
         if (openPlayerRequested) {
             navController.navigate(Screen.Player.route) {
@@ -302,6 +319,8 @@ fun MpxApp(
         ) {
             composable(Screen.Local.route) {
                 LocalScreen(
+                    permissionLauncher = localPermissionLauncher,
+                    permissionResultHandler = localPermissionHandler,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     onOpenMusic = {
                         navController.navigate(Screen.Music.route) {
@@ -324,6 +343,8 @@ fun MpxApp(
             }
             composable(Screen.Music.route) {
                 MusicScreen(
+                    permissionLauncher = musicPermissionLauncher,
+                    permissionResultHandler = musicPermissionHandler,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
@@ -389,6 +410,8 @@ fun MpxApp(
             }
             composable(Screen.Player.route) {
                 PlayerScreen(
+                    subtitleLauncher = subtitleLauncher,
+                    subtitleResultHandler = subtitleHandler,
                     onClose = { navController.popBackStack() },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,

@@ -9,7 +9,7 @@ import android.graphics.Typeface
 import android.net.Uri
 import android.util.TypedValue
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -77,6 +77,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -105,6 +106,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
 import com.mpx.player.R
+import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.PlaylistItem
@@ -137,6 +139,8 @@ private fun Context.findActivity(): Activity? {
 
 @Composable
 fun PlayerScreen(
+    subtitleLauncher: ManagedActivityResultLauncher<Array<String>, android.net.Uri?>,
+    subtitleResultHandler: ActivityResultHandler<android.net.Uri?>,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     playbackManager: PlaybackManager = PlaybackManager.getInstance(LocalContext.current),
@@ -167,9 +171,11 @@ fun PlayerScreen(
 
     var subtitleErrorDialogText by remember { mutableStateOf<String?>(null) }
 
-    val openSubtitleLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
-    ) { uri: Uri? ->
+    DisposableEffect(subtitleResultHandler) {
+        onDispose { subtitleResultHandler.callback = null }
+    }
+    SideEffect {
+        subtitleResultHandler.callback = { uri: Uri? ->
         if (uri != null) {
             try {
                 context.contentResolver.takePersistableUriPermission(
@@ -194,6 +200,7 @@ fun PlayerScreen(
                     subtitleErrorDialogText = "Cannot load '${validation.fileName}':\n\n${validation.reason}"
                 }
             }
+        }
         }
     }
 
@@ -1060,7 +1067,7 @@ fun PlayerScreen(
                     OutlinedButton(
                         onClick = {
                             activeDialog = null
-                            openSubtitleLauncher.launch(arrayOf("*/*"))
+                            subtitleLauncher.launch(arrayOf("*/*"))
                         },
                         modifier = Modifier.fillMaxWidth(),
                         border = BorderStroke(1.dp, MpxPrimary),

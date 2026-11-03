@@ -1,7 +1,7 @@
 package com.mpx.player.ui.screens.local
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -60,6 +60,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -80,6 +81,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
+import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
@@ -119,6 +121,8 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalScreen(
+    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    permissionResultHandler: ActivityResultHandler<Boolean>,
     onOpenPlayer: () -> Unit,
     onOpenMusic: () -> Unit,
     onOpenTransfer: () -> Unit,
@@ -311,9 +315,11 @@ fun LocalScreen(
         }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
+    DisposableEffect(permissionResultHandler) {
+        onDispose { permissionResultHandler.callback = null }
+    }
+    SideEffect {
+        permissionResultHandler.callback = { isGranted ->
         hasPermission = isGranted
         if (isGranted) {
             scope.launch(Dispatchers.IO) {
@@ -328,6 +334,7 @@ fun LocalScreen(
             }
         } else {
             folders = emptyList()
+        }
         }
     }
 
