@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Close
@@ -27,26 +31,36 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.ui.components.AsyncThumbnail
+import com.mpx.player.ui.components.AsyncVideoThumbnail
+import com.mpx.player.util.ThumbnailLoader
 
 fun formatTimeMs(millis: Long): String {
     if (millis <= 0) return "00:00"
@@ -75,6 +89,19 @@ fun MiniPlayer(
 ) {
     val state by playbackManager.playbackState.collectAsState()
     val item = state.currentItem
+    var showQueue by remember { mutableStateOf(false) }
+
+    if (showQueue) {
+        QueueDialog(
+            queue = state.queue,
+            currentIndex = state.currentIndex,
+            onDismiss = { showQueue = false },
+            onSelect = { index ->
+                showQueue = false
+                playbackManager.playQueue(state.queue, startIndex = index)
+            },
+        )
+    }
 
     AnimatedVisibility(
         visible = item != null,
@@ -115,7 +142,11 @@ fun MiniPlayer(
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Thumbnail container
+                    // Current track artwork: real MediaStore/ID3 thumbnail via the
+                    // same cache keys the list rows use, so artwork already loaded
+                    // while browsing shows instantly. Falls back to the honest
+                    // vector placeholder only when no artwork exists.
+                    val context = LocalContext.current
                     Box(
                         modifier = Modifier
                             .size(42.dp)
@@ -123,12 +154,32 @@ fun MiniPlayer(
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            imageVector = if (item.isVideo) Icons.Filled.Movie else Icons.Filled.MusicNote,
-                            contentDescription = if (item.isVideo) stringResource(R.string.mini_player_video) else stringResource(R.string.mini_player_audio),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp),
-                        )
+                        if (item.isVideo) {
+                            AsyncVideoThumbnail(
+                                mediaUri = item.uri,
+                                mediaId = item.id,
+                                title = item.title,
+                                modifier = Modifier.fillMaxSize(),
+                                iconSize = 24.dp,
+                            )
+                        } else {
+                            AsyncThumbnail(
+                                cacheKey = "audio_track_${item.id.ifBlank { item.uri }}",
+                                loadBitmap = {
+                                    ThumbnailLoader.loadAudioTrackThumbnail(
+                                        context = context,
+                                        trackId = item.id,
+                                        trackPath = item.uri,
+                                        width = 160,
+                                        height = 160,
+                                    )
+                                },
+                                placeholderIcon = Icons.Filled.MusicNote,
+                                modifier = Modifier.fillMaxSize(),
+                                iconSize = 24.dp,
+                                contentDescription = stringResource(R.string.mini_player_audio),
+                            )
+                        }
                     }
 
                     Spacer(Modifier.width(12.dp))
@@ -199,6 +250,19 @@ fun MiniPlayer(
                         }
                     }
 
+                    // Queue button (issue #73): opens the real current queue.
+                    IconButton(
+                        onClick = { showQueue = true },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.QueueMusic,
+                            contentDescription = stringResource(R.string.mini_player_queue),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+
                     IconButton(
                         onClick = { playbackManager.stop() },
                         modifier = Modifier.size(32.dp),
@@ -214,4 +278,90 @@ fun MiniPlayer(
             }
         }
     }
+}
+
+/**
+ * Real current-queue list for the mini-player queue button (issue #73).
+ * Shows exactly PlaybackState.queue — never invented entries. Tapping an
+ * entry plays that queue position via PlaybackManager.playQueue; the
+ * current entry is highlighted and labelled. Screenshot-only evidence
+ * per the V1 re-grounding report: the local mini-player has no layout
+ * in the decoded MX tree, so this follows the screenshots, not the decode.
+ */
+@Composable
+private fun QueueDialog(
+    queue: List<PlayableMedia>,
+    currentIndex: Int,
+    onDismiss: () -> Unit,
+    onSelect: (Int) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.mini_player_queue)) },
+        text = {
+            if (queue.isEmpty()) {
+                Text(text = stringResource(R.string.mini_player_queue_empty))
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp),
+                ) {
+                    itemsIndexed(queue) { index, entry ->
+                        val isCurrent = index == currentIndex
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(index) }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = if (isCurrent) Icons.Filled.PlayArrow
+                                else if (entry.isVideo) Icons.Filled.Movie
+                                else Icons.Filled.MusicNote,
+                                contentDescription = null,
+                                tint = if (isCurrent) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = entry.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (isCurrent) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                if (entry.subtitle.isNotBlank()) {
+                                    Text(
+                                        text = entry.subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                            if (isCurrent) {
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(R.string.mini_player_queue_now_playing),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.action_close))
+            }
+        },
+    )
 }

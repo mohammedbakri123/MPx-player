@@ -19,6 +19,9 @@
     <string name="mini_player_play">चलाएँ</string>
     <string name="mini_player_next">अगला ट्रैक</string>
     <string name="mini_player_close">प्लेयर बंद करें</string>
+    <string name="mini_player_queue">कतार</string>
+    <string name="mini_player_queue_empty">कतार खाली है</string>
+    <string name="mini_player_queue_now_playing">अभी चल रहा है</string>
 
     <!-- Common Actions -->
     <string name="action_back">वापस</string>

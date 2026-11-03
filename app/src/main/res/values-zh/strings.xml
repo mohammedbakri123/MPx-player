@@ -19,6 +19,9 @@
     <string name="mini_player_play">播放</string>
     <string name="mini_player_next">下一曲</string>
     <string name="mini_player_close">关闭播放器</string>
+    <string name="mini_player_queue">播放队列</string>
+    <string name="mini_player_queue_empty">播放队列为空</string>
+    <string name="mini_player_queue_now_playing">正在播放</string>
 
     <!-- Common Actions -->
     <string name="action_back">返回</string>

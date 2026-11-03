@@ -19,6 +19,9 @@
     <string name="mini_player_play">Играть</string>
     <string name="mini_player_next">Следующий трек</string>
     <string name="mini_player_close">Закрыть плеер</string>
+    <string name="mini_player_queue">Очередь</string>
+    <string name="mini_player_queue_empty">Очередь пуста</string>
+    <string name="mini_player_queue_now_playing">Сейчас играет</string>
 
     <!-- Common Actions -->
     <string name="action_back">Назад</string>

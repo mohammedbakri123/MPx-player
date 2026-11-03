@@ -19,6 +19,9 @@
     <string name="mini_player_play">تشغيل</string>
     <string name="mini_player_next">المسار التالي</string>
     <string name="mini_player_close">إغلاق المشغل</string>
+    <string name="mini_player_queue">قائمة الانتظار</string>
+    <string name="mini_player_queue_empty">قائمة الانتظار فارغة</string>
+    <string name="mini_player_queue_now_playing">يُشغَّل الآن</string>
 
     <!-- Common Actions -->
     <string name="action_back">رجوع</string>
