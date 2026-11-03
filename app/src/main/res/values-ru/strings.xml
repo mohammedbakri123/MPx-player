@@ -571,6 +571,11 @@
     <string name="view_type_folders">Папки (группировка по папкам)</string>
     <string name="view_type_files">Все файлы (отдельные файлы)</string>
     <string name="sort_field_duration">Длительность</string>
+    <string name="sort_field_date_duration">Дата / Длительность</string>
+    <string name="sort_field_resolution_framerate">Разрешение / Частота кадров</string>
+    <string name="sort_field_status_type_location">Статус / Тип / Расположение</string>
+    <string name="sort_direction_ascending">По возрастанию</string>
+    <string name="sort_direction_descending">По убыванию</string>
     <string name="section_files_header">ФАЙЛЫ</string>
     <string name="list_file_view">Вид файлов</string>
     <string name="list_file_view_desc">Список отдельных видеофайлов в виде «Локально» вместо группировки по папкам</string>

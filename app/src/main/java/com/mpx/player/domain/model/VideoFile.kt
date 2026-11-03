@@ -15,4 +15,9 @@ data class VideoFile(
     val formattedSize: String = "",
     val isRemovable: Boolean = false,
     val isNew: Boolean = false,
+    // From MediaStore WIDTH/HEIGHT. Frame rate has no MediaStore column, so
+    // frameRateFps stays 0 until a metadata pass populates it — never faked.
+    val widthPx: Int = 0,
+    val heightPx: Int = 0,
+    val frameRateFps: Float = 0f,
 )

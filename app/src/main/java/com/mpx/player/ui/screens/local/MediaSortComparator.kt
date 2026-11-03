@@ -134,9 +134,42 @@ object MediaSortComparator {
             }
         }
         SortField.DATE -> b.dateModified.compareTo(a.dateModified)
+        // MX combined key: date modified first, duration breaks ties.
+        SortField.DATE_DURATION -> {
+            val dateCmp = b.dateModified.compareTo(a.dateModified)
+            if (dateCmp != 0) dateCmp else b.durationMs.compareTo(a.durationMs)
+        }
         SortField.SIZE -> b.sizeBytes.compareTo(a.sizeBytes)
         SortField.DURATION -> b.durationMs.compareTo(a.durationMs)
+        // MX combined key: resolution (pixel count) first, then frame rate
+        // where known (0 when MediaStore has no frame-rate column), then width.
+        SortField.RESOLUTION_FRAMERATE -> {
+            val pixelsA = a.widthPx.toLong() * a.heightPx.toLong()
+            val pixelsB = b.widthPx.toLong() * b.heightPx.toLong()
+            val pixelsCmp = pixelsB.compareTo(pixelsA)
+            if (pixelsCmp != 0) pixelsCmp
+            else {
+                val fpsCmp = b.frameRateFps.compareTo(a.frameRateFps)
+                if (fpsCmp != 0) fpsCmp else b.widthPx.compareTo(a.widthPx)
+            }
+        }
+        // MX combined key: status (recently added first), then file type
+        // (extension), then location (full path).
+        SortField.STATUS_TYPE_LOCATION -> {
+            val statusCmp = b.isNew.compareTo(a.isNew)
+            if (statusCmp != 0) statusCmp
+            else {
+                val typeCmp = fileExtension(a.path).compareTo(fileExtension(b.path))
+                if (typeCmp != 0) typeCmp else a.path.compareTo(b.path)
+            }
+        }
         SortField.COUNT, SortField.NONE -> 0
+    }
+
+    private fun fileExtension(path: String): String {
+        val name = path.substringAfterLast('/', path)
+        val dot = name.lastIndexOf('.')
+        return if (dot > 0) name.substring(dot + 1).lowercase(Locale.US) else ""
     }
 
     /**
@@ -181,9 +214,24 @@ object MediaSortComparator {
             }
         }
         SortField.DATE -> b.lastModified.compareTo(a.lastModified)
+        // MX combined key: date modified first, duration breaks ties.
+        // Folder duration is the real summed duration of its videos.
+        SortField.DATE_DURATION -> {
+            val dateCmp = b.lastModified.compareTo(a.lastModified)
+            if (dateCmp != 0) dateCmp else b.totalDurationMs.compareTo(a.totalDurationMs)
+        }
         SortField.COUNT -> b.videoCount.compareTo(a.videoCount)
         SortField.SIZE -> parseFormattedSize(b.totalSizeFormatted).compareTo(parseFormattedSize(a.totalSizeFormatted))
-        SortField.DURATION -> b.lastModified.compareTo(a.lastModified)
+        // Issue #70 fix: was lastModified (a copy of DATE). Now the folder's
+        // real total video duration, summed at scan time.
+        SortField.DURATION -> b.totalDurationMs.compareTo(a.totalDurationMs)
+        // Folders carry no resolution: falls through to the name tie-break.
+        SortField.RESOLUTION_FRAMERATE -> 0
+        // MX combined key: status (recently updated first), then location.
+        SortField.STATUS_TYPE_LOCATION -> {
+            val statusCmp = b.isNew.compareTo(a.isNew)
+            if (statusCmp != 0) statusCmp else a.path.compareTo(b.path)
+        }
         SortField.NONE -> 0
     }
 
@@ -230,7 +278,19 @@ object MediaSortComparator {
             }
         }
         SortField.DATE -> b.id.compareTo(a.id)
+        // Audio tracks carry no date: id recency first, duration breaks ties.
+        SortField.DATE_DURATION -> {
+            val idCmp = b.id.compareTo(a.id)
+            if (idCmp != 0) idCmp else b.durationMs.compareTo(a.durationMs)
+        }
         SortField.SIZE, SortField.DURATION -> b.durationMs.compareTo(a.durationMs)
+        // Audio carries no resolution: falls through to the title tie-break.
+        SortField.RESOLUTION_FRAMERATE -> 0
+        // MX combined key: file type (extension), then location (path).
+        SortField.STATUS_TYPE_LOCATION -> {
+            val typeCmp = fileExtension(a.path).compareTo(fileExtension(b.path))
+            if (typeCmp != 0) typeCmp else a.path.compareTo(b.path)
+        }
         SortField.COUNT, SortField.NONE -> 0
     }
 }
