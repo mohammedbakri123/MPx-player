@@ -44,6 +44,8 @@
     <string name="lang_spanish_desc">Interfaz en español (diseño LTR)</string>
     <string name="lang_french">Francés (French)</string>
     <string name="lang_french_desc">Interfaz en francés (diseño LTR)</string>
+    <string name="lang_hindi">Hindi (Hindi)</string>
+    <string name="lang_hindi_desc">Interfaz en hindi (diseño LTR)</string>
     <string name="lang_applied_msg">Idioma actualizado: %s</string>
     <string name="lang_settings_note">Selecciona tu idioma preferido para la app. El idioma y la dirección del diseño se aplican de inmediato sin reiniciar.</string>
 

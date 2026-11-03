@@ -1,0 +1,689 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">MPx Player</string>
+    <string name="app_version_name">संस्करण 0.1.0-beta</string>
+    <string name="app_version_full">MPx Player 0.1.0-beta</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_local">लोकल</string>
+    <string name="nav_music">संगीत</string>
+    <string name="nav_transfer">ट्रांसफ़र</string>
+    <string name="nav_me">मैं</string>
+
+    <!-- Mini Player -->
+    <string name="mini_player_video">वीडियो</string>
+    <string name="mini_player_audio">ऑडियो</string>
+    <string name="mini_player_prev">पिछला ट्रैक</string>
+    <string name="mini_player_pause">रोकें</string>
+    <string name="mini_player_play">चलाएँ</string>
+    <string name="mini_player_next">अगला ट्रैक</string>
+    <string name="mini_player_close">प्लेयर बंद करें</string>
+
+    <!-- Common Actions -->
+    <string name="action_back">वापस</string>
+    <string name="action_close">बंद करें</string>
+    <string name="action_cancel">रद्द करें</string>
+    <string name="action_save">सहेजें</string>
+    <string name="action_ok">ठीक है</string>
+    <string name="action_paste">पेस्ट करें</string>
+    <string name="action_understood">समझ गया</string>
+    <string name="action_done">हो गया</string>
+
+    <!-- Language Settings & Dialog -->
+    <string name="pref_app_language">ऐप भाषा</string>
+    <string name="pref_app_language_desc">अंग्रेज़ी, अरबी, स्पेनिश, हिंदी और सिस्टम डिफ़ॉल्ट के बीच बदलें</string>
+    <string name="lang_dialog_title">ऐप भाषा चुनें</string>
+    <string name="lang_system_default">सिस्टम डिफ़ॉल्ट</string>
+    <string name="lang_system_default_desc">सिस्टम भाषा सेटिंग का पालन करें</string>
+    <string name="lang_english">English</string>
+    <string name="lang_english_desc">अंग्रेज़ी इंटरफ़ेस (LTR लेआउट)</string>
+    <string name="lang_arabic">العربية (Arabic)</string>
+    <string name="lang_arabic_desc">पूर्ण राइट-टू-लेफ़्ट (RTL) लेआउट के साथ अरबी इंटरफ़ेस</string>
+    <string name="lang_spanish">Español (Spanish)</string>
+    <string name="lang_spanish_desc">स्पेनिश इंटरफ़ेस (LTR लेआउट)</string>
+    <string name="lang_french">Français (French)</string>
+    <string name="lang_french_desc">फ़्रेंच इंटरफ़ेस (LTR लेआउट)</string>
+    <string name="lang_hindi">हिन्दी (Hindi)</string>
+    <string name="lang_hindi_desc">हिंदी इंटरफ़ेस (LTR लेआउट)</string>
+    <string name="lang_applied_msg">भाषा अपडेट हुई: %s</string>
+    <string name="lang_settings_note">अपनी पसंदीदा ऐप भाषा चुनें। भाषा और लेआउट दिशा ऐप पुनः आरंभ किए बिना तुरंत लागू होती है।</string>
+
+    <!-- Settings Screen Categories -->
+    <string name="settings_title">सेटिंग्स</string>
+    <string name="settings_category_language">ऐप भाषा</string>
+    <string name="settings_category_language_sub">English, العربية, Español, Français, हिन्दी, सिस्टम डिफ़ॉल्ट</string>
+    <string name="settings_category_theme">ऐप थीम</string>
+    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
+    <string name="settings_category_pip">कस्टम पॉप-अप प्ले</string>
+    <string name="settings_category_pip_sub">पिक्चर-इन-पिक्चर नियंत्रण और बैकग्राउंड प्ले</string>
+    <string name="settings_category_tabs">संगीत टैब</string>
+    <string name="settings_category_tabs_sub">ट्रैक, प्लेलिस्ट, एल्बम, कलाकार, फ़ोल्डर दिखाएँ या छिपाएँ</string>
+    <string name="settings_category_list">सूची</string>
+    <string name="settings_category_list_sub">फ़ोल्डर दृश्य, छिपी फ़ाइलें, थंबनेल, संगीत टैब</string>
+    <string name="settings_category_player">प्लेयर</string>
+    <string name="settings_category_player_sub">प्लेबैक फिर से शुरू करें, बैकग्राउंड प्ले, जेस्चर</string>
+    <string name="settings_category_decoder">डीकोडर</string>
+    <string name="settings_category_decoder_sub">हार्डवेयर एक्सेलेरेशन (HW / HW+), सॉफ़्टवेयर (SW)</string>
+    <string name="settings_category_audio">ऑडियो</string>
+    <string name="settings_category_audio_sub">वॉल्यूम बूस्ट</string>
+    <string name="settings_category_subtitle">सबटाइटल</string>
+    <string name="settings_category_subtitle_sub">सबटाइटल आकार और रंग शैली</string>
+    <string name="settings_category_general">सामान्य</string>
+    <string name="settings_category_general_sub">सभी प्राथमिकताएँ डिफ़ॉल्ट पर रीसेट करें</string>
+    <string name="settings_category_development">डेवलपमेंट</string>
+    <string name="settings_category_development_sub">डायग्नोस्टिक्स, डेटाबेस स्थिति, स्कैन मेट्रिक्स और प्लेबैक इंजन</string>
+    <string name="settings_category_about">के बारे में</string>
+    <string name="settings_category_about_sub">संस्करण 0.1.0-beta • बीटा स्थिति और फ़ीडबैक</string>
+
+    <!-- Settings Category Options -->
+    <string name="theme_midnight">Midnight OLED (शुद्ध काला)</string>
+    <string name="theme_dark">Dark Slate (चारकोल)</string>
+    <string name="theme_classic">Classic MX Navy</string>
+    <string name="theme_light">Light Cinema (साफ़ सफ़ेद)</string>
+    <string name="theme_applied_snackbar">थीम लागू हुई: %s</string>
+
+    <string name="pip_not_supported">नोट: इस डिवाइस/वातावरण पर पिक्चर-इन-पिक्चर मोड समर्थित नहीं है (Android 8.0+ और FEATURE_PICTURE_IN_PICTURE आवश्यक है)।</string>
+    <string name="pip_enable_toggle">पॉप-अप प्ले (PiP) सक्षम करें</string>
+    <string name="pip_window_controls_header">PiP विंडो नियंत्रण:</string>
+    <string name="pip_controls_prev_next">पिछला / अगला (डिफ़ॉल्ट)</string>
+    <string name="pip_controls_seek10">फ़ास्ट फ़ॉरवर्ड / रिवाइंड (10 सेकंड)</string>
+
+    <string name="list_show_all_folders">सभी फ़ोल्डर दिखाएँ</string>
+    <string name="list_show_all_folders_desc">खाली और छिपे फ़ोल्डर सहित हर स्कैन किया गया फ़ोल्डर दिखाएँ</string>
+    <string name="list_show_hidden">छिपी फ़ाइलें दिखाएँ</string>
+    <string name="list_show_thumbnails">थंबनेल दिखाएँ</string>
+
+    <string name="player_resume_playback">प्लेबैक फिर से शुरू करें</string>
+    <string name="player_background_play">बैकग्राउंड प्ले</string>
+    <string name="player_background_play_desc">ऐप बैकग्राउंड में जाने या स्क्रीन बंद होने पर भी ऑडियो चलता रहता है। वीडियो के लिए, वीडियो रेंडरिंग रुकने पर भी ऑडियो प्लेबैक ईमानदारी से जारी रहता है।</string>
+    <string name="player_menu_background_play">बैकग्राउंड प्ले (वीडियो के लिए केवल ऑडियो)</string>
+    <string name="player_background_active_banner">बैकग्राउंड प्ले सक्रिय: ऑडियो प्लेबैक जारी है (वीडियो रेंडरिंग रुकी हुई है)</string>
+    <string name="player_gestures">जेस्चर (डबल-टैप, ड्रैग सीक)</string>
+
+    <string name="decoder_hw">HW (हार्डवेयर - Android MediaCodec हार्डवेयर एक्सेलेरेशन)</string>
+    <string name="decoder_hw_plus">HW+ (हार्डवेयर प्लस - असिंक्रोनस बफ़र पाइपलाइन)</string>
+    <string name="decoder_sw">SW (सॉफ़्टवेयर - CPU डीकोडिंग फ़ॉलबैक)</string>
+    <string name="decoder_explanation">डिफ़ॉल्ट प्लेयर डीकोडर प्राथमिकता चुनें। HW डिवाइस चिपसेट हार्डवेयर कोडेक का उपयोग करता है; SW सॉफ़्टवेयर फ़ॉलबैक देता है। जहाँ Android अनुरोधित डीकोडर की अनुमति नहीं देता (जैसे असमर्थित कोडेक), MPx ईमानदारी से फ़ॉलबैक नोट दिखाता है।</string>
+
+    <string name="audio_volume_boost">वॉल्यूम बूस्ट</string>
+
+    <string name="subtitle_size_header">सबटाइटल टेक्स्ट आकार:</string>
+    <string name="subtitle_size_small">छोटा (14sp)</string>
+    <string name="subtitle_size_normal">सामान्य (18sp)</string>
+    <string name="subtitle_size_large">बड़ा (24sp)</string>
+    <string name="subtitle_style_header">सबटाइटल शैली और रंग:</string>
+    <string name="subtitle_style_white">सफ़ेद टेक्स्ट, काली आउटलाइन (क्लासिक)</string>
+    <string name="subtitle_style_yellow">पीला टेक्स्ट, काली आउटलाइन (उच्च कंट्रास्ट)</string>
+    <string name="subtitle_style_cyan">सियान टेक्स्ट, काली आउटलाइन</string>
+    <string name="subtitle_style_default">सिस्टम डिफ़ॉल्ट कैप्शन शैली</string>
+
+    <string name="general_reset_button">सभी डिफ़ॉल्ट पर रीसेट करें</string>
+    <string name="general_reset_done">सभी सेटिंग्स डिफ़ॉल्ट मानों पर रीसेट हो गई हैं।</string>
+    <string name="general_language_hint">ऐप भाषा ऐप भाषा अनुभाग से या Me स्क्रीन से बदली जा सकती है।</string>
+
+    <string name="about_app_description">MPx Player 0.1.0-beta। नेटिव Kotlin रीराइट, MX-प्रेरित लेआउट जो पूरी तरह MPx के अपने कोड और स्टाइलिंग में बना है।</string>
+
+    <!-- Me Screen Headers & Profile -->
+    <string name="me_title">मैं</string>
+    <string name="me_profile_user">MPx लोकल उपयोगकर्ता</string>
+    <string name="me_profile_desc">निजी ऑन-डिवाइस मीडिया प्लेयर</string>
+    <string name="me_status_banner">Me टूल्स ग्रिड: लोकल, संगीत, प्लेलिस्ट, पसंदीदा, इतिहास, नेटवर्क स्ट्रीम से जुड़ी असली सुविधाएँ। Issue 32 के लिए प्लेसहोल्डर ईमानदारी से चिह्नित हैं।</string>
+    <string name="section_tools">टूल्स</string>
+    <string name="section_preferences">प्राथमिकताएँ</string>
+    <string name="section_about_legal">के बारे में और कानूनी</string>
+
+    <!-- Me Screen Tools -->
+    <string name="tool_local_title">लोकल वीडियो</string>
+    <string name="tool_local_desc">वीडियो फ़ोल्डर</string>
+    <string name="tool_music_title">संगीत</string>
+    <string name="tool_music_desc">ऑडियो लाइब्रेरी</string>
+    <string name="tool_playlists_title">प्लेलिस्ट</string>
+    <string name="tool_playlists_desc">कस्टम संग्रह</string>
+    <string name="tool_favourites_title">पसंदीदा</string>
+    <string name="tool_favourites_desc">स्टार किया गया मीडिया</string>
+    <string name="tool_history_title">इतिहास</string>
+    <string name="tool_history_desc">हाल ही में चलाया गया</string>
+    <string name="tool_network_title">नेटवर्क स्ट्रीम</string>
+    <string name="tool_network_desc">स्ट्रीम URL चलाएँ</string>
+    <string name="tool_transfer_title">फ़ाइल ट्रांसफ़र</string>
+    <string name="tool_transfer_desc">P2P ट्रांसफ़र</string>
+    <string name="tool_equalizer_title">इक्वलाइज़र</string>
+    <string name="tool_equalizer_desc">सिस्टम साउंड ट्यूनर</string>
+    <string name="tool_status_title">स्टेटस सेवर</string>
+    <string name="tool_status_desc">WhatsApp स्टेटस</string>
+    <string name="tool_private_title">प्राइवेट फ़ोल्डर</string>
+    <string name="tool_private_desc">PIN वॉल्ट</string>
+    <string name="tool_manager_title">मीडिया मैनेजर</string>
+    <string name="tool_manager_desc">स्टोरेज क्लीनर</string>
+    <string name="tool_bin_title">रीसाइकल बिन</string>
+    <string name="tool_bin_desc">हटाई गई फ़ाइलें</string>
+
+    <!-- Me Screen Preferences -->
+    <string name="pref_music_player">संगीत प्लेयर</string>
+    <string name="pref_music_player_desc">लोकल ऑडियो लाइब्रेरी खोलें</string>
+    <string name="pref_video_library">वीडियो लाइब्रेरी</string>
+    <string name="pref_video_library_desc">फ़ोल्डर और वीडियो संग्रह ब्राउज़ करें</string>
+    <string name="pref_app_theme">ऐप थीम</string>
+    <string name="pref_popup_play">कस्टम पॉप-अप प्ले</string>
+    <string name="pip_status_enabled">PiP सक्षम • %s</string>
+    <string name="pip_status_disabled">पॉप-अप प्ले अक्षम</string>
+    <string name="pip_status_unsupported">डिवाइस PiP समर्थित नहीं करता (Android 8.0+ आवश्यक)</string>
+    <string name="pref_settings">सेटिंग्स</string>
+    <string name="pref_settings_desc">प्लेयर, डीकोडर, सूची और सबटाइटल विकल्प</string>
+
+    <!-- Me Screen About & Legal Rows -->
+    <string name="pref_privacy">गोपनीयता और सुरक्षा</string>
+    <string name="pref_privacy_desc">100% ऑन-डिवाइस। शून्य टेलीमेट्री, कोई विज्ञापन नहीं, कोई ट्रैकर नहीं।</string>
+    <string name="pref_help">सहायता और फ़ीडबैक</string>
+    <string name="pref_help_desc">प्लेयर जेस्चर गाइड, ट्यूटोरियल और डिवाइस डायग्नोस्टिक्स</string>
+    <string name="pref_legal">कानूनी और ओपन सोर्स</string>
+    <string name="pref_legal_desc">सॉफ़्टवेयर लाइसेंस, शर्तें और प्रेरणा प्रकटीकरण</string>
+    <string name="pref_about_mpx">MPx Player के बारे में (बीटा)</string>
+    <string name="pref_about_mpx_desc">संस्करण 0.1.0-beta • स्थिति, प्लेसहोल्डर और फ़ीडबैक</string>
+
+    <!-- Me Screen Dialogs Content -->
+    <string name="dialog_theme_title">ऐप थीम चुनें</string>
+    <string name="theme_midnight_desc">सच्चा OLED #000000 सिनेमा कंट्रास्ट। अधिकतम बैटरी बचत।</string>
+    <string name="theme_dark_desc">नरम स्लेट #0F172A कंट्रास्ट के साथ आधुनिक डार्क थीम।</string>
+    <string name="theme_classic_desc">यूटिलिटी-फ़र्स्ट क्लासिक प्लेयर से प्रेरित गहरा नीला-काला #0A0F1D।</string>
+    <string name="theme_light_desc">उज्ज्वल वातावरण के लिए उच्च-दृश्यता डेलाइट पैलेट।</string>
+
+    <string name="dialog_popup_play_title">कस्टम पॉप-अप प्ले</string>
+    <string name="pip_banner_supported">डिवाइस Android पिक्चर-इन-पिक्चर मोड समर्थित करता है।</string>
+    <string name="pip_banner_unsupported">PiP असमर्थित: Android 8.0+ और सिस्टम FEATURE_PICTURE_IN_PICTURE समर्थन आवश्यक है। सेटिंग्स ईमानदार रहती हैं।</string>
+    <string name="pip_auto_title">ऑटो पॉप-अप प्ले</string>
+    <string name="pip_auto_desc">वीडियो प्लेबैक के दौरान ऐप छोड़ने पर फ़्लोटिंग विंडो में प्रवेश करें</string>
+    <string name="pip_test_button">पॉप-अप प्ले मोड टेस्ट करें</string>
+    <string name="pip_test_fail_playing">अभी PiP मोड में प्रवेश नहीं हो सकता। पहले प्लेयर में कोई वीडियो चलाकर देखें।</string>
+
+    <string name="dialog_network_title">नेटवर्क स्ट्रीम</string>
+    <string name="dialog_network_desc">Media3 ExoPlayer में सीधे चलाने के लिए कोई भी HTTP, HTTPS या HLS स्ट्रीम URL दर्ज करें:</string>
+    <string name="dialog_network_samples">नमूना सार्वजनिक स्ट्रीम:</string>
+    <string name="dialog_network_play">स्ट्रीम चलाएँ</string>
+
+    <string name="dialog_privacy_title">गोपनीयता और सुरक्षा</string>
+    <string name="privacy_sec1_title">100% ऑन-डिवाइस आर्किटेक्चर</string>
+    <string name="privacy_sec1_body">MPx Player एक ऑफ़लाइन-फ़र्स्ट मीडिया प्लेयर है। मीडिया इंडेक्सिंग, मेटाडेटा निकालना और प्लेबैक केवल आपके डिवाइस पर होता है। आपकी फ़ाइल लाइब्रेरी कभी किसी रिमोट सर्वर पर अपलोड नहीं होती।</string>
+    <string name="privacy_sec2_title">शून्य टेलीमेट्री और कोई एनालिटिक्स नहीं</string>
+    <string name="privacy_sec2_body">MPx Player में कोई ट्रैकिंग SDK, कोई विज्ञापन पहचानकर्ता और कोई उपयोगकर्ता निगरानी फ़्रेमवर्क नहीं है। आपकी प्लेबैक आदतें और फ़ाइलें पूरी तरह आपकी अपनी रहती हैं।</string>
+    <string name="privacy_sec3_title">लोकल SQLite सैंडबॉक्स</string>
+    <string name="privacy_sec3_body">पसंदीदा, कस्टम प्लेलिस्ट और प्लेबैक फिर से शुरू करने के बिंदु Android संरक्षित ऐप सैंडबॉक्स के अंदर एक निजी Room SQLite डेटाबेस (mpx_player.db) में संग्रहीत होते हैं।</string>
+    <string name="privacy_sec4_title">पारदर्शी अनुमतियाँ</string>
+    <string name="privacy_sec4_body">• READ_MEDIA_VIDEO / AUDIO: लोकल मीडिया फ़ाइलें खोजना।\n• INTERNET: वैकल्पिक, केवल तब उपयोग होता है जब आप नेटवर्क स्ट्रीम में स्ट्रीम URL पेस्ट करते हैं।</string>
+
+    <string name="dialog_help_title">सहायता और प्लेयर गाइड</string>
+    <string name="help_sec1_title">प्लेयर जेस्चर</string>
+    <string name="help_sec1_body">• बाईं ओर डबल-टैप: 10 सेकंड पीछे जाएँ\n• दाईं ओर डबल-टैप: 10 सेकंड आगे जाएँ\n• क्षैतिज ड्रैग: वीडियो में सटीक स्क्रब\n• लॉक बटन: देखते समय गलती से छूने से रोकें\n• आस्पेक्ट रेशियो: Fit, Stretch, 16:9 और Original के बीच बदलें</string>
+    <string name="help_sec2_title">ऑडियो और सबटाइटल ट्रैक</string>
+    <string name="help_sec2_body">• ऑडियो आइकन: अलग-अलग ऑडियो ट्रैक के बीच बदलें (डुअल-ऑडियो, कमेंटरी)\n• सबटाइटल आइकन: एम्बेडेड या साइडकार .vtt / .srt सबटाइटल ट्रैक चुनें\n• सबटाइटल आकार: सेटिंग्स में कॉन्फ़िगर किया जा सकता है (छोटा, सामान्य, बड़ा)</string>
+    <string name="help_sec3_title">डिवाइस डायग्नोस्टिक्स (लाइव)</string>
+    <string name="help_diag_app">ऐप: MPx Player 0.1.0-beta (बिल्ड 2)</string>
+    <string name="help_diag_os">Android OS: SDK %1$d (%2$s)</string>
+    <string name="help_diag_device">डिवाइस: %1$s %2$s</string>
+    <string name="help_diag_engine">इंजन: AndroidX Media3 ExoPlayer 1.3.1</string>
+    <string name="help_diag_db">डेटाबेस: Room SQLite (mpx_player.db)</string>
+
+    <string name="dialog_legal_title">कानूनी और ओपन सोर्स</string>
+    <string name="legal_sec1_title">ओपन सोर्स लाइसेंस</string>
+    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: Apache License 2.0\n• Jetpack Compose और Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0</string>
+    <string name="legal_sec2_title">प्रेरणा श्रेय सूचना</string>
+    <string name="legal_sec2_body">MPx Player एक स्वतंत्र, क्लीन-रूम नेटिव Android मीडिया प्लेयर है। इसका संगठन और UX वर्कफ़्लो MX Player से प्रेरित है (रिवर्स-इंजीनियर्ड लेआउट विनिर्देशों के अनुसार)। सभी कोड, व्यू और स्टाइलिंग नेटिव Kotlin और Jetpack Compose में 100% नए सिरे से लिखी गई है। कोई मालिकाना एसेट, कोड या ट्रेडमार्क शामिल नहीं है।</string>
+    <string name="legal_sec3_title">उपयोग की शर्तें</string>
+    <string name="legal_sec3_body">MPx Player Apache 2.0 लाइसेंस के तहत बिना वारंटी के जैसा है वैसा प्रदान किया जाता है। उपयोगकर्ता अपनी मीडिया फ़ाइलों के लिए स्वयं ज़िम्मेदार हैं।</string>
+
+    <string name="dialog_about_body1">Jetpack Compose, AndroidX Media3 ExoPlayer और Room SQLite पर्सिस्टेंस के साथ शुद्ध नेटिव Kotlin रीराइट।</string>
+    <string name="dialog_about_body2">क्लाउड निर्भरता, ट्रैकिंग या विज्ञापन के बिना उच्च-घनत्व, यूटिलिटी-फ़र्स्ट मीडिया प्रबंधन।</string>
+
+    <string name="equalizer_dialog_msg">सिस्टम इक्वलाइज़र: इस डिवाइस पर कोई ऑडियो इफ़ेक्ट नियंत्रण पैनल (जैसे MusicFX या सिस्टम इक्वलाइज़र ऐप) नहीं मिला। ऑडियो मानक फ़्लैट आउटपुट का उपयोग करता है।</string>
+
+    <string name="issue32_dialog_header">%s (Issue 32)</string>
+    <string name="issue32_status_notice">यह सुविधा Issue 32 के लिए निर्धारित है।</string>
+    <string name="issue32_status_honest">स्थिति: ईमानदार प्लेसहोल्डर — नकली नहीं।</string>
+    <string name="issue32_status_detail">WhatsApp स्टेटस सेवर के लिए स्कोप्ड स्टोरेज डायरेक्टरी एक्सेस आवश्यक है। बनने के बाद यह डाउनलोड किए गए वीडियो और इमेज स्टेटस स्कैन करके सहेजेगा।</string>
+    <string name="issue32_private_detail">प्राइवेट फ़ोल्डर के लिए संवेदनशील मीडिया छिपाने हेतु PIN या बायोमेट्रिक प्रमाणीकरण से सुरक्षित एन्क्रिप्टेड SQLite या फ़ाइल वॉल्ट आवश्यक है।</string>
+    <string name="issue32_manager_detail">मीडिया मैनेजर और स्टोरेज क्लीनर डिवाइस स्टोरेज का विश्लेषण करेगा, डुप्लिकेट वीडियो, बड़ी फ़ाइलें और अस्थायी कैश की पहचान करेगा।</string>
+    <string name="issue32_bin_detail">रीसाइकल बिन हटाई गई फ़ाइलों को स्थायी रूप से हटाने से पहले 30 दिनों तक ऐप-प्रबंधित होल्डिंग डायरेक्टरी में सुरक्षित रखेगा।</string>
+
+    <!-- Music Screen -->
+    <string name="music_screen_title">संगीत</string>
+    <string name="music_cd_equalizer">इक्वलाइज़र</string>
+    <string name="music_equalizer_scheduled">इक्वलाइज़र ऑडियो चरण के लिए निर्धारित है</string>
+    <string name="music_library_refreshed">संगीत लाइब्रेरी रिफ़्रेश हुई</string>
+    <string name="music_search_placeholder">गाने खोजें…</string>
+    <string name="music_shuffle_all">सभी शफ़ल करें</string>
+    <string name="music_banner_scanning">वास्तविक MediaStore स्कैनिंग सक्रिय है। ऑडियो ट्रैक, एल्बम, कलाकार और फ़ोल्डर डिवाइस मीडिया को दर्शाते हैं।</string>
+
+    <!-- Music Tabs -->
+    <string name="music_tab_tracks">ट्रैक</string>
+    <string name="music_tab_playlists">प्लेलिस्ट</string>
+    <string name="music_tab_albums">एल्बम</string>
+    <string name="music_tab_artists">कलाकार</string>
+    <string name="music_tab_folders">फ़ोल्डर</string>
+    <string name="settings_tabs_header">संगीत टैब</string>
+    <string name="settings_tabs_desc">चुनें कि संगीत स्क्रीन पर कौन से टैब दिखें। कम से कम एक टैब हमेशा दिखाई देना चाहिए।</string>
+    <string name="settings_tab_min_one_required">कम से कम एक टैब दिखाई देना चाहिए।</string>
+    <string name="settings_tab_last_active_sub">दिखाई देना चाहिए (कम से कम एक टैब आवश्यक)</string>
+    <string name="music_menu_manage_tabs">टैब प्रबंधित करें</string>
+    <string name="music_dialog_tabs_title">दिखाई देने वाले संगीत टैब</string>
+    <string name="music_dialog_tabs_desc">चुनें कि संगीत स्क्रीन पर कौन से टैब दिखें:</string>
+
+    <!-- Music Permission & Empty States -->
+    <string name="music_permission_required_title">अनुमति आवश्यक है</string>
+    <string name="music_permission_required_desc">MPx को आपकी संगीत लाइब्रेरी दिखाने के लिए आपकी ऑडियो फ़ाइलों तक पहुँच की अनुमति चाहिए।</string>
+    <string name="music_permission_grant_button">अनुमति दें</string>
+    <string name="music_empty_tracks_title">कोई संगीत नहीं मिला</string>
+    <string name="music_empty_tracks_desc">इस डिवाइस पर कोई ऑडियो ट्रैक नहीं मिला।</string>
+    <string name="music_empty_refresh_action">रिफ़्रेश करें</string>
+    <string name="music_search_no_matches_title">कोई मिलान नहीं मिला</string>
+    <string name="music_search_no_matches_desc">« %s » से मेल खाता कोई गाना नहीं है।</string>
+    <string name="music_empty_albums_title">कोई एल्बम नहीं मिला</string>
+    <string name="music_empty_albums_desc">इस डिवाइस पर कोई ऑडियो एल्बम नहीं मिला।</string>
+    <string name="music_empty_artists_title">कोई कलाकार नहीं मिला</string>
+    <string name="music_empty_artists_desc">इस डिवाइस पर कोई संगीत कलाकार नहीं मिला।</string>
+    <string name="music_empty_folders_title">कोई ऑडियो फ़ोल्डर नहीं मिला</string>
+    <string name="music_empty_folders_desc">इस डिवाइस पर कोई ऑडियो फ़ोल्डर नहीं मिला।</string>
+    <string name="music_empty_playlists_title">कोई प्लेलिस्ट नहीं मिली</string>
+    <string name="music_empty_playlists_desc">बनाने या सिंक होने के बाद प्लेलिस्ट यहाँ दिखाई देंगी।</string>
+
+    <!-- Music Content Rows & Subtitles -->
+    <string name="music_new_playlist_title">नई प्लेलिस्ट</string>
+    <string name="music_new_playlist_subtitle">कस्टम प्लेलिस्ट बनाएँ</string>
+    <string name="music_favourites_title">पसंदीदा</string>
+    <string name="music_recently_played_title">हाल ही में चलाया गया</string>
+    <string name="music_songs_count">%d गाने</string>
+    <string name="music_playlist_songs_subtitle">%1$d गाने • %2$s</string>
+    <string name="music_album_tracks_format">%1$s • %2$d ट्रैक</string>
+    <string name="music_artist_details_format">%1$d ट्रैक • %2$d एल्बम</string>
+    <string name="music_sd_card_badge">SD कार्ड</string>
+    <string name="music_folder_tracks_format">%1$d ट्रैक • %2$s</string>
+
+    <!-- Music Track Menu & Feedback -->
+    <string name="music_cd_track_options">%s के लिए ट्रैक विकल्प</string>
+    <string name="music_menu_play_track">ट्रैक चलाएँ</string>
+    <string name="music_menu_toggle_favourite">पसंदीदा टॉगल करें</string>
+    <string name="music_menu_add_to_playlist">प्लेलिस्ट में जोड़ें…</string>
+    <string name="music_added_to_favourites">पसंदीदा में जोड़ा गया</string>
+    <string name="music_removed_from_favourites">पसंदीदा से हटाया गया</string>
+    <string name="music_cleared_favourites_msg">पसंदीदा साफ़ किए गए</string>
+    <string name="music_cleared_history_msg">इतिहास साफ़ किया गया</string>
+    <string name="music_playlist_created_msg">प्लेलिस्ट « %s » बनाई गई</string>
+    <string name="music_added_to_playlist_msg">« %s » में जोड़ा गया</string>
+    <string name="music_deleted_playlist_msg">« %s » हटाई गई</string>
+
+    <!-- Playlist & Persistence Dialogs -->
+    <string name="action_create">बनाएँ</string>
+    <string name="action_clear_all">सभी साफ़ करें</string>
+    <string name="action_more">अधिक</string>
+    <string name="media_type_video">वीडियो</string>
+    <string name="media_type_audio">ऑडियो</string>
+    <string name="favourites_dialog_title">पसंदीदा (%d)</string>
+    <string name="favourites_empty_title">अभी कोई पसंदीदा नहीं</string>
+    <string name="favourites_empty_desc">पसंदीदा जोड़ने के लिए प्लेयर या ट्रैक विकल्पों में हार्ट आइकन पर टैप करें।</string>
+    <string name="favourites_cd_remove">पसंदीदा हटाएँ</string>
+    <string name="history_dialog_title">प्लेबैक इतिहास (%d)</string>
+    <string name="history_empty_title">कोई इतिहास दर्ज नहीं</string>
+    <string name="history_empty_desc">MPx Player में चलाया गया मीडिया यहाँ स्वचालित रूप से सहेजा जाएगा।</string>
+    <string name="history_resume_at">• %s पर फिर से शुरू करें</string>
+    <string name="history_cd_resume">प्ले फिर से शुरू करें</string>
+    <string name="playlist_create_dialog_title">नई प्लेलिस्ट</string>
+    <string name="playlist_create_dialog_desc">इस कस्टम प्लेलिस्ट के लिए एक नाम दर्ज करें:</string>
+    <string name="playlist_name_placeholder">प्लेलिस्ट नाम</string>
+    <string name="playlist_add_dialog_title">प्लेलिस्ट में जोड़ें</string>
+    <string name="playlist_add_to_header">« %s » को इसमें जोड़ें:</string>
+    <string name="playlist_create_new_action">नई प्लेलिस्ट बनाएँ…</string>
+    <string name="playlist_no_custom_playlists">अभी कोई कस्टम प्लेलिस्ट नहीं बनाई गई है।</string>
+    <string name="playlist_items_subtitle">%d आइटम • कस्टम प्लेलिस्ट</string>
+    <string name="playlist_cd_delete">प्लेलिस्ट हटाएँ</string>
+    <string name="playlist_play_all">सभी चलाएँ</string>
+    <string name="playlist_empty_title">प्लेलिस्ट खाली है</string>
+    <string name="playlist_empty_desc">किसी भी ट्रैक के विकल्प मेनू से ट्रैक जोड़ें।</string>
+    <string name="playlist_cd_remove_item">आइटम हटाएँ</string>
+    <string name="playlists_dialog_title">प्लेलिस्ट (%d)</string>
+    <string name="playlists_btn_new">+ नई</string>
+    <string name="playlists_empty_msg">अभी कोई कस्टम प्लेलिस्ट नहीं है।\nबनाने के लिए « + नई » पर टैप करें।</string>
+    <string name="playlist_items_type_format">%1$d आइटम • %2$s</string>
+
+    <!-- Sort & Menu Options -->
+    <string name="menu_sort_by">इसके अनुसार क्रमबद्ध करें</string>
+    <string name="sort_name">शीर्षक / नाम</string>
+    <string name="sort_date">संशोधन तिथि</string>
+    <string name="sort_size">फ़ाइल आकार</string>
+    <string name="sort_artist">कलाकार</string>
+    <string name="sort_album">एल्बम</string>
+    <!-- Local Screen -->
+    <string name="local_title">मीडिया</string>
+    <string name="local_search_placeholder">फ़ोल्डर खोजें…</string>
+    <string name="local_section_folders">फ़ोल्डर</string>
+    <string name="local_sort_label">क्रम: %1$s</string>
+    <string name="local_status_banner">वास्तविक MediaStore स्कैनिंग सक्रिय है। फ़ोल्डर और वीडियो संख्या डिवाइस मीडिया को दर्शाती है।</string>
+    <string name="local_menu_view_sort">दृश्य और क्रम विकल्प</string>
+    <string name="local_menu_refresh">लाइब्रेरी रिफ़्रेश करें</string>
+
+    <!-- Local Screen Content Descriptions -->
+    <string name="cd_close_search">खोज बंद करें</string>
+    <string name="cd_toggle_view">दृश्य टॉगल करें</string>
+    <string name="cd_search">खोजें</string>
+    <string name="cd_more_options">अधिक विकल्प</string>
+    <string name="cd_quick_play">त्वरित प्ले</string>
+
+    <!-- Shortcut Chips -->
+    <string name="chip_private">निजी</string>
+    <string name="chip_network">नेटवर्क</string>
+
+    <!-- Folder Item Row & Grid Card -->
+    <string name="badge_sd_card">SD कार्ड</string>
+    <string name="badge_new">नया</string>
+    <string name="folder_item_videos_count">%1$d वीडियो</string>
+    <string name="folder_item_videos_and_size">%1$d वीडियो • %2$s</string>
+    <string name="local_status_strip">%1$d फ़ोल्डर • %2$d वीडियो</string>
+    <string name="folder_item_options_cd">%1$s के लिए फ़ोल्डर विकल्प</string>
+
+    <!-- View & Sort Dialog -->
+    <string name="sort_dialog_title">दृश्य और क्रम विकल्प</string>
+    <string name="sort_section_view_mode">दृश्य मोड</string>
+    <string name="sort_section_sort_by">इसके अनुसार क्रमबद्ध करें</string>
+    <string name="view_mode_list">सूची दृश्य</string>
+    <string name="view_mode_grid">ग्रिड दृश्य</string>
+    <string name="sort_field_name">शीर्षक / नाम</string>
+    <string name="sort_field_date">संशोधन तिथि</string>
+    <string name="sort_field_size">फ़ाइल आकार</string>
+    <string name="sort_field_count">वीडियो संख्या</string>
+
+    <!-- Empty States -->
+    <string name="empty_permission_title">अनुमति आवश्यक है</string>
+    <string name="empty_permission_desc">MPx को आपकी मीडिया लाइब्रेरी दिखाने के लिए आपके वीडियो तक पहुँच की अनुमति चाहिए।</string>
+    <string name="empty_permission_action">अनुमति दें</string>
+    <string name="empty_search_title">कोई मिलान नहीं मिला</string>
+    <string name="empty_search_desc">« %1$s » से मेल खाता कोई फ़ोल्डर नहीं है।</string>
+    <string name="empty_search_action">खोज साफ़ करें</string>
+    <string name="empty_videos_title">कोई वीडियो नहीं मिला</string>
+    <string name="empty_videos_desc">इस डिवाइस पर कोई वीडियो फ़ोल्डर नहीं मिला। आपके रिकॉर्ड या डाउनलोड किए गए वीडियो यहाँ दिखाई देंगे।</string>
+    <string name="empty_videos_action">रिफ़्रेश करें</string>
+
+    <!-- Snackbars -->
+    <string name="snackbar_no_playable_videos">%1$s में कोई चलाने योग्य वीडियो नहीं है।</string>
+    <string name="snackbar_library_refreshed">लाइब्रेरी रिफ़्रेश हुई</string>
+    <string name="snackbar_folder_options">%1$s के लिए फ़ोल्डर विकल्प</string>
+    <string name="snackbar_removed_favourites">पसंदीदा से हटाया गया</string>
+    <string name="snackbar_cleared_favourites">पसंदीदा साफ़ किए गए</string>
+    <string name="snackbar_cleared_history">इतिहास साफ़ किया गया</string>
+    <string name="snackbar_playlist_created">प्लेलिस्ट « %1$s » बनाई गई</string>
+    <string name="snackbar_playlist_deleted">« %1$s » हटाई गई</string>
+
+    <!-- Feature Placeholder Dialog & Playlists -->
+    <string name="dialog_feature_placeholder_title">सुविधा प्लेसहोल्डर</string>
+    <string name="feature_placeholder_msg">%1$s बाद के चरणों के लिए निर्धारित है। वर्तमान में केवल लेआउट पूर्वावलोकन किया जा रहा है।</string>
+    <string name="dialog_video_playlists_title">वीडियो प्लेलिस्ट (%1$d)</string>
+    <string name="dialog_new_playlist">नई प्लेलिस्ट</string>
+    <string name="dialog_playlists_empty">अभी कोई कस्टम प्लेलिस्ट नहीं है। बनाने के लिए नई प्लेलिस्ट पर टैप करें।</string>
+    <string name="playlist_items_count">%1$d आइटम</string>
+    <string name="local_menu_filtered_view">फ़िल्टर किए गए फ़ोल्डर दृश्य</string>
+    <string name="local_snackbar_show_all">सभी फ़ोल्डर दिखाए जा रहे हैं (खाली और छिपे सहित)</string>
+    <string name="local_snackbar_filtered">फ़िल्टर किए गए फ़ोल्डर दृश्य दिखाया जा रहा है</string>
+    <string name="empty_folders_title">कोई फ़ोल्डर नहीं मिला</string>
+    <string name="empty_folders_desc">स्टोरेज वॉल्यूम पर कोई मीडिया फ़ोल्डर नहीं मिला। बनने या सिंक होने के बाद फ़ोल्डर और मीडिया यहाँ दिखाई देंगे।</string>
+    <string name="local_section_all_folders">सभी फ़ोल्डर</string>
+    <string name="local_badge_show_all">सभी दिखाएँ</string>
+
+    <!-- Folder View Mode & Folder Contents -->
+    <string name="folder_view_mode">फ़ोल्डर दृश्य मोड</string>
+    <string name="pref_default_folder_view_mode">डिफ़ॉल्ट फ़ोल्डर दृश्य मोड</string>
+    <string name="pref_default_folder_view_mode_desc">फ़ोल्डर के अंदर वीडियो फ़ाइलें देखने के लिए डिफ़ॉल्ट लेआउट</string>
+    <string name="folder_view_subtitle">%1$d वीडियो • %2$s</string>
+    <string name="folder_view_subtitle_single">1 वीडियो • %1$s</string>
+    <string name="folder_view_search_placeholder">फ़ोल्डर में वीडियो खोजें…</string>
+    <string name="folder_view_empty_title">फ़ोल्डर में कोई वीडियो नहीं</string>
+    <string name="folder_view_empty_desc">इस फ़ोल्डर में कोई वीडियो फ़ाइल नहीं मिली।</string>
+    <string name="folder_view_search_empty_title">कोई वीडियो नहीं मिला</string>
+    <string name="folder_view_search_empty_desc">« %1$s » से मेल खाता कोई वीडियो नहीं है।</string>
+    <string name="folder_menu_play_all">सभी चलाएँ</string>
+    <string name="folder_menu_open">फ़ोल्डर खोलें</string>
+    <string name="folder_view_dialog_title">फ़ोल्डर दृश्य और क्रम</string>
+    <string name="folder_view_set_as_default">सभी फ़ोल्डर के लिए डिफ़ॉल्ट सेट करें</string>
+    <string name="folder_view_set_as_default_desc">नए फ़ोल्डर इस दृश्य मोड का उपयोग करेंगे</string>
+    <string name="folder_view_reset_default">ग्लोबल डिफ़ॉल्ट पर रीसेट करें</string>
+    <string name="folder_view_reset_default_snackbar">फ़ोल्डर दृश्य डिफ़ॉल्ट पर रीसेट हुआ (%1$s)</string>
+    <string name="view_mode_switched_list">सूची दृश्य पर स्विच हुआ</string>
+    <string name="view_mode_switched_grid">ग्रिड दृश्य पर स्विच हुआ</string>
+    <string name="video_item_options_cd">%1$s के लिए विकल्प</string>
+    <string name="video_item_play">चलाएँ</string>
+    <string name="video_item_add_to_playlist">प्लेलिस्ट में जोड़ें…</string>
+    <string name="video_item_favourite">पसंदीदा में जोड़ें</string>
+    <string name="video_item_unfavourite">पसंदीदा से हटाएँ</string>
+    <string name="action_back_to_folders">फ़ोल्डर पर वापस जाएँ</string>
+    <string name="overlay_settings_title">ओवरले सेटिंग्स</string>
+    <string name="overlay_section_trigger">कब दिखाएँ</string>
+    <string name="overlay_section_behavior">व्यवहार</string>
+    <string name="pip_banner_supported_details">आपका डिवाइस पिक्चर-इन-पिक्चर समर्थित करता है। MPx छोटी फ़्लोटिंग विंडो में चलाना जारी रख सकता है।</string>
+    <string name="pip_banner_unsupported_reason">इस डिवाइस या Android संस्करण पर पिक्चर-इन-पिक्चर उपलब्ध नहीं है।</string>
+    <string name="pip_window_controls_desc">चुनें कि फ़्लोटिंग विंडो पर कौन से नियंत्रण दिखें।</string>
+    <string name="pip_controls_prev_next_desc">प्ले/पॉज़ के बगल में पिछले और अगले बटन।</string>
+    <string name="pip_controls_seek10_desc">10 सेकंड पीछे और आगे जाएँ।</string>
+    <string name="pip_controls_play_pause_only">केवल प्ले / पॉज़</string>
+    <string name="pip_controls_play_pause_only_desc">फ़्लोटिंग विंडो पर केवल प्ले/पॉज़ बटन।</string>
+    <string name="pip_size_header">विंडो आकार</string>
+    <string name="pip_size_desc">फ़्लोटिंग विंडो कितनी बड़ी होनी चाहिए।</string>
+    <string name="pip_size_small">छोटी</string>
+    <string name="pip_size_small_desc">एक कॉम्पैक्ट फ़्लोटिंग विंडो।</string>
+    <string name="pip_size_medium">मध्यम</string>
+    <string name="pip_size_medium_desc">एक संतुलित फ़्लोटिंग विंडो आकार।</string>
+    <string name="pip_size_large">बड़ी</string>
+    <string name="pip_size_large_desc">एक बड़ी फ़्लोटिंग विंडो।</string>
+    <string name="pip_size_auto">ऑटो</string>
+    <string name="pip_size_auto_desc">सिस्टम को विंडो आकार चुनने दें।</string>
+    <string name="pip_position_header">विंडो स्थिति</string>
+    <string name="pip_position_desc">फ़्लोटिंग विंडो पहले कहाँ दिखाई दे। सिस्टम इसे हिला सकता है।</string>
+    <string name="pip_position_bottom_right">नीचे दाईं ओर</string>
+    <string name="pip_position_bottom_right_desc">नीचे-दाएँ कोने में शुरू करें।</string>
+    <string name="pip_position_bottom_left">नीचे बाईं ओर</string>
+    <string name="pip_position_bottom_left_desc">नीचे-बाएँ कोने में शुरू करें।</string>
+    <string name="pip_position_top_right">ऊपर दाईं ओर</string>
+    <string name="pip_position_top_right_desc">ऊपर-दाएँ कोने में शुरू करें।</string>
+    <string name="pip_position_top_left">ऊपर बाईं ओर</string>
+    <string name="pip_position_top_left_desc">ऊपर-बाएँ कोने में शुरू करें।</string>
+    <string name="pip_position_center">केंद्र</string>
+    <string name="pip_position_center_desc">स्क्रीन के केंद्र में शुरू करें।</string>
+    <string name="pip_position_remember_last">अंतिम स्थिति याद रखें</string>
+    <string name="pip_position_remember_last_desc">विंडो वहीं फिर से खोलें जहाँ आपने इसे पिछली बार छोड़ा था।</string>
+    <string name="pip_snap_edge_title">किनारे से स्नैप करें</string>
+    <string name="pip_snap_edge_desc">छोड़ने पर फ़्लोटिंग विंडो को निकटतम स्क्रीन किनारे से स्नैप करें।</string>
+    <string name="pip_close_on_done_title">समाप्त होने पर बंद करें</string>
+    <string name="pip_close_on_done_desc">प्लेबैक समाप्त होने पर फ़्लोटिंग विंडो स्वचालित रूप से बंद करें।</string>
+    <string name="pip_limits_title">सिस्टम सीमाएँ</string>
+    <string name="pip_limit_hardware_title">हार्डवेयर समर्थन</string>
+    <string name="pip_limit_hardware_desc">कुछ डिवाइस प्रदर्शन या बैटरी कारणों से पिक्चर-इन-पिक्चर अक्षम कर देते हैं।</string>
+    <string name="pip_limit_sandboxing_title">ऐप प्रतिबंध</string>
+    <string name="pip_limit_sandboxing_desc">बैटरी ऑप्टिमाइज़ेशन या प्रतिबंधित ऐप सेटिंग फ़्लोटिंग विंडो को रोक सकती है।</string>
+    <string name="pip_limit_window_manager_title">विंडो मैनेजर</string>
+    <string name="pip_limit_window_manager_desc">सिस्टम अंतिम आकार और स्थिति नियंत्रित करता है, इसलिए MPx के अनुरोध समायोजित किए जा सकते हैं।</string>
+    <string name="pip_limit_actions_title">उपलब्ध क्रियाएँ</string>
+    <string name="pip_limit_actions_desc">फ़्लोटिंग विंडो पर केवल वही क्रियाएँ दिखाई दे सकती हैं जिनकी Android अनुमति देता है।</string>
+    <!-- Beta & About Screen -->
+    <string name="about_beta_screen_title">के बारे में और बीटा स्थिति</string>
+    <string name="about_beta_badge">बीटा रिलीज़</string>
+    <string name="about_beta_tagline">Media3 ExoPlayer और Room पर्सिस्टेंस के साथ Android के लिए नेटिव Kotlin मीडिया प्लेयर।</string>
+    <string name="about_beta_build_info">बिल्ड 2 (VersionCode 2) • ब्रांच: feature/beta-readiness</string>
+
+    <!-- What is Ready in Beta -->
+    <string name="about_beta_section_ready">बीटा में क्या तैयार है</string>
+    <string name="about_beta_ready_subtitle">मुख्य ऑफ़लाइन प्लेबैक और लाइब्रेरी सुविधाएँ पूरी तरह कार्यात्मक नेटिव कार्यान्वयन हैं:</string>
+    <string name="about_beta_feat_player_title">Media3 वीडियो प्लेबैक इंजन</string>
+    <string name="about_beta_feat_player_desc">AndroidX Media3 ExoPlayer के माध्यम से हार्डवेयर (HW/HW+) और सॉफ़्टवेयर (SW) डीकोडिंग। वीडियो जेस्चर (10 सेकंड सीक के लिए डबल-टैप, क्षैतिज ड्रैग स्क्रब), आस्पेक्ट रेशियो नियंत्रण (Fit/Stretch/16:9/Original), एम्बेडेड और बाहरी सबटाइटल (.srt, .vtt) और मल्टी-ऑडियो ट्रैक स्विचिंग।</string>
+    <string name="about_beta_feat_bg_pip_title">बैकग्राउंड प्ले और पॉप-अप प्ले (PiP)</string>
+    <string name="about_beta_feat_bg_pip_desc">Android 8.0+ पर कस्टम विंडो नियंत्रण के साथ पिक्चर-इन-पिक्चर फ़्लोटिंग मोड। फ़ोरग्राउंड सर्विस के माध्यम से वीडियो और संगीत के लिए वास्तविक बैकग्राउंड ऑडियो प्लेबैक।</string>
+    <string name="about_beta_feat_music_title">संगीत प्लेयर और ऑडियो लाइब्रेरी</string>
+    <string name="about_beta_feat_music_desc">लोकल ट्रैक, एल्बम, कलाकार और ऑडियो फ़ोल्डर के लिए पूर्ण MediaStore स्कैनिंग। शफ़ल प्लेबैक, ट्रैक कतार और सभी मुख्य टैब में स्थायी MiniPlayer।</string>
+    <string name="about_beta_feat_persistence_title">ऑन-डिवाइस Room SQLite पर्सिस्टेंस</string>
+    <string name="about_beta_feat_persistence_desc">कस्टम प्लेलिस्ट, स्टार किए गए पसंदीदा और सटीक रिज़्यूम टाइमस्टैम्प के साथ प्लेबैक इतिहास mpx_player.db में लोकल रूप से सहेजे जाते हैं।</string>
+    <string name="about_beta_feat_themes_title">थीम और सच्चा डार्क मोड</string>
+    <string name="about_beta_feat_themes_desc">चार थीम: Midnight OLED (#000000 सिनेमा ब्लैक), Dark Slate, Classic Navy और Light Cinema। रनटाइम पर तत्काल थीम लागू होना।</string>
+    <string name="about_beta_feat_i18n_title">पूर्ण अंग्रेज़ी और आधुनिक मानक अरबी (RTL)</string>
+    <string name="about_beta_feat_i18n_desc">पूर्ण राइट-टू-लेफ़्ट (RTL) मिररिंग, मिरर किए गए आइकन और ऐप पुनः आरंभ किए बिना तत्काल भाषा स्विचिंग के साथ द्विदिशात्मक इंटरफ़ेस।</string>
+
+    <!-- What is Placeholder -->
+    <string name="about_beta_section_placeholders">अभी भी क्या प्लेसहोल्डर है</string>
+    <string name="about_beta_placeholders_subtitle">हमारे ईमानदार विकास सिद्धांतों के अनुसार, निम्नलिखित सुविधाएँ बिना किसी नकली या जाली संचालन के गैर-कार्यात्मक UI प्लेसहोल्डर हैं:</string>
+    <string name="about_beta_holder_downloader_title">URL डाउनलोडर (ट्रांसफ़र टैब)</string>
+    <string name="about_beta_holder_downloader_desc">स्थिति: केवल UI शेल। कोई नकली डाउनलोड या कृत्रिम प्रगति बार नहीं। वास्तविक बैकग्राउंड डाउनलोड इंजन चरण 5 में एकीकृत किया जाएगा।</string>
+    <string name="about_beta_holder_transfer_title">डायरेक्ट फ़ाइल ट्रांसफ़र (ट्रांसफ़र टैब)</string>
+    <string name="about_beta_holder_transfer_desc">स्थिति: UI प्लेसहोल्डर। ऑफ़लाइन पीयर-टू-पीयर (P2P / Wi-Fi Direct) फ़ाइल शेयरिंग प्रोटोकॉल चरण 5 में जुड़ेगा।</string>
+    <string name="about_beta_holder_status_title">स्टेटस सेवर (Me टूल्स ग्रिड)</string>
+    <string name="about_beta_holder_status_desc">स्थिति: ईमानदार प्लेसहोल्डर (Issue 32)। स्कोप्ड स्टोरेज डायरेक्टरी अनुमति फ़्लो लागू होने पर WhatsApp स्टेटस डायरेक्टरी स्कैनिंग और सहेजना जुड़ेगा।</string>
+    <string name="about_beta_holder_private_title">प्राइवेट फ़ोल्डर (Me टूल्स ग्रिड)</string>
+    <string name="about_beta_holder_private_desc">स्थिति: ईमानदार प्लेसहोल्डर (Issue 32)। बायोमेट्रिक / PIN प्रमाणीकरण के साथ एन्क्रिप्टेड मीडिया वॉल्ट Issue 32 के लिए निर्धारित है।</string>
+    <string name="about_beta_holder_manager_title">मीडिया मैनेजर और स्टोरेज क्लीनर (Me टूल्स ग्रिड)</string>
+    <string name="about_beta_holder_manager_desc">स्थिति: ईमानदार प्लेसहोल्डर (Issue 32)। डुप्लिकेट मीडिया पहचान, बड़ी फ़ाइल पहचान और कैश विश्लेषक Issue 32 के लिए निर्धारित हैं।</string>
+    <string name="about_beta_holder_bin_title">रीसाइकल बिन (Me टूल्स ग्रिड)</string>
+    <string name="about_beta_holder_bin_desc">स्थिति: ईमानदार प्लेसहोल्डर (Issue 32)। हटाई गई फ़ाइलों के लिए ऐप-प्रबंधित अस्थायी होल्डिंग डायरेक्टरी (30-दिन प्रतिधारण) Issue 32 के लिए निर्धारित है।</string>
+
+    <!-- Privacy & Integrity -->
+    <string name="about_beta_section_privacy">गोपनीयता और टेलीमेट्री अखंडता</string>
+    <string name="about_beta_privacy_body">MPx Player में कोई नकली क्रैश रिपोर्टिंग नहीं है, कोई तृतीय-पक्ष टेलीमेट्री नहीं है, कोई विज्ञापन फ़्रेमवर्क नहीं है और कोई ट्रैकिंग SDK नहीं है। आपका मीडिया प्लेबैक इतिहास, पसंदीदा और सेटिंग्स पूरी तरह निजी हैं और कभी आपके डिवाइस को नहीं छोड़तीं।</string>
+
+    <!-- Feedback & GitHub Issues -->
+    <string name="about_beta_section_feedback">फ़ीडबैक और बग रिपोर्ट</string>
+    <string name="about_beta_feedback_body">हम अपने सार्वजनिक GitHub रिपॉज़िटरी पर बग रिपोर्ट, रिग्रेशन खोज और सुविधा सुझावों का स्वागत करते हैं। आपका फ़ीडबैक सीधे आगामी रिलीज़ को आकार देता है।</string>
+    <string name="about_beta_open_github">GitHub Issues खोलें</string>
+    <string name="about_beta_copy_github_url">Issues लिंक कॉपी करें</string>
+    <string name="about_beta_issues_url">https://github.com/mohammedbakri123/MPx-player/issues</string>
+    <string name="about_beta_copied_snackbar">GitHub issues URL क्लिपबोर्ड पर कॉपी हुआ</string>
+    <string name="about_beta_browser_error">वेब ब्राउज़र नहीं खोल सका। URL आपके क्लिपबोर्ड पर कॉपी कर दिया गया है।</string>
+    <string name="about_beta_open_page_button">बीटा विवरण और फ़ीडबैक देखें</string>
+    <!-- Separate View Layout (Issue 16) -->
+    <string name="settings_separate_view_title">अलग दृश्य लेआउट</string>
+    <string name="settings_separate_view_desc">लोकल और संगीत स्क्रीन के लिए दृश्य लेआउट (सूची या ग्रिड) अलग-अलग याद रखें</string>
+    <string name="sort_section_layout_settings">लेआउट सेटिंग्स</string>
+    <string name="sort_separate_view_title">अलग दृश्य लेआउट</string>
+    <string name="sort_separate_view_desc">इस स्क्रीन के लिए लेआउट स्वतंत्र रूप से याद रखें</string>
+    <string name="snackbar_separate_view_enabled">अलग दृश्य लेआउट सक्षम हुआ</string>
+    <string name="snackbar_separate_view_disabled">अलग दृश्य लेआउट अक्षम हुआ: लेआउट सिंक्रनाइज़ हुए</string>
+    <!-- File View (Issue 19) -->
+    <string name="sort_section_view_type">दृश्य प्रकार</string>
+    <string name="view_type_folders">फ़ोल्डर (फ़ोल्डर के अनुसार समूह)</string>
+    <string name="view_type_files">सभी फ़ाइलें (व्यक्तिगत फ़ाइलें)</string>
+    <string name="sort_field_duration">अवधि / लंबाई</string>
+    <string name="section_files_header">फ़ाइलें</string>
+    <string name="list_file_view">फ़ाइल दृश्य</string>
+    <string name="list_file_view_desc">फ़ोल्डर के अनुसार समूह बनाने के बजाय लोकल दृश्य में व्यक्तिगत वीडियो फ़ाइलें सूचीबद्ध करें</string>
+    <string name="list_show_all_files">सभी फ़ाइलें दिखाएँ</string>
+    <string name="list_show_all_files_desc">छिपी फ़ाइलें और आंतरिक स्टोरेज पथ शामिल करें</string>
+    <string name="local_section_videos">वीडियो</string>
+    <string name="local_section_all_videos">सभी वीडियो</string>
+    <string name="local_search_placeholder_files">वीडियो खोजें…</string>
+    <string name="local_menu_switch_to_files">फ़ाइल दृश्य पर स्विच करें</string>
+    <string name="local_menu_switch_to_folders">फ़ोल्डर दृश्य पर स्विच करें</string>
+    <string name="local_snackbar_file_view">फ़ाइल दृश्य पर स्विच हुआ</string>
+    <string name="local_snackbar_folder_view">फ़ोल्डर दृश्य पर स्विच हुआ</string>
+    <string name="video_menu_play">वीडियो चलाएँ</string>
+    <string name="video_menu_play_folder">फ़ोल्डर चलाएँ (%1$s)</string>
+
+    <!-- Auto Screen Rotation (Issue 19) -->
+    <string name="player_auto_rotation">ऑटो स्क्रीन रोटेशन</string>
+    <string name="player_auto_rotation_desc">प्लेयर में सेंसर के माध्यम से डिवाइस ओरिएंटेशन का पालन करें, या लैंडस्केप/पोर्ट्रेट पर लॉक करें</string>
+    <string name="player_locked_orientation_header">लॉक की गई ओरिएंटेशन:</string>
+    <string name="player_rotation_dialog_title">स्क्रीन रोटेशन</string>
+    <string name="player_rotation_auto">ऑटो रोटेट (सेंसर)</string>
+    <string name="player_rotation_auto_desc">प्लेयर स्वचालित रूप से डिवाइस ओरिएंटेशन का पालन करता है</string>
+    <string name="player_orientation_landscape">लैंडस्केप</string>
+    <string name="player_orientation_landscape_desc">स्क्रीन को क्षैतिज लैंडस्केप मोड में लॉक करें</string>
+    <string name="player_orientation_portrait">पोर्ट्रेट</string>
+    <string name="player_orientation_portrait_desc">स्क्रीन को ऊर्ध्वाधर पोर्ट्रेट मोड में लॉक करें</string>
+    <string name="toast_rotation_auto">ऑटो स्क्रीन रोटेशन सक्षम हुआ (सेंसर)</string>
+    <string name="toast_rotation_landscape">स्क्रीन लैंडस्केप पर लॉक हुई</string>
+    <string name="toast_rotation_portrait">स्क्रीन पोर्ट्रेट पर लॉक हुई</string>
+    <string name="cd_screen_rotation">स्क्रीन रोटेशन</string>
+    <string name="local_menu_folder_view">फ़ोल्डर दृश्य</string>
+    <string name="local_menu_file_view">फ़ाइल दृश्य</string>
+    <string name="snackbar_added_to_favourites">पसंदीदा में जोड़ा गया</string>
+
+    <!-- Development Category Diagnostics (Issue 60) -->
+    <string name="dev_section_app_build">ऐप और बिल्ड</string>
+    <string name="dev_section_database">Room SQLite डेटाबेस</string>
+    <string name="dev_section_media_scan">MediaStore लाइब्रेरी स्कैन</string>
+    <string name="dev_section_playback_engine">डीकोडर और प्लेबैक इंजन</string>
+    <string name="dev_label_package">एप्लिकेशन ID</string>
+    <string name="dev_label_version">संस्करण</string>
+    <string name="dev_label_build_code">संस्करण कोड</string>
+    <string name="dev_label_build_type">बिल्ड प्रकार</string>
+    <string name="dev_label_target_sdk">टारगेट SDK</string>
+    <string name="dev_label_min_sdk">न्यूनतम SDK</string>
+    <string name="dev_label_device">डिवाइस</string>
+    <string name="dev_label_os_version">Android OS</string>
+    <string name="dev_label_db_name">डेटाबेस नाम</string>
+    <string name="dev_label_db_path">डेटाबेस पथ</string>
+    <string name="dev_label_db_size">डेटाबेस आकार</string>
+    <string name="dev_label_db_wal_size">WAL जर्नल आकार</string>
+    <string name="dev_label_db_records">डेटाबेस रिकॉर्ड</string>
+    <string name="dev_label_db_not_created">अभी नहीं बना (0 B)</string>
+    <string name="dev_label_permissions">मीडिया अनुमतियाँ</string>
+    <string name="dev_label_scan_volumes">स्टोरेज वॉल्यूम</string>
+    <string name="dev_label_video_folders">वीडियो फ़ोल्डर</string>
+    <string name="dev_label_scanned_videos">स्कैन किए गए वीडियो</string>
+    <string name="dev_label_audio_tracks">ऑडियो ट्रैक</string>
+    <string name="dev_label_audio_folders">ऑडियो फ़ोल्डर</string>
+    <string name="dev_label_audio_albums">ऑडियो एल्बम</string>
+    <string name="dev_label_audio_artists">ऑडियो कलाकार</string>
+    <string name="dev_label_playlists">प्लेलिस्ट</string>
+    <string name="dev_label_engine_name">प्लेबैक इंजन</string>
+    <string name="dev_label_engine_type">इंजन आर्किटेक्चर</string>
+    <string name="dev_label_decoder_mode">कॉन्फ़िगर किया गया डीकोडर</string>
+    <string name="dev_label_active_decoder">सक्रिय वीडियो डीकोडर</string>
+    <string name="dev_label_codec_type">कोडेक कार्यान्वयन</string>
+    <string name="dev_label_player_state">प्लेयर स्थिति</string>
+    <string name="dev_label_active_media">सक्रिय मीडिया</string>
+    <string name="dev_label_decoder_fallback">डीकोडर फ़ॉलबैक</string>
+    <string name="dev_btn_refresh_diagnostics">डायग्नोस्टिक्स रिफ़्रेश करें</string>
+    <string name="dev_val_refreshing">रिफ़्रेश हो रहा है…</string>
+    <string name="dev_val_none_idle">कोई नहीं (प्लेयर निष्क्रिय)</string>
+    <string name="dev_val_direct_codec">डायरेक्ट (कोई फ़ॉलबैक आवश्यक नहीं)</string>
+    <string name="dev_val_perm_video">वीडियो: %1$s • ऑडियो: %2$s</string>
+    <string name="dev_val_perm_granted">दी गई</string>
+    <string name="dev_val_perm_denied">अस्वीकृत</string>
+    <string name="dev_val_codec_hw">हार्डवेयर एक्सेलेरेटेड (MediaCodec)</string>
+    <string name="dev_val_codec_sw">सॉफ़्टवेयर (CPU)</string>
+    <string name="dev_label_last_updated">अंतिम अपडेट: %1$s</string>
+    <!-- Issue 59: Secondary Sort, Fields, and Advanced Sort Options -->
+    <string name="sort_section_secondary_sort">द्वितीयक क्रम</string>
+    <string name="sort_secondary_sort_desc">जब प्राथमिक मान बराबर हों तो टाई-ब्रेकर के रूप में लागू होता है</string>
+    <string name="sort_field_none">कोई नहीं</string>
+    <string name="sort_section_fields">फ़ील्ड</string>
+    <string name="sort_fields_dialog_title">फ़ील्ड</string>
+    <string name="sort_fields_desc">सूची पंक्तियों में दिखाने के लिए मेटाडेटा कॉलम चुनें</string>
+    <string name="sort_field_show_size">फ़ाइल आकार</string>
+    <string name="sort_field_show_date">संशोधन तिथि</string>
+    <string name="sort_field_show_duration">अवधि / लंबाई</string>
+    <string name="sort_field_show_location">स्थान / फ़ोल्डर</string>
+    <string name="sort_field_show_count">वीडियो संख्या</string>
+    <string name="sort_section_advanced">उन्नत</string>
+    <string name="sort_advanced_dialog_title">उन्नत क्रम विकल्प</string>
+    <string name="sort_advanced_reverse_order">प्राथमिक क्रम उल्टा करें</string>
+    <string name="sort_advanced_reverse_order_desc">आरोही और अवरोही क्रम के बीच बदलें</string>
+    <string name="sort_advanced_secondary_reverse">द्वितीयक क्रम उल्टा करें</string>
+    <string name="sort_advanced_secondary_reverse_desc">द्वितीयक क्रम को आरोही और अवरोही के बीच बदलें</string>
+    <string name="sort_advanced_numeric">प्राकृतिक संख्यात्मक क्रम</string>
+    <string name="sort_advanced_numeric_desc">नामों में \'2\' को \'10\' से पहले क्रमबद्ध करें</string>
+    <string name="sort_advanced_case_sensitive">केस-संवेदनशील क्रम</string>
+    <string name="sort_advanced_case_sensitive_desc">बड़े और छोटे अक्षरों के बीच अंतर करें</string>
+    <string name="sort_advanced_ignore_extension">फ़ाइल एक्सटेंशन अनदेखा करें</string>
+    <string name="sort_advanced_ignore_extension_desc">फ़ाइल एक्सटेंशन पर विचार किए बिना फ़ाइल शीर्षक के अनुसार क्रमबद्ध करें</string>
+    <string name="sort_advanced_summary_default">मानक क्रम विकल्प</string>
+    <!-- Issue 55: Continue Watching Row -->
+    <string name="continue_watching_title">देखना जारी रखें</string>
+    <string name="continue_watching_dismiss">देखना जारी रखें से हटाएँ</string>
+    <string name="continue_watching_dismissed">« %1$s » को देखना जारी रखें से हटाया गया</string>
+    <string name="continue_watching_resume_at">%1$s पर फिर से शुरू करें</string>
+    <!-- Issue 54: Sleep Timer -->
+    <string name="player_sleep_timer">स्लीप टाइमर</string>
+    <string name="player_sleep_timer_off">बंद</string>
+    <string name="player_sleep_timer_15">15 मिनट</string>
+    <string name="player_sleep_timer_30">30 मिनट</string>
+    <string name="player_sleep_timer_45">45 मिनट</string>
+    <string name="player_sleep_timer_60">60 मिनट</string>
+    <string name="player_sleep_timer_dialog_title">स्लीप टाइमर</string>
+    <string name="player_sleep_timer_chip">स्लीप: %1$s</string>
+    <string name="player_sleep_timer_cancel">स्लीप टाइमर रद्द करें</string>
+    <string name="player_sleep_timer_set_toast">स्लीप टाइमर %1$d मिनट के लिए सेट हुआ</string>
+    <string name="player_sleep_timer_canceled_toast">स्लीप टाइमर बंद हुआ</string>
+    <string name="player_gesture_hint">डबल-टैप: -10 सेकंड (बाएँ) / प्ले-पॉज़ / +10 सेकंड (दाएँ) • क्षैतिज स्वाइप: सीक • ऊर्ध्वाधर स्वाइप: ब्राइटनेस (बाएँ) / वॉल्यूम (दाएँ)</string>
+</resources>
