@@ -57,7 +57,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.mpx.player.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.ui.components.EmptyStateView
@@ -74,6 +77,7 @@ fun TransferScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    val context = LocalContext.current
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -83,7 +87,7 @@ fun TransferScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Transfer & Downloader",
+                        text = stringResource(R.string.transfer_title),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
@@ -121,7 +125,7 @@ fun TransferScreen(
                     onClick = { selectedTab = 0 },
                     text = {
                         Text(
-                            text = "Downloader",
+                            text = stringResource(R.string.transfer_tab_downloader),
                             style = MaterialTheme.typography.titleSmall,
                             color = if (selectedTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -132,7 +136,7 @@ fun TransferScreen(
                     onClick = { selectedTab = 1 },
                     text = {
                         Text(
-                            text = "File Transfer",
+                            text = stringResource(R.string.transfer_tab_file_transfer),
                             style = MaterialTheme.typography.titleSmall,
                             color = if (selectedTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -149,7 +153,7 @@ fun TransferScreen(
                         .padding(16.dp),
                 ) {
                     HonestStatusBanner(
-                        text = "Honest Downloader Placeholder: no fake downloads are simulated. Real engine connects in Phase 5.",
+                        text = stringResource(R.string.transfer_downloader_banner),
                     )
 
                     Spacer(Modifier.height(16.dp))
@@ -170,7 +174,7 @@ fun TransferScreen(
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Text(
-                                    text = "URL Downloader",
+                                    text = stringResource(R.string.transfer_url_downloader),
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold,
@@ -180,7 +184,7 @@ fun TransferScreen(
                             Spacer(Modifier.height(8.dp))
 
                             Text(
-                                text = "Paste a direct video link below to download to device storage.",
+                                text = stringResource(R.string.transfer_url_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -193,7 +197,7 @@ fun TransferScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 placeholder = {
                                     Text(
-                                        "Paste video URL (https://...)",
+                                        stringResource(R.string.transfer_url_placeholder),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 14.sp,
                                     )
@@ -212,13 +216,13 @@ fun TransferScreen(
                                             urlText = pasted
                                         } else {
                                             scope.launch {
-                                                snackbarHostState.showSnackbar("Clipboard does not contain a URL.")
+                                                snackbarHostState.showSnackbar(context.getString(R.string.transfer_clipboard_no_url))
                                             }
                                         }
                                     }) {
                                         Icon(
                                             imageVector = Icons.Filled.ContentPaste,
-                                            contentDescription = "Paste from clipboard",
+                                            contentDescription = stringResource(R.string.transfer_cd_paste),
                                             tint = MaterialTheme.colorScheme.primary,
                                         )
                                     }
@@ -241,7 +245,7 @@ fun TransferScreen(
                                 onClick = {
                                     scope.launch {
                                         snackbarHostState.showSnackbar(
-                                            "Downloader engine is a placeholder — real downloads will connect in Phase 5.",
+                                            context.getString(R.string.transfer_downloader_placeholder_toast),
                                         )
                                     }
                                 },
@@ -259,7 +263,7 @@ fun TransferScreen(
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    "Start Download",
+                                    stringResource(R.string.transfer_start_download),
                                     fontWeight = FontWeight.SemiBold,
                                 )
                             }
@@ -269,7 +273,7 @@ fun TransferScreen(
                     Spacer(Modifier.height(24.dp))
 
                     Text(
-                        text = "DOWNLOAD TASKS",
+                        text = stringResource(R.string.transfer_download_tasks),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
@@ -278,8 +282,8 @@ fun TransferScreen(
                     Spacer(Modifier.height(12.dp))
 
                     EmptyStateView(
-                        title = "No Active Downloads",
-                        message = "Downloaded files will appear here once the downloader engine is integrated in Phase 5.",
+                        title = stringResource(R.string.transfer_no_downloads_title),
+                        message = stringResource(R.string.transfer_no_downloads_msg),
                         icon = Icons.Filled.DownloadDone,
                         modifier = Modifier.height(200.dp),
                     )
@@ -293,7 +297,7 @@ fun TransferScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     HonestStatusBanner(
-                        text = "Offline P2P Transfer placeholder: protocol will be wired in Phase 5.",
+                        text = stringResource(R.string.transfer_p2p_banner),
                     )
 
                     Spacer(Modifier.height(24.dp))
@@ -317,7 +321,7 @@ fun TransferScreen(
                     Spacer(Modifier.height(16.dp))
 
                     Text(
-                        text = "Direct File Transfer",
+                        text = stringResource(R.string.transfer_direct_title),
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
@@ -328,7 +332,7 @@ fun TransferScreen(
                     Spacer(Modifier.height(8.dp))
 
                     Text(
-                        text = "Send and receive videos and audio files with nearby devices at high speed without using internet data.",
+                        text = stringResource(R.string.transfer_direct_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 24.dp),
@@ -343,7 +347,7 @@ fun TransferScreen(
                         Button(
                             onClick = {
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("P2P File Transfer protocol specification in Phase 5.")
+                                    snackbarHostState.showSnackbar(context.getString(R.string.transfer_p2p_spec))
                                 }
                             },
                             modifier = Modifier
@@ -357,13 +361,13 @@ fun TransferScreen(
                         ) {
                             Icon(Icons.Filled.ArrowUpward, null, Modifier.size(20.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Send", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(stringResource(R.string.transfer_send), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
 
                         OutlinedButton(
                             onClick = {
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("P2P File Transfer protocol specification in Phase 5.")
+                                    snackbarHostState.showSnackbar(context.getString(R.string.transfer_p2p_spec))
                                 }
                             },
                             modifier = Modifier
@@ -377,7 +381,7 @@ fun TransferScreen(
                         ) {
                             Icon(Icons.Filled.ArrowDownward, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(8.dp))
-                            Text("Receive", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
+                            Text(stringResource(R.string.transfer_receive), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
