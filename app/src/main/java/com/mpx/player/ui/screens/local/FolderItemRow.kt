@@ -37,10 +37,23 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.ui.components.AsyncFolderThumbnail
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private fun formatFolderDate(epochMillis: Long): String {
+    if (epochMillis <= 0L) return ""
+    val millis = if (epochMillis < 10_000_000_000L) epochMillis * 1000L else epochMillis
+    val sdf = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+    return sdf.format(Date(millis))
+}
 
 @Composable
 fun FolderItemRow(
     folder: MediaFolder,
+    showCount: Boolean = true,
+    showSize: Boolean = true,
+    showDate: Boolean = false,
     onClick: () -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -123,15 +136,30 @@ fun FolderItemRow(
                 }
             }
 
-            Spacer(Modifier.height(3.dp))
-
-            Text(
-                text = stringResource(R.string.folder_item_videos_and_size, folder.videoCount, folder.totalSizeFormatted),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            val metaParts = mutableListOf<String>()
+            if (showCount) {
+                metaParts.add(stringResource(R.string.folder_item_videos_count, folder.videoCount))
+            }
+            if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                metaParts.add(folder.totalSizeFormatted)
+            }
+            if (showDate) {
+                val dateStr = formatFolderDate(folder.lastModified)
+                if (dateStr.isNotBlank()) {
+                    metaParts.add(dateStr)
+                }
+            }
+            val subtitleText = metaParts.joinToString(" • ")
+            if (subtitleText.isNotBlank()) {
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = subtitleText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
         IconButton(
@@ -151,6 +179,9 @@ fun FolderItemRow(
 @Composable
 fun FolderItemGridCard(
     folder: MediaFolder,
+    showCount: Boolean = true,
+    showSize: Boolean = true,
+    showDate: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -224,13 +255,30 @@ fun FolderItemGridCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            Spacer(Modifier.height(2.dp))
-
-            Text(
-                text = stringResource(R.string.folder_item_videos_count, folder.videoCount),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            val metaParts = mutableListOf<String>()
+            if (showCount) {
+                metaParts.add(stringResource(R.string.folder_item_videos_count, folder.videoCount))
+            }
+            if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                metaParts.add(folder.totalSizeFormatted)
+            }
+            if (showDate) {
+                val dateStr = formatFolderDate(folder.lastModified)
+                if (dateStr.isNotBlank()) {
+                    metaParts.add(dateStr)
+                }
+            }
+            val subtitleText = metaParts.joinToString(" • ")
+            if (subtitleText.isNotBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = subtitleText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

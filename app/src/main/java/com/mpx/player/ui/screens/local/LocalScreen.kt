@@ -146,7 +146,24 @@ fun LocalScreen(
             }
         )
     }
-    var sortField by remember { mutableStateOf(SortField.DATE) }
+    var sortField by remember {
+        mutableStateOf(
+            try {
+                SortField.valueOf(appSettings.primarySortField)
+            } catch (_: Exception) {
+                SortField.DATE
+            }
+        )
+    }
+    var secondarySortField by remember {
+        mutableStateOf(
+            try {
+                SortField.valueOf(appSettings.secondarySortField)
+            } catch (_: Exception) {
+                SortField.NAME
+            }
+        )
+    }
 
     fun updateViewMode(newMode: ViewMode) {
         viewMode = newMode
@@ -171,7 +188,24 @@ fun LocalScreen(
     var folderVideos by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
     var isFolderLoading by remember { mutableStateOf(false) }
     var folderViewMode by remember { mutableStateOf(ViewMode.LIST) }
-    var folderSortField by remember { mutableStateOf(SortField.DATE) }
+    var folderSortField by remember {
+        mutableStateOf(
+            try {
+                SortField.valueOf(appSettings.folderPrimarySortField)
+            } catch (_: Exception) {
+                SortField.DATE
+            }
+        )
+    }
+    var folderSecondarySortField by remember {
+        mutableStateOf(
+            try {
+                SortField.valueOf(appSettings.folderSecondarySortField)
+            } catch (_: Exception) {
+                SortField.NAME
+            }
+        )
+    }
     var folderSearchQuery by remember { mutableStateOf("") }
     var isFolderSearching by remember { mutableStateOf(false) }
     var showFolderSortDialog by remember { mutableStateOf(false) }
@@ -364,14 +398,17 @@ fun LocalScreen(
         }
     }
 
-    val sortedFolders = remember(folders, sortField) {
-        when (sortField) {
-            SortField.NAME -> folders.sortedBy { it.name.lowercase(Locale.US) }
-            SortField.DATE -> folders.sortedByDescending { it.lastModified }
-            SortField.COUNT -> folders.sortedByDescending { it.videoCount }
-            SortField.SIZE -> folders.sortedByDescending { it.totalSizeFormatted }
-            SortField.DURATION -> folders.sortedByDescending { it.lastModified }
-        }
+    val sortedFolders = remember(folders, sortField, secondarySortField, appSettings) {
+        folders.sortedWith(
+            MediaSortComparator.folderComparator(
+                primary = sortField,
+                secondary = secondarySortField,
+                reverse = appSettings.sortReverse,
+                secondaryReverse = appSettings.sortSecondaryReverse,
+                numeric = appSettings.sortNumeric,
+                caseSensitive = appSettings.sortCaseSensitive,
+            )
+        )
     }
 
     val filteredFolders = remember(sortedFolders, searchQuery) {
@@ -381,14 +418,18 @@ fun LocalScreen(
     }
 
     // File view: all videos ungrouped, sorted and filtered
-    val sortedVideos = remember(allVideos, sortField) {
-        when (sortField) {
-            SortField.NAME -> allVideos.sortedBy { it.title.lowercase(Locale.US) }
-            SortField.DATE -> allVideos.sortedByDescending { it.dateModified }
-            SortField.SIZE -> allVideos.sortedByDescending { it.sizeBytes }
-            SortField.COUNT -> allVideos
-            SortField.DURATION -> allVideos.sortedByDescending { it.durationMs }
-        }
+    val sortedVideos = remember(allVideos, sortField, secondarySortField, appSettings) {
+        allVideos.sortedWith(
+            MediaSortComparator.videoComparator(
+                primary = sortField,
+                secondary = secondarySortField,
+                reverse = appSettings.sortReverse,
+                secondaryReverse = appSettings.sortSecondaryReverse,
+                numeric = appSettings.sortNumeric,
+                caseSensitive = appSettings.sortCaseSensitive,
+                ignoreExtension = appSettings.sortIgnoreExtension,
+            )
+        )
     }
 
     val filteredVideos = remember(sortedVideos, searchQuery) {
@@ -400,14 +441,18 @@ fun LocalScreen(
     val rootEmpty = if (appSettings.fileView) filteredVideos.isEmpty() else filteredFolders.isEmpty()
 
     // Folder view sorted and filtered videos
-    val sortedFolderVideos = remember(folderVideos, folderSortField) {
-        when (folderSortField) {
-            SortField.NAME -> folderVideos.sortedBy { it.title.lowercase(Locale.US) }
-            SortField.DATE -> folderVideos.sortedByDescending { it.dateModified }
-            SortField.SIZE -> folderVideos.sortedByDescending { it.sizeBytes }
-            SortField.COUNT -> folderVideos
-            SortField.DURATION -> folderVideos.sortedByDescending { it.durationMs }
-        }
+    val sortedFolderVideos = remember(folderVideos, folderSortField, folderSecondarySortField, appSettings) {
+        folderVideos.sortedWith(
+            MediaSortComparator.videoComparator(
+                primary = folderSortField,
+                secondary = folderSecondarySortField,
+                reverse = appSettings.sortReverse,
+                secondaryReverse = appSettings.sortSecondaryReverse,
+                numeric = appSettings.sortNumeric,
+                caseSensitive = appSettings.sortCaseSensitive,
+                ignoreExtension = appSettings.sortIgnoreExtension,
+            )
+        )
     }
 
     val filteredFolderVideos = remember(sortedFolderVideos, folderSearchQuery) {
@@ -880,8 +925,13 @@ fun LocalScreen(
                                 .padding(horizontal = 6.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            val folderSortLabelText = if (folderSecondarySortField != SortField.NONE && folderSecondarySortField != folderSortField) {
+                                "${stringResource(folderSortField.labelRes)} / ${stringResource(folderSecondarySortField.labelRes)}"
+                            } else {
+                                stringResource(folderSortField.labelRes)
+                            }
                             Text(
-                                text = stringResource(R.string.local_sort_label, stringResource(folderSortField.labelRes)),
+                                text = stringResource(R.string.local_sort_label, folderSortLabelText),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
@@ -905,6 +955,10 @@ fun LocalScreen(
                                 ) { index, video ->
                                     VideoItemRow(
                                         video = video,
+                                        showSize = appSettings.showFieldSize,
+                                        showDate = appSettings.showFieldDate,
+                                        showDuration = appSettings.showFieldDuration,
+                                        showLocation = appSettings.showFieldLocation,
                                         onClick = {
                                             playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
                                             onOpenPlayer()
@@ -947,6 +1001,10 @@ fun LocalScreen(
                                 ) { index, video ->
                                     VideoItemGridCard(
                                         video = video,
+                                        showSize = appSettings.showFieldSize,
+                                        showDate = appSettings.showFieldDate,
+                                        showDuration = appSettings.showFieldDuration,
+                                        showLocation = appSettings.showFieldLocation,
                                         onClick = {
                                             playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
                                             onOpenPlayer()
@@ -1099,8 +1157,13 @@ fun LocalScreen(
                                 .padding(horizontal = 6.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            val sortLabelText = if (secondarySortField != SortField.NONE && secondarySortField != sortField) {
+                                "${stringResource(sortField.labelRes)} / ${stringResource(secondarySortField.labelRes)}"
+                            } else {
+                                stringResource(sortField.labelRes)
+                            }
                             Text(
-                                text = stringResource(R.string.local_sort_label, stringResource(sortField.labelRes)),
+                                text = stringResource(R.string.local_sort_label, sortLabelText),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
@@ -1124,6 +1187,10 @@ fun LocalScreen(
                                     VideoItemRow(
                                         video = video,
                                         isFavourite = isFav,
+                                        showSize = appSettings.showFieldSize,
+                                        showDate = appSettings.showFieldDate,
+                                        showDuration = appSettings.showFieldDuration,
+                                        showLocation = appSettings.showFieldLocation,
                                         onClick = { playVideoWithFolder(video) },
                                         onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
                                         onAddToPlaylist = {
@@ -1191,6 +1258,10 @@ fun LocalScreen(
                                     VideoItemGridCard(
                                         video = video,
                                         isFavourite = isFav,
+                                        showSize = appSettings.showFieldSize,
+                                        showDate = appSettings.showFieldDate,
+                                        showDuration = appSettings.showFieldDuration,
+                                        showLocation = appSettings.showFieldLocation,
                                         onClick = { playVideoWithFolder(video) },
                                         onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
                                         onAddToPlaylist = {
@@ -1290,8 +1361,13 @@ fun LocalScreen(
                                 .padding(horizontal = 6.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            val sortLabelText = if (secondarySortField != SortField.NONE && secondarySortField != sortField) {
+                                "${stringResource(sortField.labelRes)} / ${stringResource(secondarySortField.labelRes)}"
+                            } else {
+                                stringResource(sortField.labelRes)
+                            }
                             Text(
-                                text = stringResource(R.string.local_sort_label, stringResource(sortField.labelRes)),
+                                text = stringResource(R.string.local_sort_label, sortLabelText),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
@@ -1315,6 +1391,9 @@ fun LocalScreen(
                                 ) { folder ->
                                     FolderItemRow(
                                         folder = folder,
+                                        showCount = appSettings.showFieldCount,
+                                        showSize = appSettings.showFieldSize,
+                                        showDate = appSettings.showFieldDate,
                                         onClick = { openFolder(folder) },
                                         onMenuClick = {
                                             folderForMenu = folder
@@ -1354,6 +1433,9 @@ fun LocalScreen(
                                 ) { folder ->
                                     FolderItemGridCard(
                                         folder = folder,
+                                        showCount = appSettings.showFieldCount,
+                                        showSize = appSettings.showFieldSize,
+                                        showDate = appSettings.showFieldDate,
                                         onClick = { openFolder(folder) },
                                     )
                                 }
@@ -1377,6 +1459,7 @@ fun LocalScreen(
     if (showSortDialog && currentFolder == null) {
         SortViewDialog(
             currentSort = sortField,
+            currentSecondarySort = secondarySortField,
             currentView = viewMode,
             showAllFolders = appSettings.showAllFolders,
             separateViewLayout = appSettings.separateViewLayout,
@@ -1386,8 +1469,17 @@ fun LocalScreen(
                 realSettingsRepo.save(updated)
                 appSettings = updated
             },
-            onSortChange = {
-                sortField = it
+            onSortChange = { newSort ->
+                sortField = newSort
+                val updated = appSettings.copy(primarySortField = newSort.name)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            onSecondarySortChange = { newSecSort ->
+                secondarySortField = newSecSort
+                val updated = appSettings.copy(secondarySortField = newSecSort.name)
+                realSettingsRepo.save(updated)
+                appSettings = updated
             },
             onViewChange = {
                 updateViewMode(it)
@@ -1419,6 +1511,66 @@ fun LocalScreen(
                     snackbarHostState.showSnackbar(msg)
                 }
             },
+            showFieldSize = appSettings.showFieldSize,
+            onShowFieldSizeChange = { isChecked ->
+                val updated = appSettings.copy(showFieldSize = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            showFieldDate = appSettings.showFieldDate,
+            onShowFieldDateChange = { isChecked ->
+                val updated = appSettings.copy(showFieldDate = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            showFieldDuration = appSettings.showFieldDuration,
+            onShowFieldDurationChange = { isChecked ->
+                val updated = appSettings.copy(showFieldDuration = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            showFieldLocation = appSettings.showFieldLocation,
+            onShowFieldLocationChange = { isChecked ->
+                val updated = appSettings.copy(showFieldLocation = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            showFieldCount = appSettings.showFieldCount,
+            onShowFieldCountChange = { isChecked ->
+                val updated = appSettings.copy(showFieldCount = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortReverse = appSettings.sortReverse,
+            onSortReverseChange = { isChecked ->
+                val updated = appSettings.copy(sortReverse = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortSecondaryReverse = appSettings.sortSecondaryReverse,
+            onSortSecondaryReverseChange = { isChecked ->
+                val updated = appSettings.copy(sortSecondaryReverse = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortNumeric = appSettings.sortNumeric,
+            onSortNumericChange = { isChecked ->
+                val updated = appSettings.copy(sortNumeric = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortCaseSensitive = appSettings.sortCaseSensitive,
+            onSortCaseSensitiveChange = { isChecked ->
+                val updated = appSettings.copy(sortCaseSensitive = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortIgnoreExtension = appSettings.sortIgnoreExtension,
+            onSortIgnoreExtensionChange = { isChecked ->
+                val updated = appSettings.copy(sortIgnoreExtension = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
             onDismiss = { showSortDialog = false },
         )
     }
@@ -1446,8 +1598,78 @@ fun LocalScreen(
                     realSettingsRepo.setFolderViewMode(folder.id, newMode.name)
                 }
             },
-            onSortChange = {
-                folderSortField = it
+            onSortChange = { newSort ->
+                folderSortField = newSort
+                val updated = appSettings.copy(folderPrimarySortField = newSort.name)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            currentSecondarySort = folderSecondarySortField,
+            onSecondarySortChange = { newSecSort ->
+                folderSecondarySortField = newSecSort
+                val updated = appSettings.copy(folderSecondarySortField = newSecSort.name)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            showFieldSize = appSettings.showFieldSize,
+            onShowFieldSizeChange = { isChecked ->
+                val updated = appSettings.copy(showFieldSize = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            showFieldDate = appSettings.showFieldDate,
+            onShowFieldDateChange = { isChecked ->
+                val updated = appSettings.copy(showFieldDate = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            showFieldDuration = appSettings.showFieldDuration,
+            onShowFieldDurationChange = { isChecked ->
+                val updated = appSettings.copy(showFieldDuration = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            showFieldLocation = appSettings.showFieldLocation,
+            onShowFieldLocationChange = { isChecked ->
+                val updated = appSettings.copy(showFieldLocation = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            showFieldCount = appSettings.showFieldCount,
+            onShowFieldCountChange = { isChecked ->
+                val updated = appSettings.copy(showFieldCount = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortReverse = appSettings.sortReverse,
+            onSortReverseChange = { isChecked ->
+                val updated = appSettings.copy(sortReverse = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortSecondaryReverse = appSettings.sortSecondaryReverse,
+            onSortSecondaryReverseChange = { isChecked ->
+                val updated = appSettings.copy(sortSecondaryReverse = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortNumeric = appSettings.sortNumeric,
+            onSortNumericChange = { isChecked ->
+                val updated = appSettings.copy(sortNumeric = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortCaseSensitive = appSettings.sortCaseSensitive,
+            onSortCaseSensitiveChange = { isChecked ->
+                val updated = appSettings.copy(sortCaseSensitive = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            sortIgnoreExtension = appSettings.sortIgnoreExtension,
+            onSortIgnoreExtensionChange = { isChecked ->
+                val updated = appSettings.copy(sortIgnoreExtension = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
             },
             onResetToDefault = {
                 realSettingsRepo.clearFolderViewModeOverride(folder.id)

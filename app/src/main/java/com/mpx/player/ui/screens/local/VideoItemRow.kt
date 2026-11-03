@@ -44,11 +44,25 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.ui.components.AsyncVideoThumbnail
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private fun formatVideoDate(epochSeconds: Long): String {
+    if (epochSeconds <= 0L) return ""
+    val millis = epochSeconds * 1000L
+    val sdf = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+    return sdf.format(Date(millis))
+}
 
 @Composable
 fun VideoItemRow(
     video: VideoFile,
     isFavourite: Boolean = false,
+    showSize: Boolean = true,
+    showDate: Boolean = false,
+    showDuration: Boolean = true,
+    showLocation: Boolean = true,
     onClick: () -> Unit,
     onPlayFolder: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
@@ -79,7 +93,7 @@ fun VideoItemRow(
                 iconSize = 24.dp,
             )
 
-            if (video.formattedDuration.isNotBlank()) {
+            if (showDuration && video.formattedDuration.isNotBlank()) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -150,30 +164,45 @@ fun VideoItemRow(
                 }
             }
 
-            Spacer(Modifier.height(3.dp))
+            val metaParts = mutableListOf<String>()
+            if (showSize && video.formattedSize.isNotBlank()) {
+                metaParts.add(video.formattedSize)
+            }
+            if (showDate) {
+                val dateStr = formatVideoDate(video.dateModified)
+                if (dateStr.isNotBlank()) {
+                    metaParts.add(dateStr)
+                }
+            }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.Folder,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(13.dp),
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = video.folderName.ifBlank { "Videos" },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (video.formattedSize.isNotBlank()) {
-                    Text(
-                        text = " • ${video.formattedSize}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
+            if (showLocation || metaParts.isNotEmpty()) {
+                Spacer(Modifier.height(3.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (showLocation) {
+                        Icon(
+                            imageVector = Icons.Filled.Folder,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(13.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = video.folderName.ifBlank { "Videos" },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    metaParts.forEachIndexed { idx, part ->
+                        val prefix = if (showLocation || idx > 0) " • " else ""
+                        Text(
+                            text = "$prefix$part",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                    }
                 }
             }
         }
@@ -232,6 +261,10 @@ fun VideoItemRow(
 fun VideoItemGridCard(
     video: VideoFile,
     isFavourite: Boolean = false,
+    showSize: Boolean = true,
+    showDate: Boolean = false,
+    showDuration: Boolean = true,
+    showLocation: Boolean = true,
     onClick: () -> Unit,
     onPlayFolder: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
@@ -263,7 +296,7 @@ fun VideoItemGridCard(
                     iconSize = 36.dp,
                 )
 
-                if (video.formattedDuration.isNotBlank()) {
+                if (showDuration && video.formattedDuration.isNotBlank()) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
@@ -325,34 +358,49 @@ fun VideoItemGridCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
+            val metaParts = mutableListOf<String>()
+            if (showSize && video.formattedSize.isNotBlank()) {
+                metaParts.add(video.formattedSize)
+            }
+            if (showDate) {
+                val dateStr = formatVideoDate(video.dateModified)
+                if (dateStr.isNotBlank()) {
+                    metaParts.add(dateStr)
+                }
+            }
+
             Spacer(Modifier.height(2.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.Folder,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(11.dp),
-                )
-                Spacer(Modifier.width(3.dp))
-                Text(
-                    text = video.folderName.ifBlank { "Videos" },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                if (video.formattedSize.isNotBlank()) {
+                if (showLocation) {
+                    Icon(
+                        imageVector = Icons.Filled.Folder,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(11.dp),
+                    )
+                    Spacer(Modifier.width(3.dp))
                     Text(
-                        text = " • ${video.formattedSize}",
+                        text = video.folderName.ifBlank { "Videos" },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                }
+                metaParts.forEachIndexed { idx, part ->
+                    val prefix = if (showLocation || idx > 0) " • " else ""
+                    Text(
+                        text = "$prefix$part",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
                         maxLines = 1,
                     )
                 }
+                Spacer(Modifier.weight(1f))
                 if (onMenuClick != null) {
                     IconButton(onClick = onMenuClick, modifier = Modifier.size(24.dp)) {
                         Icon(

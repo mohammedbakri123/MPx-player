@@ -361,7 +361,7 @@ fun MusicScreen(
             SortField.NAME -> filteredTracks.sortedBy { it.title.lowercase(Locale.US) }
             SortField.DATE -> filteredTracks.sortedByDescending { it.id }
             SortField.SIZE -> filteredTracks.sortedByDescending { it.durationMs }
-            SortField.COUNT -> filteredTracks
+            SortField.COUNT, SortField.NONE -> filteredTracks
             SortField.DURATION -> filteredTracks.sortedByDescending { it.durationMs }
         }
     }

@@ -32,6 +32,22 @@ data class AppSettings(
     val autoScreenRotation: Boolean = true, // true = follows sensor, false = locked orientation
     val screenOrientation: String = "auto", // auto (sensor), landscape, portrait
 
+    // Sort and View Fields (Issue 59)
+    val primarySortField: String = "DATE",
+    val secondarySortField: String = "NAME",
+    val folderPrimarySortField: String = "DATE",
+    val folderSecondarySortField: String = "NAME",
+    val sortReverse: Boolean = false,
+    val sortSecondaryReverse: Boolean = false,
+    val sortNumeric: Boolean = true,
+    val sortCaseSensitive: Boolean = false,
+    val sortIgnoreExtension: Boolean = true,
+    val showFieldSize: Boolean = true,
+    val showFieldDate: Boolean = false,
+    val showFieldDuration: Boolean = true,
+    val showFieldLocation: Boolean = true,
+    val showFieldCount: Boolean = true,
+
     val showMusicTracksTab: Boolean = true,
     val showMusicPlaylistsTab: Boolean = true,
     val showMusicAlbumsTab: Boolean = true,
