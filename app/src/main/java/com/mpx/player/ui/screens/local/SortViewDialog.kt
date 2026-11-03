@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,7 +44,31 @@ enum class SortField(val labelRes: Int, val label: String) {
     SIZE(R.string.sort_field_size, "File size"),
     COUNT(R.string.sort_field_count, "Video count"),
     DURATION(R.string.sort_field_duration, "Duration / Length"),
+    // MX combined sort keys (issue #70, grounded in the decompiled MX sort set).
+    // TITLE and LENGTH reuse the existing NAME / DURATION entries; SIZE is shared.
+    // DATE_DURATION sorts by date modified, breaking ties by duration.
+    DATE_DURATION(R.string.sort_field_date_duration, "Date / Duration"),
+    // Resolution first (pixel count from MediaStore WIDTH/HEIGHT), then frame
+    // rate where known (MediaStore exposes no frame-rate column, so it is 0
+    // until a metadata pass populates it — never faked).
+    RESOLUTION_FRAMERATE(R.string.sort_field_resolution_framerate, "Resolution / Frame rate"),
+    // Status (recently added first), then file type (extension), then location (path).
+    STATUS_TYPE_LOCATION(R.string.sort_field_status_type_location, "Status / Type / Location"),
 }
+
+/**
+ * The six MX combined sort keys offered in the sort picker, in MX order.
+ * Legacy entries (DATE, COUNT) stay in the enum so previously persisted
+ * preferences keep working, but the picker offers the combined set.
+ */
+val MX_SORT_FIELDS: List<SortField> = listOf(
+    SortField.NAME,
+    SortField.DATE_DURATION,
+    SortField.DURATION,
+    SortField.RESOLUTION_FRAMERATE,
+    SortField.SIZE,
+    SortField.STATUS_TYPE_LOCATION,
+)
 
 enum class ViewMode(val labelRes: Int, val label: String) {
     LIST(R.string.view_mode_list, "List view"),
@@ -99,8 +124,10 @@ fun SortViewDialog(
 
     onDismiss: () -> Unit,
 ) {
-    var showFieldsDialog by remember { mutableStateOf(false) }
-    var showAdvancedDialog by remember { mutableStateOf(false) }
+    // Issue #70: Fields and Advanced are collapsible sections inside this ONE
+    // dialog (MX pattern), not separate dialogs.
+    var fieldsExpanded by remember { mutableStateOf(false) }
+    var advancedExpanded by remember { mutableStateOf(false) }
 
     val dialogTitle = if (isFolderScope) {
         folderName?.let { "$it - ${stringResource(R.string.folder_view_dialog_title)}" }
@@ -109,15 +136,9 @@ fun SortViewDialog(
         stringResource(R.string.sort_dialog_title)
     }
 
-    val primaryFieldsToShow = availableSortFields ?: if (isFileView) {
-        listOf(SortField.NAME, SortField.DATE, SortField.SIZE, SortField.DURATION)
-    } else if (isFolderScope) {
-        listOf(SortField.NAME, SortField.DATE, SortField.SIZE, SortField.DURATION)
-    } else {
-        listOf(SortField.NAME, SortField.DATE, SortField.SIZE, SortField.COUNT)
-    }
+    val primaryFieldsToShow = availableSortFields ?: MX_SORT_FIELDS
 
-    val secondaryFieldsToShow = availableSecondarySortFields ?: (listOf(SortField.NONE) + primaryFieldsToShow)
+    val secondaryFieldsToShow = availableSecondarySortFields ?: (listOf(SortField.NONE) + MX_SORT_FIELDS)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -291,7 +312,8 @@ fun SortViewDialog(
                     }
                 }
 
-                // Fields Row (Issue 59: selects which metadata columns rows show)
+                // Fields section (Issue 59: selects which metadata columns rows
+                // show). Issue #70: collapsible inside this dialog, not a sub-dialog.
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
                     color = MaterialTheme.colorScheme.outline,
@@ -300,7 +322,7 @@ fun SortViewDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showFieldsDialog = true }
+                        .clickable { fieldsExpanded = !fieldsExpanded }
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -334,7 +356,77 @@ fun SortViewDialog(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(if (fieldsExpanded) 90f else 0f),
                     )
+                }
+
+                if (fieldsExpanded) {
+                    Spacer(Modifier.height(4.dp))
+                    if (onShowFieldSizeChange != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onShowFieldSizeChange(!showFieldSize) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(checked = showFieldSize, onCheckedChange = onShowFieldSizeChange)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.sort_field_show_size), color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                    if (onShowFieldDateChange != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onShowFieldDateChange(!showFieldDate) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(checked = showFieldDate, onCheckedChange = onShowFieldDateChange)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.sort_field_show_date), color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                    if ((isFileView || isFolderScope) && onShowFieldDurationChange != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onShowFieldDurationChange(!showFieldDuration) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(checked = showFieldDuration, onCheckedChange = onShowFieldDurationChange)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.sort_field_show_duration), color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                    if ((isFileView || isFolderScope) && onShowFieldLocationChange != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onShowFieldLocationChange(!showFieldLocation) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(checked = showFieldLocation, onCheckedChange = onShowFieldLocationChange)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.sort_field_show_location), color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                    if (!isFileView && !isFolderScope && onShowFieldCountChange != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onShowFieldCountChange(!showFieldCount) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(checked = showFieldCount, onCheckedChange = onShowFieldCountChange)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.sort_field_show_count), color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
                 }
 
                 // Primary Sort Section
@@ -365,6 +457,39 @@ fun SortViewDialog(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(field.labelRes), color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+
+                // Paired direction selectors (Issue #70, MX pattern): two
+                // side-by-side choices bound to the existing reverse state.
+                if (onSortReverseChange != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onSortReverseChange(false) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = !sortReverse, onClick = { onSortReverseChange(false) })
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.sort_direction_ascending), color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onSortReverseChange(true) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = sortReverse, onClick = { onSortReverseChange(true) })
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.sort_direction_descending), color = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
                 }
 
@@ -407,7 +532,8 @@ fun SortViewDialog(
                     }
                 }
 
-                // Advanced Sort Row (Issue 59: remaining real sort options)
+                // Advanced section (Issue 59: remaining real sort options).
+                // Issue #70: collapsible inside this dialog, not a sub-dialog.
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
                     color = MaterialTheme.colorScheme.outline,
@@ -416,7 +542,7 @@ fun SortViewDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showAdvancedDialog = true }
+                        .clickable { advancedExpanded = !advancedExpanded }
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -450,7 +576,52 @@ fun SortViewDialog(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(if (advancedExpanded) 90f else 0f),
                     )
+                }
+
+                if (advancedExpanded) {
+                    Spacer(Modifier.height(4.dp))
+                    if (onSortReverseChange != null) {
+                        AdvancedSwitchRow(
+                            checked = sortReverse,
+                            onCheckedChange = onSortReverseChange,
+                            titleRes = R.string.sort_advanced_reverse_order,
+                            descRes = R.string.sort_advanced_reverse_order_desc,
+                        )
+                    }
+                    if (onSortNumericChange != null) {
+                        AdvancedSwitchRow(
+                            checked = sortNumeric,
+                            onCheckedChange = onSortNumericChange,
+                            titleRes = R.string.sort_advanced_numeric,
+                            descRes = R.string.sort_advanced_numeric_desc,
+                        )
+                    }
+                    if (onSortCaseSensitiveChange != null) {
+                        AdvancedSwitchRow(
+                            checked = sortCaseSensitive,
+                            onCheckedChange = onSortCaseSensitiveChange,
+                            titleRes = R.string.sort_advanced_case_sensitive,
+                            descRes = R.string.sort_advanced_case_sensitive_desc,
+                        )
+                    }
+                    if ((isFileView || isFolderScope) && onSortIgnoreExtensionChange != null) {
+                        AdvancedSwitchRow(
+                            checked = sortIgnoreExtension,
+                            onCheckedChange = onSortIgnoreExtensionChange,
+                            titleRes = R.string.sort_advanced_ignore_extension,
+                            descRes = R.string.sort_advanced_ignore_extension_desc,
+                        )
+                    }
+                    if (onSortSecondaryReverseChange != null) {
+                        AdvancedSwitchRow(
+                            checked = sortSecondaryReverse,
+                            onCheckedChange = onSortSecondaryReverseChange,
+                            titleRes = R.string.sort_advanced_secondary_reverse,
+                            descRes = R.string.sort_advanced_secondary_reverse_desc,
+                        )
+                    }
                 }
 
                 if (!isFolderScope && onShowAllFoldersChange != null) {
@@ -505,379 +676,49 @@ fun SortViewDialog(
                 Text(stringResource(R.string.action_done))
             }
         },
-    )
-
-    // Sub-dialog: Fields selection (which metadata columns rows show)
-    if (showFieldsDialog) {
-        FieldsSelectionDialog(
-            isFileView = isFileView || isFolderScope,
-            showFieldSize = showFieldSize,
-            onShowFieldSizeChange = onShowFieldSizeChange,
-            showFieldDate = showFieldDate,
-            onShowFieldDateChange = onShowFieldDateChange,
-            showFieldDuration = showFieldDuration,
-            onShowFieldDurationChange = onShowFieldDurationChange,
-            showFieldLocation = showFieldLocation,
-            onShowFieldLocationChange = onShowFieldLocationChange,
-            showFieldCount = showFieldCount,
-            onShowFieldCountChange = onShowFieldCountChange,
-            onDismiss = { showFieldsDialog = false },
-        )
-    }
-
-    // Sub-dialog: Advanced sort options (remaining real sort options)
-    if (showAdvancedDialog) {
-        AdvancedSortDialog(
-            isFileView = isFileView || isFolderScope,
-            sortReverse = sortReverse,
-            onSortReverseChange = onSortReverseChange,
-            sortSecondaryReverse = sortSecondaryReverse,
-            onSortSecondaryReverseChange = onSortSecondaryReverseChange,
-            sortNumeric = sortNumeric,
-            onSortNumericChange = onSortNumericChange,
-            sortCaseSensitive = sortCaseSensitive,
-            onSortCaseSensitiveChange = onSortCaseSensitiveChange,
-            sortIgnoreExtension = sortIgnoreExtension,
-            onSortIgnoreExtensionChange = onSortIgnoreExtensionChange,
-            onDismiss = { showAdvancedDialog = false },
-        )
-    }
-}
-
-@Composable
-private fun FieldsSelectionDialog(
-    isFileView: Boolean,
-    showFieldSize: Boolean,
-    onShowFieldSizeChange: ((Boolean) -> Unit)?,
-    showFieldDate: Boolean,
-    onShowFieldDateChange: ((Boolean) -> Unit)?,
-    showFieldDuration: Boolean,
-    onShowFieldDurationChange: ((Boolean) -> Unit)?,
-    showFieldLocation: Boolean,
-    onShowFieldLocationChange: ((Boolean) -> Unit)?,
-    showFieldCount: Boolean,
-    onShowFieldCountChange: ((Boolean) -> Unit)?,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(R.string.sort_fields_dialog_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text(
-                    text = stringResource(R.string.sort_fields_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                )
-                Spacer(Modifier.height(8.dp))
-
-                // File size
-                if (onShowFieldSizeChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onShowFieldSizeChange(!showFieldSize) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(
-                            checked = showFieldSize,
-                            onCheckedChange = onShowFieldSizeChange,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.sort_field_show_size), color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-
-                // Date modified
-                if (onShowFieldDateChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onShowFieldDateChange(!showFieldDate) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(
-                            checked = showFieldDate,
-                            onCheckedChange = onShowFieldDateChange,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.sort_field_show_date), color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-
-                // Duration (for individual files)
-                if (isFileView && onShowFieldDurationChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onShowFieldDurationChange(!showFieldDuration) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(
-                            checked = showFieldDuration,
-                            onCheckedChange = onShowFieldDurationChange,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.sort_field_show_duration), color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-
-                // Location / Folder (for individual files)
-                if (isFileView && onShowFieldLocationChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onShowFieldLocationChange(!showFieldLocation) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(
-                            checked = showFieldLocation,
-                            onCheckedChange = onShowFieldLocationChange,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.sort_field_show_location), color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-
-                // Video count (for folders)
-                if (!isFileView && onShowFieldCountChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onShowFieldCountChange(!showFieldCount) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(
-                            checked = showFieldCount,
-                            onCheckedChange = onShowFieldCountChange,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.sort_field_show_count), color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-            }
-        },
-        confirmButton = {
+        dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_done))
+                Text(stringResource(R.string.action_cancel))
             }
         },
     )
 }
 
 @Composable
-private fun AdvancedSortDialog(
-    isFileView: Boolean,
-    sortReverse: Boolean,
-    onSortReverseChange: ((Boolean) -> Unit)?,
-    sortSecondaryReverse: Boolean,
-    onSortSecondaryReverseChange: ((Boolean) -> Unit)?,
-    sortNumeric: Boolean,
-    onSortNumericChange: ((Boolean) -> Unit)?,
-    sortCaseSensitive: Boolean,
-    onSortCaseSensitiveChange: ((Boolean) -> Unit)?,
-    sortIgnoreExtension: Boolean,
-    onSortIgnoreExtensionChange: ((Boolean) -> Unit)?,
-    onDismiss: () -> Unit,
+private fun AdvancedSwitchRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    titleRes: Int,
+    descRes: Int,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+            ),
+        )
+        Spacer(Modifier.width(12.dp))
+        Column {
             Text(
-                text = stringResource(R.string.sort_advanced_dialog_title),
-                style = MaterialTheme.typography.titleLarge,
+                text = stringResource(titleRes),
                 color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 13.sp,
             )
-        },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                // Reverse primary sort
-                if (onSortReverseChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSortReverseChange(!sortReverse) }
-                            .padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Switch(
-                            checked = sortReverse,
-                            onCheckedChange = onSortReverseChange,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                            ),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.sort_advanced_reverse_order),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 13.sp,
-                            )
-                            Text(
-                                text = stringResource(R.string.sort_advanced_reverse_order_desc),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
-                            )
-                        }
-                    }
-                }
-
-                // Natural numeric sorting
-                if (onSortNumericChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSortNumericChange(!sortNumeric) }
-                            .padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Switch(
-                            checked = sortNumeric,
-                            onCheckedChange = onSortNumericChange,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                            ),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.sort_advanced_numeric),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 13.sp,
-                            )
-                            Text(
-                                text = stringResource(R.string.sort_advanced_numeric_desc),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
-                            )
-                        }
-                    }
-                }
-
-                // Case-sensitive sorting
-                if (onSortCaseSensitiveChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSortCaseSensitiveChange(!sortCaseSensitive) }
-                            .padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Switch(
-                            checked = sortCaseSensitive,
-                            onCheckedChange = onSortCaseSensitiveChange,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                            ),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.sort_advanced_case_sensitive),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 13.sp,
-                            )
-                            Text(
-                                text = stringResource(R.string.sort_advanced_case_sensitive_desc),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
-                            )
-                        }
-                    }
-                }
-
-                // Ignore file extension (for files)
-                if (isFileView && onSortIgnoreExtensionChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSortIgnoreExtensionChange(!sortIgnoreExtension) }
-                            .padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Switch(
-                            checked = sortIgnoreExtension,
-                            onCheckedChange = onSortIgnoreExtensionChange,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                            ),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.sort_advanced_ignore_extension),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 13.sp,
-                            )
-                            Text(
-                                text = stringResource(R.string.sort_advanced_ignore_extension_desc),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
-                            )
-                        }
-                    }
-                }
-
-                // Reverse secondary sort
-                if (onSortSecondaryReverseChange != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSortSecondaryReverseChange(!sortSecondaryReverse) }
-                            .padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Switch(
-                            checked = sortSecondaryReverse,
-                            onCheckedChange = onSortSecondaryReverseChange,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                            ),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.sort_advanced_secondary_reverse),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 13.sp,
-                            )
-                            Text(
-                                text = stringResource(R.string.sort_advanced_secondary_reverse_desc),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_done))
-            }
-        },
-    )
+            Text(
+                text = stringResource(descRes),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                fontSize = 11.sp,
+            )
+        }
+    }
 }

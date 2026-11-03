@@ -13,4 +13,7 @@ data class MediaFolder(
     val isNew: Boolean = false,
     val lastModified: Long = 0L,
     val isStorageRemovable: Boolean = false,
+    // Real summed duration of the folder's videos (ms), accumulated at scan
+    // time. Powers the folder Length sort (issue #70).
+    val totalDurationMs: Long = 0L,
 )

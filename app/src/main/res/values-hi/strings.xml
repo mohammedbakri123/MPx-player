@@ -571,6 +571,11 @@
     <string name="view_type_folders">फ़ोल्डर (फ़ोल्डर के अनुसार समूह)</string>
     <string name="view_type_files">सभी फ़ाइलें (व्यक्तिगत फ़ाइलें)</string>
     <string name="sort_field_duration">अवधि / लंबाई</string>
+    <string name="sort_field_date_duration">तिथि / अवधि</string>
+    <string name="sort_field_resolution_framerate">रिज़ॉल्यूशन / फ़्रेम दर</string>
+    <string name="sort_field_status_type_location">स्थिति / प्रकार / स्थान</string>
+    <string name="sort_direction_ascending">आरोही</string>
+    <string name="sort_direction_descending">अवरोही</string>
     <string name="section_files_header">फ़ाइलें</string>
     <string name="list_file_view">फ़ाइल दृश्य</string>
     <string name="list_file_view_desc">फ़ोल्डर के अनुसार समूह बनाने के बजाय लोकल दृश्य में व्यक्तिगत वीडियो फ़ाइलें सूचीबद्ध करें</string>

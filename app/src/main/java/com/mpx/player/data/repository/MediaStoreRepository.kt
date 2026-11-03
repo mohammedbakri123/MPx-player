@@ -228,6 +228,7 @@ class MediaStoreRepository(
             MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
             MediaStore.Video.Media.DATA,
             MediaStore.Video.Media.SIZE,
+            MediaStore.Video.Media.DURATION,
             MediaStore.Video.Media.DATE_MODIFIED,
             MediaStore.Video.Media.DATE_ADDED,
         )
@@ -248,6 +249,7 @@ class MediaStoreRepository(
                     val bucketNameCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
                     val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
                     val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
+                    val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
                     val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
                     val dateAddedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED)
 
@@ -266,6 +268,7 @@ class MediaStoreRepository(
                             ?: "Videos"
 
                         val size = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
+                        val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
                         val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
                         val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
 
@@ -285,6 +288,7 @@ class MediaStoreRepository(
                         }
                         acc.count += 1
                         acc.totalSizeBytes += size
+                        acc.totalDurationMs += durationMs
                         if (dateModified > acc.lastModified) {
                             acc.lastModified = dateModified
                         }
@@ -391,6 +395,7 @@ class MediaStoreRepository(
                 path = acc.path,
                 videoCount = acc.count,
                 totalSizeFormatted = formatSize(acc.totalSizeBytes),
+                totalDurationMs = acc.totalDurationMs,
                 isNew = acc.isNew,
                 lastModified = acc.lastModified,
                 isStorageRemovable = acc.isRemovable,
@@ -409,6 +414,8 @@ class MediaStoreRepository(
             MediaStore.Video.Media.DATA,
             MediaStore.Video.Media.DURATION,
             MediaStore.Video.Media.SIZE,
+            MediaStore.Video.Media.WIDTH,
+            MediaStore.Video.Media.HEIGHT,
             MediaStore.Video.Media.DATE_MODIFIED,
             MediaStore.Video.Media.DATE_ADDED,
             MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
@@ -428,6 +435,8 @@ class MediaStoreRepository(
                     val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
                     val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
                     val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
+                    val widthCol = cursor.getColumnIndex(MediaStore.Video.Media.WIDTH)
+                    val heightCol = cursor.getColumnIndex(MediaStore.Video.Media.HEIGHT)
                     val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
                     val dateAddedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED)
                     val bucketNameCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
@@ -449,6 +458,8 @@ class MediaStoreRepository(
                         }
                         val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
                         val sizeBytes = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
+                        val widthPx = if (widthCol >= 0) cursor.getInt(widthCol).coerceAtLeast(0) else 0
+                        val heightPx = if (heightCol >= 0) cursor.getInt(heightCol).coerceAtLeast(0) else 0
                         val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
                         val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
                         val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
@@ -470,6 +481,8 @@ class MediaStoreRepository(
                                 formattedSize = formatSize(sizeBytes),
                                 isRemovable = isRemovablePath(path),
                                 isNew = dateAdded > sevenDaysAgoSec || dateModified > sevenDaysAgoSec,
+                                heightPx = heightPx,
+                                widthPx = widthPx,
                             )
                         )
                     }
@@ -495,6 +508,8 @@ class MediaStoreRepository(
             MediaStore.Video.Media.DATA,
             MediaStore.Video.Media.DURATION,
             MediaStore.Video.Media.SIZE,
+            MediaStore.Video.Media.WIDTH,
+            MediaStore.Video.Media.HEIGHT,
             MediaStore.Video.Media.DATE_MODIFIED,
             MediaStore.Video.Media.DATE_ADDED,
             MediaStore.Video.Media.BUCKET_ID,
@@ -516,6 +531,8 @@ class MediaStoreRepository(
                     val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
                     val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
                     val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
+                    val widthCol = cursor.getColumnIndex(MediaStore.Video.Media.WIDTH)
+                    val heightCol = cursor.getColumnIndex(MediaStore.Video.Media.HEIGHT)
                     val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
                     val dateAddedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED)
                     val bucketIdCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_ID)
@@ -552,6 +569,8 @@ class MediaStoreRepository(
                         }
                         val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
                         val size = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
+                        val widthPx = if (widthCol >= 0) cursor.getInt(widthCol).coerceAtLeast(0) else 0
+                        val heightPx = if (heightCol >= 0) cursor.getInt(heightCol).coerceAtLeast(0) else 0
                         val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
                         val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
 
@@ -582,6 +601,8 @@ class MediaStoreRepository(
                                 formattedSize = formatSize(size),
                                 isRemovable = isRemovable,
                                 isNew = isRecent,
+                                heightPx = heightPx,
+                                widthPx = widthPx,
                             )
                         )
                     }
@@ -889,6 +910,7 @@ class MediaStoreRepository(
     ) {
         var count: Int = 0
         var totalSizeBytes: Long = 0L
+        var totalDurationMs: Long = 0L
         var lastModified: Long = 0L
         var isNew: Boolean = false
     }

@@ -119,6 +119,7 @@ import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.ui.screens.local.MX_SORT_FIELDS
 import com.mpx.player.ui.screens.local.SortField
 import com.mpx.player.ui.screens.local.SortViewDialog
 import com.mpx.player.ui.screens.local.ViewMode
@@ -363,6 +364,20 @@ fun MusicScreen(
             SortField.SIZE -> filteredTracks.sortedByDescending { it.durationMs }
             SortField.COUNT, SortField.NONE -> filteredTracks
             SortField.DURATION -> filteredTracks.sortedByDescending { it.durationMs }
+            // MX combined keys (issue #70). Audio carries no date or
+            // resolution: DATE_DURATION falls back to id recency, and
+            // RESOLUTION_FRAMERATE leaves order unchanged.
+            SortField.DATE_DURATION -> filteredTracks.sortedWith(
+                compareByDescending<AudioTrack> { it.id }.thenByDescending { it.durationMs },
+            )
+            SortField.RESOLUTION_FRAMERATE -> filteredTracks
+            SortField.STATUS_TYPE_LOCATION -> filteredTracks.sortedWith(
+                compareBy<AudioTrack> {
+                    val name = it.path.substringAfterLast('/', it.path)
+                    val dot = name.lastIndexOf('.')
+                    if (dot > 0) name.substring(dot + 1).lowercase(Locale.US) else ""
+                }.thenBy { it.path },
+            )
         }
     }
 
@@ -969,7 +984,7 @@ fun MusicScreen(
             currentSort = sortField,
             currentView = viewMode,
             separateViewLayout = appSettings.separateViewLayout,
-            availableSortFields = listOf(SortField.NAME, SortField.DATE, SortField.SIZE),
+            availableSortFields = MX_SORT_FIELDS,
             onSortChange = { sortField = it },
             onViewChange = { updateViewMode(it) },
             onSeparateViewLayoutChange = { isChecked ->
