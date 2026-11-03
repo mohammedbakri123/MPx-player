@@ -52,6 +52,8 @@
     <string name="lang_russian_desc">रूसी इंटरफ़ेस (LTR लेआउट)</string>
     <string name="lang_german">जर्मन (German)</string>
     <string name="lang_german_desc">जर्मन इंटरफ़ेस (LTR लेआउट)</string>
+    <string name="lang_portuguese">पुर्तगाली (Portuguese)</string>
+    <string name="lang_portuguese_desc">पुर्तगाली इंटरफ़ेस (LTR लेआउट)</string>
     <string name="lang_applied_msg">भाषा अपडेट हुई: %s</string>
     <string name="lang_settings_note">अपनी पसंदीदा ऐप भाषा चुनें। भाषा और लेआउट दिशा ऐप पुनः आरंभ किए बिना तुरंत लागू होती है।</string>
 

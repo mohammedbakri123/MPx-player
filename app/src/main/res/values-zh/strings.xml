@@ -50,6 +50,8 @@
     <string name="lang_russian_desc">俄语界面（LTR 布局）</string>
     <string name="lang_german">Deutsch (German)</string>
     <string name="lang_german_desc">德语界面（LTR 布局）</string>
+    <string name="lang_portuguese">Português (Portuguese)</string>
+    <string name="lang_portuguese_desc">葡萄牙语界面（LTR 布局）</string>
     <string name="lang_chinese">中文 (Chinese)</string>
     <string name="lang_chinese_desc">中文界面（LTR 布局）</string>
     <string name="lang_applied_msg">语言已更新：%s</string>

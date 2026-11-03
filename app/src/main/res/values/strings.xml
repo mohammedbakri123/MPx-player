@@ -52,6 +52,8 @@
     <string name="lang_russian_desc">Russian interface (LTR layout)</string>
     <string name="lang_german">Deutsch (German)</string>
     <string name="lang_german_desc">German interface (LTR layout)</string>
+    <string name="lang_portuguese">Português (Portuguese)</string>
+    <string name="lang_portuguese_desc">Portuguese interface (LTR layout)</string>
     <string name="lang_applied_msg">Language updated: %s</string>
     <string name="lang_settings_note">Select your preferred app language. Language and layout direction apply immediately without restarting.</string>
 

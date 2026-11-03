@@ -52,6 +52,8 @@
     <string name="lang_russian_desc">واجهة باللغة الروسية (تخطيط LTR)</string>
     <string name="lang_german">الألمانية (German)</string>
     <string name="lang_german_desc">واجهة باللغة الألمانية (تخطيط LTR)</string>
+    <string name="lang_portuguese">البرتغالية (Portuguese)</string>
+    <string name="lang_portuguese_desc">واجهة باللغة البرتغالية (تخطيط LTR)</string>
     <string name="lang_applied_msg">تم تحديث اللغة: %s</string>
     <string name="lang_settings_note">اختر لغة التطبيق المفضلة. يتم تطبيق اللغة واتجاه الواجهة فوراً دون الحاجة لإعادة تشغيل التطبيق.</string>
 

@@ -50,6 +50,8 @@
     <string name="lang_chinese_desc">Китайский интерфейс (LTR-раскладка)</string>
     <string name="lang_german">Deutsch (German)</string>
     <string name="lang_german_desc">Немецкий интерфейс (LTR-раскладка)</string>
+    <string name="lang_portuguese">Português (Portuguese)</string>
+    <string name="lang_portuguese_desc">Португальский интерфейс (LTR-раскладка)</string>
     <string name="lang_russian">Русский (Russian)</string>
     <string name="lang_russian_desc">Русский интерфейс (LTR-раскладка)</string>
     <string name="lang_applied_msg">Язык обновлён: %s</string>

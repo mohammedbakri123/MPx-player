@@ -52,6 +52,8 @@
     <string name="lang_russian_desc">Interface en russe (mise en page LTR)</string>
     <string name="lang_german">Allemand (German)</string>
     <string name="lang_german_desc">Interface en allemand (mise en page LTR)</string>
+    <string name="lang_portuguese">Portugais (Portuguese)</string>
+    <string name="lang_portuguese_desc">Interface en portugais (mise en page LTR)</string>
     <string name="lang_applied_msg">Langue mise à jour : %s</string>
     <string name="lang_settings_note">Sélectionnez votre langue préférée pour l’application. La langue et le sens de disposition s’appliquent immédiatement sans redémarrage.</string>
 
