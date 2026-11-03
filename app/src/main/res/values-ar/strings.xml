@@ -407,4 +407,44 @@
     <string name="empty_folders_desc">لم يتم العثور على مجلدات وسائط على وحدات التخزين. ستظهر المجلدات والوسائط هنا بمجرد إنشائها أو مزامنتها.</string>
     <string name="local_section_all_folders">كافة المجلدات</string>
     <string name="local_badge_show_all">إظهار الكل</string>
+
+    <!-- File View (Issue 19) -->
+    <string name="sort_section_view_type">نوع العرض</string>
+    <string name="view_type_folders">المجلدات (تجميع حسب المجلد)</string>
+    <string name="view_type_files">كافة الملفات (ملفات فردية)</string>
+    <string name="sort_field_duration">المدة / الطول</string>
+    <string name="section_files_header">الملفات</string>
+    <string name="list_file_view">عرض الملفات</string>
+    <string name="list_file_view_desc">عرض مقاطع الفيديو كملفات فردية في العرض المحلي بدلاً من تجميعها حسب المجلد</string>
+    <string name="list_show_all_files">إظهار كافة الملفات</string>
+    <string name="list_show_all_files_desc">تضمين الملفات المخفية ومسارات التخزين الداخلية</string>
+    <string name="local_section_videos">مقاطع الفيديو</string>
+    <string name="local_section_all_videos">كافة مقاطع الفيديو</string>
+    <string name="local_search_placeholder_files">البحث في مقاطع الفيديو…</string>
+    <string name="local_menu_switch_to_files">التبديل إلى عرض الملفات</string>
+    <string name="local_menu_switch_to_folders">التبديل إلى عرض المجلدات</string>
+    <string name="local_snackbar_file_view">تم التبديل إلى عرض الملفات</string>
+    <string name="local_snackbar_folder_view">تم التبديل إلى عرض المجلدات</string>
+    <string name="video_menu_play">تشغيل الفيديو</string>
+    <string name="video_menu_play_folder">تشغيل المجلد (%1$s)</string>
+    <string name="video_item_options_cd">خيارات %1$s</string>
+
+    <!-- Auto Screen Rotation (Issue 19) -->
+    <string name="player_auto_rotation">تدوير الشاشة التلقائي</string>
+    <string name="player_auto_rotation_desc">اتباع اتجاه الجهاز عبر الحساس في المشغل، أو القفل في الوضع الأفقي/العمودي</string>
+    <string name="player_locked_orientation_header">الاتجاه المقفول:</string>
+    <string name="player_rotation_dialog_title">تدوير الشاشة</string>
+    <string name="player_rotation_auto">تدوير تلقائي (حساس)</string>
+    <string name="player_rotation_auto_desc">يتبع المشغل اتجاه الجهاز تلقائياً</string>
+    <string name="player_orientation_landscape">أفقي</string>
+    <string name="player_orientation_landscape_desc">قفل الشاشة في الوضع الأفقي</string>
+    <string name="player_orientation_portrait">عمودي</string>
+    <string name="player_orientation_portrait_desc">قفل الشاشة في الوضع العمودي</string>
+    <string name="toast_rotation_auto">تم تفعيل تدوير الشاشة التلقائي (حساس)</string>
+    <string name="toast_rotation_landscape">تم قفل الشاشة في الوضع الأفقي</string>
+    <string name="toast_rotation_portrait">تم قفل الشاشة في الوضع العمودي</string>
+    <string name="cd_screen_rotation">تدوير الشاشة</string>
+    <string name="local_menu_folder_view">عرض المجلدات</string>
+    <string name="local_menu_file_view">عرض الملفات</string>
+    <string name="snackbar_added_to_favourites">تمت الإضافة إلى المفضلة</string>
 </resources>

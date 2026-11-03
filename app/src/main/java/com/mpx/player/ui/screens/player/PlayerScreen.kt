@@ -1,6 +1,10 @@
 package com.mpx.player.ui.screens.player
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.graphics.Typeface
 import android.net.Uri
 import android.util.TypedValue
@@ -33,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
@@ -70,6 +75,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -87,6 +93,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -95,6 +102,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
+import com.mpx.player.R
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.PlaylistItem
@@ -116,6 +124,15 @@ import com.mpx.player.util.SubtitleUtils
 import com.mpx.player.util.SubtitleValidationResult
 import kotlinx.coroutines.launch
 
+private fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
+}
+
 @Composable
 fun PlayerScreen(
     onClose: () -> Unit,
@@ -124,9 +141,27 @@ fun PlayerScreen(
     settingsRepository: AppSettingsRepository? = null,
 ) {
     val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
     val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     var currentSettings by remember { mutableStateOf(realSettingsRepo.load()) }
     val state by playbackManager.playbackState.collectAsState()
+
+    val targetOrientation = remember(currentSettings.autoScreenRotation, currentSettings.screenOrientation) {
+        if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" || currentSettings.screenOrientation == "sensor") {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+    }
+
+    DisposableEffect(targetOrientation, activity) {
+        activity?.requestedOrientation = targetOrientation
+        onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
 
     var subtitleErrorDialogText by remember { mutableStateOf<String?>(null) }
 
@@ -655,6 +690,33 @@ fun PlayerScreen(
                                 imageVector = Icons.Filled.PictureInPictureAlt,
                                 contentDescription = "Pop-up Play (PiP)",
                                 tint = Color.White,
+                            )
+                        }
+
+                        IconButton(onClick = {
+                            val nextMode = when {
+                                currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" -> "landscape"
+                                currentSettings.screenOrientation.equals("landscape", ignoreCase = true) -> "portrait"
+                                else -> "auto"
+                            }
+                            val isAuto = nextMode == "auto"
+                            val updated = currentSettings.copy(
+                                autoScreenRotation = isAuto,
+                                screenOrientation = nextMode,
+                            )
+                            currentSettings = updated
+                            realSettingsRepo.save(updated)
+                            val msg = when (nextMode) {
+                                "landscape" -> context.getString(R.string.toast_rotation_landscape)
+                                "portrait" -> context.getString(R.string.toast_rotation_portrait)
+                                else -> context.getString(R.string.toast_rotation_auto)
+                            }
+                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.ScreenRotation,
+                                contentDescription = stringResource(R.string.cd_screen_rotation),
+                                tint = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto") MpxPrimary else Color.White,
                             )
                         }
 
@@ -1462,9 +1524,27 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.AspectRatio, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
                         Text("Aspect Ratio: ${state.aspectRatio.label}", color = MpxTextPrimary)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { activeDialog = "Screen Rotation" }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        val rotationLabel = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto") {
+                            stringResource(R.string.player_rotation_auto)
+                        } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
+                            stringResource(R.string.player_orientation_portrait)
+                        } else {
+                            stringResource(R.string.player_orientation_landscape)
+                        }
+                        Text("Screen Rotation ($rotationLabel)", color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -1485,6 +1565,146 @@ fun PlayerScreen(
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
                     Text("OK", color = MpxPrimary)
+                }
+            },
+        )
+    }
+
+    if (activeDialog == "Screen Rotation") {
+        AlertDialog(
+            onDismissRequest = { activeDialog = null },
+            containerColor = MpxSurfaceElevated,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxPrimary)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.player_rotation_dialog_title),
+                        color = MpxTextPrimary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            text = {
+                Column {
+                    val isAuto = currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto"
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val updated = currentSettings.copy(
+                                    autoScreenRotation = true,
+                                    screenOrientation = "auto",
+                                )
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                                activeDialog = null
+                                Toast.makeText(context, context.getString(R.string.toast_rotation_auto), Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = isAuto,
+                            onClick = {
+                                val updated = currentSettings.copy(
+                                    autoScreenRotation = true,
+                                    screenOrientation = "auto",
+                                )
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                                activeDialog = null
+                                Toast.makeText(context, context.getString(R.string.toast_rotation_auto), Toast.LENGTH_SHORT).show()
+                            },
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text(stringResource(R.string.player_rotation_auto), color = MpxTextPrimary, fontWeight = if (isAuto) FontWeight.Bold else FontWeight.Normal)
+                            Text(stringResource(R.string.player_rotation_auto_desc), color = MpxTextSecondary, fontSize = 12.sp)
+                        }
+                    }
+
+                    val isLandscape = !currentSettings.autoScreenRotation && currentSettings.screenOrientation.equals("landscape", ignoreCase = true)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val updated = currentSettings.copy(
+                                    autoScreenRotation = false,
+                                    screenOrientation = "landscape",
+                                )
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                                activeDialog = null
+                                Toast.makeText(context, context.getString(R.string.toast_rotation_landscape), Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = isLandscape,
+                            onClick = {
+                                val updated = currentSettings.copy(
+                                    autoScreenRotation = false,
+                                    screenOrientation = "landscape",
+                                )
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                                activeDialog = null
+                                Toast.makeText(context, context.getString(R.string.toast_rotation_landscape), Toast.LENGTH_SHORT).show()
+                            },
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text(stringResource(R.string.player_orientation_landscape), color = MpxTextPrimary, fontWeight = if (isLandscape) FontWeight.Bold else FontWeight.Normal)
+                            Text(stringResource(R.string.player_orientation_landscape_desc), color = MpxTextSecondary, fontSize = 12.sp)
+                        }
+                    }
+
+                    val isPortrait = !currentSettings.autoScreenRotation && currentSettings.screenOrientation.equals("portrait", ignoreCase = true)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val updated = currentSettings.copy(
+                                    autoScreenRotation = false,
+                                    screenOrientation = "portrait",
+                                )
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                                activeDialog = null
+                                Toast.makeText(context, context.getString(R.string.toast_rotation_portrait), Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = isPortrait,
+                            onClick = {
+                                val updated = currentSettings.copy(
+                                    autoScreenRotation = false,
+                                    screenOrientation = "portrait",
+                                )
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                                activeDialog = null
+                                Toast.makeText(context, context.getString(R.string.toast_rotation_portrait), Toast.LENGTH_SHORT).show()
+                            },
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text(stringResource(R.string.player_orientation_portrait), color = MpxTextPrimary, fontWeight = if (isPortrait) FontWeight.Bold else FontWeight.Normal)
+                            Text(stringResource(R.string.player_orientation_portrait_desc), color = MpxTextSecondary, fontSize = 12.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { activeDialog = null }) {
+                    Text(stringResource(R.string.action_close), color = MpxPrimary)
                 }
             },
         )

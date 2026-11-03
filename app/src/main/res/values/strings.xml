@@ -407,4 +407,44 @@
     <string name="empty_folders_desc">No media folders found on storage volumes. Folders and media will appear here once created or synced.</string>
     <string name="local_section_all_folders">ALL FOLDERS</string>
     <string name="local_badge_show_all">SHOW ALL</string>
+
+    <!-- File View (Issue 19) -->
+    <string name="sort_section_view_type">VIEW TYPE</string>
+    <string name="view_type_folders">Folders (group by folder)</string>
+    <string name="view_type_files">All Files (individual files)</string>
+    <string name="sort_field_duration">Duration / Length</string>
+    <string name="section_files_header">FILES</string>
+    <string name="list_file_view">File View</string>
+    <string name="list_file_view_desc">List individual video files in Local view instead of grouping by folder</string>
+    <string name="list_show_all_files">Show all files</string>
+    <string name="list_show_all_files_desc">Include hidden files and internal storage paths</string>
+    <string name="local_section_videos">VIDEOS</string>
+    <string name="local_section_all_videos">ALL VIDEOS</string>
+    <string name="local_search_placeholder_files">Search videos…</string>
+    <string name="local_menu_switch_to_files">Switch to File View</string>
+    <string name="local_menu_switch_to_folders">Switch to Folder View</string>
+    <string name="local_snackbar_file_view">Switched to File View</string>
+    <string name="local_snackbar_folder_view">Switched to Folder View</string>
+    <string name="video_menu_play">Play video</string>
+    <string name="video_menu_play_folder">Play folder (%1$s)</string>
+    <string name="video_item_options_cd">Options for %1$s</string>
+
+    <!-- Auto Screen Rotation (Issue 19) -->
+    <string name="player_auto_rotation">Auto Screen Rotation</string>
+    <string name="player_auto_rotation_desc">Follow device orientation via sensor in the player, or lock to landscape/portrait</string>
+    <string name="player_locked_orientation_header">Locked Orientation:</string>
+    <string name="player_rotation_dialog_title">Screen Rotation</string>
+    <string name="player_rotation_auto">Auto rotate (Sensor)</string>
+    <string name="player_rotation_auto_desc">Player follows device orientation automatically</string>
+    <string name="player_orientation_landscape">Landscape</string>
+    <string name="player_orientation_landscape_desc">Lock screen in horizontal landscape mode</string>
+    <string name="player_orientation_portrait">Portrait</string>
+    <string name="player_orientation_portrait_desc">Lock screen in vertical portrait mode</string>
+    <string name="toast_rotation_auto">Auto screen rotation enabled (Sensor)</string>
+    <string name="toast_rotation_landscape">Screen locked to Landscape</string>
+    <string name="toast_rotation_portrait">Screen locked to Portrait</string>
+    <string name="cd_screen_rotation">Screen rotation</string>
+    <string name="local_menu_folder_view">Folder view</string>
+    <string name="local_menu_file_view">File view</string>
+    <string name="snackbar_added_to_favourites">Added to Favourites</string>
 </resources>

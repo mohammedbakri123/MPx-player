@@ -20,6 +20,9 @@ data class AppSettings(
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10
     val appLanguage: String = "system", // system, en, ar
     val showAllFolders: Boolean = false,
+    val fileView: Boolean = false, // false = folder view, true = individual files view
+    val autoScreenRotation: Boolean = true, // true = follows sensor, false = locked orientation
+    val screenOrientation: String = "auto", // auto (sensor), landscape, portrait
 )
 
 interface AppSettingsRepository {

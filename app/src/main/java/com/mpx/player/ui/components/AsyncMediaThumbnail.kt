@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.MediaFolder
+import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.util.ThumbnailLoader
@@ -171,5 +173,33 @@ fun AsyncAlbumThumbnail(
         modifier = modifier,
         iconSize = iconSize,
         contentDescription = "Album ${album.title}",
+    )
+}
+
+@Composable
+fun AsyncVideoThumbnail(
+    video: VideoFile,
+    modifier: Modifier = Modifier,
+    iconSize: Dp = 26.dp,
+) {
+    val context = LocalContext.current
+    val numericId = video.id.toLongOrNull() ?: -1L
+    val cacheKey = "video_${video.id.ifBlank { video.path }}"
+
+    AsyncThumbnail(
+        cacheKey = cacheKey,
+        loadBitmap = {
+            ThumbnailLoader.loadVideoThumbnail(
+                context = context,
+                videoId = numericId,
+                filePath = video.path,
+                width = 240,
+                height = 240,
+            )
+        },
+        placeholderIcon = Icons.Filled.PlayArrow,
+        modifier = modifier,
+        iconSize = iconSize,
+        contentDescription = "Video ${video.title}",
     )
 }

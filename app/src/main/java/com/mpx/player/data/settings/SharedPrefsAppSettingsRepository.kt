@@ -27,6 +27,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
         appLanguage = prefs.getString("app_language", "system") ?: "system",
         showAllFolders = prefs.getBoolean("show_all_folders", false),
+        fileView = prefs.getBoolean("file_view", false),
+        autoScreenRotation = prefs.getBoolean("auto_screen_rotation", true),
+        screenOrientation = prefs.getString("screen_orientation", "auto") ?: "auto",
     )
 
     override fun save(settings: AppSettings) {
@@ -46,6 +49,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("popup_play_controls", settings.popupPlayControls)
             .putString("app_language", settings.appLanguage)
             .putBoolean("show_all_folders", settings.showAllFolders)
+            .putBoolean("file_view", settings.fileView)
+            .putBoolean("auto_screen_rotation", settings.autoScreenRotation)
+            .putString("screen_orientation", settings.screenOrientation)
             .apply()
     }
 }
