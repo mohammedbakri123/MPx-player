@@ -44,6 +44,8 @@
     <string name="lang_spanish_desc">Interface en espagnol (disposition LTR)</string>
     <string name="lang_french">Français (French)</string>
     <string name="lang_french_desc">Interface en français (disposition LTR)</string>
+    <string name="lang_hindi">Hindi (Hindi)</string>
+    <string name="lang_hindi_desc">Interface en hindi (mise en page LTR)</string>
     <string name="lang_applied_msg">Langue mise à jour : %s</string>
     <string name="lang_settings_note">Sélectionnez votre langue préférée pour l’application. La langue et le sens de disposition s’appliquent immédiatement sans redémarrage.</string>
 
