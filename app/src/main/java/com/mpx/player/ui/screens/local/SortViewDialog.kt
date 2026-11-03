@@ -17,23 +17,25 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mpx.player.R
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
 
-enum class SortField(val label: String) {
-    NAME("Title / Name"),
-    DATE("Date modified"),
-    SIZE("File size"),
-    COUNT("Video count"),
+enum class SortField(val labelRes: Int, val label: String) {
+    NAME(R.string.sort_field_name, "Title / Name"),
+    DATE(R.string.sort_field_date, "Date modified"),
+    SIZE(R.string.sort_field_size, "File size"),
+    COUNT(R.string.sort_field_count, "Video count"),
 }
 
-enum class ViewMode(val label: String) {
-    LIST("List view"),
-    GRID("Grid view"),
+enum class ViewMode(val labelRes: Int, val label: String) {
+    LIST(R.string.view_mode_list, "List view"),
+    GRID(R.string.view_mode_grid, "Grid view"),
 }
 
 @Composable
@@ -49,7 +51,7 @@ fun SortViewDialog(
         containerColor = MpxSurfaceVariant,
         title = {
             Text(
-                text = "View & Sort Options",
+                text = stringResource(R.string.sort_dialog_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MpxTextPrimary,
             )
@@ -57,7 +59,7 @@ fun SortViewDialog(
         text = {
             Column {
                 Text(
-                    text = "VIEW MODE",
+                    text = stringResource(R.string.sort_section_view_mode),
                     style = MaterialTheme.typography.labelSmall,
                     color = MpxTextSecondary,
                     fontSize = 11.sp,
@@ -76,7 +78,7 @@ fun SortViewDialog(
                             onClick = { onViewChange(mode) },
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(mode.label, color = MpxTextPrimary)
+                        Text(stringResource(mode.labelRes), color = MpxTextPrimary)
                     }
                 }
 
@@ -86,7 +88,7 @@ fun SortViewDialog(
                 )
 
                 Text(
-                    text = "SORT BY",
+                    text = stringResource(R.string.sort_section_sort_by),
                     style = MaterialTheme.typography.labelSmall,
                     color = MpxTextSecondary,
                     fontSize = 11.sp,
@@ -105,14 +107,14 @@ fun SortViewDialog(
                             onClick = { onSortChange(field) },
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(field.label, color = MpxTextPrimary)
+                        Text(stringResource(field.labelRes), color = MpxTextPrimary)
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Done")
+                Text(stringResource(R.string.action_done))
             }
         },
     )

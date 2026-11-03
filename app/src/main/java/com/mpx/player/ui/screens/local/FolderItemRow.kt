@@ -27,10 +27,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mpx.player.R
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.ui.components.AsyncFolderThumbnail
 import com.mpx.player.ui.theme.MpxAccentAmber
@@ -100,7 +102,7 @@ fun FolderItemRow(
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
-                            text = "SD CARD",
+                            text = stringResource(R.string.badge_sd_card),
                             color = MpxPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
@@ -116,7 +118,7 @@ fun FolderItemRow(
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
-                            text = "NEW",
+                            text = stringResource(R.string.badge_new),
                             color = Color.Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
@@ -128,7 +130,7 @@ fun FolderItemRow(
             Spacer(Modifier.height(3.dp))
 
             Text(
-                text = "${folder.videoCount} videos • ${folder.totalSizeFormatted}",
+                text = stringResource(R.string.folder_item_videos_and_size, folder.videoCount, folder.totalSizeFormatted),
                 style = MaterialTheme.typography.bodySmall,
                 color = MpxTextSecondary,
                 maxLines = 1,
@@ -142,7 +144,7 @@ fun FolderItemRow(
         ) {
             Icon(
                 imageVector = Icons.Filled.MoreVert,
-                contentDescription = "Folder options for ${folder.name}",
+                contentDescription = stringResource(R.string.folder_item_options_cd, folder.name),
                 tint = MpxTextMuted,
                 modifier = Modifier.size(20.dp),
             )
@@ -188,7 +190,7 @@ fun FolderItemGridCard(
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
-                            text = "SD CARD",
+                            text = stringResource(R.string.badge_sd_card),
                             color = Color.Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
@@ -205,7 +207,7 @@ fun FolderItemGridCard(
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
-                            text = "NEW",
+                            text = stringResource(R.string.badge_new),
                             color = Color.Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
@@ -227,7 +229,7 @@ fun FolderItemGridCard(
             Spacer(Modifier.height(2.dp))
 
             Text(
-                text = "${folder.videoCount} videos",
+                text = stringResource(R.string.folder_item_videos_count, folder.videoCount),
                 style = MaterialTheme.typography.bodySmall,
                 color = MpxTextSecondary,
             )
