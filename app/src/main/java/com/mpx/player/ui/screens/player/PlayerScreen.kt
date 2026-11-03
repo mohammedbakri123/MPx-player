@@ -6,8 +6,12 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Typeface
+import android.media.AudioManager
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.util.TypedValue
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,13 +22,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,8 +43,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeMute
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.BrightnessHigh
+import androidx.compose.material.icons.filled.BrightnessLow
+import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -83,6 +94,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -92,6 +104,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -99,6 +112,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -119,6 +133,9 @@ import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.player.formatTimeMs
 import com.mpx.player.util.PipUtils
+import kotlin.math.roundToInt
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import com.mpx.player.util.SubtitleUtils
 import com.mpx.player.util.SubtitleValidationResult
 import kotlinx.coroutines.launch
@@ -130,6 +147,78 @@ private fun Context.findActivity(): Activity? {
         ctx = ctx.baseContext
     }
     return null
+}
+
+private enum class DragGestureMode {
+    NONE,
+    HORIZONTAL_SEEK,
+    VERTICAL_BRIGHTNESS,
+    VERTICAL_VOLUME
+}
+
+private fun getScreenBrightness(context: Context, activity: Activity?): Float {
+    val windowBrightness = activity?.window?.attributes?.screenBrightness ?: -1f
+    return if (windowBrightness in 0f..1f) {
+        windowBrightness
+    } else {
+        try {
+            val systemBrightness = Settings.System.getInt(
+                context.contentResolver,
+                Settings.System.SCREEN_BRIGHTNESS,
+                128,
+            )
+            (systemBrightness / 255f).coerceIn(0f, 1f)
+        } catch (_: Exception) {
+            0.5f
+        }
+    }
+}
+
+private fun setScreenBrightness(activity: Activity?, brightness: Float): Float {
+    val target = brightness.coerceIn(0f, 1f)
+    activity?.window?.let { window ->
+        val lp = window.attributes
+        lp.screenBrightness = target
+        window.attributes = lp
+    }
+    return activity?.window?.attributes?.screenBrightness?.takeIf { it in 0f..1f } ?: target
+}
+
+private fun setMediaVolume(audioManager: AudioManager?, targetVolume: Int, minVolume: Int, maxVolume: Int): Int {
+    if (audioManager == null) return 0
+    val clamped = targetVolume.coerceIn(minVolume, maxVolume)
+    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, clamped, 0)
+    return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+}
+
+@Composable
+private fun VerticalIndicatorBar(
+    fraction: Float,
+    modifier: Modifier = Modifier,
+    height: Dp = 80.dp,
+    width: Dp = 6.dp,
+    trackColor: Color = Color.White.copy(alpha = 0.25f),
+    progressColor: Color = MaterialTheme.colorScheme.primary,
+) {
+    val clamped = fraction.coerceIn(0f, 1f)
+    Box(
+        modifier = modifier
+            .height(height)
+            .width(width)
+            .clip(RoundedCornerShape(width / 2))
+            .background(trackColor),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        if (clamped > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(height * clamped)
+                    .clip(RoundedCornerShape(width / 2))
+                    .background(progressColor),
+            )
+        }
+    }
 }
 
 @Composable
@@ -161,6 +250,11 @@ fun PlayerScreen(
         activity?.requestedOrientation = targetOrientation
         onDispose {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            activity?.window?.let { window ->
+                val lp = window.attributes
+                lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                window.attributes = lp
+            }
         }
     }
 
@@ -229,12 +323,50 @@ fun PlayerScreen(
     var isScrubbingSlider by remember { mutableStateOf(false) }
     var scrubFraction by remember { mutableFloatStateOf(0f) }
 
+    val audioManager = remember(context) {
+        context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+    }
+
     // Horizontal drag seek gesture state
     var isDraggingSeek by remember { mutableStateOf(false) }
     var seekStartMs by remember { mutableLongStateOf(0L) }
     var seekTargetMs by remember { mutableLongStateOf(0L) }
     var seekDeltaMs by remember { mutableLongStateOf(0L) }
     var accumulatedDragX by remember { mutableFloatStateOf(0f) }
+
+    // Gesture states for seek, brightness, and volume
+    var currentDragMode by remember { mutableStateOf(DragGestureMode.NONE) }
+    var dragStartOffset by remember { mutableStateOf(Offset.Zero) }
+    var totalDragX by remember { mutableFloatStateOf(0f) }
+    var totalDragY by remember { mutableFloatStateOf(0f) }
+
+    // Brightness gesture state
+    var showBrightnessIndicator by remember { mutableStateOf(false) }
+    var appliedBrightness by remember {
+        mutableFloatStateOf(getScreenBrightness(context, activity))
+    }
+    var dragStartBrightness by remember { mutableFloatStateOf(0.5f) }
+    var hideBrightnessJob by remember { mutableStateOf<Job?>(null) }
+
+    // Volume gesture state
+    var showVolumeIndicator by remember { mutableStateOf(false) }
+    var appliedVolume by remember {
+        mutableIntStateOf(audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0)
+    }
+    var dragStartVolume by remember { mutableIntStateOf(0) }
+    var volumeMin by remember {
+        mutableIntStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && audioManager != null) {
+                audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+            } else {
+                0
+            }
+        )
+    }
+    var volumeMax by remember {
+        mutableIntStateOf(audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15)
+    }
+    var hideVolumeJob by remember { mutableStateOf<Job?>(null) }
 
     val currentDuration = state.durationMs.coerceAtLeast(0L)
     val displayedCurrentTime = if (isScrubbingSlider && currentDuration > 0) {
@@ -268,34 +400,140 @@ fun PlayerScreen(
                     },
                 )
             }
-            // Horizontal drag seek gesture
+            // Drag gestures: horizontal seek, left-vertical brightness, right-vertical volume
             .pointerInput(state.isLocked, currentDuration) {
-                if (state.isLocked || currentDuration <= 0) return@pointerInput
+                if (state.isLocked) return@pointerInput
 
-                detectHorizontalDragGestures(
-                    onDragStart = {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        currentDragMode = DragGestureMode.NONE
+                        dragStartOffset = offset
+                        totalDragX = 0f
+                        totalDragY = 0f
                         accumulatedDragX = 0f
                         seekStartMs = state.currentPositionMs
                         seekTargetMs = seekStartMs
                         seekDeltaMs = 0L
-                        isDraggingSeek = true
+                        dragStartBrightness = getScreenBrightness(context, activity)
+                        dragStartVolume = audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
+                        volumeMin = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && audioManager != null) {
+                            audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+                        } else {
+                            0
+                        }
+                        volumeMax = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
                     },
                     onDragEnd = {
-                        if (isDraggingSeek) {
-                            playbackManager.seekTo(seekTargetMs)
-                            isDraggingSeek = false
+                        when (currentDragMode) {
+                            DragGestureMode.HORIZONTAL_SEEK -> {
+                                if (isDraggingSeek) {
+                                    playbackManager.seekTo(seekTargetMs)
+                                    isDraggingSeek = false
+                                }
+                            }
+                            DragGestureMode.VERTICAL_BRIGHTNESS -> {
+                                hideBrightnessJob?.cancel()
+                                hideBrightnessJob = scope.launch {
+                                    delay(1000)
+                                    showBrightnessIndicator = false
+                                }
+                            }
+                            DragGestureMode.VERTICAL_VOLUME -> {
+                                hideVolumeJob?.cancel()
+                                hideVolumeJob = scope.launch {
+                                    delay(1000)
+                                    showVolumeIndicator = false
+                                }
+                            }
+                            DragGestureMode.NONE -> {}
                         }
+                        currentDragMode = DragGestureMode.NONE
                     },
                     onDragCancel = {
-                        isDraggingSeek = false
+                        if (isDraggingSeek) {
+                            isDraggingSeek = false
+                        }
+                        if (showBrightnessIndicator) {
+                            hideBrightnessJob?.cancel()
+                            hideBrightnessJob = scope.launch {
+                                delay(1000)
+                                showBrightnessIndicator = false
+                            }
+                        }
+                        if (showVolumeIndicator) {
+                            hideVolumeJob?.cancel()
+                            hideVolumeJob = scope.launch {
+                                delay(1000)
+                                showVolumeIndicator = false
+                            }
+                        }
+                        currentDragMode = DragGestureMode.NONE
                     },
-                    onHorizontalDrag = { change, dragAmount ->
+                    onDrag = { change, dragAmount ->
                         change.consume()
-                        accumulatedDragX += dragAmount
-                        val delta = (accumulatedDragX * 120f).toLong()
-                        val target = (seekStartMs + delta).coerceIn(0L, currentDuration)
-                        seekTargetMs = target
-                        seekDeltaMs = target - seekStartMs
+                        totalDragX += dragAmount.x
+                        totalDragY += dragAmount.y
+
+                        if (currentDragMode == DragGestureMode.NONE) {
+                            val absX = kotlin.math.abs(totalDragX)
+                            val absY = kotlin.math.abs(totalDragY)
+                            if (absX > 0f || absY > 0f) {
+                                if (absX >= absY) {
+                                    if (currentDuration > 0) {
+                                        currentDragMode = DragGestureMode.HORIZONTAL_SEEK
+                                        isDraggingSeek = true
+                                    }
+                                } else {
+                                    val isLeftHalf = dragStartOffset.x < size.width / 2f
+                                    if (isLeftHalf) {
+                                        currentDragMode = DragGestureMode.VERTICAL_BRIGHTNESS
+                                        hideBrightnessJob?.cancel()
+                                        showBrightnessIndicator = true
+                                    } else {
+                                        currentDragMode = DragGestureMode.VERTICAL_VOLUME
+                                        hideVolumeJob?.cancel()
+                                        showVolumeIndicator = true
+                                    }
+                                }
+                            }
+                        }
+
+                        when (currentDragMode) {
+                            DragGestureMode.HORIZONTAL_SEEK -> {
+                                val minTotalX = -(seekStartMs.toFloat() / 120f)
+                                val maxTotalX = ((currentDuration - seekStartMs).toFloat() / 120f)
+                                totalDragX = totalDragX.coerceIn(minTotalX, maxTotalX)
+                                val delta = (totalDragX * 120f).toLong()
+                                val target = (seekStartMs + delta).coerceIn(0L, currentDuration)
+                                seekTargetMs = target
+                                seekDeltaMs = target - seekStartMs
+                            }
+                            DragGestureMode.VERTICAL_BRIGHTNESS -> {
+                                val sensitivity = (size.height.toFloat() * 0.75f).coerceAtLeast(200f)
+                                totalDragY = totalDragY.coerceIn(
+                                    -sensitivity * (1.0f - dragStartBrightness),
+                                    sensitivity * dragStartBrightness,
+                                )
+                                val deltaFraction = -totalDragY / sensitivity
+                                val target = (dragStartBrightness + deltaFraction).coerceIn(0f, 1f)
+                                appliedBrightness = setScreenBrightness(activity, target)
+                                hideBrightnessJob?.cancel()
+                                showBrightnessIndicator = true
+                            }
+                            DragGestureMode.VERTICAL_VOLUME -> {
+                                val sensitivity = (size.height.toFloat() * 0.75f).coerceAtLeast(200f)
+                                val volumeRange = (volumeMax - volumeMin).coerceAtLeast(1)
+                                val minTotalY = -sensitivity * ((volumeMax - dragStartVolume).toFloat() / volumeRange.toFloat())
+                                val maxTotalY = sensitivity * ((dragStartVolume - volumeMin).toFloat() / volumeRange.toFloat())
+                                totalDragY = totalDragY.coerceIn(minTotalY, maxTotalY)
+                                val deltaSteps = (-totalDragY / sensitivity * volumeRange).toInt()
+                                val target = (dragStartVolume + deltaSteps).coerceIn(volumeMin, volumeMax)
+                                appliedVolume = setMediaVolume(audioManager, target, volumeMin, volumeMax)
+                                hideVolumeJob?.cancel()
+                                showVolumeIndicator = true
+                            }
+                            DragGestureMode.NONE -> {}
+                        }
                     },
                 )
             },
@@ -400,6 +638,97 @@ fun PlayerScreen(
                     Text(
                         text = "${formatTimeMs(seekTargetMs)} / ${formatTimeMs(currentDuration)}",
                         color = Color.White,
+                        fontSize = 13.sp,
+                    )
+                }
+            }
+        }
+
+        // Brightness HUD Indicator (Left half vertical drag)
+        if (showBrightnessIndicator) {
+            Surface(
+                color = Color.Black.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 48.dp),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    val brightnessPercent = (appliedBrightness * 100).roundToInt().coerceIn(0, 100)
+                    val icon = when {
+                        brightnessPercent < 33 -> Icons.Filled.BrightnessLow
+                        brightnessPercent < 67 -> Icons.Filled.BrightnessMedium
+                        else -> Icons.Filled.BrightnessHigh
+                    }
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = "Brightness",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    VerticalIndicatorBar(
+                        fraction = appliedBrightness,
+                        height = 96.dp,
+                        width = 6.dp,
+                        trackColor = Color.White.copy(alpha = 0.25f),
+                        progressColor = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "$brightnessPercent%",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                    )
+                }
+            }
+        }
+
+        // Volume HUD Indicator (Right half vertical drag)
+        if (showVolumeIndicator) {
+            Surface(
+                color = Color.Black.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 48.dp),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    val volumeRange = (volumeMax - volumeMin).coerceAtLeast(1)
+                    val volumePercent = (((appliedVolume - volumeMin).toFloat() / volumeRange.toFloat()) * 100).roundToInt().coerceIn(0, 100)
+                    val icon = when {
+                        appliedVolume <= volumeMin -> Icons.AutoMirrored.Filled.VolumeMute
+                        volumePercent < 50 -> Icons.AutoMirrored.Filled.VolumeDown
+                        else -> Icons.AutoMirrored.Filled.VolumeUp
+                    }
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = "Volume",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    VerticalIndicatorBar(
+                        fraction = (appliedVolume - volumeMin).toFloat() / volumeRange.toFloat(),
+                        height = 96.dp,
+                        width = 6.dp,
+                        trackColor = Color.White.copy(alpha = 0.25f),
+                        progressColor = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "$volumePercent%",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                     )
                 }
@@ -777,7 +1106,7 @@ fun PlayerScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text = "Double-tap: Play/Pause • Horizontal drag: Seek",
+                                    text = "Double-tap: Play/Pause • Swipe H: Seek • Swipe V: Brightness (L) / Volume (R)",
                                     color = Color.White.copy(alpha = 0.85f),
                                     fontSize = 11.sp,
                                 )
