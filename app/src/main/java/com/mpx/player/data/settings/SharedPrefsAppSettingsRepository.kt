@@ -27,6 +27,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
         appLanguage = prefs.getString("app_language", "system") ?: "system",
         showAllFolders = prefs.getBoolean("show_all_folders", false),
+        folderViewMode = prefs.getString("folder_view_mode", "LIST") ?: "LIST",
+        localViewMode = prefs.getString("local_view_mode", "LIST") ?: "LIST",
     )
 
     override fun save(settings: AppSettings) {
@@ -46,6 +48,32 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("popup_play_controls", settings.popupPlayControls)
             .putString("app_language", settings.appLanguage)
             .putBoolean("show_all_folders", settings.showAllFolders)
+            .putString("folder_view_mode", settings.folderViewMode)
+            .putString("local_view_mode", settings.localViewMode)
             .apply()
+    }
+
+    override fun getFolderViewMode(folderId: String): String {
+        val overrideKey = "folder_view_mode_$folderId"
+        val override = prefs.getString(overrideKey, null)
+        if (!override.isNullOrBlank()) {
+            return override
+        }
+        return prefs.getString("folder_view_mode", "LIST") ?: "LIST"
+    }
+
+    override fun setFolderViewMode(folderId: String, mode: String) {
+        val overrideKey = "folder_view_mode_$folderId"
+        prefs.edit().putString(overrideKey, mode).apply()
+    }
+
+    override fun clearFolderViewModeOverride(folderId: String) {
+        val overrideKey = "folder_view_mode_$folderId"
+        prefs.edit().remove(overrideKey).apply()
+    }
+
+    override fun hasFolderViewModeOverride(folderId: String): Boolean {
+        val overrideKey = "folder_view_mode_$folderId"
+        return prefs.contains(overrideKey)
     }
 }

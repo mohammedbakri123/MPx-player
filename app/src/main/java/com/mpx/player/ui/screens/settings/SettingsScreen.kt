@@ -237,6 +237,19 @@ fun SettingsScreen(
                                     }
                                 }
                                 "list" -> {
+                                    Text(
+                                        stringResource(R.string.pref_default_folder_view_mode),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
+                                    )
+                                    ChoiceRow(stringResource(R.string.view_mode_list), settings.folderViewMode.equals("LIST", ignoreCase = true)) {
+                                        update(settings.copy(folderViewMode = "LIST"))
+                                    }
+                                    ChoiceRow(stringResource(R.string.view_mode_grid), settings.folderViewMode.equals("GRID", ignoreCase = true)) {
+                                        update(settings.copy(folderViewMode = "GRID"))
+                                    }
+                                    Spacer(Modifier.height(8.dp))
                                     ToggleRow(stringResource(R.string.list_show_all_folders), settings.showAllFolders) { update(settings.copy(showAllFolders = it)) }
                                     ToggleRow(stringResource(R.string.list_show_hidden), settings.showHiddenFiles) { update(settings.copy(showHiddenFiles = it)) }
                                     ToggleRow(stringResource(R.string.list_show_thumbnails), settings.showThumbnails) { update(settings.copy(showThumbnails = it)) }

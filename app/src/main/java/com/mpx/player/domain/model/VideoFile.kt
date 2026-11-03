@@ -6,4 +6,7 @@ data class VideoFile(
     val title: String,
     val path: String,
     val durationMs: Long = 0L,
+    val sizeBytes: Long = 0L,
+    val sizeFormatted: String = "",
+    val dateModified: Long = 0L,
 )

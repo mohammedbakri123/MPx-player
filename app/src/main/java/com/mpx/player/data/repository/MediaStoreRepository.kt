@@ -382,6 +382,8 @@ class MediaStoreRepository(
             MediaStore.Video.Media.TITLE,
             MediaStore.Video.Media.DATA,
             MediaStore.Video.Media.DURATION,
+            MediaStore.Video.Media.SIZE,
+            MediaStore.Video.Media.DATE_MODIFIED,
         )
         val uris = getVideoContentUris()
         for (uri in uris) {
@@ -397,6 +399,8 @@ class MediaStoreRepository(
                     val titleCol = cursor.getColumnIndex(MediaStore.Video.Media.TITLE)
                     val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
                     val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
+                    val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
+                    val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
                     while (cursor.moveToNext()) {
                         val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
                         if (path.isNotBlank() && !seenPaths.add(path)) continue
@@ -408,6 +412,8 @@ class MediaStoreRepository(
                                 ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
                             } else ""
                         }
+                        val sizeBytes = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
+                        val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
                         videos.add(
                             VideoFile(
                                 id = id,
@@ -416,6 +422,9 @@ class MediaStoreRepository(
                                 } ?: if (path.isNotBlank()) File(path).name else "Video",
                                 path = effectivePath,
                                 durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L,
+                                sizeBytes = sizeBytes,
+                                sizeFormatted = formatSize(sizeBytes),
+                                dateModified = dateModified,
                             )
                         )
                     }

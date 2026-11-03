@@ -407,4 +407,31 @@
     <string name="empty_folders_desc">No media folders found on storage volumes. Folders and media will appear here once created or synced.</string>
     <string name="local_section_all_folders">ALL FOLDERS</string>
     <string name="local_badge_show_all">SHOW ALL</string>
+
+    <!-- Folder View Mode & Folder Contents -->
+    <string name="folder_view_mode">Folder view mode</string>
+    <string name="pref_default_folder_view_mode">Default folder view mode</string>
+    <string name="pref_default_folder_view_mode_desc">Default layout for viewing video files inside folders</string>
+    <string name="folder_view_subtitle">%1$d videos • %2$s</string>
+    <string name="folder_view_subtitle_single">1 video • %1$s</string>
+    <string name="folder_view_search_placeholder">Search videos in folder…</string>
+    <string name="folder_view_empty_title">No Videos in Folder</string>
+    <string name="folder_view_empty_desc">No video files found in this folder.</string>
+    <string name="folder_view_search_empty_title">No Videos Found</string>
+    <string name="folder_view_search_empty_desc">No videos match \"%1$s\".</string>
+    <string name="folder_menu_play_all">Play all</string>
+    <string name="folder_menu_open">Open folder</string>
+    <string name="folder_view_dialog_title">Folder View &amp; Sort</string>
+    <string name="folder_view_set_as_default">Set as default for all folders</string>
+    <string name="folder_view_set_as_default_desc">New folders will use this view mode</string>
+    <string name="folder_view_reset_default">Reset to global default</string>
+    <string name="folder_view_reset_default_snackbar">Folder view reset to default (%1$s)</string>
+    <string name="view_mode_switched_list">Switched to list view</string>
+    <string name="view_mode_switched_grid">Switched to grid view</string>
+    <string name="video_item_options_cd">Options for %1$s</string>
+    <string name="video_item_play">Play</string>
+    <string name="video_item_add_to_playlist">Add to playlist…</string>
+    <string name="video_item_favourite">Add to favourites</string>
+    <string name="video_item_unfavourite">Remove from favourites</string>
+    <string name="action_back_to_folders">Back to folders</string>
 </resources>

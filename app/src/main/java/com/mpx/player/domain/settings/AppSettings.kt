@@ -20,9 +20,15 @@ data class AppSettings(
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10
     val appLanguage: String = "system", // system, en, ar
     val showAllFolders: Boolean = false,
+    val folderViewMode: String = "LIST", // Global default folder contents view mode: LIST, GRID
+    val localViewMode: String = "LIST", // Local root folders list view mode: LIST, GRID
 )
 
 interface AppSettingsRepository {
     fun load(): AppSettings
     fun save(settings: AppSettings)
+    fun getFolderViewMode(folderId: String): String = "LIST"
+    fun setFolderViewMode(folderId: String, mode: String) {}
+    fun clearFolderViewModeOverride(folderId: String) {}
+    fun hasFolderViewModeOverride(folderId: String): Boolean = false
 }
