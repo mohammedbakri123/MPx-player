@@ -231,4 +231,104 @@
     <string name="issue32_private_detail">يتطلب المجلد الخاص خزينة ملفات أو SQLite مشفرة ومحمية برقم سري أو مصادقة حيوية لإخفاء الوسائط الحساسة.</string>
     <string name="issue32_manager_detail">سيقوم مدير الوسائط ومنظف التخزين بتحليل سعة تخزين الجهاز وتحديد مقاطع الفيديو المكررة والملفات الكبيرة وذاكرة التخزين المؤقت.</string>
     <string name="issue32_bin_detail">ستحتفظ سلة المحذوفات بالملفات المحذوفة في مجلد تحت إدارة التطبيق لمدة 30 يوماً قبل حذفها نهائياً.</string>
+
+    <!-- Music Screen -->
+    <string name="music_screen_title">موسيقى</string>
+    <string name="music_cd_equalizer">معادل الصوت</string>
+    <string name="music_equalizer_scheduled">معادل الصوت مجدول لمرحلة الصوتيات</string>
+    <string name="music_library_refreshed">تم تحديث مكتبة الموسيقى</string>
+    <string name="music_search_placeholder">البحث في الأغاني…</string>
+    <string name="music_shuffle_all">خلط الكل</string>
+    <string name="music_banner_scanning">المسح الفعلي عبر MediaStore نشط. تعكس المقاطع والألبومات والفنانون والمجلدات وسائط الجهاز.</string>
+
+    <!-- Music Tabs -->
+    <string name="music_tab_tracks">المسارات</string>
+    <string name="music_tab_playlists">قوائم التشغيل</string>
+    <string name="music_tab_albums">الألبومات</string>
+    <string name="music_tab_artists">الفنانون</string>
+    <string name="music_tab_folders">المجلدات</string>
+
+    <!-- Music Permission & Empty States -->
+    <string name="music_permission_required_title">الإذن مطلوب</string>
+    <string name="music_permission_required_desc">يحتاج MPx إلى إذن للوصول إلى ملفاتك الصوتية لعرض مكتبة الموسيقى الخاصة بك.</string>
+    <string name="music_permission_grant_button">منح الإذن</string>
+    <string name="music_empty_tracks_title">لم يتم العثور على موسيقى</string>
+    <string name="music_empty_tracks_desc">لم يتم العثور على أي مقاطع صوتية على هذا الجهاز.</string>
+    <string name="music_empty_refresh_action">تحديث</string>
+    <string name="music_search_no_matches_title">لم يتم العثور على نتائج</string>
+    <string name="music_search_no_matches_desc">لا توجد أغانٍ تطابق \"%s\".</string>
+    <string name="music_empty_albums_title">لم يتم العثور على ألبومات</string>
+    <string name="music_empty_albums_desc">لم يتم العثور على أي ألبومات صوتية على هذا الجهاز.</string>
+    <string name="music_empty_artists_title">لم يتم العثور على فنانين</string>
+    <string name="music_empty_artists_desc">لم يتم العثور على أي فنانين على هذا الجهاز.</string>
+    <string name="music_empty_folders_title">لم يتم العثور على مجلدات صوتية</string>
+    <string name="music_empty_folders_desc">لم يتم العثور على أي مجلدات صوتية على هذا الجهاز.</string>
+    <string name="music_empty_playlists_title">لم يتم العثور على قوائم تشغيل</string>
+    <string name="music_empty_playlists_desc">ستظهر قوائم التشغيل هنا بمجرد إنشائها أو مزامنتها.</string>
+
+    <!-- Music Content Rows & Subtitles -->
+    <string name="music_new_playlist_title">قائمة تشغيل جديدة</string>
+    <string name="music_new_playlist_subtitle">إنشاء قائمة تشغيل مخصصة</string>
+    <string name="music_favourites_title">المفضلة</string>
+    <string name="music_recently_played_title">تم تشغيلها مؤخراً</string>
+    <string name="music_songs_count">%d من الأغاني</string>
+    <string name="music_playlist_songs_subtitle">%1$d من الأغاني • %2$s</string>
+    <string name="music_album_tracks_format">%1$s • %2$d من المقاطع</string>
+    <string name="music_artist_details_format">%1$d من المقاطع • %2$d ألبوم</string>
+    <string name="music_sd_card_badge">بطاقة SD</string>
+    <string name="music_folder_tracks_format">%1$d من المقاطع • %2$s</string>
+
+    <!-- Music Track Menu & Feedback -->
+    <string name="music_cd_track_options">خيارات المسار لـ %s</string>
+    <string name="music_menu_play_track">تشغيل المسار</string>
+    <string name="music_menu_toggle_favourite">تبديل المفضلة</string>
+    <string name="music_menu_add_to_playlist">إضافة إلى قائمة التشغيل…</string>
+    <string name="music_added_to_favourites">تمت الإضافة إلى المفضلة</string>
+    <string name="music_removed_from_favourites">تمت الإزالة من المفضلة</string>
+    <string name="music_cleared_favourites_msg">تم مسح المفضلة</string>
+    <string name="music_cleared_history_msg">تم مسح السجل</string>
+    <string name="music_playlist_created_msg">تم إنشاء قائمة التشغيل \"%s\"</string>
+    <string name="music_added_to_playlist_msg">تمت الإضافة إلى \"%s\"</string>
+    <string name="music_deleted_playlist_msg">تم حذف \"%s\"</string>
+
+    <!-- Playlist & Persistence Dialogs -->
+    <string name="action_create">إنشاء</string>
+    <string name="action_clear_all">مسح الكل</string>
+    <string name="action_more">المزيد</string>
+    <string name="media_type_video">فيديو</string>
+    <string name="media_type_audio">صوت</string>
+    <string name="favourites_dialog_title">المفضلة (%d)</string>
+    <string name="favourites_empty_title">لا توجد عناصر مفضلة بعد</string>
+    <string name="favourites_empty_desc">اضغط على أيقونة القلب في المشغل أو خيارات المسار لإضافة المفضلة.</string>
+    <string name="favourites_cd_remove">إزالة من المفضلة</string>
+    <string name="history_dialog_title">سجل التشغيل (%d)</string>
+    <string name="history_empty_title">لم يتم تسجيل أي سجل</string>
+    <string name="history_empty_desc">سيتم حفظ الوسائط التي يتم تشغيلها في مشغل MPx هنا تلقائياً.</string>
+    <string name="history_resume_at">• استئناف عند %s</string>
+    <string name="history_cd_resume">استئناف التشغيل</string>
+    <string name="playlist_create_dialog_title">قائمة تشغيل جديدة</string>
+    <string name="playlist_create_dialog_desc">أدخل اسماً لقائمة التشغيل المخصصة هذه:</string>
+    <string name="playlist_name_placeholder">اسم قائمة التشغيل</string>
+    <string name="playlist_add_dialog_title">إضافة إلى قائمة التشغيل</string>
+    <string name="playlist_add_to_header">إضافة \"%s\" إلى:</string>
+    <string name="playlist_create_new_action">إنشاء قائمة تشغيل جديدة…</string>
+    <string name="playlist_no_custom_playlists">لم يتم إنشاء قوائم تشغيل مخصصة بعد.</string>
+    <string name="playlist_items_subtitle">%d من العناصر • قائمة تشغيل مخصصة</string>
+    <string name="playlist_cd_delete">حذف قائمة التشغيل</string>
+    <string name="playlist_play_all">تشغيل الكل</string>
+    <string name="playlist_empty_title">قائمة التشغيل فارغة</string>
+    <string name="playlist_empty_desc">أضف مسارات باستخدام قائمة الخيارات في أي مسار.</string>
+    <string name="playlist_cd_remove_item">إزالة العنصر</string>
+    <string name="playlists_dialog_title">قوائم التشغيل (%d)</string>
+    <string name="playlists_btn_new">+ جديدة</string>
+    <string name="playlists_empty_msg">لا توجد قوائم تشغيل مخصصة بعد.\nاضغط على \'+ جديدة\' لإنشاء واحدة.</string>
+    <string name="playlist_items_type_format">%1$d من العناصر • %2$s</string>
+
+    <!-- Sort & Menu Options -->
+    <string name="menu_sort_by">الترتيب حسب</string>
+    <string name="sort_name">العنوان / الاسم</string>
+    <string name="sort_date">تاريخ التعديل</string>
+    <string name="sort_size">حجم الملف</string>
+    <string name="sort_artist">الفنان</string>
+    <string name="sort_album">الألبوم</string>
 </resources>

@@ -231,4 +231,104 @@
     <string name="issue32_private_detail">Private Folder requires an encrypted SQLite or file vault protected by a PIN or biometric auth to hide sensitive media.</string>
     <string name="issue32_manager_detail">Media Manager &amp; Storage Cleaner will analyze device storage, identify duplicate videos, large files, and temporary cache.</string>
     <string name="issue32_bin_detail">Recycle Bin will preserve deleted files in an app-managed holding directory for 30 days before permanent deletion.</string>
+
+    <!-- Music Screen -->
+    <string name="music_screen_title">Music</string>
+    <string name="music_cd_equalizer">Equalizer</string>
+    <string name="music_equalizer_scheduled">Equalizer is scheduled for audio phase</string>
+    <string name="music_library_refreshed">Music library refreshed</string>
+    <string name="music_search_placeholder">Search songs…</string>
+    <string name="music_shuffle_all">Shuffle All</string>
+    <string name="music_banner_scanning">Real MediaStore scanning active. Audio tracks, albums, artists, and folders reflect device media.</string>
+
+    <!-- Music Tabs -->
+    <string name="music_tab_tracks">Tracks</string>
+    <string name="music_tab_playlists">Playlists</string>
+    <string name="music_tab_albums">Albums</string>
+    <string name="music_tab_artists">Artists</string>
+    <string name="music_tab_folders">Folders</string>
+
+    <!-- Music Permission & Empty States -->
+    <string name="music_permission_required_title">Permission Required</string>
+    <string name="music_permission_required_desc">MPx needs permission to access your audio files to display your music library.</string>
+    <string name="music_permission_grant_button">Grant Permission</string>
+    <string name="music_empty_tracks_title">No Music Found</string>
+    <string name="music_empty_tracks_desc">No audio tracks were found on this device.</string>
+    <string name="music_empty_refresh_action">Refresh</string>
+    <string name="music_search_no_matches_title">No Matches Found</string>
+    <string name="music_search_no_matches_desc">No songs match \"%s\".</string>
+    <string name="music_empty_albums_title">No Albums Found</string>
+    <string name="music_empty_albums_desc">No audio albums were found on this device.</string>
+    <string name="music_empty_artists_title">No Artists Found</string>
+    <string name="music_empty_artists_desc">No music artists were found on this device.</string>
+    <string name="music_empty_folders_title">No Audio Folders Found</string>
+    <string name="music_empty_folders_desc">No audio folders were found on this device.</string>
+    <string name="music_empty_playlists_title">No Playlists Found</string>
+    <string name="music_empty_playlists_desc">Playlists will appear here once created or synced.</string>
+
+    <!-- Music Content Rows & Subtitles -->
+    <string name="music_new_playlist_title">New Playlist</string>
+    <string name="music_new_playlist_subtitle">Create custom playlist</string>
+    <string name="music_favourites_title">Favourites</string>
+    <string name="music_recently_played_title">Recently Played</string>
+    <string name="music_songs_count">%d songs</string>
+    <string name="music_playlist_songs_subtitle">%1$d songs • %2$s</string>
+    <string name="music_album_tracks_format">%1$s • %2$d tracks</string>
+    <string name="music_artist_details_format">%1$d tracks • %2$d album</string>
+    <string name="music_sd_card_badge">SD CARD</string>
+    <string name="music_folder_tracks_format">%1$d tracks • %2$s</string>
+
+    <!-- Music Track Menu & Feedback -->
+    <string name="music_cd_track_options">Track options for %s</string>
+    <string name="music_menu_play_track">Play Track</string>
+    <string name="music_menu_toggle_favourite">Toggle Favourite</string>
+    <string name="music_menu_add_to_playlist">Add to Playlist…</string>
+    <string name="music_added_to_favourites">Added to Favourites</string>
+    <string name="music_removed_from_favourites">Removed from Favourites</string>
+    <string name="music_cleared_favourites_msg">Cleared Favourites</string>
+    <string name="music_cleared_history_msg">Cleared History</string>
+    <string name="music_playlist_created_msg">Playlist \"%s\" created</string>
+    <string name="music_added_to_playlist_msg">Added to \"%s\"</string>
+    <string name="music_deleted_playlist_msg">Deleted \"%s\"</string>
+
+    <!-- Playlist & Persistence Dialogs -->
+    <string name="action_create">Create</string>
+    <string name="action_clear_all">Clear All</string>
+    <string name="action_more">More</string>
+    <string name="media_type_video">Video</string>
+    <string name="media_type_audio">Audio</string>
+    <string name="favourites_dialog_title">Favourites (%d)</string>
+    <string name="favourites_empty_title">No Favourites Yet</string>
+    <string name="favourites_empty_desc">Tap the heart icon in the player or track options to add favourites.</string>
+    <string name="favourites_cd_remove">Remove favourite</string>
+    <string name="history_dialog_title">Playback History (%d)</string>
+    <string name="history_empty_title">No History Recorded</string>
+    <string name="history_empty_desc">Media played in MPx Player will be saved here automatically.</string>
+    <string name="history_resume_at">• Resume at %s</string>
+    <string name="history_cd_resume">Resume play</string>
+    <string name="playlist_create_dialog_title">New Playlist</string>
+    <string name="playlist_create_dialog_desc">Enter a name for this custom playlist:</string>
+    <string name="playlist_name_placeholder">Playlist name</string>
+    <string name="playlist_add_dialog_title">Add to Playlist</string>
+    <string name="playlist_add_to_header">Add \"%s\" to:</string>
+    <string name="playlist_create_new_action">Create New Playlist…</string>
+    <string name="playlist_no_custom_playlists">No custom playlists created yet.</string>
+    <string name="playlist_items_subtitle">%d items • Custom Playlist</string>
+    <string name="playlist_cd_delete">Delete playlist</string>
+    <string name="playlist_play_all">Play All</string>
+    <string name="playlist_empty_title">Playlist is Empty</string>
+    <string name="playlist_empty_desc">Add tracks using the options menu on any track.</string>
+    <string name="playlist_cd_remove_item">Remove item</string>
+    <string name="playlists_dialog_title">Playlists (%d)</string>
+    <string name="playlists_btn_new">+ New</string>
+    <string name="playlists_empty_msg">No custom playlists yet.\nTap \'+ New\' to create one.</string>
+    <string name="playlist_items_type_format">%1$d items • %2$s</string>
+
+    <!-- Sort & Menu Options -->
+    <string name="menu_sort_by">SORT BY</string>
+    <string name="sort_name">Title / Name</string>
+    <string name="sort_date">Date modified</string>
+    <string name="sort_size">File size</string>
+    <string name="sort_artist">Artist</string>
+    <string name="sort_album">Album</string>
 </resources>
