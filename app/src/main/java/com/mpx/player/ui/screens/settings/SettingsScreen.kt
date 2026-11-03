@@ -73,6 +73,7 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onOpenOverlaySettings: (() -> Unit)? = null,
     settingsRepository: AppSettingsRepository,
+    onOpenAboutBeta: (() -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     currentLanguage: String = "system",
     onLanguageChanged: ((String) -> Unit)? = null,
@@ -328,8 +329,30 @@ fun SettingsScreen(
                                 "about" -> {
                                     Text(
                                         stringResource(R.string.about_app_description),
-                                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
+                                    Spacer(Modifier.height(10.dp))
+                                    if (onOpenAboutBeta != null) {
+                                        OutlinedButton(
+                                            onClick = onOpenAboutBeta,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(10.dp),
+                                        ) {
+                                            Icon(
+                                                Icons.Filled.Info,
+                                                null,
+                                                tint = MpxPrimary,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                stringResource(R.string.about_beta_open_page_button),
+                                                color = MpxPrimary,
+                                                fontWeight = FontWeight.SemiBold,
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

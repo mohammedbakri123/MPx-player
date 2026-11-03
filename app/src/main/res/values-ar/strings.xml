@@ -2,8 +2,8 @@
 <resources>
     <!-- App & General -->
     <string name="app_name">MPx Player</string>
-    <string name="app_version_name">الإصدار 0.1.0-native</string>
-    <string name="app_version_full">مشغل MPx الإصدار 0.1.0-native</string>
+    <string name="app_version_name">الإصدار 0.1.0-beta</string>
+    <string name="app_version_full">مشغل MPx الإصدار 0.1.0-beta</string>
 
     <!-- Navigation Tabs -->
     <string name="nav_local">محلي</string>
@@ -64,7 +64,7 @@
     <string name="settings_category_general">عام</string>
     <string name="settings_category_general_sub">إعادة تعيين كافة التفضيلات إلى الإعدادات الافتراضية</string>
     <string name="settings_category_about">حول</string>
-    <string name="settings_category_about_sub">الإصدار 0.1.0-native</string>
+    <string name="settings_category_about_sub">الإصدار 0.1.0-beta • حالة النسخة التجريبية والملاحظات</string>
 
     <!-- Settings Category Options -->
     <string name="theme_midnight">شاشات أوليد الليلية (أسود نقي)</string>
@@ -112,7 +112,7 @@
     <string name="general_reset_done">تمت إعادة تعيين جميع الإعدادات إلى القيم الافتراضية.</string>
     <string name="general_language_hint">يمكن تغيير إعداد لغة التطبيق في قسم لغة التطبيق أعلاه أو من شاشة \'أنا\'.</string>
 
-    <string name="about_app_description">مشغل MPx 0.1.0-native. إعادة كتابة أصلية بلغة كوتلن، تصميم مستوحى من MX ومبني بالكامل بأكواد وتنسيق MPx الخاص.</string>
+    <string name="about_app_description">مشغل MPx 0.1.0-beta. إعادة كتابة أصلية بلغة كوتلن، تصميم مستوحى من MX ومبني بالكامل بأكواد وتنسيق MPx الخاص.</string>
 
     <!-- Me Screen Headers & Profile -->
     <string name="me_title">أنا</string>
@@ -169,8 +169,8 @@
     <string name="pref_help_desc">دليل إيماءات المشغل، شروحات تعليمية، وتشخيصات الجهاز</string>
     <string name="pref_legal">المعلومات القانونية والمصادر المفتوحة</string>
     <string name="pref_legal_desc">تراخيص البرمجيات، الشروط، وإشعار الاستلهام</string>
-    <string name="pref_about_mpx">مشغل MPx الأصلي</string>
-    <string name="pref_about_mpx_desc">الإصدار 0.1.0-native • Jetpack Compose • Media3</string>
+    <string name="pref_about_mpx">حول مشغل MPx (النسخة التجريبية)</string>
+    <string name="pref_about_mpx_desc">الإصدار 0.1.0-beta • الحالة، العناصر قيد التطوير، والملاحظات</string>
 
     <!-- Me Screen Dialogs Content -->
     <string name="dialog_theme_title">اختر مظهر التطبيق</string>
@@ -208,7 +208,7 @@
     <string name="help_sec2_title">المسارات الصوتية ومسارات الترجمة</string>
     <string name="help_sec2_body">• أيقونة الصوت: التبديل بين المسارات الصوتية المستقلة (صوت ثنائي، تعليق)\n• أيقونة الترجمة: اختيار مسارات الترجمة المدمجة أو الخارجية بتنسيق vtt. أو srt.\n• حجم الترجمة: قابل للضبط من الإعدادات (صغير، عادي، كبير)</string>
     <string name="help_sec3_title">تشخيصات الجهاز (مباشرة)</string>
-    <string name="help_diag_app">التطبيق: مشغل MPx 0.1.0-native</string>
+    <string name="help_diag_app">التطبيق: مشغل MPx 0.1.0-beta (البناء 2)</string>
     <string name="help_diag_os">نظام أندرويد: SDK %1$d (%2$s)</string>
     <string name="help_diag_device">الجهاز: %1$s %2$s</string>
     <string name="help_diag_engine">المحرك: AndroidX Media3 ExoPlayer 1.3.1</string>
@@ -481,4 +481,55 @@
     <string name="pip_limit_window_manager_desc">يتحكم النظام في الحجم والموضع النهائيين، لذا قد تُعدَّل طلبات MPx.</string>
     <string name="pip_limit_actions_title">الإجراءات المتاحة</string>
     <string name="pip_limit_actions_desc">لا يمكن أن تظهر على النافذة العائمة إلا الإجراءات التي يسمح بها أندرويد.</string>
+    <!-- Beta & About Screen -->
+    <string name="about_beta_screen_title">حول وحالة النسخة التجريبية</string>
+    <string name="about_beta_badge">إصدار تجريبي</string>
+    <string name="about_beta_tagline">مشغل وسائط أصلي لنظام أندرويد بلغة كوتلن يعتمد على Media3 ExoPlayer وقاعدة بيانات Room.</string>
+    <string name="about_beta_build_info">البناء 2 (رمز الإصدار 2) • الفرع: feature/beta-readiness</string>
+
+    <!-- What is Ready in Beta -->
+    <string name="about_beta_section_ready">الميزات الجاهزة في النسخة التجريبية</string>
+    <string name="about_beta_ready_subtitle">ميزات التشغيل المحلي ومكتبة الوسائط مكتملة بالكامل وتعمل بشكل أصلي:</string>
+    <string name="about_beta_feat_player_title">محرك تشغيل الفيديو Media3</string>
+    <string name="about_beta_feat_player_desc">فك الترميز العتادي (HW/HW+) والبرمجي (SW) عبر AndroidX Media3 ExoPlayer. إيماءات الفيديو (النقر المزدوج لتقديم/تأخير 10 ثوانٍ، السحب للتمرير)، التحكم بنسبة العرض (ملاءمة/تمديد/16:9/الأصلي)، الترجمات المدمجة والخارجية (.srt، .vtt)، والتبديل بين المسارات الصوتية المتعددة.</string>
+    <string name="about_beta_feat_bg_pip_title">التشغيل في الخلفية والنافذة المنبثقة (صورة في صورة)</string>
+    <string name="about_beta_feat_bg_pip_desc">وضع النافذة العائمة (صورة في صورة) مع عناصر تحكم مخصصة على أندرويد 8.0+. تشغيل صوتي حقيقي في الخلفية للفيديو والموسيقى عبر خدمة أمامية.</string>
+    <string name="about_beta_feat_music_title">مشغل الموسيقى ومكتبة الصوتيات</string>
+    <string name="about_beta_feat_music_desc">فحص كامل عبر MediaStore للمقاطع الصوتية والألبومات والفنانين ومجلدات الصوت المحلية. تشغيل عشوائي، وقائمة تشغيل، ومشغل مصغر دائم عبر كافة التبويبات الرئيسية.</string>
+    <string name="about_beta_feat_persistence_title">حفظ محلي عبر قاعدة بيانات Room SQLite</string>
+    <string name="about_beta_feat_persistence_desc">قوائم تشغيل مخصصة، المفضلة، وسجل التشغيل مع نقاط استئناف دقيقة محفوظة محلياً في mpx_player.db.</string>
+    <string name="about_beta_feat_themes_title">المظاهر والوضع الداكن الحقيقي</string>
+    <string name="about_beta_feat_themes_desc">أربعة مظاهر: أوليد الليلي (#000000 أسود سينمائي)، حجر داكن، كحلي كلاسيكي، وسينما فاتح. تطبيق فوري للمظهر أثناء التشغيل.</string>
+    <string name="about_beta_feat_i18n_title">دعم كامل للإنجليزية والعربية الفصحى (RTL)</string>
+    <string name="about_beta_feat_i18n_desc">واجهة ثنائية الاتجاه مع دعم كامل لمحاذاة اليمين إلى اليسار (RTL)، وأيقونات معكوسة، وتبديل فوري للغة دون إعادة تشغيل التطبيق.</string>
+
+    <!-- What is Placeholder -->
+    <string name="about_beta_section_placeholders">العناصر التي ما زالت قيد التطوير (عناصر نائبة)</string>
+    <string name="about_beta_placeholders_subtitle">التزاماً بمبادئ الشفافية والصدق البرمجي، الميزات التالية هي واجهات تمهيدية غير فعالة ولا تتم محاكاتها بشكل وهمي أو زائف:</string>
+    <string name="about_beta_holder_downloader_title">منزل الروابط (تبويب النقل)</string>
+    <string name="about_beta_holder_downloader_desc">الحالة: واجهة مستخدم فقط. لا توجد عمليات تنزيل وهمية أو أشرطة تقدم زائفة. سيتم دمج محرك التنزيل الفعلي في المرحلة الخامسة.</string>
+    <string name="about_beta_holder_transfer_title">النقل المباشر للملفات (تبويب النقل)</string>
+    <string name="about_beta_holder_transfer_desc">الحالة: واجهة تمهيدية. بروتوكول نقل الملفات المباشر بين الأجهزة (P2P / Wi-Fi Direct) دون إنترنت سيتصل في المرحلة الخامسة.</string>
+    <string name="about_beta_holder_status_title">حفظ الحالة (شبكة أدوات أنا)</string>
+    <string name="about_beta_holder_status_desc">الحالة: عنصر نائب صادق (المسألة 32). سيتصل فحص وحفظ مجلد حالات واتساب عند اكتمال مسار أذونات التخزين المخصص.</string>
+    <string name="about_beta_holder_private_title">المجلد الخاص (شبكة أدوات أنا)</string>
+    <string name="about_beta_holder_private_desc">الحالة: عنصر نائب صادق (المسألة 32). خزينة الوسائط المشفرة مع المصادقة الحيوية أو الرقم السري مجدولة للمسألة 32.</string>
+    <string name="about_beta_holder_manager_title">مدير الوسائط وتنظيف التخزين (أدوات أنا)</string>
+    <string name="about_beta_holder_manager_desc">الحالة: عنصر نائب صادق (المسألة 32). أدوات اكتشاف مقاطع الفيديو المكررة والملفات الكبيرة وتحليل الذاكرة المؤقتة مجدولة للمسألة 32.</string>
+    <string name="about_beta_holder_bin_title">سلة المحذوفات (أدوات أنا)</string>
+    <string name="about_beta_holder_bin_desc">الحالة: عنصر نائب صادق (المسألة 32). مجلد الاحتفاظ المؤقت بالملفات المحذوفة تحت إدارة التطبيق (لمدة 30 يوماً) مجدول للمسألة 32.</string>
+
+    <!-- Privacy & Integrity -->
+    <string name="about_beta_section_privacy">النزاهة الرقمية والخصوصية</string>
+    <string name="about_beta_privacy_body">لا يحتوي مشغل MPx على أي تقارير أعطال زائفة، ولا قياس عن بعد عبر جهات خارجية، ولا حزم إعلانية، ولا أدوات تتبع. سجل تشغيل وسائطك ومفضلاتك وإعداداتك خاصة تماماً ولا تغادر جهازك أبداً.</string>
+
+    <!-- Feedback & GitHub Issues -->
+    <string name="about_beta_section_feedback">الملاحظات وبلاغات الأخطاء</string>
+    <string name="about_beta_feedback_body">نرحب ببلاغات الأخطاء وملاحظات الأداء واقتراحات الميزات عبر مستودع GitHub العام الخاص بنا. ملاحظاتكم تسهم مباشرة في تشكيل التحديثات القادمة.</string>
+    <string name="about_beta_open_github">فتح مشكلات GitHub</string>
+    <string name="about_beta_copy_github_url">نسخ رابط المشكلات</string>
+    <string name="about_beta_issues_url">https://github.com/mohammedbakri123/MPx-player/issues</string>
+    <string name="about_beta_copied_snackbar">تم نسخ رابط مشكلات GitHub إلى الحافظة</string>
+    <string name="about_beta_browser_error">تعذر فتح متصفح الويب. تم نسخ الرابط إلى الحافظة.</string>
+    <string name="about_beta_open_page_button">عرض تفاصيل النسخة التجريبية والملاحظات</string>
 </resources>

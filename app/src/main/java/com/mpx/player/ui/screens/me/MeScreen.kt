@@ -129,6 +129,7 @@ fun MeScreen(
     onOpenTransfer: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPlayer: () -> Unit,
+    onOpenAboutBeta: (() -> Unit)? = null,
     playbackManager: PlaybackManager? = null,
     settingsRepository: AppSettingsRepository? = null,
     onThemeChanged: ((String) -> Unit)? = null,
@@ -625,7 +626,13 @@ fun MeScreen(
                             icon = Icons.Filled.Info,
                             title = stringResource(R.string.pref_about_mpx),
                             subtitle = stringResource(R.string.pref_about_mpx_desc),
-                            onClick = { showAboutDialog = true },
+                            onClick = {
+                                if (onOpenAboutBeta != null) {
+                                    onOpenAboutBeta()
+                                } else {
+                                    showAboutDialog = true
+                                }
+                            },
                         )
                     }
                 }
@@ -894,7 +901,10 @@ fun MeScreen(
 
     // 10. About In-App Info Page
     if (showAboutDialog) {
-        AboutAppDialog(onDismiss = { showAboutDialog = false })
+        AboutAppDialog(
+            onDismiss = { showAboutDialog = false },
+            onOpenAboutBeta = onOpenAboutBeta,
+        )
     }
 
     // 11. Equalizer Message Dialog (honest fallback)
@@ -1751,7 +1761,10 @@ private fun LegalLicensesDialog(onDismiss: () -> Unit) {
  * About MPx Player In-App Dialog.
  */
 @Composable
-private fun AboutAppDialog(onDismiss: () -> Unit) {
+private fun AboutAppDialog(
+    onDismiss: () -> Unit,
+    onOpenAboutBeta: (() -> Unit)? = null,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
@@ -1786,7 +1799,17 @@ private fun AboutAppDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_ok), color = MpxPrimary) }
+            Row {
+                if (onOpenAboutBeta != null) {
+                    TextButton(onClick = {
+                        onDismiss()
+                        onOpenAboutBeta()
+                    }) {
+                        Text(stringResource(R.string.about_beta_open_page_button), color = MpxPrimary)
+                    }
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_ok), color = MpxPrimary) }
+            }
         },
     )
 }

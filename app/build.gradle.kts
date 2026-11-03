@@ -12,8 +12,8 @@ android {
         applicationId = "com.mpx.player"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0-native"
+        versionCode = 2
+        versionName = "0.1.0-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
