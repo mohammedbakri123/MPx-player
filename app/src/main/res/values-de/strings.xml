@@ -1,0 +1,695 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">MPx Player</string>
+    <string name="app_version_name">Version 0.1.0-beta</string>
+    <string name="app_version_full">MPx Player 0.1.0-beta</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_local">Lokal</string>
+    <string name="nav_music">Musik</string>
+    <string name="nav_transfer">Übertragen</string>
+    <string name="nav_me">Ich</string>
+
+    <!-- Mini Player -->
+    <string name="mini_player_video">Video</string>
+    <string name="mini_player_audio">Audio</string>
+    <string name="mini_player_prev">Vorheriger Titel</string>
+    <string name="mini_player_pause">Pausieren</string>
+    <string name="mini_player_play">Abspielen</string>
+    <string name="mini_player_next">Nächster Titel</string>
+    <string name="mini_player_close">Player schließen</string>
+
+    <!-- Common Actions -->
+    <string name="action_back">Zurück</string>
+    <string name="action_close">Schließen</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_ok">OK</string>
+    <string name="action_paste">Einfügen</string>
+    <string name="action_understood">Verstanden</string>
+    <string name="action_done">Fertig</string>
+
+    <!-- Language Settings & Dialog -->
+    <string name="pref_app_language">App-Sprache</string>
+    <string name="pref_app_language_desc">Wechseln zwischen Englisch, Arabisch, Spanisch, Französisch, Hindi, Deutsch und Systemstandard</string>
+    <string name="lang_dialog_title">App-Sprache wählen</string>
+    <string name="lang_system_default">Systemstandard</string>
+    <string name="lang_system_default_desc">Systemspracheinstellungen folgen</string>
+    <string name="lang_english">English</string>
+    <string name="lang_english_desc">Englische Oberfläche (LTR-Layout)</string>
+    <string name="lang_arabic">العربية (Arabic)</string>
+    <string name="lang_arabic_desc">Arabische Oberfläche mit vollständigem Rechts-nach-links-Layout (RTL)</string>
+    <string name="lang_spanish">Español (Spanish)</string>
+    <string name="lang_spanish_desc">Spanische Oberfläche (LTR-Layout)</string>
+    <string name="lang_french">Français (French)</string>
+    <string name="lang_french_desc">Französische Oberfläche (LTR-Layout)</string>
+    <string name="lang_hindi">हिन्दी (Hindi)</string>
+    <string name="lang_hindi_desc">Hindi-Oberfläche (LTR-Layout)</string>
+    <string name="lang_chinese">中文 (Chinese)</string>
+    <string name="lang_chinese_desc">Chinesische Oberfläche (LTR-Layout)</string>
+    <string name="lang_russian">Русский (Russian)</string>
+    <string name="lang_russian_desc">Russische Oberfläche (LTR-Layout)</string>
+    <string name="lang_german">Deutsch (German)</string>
+    <string name="lang_german_desc">Deutsche Oberfläche (LTR-Layout)</string>
+    <string name="lang_applied_msg">Sprache aktualisiert: %s</string>
+    <string name="lang_settings_note">Wählen Sie Ihre bevorzugte App-Sprache. Sprache und Layoutrichtung werden sofort angewendet, ohne die App neu zu starten.</string>
+
+    <!-- Settings Screen Categories -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_category_language">App-Sprache</string>
+    <string name="settings_category_language_sub">English, العربية, Español, Français, हिन्दी, Deutsch, Systemstandard</string>
+    <string name="settings_category_theme">App-Theme</string>
+    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
+    <string name="settings_category_pip">Benutzerdefinierte Pop-up-Wiedergabe</string>
+    <string name="settings_category_pip_sub">Bild-in-Bild-Steuerung und Hintergrundwiedergabe</string>
+    <string name="settings_category_tabs">Musik-Tabs</string>
+    <string name="settings_category_tabs_sub">Titel, Wiedergabelisten, Alben, Künstler, Ordner ein- oder ausblenden</string>
+    <string name="settings_category_list">Liste</string>
+    <string name="settings_category_list_sub">Ordneransicht, versteckte Dateien, Vorschaubilder, Musik-Tabs</string>
+    <string name="settings_category_player">Player</string>
+    <string name="settings_category_player_sub">Wiedergabe fortsetzen, Hintergrundwiedergabe, Gesten</string>
+    <string name="settings_category_decoder">Decoder</string>
+    <string name="settings_category_decoder_sub">Hardwarebeschleunigung (HW / HW+), Software (SW)</string>
+    <string name="settings_category_audio">Audio</string>
+    <string name="settings_category_audio_sub">Lautstärkeverstärkung</string>
+    <string name="settings_category_subtitle">Untertitel</string>
+    <string name="settings_category_subtitle_sub">Untertitelgröße und Farbstil</string>
+    <string name="settings_category_general">Allgemein</string>
+    <string name="settings_category_general_sub">Alle Einstellungen auf Standard zurücksetzen</string>
+    <string name="settings_category_development">Entwicklung</string>
+    <string name="settings_category_development_sub">Diagnose, Datenbankstatus, Scan-Metriken &amp; Wiedergabe-Engine</string>
+    <string name="settings_category_about">Über</string>
+    <string name="settings_category_about_sub">Version 0.1.0-beta • Beta-Status &amp; Feedback</string>
+
+    <!-- Settings Category Options -->
+    <string name="theme_midnight">Midnight OLED (reines Schwarz)</string>
+    <string name="theme_dark">Dark Slate (Anthrazit)</string>
+    <string name="theme_classic">Classic MX Navy</string>
+    <string name="theme_light">Light Cinema (sauberes Weiß)</string>
+    <string name="theme_applied_snackbar">Theme angewendet: %s</string>
+
+    <string name="pip_not_supported">Hinweis: Der Bild-in-Bild-Modus wird auf diesem Gerät / in dieser Umgebung nicht unterstützt (erfordert Android 8.0+ mit FEATURE_PICTURE_IN_PICTURE).</string>
+    <string name="pip_enable_toggle">Pop-up-Wiedergabe (PiP) aktivieren</string>
+    <string name="pip_window_controls_header">PiP-Fenstersteuerung:</string>
+    <string name="pip_controls_prev_next">Zurück / Weiter (Standard)</string>
+    <string name="pip_controls_seek10">Vor- / Zurückspulen (10 s)</string>
+
+    <string name="list_show_all_folders">Alle Ordner anzeigen</string>
+    <string name="list_show_all_folders_desc">Jeden gescannten Ordner anzeigen, einschließlich leerer und versteckter Ordner</string>
+    <string name="list_show_hidden">Versteckte Dateien anzeigen</string>
+    <string name="list_show_thumbnails">Vorschaubilder anzeigen</string>
+
+    <string name="player_resume_playback">Wiedergabe fortsetzen</string>
+    <string name="player_background_play">Hintergrundwiedergabe</string>
+    <string name="player_background_play_desc">Audio läuft weiter, wenn die App in den Hintergrund geht oder der Bildschirm ausgeschaltet wird. Bei Videos läuft die Audiowiedergabe ehrlich weiter, während das Videorendering pausiert.</string>
+    <string name="player_menu_background_play">Hintergrundwiedergabe (bei Video nur Audio)</string>
+    <string name="player_background_active_banner">Hintergrundwiedergabe aktiv: Audiowiedergabe läuft weiter (Videorendering pausiert)</string>
+    <string name="player_gestures">Gesten (Doppeltippen, Ziehen zum Spulen)</string>
+
+    <string name="decoder_hw">HW (Hardware – Android MediaCodec-Hardwarebeschleunigung)</string>
+    <string name="decoder_hw_plus">HW+ (Hardware Plus – asynchrone Puffer-Pipeline)</string>
+    <string name="decoder_sw">SW (Software – CPU-Decodierung als Fallback)</string>
+    <string name="decoder_explanation">Wählt die Standard-Decoder-Präferenz des Players. HW nutzt die Hardware-Codecs des Geräte-Chipsatzes; SW bietet einen Software-Fallback. Wo Android den angeforderten Decoder nicht zulässt (z. B. nicht unterstützter Codec), zeigt MPx ehrlich einen Fallback-Hinweis an.</string>
+
+    <string name="audio_volume_boost">Lautstärkeverstärkung</string>
+
+    <string name="subtitle_size_header">Untertitel-Textgröße:</string>
+    <string name="subtitle_size_small">Klein (14sp)</string>
+    <string name="subtitle_size_normal">Normal (18sp)</string>
+    <string name="subtitle_size_large">Groß (24sp)</string>
+    <string name="subtitle_style_header">Untertitel-Stil &amp; Farbe:</string>
+    <string name="subtitle_style_white">Weißer Text, schwarze Kontur (klassisch)</string>
+    <string name="subtitle_style_yellow">Gelber Text, schwarze Kontur (hoher Kontrast)</string>
+    <string name="subtitle_style_cyan">Cyanfarbener Text, schwarze Kontur</string>
+    <string name="subtitle_style_default">Systemstandard für Untertitel</string>
+
+    <string name="general_reset_button">Alle auf Standard zurücksetzen</string>
+    <string name="general_reset_done">Alle Einstellungen wurden auf die Standardwerte zurückgesetzt.</string>
+    <string name="general_language_hint">Die App-Sprache kann im Bereich „App-Sprache“ oder über den Ich-Bildschirm geändert werden.</string>
+
+    <string name="about_app_description">MPx Player 0.1.0-beta. Native Kotlin-Neuentwicklung, MX-inspiriertes Layout, vollständig in MPx-eigenem Code und Styling erstellt.</string>
+
+    <!-- Me Screen Headers & Profile -->
+    <string name="me_title">Ich</string>
+    <string name="me_profile_user">MPx Lokaler Benutzer</string>
+    <string name="me_profile_desc">Privater Media-Player auf dem Gerät</string>
+    <string name="me_status_banner">Ich-Werkzeugraster: echte Funktionen, verbunden mit Lokal, Musik, Wiedergabelisten, Favoriten, Verlauf, Netzwerk-Stream. Platzhalter für Issue 32 ehrlich markiert.</string>
+    <string name="section_tools">WERKZEUGE</string>
+    <string name="section_preferences">EINSTELLUNGEN</string>
+    <string name="section_about_legal">ÜBER &amp; RECHTLICHES</string>
+
+    <!-- Me Screen Tools -->
+    <string name="tool_local_title">Lokale Videos</string>
+    <string name="tool_local_desc">Videoordner</string>
+    <string name="tool_music_title">Musik</string>
+    <string name="tool_music_desc">Audiobibliothek</string>
+    <string name="tool_playlists_title">Wiedergabelisten</string>
+    <string name="tool_playlists_desc">Eigene Sammlungen</string>
+    <string name="tool_favourites_title">Favoriten</string>
+    <string name="tool_favourites_desc">Markierte Medien</string>
+    <string name="tool_history_title">Verlauf</string>
+    <string name="tool_history_desc">Zuletzt abgespielt</string>
+    <string name="tool_network_title">Netzwerk-Stream</string>
+    <string name="tool_network_desc">Stream-URL abspielen</string>
+    <string name="tool_transfer_title">Dateiübertragung</string>
+    <string name="tool_transfer_desc">P2P-Übertragung</string>
+    <string name="tool_equalizer_title">Equalizer</string>
+    <string name="tool_equalizer_desc">System-Klangregler</string>
+    <string name="tool_status_title">Status-Saver</string>
+    <string name="tool_status_desc">WhatsApp-Status</string>
+    <string name="tool_private_title">Privater Ordner</string>
+    <string name="tool_private_desc">PIN-Tresor</string>
+    <string name="tool_manager_title">Medien-Manager</string>
+    <string name="tool_manager_desc">Speicherbereinigung</string>
+    <string name="tool_bin_title">Papierkorb</string>
+    <string name="tool_bin_desc">Gelöschte Dateien</string>
+
+    <!-- Me Screen Preferences -->
+    <string name="pref_music_player">Musik-Player</string>
+    <string name="pref_music_player_desc">Lokale Audiobibliothek öffnen</string>
+    <string name="pref_video_library">Videobibliothek</string>
+    <string name="pref_video_library_desc">Ordner und Videosammlungen durchsuchen</string>
+    <string name="pref_app_theme">App-Theme</string>
+    <string name="pref_popup_play">Benutzerdefinierte Pop-up-Wiedergabe</string>
+    <string name="pip_status_enabled">PiP aktiviert • %s</string>
+    <string name="pip_status_disabled">Pop-up-Wiedergabe deaktiviert</string>
+    <string name="pip_status_unsupported">Gerät unterstützt kein PiP (Android 8.0+ erforderlich)</string>
+    <string name="pref_settings">Einstellungen</string>
+    <string name="pref_settings_desc">Player-, Decoder-, Listen- und Untertiteloptionen</string>
+
+    <!-- Me Screen About & Legal Rows -->
+    <string name="pref_privacy">Datenschutz &amp; Sicherheit</string>
+    <string name="pref_privacy_desc">100 % auf dem Gerät. Keine Telemetrie, keine Werbung, keine Tracker.</string>
+    <string name="pref_help">Hilfe &amp; Feedback</string>
+    <string name="pref_help_desc">Player-Gestenanleitung, Tutorials und Gerätediagnose</string>
+    <string name="pref_legal">Rechtliches &amp; Open Source</string>
+    <string name="pref_legal_desc">Softwarelizenzen, Bedingungen und Hinweis zur Inspiration</string>
+    <string name="pref_about_mpx">Über MPx Player (Beta)</string>
+    <string name="pref_about_mpx_desc">Version 0.1.0-beta • Status, Platzhalter &amp; Feedback</string>
+
+    <!-- Me Screen Dialogs Content -->
+    <string name="dialog_theme_title">App-Theme wählen</string>
+    <string name="theme_midnight_desc">Echter OLED-Kontrast #000000 für Kino. Maximale Akkueinsparung.</string>
+    <string name="theme_dark_desc">Sanftes modernes dunkles Theme mit weicherem Schiefer-Kontrast #0F172A.</string>
+    <string name="theme_classic_desc">Tiefes Blau-Schwarz #0A0F1D, inspiriert von klassischen Playern mit Utility-First-Ansatz.</string>
+    <string name="theme_light_desc">Hochsichtbare Tagespalette für helle Umgebungen.</string>
+
+    <string name="dialog_popup_play_title">Benutzerdefinierte Pop-up-Wiedergabe</string>
+    <string name="pip_banner_supported">Gerät unterstützt den Android-Bild-in-Bild-Modus.</string>
+    <string name="pip_banner_unsupported">PiP nicht unterstützt: Erfordert Android 8.0+ und Systemunterstützung für FEATURE_PICTURE_IN_PICTURE. Einstellungen bleiben ehrlich.</string>
+    <string name="pip_auto_title">Automatische Pop-up-Wiedergabe</string>
+    <string name="pip_auto_desc">Beim Verlassen der App während der Videowiedergabe in ein schwebendes Fenster wechseln</string>
+    <string name="pip_test_button">Pop-up-Wiedergabemodus testen</string>
+    <string name="pip_test_fail_playing">PiP-Modus kann gerade nicht aktiviert werden. Spielen Sie zuerst ein Video im Player ab.</string>
+
+    <string name="dialog_network_title">Netzwerk-Stream</string>
+    <string name="dialog_network_desc">Geben Sie eine beliebige HTTP-, HTTPS- oder HLS-Stream-URL ein, um sie direkt in Media3 ExoPlayer abzuspielen:</string>
+    <string name="dialog_network_samples">Öffentliche Beispiel-Streams:</string>
+    <string name="dialog_network_play">Stream abspielen</string>
+
+    <string name="dialog_privacy_title">Datenschutz &amp; Sicherheit</string>
+    <string name="privacy_sec1_title">100 % On-Device-Architektur</string>
+    <string name="privacy_sec1_body">MPx Player ist ein Offline-First-Media-Player. Medienindizierung, Metadatenextraktion und Wiedergabe finden ausschließlich auf Ihrem Gerät statt. Ihre Dateibibliothek wird niemals auf einen Remote-Server hochgeladen.</string>
+    <string name="privacy_sec2_title">Keine Telemetrie &amp; keine Analysen</string>
+    <string name="privacy_sec2_body">Keine Tracking-SDKs, keine Werbe-IDs und keine Frameworks zur Benutzerüberwachung sind in MPx Player eingebettet. Ihre Wiedergabegewohnheiten und Dateien bleiben strikt Ihre eigenen.</string>
+    <string name="privacy_sec3_title">Lokale SQLite-Sandbox</string>
+    <string name="privacy_sec3_body">Favoriten, eigene Wiedergabelisten und Wiedergabe-Fortsetzungspunkte werden in einer privaten Room-SQLite-Datenbank (mpx_player.db) innerhalb der geschützten Android-App-Sandbox gespeichert.</string>
+    <string name="privacy_sec4_title">Transparente Berechtigungen</string>
+    <string name="privacy_sec4_body">• READ_MEDIA_VIDEO / AUDIO: Lokale Mediendateien finden.\n• INTERNET: Optional, nur verwendet, wenn Sie im Netzwerk-Stream eine Stream-URL einfügen.</string>
+
+    <string name="dialog_help_title">Hilfe &amp; Player-Anleitung</string>
+    <string name="help_sec1_title">Player-Gesten</string>
+    <string name="help_sec1_body">• Doppeltippen links: 10 Sekunden zurückspulen\n• Doppeltippen rechts: 10 Sekunden vorspulen\n• Horizontales Ziehen: Präzises Spulen durch das Video\n• Sperrtaste: Versehentliche Berührungen beim Ansehen verhindern\n• Seitenverhältnis: Zwischen Anpassen, Strecken, 16:9 und Original wechseln</string>
+    <string name="help_sec2_title">Audio- &amp; Untertitelspuren</string>
+    <string name="help_sec2_body">• Audio-Symbol: Zwischen einzelnen Audiospuren wechseln (Dual-Audio, Kommentar)\n• Untertitel-Symbol: Eingebettete oder Sidecar-Untertitelspuren (.vtt / .srt) wählen\n• Untertitelgröße: Unter Einstellungen konfigurierbar (klein, normal, groß)</string>
+    <string name="help_sec3_title">Gerätediagnose (live)</string>
+    <string name="help_diag_app">App: MPx Player 0.1.0-beta (Build 2)</string>
+    <string name="help_diag_os">Android-Betriebssystem: SDK %1$d (%2$s)</string>
+    <string name="help_diag_device">Gerät: %1$s %2$s</string>
+    <string name="help_diag_engine">Engine: AndroidX Media3 ExoPlayer 1.3.1</string>
+    <string name="help_diag_db">Datenbank: Room SQLite (mpx_player.db)</string>
+
+    <string name="dialog_legal_title">Rechtliches &amp; Open Source</string>
+    <string name="legal_sec1_title">Open-Source-Lizenzen</string>
+    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: Apache-Lizenz 2.0\n• Jetpack Compose &amp; Material 3: Apache-Lizenz 2.0\n• AndroidX Room Persistence Library: Apache-Lizenz 2.0\n• Kotlin Coroutines: Apache-Lizenz 2.0</string>
+    <string name="legal_sec2_title">Hinweis zur Inspirationszuordnung</string>
+    <string name="legal_sec2_body">MPx Player ist ein unabhängiger, im Clean-Room-Verfahren erstellter nativer Android-Media-Player. Organisation und UX-Ablauf sind von MX Player inspiriert (gemäß per Reverse Engineering ermittelter Layout-Spezifikationen). Sämtlicher Code, alle Ansichten und das Styling wurden zu 100 % von Grund auf neu in nativem Kotlin und Jetpack Compose geschrieben. Es sind keine proprietären Assets, kein Code und keine Marken enthalten.</string>
+    <string name="legal_sec3_title">Nutzungsbedingungen</string>
+    <string name="legal_sec3_body">MPx Player wird „wie besehen“ ohne Gewährleistung unter der Apache-2.0-Lizenz bereitgestellt. Benutzer sind für ihre eigenen Mediendateien verantwortlich.</string>
+
+    <string name="dialog_about_body1">Reine native Kotlin-Neuentwicklung mit Jetpack Compose, AndroidX Media3 ExoPlayer und Room-SQLite-Persistenz.</string>
+    <string name="dialog_about_body2">Hochdichtes, Utility-First-Medienmanagement ohne Cloud-Abhängigkeit, Tracking oder Werbung.</string>
+
+    <string name="equalizer_dialog_msg">System-Equalizer: Auf diesem Gerät wurde kein Audioeffekt-Bedienfeld (z. B. MusicFX oder System-Equalizer-App) gefunden. Audio nutzt standardmäßig flache Ausgabe.</string>
+
+    <string name="issue32_dialog_header">%s (Issue 32)</string>
+    <string name="issue32_status_notice">Diese Funktion ist für Issue 32 vorgesehen.</string>
+    <string name="issue32_status_honest">Status: Ehrlicher Platzhalter – nicht vorgetäuscht.</string>
+    <string name="issue32_status_detail">Der WhatsApp-Status-Saver benötigt Zugriff auf ein Verzeichnis mit bereichsbezogenem Speicher. Nach der Erstellung scannt und speichert er heruntergeladene Video- und Bild-Status.</string>
+    <string name="issue32_private_detail">Der private Ordner benötigt einen verschlüsselten SQLite- oder Datei-Tresor, der durch PIN oder biometrische Authentifizierung geschützt ist, um sensible Medien zu verbergen.</string>
+    <string name="issue32_manager_detail">Medien-Manager &amp; Speicherbereinigung analysieren den Gerätespeicher, identifizieren doppelte Videos, große Dateien und temporären Cache.</string>
+    <string name="issue32_bin_detail">Der Papierkorb bewahrt gelöschte Dateien vor der endgültigen Löschung 30 Tage lang in einem von der App verwalteten Aufbewahrungsverzeichnis auf.</string>
+
+    <!-- Music Screen -->
+    <string name="music_screen_title">Musik</string>
+    <string name="music_cd_equalizer">Equalizer</string>
+    <string name="music_equalizer_scheduled">Equalizer ist für die Audiophase vorgesehen</string>
+    <string name="music_library_refreshed">Musikbibliothek aktualisiert</string>
+    <string name="music_search_placeholder">Titel suchen…</string>
+    <string name="music_shuffle_all">Alle mischen</string>
+    <string name="music_banner_scanning">Echtes MediaStore-Scannen aktiv. Audiotitel, Alben, Künstler und Ordner spiegeln die Medien des Geräts wider.</string>
+
+    <!-- Music Tabs -->
+    <string name="music_tab_tracks">Titel</string>
+    <string name="music_tab_playlists">Wiedergabelisten</string>
+    <string name="music_tab_albums">Alben</string>
+    <string name="music_tab_artists">Künstler</string>
+    <string name="music_tab_folders">Ordner</string>
+    <string name="settings_tabs_header">Musik-Tabs</string>
+    <string name="settings_tabs_desc">Wählen Sie, welche Tabs auf dem Musik-Bildschirm erscheinen. Mindestens ein Tab muss immer sichtbar bleiben.</string>
+    <string name="settings_tab_min_one_required">Mindestens ein Tab muss sichtbar bleiben.</string>
+    <string name="settings_tab_last_active_sub">Muss sichtbar bleiben (mindestens ein Tab erforderlich)</string>
+    <string name="music_menu_manage_tabs">Tabs verwalten</string>
+    <string name="music_dialog_tabs_title">Sichtbare Musik-Tabs</string>
+    <string name="music_dialog_tabs_desc">Wählen Sie, welche Tabs auf dem Musik-Bildschirm erscheinen:</string>
+
+    <!-- Music Permission & Empty States -->
+    <string name="music_permission_required_title">Berechtigung erforderlich</string>
+    <string name="music_permission_required_desc">MPx benötigt die Berechtigung für den Zugriff auf Ihre Audiodateien, um Ihre Musikbibliothek anzuzeigen.</string>
+    <string name="music_permission_grant_button">Berechtigung erteilen</string>
+    <string name="music_empty_tracks_title">Keine Musik gefunden</string>
+    <string name="music_empty_tracks_desc">Auf diesem Gerät wurden keine Audiotitel gefunden.</string>
+    <string name="music_empty_refresh_action">Aktualisieren</string>
+    <string name="music_search_no_matches_title">Keine Treffer gefunden</string>
+    <string name="music_search_no_matches_desc">Kein Titel passt zu „%s“.</string>
+    <string name="music_empty_albums_title">Keine Alben gefunden</string>
+    <string name="music_empty_albums_desc">Auf diesem Gerät wurden keine Audioalben gefunden.</string>
+    <string name="music_empty_artists_title">Keine Künstler gefunden</string>
+    <string name="music_empty_artists_desc">Auf diesem Gerät wurden keine Musikkünstler gefunden.</string>
+    <string name="music_empty_folders_title">Keine Audioordner gefunden</string>
+    <string name="music_empty_folders_desc">Auf diesem Gerät wurden keine Audioordner gefunden.</string>
+    <string name="music_empty_playlists_title">Keine Wiedergabelisten gefunden</string>
+    <string name="music_empty_playlists_desc">Wiedergabelisten erscheinen hier, sobald sie erstellt oder synchronisiert wurden.</string>
+
+    <!-- Music Content Rows & Subtitles -->
+    <string name="music_new_playlist_title">Neue Wiedergabeliste</string>
+    <string name="music_new_playlist_subtitle">Eigene Wiedergabeliste erstellen</string>
+    <string name="music_favourites_title">Favoriten</string>
+    <string name="music_recently_played_title">Zuletzt abgespielt</string>
+    <string name="music_songs_count">%d Titel</string>
+    <string name="music_playlist_songs_subtitle">%1$d Titel • %2$s</string>
+    <string name="music_album_tracks_format">%1$s • %2$d Titel</string>
+    <string name="music_artist_details_format">%1$d Titel • %2$d Album</string>
+    <string name="music_sd_card_badge">SD-KARTE</string>
+    <string name="music_folder_tracks_format">%1$d Titel • %2$s</string>
+
+    <!-- Music Track Menu & Feedback -->
+    <string name="music_cd_track_options">Titeloptionen für %s</string>
+    <string name="music_menu_play_track">Titel abspielen</string>
+    <string name="music_menu_toggle_favourite">Favorit umschalten</string>
+    <string name="music_menu_add_to_playlist">Zur Wiedergabeliste hinzufügen…</string>
+    <string name="music_added_to_favourites">Zu Favoriten hinzugefügt</string>
+    <string name="music_removed_from_favourites">Aus Favoriten entfernt</string>
+    <string name="music_cleared_favourites_msg">Favoriten gelöscht</string>
+    <string name="music_cleared_history_msg">Verlauf gelöscht</string>
+    <string name="music_playlist_created_msg">Wiedergabeliste „%s“ erstellt</string>
+    <string name="music_added_to_playlist_msg">Zu „%s“ hinzugefügt</string>
+    <string name="music_deleted_playlist_msg">„%s“ gelöscht</string>
+
+    <!-- Playlist & Persistence Dialogs -->
+    <string name="action_create">Erstellen</string>
+    <string name="action_clear_all">Alle löschen</string>
+    <string name="action_more">Mehr</string>
+    <string name="media_type_video">Video</string>
+    <string name="media_type_audio">Audio</string>
+    <string name="favourites_dialog_title">Favoriten (%d)</string>
+    <string name="favourites_empty_title">Noch keine Favoriten</string>
+    <string name="favourites_empty_desc">Tippen Sie auf das Herz-Symbol im Player oder in den Titeloptionen, um Favoriten hinzuzufügen.</string>
+    <string name="favourites_cd_remove">Favorit entfernen</string>
+    <string name="history_dialog_title">Wiedergabeverlauf (%d)</string>
+    <string name="history_empty_title">Kein Verlauf aufgezeichnet</string>
+    <string name="history_empty_desc">In MPx Player abgespielte Medien werden hier automatisch gespeichert.</string>
+    <string name="history_resume_at">• Fortsetzen bei %s</string>
+    <string name="history_cd_resume">Wiedergabe fortsetzen</string>
+    <string name="playlist_create_dialog_title">Neue Wiedergabeliste</string>
+    <string name="playlist_create_dialog_desc">Geben Sie einen Namen für diese eigene Wiedergabeliste ein:</string>
+    <string name="playlist_name_placeholder">Name der Wiedergabeliste</string>
+    <string name="playlist_add_dialog_title">Zur Wiedergabeliste hinzufügen</string>
+    <string name="playlist_add_to_header">„%s“ hinzufügen zu:</string>
+    <string name="playlist_create_new_action">Neue Wiedergabeliste erstellen…</string>
+    <string name="playlist_no_custom_playlists">Noch keine eigenen Wiedergabelisten erstellt.</string>
+    <string name="playlist_items_subtitle">%d Elemente • Eigene Wiedergabeliste</string>
+    <string name="playlist_cd_delete">Wiedergabeliste löschen</string>
+    <string name="playlist_play_all">Alle abspielen</string>
+    <string name="playlist_empty_title">Wiedergabeliste ist leer</string>
+    <string name="playlist_empty_desc">Fügen Sie Titel über das Optionsmenü eines beliebigen Titels hinzu.</string>
+    <string name="playlist_cd_remove_item">Element entfernen</string>
+    <string name="playlists_dialog_title">Wiedergabelisten (%d)</string>
+    <string name="playlists_btn_new">+ Neu</string>
+    <string name="playlists_empty_msg">Noch keine eigenen Wiedergabelisten.\nTippen Sie auf „+ Neu“, um eine zu erstellen.</string>
+    <string name="playlist_items_type_format">%1$d Elemente • %2$s</string>
+
+    <!-- Sort & Menu Options -->
+    <string name="menu_sort_by">SORTIEREN NACH</string>
+    <string name="sort_name">Titel / Name</string>
+    <string name="sort_date">Änderungsdatum</string>
+    <string name="sort_size">Dateigröße</string>
+    <string name="sort_artist">Künstler</string>
+    <string name="sort_album">Album</string>
+    <!-- Local Screen -->
+    <string name="local_title">Medien</string>
+    <string name="local_search_placeholder">Ordner suchen…</string>
+    <string name="local_section_folders">ORDNER</string>
+    <string name="local_sort_label">Sortierung: %1$s</string>
+    <string name="local_status_banner">Echtes MediaStore-Scannen aktiv. Ordner und Videoanzahl spiegeln die Medien des Geräts wider.</string>
+    <string name="local_menu_view_sort">Anzeige- &amp; Sortieroptionen</string>
+    <string name="local_menu_refresh">Bibliothek aktualisieren</string>
+
+    <!-- Local Screen Content Descriptions -->
+    <string name="cd_close_search">Suche schließen</string>
+    <string name="cd_toggle_view">Ansicht umschalten</string>
+    <string name="cd_search">Suchen</string>
+    <string name="cd_more_options">Weitere Optionen</string>
+    <string name="cd_quick_play">Schnellwiedergabe</string>
+
+    <!-- Shortcut Chips -->
+    <string name="chip_private">Privat</string>
+    <string name="chip_network">Netzwerk</string>
+
+    <!-- Folder Item Row & Grid Card -->
+    <string name="badge_sd_card">SD-KARTE</string>
+    <string name="badge_new">NEU</string>
+    <string name="folder_item_videos_count">%1$d Videos</string>
+    <string name="folder_item_videos_and_size">%1$d Videos • %2$s</string>
+    <string name="local_status_strip">%1$d Ordner • %2$d Videos</string>
+    <string name="folder_item_options_cd">Ordneroptionen für %1$s</string>
+
+    <!-- View & Sort Dialog -->
+    <string name="sort_dialog_title">Anzeige- &amp; Sortieroptionen</string>
+    <string name="sort_section_view_mode">ANSICHTSMODUS</string>
+    <string name="sort_section_sort_by">SORTIEREN NACH</string>
+    <string name="view_mode_list">Listenansicht</string>
+    <string name="view_mode_grid">Rasteransicht</string>
+    <string name="sort_field_name">Titel / Name</string>
+    <string name="sort_field_date">Änderungsdatum</string>
+    <string name="sort_field_size">Dateigröße</string>
+    <string name="sort_field_count">Videoanzahl</string>
+
+    <!-- Empty States -->
+    <string name="empty_permission_title">Berechtigung erforderlich</string>
+    <string name="empty_permission_desc">MPx benötigt die Berechtigung für den Zugriff auf Ihre Videos, um Ihre Medienbibliothek anzuzeigen.</string>
+    <string name="empty_permission_action">Berechtigung erteilen</string>
+    <string name="empty_search_title">Keine Treffer gefunden</string>
+    <string name="empty_search_desc">Kein Ordner passt zu „%1$s“.</string>
+    <string name="empty_search_action">Suche löschen</string>
+    <string name="empty_videos_title">Keine Videos gefunden</string>
+    <string name="empty_videos_desc">Auf diesem Gerät wurden keine Videoordner gefunden. Videos, die Sie aufnehmen oder herunterladen, erscheinen hier.</string>
+    <string name="empty_videos_action">Aktualisieren</string>
+
+    <!-- Snackbars -->
+    <string name="snackbar_no_playable_videos">Keine abspielbaren Videos in %1$s.</string>
+    <string name="snackbar_library_refreshed">Bibliothek aktualisiert</string>
+    <string name="snackbar_folder_options">Ordneroptionen für %1$s</string>
+    <string name="snackbar_removed_favourites">Aus Favoriten entfernt</string>
+    <string name="snackbar_cleared_favourites">Favoriten gelöscht</string>
+    <string name="snackbar_cleared_history">Verlauf gelöscht</string>
+    <string name="snackbar_playlist_created">Wiedergabeliste „%1$s“ erstellt</string>
+    <string name="snackbar_playlist_deleted">„%1$s“ gelöscht</string>
+
+    <!-- Feature Placeholder Dialog & Playlists -->
+    <string name="dialog_feature_placeholder_title">Funktions-Platzhalter</string>
+    <string name="feature_placeholder_msg">%1$s ist für spätere Phasen vorgesehen. Derzeit wird nur das Layout gezeigt.</string>
+    <string name="dialog_video_playlists_title">Video-Wiedergabelisten (%1$d)</string>
+    <string name="dialog_new_playlist">Neue Wiedergabeliste</string>
+    <string name="dialog_playlists_empty">Noch keine eigenen Wiedergabelisten. Tippen Sie auf „Neue Wiedergabeliste“, um eine zu erstellen.</string>
+    <string name="playlist_items_count">%1$d Elemente</string>
+    <string name="local_menu_filtered_view">Gefilterte Ordneransicht</string>
+    <string name="local_snackbar_show_all">Alle Ordner werden angezeigt (einschließlich leerer &amp; versteckter)</string>
+    <string name="local_snackbar_filtered">Gefilterte Ordneransicht wird angezeigt</string>
+    <string name="empty_folders_title">Keine Ordner gefunden</string>
+    <string name="empty_folders_desc">Auf den Speichervolumes wurden keine Medienordner gefunden. Ordner und Medien erscheinen hier, sobald sie erstellt oder synchronisiert wurden.</string>
+    <string name="local_section_all_folders">ALLE ORDNER</string>
+    <string name="local_badge_show_all">ALLE ANZEIGEN</string>
+
+    <!-- Folder View Mode & Folder Contents -->
+    <string name="folder_view_mode">Ordneransichtsmodus</string>
+    <string name="pref_default_folder_view_mode">Standard-Ordneransichtsmodus</string>
+    <string name="pref_default_folder_view_mode_desc">Standardlayout für die Anzeige von Videodateien in Ordnern</string>
+    <string name="folder_view_subtitle">%1$d Videos • %2$s</string>
+    <string name="folder_view_subtitle_single">1 Video • %1$s</string>
+    <string name="folder_view_search_placeholder">Videos im Ordner suchen…</string>
+    <string name="folder_view_empty_title">Keine Videos im Ordner</string>
+    <string name="folder_view_empty_desc">In diesem Ordner wurden keine Videodateien gefunden.</string>
+    <string name="folder_view_search_empty_title">Keine Videos gefunden</string>
+    <string name="folder_view_search_empty_desc">Kein Video passt zu „%1$s“.</string>
+    <string name="folder_menu_play_all">Alle abspielen</string>
+    <string name="folder_menu_open">Ordner öffnen</string>
+    <string name="folder_view_dialog_title">Ordneransicht &amp; Sortierung</string>
+    <string name="folder_view_set_as_default">Als Standard für alle Ordner festlegen</string>
+    <string name="folder_view_set_as_default_desc">Neue Ordner verwenden diesen Ansichtsmodus</string>
+    <string name="folder_view_reset_default">Auf globalen Standard zurücksetzen</string>
+    <string name="folder_view_reset_default_snackbar">Ordneransicht auf Standard zurückgesetzt (%1$s)</string>
+    <string name="view_mode_switched_list">Zur Listenansicht gewechselt</string>
+    <string name="view_mode_switched_grid">Zur Rasteransicht gewechselt</string>
+    <string name="video_item_options_cd">Optionen für %1$s</string>
+    <string name="video_item_play">Abspielen</string>
+    <string name="video_item_add_to_playlist">Zur Wiedergabeliste hinzufügen…</string>
+    <string name="video_item_favourite">Zu Favoriten hinzufügen</string>
+    <string name="video_item_unfavourite">Aus Favoriten entfernen</string>
+    <string name="action_back_to_folders">Zurück zu den Ordnern</string>
+    <string name="overlay_settings_title">Overlay-Einstellungen</string>
+    <string name="overlay_section_trigger">Wann anzeigen</string>
+    <string name="overlay_section_behavior">Verhalten</string>
+    <string name="pip_banner_supported_details">Ihr Gerät unterstützt Bild-in-Bild. MPx kann in einem kleinen schwebenden Fenster weiter abspielen.</string>
+    <string name="pip_banner_unsupported_reason">Bild-in-Bild ist auf diesem Gerät oder dieser Android-Version nicht verfügbar.</string>
+    <string name="pip_window_controls_desc">Wählen Sie, welche Steuerelemente im schwebenden Fenster erscheinen.</string>
+    <string name="pip_controls_prev_next_desc">Zurück- und Weiter-Tasten neben Wiedergabe/Pause.</string>
+    <string name="pip_controls_seek10_desc">Um 10 Sekunden vor- und zurückspringen.</string>
+    <string name="pip_controls_play_pause_only">Nur Wiedergabe / Pause</string>
+    <string name="pip_controls_play_pause_only_desc">Nur eine Wiedergabe/Pause-Taste im schwebenden Fenster.</string>
+    <string name="pip_size_header">Fenstergröße</string>
+    <string name="pip_size_desc">Wie groß das schwebende Fenster sein soll.</string>
+    <string name="pip_size_small">Klein</string>
+    <string name="pip_size_small_desc">Ein kompaktes schwebendes Fenster.</string>
+    <string name="pip_size_medium">Mittel</string>
+    <string name="pip_size_medium_desc">Eine ausgewogene Größe für das schwebende Fenster.</string>
+    <string name="pip_size_large">Groß</string>
+    <string name="pip_size_large_desc">Ein großes schwebendes Fenster.</string>
+    <string name="pip_size_auto">Automatisch</string>
+    <string name="pip_size_auto_desc">Das System die Fenstergröße wählen lassen.</string>
+    <string name="pip_position_header">Fensterposition</string>
+    <string name="pip_position_desc">Wo das schwebende Fenster zuerst erscheint. Das System kann es verschieben.</string>
+    <string name="pip_position_bottom_right">Unten rechts</string>
+    <string name="pip_position_bottom_right_desc">In der unteren rechten Ecke starten.</string>
+    <string name="pip_position_bottom_left">Unten links</string>
+    <string name="pip_position_bottom_left_desc">In der unteren linken Ecke starten.</string>
+    <string name="pip_position_top_right">Oben rechts</string>
+    <string name="pip_position_top_right_desc">In der oberen rechten Ecke starten.</string>
+    <string name="pip_position_top_left">Oben links</string>
+    <string name="pip_position_top_left_desc">In der oberen linken Ecke starten.</string>
+    <string name="pip_position_center">Mitte</string>
+    <string name="pip_position_center_desc">In der Bildschirmmitte starten.</string>
+    <string name="pip_position_remember_last">Letzte Position merken</string>
+    <string name="pip_position_remember_last_desc">Das Fenster dort wieder öffnen, wo Sie es zuletzt gelassen haben.</string>
+    <string name="pip_snap_edge_title">An Kante einrasten</string>
+    <string name="pip_snap_edge_desc">Das schwebende Fenster beim Loslassen an der nächstgelegenen Bildschirmkante einrasten lassen.</string>
+    <string name="pip_close_on_done_title">Bei Fertigstellung schließen</string>
+    <string name="pip_close_on_done_desc">Das schwebende Fenster automatisch schließen, wenn die Wiedergabe endet.</string>
+    <string name="pip_limits_title">Systemgrenzen</string>
+    <string name="pip_limit_hardware_title">Hardwareunterstützung</string>
+    <string name="pip_limit_hardware_desc">Manche Geräte deaktivieren Bild-in-Bild aus Leistungs- oder Akkugründen.</string>
+    <string name="pip_limit_sandboxing_title">App-Einschränkungen</string>
+    <string name="pip_limit_sandboxing_desc">Akkuoptimierung oder eingeschränkte App-Einstellungen können das schwebende Fenster stoppen.</string>
+    <string name="pip_limit_window_manager_title">Fenstermanager</string>
+    <string name="pip_limit_window_manager_desc">Das System steuert die endgültige Größe und Position, sodass MPx-Anfragen angepasst werden können.</string>
+    <string name="pip_limit_actions_title">Verfügbare Aktionen</string>
+    <string name="pip_limit_actions_desc">Nur die Aktionen, die Android erlaubt, können im schwebenden Fenster erscheinen.</string>
+    <!-- Beta & About Screen -->
+    <string name="about_beta_screen_title">Über &amp; Beta-Status</string>
+    <string name="about_beta_badge">BETA-VERSION</string>
+    <string name="about_beta_tagline">Nativer Kotlin-Media-Player für Android mit Media3 ExoPlayer und Room-Persistenz.</string>
+    <string name="about_beta_build_info">Build 2 (VersionCode 2) • Branch: feature/beta-readiness</string>
+
+    <!-- What is Ready in Beta -->
+    <string name="about_beta_section_ready">WAS IN DER BETA BEREIT IST</string>
+    <string name="about_beta_ready_subtitle">Kernfunktionen für Offline-Wiedergabe und Bibliothek sind vollständig funktionsfähige native Implementierungen:</string>
+    <string name="about_beta_feat_player_title">Media3-Videowiedergabe-Engine</string>
+    <string name="about_beta_feat_player_desc">Hardware- (HW/HW+) und Software- (SW) Decodierung über AndroidX Media3 ExoPlayer. Videogesten (Doppeltippen für 10-s-Spulen, horizontales Ziehen zum Spulen), Seitenverhältnis-Steuerung (Anpassen/Strecken/16:9/Original), eingebettete und externe Untertitel (.srt, .vtt) und Mehrspur-Audio-Wechsel.</string>
+    <string name="about_beta_feat_bg_pip_title">Hintergrundwiedergabe &amp; Pop-up-Wiedergabe (PiP)</string>
+    <string name="about_beta_feat_bg_pip_desc">Bild-in-Bild-Schwebemodus mit benutzerdefinierter Fenstersteuerung ab Android 8.0. Echte Hintergrund-Audiowiedergabe für Videos und Musik über einen Vordergrunddienst.</string>
+    <string name="about_beta_feat_music_title">Musik-Player &amp; Audiobibliothek</string>
+    <string name="about_beta_feat_music_desc">Vollständiges MediaStore-Scannen lokaler Titel, Alben, Künstler und Audioordner. Zufallswiedergabe, Titelwarteschlange und dauerhafter MiniPlayer in allen Haupt-Tabs.</string>
+    <string name="about_beta_feat_persistence_title">On-Device-Room-SQLite-Persistenz</string>
+    <string name="about_beta_feat_persistence_desc">Eigene Wiedergabelisten, markierte Favoriten und Wiedergabeverlauf mit präzisen Fortsetzungs-Zeitstempeln werden lokal in mpx_player.db gespeichert.</string>
+    <string name="about_beta_feat_themes_title">Themes &amp; echter Dunkelmodus</string>
+    <string name="about_beta_feat_themes_desc">Vier Themes: Midnight OLED (#000000 Kino-Schwarz), Dark Slate, Classic Navy und Light Cinema. Sofortige Theme-Anwendung zur Laufzeit.</string>
+    <string name="about_beta_feat_i18n_title">Vollständiges Englisch &amp; modernes Hocharabisch (RTL)</string>
+    <string name="about_beta_feat_i18n_desc">Bidirektionale Oberfläche mit vollständigem Rechts-nach-links-Spiegeln (RTL), gespiegelten Symbolen und sofortigem Sprachwechsel ohne App-Neustart.</string>
+
+    <!-- What is Placeholder -->
+    <string name="about_beta_section_placeholders">WAS NOCH PLATZHALTER IST</string>
+    <string name="about_beta_placeholders_subtitle">Gemäß unseren ehrlichen Entwicklungsprinzipien sind die folgenden Funktionen nicht funktionsfähige UI-Platzhalter ohne simulierte oder vorgetäuschte Vorgänge:</string>
+    <string name="about_beta_holder_downloader_title">URL-Downloader (Übertragen-Tab)</string>
+    <string name="about_beta_holder_downloader_desc">Status: Nur UI-Hülle. Keine vorgetäuschten Downloads oder künstlichen Fortschrittsbalken. Die echte Hintergrund-Download-Engine wird in Phase 5 integriert.</string>
+    <string name="about_beta_holder_transfer_title">Direkte Dateiübertragung (Übertragen-Tab)</string>
+    <string name="about_beta_holder_transfer_desc">Status: UI-Platzhalter. Das Offline-Peer-to-Peer-Protokoll (P2P / Wi-Fi Direct) zur Dateifreigabe wird in Phase 5 verbunden.</string>
+    <string name="about_beta_holder_status_title">Status-Saver (Ich-Werkzeugraster)</string>
+    <string name="about_beta_holder_status_desc">Status: Ehrlicher Platzhalter (Issue 32). Das Scannen und Speichern des WhatsApp-Status-Verzeichnisses wird verbunden, sobald der Ablauf für die Verzeichnisberechtigung mit bereichsbezogenem Speicher implementiert ist.</string>
+    <string name="about_beta_holder_private_title">Privater Ordner (Ich-Werkzeugraster)</string>
+    <string name="about_beta_holder_private_desc">Status: Ehrlicher Platzhalter (Issue 32). Der verschlüsselte Medientresor mit biometrischer / PIN-Authentifizierung ist für Issue 32 vorgesehen.</string>
+    <string name="about_beta_holder_manager_title">Medien-Manager &amp; Speicherbereinigung (Ich-Werkzeugraster)</string>
+    <string name="about_beta_holder_manager_desc">Status: Ehrlicher Platzhalter (Issue 32). Erkennung doppelter Medien, Identifizierung großer Dateien und Cache-Analyse sind für Issue 32 vorgesehen.</string>
+    <string name="about_beta_holder_bin_title">Papierkorb (Ich-Werkzeugraster)</string>
+    <string name="about_beta_holder_bin_desc">Status: Ehrlicher Platzhalter (Issue 32). Von der App verwaltetes temporäres Aufbewahrungsverzeichnis für gelöschte Dateien (30-tägige Aufbewahrung) ist für Issue 32 vorgesehen.</string>
+
+    <!-- Privacy & Integrity -->
+    <string name="about_beta_section_privacy">DATENSCHUTZ &amp; TELEMETRIE-INTEGRITÄT</string>
+    <string name="about_beta_privacy_body">MPx Player enthält KEINE vorgetäuschten Absturzberichte, KEINE Telemetrie von Drittanbietern, KEINE Werbe-Frameworks und KEINE Tracking-SDKs. Ihr Medienwiedergabeverlauf, Ihre Favoriten und Einstellungen sind strikt privat und verlassen niemals Ihr Gerät.</string>
+
+    <!-- Feedback & GitHub Issues -->
+    <string name="about_beta_section_feedback">FEEDBACK &amp; FEHLERBERICHTE</string>
+    <string name="about_beta_feedback_body">Wir freuen uns über Fehlerberichte, Regressionsfunde und Funktionsvorschläge in unserem öffentlichen GitHub-Repository. Ihr Feedback gestaltet kommende Versionen direkt mit.</string>
+    <string name="about_beta_open_github">GitHub-Issues öffnen</string>
+    <string name="about_beta_copy_github_url">Issues-Link kopieren</string>
+    <string name="about_beta_issues_url">https://github.com/mohammedbakri123/MPx-player/issues</string>
+    <string name="about_beta_copied_snackbar">GitHub-Issues-URL in Zwischenablage kopiert</string>
+    <string name="about_beta_browser_error">Webbrowser konnte nicht geöffnet werden. Die URL wurde in Ihre Zwischenablage kopiert.</string>
+    <string name="about_beta_open_page_button">Beta-Details &amp; Feedback ansehen</string>
+    <!-- Separate View Layout (Issue 16) -->
+    <string name="settings_separate_view_title">Separates Ansichtslayout</string>
+    <string name="settings_separate_view_desc">Ansichts-Layout (Liste oder Raster) für die Bildschirme „Lokal“ und „Musik“ separat merken</string>
+    <string name="sort_section_layout_settings">LAYOUT-EINSTELLUNGEN</string>
+    <string name="sort_separate_view_title">Separates Ansichtslayout</string>
+    <string name="sort_separate_view_desc">Layout für diesen Bildschirm unabhängig merken</string>
+    <string name="snackbar_separate_view_enabled">Separates Ansichtslayout aktiviert</string>
+    <string name="snackbar_separate_view_disabled">Separates Ansichtslayout deaktiviert: Layouts synchronisiert</string>
+    <!-- File View (Issue 19) -->
+    <string name="sort_section_view_type">ANSICHTSTYP</string>
+    <string name="view_type_folders">Ordner (nach Ordner gruppieren)</string>
+    <string name="view_type_files">Alle Dateien (einzelne Dateien)</string>
+    <string name="sort_field_duration">Dauer / Länge</string>
+    <string name="section_files_header">DATEIEN</string>
+    <string name="list_file_view">Dateiansicht</string>
+    <string name="list_file_view_desc">Einzelne Videodateien in der Lokal-Ansicht auflisten, statt nach Ordner zu gruppieren</string>
+    <string name="list_show_all_files">Alle Dateien anzeigen</string>
+    <string name="list_show_all_files_desc">Versteckte Dateien und interne Speicherpfade einbeziehen</string>
+    <string name="local_section_videos">VIDEOS</string>
+    <string name="local_section_all_videos">ALLE VIDEOS</string>
+    <string name="local_search_placeholder_files">Videos suchen…</string>
+    <string name="local_menu_switch_to_files">Zur Dateiansicht wechseln</string>
+    <string name="local_menu_switch_to_folders">Zur Ordneransicht wechseln</string>
+    <string name="local_snackbar_file_view">Zur Dateiansicht gewechselt</string>
+    <string name="local_snackbar_folder_view">Zur Ordneransicht gewechselt</string>
+    <string name="video_menu_play">Video abspielen</string>
+    <string name="video_menu_play_folder">Ordner abspielen (%1$s)</string>
+
+    <!-- Auto Screen Rotation (Issue 19) -->
+    <string name="player_auto_rotation">Automatische Bildschirmdrehung</string>
+    <string name="player_auto_rotation_desc">Geräteausrichtung im Player per Sensor folgen oder auf Querformat/Hochformat sperren</string>
+    <string name="player_locked_orientation_header">Gesperrte Ausrichtung:</string>
+    <string name="player_rotation_dialog_title">Bildschirmdrehung</string>
+    <string name="player_rotation_auto">Automatisch drehen (Sensor)</string>
+    <string name="player_rotation_auto_desc">Player folgt der Geräteausrichtung automatisch</string>
+    <string name="player_orientation_landscape">Querformat</string>
+    <string name="player_orientation_landscape_desc">Bildschirm im horizontalen Querformat sperren</string>
+    <string name="player_orientation_portrait">Hochformat</string>
+    <string name="player_orientation_portrait_desc">Bildschirm im vertikalen Hochformat sperren</string>
+    <string name="toast_rotation_auto">Automatische Bildschirmdrehung aktiviert (Sensor)</string>
+    <string name="toast_rotation_landscape">Bildschirm auf Querformat gesperrt</string>
+    <string name="toast_rotation_portrait">Bildschirm auf Hochformat gesperrt</string>
+    <string name="cd_screen_rotation">Bildschirmdrehung</string>
+    <string name="local_menu_folder_view">Ordneransicht</string>
+    <string name="local_menu_file_view">Dateiansicht</string>
+    <string name="snackbar_added_to_favourites">Zu Favoriten hinzugefügt</string>
+
+    <!-- Development Category Diagnostics (Issue 60) -->
+    <string name="dev_section_app_build">App &amp; Build</string>
+    <string name="dev_section_database">Room-SQLite-Datenbank</string>
+    <string name="dev_section_media_scan">MediaStore-Bibliotheksscan</string>
+    <string name="dev_section_playback_engine">Decoder &amp; Wiedergabe-Engine</string>
+    <string name="dev_label_package">Anwendungs-ID</string>
+    <string name="dev_label_version">Version</string>
+    <string name="dev_label_build_code">Versionscode</string>
+    <string name="dev_label_build_type">Build-Typ</string>
+    <string name="dev_label_target_sdk">Ziel-SDK</string>
+    <string name="dev_label_min_sdk">Mindest-SDK</string>
+    <string name="dev_label_device">Gerät</string>
+    <string name="dev_label_os_version">Android-Betriebssystem</string>
+    <string name="dev_label_db_name">Datenbankname</string>
+    <string name="dev_label_db_path">Datenbankpfad</string>
+    <string name="dev_label_db_size">Datenbankgröße</string>
+    <string name="dev_label_db_wal_size">WAL-Journalgröße</string>
+    <string name="dev_label_db_records">Datenbankeinträge</string>
+    <string name="dev_label_db_not_created">Noch nicht erstellt (0 B)</string>
+    <string name="dev_label_permissions">Medienberechtigungen</string>
+    <string name="dev_label_scan_volumes">Speichervolumes</string>
+    <string name="dev_label_video_folders">Videoordner</string>
+    <string name="dev_label_scanned_videos">Gescannte Videos</string>
+    <string name="dev_label_audio_tracks">Audiotitel</string>
+    <string name="dev_label_audio_folders">Audioordner</string>
+    <string name="dev_label_audio_albums">Audioalben</string>
+    <string name="dev_label_audio_artists">Audiokünstler</string>
+    <string name="dev_label_playlists">Wiedergabelisten</string>
+    <string name="dev_label_engine_name">Wiedergabe-Engine</string>
+    <string name="dev_label_engine_type">Engine-Architektur</string>
+    <string name="dev_label_decoder_mode">Konfigurierter Decoder</string>
+    <string name="dev_label_active_decoder">Aktiver Video-Decoder</string>
+    <string name="dev_label_codec_type">Codec-Implementierung</string>
+    <string name="dev_label_player_state">Player-Status</string>
+    <string name="dev_label_active_media">Aktive Medien</string>
+    <string name="dev_label_decoder_fallback">Decoder-Fallback</string>
+    <string name="dev_btn_refresh_diagnostics">Diagnose aktualisieren</string>
+    <string name="dev_val_refreshing">Aktualisieren…</string>
+    <string name="dev_val_none_idle">Keine (Player inaktiv)</string>
+    <string name="dev_val_direct_codec">Direkt (kein Fallback erforderlich)</string>
+    <string name="dev_val_perm_video">Video: %1$s • Audio: %2$s</string>
+    <string name="dev_val_perm_granted">Erteilt</string>
+    <string name="dev_val_perm_denied">Abgelehnt</string>
+    <string name="dev_val_codec_hw">Hardwarebeschleunigt (MediaCodec)</string>
+    <string name="dev_val_codec_sw">Software (CPU)</string>
+    <string name="dev_label_last_updated">Zuletzt aktualisiert: %1$s</string>
+    <!-- Issue 59: Secondary Sort, Fields, and Advanced Sort Options -->
+    <string name="sort_section_secondary_sort">ZWEITE SORTIERUNG</string>
+    <string name="sort_secondary_sort_desc">Wird als Tie-Breaker angewendet, wenn Primärwerte gleich sind</string>
+    <string name="sort_field_none">Keine</string>
+    <string name="sort_section_fields">Felder</string>
+    <string name="sort_fields_dialog_title">Felder</string>
+    <string name="sort_fields_desc">Metadatenspalten wählen, die in Listen Zeilen angezeigt werden</string>
+    <string name="sort_field_show_size">Dateigröße</string>
+    <string name="sort_field_show_date">Änderungsdatum</string>
+    <string name="sort_field_show_duration">Dauer / Länge</string>
+    <string name="sort_field_show_location">Ort / Ordner</string>
+    <string name="sort_field_show_count">Videoanzahl</string>
+    <string name="sort_section_advanced">Erweitert</string>
+    <string name="sort_advanced_dialog_title">Erweiterte Sortieroptionen</string>
+    <string name="sort_advanced_reverse_order">Primäre Sortierreihenfolge umkehren</string>
+    <string name="sort_advanced_reverse_order_desc">Zwischen aufsteigender und absteigender Reihenfolge wechseln</string>
+    <string name="sort_advanced_secondary_reverse">Sekundäre Sortierreihenfolge umkehren</string>
+    <string name="sort_advanced_secondary_reverse_desc">Sekundäre Sortierung zwischen aufsteigend und absteigend wechseln</string>
+    <string name="sort_advanced_numeric">Natürliche numerische Sortierung</string>
+    <string name="sort_advanced_numeric_desc">„2“ vor „10“ in Namen sortieren</string>
+    <string name="sort_advanced_case_sensitive">Sortierung mit Groß-/Kleinschreibung</string>
+    <string name="sort_advanced_case_sensitive_desc">Groß- und Kleinbuchstaben unterscheiden</string>
+    <string name="sort_advanced_ignore_extension">Dateierweiterungen ignorieren</string>
+    <string name="sort_advanced_ignore_extension_desc">Nach Dateititel sortieren, ohne die Dateierweiterung zu berücksichtigen</string>
+    <string name="sort_advanced_summary_default">Standard-Sortieroptionen</string>
+    <!-- Issue 55: Continue Watching Row -->
+    <string name="continue_watching_title">Weiter ansehen</string>
+    <string name="continue_watching_dismiss">Aus „Weiter ansehen“ entfernen</string>
+    <string name="continue_watching_dismissed">„%1$s“ aus „Weiter ansehen“ entfernt</string>
+    <string name="continue_watching_resume_at">Fortsetzen bei %1$s</string>
+    <!-- Issue 54: Sleep Timer -->
+    <string name="player_sleep_timer">Schlaf-Timer</string>
+    <string name="player_sleep_timer_off">Aus</string>
+    <string name="player_sleep_timer_15">15 Minuten</string>
+    <string name="player_sleep_timer_30">30 Minuten</string>
+    <string name="player_sleep_timer_45">45 Minuten</string>
+    <string name="player_sleep_timer_60">60 Minuten</string>
+    <string name="player_sleep_timer_dialog_title">Schlaf-Timer</string>
+    <string name="player_sleep_timer_chip">Schlaf: %1$s</string>
+    <string name="player_sleep_timer_cancel">Schlaf-Timer abbrechen</string>
+    <string name="player_sleep_timer_set_toast">Schlaf-Timer auf %1$d Minuten eingestellt</string>
+    <string name="player_sleep_timer_canceled_toast">Schlaf-Timer ausgeschaltet</string>
+    <string name="player_gesture_hint">Doppeltippen: -10 s (links) / Wiedergabe-Pause / +10 s (rechts) • Horizontal wischen: Spulen • Vertikal wischen: Helligkeit (links) / Lautstärke (rechts)</string>
+</resources>

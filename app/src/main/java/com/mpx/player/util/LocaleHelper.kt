@@ -24,6 +24,7 @@ object LocaleHelper {
     const val LANGUAGE_HINDI = "hi"
     const val LANGUAGE_CHINESE = "zh"
     const val LANGUAGE_RUSSIAN = "ru"
+    const val LANGUAGE_GERMAN = "de"
 
     /**
      * Resolves the target [Locale] for a given language code.
@@ -37,6 +38,7 @@ object LocaleHelper {
             LANGUAGE_HINDI -> Locale("hi")
             LANGUAGE_CHINESE -> Locale("zh")
             LANGUAGE_RUSSIAN -> Locale("ru")
+            LANGUAGE_GERMAN -> Locale("de")
             LANGUAGE_ENGLISH -> Locale("en")
             else -> {
                 val systemLocales = Resources.getSystem().configuration.locales
