@@ -123,6 +123,8 @@ class PlaybackService : Service() {
             ACTION_TOGGLE -> playbackManager.togglePlayPause()
             ACTION_NEXT -> playbackManager.skipNext()
             ACTION_PREVIOUS -> playbackManager.skipPrevious()
+            ACTION_SEEK_FORWARD_10 -> playbackManager.skipForward(10_000L)
+            ACTION_SEEK_BACKWARD_10 -> playbackManager.skipBackward(10_000L)
             ACTION_STOP -> {
                 playbackManager.pause()
                 stopForegroundInternal(removeNotification = true)
@@ -341,6 +343,8 @@ class PlaybackService : Service() {
         const val ACTION_TOGGLE = "com.mpx.player.playback.ACTION_TOGGLE"
         const val ACTION_NEXT = "com.mpx.player.playback.ACTION_NEXT"
         const val ACTION_PREVIOUS = "com.mpx.player.playback.ACTION_PREVIOUS"
+        const val ACTION_SEEK_FORWARD_10 = "com.mpx.player.playback.ACTION_SEEK_FORWARD_10"
+        const val ACTION_SEEK_BACKWARD_10 = "com.mpx.player.playback.ACTION_SEEK_BACKWARD_10"
         const val ACTION_STOP = "com.mpx.player.playback.ACTION_STOP"
         const val ACTION_OPEN_PLAYER = "com.mpx.player.ACTION_OPEN_PLAYER"
         const val EXTRA_OPEN_PLAYER = "open_player"

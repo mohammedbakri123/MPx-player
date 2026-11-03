@@ -25,6 +25,10 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         appTheme = prefs.getString("app_theme", "Midnight") ?: "Midnight",
         popupPlayEnabled = prefs.getBoolean("popup_play_enabled", true),
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
+        popupPlaySize = prefs.getString("popup_play_size", "Medium") ?: "Medium",
+        popupPlayPosition = prefs.getString("popup_play_position", "BottomRight") ?: "BottomRight",
+        popupPlaySnapToEdge = prefs.getBoolean("popup_play_snap_to_edge", true),
+        popupPlayCloseOnDone = prefs.getBoolean("popup_play_close_on_done", true),
         appLanguage = prefs.getString("app_language", "system") ?: "system",
         showAllFolders = prefs.getBoolean("show_all_folders", false),
         folderViewMode = prefs.getString("folder_view_mode", "LIST") ?: "LIST",
@@ -46,6 +50,10 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("app_theme", settings.appTheme)
             .putBoolean("popup_play_enabled", settings.popupPlayEnabled)
             .putString("popup_play_controls", settings.popupPlayControls)
+            .putString("popup_play_size", settings.popupPlaySize)
+            .putString("popup_play_position", settings.popupPlayPosition)
+            .putBoolean("popup_play_snap_to_edge", settings.popupPlaySnapToEdge)
+            .putBoolean("popup_play_close_on_done", settings.popupPlayCloseOnDone)
             .putString("app_language", settings.appLanguage)
             .putBoolean("show_all_folders", settings.showAllFolders)
             .putString("folder_view_mode", settings.folderViewMode)

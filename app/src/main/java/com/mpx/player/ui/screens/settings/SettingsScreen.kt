@@ -42,6 +42,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -70,6 +71,7 @@ import com.mpx.player.util.PipUtils
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onOpenOverlaySettings: (() -> Unit)? = null,
     settingsRepository: AppSettingsRepository,
     onThemeChanged: ((String) -> Unit)? = null,
     currentLanguage: String = "system",
@@ -217,6 +219,11 @@ fun SettingsScreen(
                                     }
                                 }
                                 "pip" -> {
+                                    if (onOpenOverlaySettings != null) {
+                                        TextButton(onClick = onOpenOverlaySettings) {
+                                            Text(stringResource(R.string.overlay_settings_title), color = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
                                     val isSupported = PipUtils.isPipSupported(context)
                                     if (!isSupported) {
                                         Text(
