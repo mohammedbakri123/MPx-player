@@ -79,6 +79,8 @@
     <string name="pip_controls_prev_next">Previous / Next (Default)</string>
     <string name="pip_controls_seek10">Fast Forward / Rewind (10s)</string>
 
+    <string name="list_show_all_folders">Show all folders</string>
+    <string name="list_show_all_folders_desc">Show every scanned folder including empty and hidden folders</string>
     <string name="list_show_hidden">Show hidden files</string>
     <string name="list_show_thumbnails">Show thumbnails</string>
 
@@ -398,4 +400,11 @@
     <string name="dialog_new_playlist">New Playlist</string>
     <string name="dialog_playlists_empty">No custom playlists yet. Tap New Playlist to create one.</string>
     <string name="playlist_items_count">%1$d items</string>
+    <string name="local_menu_filtered_view">Filtered folders view</string>
+    <string name="local_snackbar_show_all">Showing all folders (including empty &amp; hidden)</string>
+    <string name="local_snackbar_filtered">Showing filtered folders view</string>
+    <string name="empty_folders_title">No Folders Found</string>
+    <string name="empty_folders_desc">No media folders found on storage volumes. Folders and media will appear here once created or synced.</string>
+    <string name="local_section_all_folders">ALL FOLDERS</string>
+    <string name="local_badge_show_all">SHOW ALL</string>
 </resources>

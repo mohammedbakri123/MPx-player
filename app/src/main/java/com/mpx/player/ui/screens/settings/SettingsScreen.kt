@@ -237,6 +237,7 @@ fun SettingsScreen(
                                     }
                                 }
                                 "list" -> {
+                                    ToggleRow(stringResource(R.string.list_show_all_folders), settings.showAllFolders) { update(settings.copy(showAllFolders = it)) }
                                     ToggleRow(stringResource(R.string.list_show_hidden), settings.showHiddenFiles) { update(settings.copy(showHiddenFiles = it)) }
                                     ToggleRow(stringResource(R.string.list_show_thumbnails), settings.showThumbnails) { update(settings.copy(showThumbnails = it)) }
                                 }

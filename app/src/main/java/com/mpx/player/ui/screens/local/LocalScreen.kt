@@ -80,9 +80,11 @@ import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.PlaylistItem
+import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
@@ -114,10 +116,15 @@ fun LocalScreen(
     onOpenTransfer: () -> Unit,
     onOpenSettings: () -> Unit,
     playbackManager: PlaybackManager? = null,
+    settingsRepository: AppSettingsRepository? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val repository = remember(context) { MediaStoreRepository(context) }
+    val realSettingsRepo = remember(settingsRepository, context) {
+        settingsRepository ?: SharedPrefsAppSettingsRepository(context)
+    }
+    var appSettings by remember { mutableStateOf(realSettingsRepo.load()) }
     var hasPermission by remember {
         mutableStateOf(MediaPermissions.hasVideoPermission(context))
     }
@@ -166,31 +173,13 @@ fun LocalScreen(
     var selectedPlaylist by remember { mutableStateOf<CustomPlaylist?>(null) }
     var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        hasPermission = isGranted
-        if (isGranted) {
-            scope.launch(Dispatchers.IO) {
-                isLoading = true
-                val scanned = repository.getMediaFolders()
-                withContext(Dispatchers.Main) {
-                    folders = scanned
-                    isLoading = false
-                }
-            }
-        } else {
-            folders = emptyList()
-        }
-    }
-
-    fun refreshFolders() {
+    fun refreshFolders(showAll: Boolean = appSettings.showAllFolders) {
         if (isLoading) return
         if (MediaPermissions.hasVideoPermission(context)) {
             hasPermission = true
             scope.launch(Dispatchers.IO) {
                 isLoading = true
-                val scanned = repository.getMediaFolders()
+                val scanned = repository.getMediaFolders(showAll)
                 withContext(Dispatchers.Main) {
                     folders = scanned
                     isLoading = false
@@ -202,16 +191,36 @@ fun LocalScreen(
         }
     }
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { isGranted ->
+        hasPermission = isGranted
+        if (isGranted) {
+            scope.launch(Dispatchers.IO) {
+                isLoading = true
+                val scanned = repository.getMediaFolders(appSettings.showAllFolders)
+                withContext(Dispatchers.Main) {
+                    folders = scanned
+                    isLoading = false
+                }
+            }
+        } else {
+            folders = emptyList()
+        }
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 val currentPerm = MediaPermissions.hasVideoPermission(context)
                 hasPermission = currentPerm
+                val loadedSettings = realSettingsRepo.load()
+                appSettings = loadedSettings
                 if (currentPerm) {
                     scope.launch(Dispatchers.IO) {
                         isLoading = true
-                        val scanned = repository.getMediaFolders()
+                        val scanned = repository.getMediaFolders(loadedSettings.showAllFolders)
                         withContext(Dispatchers.Main) {
                             folders = scanned
                             isLoading = false
@@ -327,6 +336,29 @@ fun LocalScreen(
                                 },
                             )
                             DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (appSettings.showAllFolders) stringResource(R.string.local_menu_filtered_view)
+                                        else stringResource(R.string.list_show_all_folders)
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    val updated = appSettings.copy(showAllFolders = !appSettings.showAllFolders)
+                                    realSettingsRepo.save(updated)
+                                    appSettings = updated
+                                    refreshFolders(updated.showAllFolders)
+                                    scope.launch {
+                                        val msg = if (updated.showAllFolders) {
+                                            context.getString(R.string.local_snackbar_show_all)
+                                        } else {
+                                            context.getString(R.string.local_snackbar_filtered)
+                                        }
+                                        snackbarHostState.showSnackbar(msg)
+                                    }
+                                },
+                            )
+                            DropdownMenuItem(
                                 text = { Text(stringResource(R.string.local_menu_refresh)) },
                                 onClick = {
                                     menuExpanded = false
@@ -435,15 +467,35 @@ fun LocalScreen(
                     onActionClick = { searchQuery = "" },
                 )
             } else if (filteredFolders.isEmpty()) {
-                EmptyStateView(
-                    title = stringResource(R.string.empty_videos_title),
-                    message = stringResource(R.string.empty_videos_desc),
-                    icon = Icons.Filled.Folder,
-                    actionLabel = stringResource(R.string.empty_videos_action),
-                    onActionClick = {
-                        refreshFolders()
-                    },
-                )
+                if (!appSettings.showAllFolders) {
+                    EmptyStateView(
+                        title = stringResource(R.string.empty_videos_title),
+                        message = stringResource(R.string.empty_videos_desc),
+                        icon = Icons.Filled.Folder,
+                        actionLabel = stringResource(R.string.list_show_all_folders),
+                        onActionClick = {
+                            val updated = appSettings.copy(showAllFolders = true)
+                            realSettingsRepo.save(updated)
+                            appSettings = updated
+                            refreshFolders(showAll = true)
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    context.getString(R.string.local_snackbar_show_all)
+                                )
+                            }
+                        },
+                    )
+                } else {
+                    EmptyStateView(
+                        title = stringResource(R.string.empty_folders_title),
+                        message = stringResource(R.string.empty_folders_desc),
+                        icon = Icons.Filled.Folder,
+                        actionLabel = stringResource(R.string.empty_videos_action),
+                        onActionClick = {
+                            refreshFolders(showAll = true)
+                        },
+                    )
+                }
             } else {
                 // Section Header: FOLDERS + Sort Button
                 Row(
@@ -455,7 +507,8 @@ fun LocalScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = stringResource(R.string.local_section_folders),
+                            text = if (appSettings.showAllFolders) stringResource(R.string.local_section_all_folders)
+                                else stringResource(R.string.local_section_folders),
                             style = MaterialTheme.typography.labelSmall,
                             color = MpxTextSecondary,
                             fontSize = 12.sp,
@@ -473,6 +526,22 @@ fun LocalScreen(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                             )
+                        }
+                        if (appSettings.showAllFolders) {
+                            Spacer(Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MpxPrimary.copy(alpha = 0.2f))
+                                    .padding(horizontal = 6.dp, vertical = 1.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.local_badge_show_all),
+                                    color = MpxPrimary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
                         }
                     }
 
@@ -573,11 +642,26 @@ fun LocalScreen(
         SortViewDialog(
             currentSort = sortField,
             currentView = viewMode,
+            showAllFolders = appSettings.showAllFolders,
             onSortChange = {
                 sortField = it
             },
             onViewChange = {
                 viewMode = it
+            },
+            onShowAllFoldersChange = { isChecked ->
+                val updated = appSettings.copy(showAllFolders = isChecked)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+                refreshFolders(isChecked)
+                scope.launch {
+                    val msg = if (isChecked) {
+                        "Showing all folders (including empty & hidden)"
+                    } else {
+                        "Showing filtered folders view"
+                    }
+                    snackbarHostState.showSnackbar(msg)
+                }
             },
             onDismiss = { showSortDialog = false },
         )

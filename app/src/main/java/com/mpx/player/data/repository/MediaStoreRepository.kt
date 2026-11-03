@@ -4,6 +4,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.os.storage.StorageManager
 import android.provider.MediaStore
 import com.mpx.player.domain.model.AudioAlbum
@@ -141,8 +142,67 @@ class MediaStoreRepository(
         return false
     }
 
-    override fun getMediaFolders(): List<MediaFolder> {
+    /**
+     * Resolves storage root directories across primary internal storage and mounted SD cards.
+     */
+    fun getStorageRootDirectories(): List<File> {
+        val roots = LinkedHashSet<File>()
+
+        try {
+            val primary = Environment.getExternalStorageDirectory()
+            if (primary != null && primary.exists()) {
+                roots.add(primary)
+            }
+        } catch (_: Exception) {}
+
+        val emulated = File("/storage/emulated/0")
+        if (emulated.exists()) {
+            roots.add(emulated)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as? StorageManager
+                storageManager?.storageVolumes?.forEach { volume ->
+                    volume.directory?.let { if (it.exists()) roots.add(it) }
+                }
+            } catch (_: Exception) {}
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                val storageManager = context.getSystemService(Context.STORAGE_SERVICE) as? StorageManager
+                storageManager?.storageVolumes?.forEach { volume ->
+                    val uuid = volume.uuid
+                    if (!uuid.isNullOrBlank()) {
+                        val sdDir = File("/storage/$uuid")
+                        if (sdDir.exists()) roots.add(sdDir)
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
+        try {
+            val extDirs = context.getExternalFilesDirs(null)
+            for (dir in extDirs) {
+                if (dir != null) {
+                    val full = dir.absolutePath
+                    val androidIdx = full.indexOf("/Android")
+                    if (androidIdx > 0) {
+                        val rootPath = full.substring(0, androidIdx)
+                        val rootFile = File(rootPath)
+                        if (rootFile.exists()) roots.add(rootFile)
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+
+        return roots.toList()
+    }
+
+    override fun getMediaFolders(): List<MediaFolder> = getMediaFolders(showAllFolders = false)
+
+    override fun getMediaFolders(showAllFolders: Boolean): List<MediaFolder> {
         val folderMap = mutableMapOf<String, FolderAccumulator>()
+        val seenPaths = mutableSetOf<String>()
         val projection = arrayOf(
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.BUCKET_ID,
@@ -201,6 +261,9 @@ class MediaStoreRepository(
                                 isRemovable = isRemovable,
                             )
                         }
+                        if (parentPath.isNotBlank()) {
+                            seenPaths.add(parentPath)
+                        }
                         acc.count += 1
                         acc.totalSizeBytes += size
                         if (dateModified > acc.lastModified) {
@@ -221,7 +284,83 @@ class MediaStoreRepository(
             }
         }
 
-        return folderMap.values.map { acc ->
+        // When showAllFolders is ON, enumerate directories across storage roots so every
+        // existing folder (including ones filtered out due to 0 videos or hidden names) is included.
+        if (showAllFolders) {
+            val storageRoots = getStorageRootDirectories()
+            val candidateDirs = mutableListOf<File>()
+
+            for (root in storageRoots) {
+                try {
+                    val rootFiles = root.listFiles()
+                    if (rootFiles != null) {
+                        for (f in rootFiles) {
+                            if (f.isDirectory) {
+                                candidateDirs.add(f)
+                                val nameLower = f.name.lowercase(Locale.US)
+                                if (nameLower in setOf("dcim", "movies", "pictures", "download", "documents", "video", "videos")) {
+                                    f.listFiles()?.filter { it.isDirectory }?.let { candidateDirs.addAll(it) }
+                                }
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+
+            for (root in storageRoots) {
+                val standardNames = listOf(
+                    Environment.DIRECTORY_MOVIES,
+                    Environment.DIRECTORY_DCIM,
+                    Environment.DIRECTORY_DOWNLOADS,
+                    Environment.DIRECTORY_PICTURES,
+                    Environment.DIRECTORY_MUSIC,
+                    Environment.DIRECTORY_DOCUMENTS,
+                    "Videos",
+                )
+                for (name in standardNames) {
+                    val dir = File(root, name)
+                    if (dir.exists() && dir.isDirectory) {
+                        candidateDirs.add(dir)
+                    }
+                }
+            }
+
+            for (dir in candidateDirs) {
+                val path = dir.absolutePath
+                if (path.isNotBlank() && seenPaths.add(path)) {
+                    val bucketId = path.hashCode().toString()
+                    folderMap.getOrPut(bucketId) {
+                        FolderAccumulator(
+                            id = bucketId,
+                            name = dir.name.ifBlank { "Folder" },
+                            path = path,
+                            isRemovable = isRemovablePath(path),
+                        ).apply {
+                            count = 0
+                            totalSizeBytes = 0L
+                            lastModified = dir.lastModified() / 1000L
+                            isNew = false
+                        }
+                    }
+                }
+            }
+        }
+
+        val foldersToDisplay = if (showAllFolders) {
+            folderMap.values
+        } else {
+            // Keep current filtered view: only folders containing videos, excluding
+            // hidden folders (starting with '.') and internal system cache directories
+            folderMap.values.filter { acc ->
+                acc.count > 0 &&
+                !acc.name.startsWith(".") &&
+                !acc.path.split(File.separatorChar).any { it.startsWith(".") } &&
+                !acc.path.contains("/Android/data") &&
+                !acc.path.contains("/Android/obb")
+            }
+        }
+
+        return foldersToDisplay.map { acc ->
             MediaFolder(
                 id = acc.id,
                 name = acc.name,

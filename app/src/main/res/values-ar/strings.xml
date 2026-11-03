@@ -79,6 +79,8 @@
     <string name="pip_controls_prev_next">السابق / التالي (افتراضي)</string>
     <string name="pip_controls_seek10">تقديم / إرجاع سريع (10 ثوانٍ)</string>
 
+    <string name="list_show_all_folders">إظهار كافة المجلدات</string>
+    <string name="list_show_all_folders_desc">إظهار كافة المجلدات المفحوصة بما فيها المجلدات الفارغة والمخفية</string>
     <string name="list_show_hidden">إظهار الملفات المخفية</string>
     <string name="list_show_thumbnails">إظهار الصور المصغرة</string>
 
@@ -398,4 +400,11 @@
     <string name="dialog_new_playlist">قائمة تشغيل جديدة</string>
     <string name="dialog_playlists_empty">لا توجد قوائم تشغيل مخصصة بعد. انقر على قائمة تشغيل جديدة لإنشاء واحدة.</string>
     <string name="playlist_items_count">%1$d عناصر</string>
+    <string name="local_menu_filtered_view">عرض المجلدات المصفاة</string>
+    <string name="local_snackbar_show_all">إظهار كافة المجلدات (بما فيها الفارغة والمخفية)</string>
+    <string name="local_snackbar_filtered">عرض المجلدات المصفاة</string>
+    <string name="empty_folders_title">لم يتم العثور على مجلدات</string>
+    <string name="empty_folders_desc">لم يتم العثور على مجلدات وسائط على وحدات التخزين. ستظهر المجلدات والوسائط هنا بمجرد إنشائها أو مزامنتها.</string>
+    <string name="local_section_all_folders">كافة المجلدات</string>
+    <string name="local_badge_show_all">إظهار الكل</string>
 </resources>
