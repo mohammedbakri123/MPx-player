@@ -46,6 +46,8 @@
     <string name="lang_french_desc">واجهة باللغة الفرنسية (تخطيط LTR)</string>
     <string name="lang_hindi">الهندية (Hindi)</string>
     <string name="lang_hindi_desc">واجهة باللغة الهندية (تخطيط LTR)</string>
+    <string name="lang_portuguese">البرتغالية (Portuguese)</string>
+    <string name="lang_portuguese_desc">واجهة باللغة البرتغالية (تخطيط LTR)</string>
     <string name="lang_applied_msg">تم تحديث اللغة: %s</string>
     <string name="lang_settings_note">اختر لغة التطبيق المفضلة. يتم تطبيق اللغة واتجاه الواجهة فوراً دون الحاجة لإعادة تشغيل التطبيق.</string>
 
