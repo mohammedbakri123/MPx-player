@@ -387,6 +387,8 @@
     <!-- Shortcut Chips -->
     <string name="chip_private">Privado</string>
     <string name="chip_network">Rede</string>
+    <string name="chip_cleaner">Limpador</string>
+    <string name="chip_privacy">Privacidade</string>
 
     <!-- Folder Item Row & Grid Card -->
     <string name="badge_sd_card">CARTÃO SD</string>

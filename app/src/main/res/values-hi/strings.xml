@@ -387,6 +387,8 @@
     <!-- Shortcut Chips -->
     <string name="chip_private">निजी</string>
     <string name="chip_network">नेटवर्क</string>
+    <string name="chip_cleaner">क्लीनर</string>
+    <string name="chip_privacy">गोपनीयता</string>
 
     <!-- Folder Item Row & Grid Card -->
     <string name="badge_sd_card">SD कार्ड</string>

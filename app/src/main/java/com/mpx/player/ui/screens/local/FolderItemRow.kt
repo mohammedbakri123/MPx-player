@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -66,21 +67,51 @@ fun FolderItemRow(
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Real MediaStore folder thumbnail with honest vector fallback and caching
+        // Real MediaStore folder thumbnail with honest vector fallback and caching.
+        // Red numeric count badge anchored at the icon's top-end, matching the
+        // badge slot confirmed in MX's decoded folder row (20dp high, value set
+        // in code from the real video count; hidden when the folder is empty).
+        // The badge overflows the corner slightly, so it sits in an unclipped
+        // outer box around the clipped thumbnail.
+        val badgeText = if (folder.videoCount > 99) "99+" else folder.videoCount.toString()
         Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp)),
+            modifier = Modifier.size(52.dp),
             contentAlignment = Alignment.Center,
         ) {
-            AsyncFolderThumbnail(
-                folder = folder,
-                modifier = Modifier.fillMaxSize(),
-                iconSize = 28.dp,
-                showThumbnails = showThumbnails,
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                AsyncFolderThumbnail(
+                    folder = folder,
+                    modifier = Modifier.fillMaxSize(),
+                    iconSize = 28.dp,
+                    showThumbnails = showThumbnails,
+                )
+            }
+            if (folder.videoCount > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 4.dp, y = (-4).dp)
+                        .height(20.dp)
+                        .background(MaterialTheme.colorScheme.error, RoundedCornerShape(10.dp))
+                        .padding(horizontal = 5.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = badgeText,
+                        color = MaterialTheme.colorScheme.onError,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.width(16.dp))
@@ -138,29 +169,64 @@ fun FolderItemRow(
                 }
             }
 
-            val metaParts = mutableListOf<String>()
-            if (showCount) {
-                metaParts.add(stringResource(R.string.folder_item_videos_count, folder.videoCount))
-            }
-            if (showSize && folder.totalSizeFormatted.isNotBlank()) {
-                metaParts.add(folder.totalSizeFormatted)
-            }
-            if (showDate) {
-                val dateStr = formatFolderDate(folder.lastModified)
-                if (dateStr.isNotBlank()) {
-                    metaParts.add(dateStr)
-                }
-            }
-            val subtitleText = metaParts.joinToString(" • ")
-            if (subtitleText.isNotBlank()) {
+            // Count as plain text + real folder size in a small rounded box
+            // beside it, matching the boxed info value confirmed in MX's
+            // decoded folder row. No subfolder counts: MediaFolder has no such
+            // field and a recursive scan is out of scope.
+            val folderDateStr = formatFolderDate(folder.lastModified)
+            val hasSubtitle = showCount ||
+                (showSize && folder.totalSizeFormatted.isNotBlank()) ||
+                (showDate && folderDateStr.isNotBlank())
+            if (hasSubtitle) {
                 Spacer(Modifier.height(3.dp))
-                Text(
-                    text = subtitleText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (showCount) {
+                        Text(
+                            text = stringResource(R.string.folder_item_videos_count, folder.videoCount),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                        if (showCount) {
+                            Spacer(Modifier.width(6.dp))
+                        }
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    RoundedCornerShape(4.dp),
+                                )
+                                .border(
+                                    0.5.dp,
+                                    MaterialTheme.colorScheme.outline,
+                                    RoundedCornerShape(4.dp),
+                                )
+                                .padding(horizontal = 5.dp, vertical = 1.dp),
+                        ) {
+                            Text(
+                                text = folder.totalSizeFormatted,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+                if (showDate && folderDateStr.isNotBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = folderDateStr,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
 
@@ -247,6 +313,29 @@ fun FolderItemGridCard(
                         )
                     }
                 }
+
+                // Same red count badge as the list row, at the thumbnail's
+                // bottom-end to avoid colliding with the SD/NEW badges.
+                if (folder.videoCount > 0) {
+                    val gridBadgeText = if (folder.videoCount > 99) "99+" else folder.videoCount.toString()
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(6.dp)
+                            .height(20.dp)
+                            .background(MaterialTheme.colorScheme.error, RoundedCornerShape(10.dp))
+                            .padding(horizontal = 5.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = gridBadgeText,
+                            color = MaterialTheme.colorScheme.onError,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            maxLines = 1,
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(8.dp))
@@ -259,29 +348,62 @@ fun FolderItemGridCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            val metaParts = mutableListOf<String>()
-            if (showCount) {
-                metaParts.add(stringResource(R.string.folder_item_videos_count, folder.videoCount))
-            }
-            if (showSize && folder.totalSizeFormatted.isNotBlank()) {
-                metaParts.add(folder.totalSizeFormatted)
-            }
-            if (showDate) {
-                val dateStr = formatFolderDate(folder.lastModified)
-                if (dateStr.isNotBlank()) {
-                    metaParts.add(dateStr)
-                }
-            }
-            val subtitleText = metaParts.joinToString(" • ")
-            if (subtitleText.isNotBlank()) {
+            // Count as plain text + real size in a small rounded box, as in
+            // the list row. No subfolder counts (no such field exists).
+            val gridDateStr = formatFolderDate(folder.lastModified)
+            val gridHasSubtitle = showCount ||
+                (showSize && folder.totalSizeFormatted.isNotBlank()) ||
+                (showDate && gridDateStr.isNotBlank())
+            if (gridHasSubtitle) {
                 Spacer(Modifier.height(2.dp))
-                Text(
-                    text = subtitleText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (showCount) {
+                        Text(
+                            text = stringResource(R.string.folder_item_videos_count, folder.videoCount),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                        if (showCount) {
+                            Spacer(Modifier.width(6.dp))
+                        }
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    RoundedCornerShape(4.dp),
+                                )
+                                .border(
+                                    0.5.dp,
+                                    MaterialTheme.colorScheme.outline,
+                                    RoundedCornerShape(4.dp),
+                                )
+                                .padding(horizontal = 5.dp, vertical = 1.dp),
+                        ) {
+                            Text(
+                                text = folder.totalSizeFormatted,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+                if (showDate && gridDateStr.isNotBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = gridDateStr,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
