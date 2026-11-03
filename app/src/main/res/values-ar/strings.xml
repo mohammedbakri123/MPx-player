@@ -32,7 +32,7 @@
 
     <!-- Language Settings & Dialog -->
     <string name="pref_app_language">لغة التطبيق</string>
-    <string name="pref_app_language_desc">التبديل بين الإنجليزية، العربية، والافتراضي للنظام</string>
+    <string name="pref_app_language_desc">التبديل بين الإنجليزية، العربية، الإسبانية، والافتراضي للنظام</string>
     <string name="lang_dialog_title">اختر لغة التطبيق</string>
     <string name="lang_system_default">الافتراضي للنظام</string>
     <string name="lang_system_default_desc">اتباع إعدادات لغة النظام</string>
@@ -40,13 +40,15 @@
     <string name="lang_english_desc">واجهة باللغة الإنجليزية (تخطيط LTR)</string>
     <string name="lang_arabic">العربية (Arabic)</string>
     <string name="lang_arabic_desc">واجهة باللغة العربية مع دعم كامل لتخطيط اليمين لليسار (RTL)</string>
+    <string name="lang_spanish">الإسبانية (Spanish)</string>
+    <string name="lang_spanish_desc">واجهة باللغة الإسبانية (تخطيط LTR)</string>
     <string name="lang_applied_msg">تم تحديث اللغة: %s</string>
     <string name="lang_settings_note">اختر لغة التطبيق المفضلة. يتم تطبيق اللغة واتجاه الواجهة فوراً دون الحاجة لإعادة تشغيل التطبيق.</string>
 
     <!-- Settings Screen Categories -->
     <string name="settings_title">الإعدادات</string>
     <string name="settings_category_language">لغة التطبيق</string>
-    <string name="settings_category_language_sub">الإنجليزية، العربية، الافتراضي للنظام</string>
+    <string name="settings_category_language_sub">الإنجليزية، العربية، الإسبانية، الافتراضي للنظام</string>
     <string name="settings_category_theme">مظهر التطبيق</string>
     <string name="settings_category_theme_sub">شاشات أوليد الليلية، حجر داكن، كحلي كلاسيكي، فاتح</string>
     <string name="settings_category_pip">التشغيل في نافذة منبثقة</string>

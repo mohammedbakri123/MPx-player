@@ -32,7 +32,7 @@
 
     <!-- Language Settings & Dialog -->
     <string name="pref_app_language">App Language</string>
-    <string name="pref_app_language_desc">Switch between English, Arabic, and System default</string>
+    <string name="pref_app_language_desc">Switch between English, Arabic, Spanish, and System default</string>
     <string name="lang_dialog_title">Select App Language</string>
     <string name="lang_system_default">System Default</string>
     <string name="lang_system_default_desc">Follow system language settings</string>
@@ -40,13 +40,15 @@
     <string name="lang_english_desc">English interface (LTR layout)</string>
     <string name="lang_arabic">العربية (Arabic)</string>
     <string name="lang_arabic_desc">Arabic interface with full Right-to-Left (RTL) layout</string>
+    <string name="lang_spanish">Español (Spanish)</string>
+    <string name="lang_spanish_desc">Spanish interface (LTR layout)</string>
     <string name="lang_applied_msg">Language updated: %s</string>
     <string name="lang_settings_note">Select your preferred app language. Language and layout direction apply immediately without restarting.</string>
 
     <!-- Settings Screen Categories -->
     <string name="settings_title">Settings</string>
     <string name="settings_category_language">App Language</string>
-    <string name="settings_category_language_sub">English, العربية, System Default</string>
+    <string name="settings_category_language_sub">English, العربية, Español, System Default</string>
     <string name="settings_category_theme">App Theme</string>
     <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
     <string name="settings_category_pip">Custom Pop-up Play</string>
