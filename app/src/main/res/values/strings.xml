@@ -65,6 +65,8 @@
     <string name="settings_category_subtitle_sub">Subtitle size and color style</string>
     <string name="settings_category_general">General</string>
     <string name="settings_category_general_sub">Reset all preferences to defaults</string>
+    <string name="settings_category_development">Development</string>
+    <string name="settings_category_development_sub">Diagnostics, database status, scan metrics &amp; playback engine</string>
     <string name="settings_category_about">About</string>
     <string name="settings_category_about_sub">Version 0.1.0-beta • Beta Status &amp; Feedback</string>
 
@@ -588,4 +590,51 @@
     <string name="local_menu_folder_view">Folder view</string>
     <string name="local_menu_file_view">File view</string>
     <string name="snackbar_added_to_favourites">Added to Favourites</string>
+
+    <!-- Development Category Diagnostics (Issue 60) -->
+    <string name="dev_section_app_build">App &amp; Build</string>
+    <string name="dev_section_database">Room SQLite Database</string>
+    <string name="dev_section_media_scan">MediaStore Library Scan</string>
+    <string name="dev_section_playback_engine">Decoder &amp; Playback Engine</string>
+    <string name="dev_label_package">Application ID</string>
+    <string name="dev_label_version">Version</string>
+    <string name="dev_label_build_code">Version Code</string>
+    <string name="dev_label_build_type">Build Type</string>
+    <string name="dev_label_target_sdk">Target SDK</string>
+    <string name="dev_label_min_sdk">Minimum SDK</string>
+    <string name="dev_label_device">Device</string>
+    <string name="dev_label_os_version">Android OS</string>
+    <string name="dev_label_db_name">Database Name</string>
+    <string name="dev_label_db_path">Database Path</string>
+    <string name="dev_label_db_size">Database Size</string>
+    <string name="dev_label_db_wal_size">WAL Journal Size</string>
+    <string name="dev_label_db_records">Database Records</string>
+    <string name="dev_label_db_not_created">Not created yet (0 B)</string>
+    <string name="dev_label_permissions">Media Permissions</string>
+    <string name="dev_label_scan_volumes">Storage Volumes</string>
+    <string name="dev_label_video_folders">Video Folders</string>
+    <string name="dev_label_scanned_videos">Scanned Videos</string>
+    <string name="dev_label_audio_tracks">Audio Tracks</string>
+    <string name="dev_label_audio_folders">Audio Folders</string>
+    <string name="dev_label_audio_albums">Audio Albums</string>
+    <string name="dev_label_audio_artists">Audio Artists</string>
+    <string name="dev_label_playlists">Playlists</string>
+    <string name="dev_label_engine_name">Playback Engine</string>
+    <string name="dev_label_engine_type">Engine Architecture</string>
+    <string name="dev_label_decoder_mode">Configured Decoder</string>
+    <string name="dev_label_active_decoder">Active Video Decoder</string>
+    <string name="dev_label_codec_type">Codec Implementation</string>
+    <string name="dev_label_player_state">Player State</string>
+    <string name="dev_label_active_media">Active Media</string>
+    <string name="dev_label_decoder_fallback">Decoder Fallback</string>
+    <string name="dev_btn_refresh_diagnostics">Refresh Diagnostics</string>
+    <string name="dev_val_refreshing">Refreshing…</string>
+    <string name="dev_val_none_idle">None (Player Idle)</string>
+    <string name="dev_val_direct_codec">Direct (no fallback required)</string>
+    <string name="dev_val_perm_video">Video: %1$s • Audio: %2$s</string>
+    <string name="dev_val_perm_granted">Granted</string>
+    <string name="dev_val_perm_denied">Denied</string>
+    <string name="dev_val_codec_hw">Hardware Accelerated (MediaCodec)</string>
+    <string name="dev_val_codec_sw">Software (CPU)</string>
+    <string name="dev_label_last_updated">Last updated: %1$s</string>
 </resources>
