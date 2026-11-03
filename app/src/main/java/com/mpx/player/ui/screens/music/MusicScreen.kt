@@ -20,8 +20,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.mpx.player.ui.components.AsyncAlbumThumbnail
+import com.mpx.player.ui.components.AsyncAudioTrackThumbnail
+import com.mpx.player.ui.components.FastScrollbar
+import com.mpx.player.ui.components.GridFastScrollbar
+import java.util.Locale
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -484,85 +491,100 @@ private fun TracksTabContent(
     tracks: List<AudioTrack>,
     onTrackClick: (Int) -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 80.dp),
-    ) {
-        itemsIndexed(tracks, key = { _, track -> track.id }) { index, track ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onTrackClick(index) }
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
+    val listState = rememberLazyListState()
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 80.dp),
+        ) {
+            itemsIndexed(
+                items = tracks,
+                key = { index, track -> track.id.ifBlank { "${track.path}_$index" } },
+                contentType = { _, _ -> "track_row" },
+            ) { index, track ->
+                Row(
                     modifier = Modifier
-                        .size(46.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MpxSurfaceElevated),
-                    contentAlignment = Alignment.Center,
+                        .fillMaxWidth()
+                        .clickable { onTrackClick(index) }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.MusicNote,
-                        contentDescription = null,
-                        tint = MpxPrimary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MpxSurfaceElevated),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AsyncAudioTrackThumbnail(
+                            track = track,
+                            modifier = Modifier.fillMaxSize(),
+                            iconSize = 24.dp,
+                        )
+                    }
 
-                Spacer(Modifier.width(14.dp))
+                    Spacer(Modifier.width(14.dp))
 
-                Column(
-                    modifier = Modifier.weight(1f),
-                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            text = track.title,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                            ),
+                            color = MpxTextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "${track.artist} • ${track.album}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MpxTextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+
                     Text(
-                        text = track.title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                        ),
-                        color = MpxTextPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = "${track.artist} • ${track.album}",
+                        text = track.durationFormatted,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        color = MpxTextMuted,
+                        fontSize = 12.sp,
                     )
-                }
 
-                Text(
-                    text = track.durationFormatted,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextMuted,
-                    fontSize = 12.sp,
+                    Spacer(Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = { onTrackClick(index) },
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = "Track options for ${track.title}",
+                            tint = MpxTextMuted,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(start = 78.dp),
+                    color = MpxBorder,
+                    thickness = 0.5.dp,
                 )
-
-                Spacer(Modifier.width(8.dp))
-
-                IconButton(
-                    onClick = { onTrackClick(index) },
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.MoreVert,
-                        contentDescription = "Track options",
-                        tint = MpxTextMuted,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
             }
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 76.dp),
-                color = MpxBorder,
-                thickness = 0.5.dp,
-            )
         }
+        FastScrollbar(
+            listState = listState,
+            itemCount = tracks.size,
+            getSectionText = { index ->
+                tracks.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+            },
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
     }
 }
 
@@ -571,123 +593,139 @@ private fun PlaylistsTabContent(
     playlists: List<Playlist>,
     onPlaylistClick: () -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 80.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onPlaylistClick() }
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MpxPrimary.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.PlaylistAdd,
-                        contentDescription = null,
-                        tint = MpxPrimary,
-                    )
-                }
-                Spacer(Modifier.width(14.dp))
-                Column {
-                    Text(
-                        text = "New Playlist",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            color = MpxPrimary,
-                        ),
-                    )
-                    Text(
-                        text = "Create custom playlist",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
-                    )
-                }
-            }
-            HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
-        }
-
-        if (playlists.isEmpty()) {
-            item {
-                Box(
+    val listState = rememberLazyListState()
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 80.dp),
+        ) {
+            item(key = "new_playlist_header", contentType = "new_playlist_action") {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 48.dp, bottom = 48.dp),
-                    contentAlignment = Alignment.Center,
+                        .clickable { onPlaylistClick() }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MpxPrimary.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Icon(
-                            imageVector = Icons.Filled.QueueMusic,
+                            imageVector = Icons.Filled.PlaylistAdd,
                             contentDescription = null,
-                            tint = MpxTextMuted,
-                            modifier = Modifier.size(48.dp),
+                            tint = MpxPrimary,
                         )
-                        Spacer(Modifier.height(12.dp))
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column {
                         Text(
-                            text = "No Playlists Found",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MpxTextPrimary,
+                            text = "New Playlist",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = MpxPrimary,
+                            ),
                         )
-                        Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Playlists will appear here once created or synced.",
+                            text = "Create custom playlist",
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxTextSecondary,
                         )
                     }
                 }
+                HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
             }
-        }
 
-        items(playlists, key = { it.id }) { playlist ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onPlaylistClick() }
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MpxSurfaceElevated),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.QueueMusic,
-                        contentDescription = null,
-                        tint = MpxPrimary,
-                    )
-                }
-                Spacer(Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = playlist.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MpxTextPrimary,
-                    )
-                    Text(
-                        text = "${playlist.itemCount} songs • ${playlist.subtitle}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
-                    )
+            if (playlists.isEmpty()) {
+                item(key = "empty_playlists", contentType = "empty_state") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 48.dp, bottom = 48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Filled.QueueMusic,
+                                contentDescription = null,
+                                tint = MpxTextMuted,
+                                modifier = Modifier.size(48.dp),
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                text = "No Playlists Found",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MpxTextPrimary,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "Playlists will appear here once created or synced.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MpxTextSecondary,
+                            )
+                        }
+                    }
                 }
             }
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 76.dp),
-                color = MpxBorder,
-                thickness = 0.5.dp,
-            )
+
+            items(
+                items = playlists,
+                key = { it.id.ifBlank { it.title } },
+                contentType = { "playlist_row" },
+            ) { playlist ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onPlaylistClick() }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MpxSurfaceElevated),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.QueueMusic,
+                            contentDescription = null,
+                            tint = MpxPrimary,
+                        )
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = playlist.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MpxTextPrimary,
+                        )
+                        Text(
+                            text = "${playlist.itemCount} songs • ${playlist.subtitle}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MpxTextSecondary,
+                        )
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(start = 76.dp),
+                    color = MpxBorder,
+                    thickness = 0.5.dp,
+                )
+            }
         }
+        FastScrollbar(
+            listState = listState,
+            itemCount = playlists.size + 1,
+            getSectionText = { index ->
+                if (index == 0) "+" else playlists.getOrNull(index - 1)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+            },
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
     }
 }
 
@@ -696,53 +734,68 @@ private fun AlbumsTabContent(
     albums: List<AudioAlbum>,
     onAlbumClick: () -> Unit,
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        items(albums, key = { it.id }) { album ->
-            Column(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MpxSurfaceVariant)
-                    .clickable { onAlbumClick() }
-                    .padding(10.dp),
-            ) {
-                Box(
+    val gridState = rememberLazyGridState()
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyVerticalGrid(
+            state = gridState,
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(
+                items = albums,
+                key = { it.id.ifBlank { it.title } },
+                contentType = { "album_card" },
+            ) { album ->
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(110.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MpxSurfaceElevated),
-                    contentAlignment = Alignment.Center,
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MpxSurfaceVariant)
+                        .clickable { onAlbumClick() }
+                        .padding(10.dp),
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.MusicNote,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MpxPrimary.copy(alpha = 0.7f),
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(110.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MpxSurfaceElevated),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AsyncAlbumThumbnail(
+                            album = album,
+                            modifier = Modifier.fillMaxSize(),
+                            iconSize = 48.dp,
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = album.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MpxTextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = "${album.artist} • ${album.trackCount} tracks",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MpxTextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = album.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MpxTextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = "${album.artist} • ${album.trackCount} tracks",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
             }
         }
+        GridFastScrollbar(
+            gridState = gridState,
+            itemCount = albums.size,
+            getSectionText = { index ->
+                albums.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+            },
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
     }
 }
 
@@ -751,52 +804,68 @@ private fun ArtistsTabContent(
     artists: List<AudioArtist>,
     onArtistClick: () -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 80.dp),
-    ) {
-        items(artists, key = { it.id }) { artist ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onArtistClick() }
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
+    val listState = rememberLazyListState()
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 80.dp),
+        ) {
+            items(
+                items = artists,
+                key = { it.id.ifBlank { it.name } },
+                contentType = { "artist_row" },
+            ) { artist ->
+                Row(
                     modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MpxSurfaceElevated),
-                    contentAlignment = Alignment.Center,
+                        .fillMaxWidth()
+                        .clickable { onArtistClick() }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = null,
-                        tint = MpxPrimary,
-                        modifier = Modifier.size(28.dp),
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(MpxSurfaceElevated),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = null,
+                            tint = MpxPrimary,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = artist.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MpxTextPrimary,
+                        )
+                        Text(
+                            text = "${artist.trackCount} tracks • ${artist.albumCount} album",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MpxTextSecondary,
+                        )
+                    }
                 }
-                Spacer(Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = artist.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MpxTextPrimary,
-                    )
-                    Text(
-                        text = "${artist.trackCount} tracks • ${artist.albumCount} album",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
-                    )
-                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(start = 78.dp),
+                    color = MpxBorder,
+                    thickness = 0.5.dp,
+                )
             }
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 78.dp),
-                color = MpxBorder,
-                thickness = 0.5.dp,
-            )
         }
+        FastScrollbar(
+            listState = listState,
+            itemCount = artists.size,
+            getSectionText = { index ->
+                artists.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+            },
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
     }
 }
 
@@ -805,52 +874,68 @@ private fun FoldersTabContent(
     folders: List<AudioFolder>,
     onFolderClick: () -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 80.dp),
-    ) {
-        items(folders, key = { it.id }) { folder ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onFolderClick() }
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
+    val listState = rememberLazyListState()
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 80.dp),
+        ) {
+            items(
+                items = folders,
+                key = { it.id.ifBlank { it.path } },
+                contentType = { "audio_folder_row" },
+            ) { folder ->
+                Row(
                     modifier = Modifier
-                        .size(46.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MpxSurfaceElevated),
-                    contentAlignment = Alignment.Center,
+                        .fillMaxWidth()
+                        .clickable { onFolderClick() }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Folder,
-                        contentDescription = null,
-                        tint = MpxPrimary,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MpxSurfaceElevated),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Folder,
+                            contentDescription = null,
+                            tint = MpxPrimary,
+                        )
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = folder.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MpxTextPrimary,
+                        )
+                        Text(
+                            text = "${folder.trackCount} tracks • ${folder.path}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MpxTextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
-                Spacer(Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = folder.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MpxTextPrimary,
-                    )
-                    Text(
-                        text = "${folder.trackCount} tracks • ${folder.path}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(start = 76.dp),
+                    color = MpxBorder,
+                    thickness = 0.5.dp,
+                )
             }
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 76.dp),
-                color = MpxBorder,
-                thickness = 0.5.dp,
-            )
         }
+        FastScrollbar(
+            listState = listState,
+            itemCount = folders.size,
+            getSectionText = { index ->
+                folders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+            },
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
     }
 }
