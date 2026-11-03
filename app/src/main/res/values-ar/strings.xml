@@ -368,6 +368,7 @@
     <string name="badge_new">جديد</string>
     <string name="folder_item_videos_count">%1$d مقطع فيديو</string>
     <string name="folder_item_videos_and_size">%1$d مقطع فيديو • %2$s</string>
+    <string name="local_status_strip">%1$d مجلد • %2$d مقطع فيديو</string>
     <string name="folder_item_options_cd">خيارات المجلد لـ %1$s</string>
 
     <!-- View & Sort Dialog -->

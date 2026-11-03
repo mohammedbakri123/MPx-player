@@ -87,7 +87,7 @@ fun AsyncThumbnail(
                 Icon(
                     imageVector = placeholderIcon,
                     contentDescription = contentDescription,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(iconSize),
                 )
             }

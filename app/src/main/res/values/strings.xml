@@ -368,6 +368,7 @@
     <string name="badge_new">NEW</string>
     <string name="folder_item_videos_count">%1$d videos</string>
     <string name="folder_item_videos_and_size">%1$d videos • %2$s</string>
+    <string name="local_status_strip">%1$d folders • %2$d videos</string>
     <string name="folder_item_options_cd">Folder options for %1$s</string>
 
     <!-- View & Sort Dialog -->

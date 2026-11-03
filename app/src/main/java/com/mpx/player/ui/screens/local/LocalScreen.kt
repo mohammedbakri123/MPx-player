@@ -768,6 +768,30 @@ fun LocalScreen(
                 )
             }
         },
+        bottomBar = {
+            if (currentFolder == null) {
+                Column {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.local_status_strip,
+                                filteredFolders.size,
+                                filteredFolders.sumOf { it.videoCount },
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
