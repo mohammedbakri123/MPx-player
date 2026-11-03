@@ -17,6 +17,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -147,8 +149,11 @@ fun MpxApp() {
                 )
             }
             composable(Screen.Settings.route) {
+                val context = LocalContext.current
+                val settingsRepository = remember { SharedPrefsAppSettingsRepository(context) }
                 SettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
+                    settingsRepository = settingsRepository,
                 )
             }
             composable(Screen.Player.route) {
