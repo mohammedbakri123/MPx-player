@@ -44,13 +44,6 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.ui.components.AsyncVideoThumbnail
-import com.mpx.player.ui.theme.MpxAccentAmber
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxSurfaceVariant
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
 
 @Composable
 fun VideoItemRow(
@@ -77,7 +70,7 @@ fun VideoItemRow(
             modifier = Modifier
                 .size(width = 68.dp, height = 48.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(MpxSurfaceElevated),
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) {
             AsyncVideoThumbnail(
@@ -118,7 +111,7 @@ fun VideoItemRow(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                     ),
-                    color = MpxTextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -128,12 +121,12 @@ fun VideoItemRow(
                     Spacer(Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
-                            .background(MpxPrimary.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.badge_sd_card),
-                            color = MpxPrimary,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
                         )
@@ -144,7 +137,7 @@ fun VideoItemRow(
                     Spacer(Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
-                            .background(MpxAccentAmber, RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(3.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
@@ -163,14 +156,14 @@ fun VideoItemRow(
                 Icon(
                     imageVector = Icons.Filled.Folder,
                     contentDescription = null,
-                    tint = MpxTextSecondary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(13.dp),
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
                     text = video.folderName.ifBlank { "Videos" },
                     style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -178,7 +171,7 @@ fun VideoItemRow(
                     Text(
                         text = " • ${video.formattedSize}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                     )
                 }
@@ -193,7 +186,7 @@ fun VideoItemRow(
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
                     contentDescription = stringResource(R.string.video_item_options_cd, video.title),
-                    tint = MpxTextMuted,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -251,7 +244,7 @@ fun VideoItemGridCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(
             modifier = Modifier.padding(10.dp),
@@ -261,7 +254,7 @@ fun VideoItemGridCard(
                     .fillMaxWidth()
                     .height(96.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MpxSurfaceElevated),
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                 contentAlignment = Alignment.Center,
             ) {
                 AsyncVideoThumbnail(
@@ -292,7 +285,7 @@ fun VideoItemGridCard(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(6.dp)
-                            .background(MpxPrimary.copy(alpha = 0.85f), RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.85f), RoundedCornerShape(3.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
@@ -309,7 +302,7 @@ fun VideoItemGridCard(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(6.dp)
-                            .background(MpxAccentAmber, RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(3.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
@@ -327,7 +320,7 @@ fun VideoItemGridCard(
             Text(
                 text = video.title,
                 style = MaterialTheme.typography.titleSmall,
-                color = MpxTextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -338,14 +331,14 @@ fun VideoItemGridCard(
                 Icon(
                     imageVector = Icons.Filled.Folder,
                     contentDescription = null,
-                    tint = MpxTextSecondary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(11.dp),
                 )
                 Spacer(Modifier.width(3.dp))
                 Text(
                     text = video.folderName.ifBlank { "Videos" },
                     style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -355,7 +348,7 @@ fun VideoItemGridCard(
                     Text(
                         text = " • ${video.formattedSize}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
                         maxLines = 1,
                     )
@@ -365,7 +358,7 @@ fun VideoItemGridCard(
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
                             contentDescription = null,
-                            tint = MpxTextSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp),
                         )
                     }
@@ -374,7 +367,7 @@ fun VideoItemGridCard(
                     Icon(
                         imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                         contentDescription = null,
-                        tint = if (isFavourite) MpxPrimary else MpxTextSecondary,
+                        tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(14.dp),
                     )
                 }

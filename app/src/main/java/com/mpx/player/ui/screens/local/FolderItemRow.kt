@@ -37,11 +37,6 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.ui.components.AsyncFolderThumbnail
-import com.mpx.player.ui.theme.MpxAccentAmber
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
 
 @Composable
 fun FolderItemRow(
@@ -89,7 +84,7 @@ fun FolderItemRow(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                     ),
-                    color = MpxTextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -99,12 +94,12 @@ fun FolderItemRow(
                     Spacer(Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
-                            .background(MpxPrimary.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.badge_sd_card),
-                            color = MpxPrimary,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
                         )
@@ -115,7 +110,7 @@ fun FolderItemRow(
                     Spacer(Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
-                            .background(MpxAccentAmber, RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(3.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
@@ -133,7 +128,7 @@ fun FolderItemRow(
             Text(
                 text = stringResource(R.string.folder_item_videos_and_size, folder.videoCount, folder.totalSizeFormatted),
                 style = MaterialTheme.typography.bodySmall,
-                color = MpxTextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -146,7 +141,7 @@ fun FolderItemRow(
             Icon(
                 imageVector = Icons.Filled.MoreVert,
                 contentDescription = stringResource(R.string.folder_item_options_cd, folder.name),
-                tint = MpxTextMuted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -189,7 +184,7 @@ fun FolderItemGridCard(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(6.dp)
-                            .background(MpxPrimary.copy(alpha = 0.85f), RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.85f), RoundedCornerShape(3.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
@@ -206,7 +201,7 @@ fun FolderItemGridCard(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(6.dp)
-                            .background(MpxAccentAmber, RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(3.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
@@ -224,7 +219,7 @@ fun FolderItemGridCard(
             Text(
                 text = folder.name,
                 style = MaterialTheme.typography.titleSmall,
-                color = MpxTextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -234,7 +229,7 @@ fun FolderItemGridCard(
             Text(
                 text = stringResource(R.string.folder_item_videos_count, folder.videoCount),
                 style = MaterialTheme.typography.bodySmall,
-                color = MpxTextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

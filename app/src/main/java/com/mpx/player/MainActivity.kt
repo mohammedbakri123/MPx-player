@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import com.mpx.player.ui.theme.MpxTheme
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -58,8 +59,6 @@ import com.mpx.player.ui.screens.player.PlayerScreen
 import com.mpx.player.ui.screens.settings.SettingsScreen
 import com.mpx.player.ui.screens.settings.OverlaySettingsScreen
 import com.mpx.player.ui.screens.transfer.TransferScreen
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTheme
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import java.util.Locale
@@ -314,11 +313,11 @@ fun MpxApp(
                             },
                             label = { Text(stringResource(tab.labelRes)) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MpxPrimary,
-                                selectedTextColor = MpxPrimary,
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
                                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                indicatorColor = MpxPrimary.copy(alpha = 0.15f),
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                             ),
                         )
                     }

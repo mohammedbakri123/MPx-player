@@ -59,11 +59,6 @@ import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.model.PlaylistItem
-import com.mpx.player.ui.theme.MpxBorder
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -101,12 +96,12 @@ fun FavouritesDialog(
                     Text(
                         text = stringResource(R.string.favourites_dialog_title, favourites.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 if (favourites.isNotEmpty()) {
                     TextButton(onClick = onClearAll) {
-                        Text(stringResource(R.string.action_clear_all), color = MpxTextMuted, fontSize = 12.sp)
+                        Text(stringResource(R.string.action_clear_all), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), fontSize = 12.sp)
                     }
                 }
             }
@@ -123,20 +118,20 @@ fun FavouritesDialog(
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            tint = MpxTextMuted.copy(alpha = 0.5f),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f).copy(alpha = 0.5f),
                             modifier = Modifier.size(48.dp),
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
                             text = stringResource(R.string.favourites_empty_title),
                             style = MaterialTheme.typography.titleMedium,
-                            color = MpxTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = stringResource(R.string.favourites_empty_desc),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
                     }
@@ -166,7 +161,7 @@ fun FavouritesDialog(
                                 Icon(
                                     imageVector = if (item.isVideo) Icons.Filled.Movie else Icons.Filled.MusicNote,
                                     contentDescription = null,
-                                    tint = MpxPrimary,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp),
                                 )
                             }
@@ -175,7 +170,7 @@ fun FavouritesDialog(
                                 Text(
                                     text = item.title,
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MpxTextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -183,7 +178,7 @@ fun FavouritesDialog(
                                     Text(
                                         text = item.subtitle,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MpxTextSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -196,19 +191,19 @@ fun FavouritesDialog(
                                 Icon(
                                     imageVector = Icons.Filled.Delete,
                                     contentDescription = stringResource(R.string.favourites_cd_remove),
-                                    tint = MpxTextMuted,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     modifier = Modifier.size(18.dp),
                                 )
                             }
                         }
-                        HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_close), color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
             }
         },
     )
@@ -241,19 +236,19 @@ fun PlaybackHistoryDialog(
                     Icon(
                         imageVector = Icons.Filled.History,
                         contentDescription = null,
-                        tint = MpxPrimary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.history_dialog_title, history.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 if (history.isNotEmpty()) {
                     TextButton(onClick = onClearHistory) {
-                        Text(stringResource(R.string.action_clear_all), color = MpxTextMuted, fontSize = 12.sp)
+                        Text(stringResource(R.string.action_clear_all), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), fontSize = 12.sp)
                     }
                 }
             }
@@ -270,20 +265,20 @@ fun PlaybackHistoryDialog(
                         Icon(
                             imageVector = Icons.Filled.History,
                             contentDescription = null,
-                            tint = MpxTextMuted.copy(alpha = 0.5f),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f).copy(alpha = 0.5f),
                             modifier = Modifier.size(48.dp),
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
                             text = stringResource(R.string.history_empty_title),
                             style = MaterialTheme.typography.titleMedium,
-                            color = MpxTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = stringResource(R.string.history_empty_desc),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
                     }
@@ -317,7 +312,7 @@ fun PlaybackHistoryDialog(
                                     Icon(
                                         imageVector = if (item.isVideo) Icons.Filled.Movie else Icons.Filled.MusicNote,
                                         contentDescription = null,
-                                        tint = MpxPrimary,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp),
                                     )
                                 }
@@ -326,7 +321,7 @@ fun PlaybackHistoryDialog(
                                     Text(
                                         text = item.title,
                                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MpxTextPrimary,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -334,7 +329,7 @@ fun PlaybackHistoryDialog(
                                         Text(
                                             text = dateFormat.format(Date(item.lastPlayedAt)),
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = MpxTextMuted,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                             fontSize = 11.sp,
                                         )
                                         if (item.playbackPositionMs > 1_500L) {
@@ -342,7 +337,7 @@ fun PlaybackHistoryDialog(
                                             Text(
                                                 text = stringResource(R.string.history_resume_at, formatTime(item.playbackPositionMs)),
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = MpxPrimary,
+                                                color = MaterialTheme.colorScheme.primary,
                                                 fontSize = 11.sp,
                                             )
                                         }
@@ -351,7 +346,7 @@ fun PlaybackHistoryDialog(
                                 Icon(
                                     imageVector = Icons.Filled.PlayArrow,
                                     contentDescription = stringResource(R.string.history_cd_resume),
-                                    tint = MpxPrimary,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(24.dp),
                                 )
                             }
@@ -363,19 +358,19 @@ fun PlaybackHistoryDialog(
                                         .fillMaxWidth()
                                         .height(3.dp)
                                         .clip(RoundedCornerShape(1.5.dp)),
-                                    color = MpxPrimary,
+                                    color = MaterialTheme.colorScheme.primary,
                                     trackColor = MaterialTheme.colorScheme.outline,
                                 )
                             }
                         }
-                        HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_close), color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
             }
         },
     )
@@ -401,7 +396,7 @@ fun CreatePlaylistDialog(
             Text(
                 text = stringResource(R.string.playlist_create_dialog_title),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MpxTextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         },
         text = {
@@ -409,7 +404,7 @@ fun CreatePlaylistDialog(
                 Text(
                     text = stringResource(R.string.playlist_create_dialog_desc),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
@@ -418,10 +413,10 @@ fun CreatePlaylistDialog(
                     placeholder = { Text(stringResource(R.string.playlist_name_placeholder)) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MpxPrimary,
-                        unfocusedBorderColor = MpxBorder,
-                        focusedTextColor = MpxTextPrimary,
-                        unfocusedTextColor = MpxTextPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     ),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -435,14 +430,14 @@ fun CreatePlaylistDialog(
                     }
                 },
                 enabled = name.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = MpxPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
                 Text(stringResource(R.string.action_create))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel), color = MpxTextSecondary)
+                Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
     )
@@ -468,7 +463,7 @@ fun AddToPlaylistDialog(
             Text(
                 text = stringResource(R.string.playlist_add_dialog_title),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MpxTextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         },
         text = {
@@ -476,7 +471,7 @@ fun AddToPlaylistDialog(
                 Text(
                     text = stringResource(R.string.playlist_add_to_header, mediaTitle),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -493,18 +488,18 @@ fun AddToPlaylistDialog(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                         contentDescription = null,
-                        tint = MpxPrimary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp),
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
                         text = stringResource(R.string.playlist_create_new_action),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = MpxPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
 
-                HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
 
                 if (playlists.isEmpty()) {
                     Box(
@@ -516,7 +511,7 @@ fun AddToPlaylistDialog(
                         Text(
                             text = stringResource(R.string.playlist_no_custom_playlists),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         )
                     }
                 } else {
@@ -537,7 +532,7 @@ fun AddToPlaylistDialog(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                     contentDescription = null,
-                                    tint = MpxTextSecondary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(22.dp),
                                 )
                                 Spacer(Modifier.width(12.dp))
@@ -545,12 +540,12 @@ fun AddToPlaylistDialog(
                                     Text(
                                         text = pl.name,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MpxTextPrimary,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                     Text(
                                         text = stringResource(R.string.music_songs_count, pl.itemCount),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MpxTextMuted,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                         fontSize = 11.sp,
                                     )
                                 }
@@ -562,7 +557,7 @@ fun AddToPlaylistDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel), color = MpxTextSecondary)
+                Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
     )
@@ -596,21 +591,21 @@ fun PlaylistDetailsDialog(
                     Text(
                         text = playlist.name,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = stringResource(R.string.playlist_items_subtitle, items.size),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 IconButton(onClick = onDeletePlaylist) {
                     Icon(
                         imageVector = Icons.Filled.Delete,
                         contentDescription = stringResource(R.string.playlist_cd_delete),
-                        tint = MpxTextMuted,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     )
                 }
             }
@@ -620,7 +615,7 @@ fun PlaylistDetailsDialog(
                 if (items.isNotEmpty()) {
                     Button(
                         onClick = onPlayAll,
-                        colors = ButtonDefaults.buttonColors(containerColor = MpxPrimary),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 12.dp),
@@ -642,19 +637,19 @@ fun PlaylistDetailsDialog(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                 contentDescription = null,
-                                tint = MpxTextMuted.copy(alpha = 0.5f),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f).copy(alpha = 0.5f),
                                 modifier = Modifier.size(40.dp),
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 text = stringResource(R.string.playlist_empty_title),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MpxTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
                                 text = stringResource(R.string.playlist_empty_desc),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MpxTextMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             )
                         }
                     }
@@ -683,7 +678,7 @@ fun PlaylistDetailsDialog(
                                     Icon(
                                         imageVector = if (item.isVideo) Icons.Filled.Movie else Icons.Filled.MusicNote,
                                         contentDescription = null,
-                                        tint = MpxPrimary,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(18.dp),
                                     )
                                 }
@@ -692,7 +687,7 @@ fun PlaylistDetailsDialog(
                                     Text(
                                         text = item.title,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MpxTextPrimary,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -700,7 +695,7 @@ fun PlaylistDetailsDialog(
                                         Text(
                                             text = item.subtitle,
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = MpxTextMuted,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
@@ -713,12 +708,12 @@ fun PlaylistDetailsDialog(
                                     Icon(
                                         imageVector = Icons.Filled.Delete,
                                         contentDescription = stringResource(R.string.playlist_cd_remove_item),
-                                        tint = MpxTextMuted,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                         modifier = Modifier.size(16.dp),
                                     )
                                 }
                             }
-                            HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                         }
                     }
                 }
@@ -726,7 +721,7 @@ fun PlaylistDetailsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_close), color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
             }
         },
     )
@@ -769,7 +764,7 @@ fun PlaylistsDialog(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                         contentDescription = null,
-                        tint = MpxPrimary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp),
                     )
                     Spacer(Modifier.width(8.dp))
@@ -783,7 +778,7 @@ fun PlaylistsDialog(
                     onDismiss()
                     onCreateNewPlaylist()
                 }) {
-                    Text(stringResource(R.string.playlists_btn_new), color = MpxPrimary, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.playlists_btn_new), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
             }
         },
@@ -798,7 +793,7 @@ fun PlaylistsDialog(
                     Text(
                         text = stringResource(R.string.playlists_empty_msg),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MpxTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
@@ -828,7 +823,7 @@ fun PlaylistsDialog(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                     contentDescription = null,
-                                    tint = MpxPrimary,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp),
                                 )
                             }
@@ -850,7 +845,7 @@ fun PlaylistsDialog(
                                 Text(
                                     text = stringResource(R.string.playlist_items_type_format, pl.itemCount, mediaType),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MpxTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -861,7 +856,7 @@ fun PlaylistsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_close), color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
             }
         },
     )

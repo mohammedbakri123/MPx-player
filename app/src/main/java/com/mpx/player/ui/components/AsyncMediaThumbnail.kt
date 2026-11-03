@@ -31,7 +31,6 @@ import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.VideoFile
-import com.mpx.player.ui.theme.MpxPrimary
 import androidx.compose.material3.MaterialTheme
 import com.mpx.player.util.ThumbnailLoader
 import kotlinx.coroutines.Dispatchers
@@ -88,7 +87,7 @@ fun AsyncThumbnail(
                 Icon(
                     imageVector = placeholderIcon,
                     contentDescription = contentDescription,
-                    tint = MpxPrimary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(iconSize),
                 )
             }

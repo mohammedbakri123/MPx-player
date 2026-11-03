@@ -44,8 +44,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextPrimary
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -61,7 +59,7 @@ fun FastScrollbar(
     itemCount: Int,
     modifier: Modifier = Modifier,
     getSectionText: ((Int) -> String)? = null,
-    thumbColor: Color = MpxPrimary,
+    thumbColor: Color = MaterialTheme.colorScheme.primary,
     trackColor: Color = Color.Transparent,
 ) {
     if (itemCount <= 3) return
@@ -153,7 +151,7 @@ fun FastScrollbar(
         ) {
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = MpxPrimary,
+                color = MaterialTheme.colorScheme.primary,
                 shadowElevation = 6.dp,
             ) {
                 Box(
@@ -168,7 +166,7 @@ fun FastScrollbar(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -240,7 +238,7 @@ fun GridFastScrollbar(
     itemCount: Int,
     modifier: Modifier = Modifier,
     getSectionText: ((Int) -> String)? = null,
-    thumbColor: Color = MpxPrimary,
+    thumbColor: Color = MaterialTheme.colorScheme.primary,
     trackColor: Color = Color.Transparent,
 ) {
     if (itemCount <= 4) return
@@ -329,7 +327,7 @@ fun GridFastScrollbar(
         ) {
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = MpxPrimary,
+                color = MaterialTheme.colorScheme.primary,
                 shadowElevation = 6.dp,
             ) {
                 Box(
@@ -344,7 +342,7 @@ fun GridFastScrollbar(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }

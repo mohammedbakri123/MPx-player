@@ -56,9 +56,6 @@ import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlaybackManager
-import com.mpx.player.ui.theme.MpxAccentAmber
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.util.PipUtils
 
 /**
@@ -128,15 +125,15 @@ fun OverlaySettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MpxPrimary.copy(alpha = 0.12f))
-                            .border(1.dp, MpxPrimary.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
                             .padding(14.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.CheckCircle,
                                 contentDescription = null,
-                                tint = MpxPrimary,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp),
                             )
                             Spacer(Modifier.width(12.dp))
@@ -164,15 +161,15 @@ fun OverlaySettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MpxAccentAmber.copy(alpha = 0.12f))
-                            .border(1.dp, MpxAccentAmber.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f))
+                            .border(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
                             .padding(14.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.Warning,
                                 contentDescription = null,
-                                tint = MpxAccentAmber,
+                                tint = MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.size(24.dp),
                             )
                             Spacer(Modifier.width(12.dp))
@@ -218,12 +215,12 @@ fun OverlaySettingsScreen(
                         imageVector = Icons.Filled.PictureInPictureAlt,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
-                        tint = MpxPrimary,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.pip_test_button),
-                        color = MpxPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
@@ -443,7 +440,7 @@ fun OverlaySettingsScreen(
                             Icon(
                                 imageVector = Icons.Filled.Info,
                                 contentDescription = null,
-                                tint = MpxPrimary,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp),
                             )
                             Spacer(Modifier.width(8.dp))
@@ -502,7 +499,7 @@ private fun SectionHeader(title: String) {
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
         ),
-        color = MpxPrimary,
+        color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(bottom = 6.dp),
     )
 }
@@ -540,8 +537,8 @@ private fun SettingsToggleRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MpxPrimary,
-                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
             ),
         )
     }
@@ -564,7 +561,7 @@ private fun SettingsRadioRow(
         RadioButton(
             selected = selected,
             onClick = onClick,
-            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
         )
         Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -597,7 +594,7 @@ private fun PlatformLimitItem(
         Text(
             text = "$number.",
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-            color = MpxPrimary,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.width(18.dp),
         )
         Column(modifier = Modifier.weight(1f)) {

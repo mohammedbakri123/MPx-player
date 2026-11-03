@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mpx.player.ui.theme.MpxPrimary
 
 @Composable
 fun HonestStatusBanner(
@@ -44,7 +43,7 @@ fun HonestStatusBanner(
                 imageVector = Icons.Outlined.Info,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = MpxPrimary,
+                tint = MaterialTheme.colorScheme.primary,
             )
             Spacer(Modifier.width(8.dp))
             Text(

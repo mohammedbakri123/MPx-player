@@ -110,12 +110,6 @@ import com.mpx.player.ui.components.persistence.FavouritesDialog
 import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
 import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
 import com.mpx.player.ui.components.persistence.PlaylistsDialog
-import com.mpx.player.ui.theme.MpxAccentAmber
-import com.mpx.player.ui.theme.MpxAccentCyan
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import java.util.Locale
@@ -346,7 +340,7 @@ fun MeScreen(
                             modifier = Modifier
                                 .size(56.dp)
                                 .clip(CircleShape)
-                                .background(MpxPrimary),
+                                .background(MaterialTheme.colorScheme.primary),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
@@ -914,12 +908,12 @@ fun MeScreen(
             containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
             modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
-            icon = { Icon(Icons.Filled.Equalizer, null, tint = MpxPrimary) },
+            icon = { Icon(Icons.Filled.Equalizer, null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text(stringResource(R.string.tool_equalizer_title), color = MaterialTheme.colorScheme.onSurface) },
             text = { Text(equalizerMessage ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(onClick = { equalizerMessage = null }) {
-                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
+                    Text(stringResource(R.string.action_ok), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -933,7 +927,7 @@ fun MeScreen(
             containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
             modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
-            icon = { Icon(tool.icon, null, tint = MpxAccentAmber) },
+            icon = { Icon(tool.icon, null, tint = MaterialTheme.colorScheme.tertiary) },
             title = {
                 Text(
                     text = stringResource(R.string.issue32_dialog_header, tool.title),
@@ -964,7 +958,7 @@ fun MeScreen(
                     Spacer(Modifier.height(12.dp))
                     Text(
                         text = stringResource(R.string.issue32_status_honest),
-                        color = MpxAccentAmber,
+                        color = MaterialTheme.colorScheme.tertiary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
@@ -972,7 +966,7 @@ fun MeScreen(
             },
             confirmButton = {
                 TextButton(onClick = { issue32Tool = null }) {
-                    Text(stringResource(R.string.action_understood), color = MpxPrimary)
+                    Text(stringResource(R.string.action_understood), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -1005,7 +999,7 @@ private fun ToolGridItem(
             Icon(
                 imageVector = tool.icon,
                 contentDescription = tool.title,
-                tint = if (tool.isAvailable) MpxPrimary else MpxAccentAmber,
+                tint = if (tool.isAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.size(24.dp),
             )
             if (tool.badge != null) {
@@ -1013,7 +1007,7 @@ private fun ToolGridItem(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .background(
-                            if (tool.isAvailable) MpxPrimary else MpxAccentAmber,
+                            if (tool.isAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                             RoundedCornerShape(3.dp),
                         )
                         .padding(horizontal = 3.dp, vertical = 1.dp),
@@ -1067,7 +1061,7 @@ private fun PreferenceRow(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MpxPrimary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -1091,7 +1085,7 @@ private fun PreferenceRow(
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = MpxTextMuted,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             modifier = Modifier.size(20.dp),
         )
     }
@@ -1129,7 +1123,7 @@ private fun NetworkStreamDialog(
         modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Cloud, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Filled.Cloud, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.dialog_network_title),
@@ -1149,16 +1143,16 @@ private fun NetworkStreamDialog(
                 OutlinedTextField(
                     value = urlText,
                     onValueChange = { urlText = it },
-                    placeholder = { Text("https://example.com/video.mp4", color = MpxTextMuted, fontSize = 13.sp) },
+                    placeholder = { Text("https://example.com/video.mp4", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), fontSize = 13.sp) },
                     trailingIcon = {
                         IconButton(onClick = { pasteClipboard() }) {
-                            Icon(Icons.Filled.ContentPaste, stringResource(R.string.action_paste), tint = MpxPrimary)
+                            Icon(Icons.Filled.ContentPaste, stringResource(R.string.action_paste), tint = MaterialTheme.colorScheme.primary)
                         }
                     },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MpxPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                     ),
                 )
@@ -1171,14 +1165,14 @@ private fun NetworkStreamDialog(
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                     ) {
-                        Text("Big Buck Bunny", fontSize = 11.sp, maxLines = 1, color = MpxPrimary)
+                        Text("Big Buck Bunny", fontSize = 11.sp, maxLines = 1, color = MaterialTheme.colorScheme.primary)
                     }
                     OutlinedButton(
                         onClick = { urlText = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" },
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                     ) {
-                        Text("Elephants Dream", fontSize = 11.sp, maxLines = 1, color = MpxPrimary)
+                        Text("Elephants Dream", fontSize = 11.sp, maxLines = 1, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -1187,7 +1181,7 @@ private fun NetworkStreamDialog(
             Button(
                 onClick = { if (urlText.isNotBlank()) onPlayStream(urlText.trim()) },
                 enabled = urlText.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = MpxPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
                 Text(stringResource(R.string.dialog_network_play))
             }
@@ -1251,7 +1245,7 @@ private fun AppThemeDialog(
         modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.ColorLens, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Filled.ColorLens, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.dialog_theme_title),
@@ -1275,7 +1269,7 @@ private fun AppThemeDialog(
                         RadioButton(
                             selected = isSelected,
                             onClick = { onSelectTheme(option.key) },
-                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -1309,7 +1303,7 @@ private fun AppThemeDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_close), color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
             }
         },
     )
@@ -1349,7 +1343,7 @@ private fun AppLanguageDialog(
         modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Language, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Filled.Language, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.lang_dialog_title),
@@ -1373,7 +1367,7 @@ private fun AppLanguageDialog(
                         RadioButton(
                             selected = isSelected,
                             onClick = { onSelectLanguage(langKey) },
-                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -1402,7 +1396,7 @@ private fun AppLanguageDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_close), color = MpxPrimary)
+                Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
             }
         },
     )
@@ -1440,7 +1434,7 @@ private fun CustomPopupPlayDialog(
         modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.PictureInPictureAlt, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Filled.PictureInPictureAlt, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.dialog_popup_play_title),
@@ -1457,11 +1451,11 @@ private fun CustomPopupPlayDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MpxPrimary.copy(alpha = 0.15f))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
                             .padding(10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.CheckCircle, null, tint = MpxPrimary, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.CheckCircle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.pip_banner_supported),
@@ -1474,11 +1468,11 @@ private fun CustomPopupPlayDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MpxAccentAmber.copy(alpha = 0.15f))
+                            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f))
                             .padding(10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Warning, null, tint = MpxAccentAmber, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.Warning, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.pip_banner_unsupported),
@@ -1510,7 +1504,7 @@ private fun CustomPopupPlayDialog(
                     Switch(
                         checked = currentEnabled,
                         onCheckedChange = { currentEnabled = it },
-                        colors = SwitchDefaults.colors(checkedThumbColor = MpxPrimary, checkedTrackColor = MpxPrimary.copy(alpha = 0.4f)),
+                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
                     )
                 }
 
@@ -1532,7 +1526,7 @@ private fun CustomPopupPlayDialog(
                     RadioButton(
                         selected = currentControls == "PrevNext",
                         onClick = { currentControls = "PrevNext" },
-                        colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.pip_controls_prev_next), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
@@ -1548,7 +1542,7 @@ private fun CustomPopupPlayDialog(
                     RadioButton(
                         selected = currentControls == "Seek10",
                         onClick = { currentControls = "Seek10" },
-                        colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.pip_controls_seek10), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
@@ -1560,16 +1554,16 @@ private fun CustomPopupPlayDialog(
                     onClick = onTestPip,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(Icons.Filled.PictureInPictureAlt, null, modifier = Modifier.size(16.dp), tint = MpxPrimary)
+                    Icon(Icons.Filled.PictureInPictureAlt, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.pip_test_button), color = MpxPrimary)
+                    Text(stringResource(R.string.pip_test_button), color = MaterialTheme.colorScheme.primary)
                 }
             }
         },
         confirmButton = {
             Button(
                 onClick = { onUpdateSettings(currentEnabled, currentControls) },
-                colors = ButtonDefaults.buttonColors(containerColor = MpxPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
                 Text(stringResource(R.string.action_save))
             }
@@ -1594,7 +1588,7 @@ private fun PrivacySecurityDialog(onDismiss: () -> Unit) {
         modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Security, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Filled.Security, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.dialog_privacy_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
@@ -1637,7 +1631,7 @@ private fun PrivacySecurityDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close), color = MpxPrimary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary) }
         },
     )
 }
@@ -1654,7 +1648,7 @@ private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
         modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.AutoMirrored.Filled.HelpOutline, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.AutoMirrored.Filled.HelpOutline, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.dialog_help_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
@@ -1700,7 +1694,7 @@ private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close), color = MpxPrimary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary) }
         },
     )
 }
@@ -1717,7 +1711,7 @@ private fun LegalLicensesDialog(onDismiss: () -> Unit) {
         modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Gavel, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Filled.Gavel, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.dialog_legal_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
@@ -1752,7 +1746,7 @@ private fun LegalLicensesDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close), color = MpxPrimary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary) }
         },
     )
 }
@@ -1772,7 +1766,7 @@ private fun AboutAppDialog(
         modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Info, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Filled.Info, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.pref_about_mpx), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
@@ -1805,10 +1799,10 @@ private fun AboutAppDialog(
                         onDismiss()
                         onOpenAboutBeta()
                     }) {
-                        Text(stringResource(R.string.about_beta_open_page_button), color = MpxPrimary)
+                        Text(stringResource(R.string.about_beta_open_page_button), color = MaterialTheme.colorScheme.primary)
                     }
                 }
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_ok), color = MpxPrimary) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_ok), color = MaterialTheme.colorScheme.primary) }
             }
         },
     )

@@ -47,11 +47,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.playback.PlaybackManager
-import com.mpx.player.ui.theme.MpxBorder
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
 
 fun formatTimeMs(millis: Long): String {
     if (millis <= 0) return "00:00"
@@ -125,13 +120,13 @@ fun MiniPlayer(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MpxPrimary.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = if (item.isVideo) Icons.Filled.Movie else Icons.Filled.MusicNote,
                             contentDescription = if (item.isVideo) stringResource(R.string.mini_player_video) else stringResource(R.string.mini_player_audio),
-                            tint = MpxPrimary,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -172,7 +167,7 @@ fun MiniPlayer(
                             Icon(
                                 imageVector = Icons.Filled.SkipPrevious,
                                 contentDescription = stringResource(R.string.mini_player_prev),
-                                tint = MpxTextPrimary,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -185,7 +180,7 @@ fun MiniPlayer(
                         Icon(
                             imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                             contentDescription = if (state.isPlaying) stringResource(R.string.mini_player_pause) else stringResource(R.string.mini_player_play),
-                            tint = MpxPrimary,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(28.dp),
                         )
                     }
@@ -198,7 +193,7 @@ fun MiniPlayer(
                             Icon(
                                 imageVector = Icons.Filled.SkipNext,
                                 contentDescription = stringResource(R.string.mini_player_next),
-                                tint = MpxTextPrimary,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -211,7 +206,7 @@ fun MiniPlayer(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.mini_player_close),
-                            tint = MpxTextMuted,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             modifier = Modifier.size(18.dp),
                         )
                     }

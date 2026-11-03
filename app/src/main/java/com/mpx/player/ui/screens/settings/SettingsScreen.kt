@@ -66,8 +66,6 @@ import com.mpx.player.R
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import kotlinx.coroutines.launch
@@ -180,7 +178,7 @@ fun SettingsScreen(
                                 .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(category.icon, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
+                            Icon(category.icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         }
                         Spacer(Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -189,7 +187,7 @@ fun SettingsScreen(
                             Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
                         }
                         Spacer(Modifier.width(8.dp))
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MpxTextMuted, modifier = Modifier.size(20.dp))
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
                     }
 
                     if (expandedId == category.id) {
@@ -394,7 +392,7 @@ fun SettingsScreen(
                                         val defaultSettings = AppSettings()
                                         update(defaultSettings)
                                     }) {
-                                        Text(stringResource(R.string.general_reset_button), color = MpxPrimary)
+                                        Text(stringResource(R.string.general_reset_button), color = MaterialTheme.colorScheme.primary)
                                     }
                                     Spacer(Modifier.height(6.dp))
                                     Text(
@@ -418,13 +416,13 @@ fun SettingsScreen(
                                             Icon(
                                                 Icons.Filled.Info,
                                                 null,
-                                                tint = MpxPrimary,
+                                                tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(18.dp),
                                             )
                                             Spacer(Modifier.width(8.dp))
                                             Text(
                                                 stringResource(R.string.about_beta_open_page_button),
-                                                color = MpxPrimary,
+                                                color = MaterialTheme.colorScheme.primary,
                                                 fontWeight = FontWeight.SemiBold,
                                             )
                                         }
@@ -450,7 +448,7 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
         Switch(
             checked = checked,
             onCheckedChange = onChange,
-            colors = SwitchDefaults.colors(checkedThumbColor = MpxPrimary, checkedTrackColor = MpxPrimary.copy(alpha = 0.4f)),
+            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
         )
     }
 }
@@ -464,7 +462,7 @@ private fun ChoiceRow(label: String, selected: Boolean, onClick: () -> Unit) {
         RadioButton(
             selected = selected,
             onClick = onClick,
-            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
         )
         Spacer(Modifier.width(8.dp))
         Text(label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
@@ -480,7 +478,7 @@ private fun ChoiceRowWithSubtitle(title: String, subtitle: String, selected: Boo
         RadioButton(
             selected = selected,
             onClick = onClick,
-            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
         )
         Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -576,8 +574,8 @@ private fun TabToggleRow(
             checked = checked,
             onCheckedChange = { onToggle(it) },
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MpxPrimary,
-                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
             ),
         )
     }

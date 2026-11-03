@@ -104,14 +104,6 @@ import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.FavouritesDialog
 import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
 import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurface
-import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
 import com.mpx.player.util.MediaPermissions
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
@@ -426,7 +418,7 @@ fun LocalScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MpxBlack,
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             if (currentFolder != null) {
@@ -442,7 +434,7 @@ fun LocalScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.action_back_to_folders),
-                                tint = MpxTextPrimary,
+                                tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     },
@@ -455,19 +447,19 @@ fun LocalScreen(
                                 placeholder = {
                                     Text(
                                         stringResource(R.string.folder_view_search_placeholder),
-                                        color = MpxTextSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 14.sp,
                                     )
                                 },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MpxSurfaceElevated,
-                                    unfocusedContainerColor = MpxSurfaceElevated,
-                                    focusedBorderColor = MpxPrimary,
-                                    unfocusedBorderColor = MpxBorder,
-                                    focusedTextColor = MpxTextPrimary,
-                                    unfocusedTextColor = MpxTextPrimary,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 ),
                             )
                         } else {
@@ -478,7 +470,7 @@ fun LocalScreen(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 18.sp,
                                     ),
-                                    color = MpxTextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -492,20 +484,20 @@ fun LocalScreen(
                                 Text(
                                     text = subText,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MpxTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp,
                                 )
                             }
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MpxSurface),
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
                     actions = {
                         if (isFolderSearching) {
                             IconButton(onClick = { isFolderSearching = false; folderSearchQuery = "" }) {
                                 Icon(
                                     imageVector = Icons.Filled.Close,
                                     contentDescription = stringResource(R.string.cd_close_search),
-                                    tint = MpxTextPrimary,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
@@ -527,7 +519,7 @@ fun LocalScreen(
                             Icon(
                                 imageVector = if (folderViewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
                                 contentDescription = stringResource(R.string.cd_toggle_view),
-                                tint = MpxTextPrimary,
+                                tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
 
@@ -535,7 +527,7 @@ fun LocalScreen(
                             Icon(
                                 imageVector = Icons.Filled.Search,
                                 contentDescription = stringResource(R.string.cd_search),
-                                tint = MpxTextPrimary,
+                                tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
 
@@ -544,7 +536,7 @@ fun LocalScreen(
                                 Icon(
                                     imageVector = Icons.Filled.MoreVert,
                                     contentDescription = stringResource(R.string.cd_more_options),
-                                    tint = MpxTextPrimary,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                             DropdownMenu(
@@ -616,16 +608,16 @@ fun LocalScreen(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text(stringResource(R.string.local_search_placeholder), color = MpxTextSecondary, fontSize = 14.sp) },
+                                placeholder = { Text(stringResource(R.string.local_search_placeholder), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MpxSurfaceElevated,
-                                    unfocusedContainerColor = MpxSurfaceElevated,
-                                    focusedBorderColor = MpxPrimary,
-                                    unfocusedBorderColor = MpxBorder,
-                                    focusedTextColor = MpxTextPrimary,
-                                    unfocusedTextColor = MpxTextPrimary,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 ),
                             )
                         } else {
@@ -635,12 +627,12 @@ fun LocalScreen(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 20.sp,
                                 ),
-                                color = MpxTextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MpxSurface,
+                        containerColor = MaterialTheme.colorScheme.surface,
                     ),
                     actions = {
                         if (isSearching) {
@@ -648,7 +640,7 @@ fun LocalScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Close,
                                     contentDescription = stringResource(R.string.cd_close_search),
-                                    tint = MpxTextPrimary,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                         }
@@ -658,14 +650,14 @@ fun LocalScreen(
                             Icon(
                                 imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
                                 contentDescription = stringResource(R.string.cd_toggle_view),
-                                tint = MpxTextPrimary,
+                                tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                         IconButton(onClick = { isSearching = true }) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
                                 contentDescription = stringResource(R.string.cd_search),
-                                tint = MpxTextPrimary,
+                                tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                         Box {
@@ -673,7 +665,7 @@ fun LocalScreen(
                                 Icon(
                                     imageVector = Icons.Filled.MoreVert,
                                     contentDescription = stringResource(R.string.cd_more_options),
-                                    tint = MpxTextPrimary,
+                                    tint = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
                             DropdownMenu(
@@ -765,8 +757,8 @@ fun LocalScreen(
                         if (first != null) playFolder(first)
                     }
                 },
-                containerColor = MpxPrimary,
-                contentColor = MpxTextPrimary,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onSurface,
                 shape = RoundedCornerShape(16.dp),
             ) {
                 Icon(
@@ -791,7 +783,7 @@ fun LocalScreen(
                             .padding(32.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator(color = MpxPrimary)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else if (filteredFolderVideos.isEmpty() && folderSearchQuery.isNotBlank()) {
                     EmptyStateView(
@@ -822,19 +814,19 @@ fun LocalScreen(
                             Text(
                                 text = stringResource(R.string.mini_player_video).uppercase(Locale.US),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MpxTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp,
                             )
                             Spacer(Modifier.width(8.dp))
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(MpxSurfaceElevated)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                     .padding(horizontal = 6.dp, vertical = 2.dp),
                             ) {
                                 Text(
                                     text = "${filteredFolderVideos.size}",
-                                    color = MpxTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -844,12 +836,12 @@ fun LocalScreen(
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(MpxPrimary.copy(alpha = 0.2f))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                                         .padding(horizontal = 6.dp, vertical = 1.dp),
                                 ) {
                                     Text(
                                         text = stringResource(folderViewMode.labelRes),
-                                        color = MpxPrimary,
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -867,7 +859,7 @@ fun LocalScreen(
                             Text(
                                 text = stringResource(R.string.local_sort_label, stringResource(folderSortField.labelRes)),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MpxPrimary,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
                             )
                         }
@@ -899,7 +891,7 @@ fun LocalScreen(
                                     )
                                     HorizontalDivider(
                                         modifier = Modifier.padding(start = 130.dp),
-                                        color = MpxBorder,
+                                        color = MaterialTheme.colorScheme.outline,
                                         thickness = 0.5.dp,
                                     )
                                 }
@@ -1005,7 +997,7 @@ fun LocalScreen(
                             .padding(32.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator(color = MpxPrimary)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else if (rootEmpty && searchQuery.isNotBlank()) {
                     EmptyStateView(
@@ -1058,19 +1050,19 @@ fun LocalScreen(
                             Text(
                                 text = stringResource(R.string.section_files_header),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MpxTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp,
                             )
                             Spacer(Modifier.width(8.dp))
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(MpxSurfaceElevated)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                     .padding(horizontal = 6.dp, vertical = 2.dp),
                             ) {
                                 Text(
                                     text = "${filteredVideos.size}",
-                                    color = MpxTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -1086,7 +1078,7 @@ fun LocalScreen(
                             Text(
                                 text = stringResource(R.string.local_sort_label, stringResource(sortField.labelRes)),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MpxPrimary,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
                             )
                         }
@@ -1141,7 +1133,7 @@ fun LocalScreen(
                                     )
                                     HorizontalDivider(
                                         modifier = Modifier.padding(start = 128.dp),
-                                        color = MpxBorder,
+                                        color = MaterialTheme.colorScheme.outline,
                                         thickness = 0.5.dp,
                                     )
                                 }
@@ -1232,19 +1224,19 @@ fun LocalScreen(
                                 text = if (appSettings.showAllFolders) stringResource(R.string.local_section_all_folders)
                                 else stringResource(R.string.local_section_folders),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MpxTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp,
                             )
                             Spacer(Modifier.width(8.dp))
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(MpxSurfaceElevated)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                     .padding(horizontal = 6.dp, vertical = 2.dp),
                             ) {
                                 Text(
                                     text = "${filteredFolders.size}",
-                                    color = MpxTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -1254,12 +1246,12 @@ fun LocalScreen(
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(MpxPrimary.copy(alpha = 0.2f))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                                         .padding(horizontal = 6.dp, vertical = 1.dp),
                                 ) {
                                     Text(
                                         text = stringResource(R.string.local_badge_show_all),
-                                        color = MpxPrimary,
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -1277,7 +1269,7 @@ fun LocalScreen(
                             Text(
                                 text = stringResource(R.string.local_sort_label, stringResource(sortField.labelRes)),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MpxPrimary,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
                             )
                         }
@@ -1306,7 +1298,7 @@ fun LocalScreen(
                                     )
                                     HorizontalDivider(
                                         modifier = Modifier.padding(start = 76.dp),
-                                        color = MpxBorder,
+                                        color = MaterialTheme.colorScheme.outline,
                                         thickness = 0.5.dp,
                                     )
                                 }
@@ -1467,16 +1459,16 @@ fun LocalScreen(
         val f = folderForMenu!!
         AlertDialog(
             onDismissRequest = { folderForMenu = null },
-            containerColor = MpxSurface,
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
-                Text(text = f.name, color = MpxTextPrimary, fontWeight = FontWeight.Bold)
+                Text(text = f.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column {
                     Text(
                         text = stringResource(R.string.folder_item_videos_and_size, f.videoCount, f.totalSizeFormatted),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
                     Row(
@@ -1489,11 +1481,11 @@ fun LocalScreen(
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Folder, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.folder_menu_open), color = MpxTextPrimary)
+                        Text(stringResource(R.string.folder_menu_open), color = MaterialTheme.colorScheme.onSurface)
                     }
-                    HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1504,15 +1496,15 @@ fun LocalScreen(
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.folder_menu_play_all), color = MpxTextPrimary)
+                        Text(stringResource(R.string.folder_menu_play_all), color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { folderForMenu = null }) {
-                    Text(stringResource(R.string.action_close), color = MpxPrimary)
+                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -1524,11 +1516,11 @@ fun LocalScreen(
         val isFav = favourites.any { it.mediaUri == vid.path || it.mediaId == vid.id }
         AlertDialog(
             onDismissRequest = { videoForMenu = null },
-            containerColor = MpxSurface,
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(
                     text = vid.title,
-                    color = MpxTextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -1547,11 +1539,11 @@ fun LocalScreen(
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.video_item_play), color = MpxTextPrimary)
+                        Text(stringResource(R.string.video_item_play), color = MaterialTheme.colorScheme.onSurface)
                     }
-                    HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1563,11 +1555,11 @@ fun LocalScreen(
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.video_item_add_to_playlist), color = MpxTextPrimary)
+                        Text(stringResource(R.string.video_item_add_to_playlist), color = MaterialTheme.colorScheme.onSurface)
                     }
-                    HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1594,18 +1586,18 @@ fun LocalScreen(
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Favorite, contentDescription = null, tint = if (isFav) MpxPrimary else MpxTextMuted)
+                        Icon(Icons.Filled.Favorite, contentDescription = null, tint = if (isFav) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                         Spacer(Modifier.width(12.dp))
                         Text(
                             text = if (isFav) stringResource(R.string.video_item_unfavourite) else stringResource(R.string.video_item_favourite),
-                            color = MpxTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { videoForMenu = null }) {
-                    Text(stringResource(R.string.action_close), color = MpxPrimary)
+                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -1652,12 +1644,12 @@ fun LocalScreen(
     if (featureDialogMessage != null) {
         AlertDialog(
             onDismissRequest = { featureDialogMessage = null },
-            containerColor = MpxSurface,
-            title = { Text(stringResource(R.string.dialog_feature_placeholder_title), color = MpxTextPrimary) },
-            text = { Text(featureDialogMessage ?: "", color = MpxTextSecondary) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text(stringResource(R.string.dialog_feature_placeholder_title), color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text(featureDialogMessage ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(onClick = { featureDialogMessage = null }) {
-                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
+                    Text(stringResource(R.string.action_ok), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -1736,7 +1728,7 @@ fun LocalScreen(
     if (showPlaylistsDialog) {
         AlertDialog(
             onDismissRequest = { showPlaylistsDialog = false },
-            containerColor = MpxSurface,
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1746,13 +1738,13 @@ fun LocalScreen(
                     Text(
                         text = stringResource(R.string.dialog_video_playlists_title, customPlaylists.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     TextButton(onClick = {
                         showPlaylistsDialog = false
                         showCreatePlaylistDialog = true
                     }) {
-                        Text(stringResource(R.string.dialog_new_playlist), color = MpxPrimary, fontSize = 12.sp)
+                        Text(stringResource(R.string.dialog_new_playlist), color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
                     }
                 }
             },
@@ -1767,7 +1759,7 @@ fun LocalScreen(
                         Text(
                             text = stringResource(R.string.dialog_playlists_empty),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         )
                     }
                 } else {
@@ -1794,34 +1786,34 @@ fun LocalScreen(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(MpxSurfaceElevated),
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                         contentDescription = null,
-                                        tint = MpxPrimary,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp),
                                     )
                                 }
                                 Spacer(Modifier.width(12.dp))
                                 Column {
-                                    Text(text = pl.name, style = MaterialTheme.typography.bodyMedium, color = MpxTextPrimary)
+                                    Text(text = pl.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                                     Text(
                                         text = stringResource(R.string.playlist_items_count, pl.itemCount),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MpxTextMuted,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     )
                                 }
                             }
-                            HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showPlaylistsDialog = false }) {
-                    Text(stringResource(R.string.action_close), color = MpxPrimary)
+                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
