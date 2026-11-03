@@ -450,6 +450,7 @@ fun MpxApp(
                     onThemeChanged = onThemeChanged,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
+                    playbackManager = playbackManager,
                 )
             }
             composable(Screen.OverlaySettings.route) {

@@ -65,6 +65,8 @@
     <string name="settings_category_subtitle_sub">حجم خط الترجمة ونمط اللون</string>
     <string name="settings_category_general">عام</string>
     <string name="settings_category_general_sub">إعادة تعيين كافة التفضيلات إلى الإعدادات الافتراضية</string>
+    <string name="settings_category_development">التطوير</string>
+    <string name="settings_category_development_sub">التشخيصات، حالة قاعدة البيانات، مقاييس المسح ومحرك التشغيل</string>
     <string name="settings_category_about">حول</string>
     <string name="settings_category_about_sub">الإصدار 0.1.0-beta • حالة النسخة التجريبية والملاحظات</string>
 
@@ -588,4 +590,51 @@
     <string name="local_menu_folder_view">عرض المجلدات</string>
     <string name="local_menu_file_view">عرض الملفات</string>
     <string name="snackbar_added_to_favourites">تمت الإضافة إلى المفضلة</string>
+
+    <!-- Development Category Diagnostics (Issue 60) -->
+    <string name="dev_section_app_build">التطبيق والبناء</string>
+    <string name="dev_section_database">قاعدة بيانات Room SQLite</string>
+    <string name="dev_section_media_scan">مسح مكتبة MediaStore</string>
+    <string name="dev_section_playback_engine">مفكك الترميز ومحرك التشغيل</string>
+    <string name="dev_label_package">معرف التطبيق</string>
+    <string name="dev_label_version">الإصدار</string>
+    <string name="dev_label_build_code">رمز الإصدار</string>
+    <string name="dev_label_build_type">نوع البناء</string>
+    <string name="dev_label_target_sdk">SDK المستهدف</string>
+    <string name="dev_label_min_sdk">الحد الأدنى لـ SDK</string>
+    <string name="dev_label_device">الجهاز</string>
+    <string name="dev_label_os_version">نظام أندرويد</string>
+    <string name="dev_label_db_name">اسم قاعدة البيانات</string>
+    <string name="dev_label_db_path">مسار قاعدة البيانات</string>
+    <string name="dev_label_db_size">حجم قاعدة البيانات</string>
+    <string name="dev_label_db_wal_size">حجم سجل WAL</string>
+    <string name="dev_label_db_records">سجلات قاعدة البيانات</string>
+    <string name="dev_label_db_not_created">لم يتم إنشاؤها بعد (0 بايت)</string>
+    <string name="dev_label_permissions">أذونات الوسائط</string>
+    <string name="dev_label_scan_volumes">وحدات التخزين</string>
+    <string name="dev_label_video_folders">مجلدات الفيديو</string>
+    <string name="dev_label_scanned_videos">مقاطع الفيديو الممسوحة</string>
+    <string name="dev_label_audio_tracks">المسارات الصوتية</string>
+    <string name="dev_label_audio_folders">مجلدات الصوت</string>
+    <string name="dev_label_audio_albums">ألبومات الصوت</string>
+    <string name="dev_label_audio_artists">فناني الصوت</string>
+    <string name="dev_label_playlists">قوائم التشغيل</string>
+    <string name="dev_label_engine_name">محرك التشغيل</string>
+    <string name="dev_label_engine_type">بنية المحرك</string>
+    <string name="dev_label_decoder_mode">مفكك الترميز المعين</string>
+    <string name="dev_label_active_decoder">مفكك فيديو الترميز النشط</string>
+    <string name="dev_label_codec_type">تنفيذ المرمز</string>
+    <string name="dev_label_player_state">حالة المشغل</string>
+    <string name="dev_label_active_media">الوسيط النشط</string>
+    <string name="dev_label_decoder_fallback">الرجوع التلقائي لمفكك الترميز</string>
+    <string name="dev_btn_refresh_diagnostics">تحديث التشخيصات</string>
+    <string name="dev_val_refreshing">جاري التحديث…</string>
+    <string name="dev_val_none_idle">لا يوجد (المشغل في وضع السكون)</string>
+    <string name="dev_val_direct_codec">مباشر (لا يتطلب مسارًا بديلاً)</string>
+    <string name="dev_val_perm_video">الفيديو: %1$s • الصوت: %2$s</string>
+    <string name="dev_val_perm_granted">ممنوح</string>
+    <string name="dev_val_perm_denied">مرفوض</string>
+    <string name="dev_val_codec_hw">تسريع العتاد (MediaCodec)</string>
+    <string name="dev_val_codec_sw">برمجي (معالج CPU)</string>
+    <string name="dev_label_last_updated">آخر تحديث: %1$s</string>
 </resources>

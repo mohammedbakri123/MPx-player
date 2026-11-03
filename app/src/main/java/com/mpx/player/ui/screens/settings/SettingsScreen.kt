@@ -1,5 +1,9 @@
 package com.mpx.player.ui.screens.settings
 
+import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.os.Build
+import android.text.format.Formatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,11 +27,13 @@ import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayCircleOutline
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.filled.Tune
@@ -49,6 +55,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,18 +67,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.data.local.db.MpxDatabase
+import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.util.LocaleHelper
+import com.mpx.player.util.MediaPermissions
 import com.mpx.player.util.PipUtils
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,9 +101,11 @@ fun SettingsScreen(
     onThemeChanged: ((String) -> Unit)? = null,
     currentLanguage: String = "system",
     onLanguageChanged: ((String) -> Unit)? = null,
+    playbackManager: PlaybackManager? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val actualPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
     var settings by remember { mutableStateOf(settingsRepository.load()) }
     var expandedId by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -134,6 +155,7 @@ fun SettingsScreen(
         SettingCategory("audio", stringResource(R.string.settings_category_audio), stringResource(R.string.settings_category_audio_sub), Icons.AutoMirrored.Filled.VolumeUp),
         SettingCategory("subtitle", stringResource(R.string.settings_category_subtitle), stringResource(R.string.settings_category_subtitle_sub), Icons.Filled.Subtitles),
         SettingCategory("general", stringResource(R.string.settings_category_general), stringResource(R.string.settings_category_general_sub), Icons.Filled.Tune),
+        SettingCategory("development", stringResource(R.string.settings_category_development), stringResource(R.string.settings_category_development_sub), Icons.Filled.DeveloperMode),
         SettingCategory("about", stringResource(R.string.settings_category_about), stringResource(R.string.settings_category_about_sub), Icons.Filled.Info),
     )
 
@@ -410,6 +432,13 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
+                                "development" -> {
+                                    DevelopmentSettingsSection(
+                                        context = context,
+                                        playbackManager = actualPlaybackManager,
+                                        settings = settings,
+                                    )
+                                }
                                 "about" -> {
                                     Text(
                                         stringResource(R.string.about_app_description),
@@ -589,4 +618,449 @@ private fun TabToggleRow(
             ),
         )
     }
+}
+
+private data class DevDiagnosticsData(
+    val appId: String = "",
+    val versionName: String = "",
+    val versionCode: String = "",
+    val buildType: String = "",
+    val targetSdk: String = "",
+    val minSdk: String = "",
+    val deviceModel: String = "",
+    val osVersion: String = "",
+    val dbPath: String = "",
+    val dbSizeFormatted: String = "",
+    val dbWalFormatted: String = "",
+    val dbRecordStats: String = "",
+    val hasVideoPerm: Boolean = false,
+    val hasAudioPerm: Boolean = false,
+    val storageVolumes: String = "",
+    val videoFoldersCount: Int = 0,
+    val videosCount: Int = 0,
+    val audioTracksCount: Int = 0,
+    val audioFoldersCount: Int = 0,
+    val audioAlbumsCount: Int = 0,
+    val audioArtistsCount: Int = 0,
+    val playlistsCount: Int = 0,
+    val lastScannedTime: String = "",
+)
+
+@Composable
+private fun DevelopmentSettingsSection(
+    context: Context,
+    playbackManager: PlaybackManager,
+    settings: AppSettings,
+) {
+    val playbackState by playbackManager.playbackState.collectAsState()
+    var devDiagnostics by remember { mutableStateOf<DevDiagnosticsData?>(null) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    fun refreshStats() {
+        if (isRefreshing) return
+        isRefreshing = true
+        scope.launch {
+            val stats = loadDevDiagnostics(context)
+            devDiagnostics = stats
+            isRefreshing = false
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        refreshStats()
+    }
+
+    val stats = devDiagnostics
+
+    // Section 1: App & Build Information
+    DiagnosticSection(title = stringResource(R.string.dev_section_app_build)) {
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_package),
+            value = stats?.appId ?: context.packageName,
+            isMonospace = true,
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_version),
+            value = stats?.versionName ?: "0.1.0-beta",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_build_code),
+            value = stats?.versionCode ?: "2",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_build_type),
+            value = stats?.buildType ?: "Debug",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_target_sdk),
+            value = stats?.targetSdk ?: "34",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_min_sdk),
+            value = stats?.minSdk ?: "24",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_device),
+            value = stats?.deviceModel ?: "${Build.MANUFACTURER} ${Build.MODEL}",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_os_version),
+            value = stats?.osVersion ?: "Android ${Build.VERSION.RELEASE}",
+        )
+    }
+
+    Spacer(Modifier.height(8.dp))
+
+    // Section 2: Room SQLite Database
+    DiagnosticSection(title = stringResource(R.string.dev_section_database)) {
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_db_name),
+            value = "mpx_player.db (Room v1)",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_db_path),
+            value = stats?.dbPath ?: context.getDatabasePath("mpx_player.db").absolutePath,
+            isMonospace = true,
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_db_size),
+            value = stats?.dbSizeFormatted ?: stringResource(R.string.dev_val_refreshing),
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_db_wal_size),
+            value = stats?.dbWalFormatted ?: stringResource(R.string.dev_val_refreshing),
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_db_records),
+            value = stats?.dbRecordStats ?: stringResource(R.string.dev_val_refreshing),
+        )
+    }
+
+    Spacer(Modifier.height(8.dp))
+
+    // Section 3: MediaStore Library Scan
+    DiagnosticSection(title = stringResource(R.string.dev_section_media_scan)) {
+        val permVideo = if (stats?.hasVideoPerm == true) {
+            stringResource(R.string.dev_val_perm_granted)
+        } else {
+            stringResource(R.string.dev_val_perm_denied)
+        }
+        val permAudio = if (stats?.hasAudioPerm == true) {
+            stringResource(R.string.dev_val_perm_granted)
+        } else {
+            stringResource(R.string.dev_val_perm_denied)
+        }
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_permissions),
+            value = stringResource(R.string.dev_val_perm_video, permVideo, permAudio),
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_scan_volumes),
+            value = stats?.storageVolumes ?: "primary",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_video_folders),
+            value = "${stats?.videoFoldersCount ?: 0} folders",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_scanned_videos),
+            value = "${stats?.videosCount ?: 0} videos",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_audio_tracks),
+            value = "${stats?.audioTracksCount ?: 0} tracks",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_audio_folders),
+            value = "${stats?.audioFoldersCount ?: 0} folders",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_audio_albums),
+            value = "${stats?.audioAlbumsCount ?: 0} albums",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_audio_artists),
+            value = "${stats?.audioArtistsCount ?: 0} artists",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_playlists),
+            value = "${stats?.playlistsCount ?: 0} playlists",
+        )
+    }
+
+    Spacer(Modifier.height(8.dp))
+
+    // Section 4: Decoder & Playback Engine
+    DiagnosticSection(title = stringResource(R.string.dev_section_playback_engine)) {
+        val configuredDecoderDesc = when (settings.decoderMode) {
+            "HW" -> "Hardware (MediaCodec)"
+            "HW+" -> "Hardware Plus (Async Queue)"
+            "SW" -> "Software (CPU Codecs)"
+            else -> settings.decoderMode
+        }
+        val playerStateText = when (playbackState.playbackState) {
+            androidx.media3.common.Player.STATE_READY -> if (playbackState.isPlaying) "Playing" else "Paused"
+            androidx.media3.common.Player.STATE_BUFFERING -> "Buffering"
+            androidx.media3.common.Player.STATE_ENDED -> "Ended"
+            androidx.media3.common.Player.STATE_IDLE -> "Idle"
+            else -> "Idle"
+        }
+        val activeMediaText = playbackState.currentItem?.let {
+            "${it.title} (${if (it.isVideo) "Video" else "Audio"})"
+        } ?: stringResource(R.string.dev_val_none_idle)
+
+        val activeCodec = playbackState.activeDecoderName ?: stringResource(R.string.dev_val_none_idle)
+        val isSwCodec = playbackState.activeDecoderName?.let { MpxMediaCodecSelector.isSoftwareCodecName(it) }
+        val codecType = when {
+            playbackState.activeDecoderName == null -> "Configured for ${settings.decoderMode}"
+            isSwCodec == true -> stringResource(R.string.dev_val_codec_sw)
+            else -> stringResource(R.string.dev_val_codec_hw)
+        }
+        val fallbackNote = playbackState.decoderFallbackNote ?: stringResource(R.string.dev_val_direct_codec)
+
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_engine_name),
+            value = "AndroidX Media3 ExoPlayer 1.3.1",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_engine_type),
+            value = "Native Kotlin/Java Core (Standalone)",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_decoder_mode),
+            value = "${settings.decoderMode} ($configuredDecoderDesc)",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_player_state),
+            value = playerStateText,
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_active_media),
+            value = activeMediaText,
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_active_decoder),
+            value = activeCodec,
+            isMonospace = playbackState.activeDecoderName != null,
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_codec_type),
+            value = codecType,
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_decoder_fallback),
+            value = fallbackNote,
+        )
+    }
+
+    Spacer(Modifier.height(10.dp))
+
+    // Refresh Diagnostics Button
+    OutlinedButton(
+        onClick = { refreshStats() },
+        enabled = !isRefreshing,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Refresh,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = if (isRefreshing) stringResource(R.string.dev_val_refreshing) else stringResource(R.string.dev_btn_refresh_diagnostics),
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+
+    stats?.lastScannedTime?.takeIf { it.isNotBlank() }?.let { time ->
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.dev_label_last_updated, time),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            modifier = Modifier.padding(start = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun DiagnosticSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiagnosticRow(
+    label: String,
+    value: String,
+    isMonospace: Boolean = false,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(0.42f),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = value,
+            style = if (isMonospace) {
+                MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+            } else {
+                MaterialTheme.typography.bodySmall
+            },
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(0.58f),
+        )
+    }
+}
+
+private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = withContext(Dispatchers.IO) {
+    val pInfo = try {
+        context.packageManager.getPackageInfo(context.packageName, 0)
+    } catch (_: Exception) {
+        null
+    }
+    val versionName = pInfo?.versionName ?: "0.1.0-beta"
+    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        pInfo?.longVersionCode?.toString() ?: "2"
+    } else {
+        @Suppress("DEPRECATION")
+        pInfo?.versionCode?.toString() ?: "2"
+    }
+    val isDebug = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    val buildType = if (isDebug) "Debug" else "Release"
+    val targetSdk = context.applicationInfo.targetSdkVersion.toString()
+    val minSdk = "24 (Android 7.0 Nougat)"
+    val device = "${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})"
+    val osVersion = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
+
+    val dbFile = context.getDatabasePath("mpx_player.db")
+    val walFile = File(dbFile.path + "-wal")
+    val shmFile = File(dbFile.path + "-shm")
+    val dbExists = dbFile.exists()
+    val dbSizeBytes = if (dbExists) dbFile.length() else 0L
+    val walSizeBytes = if (walFile.exists()) walFile.length() else 0L
+    val shmSizeBytes = if (shmFile.exists()) shmFile.length() else 0L
+    val totalDbBytes = dbSizeBytes + walSizeBytes + shmSizeBytes
+    val formattedSize = if (dbExists) {
+        val formatted = Formatter.formatFileSize(context, totalDbBytes)
+        "$formatted ($totalDbBytes bytes)"
+    } else {
+        context.getString(R.string.dev_label_db_not_created)
+    }
+    val walFormatted = if (walFile.exists()) {
+        val formatted = Formatter.formatFileSize(context, walSizeBytes)
+        "$formatted ($walSizeBytes bytes)"
+    } else {
+        "0 B (no active WAL log)"
+    }
+
+    val recordStats = try {
+        val db = MpxDatabase.getInstance(context)
+        val favCount = db.favouriteDao().getCount()
+        val histCount = db.playbackHistoryDao().getCount()
+        val playCount = db.playlistDao().getPlaylistsWithCount().size
+        val resCount = db.playbackResumeDao().getAllResumePositions().size
+        "$favCount favs • $histCount history • $playCount playlists • $resCount resume"
+    } catch (_: Exception) {
+        "0 favs • 0 history • 0 playlists • 0 resume"
+    }
+
+    val hasVideoPerm = MediaPermissions.hasVideoPermission(context)
+    val hasAudioPerm = MediaPermissions.hasAudioPermission(context)
+    val mediaRepo = MediaStoreRepository(context)
+
+    val volumes = try {
+        val volNames = mediaRepo.getExternalVolumeNames()
+        if (volNames.isNotEmpty()) volNames.joinToString(", ") else "primary (internal)"
+    } catch (_: Exception) {
+        "primary (internal)"
+    }
+
+    var videoFolders = 0
+    var videoCount = 0
+    var audioTracks = 0
+    var audioFolders = 0
+    var audioAlbums = 0
+    var audioArtists = 0
+    var playlists = 0
+
+    if (hasVideoPerm) {
+        try {
+            val folders = mediaRepo.getMediaFolders(showAllFolders = true)
+            videoFolders = folders.size
+            videoCount = folders.sumOf { it.videoCount }
+        } catch (_: Exception) {}
+    }
+
+    if (hasAudioPerm) {
+        try {
+            audioTracks = mediaRepo.getAudioTracks().size
+            audioFolders = mediaRepo.getAudioFolders().size
+            audioAlbums = mediaRepo.getAudioAlbums().size
+            audioArtists = mediaRepo.getAudioArtists().size
+            playlists = mediaRepo.getPlaylists().size
+        } catch (_: Exception) {}
+    }
+
+    val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+
+    DevDiagnosticsData(
+        appId = context.packageName,
+        versionName = versionName,
+        versionCode = versionCode,
+        buildType = buildType,
+        targetSdk = targetSdk,
+        minSdk = minSdk,
+        deviceModel = device,
+        osVersion = osVersion,
+        dbPath = dbFile.absolutePath,
+        dbSizeFormatted = formattedSize,
+        dbWalFormatted = walFormatted,
+        dbRecordStats = recordStats,
+        hasVideoPerm = hasVideoPerm,
+        hasAudioPerm = hasAudioPerm,
+        storageVolumes = volumes,
+        videoFoldersCount = videoFolders,
+        videosCount = videoCount,
+        audioTracksCount = audioTracks,
+        audioFoldersCount = audioFolders,
+        audioAlbumsCount = audioAlbums,
+        audioArtistsCount = audioArtists,
+        playlistsCount = playlists,
+        lastScannedTime = timeFormat.format(Date()),
+    )
 }
