@@ -532,4 +532,12 @@
     <string name="about_beta_copied_snackbar">GitHub issues URL copied to clipboard</string>
     <string name="about_beta_browser_error">Unable to open web browser. The URL has been copied to your clipboard.</string>
     <string name="about_beta_open_page_button">View Beta Details &amp; Feedback</string>
+    <!-- Separate View Layout (Issue 16) -->
+    <string name="settings_separate_view_title">Separate view layout</string>
+    <string name="settings_separate_view_desc">Remember view layout (list or grid) separately for Local and Music screens</string>
+    <string name="sort_section_layout_settings">LAYOUT SETTINGS</string>
+    <string name="sort_separate_view_title">Separate view layout</string>
+    <string name="sort_separate_view_desc">Remember layout independently for this screen</string>
+    <string name="snackbar_separate_view_enabled">Separate view layout enabled</string>
+    <string name="snackbar_separate_view_disabled">Separate view layout disabled: layouts synchronized</string>
 </resources>

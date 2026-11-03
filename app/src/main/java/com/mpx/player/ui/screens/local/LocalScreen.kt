@@ -150,6 +150,17 @@ fun LocalScreen(
         )
     }
     var sortField by remember { mutableStateOf(SortField.DATE) }
+
+    fun updateViewMode(newMode: ViewMode) {
+        viewMode = newMode
+        val updated = if (appSettings.separateViewLayout) {
+            appSettings.copy(localViewMode = newMode.name)
+        } else {
+            appSettings.copy(localViewMode = newMode.name, musicViewMode = newMode.name)
+        }
+        realSettingsRepo.save(updated)
+        appSettings = updated
+    }
     var showSortDialog by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
     var featureDialogMessage by remember { mutableStateOf<String?>(null) }
@@ -289,6 +300,7 @@ fun LocalScreen(
                 hasPermission = currentPerm
                 val loadedSettings = realSettingsRepo.load()
                 appSettings = loadedSettings
+                viewMode = if (loadedSettings.localViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
                 if (currentPerm) {
                     scope.launch(Dispatchers.IO) {
                         isLoading = true
@@ -572,11 +584,7 @@ fun LocalScreen(
                             }
                         }
                         IconButton(onClick = {
-                            val nextMode = if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
-                            viewMode = nextMode
-                            val updated = appSettings.copy(localViewMode = nextMode.name)
-                            realSettingsRepo.save(updated)
-                            appSettings = updated
+                            updateViewMode(if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST)
                         }) {
                             Icon(
                                 imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
@@ -1096,14 +1104,25 @@ fun LocalScreen(
             currentSort = sortField,
             currentView = viewMode,
             showAllFolders = appSettings.showAllFolders,
+            separateViewLayout = appSettings.separateViewLayout,
             onSortChange = {
                 sortField = it
             },
             onViewChange = {
-                viewMode = it
-                val updated = appSettings.copy(localViewMode = it.name)
+                updateViewMode(it)
+            },
+            onSeparateViewLayoutChange = { isChecked ->
+                val updated = appSettings.copy(separateViewLayout = isChecked)
                 realSettingsRepo.save(updated)
                 appSettings = updated
+                scope.launch {
+                    val msg = if (isChecked) {
+                        context.getString(R.string.snackbar_separate_view_enabled)
+                    } else {
+                        context.getString(R.string.snackbar_separate_view_disabled)
+                    }
+                    snackbarHostState.showSnackbar(msg)
+                }
             },
             onShowAllFoldersChange = { isChecked ->
                 val updated = appSettings.copy(showAllFolders = isChecked)

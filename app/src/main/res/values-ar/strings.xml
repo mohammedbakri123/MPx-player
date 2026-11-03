@@ -532,4 +532,12 @@
     <string name="about_beta_copied_snackbar">تم نسخ رابط مشكلات GitHub إلى الحافظة</string>
     <string name="about_beta_browser_error">تعذر فتح متصفح الويب. تم نسخ الرابط إلى الحافظة.</string>
     <string name="about_beta_open_page_button">عرض تفاصيل النسخة التجريبية والملاحظات</string>
+    <!-- Separate View Layout (Issue 16) -->
+    <string name="settings_separate_view_title">تخطيط عرض منفصل</string>
+    <string name="settings_separate_view_desc">تذكر تخطيط العرض (قائمة أو شبكة) بشكل مستقل لشاشتي محلي والموسيقى</string>
+    <string name="sort_section_layout_settings">إعدادات التخطيط</string>
+    <string name="sort_separate_view_title">تخطيط عرض منفصل</string>
+    <string name="sort_separate_view_desc">تذكر تخطيط العرض بشكل مستقل لهذه الشاشة</string>
+    <string name="snackbar_separate_view_enabled">تم تفعيل تخطيط العرض المنفصل</string>
+    <string name="snackbar_separate_view_disabled">تم تعطيل تخطيط العرض المنفصل: التخطيطات متزامنة</string>
 </resources>

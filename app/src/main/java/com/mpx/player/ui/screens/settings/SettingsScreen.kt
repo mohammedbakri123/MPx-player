@@ -260,6 +260,15 @@ fun SettingsScreen(
                                         update(settings.copy(folderViewMode = "GRID"))
                                     }
                                     Spacer(Modifier.height(8.dp))
+                                    ToggleRow(stringResource(R.string.settings_separate_view_title), settings.separateViewLayout) {
+                                        update(settings.copy(separateViewLayout = it))
+                                    }
+                                    Text(
+                                        stringResource(R.string.settings_separate_view_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = 6.dp),
+                                    )
                                     ToggleRow(stringResource(R.string.list_show_all_folders), settings.showAllFolders) { update(settings.copy(showAllFolders = it)) }
                                     ToggleRow(stringResource(R.string.list_show_hidden), settings.showHiddenFiles) { update(settings.copy(showHiddenFiles = it)) }
                                     ToggleRow(stringResource(R.string.list_show_thumbnails), settings.showThumbnails) { update(settings.copy(showThumbnails = it)) }

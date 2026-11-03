@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
@@ -46,6 +47,8 @@ fun SortViewDialog(
     currentSort: SortField,
     currentView: ViewMode,
     showAllFolders: Boolean = false,
+    separateViewLayout: Boolean = true,
+    availableSortFields: List<SortField>? = null,
     onSortChange: (SortField) -> Unit,
     onViewChange: (ViewMode) -> Unit,
     onShowAllFoldersChange: ((Boolean) -> Unit)? = null,
@@ -55,6 +58,8 @@ fun SortViewDialog(
     isSetAsDefault: Boolean = false,
     onSetAsDefaultChange: ((Boolean) -> Unit)? = null,
     onResetToDefault: (() -> Unit)? = null,
+    onSeparateViewLayoutChange: ((Boolean) -> Unit)? = null,
+
     onDismiss: () -> Unit,
 ) {
     val sortOptions = if (isFolderScope) {
@@ -156,6 +161,47 @@ fun SortViewDialog(
                     }
                 }
 
+                if (onSeparateViewLayoutChange != null) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MpxBorder,
+                    )
+
+                    Text(
+                        text = stringResource(R.string.sort_section_layout_settings),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MpxTextSecondary,
+                        fontSize = 11.sp,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSeparateViewLayoutChange(!separateViewLayout) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Switch(
+                            checked = separateViewLayout,
+                            onCheckedChange = onSeparateViewLayoutChange,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MpxPrimary,
+                                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                            ),
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(stringResource(R.string.sort_separate_view_title), color = MpxTextPrimary)
+                            Text(
+                                stringResource(R.string.sort_separate_view_desc),
+                                color = MpxTextSecondary,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 11.sp,
+                            )
+                        }
+                    }
+                }
+
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
                     color = MaterialTheme.colorScheme.outline,
@@ -168,7 +214,7 @@ fun SortViewDialog(
                     fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(6.dp))
-                sortOptions.forEach { field ->
+                (availableSortFields ?: sortOptions).forEach { field ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -215,10 +261,10 @@ fun SortViewDialog(
                         )
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("Show all folders", color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.list_show_all_folders), color = MpxTextPrimary)
                             Text(
-                                "Include empty and hidden folders",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                stringResource(R.string.list_show_all_folders_desc),
+                                color = MpxTextSecondary,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,
                             )

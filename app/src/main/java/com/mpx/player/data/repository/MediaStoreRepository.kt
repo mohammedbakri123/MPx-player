@@ -504,6 +504,7 @@ class MediaStoreRepository(
                                 artist = artist,
                                 album = album,
                                 durationFormatted = formatDuration(durationMs),
+                                durationMs = durationMs,
                                 path = effectivePath,
                             )
                         )

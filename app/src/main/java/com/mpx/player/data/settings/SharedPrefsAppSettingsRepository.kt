@@ -33,6 +33,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         showAllFolders = prefs.getBoolean("show_all_folders", false),
         folderViewMode = prefs.getString("folder_view_mode", "LIST") ?: "LIST",
         localViewMode = prefs.getString("local_view_mode", "LIST") ?: "LIST",
+        separateViewLayout = prefs.getBoolean("separate_view_layout", true),
+        musicViewMode = prefs.getString("music_view_mode", "LIST") ?: "LIST",
     )
 
     override fun save(settings: AppSettings) {
@@ -58,6 +60,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("show_all_folders", settings.showAllFolders)
             .putString("folder_view_mode", settings.folderViewMode)
             .putString("local_view_mode", settings.localViewMode)
+            .putBoolean("separate_view_layout", settings.separateViewLayout)
+            .putString("music_view_mode", settings.musicViewMode)
             .apply()
     }
 

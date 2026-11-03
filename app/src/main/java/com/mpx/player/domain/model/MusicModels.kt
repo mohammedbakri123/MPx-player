@@ -9,6 +9,7 @@ data class AudioTrack(
     val artist: String,
     val album: String,
     val durationFormatted: String,
+    val durationMs: Long = 0L,
     val path: String = "",
 )
 
