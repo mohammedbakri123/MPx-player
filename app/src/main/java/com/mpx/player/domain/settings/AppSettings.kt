@@ -14,7 +14,19 @@ data class AppSettings(
     val decoderMode: String = "HW", // HW, HW+, SW
     val playerEngine: String = "MEDIA3", // MEDIA3, MPV
     val subtitleSize: String = "Normal", // Small, Normal, Large
-    val subtitleStyle: String = "White", // White, Yellow, Cyan, Default
+    val subtitleStyle: String = "White", // White, Yellow, Cyan, Default (legacy preset; kept working)
+    // Subtitle depth (issue #75): each option is applied to rendered subtitles.
+    val subtitleTypeface: String = "Default", // Default, Sans, Serif, Mono
+    val subtitleTextColor: String = "Preset", // Preset (follow subtitleStyle), White, Yellow, Cyan, Green, Magenta, Red, Black
+    val subtitleBackgroundColor: String = "Transparent", // Transparent, Black, SemiBlack, White
+    val subtitleBorderColor: String = "Black", // Black, White, Yellow, Transparent (no border)
+    val subtitleBorderThickness: String = "Medium", // None, Thin, Medium, Thick (thickness granularity is mpv-only; Media3 renders an outline)
+    val subtitleBold: Boolean = true,
+    val subtitleShadow: Boolean = false, // Media3: single edge type, so shadow wins over outline when both are set
+    val subtitleAlignment: String = "Bottom", // Bottom, Center, Top (Media3 approximates via bottom padding fraction)
+    val subtitleBottomPadding: String = "Medium", // Small, Medium, Large (used when alignment is Bottom)
+    val subtitleScale: String = "100", // Percent: 75, 100, 125, 150
+    val subtitleAssOverride: String = "Default", // Default, Scale, Force, Strip (mpv-only; Media3 always applies embedded styles)
     val appTheme: String = "Midnight", // Midnight, Dark, Classic, Light
     val popupPlayEnabled: Boolean = true,
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10, PlayPauseOnly

@@ -7,11 +7,14 @@ import android.system.Os
 import android.util.Log
 import android.view.Surface
 import androidx.media3.common.Player
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
+import com.mpx.player.playback.subtitleMpvOptions
 import `is`.xyz.mpv.MPV
 import `is`.xyz.mpv.MPVNode
 import java.io.File
@@ -56,6 +59,7 @@ class MpvPlayerEngine(
 
     private var currentSurface: Surface? = null
     private var isReleased: Boolean = false
+    private var mpvInitialized: Boolean = false
 
     private enum class DecoderStage { HW, HW_PLUS, SW }
     private var currentDecoderStage: DecoderStage = DecoderStage.HW
@@ -146,10 +150,12 @@ class MpvPlayerEngine(
         mpv.setOptionString("keep-open", "always")
         mpv.setOptionString("ytdl", "no")
 
-        // Subtitle configuration: use system fonts via fontconfig
+        // Subtitle configuration: use system fonts via fontconfig.
+        // The font itself comes from saved settings so the first frame already
+        // matches; the full option set is applied post-init below.
         mpv.setOptionString("sub-font-provider", "fontconfig")
         mpv.setOptionString("sub-fonts-dir", "/system/fonts")
-        mpv.setOptionString("sub-font", "sans-serif")
+        mpv.setOptionString("sub-font", subtitleMpvOptions(loadSavedSubtitleSettings())["sub-font"] ?: "sans-serif")
         mpv.setOptionString("sub-fix-timing", "yes")
         mpv.setOptionString("sub-auto", "fuzzy")
 
@@ -162,9 +168,13 @@ class MpvPlayerEngine(
         applyHwdecForMode(mode)
 
         mpv.init()
+        mpvInitialized = true
 
         // Post-init options
         mpv.setOptionString("force-window", "yes")
+
+        // Apply the full saved subtitle style (issue #75) now that mpv accepts live options.
+        applySubtitleSettings(loadSavedSubtitleSettings())
 
         // Observe critical playback and decoder properties
         mpv.observeProperty("time-pos", MPV.mpvFormat.MPV_FORMAT_DOUBLE)
@@ -180,6 +190,32 @@ class MpvPlayerEngine(
 
         mpv.addObserver(eventObserver)
         mpv.addLogObserver(logObserver)
+    }
+
+    private fun loadSavedSubtitleSettings(): AppSettings {
+        return try {
+            SharedPrefsAppSettingsRepository(appContext).load()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed loading saved subtitle settings, using defaults", e)
+            AppSettings()
+        }
+    }
+
+    /**
+     * Applies the subtitle style options (issue #75) to a running mpv instance.
+     * All sub-* options used here are runtime-changeable in mpv, so this is
+     * safe to call whenever settings change mid-playback. No-op before init
+     * or after release.
+     */
+    fun applySubtitleSettings(settings: AppSettings) {
+        if (!mpvInitialized || isReleased) return
+        try {
+            subtitleMpvOptions(settings).forEach { (key, value) ->
+                mpv.setOptionString(key, value)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed applying subtitle settings to mpv", e)
+        }
     }
 
     /**

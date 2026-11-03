@@ -10,6 +10,7 @@ import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioTrack
+import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.repository.MediaPersistenceRepository
 import android.util.Log
@@ -274,6 +275,17 @@ class PlaybackManager private constructor(context: Context) {
     fun detachSurface() {
         activeSurface = null
         engine.detachSurface()
+    }
+
+    /**
+     * Applies subtitle style settings to the active engine. Only the mpv
+     * engine renders subtitles itself (Media3 subtitles are styled by the
+     * PlayerView in PlayerScreen), so this is a no-op for Media3.
+     */
+    fun applySubtitleSettings(settings: AppSettings) {
+        if (isMpv) {
+            (engine as? MpvPlayerEngine)?.applySubtitleSettings(settings)
+        }
     }
 
     /**
