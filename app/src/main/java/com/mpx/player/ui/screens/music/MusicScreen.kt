@@ -1187,7 +1187,7 @@ private fun TracksTabContent(
                                 imageVector = Icons.Filled.MoreVert,
                                 contentDescription = stringResource(R.string.music_cd_track_options, track.title),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(20.dp),
                             )
                         }
                     }
