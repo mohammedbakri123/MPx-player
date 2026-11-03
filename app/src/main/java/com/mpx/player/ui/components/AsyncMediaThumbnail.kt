@@ -202,3 +202,33 @@ fun AsyncVideoThumbnail(
         contentDescription = "Video ${video.title}",
     )
 }
+
+@Composable
+fun AsyncVideoThumbnail(
+    mediaUri: String,
+    mediaId: String,
+    title: String = "",
+    modifier: Modifier = Modifier,
+    iconSize: Dp = 28.dp,
+) {
+    val context = LocalContext.current
+    val cacheKey = "video_${mediaId.ifBlank { mediaUri }}"
+    val videoIdLong = mediaId.toLongOrNull() ?: -1L
+
+    AsyncThumbnail(
+        cacheKey = cacheKey,
+        loadBitmap = {
+            ThumbnailLoader.loadVideoThumbnail(
+                context = context,
+                videoId = videoIdLong,
+                filePath = mediaUri,
+                width = 320,
+                height = 240,
+            )
+        },
+        placeholderIcon = Icons.Filled.PlayArrow,
+        modifier = modifier,
+        iconSize = iconSize,
+        contentDescription = if (title.isNotBlank()) "Video $title" else null,
+    )
+}

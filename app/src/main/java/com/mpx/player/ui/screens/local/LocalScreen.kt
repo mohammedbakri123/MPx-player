@@ -316,7 +316,100 @@ fun LocalScreen(
     }
     val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
     val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
+    val resumePositions by persistenceRepository.observeResumePositions().collectAsState(initial = emptyList())
     val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
+
+    val resumePositionsMap = remember(resumePositions) {
+        resumePositions.associateBy { it.mediaId }
+    }
+
+    val continueWatchingItems = remember(history, resumePositionsMap, allVideos) {
+        history
+            .filter { it.isVideo }
+            .mapNotNull { item ->
+                val resumeEntry = resumePositionsMap[item.mediaId] ?: resumePositionsMap[item.mediaUri]
+                val savedPosition = when {
+                    resumeEntry != null && resumeEntry.positionMs > 0L -> resumeEntry.positionMs
+                    item.playbackPositionMs > 0L -> item.playbackPositionMs
+                    else -> 0L
+                }
+                val rawDuration = when {
+                    item.durationMs > 0L -> item.durationMs
+                    resumeEntry != null && resumeEntry.durationMs > 0L -> resumeEntry.durationMs
+                    else -> allVideos.find { it.path == item.mediaUri || it.id == item.mediaId }?.durationMs ?: 0L
+                }
+                // Only include if there is a real saved position and it has not been watched to completion
+                if (savedPosition > 0L && (rawDuration <= 0L || savedPosition < rawDuration - 2000L)) {
+                    val resolvedTitle = item.title.ifBlank {
+                        allVideos.find { it.path == item.mediaUri || it.id == item.mediaId }?.title
+                            ?: item.mediaUri.substringAfterLast('/').substringBeforeLast('.')
+                    }
+                    ContinueWatchingItem(
+                        mediaUri = item.mediaUri,
+                        mediaId = item.mediaId,
+                        title = resolvedTitle,
+                        subtitle = item.subtitle,
+                        positionMs = savedPosition,
+                        durationMs = rawDuration,
+                        lastPlayedAt = item.lastPlayedAt,
+                    )
+                } else {
+                    null
+                }
+            }
+            .take(10)
+    }
+
+    fun resumeVideo(item: ContinueWatchingItem) {
+        val matchingVideo = allVideos.find { it.path == item.mediaUri || it.id == item.mediaId }
+        if (matchingVideo != null && matchingVideo.bucketId.isNotBlank()) {
+            scope.launch(Dispatchers.IO) {
+                val vids = repository.getVideosInFolder(matchingVideo.bucketId)
+                val playlist = if (vids.isNotEmpty()) vids else listOf(matchingVideo)
+                val startIndex = playlist.indexOfFirst { it.id == matchingVideo.id }.coerceAtLeast(0)
+                playbackManager?.resumeManager?.saveResumePosition(
+                    id = matchingVideo.id,
+                    positionMs = item.positionMs,
+                    mediaUri = matchingVideo.path,
+                    durationMs = item.durationMs,
+                )
+                withContext(Dispatchers.Main) {
+                    playbackManager?.playVideoFiles(playlist, startIndex)
+                    onOpenPlayer()
+                }
+            }
+        } else {
+            val media = PlayableMedia(
+                id = item.mediaId,
+                title = item.title,
+                subtitle = item.subtitle,
+                uri = item.mediaUri,
+                isVideo = true,
+                durationMs = item.durationMs,
+            )
+            playbackManager?.load(media, resumeMs = item.positionMs)
+            onOpenPlayer()
+        }
+    }
+
+    fun dismissContinueWatching(item: ContinueWatchingItem) {
+        scope.launch(Dispatchers.IO) {
+            persistenceRepository.deleteHistoryItem(item.mediaUri)
+            persistenceRepository.clearResumePosition(item.mediaId)
+            if (item.mediaUri.isNotBlank()) {
+                persistenceRepository.clearResumePosition(item.mediaUri)
+            }
+            playbackManager?.resumeManager?.clearResumePosition(item.mediaId)
+            if (item.mediaUri.isNotBlank()) {
+                playbackManager?.resumeManager?.clearResumePosition(item.mediaUri)
+            }
+            withContext(Dispatchers.Main) {
+                snackbarHostState.showSnackbar(
+                    context.getString(R.string.continue_watching_dismissed, item.title)
+                )
+            }
+        }
+    }
 
     var showFavouritesDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
@@ -1080,6 +1173,15 @@ fun LocalScreen(
                 HonestStatusBanner(
                     text = stringResource(R.string.local_status_banner),
                 )
+
+                // Continue Watching Row (Issue #55)
+                if (continueWatchingItems.isNotEmpty() && searchQuery.isBlank() && hasPermission && !isLoading) {
+                    ContinueWatchingRow(
+                        items = continueWatchingItems,
+                        onItemClick = { item -> resumeVideo(item) },
+                        onDismissItem = { item -> dismissContinueWatching(item) },
+                    )
+                }
 
                 if (!hasPermission) {
                     EmptyStateView(

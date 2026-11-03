@@ -662,4 +662,9 @@
     <string name="sort_advanced_ignore_extension">Ignore file extensions</string>
     <string name="sort_advanced_ignore_extension_desc">Sort by file title without considering file extension</string>
     <string name="sort_advanced_summary_default">Standard sort options</string>
+    <!-- Issue 55: Continue Watching Row -->
+    <string name="continue_watching_title">Continue Watching</string>
+    <string name="continue_watching_dismiss">Remove from Continue Watching</string>
+    <string name="continue_watching_dismissed">Removed \"%1$s\" from Continue Watching</string>
+    <string name="continue_watching_resume_at">Resume at %1$s</string>
 </resources>

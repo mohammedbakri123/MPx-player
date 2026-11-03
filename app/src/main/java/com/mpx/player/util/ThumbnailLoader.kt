@@ -107,35 +107,37 @@ object ThumbnailLoader {
         width: Int = 160,
         height: Int = 160,
     ): Bitmap? {
-        val key = "video_$videoId"
+        val key = if (videoId > 0L) "video_$videoId" else "video_${filePath.ifBlank { "unknown" }}"
         getCached(key)?.let { return it }
 
         var bitmap: Bitmap? = null
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val uris = getVideoContentUris(context)
-                for (baseUri in uris) {
-                    try {
-                        val contentUri = ContentUris.withAppendedId(baseUri, videoId)
-                        bitmap = context.contentResolver.loadThumbnail(
-                            contentUri,
-                            Size(width, height),
-                            null,
-                        )
-                        if (bitmap != null) break
-                    } catch (_: Exception) {}
+        if (videoId > 0L) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val uris = getVideoContentUris(context)
+                    for (baseUri in uris) {
+                        try {
+                            val contentUri = ContentUris.withAppendedId(baseUri, videoId)
+                            bitmap = context.contentResolver.loadThumbnail(
+                                contentUri,
+                                Size(width, height),
+                                null,
+                            )
+                            if (bitmap != null) break
+                        } catch (_: Exception) {}
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    bitmap = MediaStore.Video.Thumbnails.getThumbnail(
+                        context.contentResolver,
+                        videoId,
+                        MediaStore.Video.Thumbnails.MINI_KIND,
+                        null,
+                    )
                 }
-            } else {
-                @Suppress("DEPRECATION")
-                bitmap = MediaStore.Video.Thumbnails.getThumbnail(
-                    context.contentResolver,
-                    videoId,
-                    MediaStore.Video.Thumbnails.MINI_KIND,
-                    null,
-                )
+            } catch (_: Exception) {
+                // Silently fall through to file path extraction if possible
             }
-        } catch (_: Exception) {
-            // Silently fall through to file path extraction if possible
         }
 
         if (bitmap == null && filePath.isNotBlank() && File(filePath).exists()) {
@@ -145,6 +147,21 @@ object ThumbnailLoader {
                     filePath,
                     MediaStore.Images.Thumbnails.MINI_KIND,
                 )
+            } catch (_: Exception) {}
+        }
+
+        if (bitmap == null && filePath.startsWith("asset:///")) {
+            try {
+                val assetPath = filePath.removePrefix("asset:///")
+                context.assets.openFd(assetPath).use { afd ->
+                    val retriever = MediaMetadataRetriever()
+                    try {
+                        retriever.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                        bitmap = retriever.getFrameAtTime(1_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                    } finally {
+                        retriever.release()
+                    }
+                }
             } catch (_: Exception) {}
         }
 
