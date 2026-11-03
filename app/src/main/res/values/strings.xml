@@ -42,6 +42,8 @@
     <string name="lang_arabic_desc">Arabic interface with full Right-to-Left (RTL) layout</string>
     <string name="lang_spanish">Español (Spanish)</string>
     <string name="lang_spanish_desc">Spanish interface (LTR layout)</string>
+    <string name="lang_french">Français (French)</string>
+    <string name="lang_french_desc">French interface (LTR layout)</string>
     <string name="lang_applied_msg">Language updated: %s</string>
     <string name="lang_settings_note">Select your preferred app language. Language and layout direction apply immediately without restarting.</string>
 

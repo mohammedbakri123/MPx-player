@@ -42,6 +42,8 @@
     <string name="lang_arabic_desc">واجهة باللغة العربية مع دعم كامل لتخطيط اليمين لليسار (RTL)</string>
     <string name="lang_spanish">الإسبانية (Spanish)</string>
     <string name="lang_spanish_desc">واجهة باللغة الإسبانية (تخطيط LTR)</string>
+    <string name="lang_french">الفرنسية (French)</string>
+    <string name="lang_french_desc">واجهة باللغة الفرنسية (تخطيط LTR)</string>
     <string name="lang_applied_msg">تم تحديث اللغة: %s</string>
     <string name="lang_settings_note">اختر لغة التطبيق المفضلة. يتم تطبيق اللغة واتجاه الواجهة فوراً دون الحاجة لإعادة تشغيل التطبيق.</string>
 
