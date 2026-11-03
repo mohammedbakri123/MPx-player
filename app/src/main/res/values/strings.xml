@@ -51,8 +51,10 @@
     <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
     <string name="settings_category_pip">Custom Pop-up Play</string>
     <string name="settings_category_pip_sub">Picture-in-Picture controls and background play</string>
+    <string name="settings_category_tabs">Music Tabs</string>
+    <string name="settings_category_tabs_sub">Show or hide Tracks, Playlists, Albums, Artists, Folders</string>
     <string name="settings_category_list">List</string>
-    <string name="settings_category_list_sub">Folder view, hidden files, thumbnails</string>
+    <string name="settings_category_list_sub">Folder view, hidden files, thumbnails, music tabs</string>
     <string name="settings_category_player">Player</string>
     <string name="settings_category_player_sub">Resume playback, background play, gestures</string>
     <string name="settings_category_decoder">Decoder</string>
@@ -250,6 +252,13 @@
     <string name="music_tab_albums">Albums</string>
     <string name="music_tab_artists">Artists</string>
     <string name="music_tab_folders">Folders</string>
+    <string name="settings_tabs_header">Music Tabs</string>
+    <string name="settings_tabs_desc">Select which tabs appear on the Music screen. At least one tab must always be kept visible.</string>
+    <string name="settings_tab_min_one_required">At least one tab must remain visible.</string>
+    <string name="settings_tab_last_active_sub">Must remain visible (minimum one tab required)</string>
+    <string name="music_menu_manage_tabs">Manage Tabs</string>
+    <string name="music_dialog_tabs_title">Visible Music Tabs</string>
+    <string name="music_dialog_tabs_desc">Choose which tabs appear on the Music screen:</string>
 
     <!-- Music Permission & Empty States -->
     <string name="music_permission_required_title">Permission Required</string>

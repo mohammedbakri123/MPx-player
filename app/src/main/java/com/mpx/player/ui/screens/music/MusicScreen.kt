@@ -2,6 +2,7 @@ package com.mpx.player.ui.screens.music
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,12 +43,16 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -59,6 +64,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -68,9 +75,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -92,6 +99,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.mpx.player.domain.settings.AppSettings
+import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioFolder
@@ -123,15 +133,30 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+enum class MusicTab(
+    val id: String,
+    @StringRes val titleRes: Int,
+) {
+    TRACKS("tracks", R.string.music_tab_tracks),
+    PLAYLISTS("playlists", R.string.music_tab_playlists),
+    ALBUMS("albums", R.string.music_tab_albums),
+    ARTISTS("artists", R.string.music_tab_artists),
+    FOLDERS("folders", R.string.music_tab_folders);
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicScreen(
     onOpenPlayer: () -> Unit,
     playbackManager: PlaybackManager? = null,
+    settingsRepository: AppSettingsRepository? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val repository = remember(context) { MediaStoreRepository(context) }
+    val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
+    var appSettings by remember { mutableStateOf(realSettingsRepo.load()) }
+
     var hasPermission by remember {
         mutableStateOf(MediaPermissions.hasAudioPermission(context))
     }
@@ -161,16 +186,35 @@ fun MusicScreen(
     var selectedCustomPlaylist by remember { mutableStateOf<CustomPlaylist?>(null) }
     var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
 
-    val tabs = remember {
-        listOf(
-            R.string.music_tab_tracks,
-            R.string.music_tab_playlists,
-            R.string.music_tab_albums,
-            R.string.music_tab_artists,
-            R.string.music_tab_folders,
-        )
+    val visibleTabs = remember(
+        appSettings.showMusicTracksTab,
+        appSettings.showMusicPlaylistsTab,
+        appSettings.showMusicAlbumsTab,
+        appSettings.showMusicArtistsTab,
+        appSettings.showMusicFoldersTab,
+    ) {
+        val list = mutableListOf<MusicTab>()
+        if (appSettings.showMusicTracksTab) list.add(MusicTab.TRACKS)
+        if (appSettings.showMusicPlaylistsTab) list.add(MusicTab.PLAYLISTS)
+        if (appSettings.showMusicAlbumsTab) list.add(MusicTab.ALBUMS)
+        if (appSettings.showMusicArtistsTab) list.add(MusicTab.ARTISTS)
+        if (appSettings.showMusicFoldersTab) list.add(MusicTab.FOLDERS)
+        if (list.isEmpty()) {
+            list.add(MusicTab.TRACKS)
+        }
+        list
     }
-    var selectedTab by remember { mutableIntStateOf(0) }
+
+    var selectedTab by remember { mutableStateOf(visibleTabs.firstOrNull() ?: MusicTab.TRACKS) }
+
+    LaunchedEffect(visibleTabs) {
+        if (selectedTab !in visibleTabs) {
+            selectedTab = visibleTabs.firstOrNull() ?: MusicTab.TRACKS
+        }
+    }
+
+    var showMoreMenu by remember { mutableStateOf(false) }
+    var showManageTabsDialog by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -238,6 +282,7 @@ fun MusicScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
+                appSettings = realSettingsRepo.load()
                 val currentPerm = MediaPermissions.hasAudioPermission(context)
                 hasPermission = currentPerm
                 if (currentPerm) {
@@ -315,17 +360,43 @@ fun MusicScreen(
                             tint = MpxTextPrimary,
                         )
                     }
-                    IconButton(onClick = {
-                        refreshMusic()
-                        scope.launch {
-                            snackbarHostState.showSnackbar(context.getString(R.string.music_library_refreshed))
+                    Box {
+                        IconButton(onClick = { showMoreMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = stringResource(R.string.action_more),
+                                tint = MpxTextPrimary,
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = stringResource(R.string.action_more),
-                            tint = MpxTextPrimary,
-                        )
+                        DropdownMenu(
+                            expanded = showMoreMenu,
+                            onDismissRequest = { showMoreMenu = false },
+                            modifier = Modifier.background(MpxSurface),
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.music_empty_refresh_action), color = MpxTextPrimary) },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Refresh, contentDescription = null, tint = MpxPrimary)
+                                },
+                                onClick = {
+                                    showMoreMenu = false
+                                    refreshMusic()
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(context.getString(R.string.music_library_refreshed))
+                                    }
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.music_menu_manage_tabs), color = MpxTextPrimary) },
+                                leadingIcon = {
+                                    Icon(Icons.Filled.Tab, contentDescription = null, tint = MpxPrimary)
+                                },
+                                onClick = {
+                                    showMoreMenu = false
+                                    showManageTabsDialog = true
+                                },
+                            )
+                        }
                     }
                 },
             )
@@ -336,33 +407,36 @@ fun MusicScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            // Scrollable 5-Tab Bar
+            // Dynamic Visible Tabs Bar
+            val selectedTabIndex = visibleTabs.indexOf(selectedTab).coerceAtLeast(0)
             ScrollableTabRow(
-                selectedTabIndex = selectedTab,
+                selectedTabIndex = selectedTabIndex,
                 containerColor = MpxSurface,
                 contentColor = MpxPrimary,
                 edgePadding = 16.dp,
                 indicator = { tabPositions ->
-                    TabRowDefaults.SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = MpxPrimary,
-                    )
+                    if (selectedTabIndex in tabPositions.indices) {
+                        TabRowDefaults.SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                            color = MpxPrimary,
+                        )
+                    }
                 },
                 divider = {
                     HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
                 },
             ) {
-                tabs.forEachIndexed { index, titleResId ->
+                visibleTabs.forEachIndexed { index, tab ->
                     Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab },
                         text = {
                             Text(
-                                text = stringResource(titleResId),
+                                text = stringResource(tab.titleRes),
                                 style = MaterialTheme.typography.titleSmall.copy(
-                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium,
+                                    fontWeight = if (selectedTab == tab) FontWeight.Bold else FontWeight.Medium,
                                 ),
-                                color = if (selectedTab == index) MpxPrimary else MpxTextSecondary,
+                                color = if (selectedTab == tab) MpxPrimary else MpxTextSecondary,
                             )
                         },
                     )
@@ -459,7 +533,7 @@ fun MusicScreen(
                 }
             } else {
                 when (selectedTab) {
-                    0 -> {
+                    MusicTab.TRACKS -> {
                         if (tracks.isEmpty()) {
                             EmptyStateView(
                                 title = stringResource(R.string.music_empty_tracks_title),
@@ -487,7 +561,7 @@ fun MusicScreen(
                             )
                         }
                     }
-                    1 -> PlaylistsTabContent(
+                    MusicTab.PLAYLISTS -> PlaylistsTabContent(
                         playlists = allPlaylists,
                         favouritesCount = favourites.size,
                         historyCount = history.size,
@@ -507,7 +581,7 @@ fun MusicScreen(
                             }
                         },
                     )
-                    2 -> {
+                    MusicTab.ALBUMS -> {
                         if (albums.isEmpty()) {
                             EmptyStateView(
                                 title = stringResource(R.string.music_empty_albums_title),
@@ -521,7 +595,7 @@ fun MusicScreen(
                             })
                         }
                     }
-                    3 -> {
+                    MusicTab.ARTISTS -> {
                         if (artists.isEmpty()) {
                             EmptyStateView(
                                 title = stringResource(R.string.music_empty_artists_title),
@@ -535,7 +609,7 @@ fun MusicScreen(
                             })
                         }
                     }
-                    4 -> {
+                    MusicTab.FOLDERS -> {
                         if (folders.isEmpty()) {
                             EmptyStateView(
                                 title = stringResource(R.string.music_empty_folders_title),
@@ -813,6 +887,138 @@ fun MusicScreen(
                     snackbarHostState.showSnackbar(context.getString(R.string.music_cleared_history_msg))
                 }
             },
+        )
+    }
+
+    if (showManageTabsDialog) {
+        ManageMusicTabsDialog(
+            settings = appSettings,
+            onDismiss = { showManageTabsDialog = false },
+            onToggleTab = { tabId, currentVal ->
+                if (currentVal && appSettings.visibleMusicTabsCount <= 1) {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(context.getString(R.string.settings_tab_min_one_required))
+                    }
+                } else {
+                    val updated = appSettings.withMusicTabToggled(tabId, !currentVal)
+                    appSettings = updated
+                    realSettingsRepo.save(updated)
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ManageMusicTabsDialog(
+    settings: AppSettings,
+    onDismiss: () -> Unit,
+    onToggleTab: (tabId: String, currentVal: Boolean) -> Unit,
+) {
+    val isOnlyOneVisible = settings.visibleMusicTabsCount <= 1
+    val lastActiveSub = stringResource(R.string.settings_tab_last_active_sub)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MpxSurface,
+        title = {
+            Text(
+                text = stringResource(R.string.music_dialog_tabs_title),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MpxTextPrimary,
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.music_dialog_tabs_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MpxTextSecondary,
+                )
+                Spacer(Modifier.height(12.dp))
+
+                MusicTabDialogToggleRow(
+                    label = stringResource(R.string.music_tab_tracks),
+                    checked = settings.showMusicTracksTab,
+                    isLastVisible = isOnlyOneVisible && settings.showMusicTracksTab,
+                    subtitle = lastActiveSub,
+                    onToggle = { onToggleTab("tracks", settings.showMusicTracksTab) },
+                )
+                MusicTabDialogToggleRow(
+                    label = stringResource(R.string.music_tab_playlists),
+                    checked = settings.showMusicPlaylistsTab,
+                    isLastVisible = isOnlyOneVisible && settings.showMusicPlaylistsTab,
+                    subtitle = lastActiveSub,
+                    onToggle = { onToggleTab("playlists", settings.showMusicPlaylistsTab) },
+                )
+                MusicTabDialogToggleRow(
+                    label = stringResource(R.string.music_tab_albums),
+                    checked = settings.showMusicAlbumsTab,
+                    isLastVisible = isOnlyOneVisible && settings.showMusicAlbumsTab,
+                    subtitle = lastActiveSub,
+                    onToggle = { onToggleTab("albums", settings.showMusicAlbumsTab) },
+                )
+                MusicTabDialogToggleRow(
+                    label = stringResource(R.string.music_tab_artists),
+                    checked = settings.showMusicArtistsTab,
+                    isLastVisible = isOnlyOneVisible && settings.showMusicArtistsTab,
+                    subtitle = lastActiveSub,
+                    onToggle = { onToggleTab("artists", settings.showMusicArtistsTab) },
+                )
+                MusicTabDialogToggleRow(
+                    label = stringResource(R.string.music_tab_folders),
+                    checked = settings.showMusicFoldersTab,
+                    isLastVisible = isOnlyOneVisible && settings.showMusicFoldersTab,
+                    subtitle = lastActiveSub,
+                    onToggle = { onToggleTab("folders", settings.showMusicFoldersTab) },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_done), color = MpxPrimary)
+            }
+        },
+    )
+}
+
+@Composable
+private fun MusicTabDialogToggleRow(
+    label: String,
+    checked: Boolean,
+    isLastVisible: Boolean = false,
+    subtitle: String? = null,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle(!checked) }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                color = MpxTextPrimary,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+            )
+            if (isLastVisible && subtitle != null) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    color = MpxPrimary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = { onToggle(it) },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MpxPrimary,
+                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+            ),
         )
     }
 }

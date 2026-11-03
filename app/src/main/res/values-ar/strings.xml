@@ -51,8 +51,10 @@
     <string name="settings_category_theme_sub">شاشات أوليد الليلية، حجر داكن، كحلي كلاسيكي، فاتح</string>
     <string name="settings_category_pip">التشغيل في نافذة منبثقة</string>
     <string name="settings_category_pip_sub">عناصر التحكم بالصورة في الصورة والتشغيل في الخلفية</string>
+    <string name="settings_category_tabs">علامات تبويب الموسيقى</string>
+    <string name="settings_category_tabs_sub">إظهار أو إخفاء المسارات، قوائم التشغيل، الألبومات، الفنانين، المجلدات</string>
     <string name="settings_category_list">القائمة</string>
-    <string name="settings_category_list_sub">عرض المجلدات، الملفات المخفية، الصور المصغرة</string>
+    <string name="settings_category_list_sub">عرض المجلدات، الملفات المخفية، الصور المصغرة، علامات تبويب الموسيقى</string>
     <string name="settings_category_player">المشغل</string>
     <string name="settings_category_player_sub">استئناف التشغيل، التشغيل في الخلفية، الإيماءات</string>
     <string name="settings_category_decoder">فك الترميز</string>
@@ -250,6 +252,13 @@
     <string name="music_tab_albums">الألبومات</string>
     <string name="music_tab_artists">الفنانون</string>
     <string name="music_tab_folders">المجلدات</string>
+    <string name="settings_tabs_header">علامات تبويب الموسيقى</string>
+    <string name="settings_tabs_desc">تحديد علامات التبويب التي تظهر في شاشة الموسيقى. يجب أن تظل علامة تبويب واحدة على الأقل مرئية دائماً.</string>
+    <string name="settings_tab_min_one_required">يجب أن تظل علامة تبويب واحدة على الأقل مرئية.</string>
+    <string name="settings_tab_last_active_sub">يجب أن تظل مرئية (يلزم وجود علامة تبويب واحدة على الأقل)</string>
+    <string name="music_menu_manage_tabs">إدارة علامات التبويب</string>
+    <string name="music_dialog_tabs_title">علامات تبويب الموسيقى المرئية</string>
+    <string name="music_dialog_tabs_desc">اختر علامات التبويب التي ترغب في عرضها في شاشة الموسيقى:</string>
 
     <!-- Music Permission & Empty States -->
     <string name="music_permission_required_title">الإذن مطلوب</string>
