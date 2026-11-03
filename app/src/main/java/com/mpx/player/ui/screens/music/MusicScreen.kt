@@ -26,14 +26,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Equalizer
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -52,10 +56,12 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +71,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
@@ -73,15 +80,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.data.repository.RoomMediaPersistenceRepository
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioFolder
 import com.mpx.player.domain.model.AudioTrack
+import com.mpx.player.domain.model.CustomPlaylist
+import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.Playlist
+import com.mpx.player.domain.model.PlaylistItem
+import com.mpx.player.playback.PlayableMedia
+import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.HonestStatusBanner
+import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
+import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
+import com.mpx.player.ui.components.persistence.FavouritesDialog
+import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
+import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
 import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
@@ -114,6 +132,25 @@ fun MusicScreen(
     var artists by remember { mutableStateOf<List<AudioArtist>>(emptyList()) }
     var folders by remember { mutableStateOf<List<AudioFolder>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+
+    val persistenceRepository = remember(context) {
+        playbackManager?.persistenceRepository
+            ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context))
+    }
+    val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
+    val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
+    val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
+    val allPlaylists = remember(customPlaylists, playlists) {
+        customPlaylists.map { it.toPlaylist() } + playlists
+    }
+
+    var showFavouritesDialog by remember { mutableStateOf(false) }
+    var showHistoryDialog by remember { mutableStateOf(false) }
+    var trackForOptions by remember { mutableStateOf<AudioTrack?>(null) }
+    var trackForPlaylistAdd by remember { mutableStateOf<AudioTrack?>(null) }
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var selectedCustomPlaylist by remember { mutableStateOf<CustomPlaylist?>(null) }
+    var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
 
     val tabs = listOf("Tracks", "Playlists", "Albums", "Artists", "Folders")
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -421,16 +458,38 @@ fun MusicScreen(
                                 icon = Icons.Filled.Search,
                             )
                         } else {
-                            TracksTabContent(tracks = filteredTracks, onTrackClick = { index ->
-                                playbackManager?.playAudioQueue(filteredTracks, startIndex = index)
-                                onOpenPlayer()
-                            })
+                            TracksTabContent(
+                                tracks = filteredTracks,
+                                onTrackClick = { index ->
+                                    playbackManager?.playAudioQueue(filteredTracks, startIndex = index)
+                                    onOpenPlayer()
+                                },
+                                onTrackOptionsClick = { track ->
+                                    trackForOptions = track
+                                },
+                            )
                         }
                     }
-                    1 -> PlaylistsTabContent(playlists = playlists, onPlaylistClick = {
+                    1 -> PlaylistsTabContent(
+                        playlists = allPlaylists,
+                        favouritesCount = favourites.size,
+                        historyCount = history.size,
+                        onCreatePlaylist = { showCreatePlaylistDialog = true },
+                        onFavouritesClick = { showFavouritesDialog = true },
+                        onHistoryClick = { showHistoryDialog = true },
+                        onPlaylistClick = { playlist ->
+                            val custom = customPlaylists.find { it.id.toString() == playlist.id }
+                            if (custom != null) {
+                                selectedCustomPlaylist = custom
+                                scope.launch {
+                                    playlistItemsForDialog = persistenceRepository.getPlaylistItems(custom.id)
+                                }
+                            } else {
                                 playbackManager?.playAudioQueue(tracks, startIndex = 0)
                                 onOpenPlayer()
-                            })
+                            }
+                        },
+                    )
                     2 -> {
                         if (albums.isEmpty()) {
                             EmptyStateView(
@@ -477,12 +536,283 @@ fun MusicScreen(
             }
         }
     }
+
+    if (showCreatePlaylistDialog) {
+        CreatePlaylistDialog(
+            onDismiss = { showCreatePlaylistDialog = false },
+            onConfirm = { name ->
+                scope.launch {
+                    persistenceRepository.createPlaylist(name)
+                    showCreatePlaylistDialog = false
+                    snackbarHostState.showSnackbar("Playlist \"$name\" created")
+                }
+            },
+        )
+    }
+
+    if (trackForPlaylistAdd != null) {
+        val targetTrack = trackForPlaylistAdd!!
+        AddToPlaylistDialog(
+            playlists = customPlaylists,
+            mediaTitle = targetTrack.title,
+            onDismiss = { trackForPlaylistAdd = null },
+            onSelectPlaylist = { pl ->
+                scope.launch {
+                    val playableUri = getPlayableUri(targetTrack)
+                    persistenceRepository.addItemToPlaylist(
+                        PlaylistItem(
+                            playlistId = pl.id,
+                            mediaUri = playableUri,
+                            mediaId = targetTrack.id,
+                            title = targetTrack.title,
+                            subtitle = "${targetTrack.artist} • ${targetTrack.album}",
+                            isVideo = false,
+                        )
+                    )
+                    trackForPlaylistAdd = null
+                    snackbarHostState.showSnackbar("Added to \"${pl.name}\"")
+                }
+            },
+            onCreateNewPlaylist = {
+                trackForPlaylistAdd = null
+                showCreatePlaylistDialog = true
+            },
+        )
+    }
+
+    if (trackForOptions != null) {
+        val targetTrack = trackForOptions!!
+        AlertDialog(
+            onDismissRequest = { trackForOptions = null },
+            containerColor = MpxSurface,
+            title = {
+                Text(
+                    text = targetTrack.title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MpxTextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "${targetTrack.artist} • ${targetTrack.album}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MpxTextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                trackForOptions = null
+                                val idx = tracks.indexOfFirst { it.id == targetTrack.id }.coerceAtLeast(0)
+                                playbackManager?.playAudioQueue(tracks, startIndex = idx)
+                                onOpenPlayer()
+                            }
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Play Track", color = MpxTextPrimary)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                trackForOptions = null
+                                scope.launch {
+                                    val uri = getPlayableUri(targetTrack)
+                                    val added = persistenceRepository.toggleFavourite(
+                                        FavouriteItem(
+                                            mediaUri = uri,
+                                            mediaId = targetTrack.id,
+                                            title = targetTrack.title,
+                                            subtitle = "${targetTrack.artist} • ${targetTrack.album}",
+                                            isVideo = false,
+                                        )
+                                    )
+                                    snackbarHostState.showSnackbar(
+                                        if (added) "Added to Favourites" else "Removed from Favourites"
+                                    )
+                                }
+                            }
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color(0xFFFF5252))
+                        Spacer(Modifier.width(12.dp))
+                        Text("Toggle Favourite", color = MpxTextPrimary)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                trackForPlaylistAdd = targetTrack
+                                trackForOptions = null
+                            }
+                            .padding(vertical = 10.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.PlaylistAdd, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Add to Playlist...", color = MpxTextPrimary)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { trackForOptions = null }) {
+                    Text("Close", color = MpxPrimary)
+                }
+            },
+        )
+    }
+
+    if (selectedCustomPlaylist != null) {
+        val pl = selectedCustomPlaylist!!
+        PlaylistDetailsDialog(
+            playlist = pl,
+            items = playlistItemsForDialog,
+            onDismiss = { selectedCustomPlaylist = null },
+            onPlayAll = {
+                val playable = playlistItemsForDialog.map { item ->
+                    PlayableMedia(
+                        id = item.mediaId,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        uri = item.mediaUri,
+                        isVideo = item.isVideo,
+                    )
+                }
+                if (playable.isNotEmpty()) {
+                    playbackManager?.playQueue(playable, startIndex = 0)
+                    selectedCustomPlaylist = null
+                    onOpenPlayer()
+                }
+            },
+            onPlayItem = { item ->
+                playbackManager?.playQueue(
+                    listOf(
+                        PlayableMedia(
+                            id = item.mediaId,
+                            title = item.title,
+                            subtitle = item.subtitle,
+                            uri = item.mediaUri,
+                            isVideo = item.isVideo,
+                        )
+                    )
+                )
+                selectedCustomPlaylist = null
+                onOpenPlayer()
+            },
+            onRemoveItem = { itemId ->
+                scope.launch {
+                    persistenceRepository.removeItemFromPlaylist(itemId)
+                    playlistItemsForDialog = persistenceRepository.getPlaylistItems(pl.id)
+                }
+            },
+            onDeletePlaylist = {
+                scope.launch {
+                    persistenceRepository.deletePlaylist(pl.id)
+                    selectedCustomPlaylist = null
+                    snackbarHostState.showSnackbar("Deleted \"${pl.name}\"")
+                }
+            },
+        )
+    }
+
+    if (showFavouritesDialog) {
+        FavouritesDialog(
+            favourites = favourites,
+            onDismiss = { showFavouritesDialog = false },
+            onItemClick = { item ->
+                showFavouritesDialog = false
+                playbackManager?.playQueue(
+                    listOf(
+                        PlayableMedia(
+                            id = item.mediaId,
+                            title = item.title,
+                            subtitle = item.subtitle,
+                            uri = item.mediaUri,
+                            isVideo = item.isVideo,
+                            durationMs = item.durationMs,
+                        )
+                    )
+                )
+                onOpenPlayer()
+            },
+            onRemoveFavourite = { uri ->
+                scope.launch {
+                    persistenceRepository.removeFavourite(uri)
+                    snackbarHostState.showSnackbar("Removed from Favourites")
+                }
+            },
+            onClearAll = {
+                scope.launch {
+                    persistenceRepository.clearFavourites()
+                    snackbarHostState.showSnackbar("Cleared Favourites")
+                }
+            },
+        )
+    }
+
+    if (showHistoryDialog) {
+        PlaybackHistoryDialog(
+            history = history,
+            onDismiss = { showHistoryDialog = false },
+            onItemClick = { item ->
+                showHistoryDialog = false
+                playbackManager?.playQueue(
+                    listOf(
+                        PlayableMedia(
+                            id = item.mediaId,
+                            title = item.title,
+                            subtitle = item.subtitle,
+                            uri = item.mediaUri,
+                            isVideo = item.isVideo,
+                            durationMs = item.durationMs,
+                        )
+                    )
+                )
+                onOpenPlayer()
+            },
+            onClearHistory = {
+                scope.launch {
+                    persistenceRepository.clearHistory()
+                    snackbarHostState.showSnackbar("Cleared History")
+                }
+            },
+        )
+    }
+}
+
+private fun getPlayableUri(track: AudioTrack): String {
+    return if (track.path.isNotBlank()) {
+        track.path
+    } else {
+        when (track.id) {
+            "1" -> "asset:///media/midnight_drive.mp3"
+            "2" -> "asset:///media/electric_echoes.mp3"
+            else -> "asset:///media/sample_video.mp4"
+        }
+    }
 }
 
 @Composable
 private fun TracksTabContent(
     tracks: List<AudioTrack>,
     onTrackClick: (Int) -> Unit,
+    onTrackOptionsClick: (AudioTrack) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -546,7 +876,7 @@ private fun TracksTabContent(
                 Spacer(Modifier.width(8.dp))
 
                 IconButton(
-                    onClick = { onTrackClick(index) },
+                    onClick = { onTrackOptionsClick(track) },
                     modifier = Modifier.size(32.dp),
                 ) {
                     Icon(
@@ -569,7 +899,12 @@ private fun TracksTabContent(
 @Composable
 private fun PlaylistsTabContent(
     playlists: List<Playlist>,
-    onPlaylistClick: () -> Unit,
+    favouritesCount: Int,
+    historyCount: Int,
+    onCreatePlaylist: () -> Unit,
+    onFavouritesClick: () -> Unit,
+    onHistoryClick: () -> Unit,
+    onPlaylistClick: (Playlist) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -579,7 +914,7 @@ private fun PlaylistsTabContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onPlaylistClick() }
+                    .clickable { onCreatePlaylist() }
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -607,6 +942,88 @@ private fun PlaylistsTabContent(
                     )
                     Text(
                         text = "Create custom playlist",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MpxTextSecondary,
+                    )
+                }
+            }
+            HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+        }
+
+        // Favourites
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onFavouritesClick() }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFFF5252).copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = null,
+                        tint = Color(0xFFFF5252),
+                    )
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Favourites",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = MpxTextPrimary,
+                    )
+                    Text(
+                        text = "$favouritesCount songs",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MpxTextSecondary,
+                    )
+                }
+            }
+            HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+        }
+
+        // Recently Played
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onHistoryClick() }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MpxPrimary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.History,
+                        contentDescription = null,
+                        tint = MpxPrimary,
+                    )
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Recently Played",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = MpxTextPrimary,
+                    )
+                    Text(
+                        text = "$historyCount songs",
                         style = MaterialTheme.typography.bodySmall,
                         color = MpxTextSecondary,
                     )
@@ -651,7 +1068,7 @@ private fun PlaylistsTabContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onPlaylistClick() }
+                    .clickable { onPlaylistClick(playlist) }
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

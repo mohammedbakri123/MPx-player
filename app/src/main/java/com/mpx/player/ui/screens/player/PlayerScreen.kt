@@ -25,8 +25,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
@@ -58,8 +61,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.mpx.player.domain.model.FavouriteItem
+import com.mpx.player.domain.model.PlaylistItem
+import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
+import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -102,6 +112,21 @@ fun PlayerScreen(
     var controlsVisible by remember { mutableStateOf(true) }
     var activeDialog by remember { mutableStateOf<String?>(null) }
     var showGestureHint by remember { mutableStateOf(true) }
+
+    val scope = rememberCoroutineScope()
+    val customPlaylists by playbackManager.persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
+    var showAddToPlaylistDialog by remember { mutableStateOf(false) }
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    val currentUri = state.currentItem?.uri.orEmpty()
+    val isFavourite by produceState(initialValue = false, currentUri) {
+        if (currentUri.isNotBlank()) {
+            playbackManager.persistenceRepository.observeIsFavourite(currentUri).collect {
+                value = it
+            }
+        } else {
+            value = false
+        }
+    }
 
     // Slider scrubbing state
     var isScrubbingSlider by remember { mutableStateOf(false) }
@@ -422,6 +447,29 @@ fun PlayerScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+
+                        IconButton(onClick = {
+                            state.currentItem?.let { item ->
+                                scope.launch {
+                                    playbackManager.persistenceRepository.toggleFavourite(
+                                        FavouriteItem(
+                                            mediaUri = item.uri,
+                                            mediaId = item.id,
+                                            title = item.title,
+                                            subtitle = item.subtitle,
+                                            isVideo = item.isVideo,
+                                            durationMs = item.durationMs,
+                                        )
+                                    )
+                                }
+                            }
+                        }) {
+                            Icon(
+                                imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (isFavourite) "Remove favourite" else "Add favourite",
+                                tint = if (isFavourite) Color(0xFFFF5252) else Color.White,
                             )
                         }
 
@@ -920,11 +968,82 @@ fun PlayerScreen(
                         Spacer(Modifier.width(12.dp))
                         Text("Aspect Ratio: ${state.aspectRatio.label}", color = MpxTextPrimary)
                     }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                activeDialog = null
+                                showAddToPlaylistDialog = true
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Add to Playlist...", color = MpxTextPrimary)
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
                     Text("OK", color = MpxPrimary)
+                }
+            },
+        )
+    }
+
+    if (showAddToPlaylistDialog && state.currentItem != null) {
+        val current = state.currentItem!!
+        AddToPlaylistDialog(
+            playlists = customPlaylists,
+            mediaTitle = current.title,
+            onDismiss = { showAddToPlaylistDialog = false },
+            onSelectPlaylist = { pl ->
+                scope.launch {
+                    playbackManager.persistenceRepository.addItemToPlaylist(
+                        PlaylistItem(
+                            playlistId = pl.id,
+                            mediaUri = current.uri,
+                            mediaId = current.id,
+                            title = current.title,
+                            subtitle = current.subtitle,
+                            isVideo = current.isVideo,
+                            durationMs = current.durationMs,
+                        )
+                    )
+                    showAddToPlaylistDialog = false
+                }
+            },
+            onCreateNewPlaylist = {
+                showAddToPlaylistDialog = false
+                showCreatePlaylistDialog = true
+            },
+        )
+    }
+
+    if (showCreatePlaylistDialog) {
+        CreatePlaylistDialog(
+            onDismiss = { showCreatePlaylistDialog = false },
+            onConfirm = { name ->
+                scope.launch {
+                    val newId = playbackManager.persistenceRepository.createPlaylist(
+                        name = name,
+                        isVideoPlaylist = state.currentItem?.isVideo ?: false,
+                    )
+                    state.currentItem?.let { current ->
+                        playbackManager.persistenceRepository.addItemToPlaylist(
+                            PlaylistItem(
+                                playlistId = newId,
+                                mediaUri = current.uri,
+                                mediaId = current.id,
+                                title = current.title,
+                                subtitle = current.subtitle,
+                                isVideo = current.isVideo,
+                                durationMs = current.durationMs,
+                            )
+                        )
+                    }
+                    showCreatePlaylistDialog = false
                 }
             },
         )

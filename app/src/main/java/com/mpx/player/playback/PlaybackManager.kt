@@ -8,7 +8,11 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.exoplayer.ExoPlayer
+import com.mpx.player.data.local.db.MpxDatabase
+import com.mpx.player.data.repository.RoomMediaPersistenceRepository
 import com.mpx.player.domain.model.AudioTrack
+import com.mpx.player.domain.model.PlaybackHistoryItem
+import com.mpx.player.domain.repository.MediaPersistenceRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,12 +27,15 @@ import kotlinx.coroutines.launch
 /**
  * Central controller for Media3 ExoPlayer playback in MPx Player.
  * Manages the ExoPlayer instance, queue state, real position ticker,
- * in-memory resume tracking, and audio/subtitle stream track switching.
+ * Room database-backed persistent resume tracking, playback history recording,
+ * and audio/subtitle stream track switching.
  */
 class PlaybackManager private constructor(context: Context) {
 
+    val database: MpxDatabase = MpxDatabase.getInstance(context)
+    val persistenceRepository: MediaPersistenceRepository = RoomMediaPersistenceRepository(database)
     val player: ExoPlayer = ExoPlayer.Builder(context).build()
-    val resumeManager = PlaybackResumeManager()
+    val resumeManager = PlaybackResumeManager(persistenceRepository)
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private var tickerJob: Job? = null
@@ -45,6 +52,29 @@ class PlaybackManager private constructor(context: Context) {
             } else {
                 stopTicker()
                 updatePosition()
+                _playbackState.value.currentItem?.let { item ->
+                    val pos = player.currentPosition.coerceAtLeast(0L)
+                    val dur = player.duration.coerceAtLeast(0L)
+                    if (pos > 1_500L) {
+                        scope.launch(Dispatchers.IO) {
+                            try {
+                                persistenceRepository.recordHistory(
+                                    PlaybackHistoryItem(
+                                        mediaUri = item.uri,
+                                        mediaId = item.id,
+                                        title = item.title,
+                                        subtitle = item.subtitle,
+                                        isVideo = item.isVideo,
+                                        lastPlayedAt = System.currentTimeMillis(),
+                                        playbackPositionMs = pos,
+                                        durationMs = if (dur > 0L) dur else item.durationMs,
+                                    )
+                                )
+                            } catch (_: Exception) {
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -68,6 +98,26 @@ class PlaybackManager private constructor(context: Context) {
 
             if (shouldResume && savedPos != null) {
                 player.seekTo(savedPos)
+            }
+
+            current?.let { item ->
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        persistenceRepository.recordHistory(
+                            PlaybackHistoryItem(
+                                mediaUri = item.uri,
+                                mediaId = item.id,
+                                title = item.title,
+                                subtitle = item.subtitle,
+                                isVideo = item.isVideo,
+                                lastPlayedAt = System.currentTimeMillis(),
+                                playbackPositionMs = savedPos ?: 0L,
+                                durationMs = item.durationMs,
+                            )
+                        )
+                    } catch (_: Exception) {
+                    }
+                }
             }
 
             _playbackState.update {
@@ -110,6 +160,26 @@ class PlaybackManager private constructor(context: Context) {
         player.prepare()
         if (autoPlay) {
             player.play()
+        }
+
+        targetItem.let { item ->
+            scope.launch(Dispatchers.IO) {
+                try {
+                    persistenceRepository.recordHistory(
+                        PlaybackHistoryItem(
+                            mediaUri = item.uri,
+                            mediaId = item.id,
+                            title = item.title,
+                            subtitle = item.subtitle,
+                            isVideo = item.isVideo,
+                            lastPlayedAt = System.currentTimeMillis(),
+                            playbackPositionMs = if (shouldResume) savedPos else 0L,
+                            durationMs = item.durationMs,
+                        )
+                    )
+                } catch (_: Exception) {
+                }
+            }
         }
 
         _playbackState.update {
@@ -308,10 +378,15 @@ class PlaybackManager private constructor(context: Context) {
         val duration = player.duration.coerceAtLeast(0L)
         val buffered = player.bufferedPosition.coerceAtLeast(0L)
 
-        // Save position into in-memory resume store
+        // Save position into persistent resume store
         _playbackState.value.currentItem?.let { item ->
             if (current > 1_500L && (duration <= 0L || current < duration - 2_000L)) {
-                resumeManager.saveResumePosition(item.id, current)
+                resumeManager.saveResumePosition(
+                    id = item.id,
+                    positionMs = current,
+                    mediaUri = item.uri,
+                    durationMs = duration,
+                )
             }
         }
 

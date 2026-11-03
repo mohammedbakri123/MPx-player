@@ -23,10 +23,14 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.AlertDialog
@@ -48,6 +52,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,17 +68,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.data.repository.RoomMediaPersistenceRepository
+import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.MediaFolder
+import com.mpx.player.domain.model.PlaylistItem
+import com.mpx.player.playback.PlayableMedia
+import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.ShortcutChipRow
+import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
+import com.mpx.player.ui.components.persistence.FavouritesDialog
+import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
+import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
 import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurface
 import com.mpx.player.ui.theme.MpxSurfaceElevated
+import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
 import com.mpx.player.util.MediaPermissions
@@ -107,6 +122,21 @@ fun LocalScreen(
     var featureDialogMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val persistenceRepository = remember(context) {
+        playbackManager?.persistenceRepository
+            ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context))
+    }
+    val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
+    val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
+    val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
+
+    var showFavouritesDialog by remember { mutableStateOf(false) }
+    var showHistoryDialog by remember { mutableStateOf(false) }
+    var showPlaylistsDialog by remember { mutableStateOf(false) }
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var selectedPlaylist by remember { mutableStateOf<CustomPlaylist?>(null) }
+    var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -287,7 +317,12 @@ fun LocalScreen(
                 onOpenMusic = onOpenMusic,
                 onOpenTransfer = onOpenTransfer,
                 onChipClick = { featureName ->
-                    featureDialogMessage = "$featureName is scheduled for subsequent phases. Currently previewing layout."
+                    when (featureName) {
+                        "Favourites" -> showFavouritesDialog = true
+                        "History" -> showHistoryDialog = true
+                        "Video Playlists" -> showPlaylistsDialog = true
+                        else -> featureDialogMessage = "$featureName is scheduled for subsequent phases. Currently previewing layout."
+                    }
                 },
             )
 
@@ -445,6 +480,226 @@ fun LocalScreen(
             confirmButton = {
                 TextButton(onClick = { featureDialogMessage = null }) {
                     Text("OK", color = MpxPrimary)
+                }
+            },
+        )
+    }
+
+    if (showFavouritesDialog) {
+        FavouritesDialog(
+            favourites = favourites,
+            onDismiss = { showFavouritesDialog = false },
+            onItemClick = { item ->
+                showFavouritesDialog = false
+                playbackManager?.playQueue(
+                    listOf(
+                        PlayableMedia(
+                            id = item.mediaId,
+                            title = item.title,
+                            subtitle = item.subtitle,
+                            uri = item.mediaUri,
+                            isVideo = item.isVideo,
+                            durationMs = item.durationMs,
+                        )
+                    )
+                )
+                onOpenPlayer()
+            },
+            onRemoveFavourite = { uri ->
+                scope.launch {
+                    persistenceRepository.removeFavourite(uri)
+                    snackbarHostState.showSnackbar("Removed from Favourites")
+                }
+            },
+            onClearAll = {
+                scope.launch {
+                    persistenceRepository.clearFavourites()
+                    snackbarHostState.showSnackbar("Cleared Favourites")
+                }
+            },
+        )
+    }
+
+    if (showHistoryDialog) {
+        PlaybackHistoryDialog(
+            history = history,
+            onDismiss = { showHistoryDialog = false },
+            onItemClick = { item ->
+                showHistoryDialog = false
+                playbackManager?.playQueue(
+                    listOf(
+                        PlayableMedia(
+                            id = item.mediaId,
+                            title = item.title,
+                            subtitle = item.subtitle,
+                            uri = item.mediaUri,
+                            isVideo = item.isVideo,
+                            durationMs = item.durationMs,
+                        )
+                    )
+                )
+                onOpenPlayer()
+            },
+            onClearHistory = {
+                scope.launch {
+                    persistenceRepository.clearHistory()
+                    snackbarHostState.showSnackbar("Cleared History")
+                }
+            },
+        )
+    }
+
+    if (showPlaylistsDialog) {
+        AlertDialog(
+            onDismissRequest = { showPlaylistsDialog = false },
+            containerColor = MpxSurface,
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = "Video Playlists (${customPlaylists.size})",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MpxTextPrimary,
+                    )
+                    TextButton(onClick = {
+                        showPlaylistsDialog = false
+                        showCreatePlaylistDialog = true
+                    }) {
+                        Text("New Playlist", color = MpxPrimary, fontSize = 12.sp)
+                    }
+                }
+            },
+            text = {
+                if (customPlaylists.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "No custom playlists yet. Tap New Playlist to create one.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MpxTextMuted,
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp),
+                    ) {
+                        items(customPlaylists, key = { it.id }) { pl ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        showPlaylistsDialog = false
+                                        selectedPlaylist = pl
+                                        scope.launch {
+                                            playlistItemsForDialog = persistenceRepository.getPlaylistItems(pl.id)
+                                        }
+                                    }
+                                    .padding(vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(MpxSurfaceElevated),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.QueueMusic,
+                                        contentDescription = null,
+                                        tint = MpxPrimary,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text(text = pl.name, style = MaterialTheme.typography.bodyMedium, color = MpxTextPrimary)
+                                    Text(text = "${pl.itemCount} items", style = MaterialTheme.typography.bodySmall, color = MpxTextMuted)
+                                }
+                            }
+                            HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPlaylistsDialog = false }) {
+                    Text("Close", color = MpxPrimary)
+                }
+            },
+        )
+    }
+
+    if (showCreatePlaylistDialog) {
+        CreatePlaylistDialog(
+            onDismiss = { showCreatePlaylistDialog = false },
+            onConfirm = { name ->
+                scope.launch {
+                    persistenceRepository.createPlaylist(name, isVideoPlaylist = true)
+                    showCreatePlaylistDialog = false
+                    snackbarHostState.showSnackbar("Playlist \"$name\" created")
+                }
+            },
+        )
+    }
+
+    if (selectedPlaylist != null) {
+        val pl = selectedPlaylist!!
+        PlaylistDetailsDialog(
+            playlist = pl,
+            items = playlistItemsForDialog,
+            onDismiss = { selectedPlaylist = null },
+            onPlayAll = {
+                val playable = playlistItemsForDialog.map { item ->
+                    PlayableMedia(
+                        id = item.mediaId,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        uri = item.mediaUri,
+                        isVideo = item.isVideo,
+                    )
+                }
+                if (playable.isNotEmpty()) {
+                    playbackManager?.playQueue(playable, startIndex = 0)
+                    selectedPlaylist = null
+                    onOpenPlayer()
+                }
+            },
+            onPlayItem = { item ->
+                playbackManager?.playQueue(
+                    listOf(
+                        PlayableMedia(
+                            id = item.mediaId,
+                            title = item.title,
+                            subtitle = item.subtitle,
+                            uri = item.mediaUri,
+                            isVideo = item.isVideo,
+                        )
+                    )
+                )
+                selectedPlaylist = null
+                onOpenPlayer()
+            },
+            onRemoveItem = { itemId ->
+                scope.launch {
+                    persistenceRepository.removeItemFromPlaylist(itemId)
+                    playlistItemsForDialog = persistenceRepository.getPlaylistItems(pl.id)
+                }
+            },
+            onDeletePlaylist = {
+                scope.launch {
+                    persistenceRepository.deletePlaylist(pl.id)
+                    selectedPlaylist = null
+                    snackbarHostState.showSnackbar("Deleted \"${pl.name}\"")
                 }
             },
         )

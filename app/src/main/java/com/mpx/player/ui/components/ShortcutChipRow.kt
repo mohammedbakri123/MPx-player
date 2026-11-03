@@ -15,6 +15,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.PlaylistPlay
@@ -74,6 +76,18 @@ fun ShortcutChipRow(
             label = "Private",
             icon = Icons.Outlined.Lock,
             onClick = { onChipClick("Private Folder") },
+        ),
+        ShortcutChipData(
+            id = "favourites",
+            label = "Favourites",
+            icon = Icons.Outlined.FavoriteBorder,
+            onClick = { onChipClick("Favourites") },
+        ),
+        ShortcutChipData(
+            id = "history",
+            label = "History",
+            icon = Icons.Outlined.History,
+            onClick = { onChipClick("History") },
         ),
         ShortcutChipData(
             id = "playlists",
