@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.data.repository.MediaStoreRepository
+import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.HonestStatusBanner
@@ -88,6 +89,7 @@ fun LocalScreen(
     onOpenMusic: () -> Unit,
     onOpenTransfer: () -> Unit,
     onOpenSettings: () -> Unit,
+    playbackManager: PlaybackManager? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -259,7 +261,10 @@ fun LocalScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onOpenPlayer,
+                onClick = {
+                                playbackManager?.playVideoQueue()
+                                onOpenPlayer()
+                            },
                 containerColor = MpxPrimary,
                 contentColor = MpxTextPrimary,
                 shape = RoundedCornerShape(16.dp),
@@ -377,7 +382,10 @@ fun LocalScreen(
                         items(sortedFolders, key = { it.id }) { folder ->
                             FolderItemRow(
                                 folder = folder,
-                                onClick = onOpenPlayer,
+                                onClick = {
+                                playbackManager?.playVideoQueue()
+                                onOpenPlayer()
+                            },
                                 onMenuClick = {
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Folder options for ${folder.name}")
@@ -402,7 +410,10 @@ fun LocalScreen(
                         items(sortedFolders, key = { it.id }) { folder ->
                             FolderItemGridCard(
                                 folder = folder,
-                                onClick = onOpenPlayer,
+                                onClick = {
+                                playbackManager?.playVideoQueue()
+                                onOpenPlayer()
+                            },
                             )
                         }
                     }

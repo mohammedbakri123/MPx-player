@@ -3,6 +3,7 @@ package com.mpx.player
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -13,8 +14,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -22,6 +24,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.ui.components.player.MiniPlayer
 import com.mpx.player.ui.navigation.Screen
 import com.mpx.player.ui.navigation.navigationTabs
 import com.mpx.player.ui.screens.local.LocalScreen
@@ -33,7 +37,6 @@ import com.mpx.player.ui.screens.transfer.TransferScreen
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurface
-import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
 import com.mpx.player.ui.theme.MpxTheme
@@ -51,6 +54,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MpxApp() {
+    val context = LocalContext.current
+    val playbackManager = remember { PlaybackManager.getInstance(context) }
     val navController = rememberNavController()
 
     Scaffold(
@@ -63,7 +68,12 @@ fun MpxApp() {
                 return@Scaffold
             }
 
-            androidx.compose.foundation.layout.Column {
+            Column {
+                // Real Media3 persistent MiniPlayer bar
+                MiniPlayer(
+                    playbackManager = playbackManager,
+                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                )
                 HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
                 NavigationBar(
                     containerColor = MpxSurface,
@@ -117,11 +127,13 @@ fun MpxApp() {
                     onOpenMusic = { navController.navigate(Screen.Music.route) },
                     onOpenTransfer = { navController.navigate(Screen.Transfer.route) },
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
+                    playbackManager = playbackManager,
                 )
             }
             composable(Screen.Music.route) {
                 MusicScreen(
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                    playbackManager = playbackManager,
                 )
             }
             composable(Screen.Transfer.route) {
@@ -142,6 +154,7 @@ fun MpxApp() {
             composable(Screen.Player.route) {
                 PlayerScreen(
                     onClose = { navController.popBackStack() },
+                    playbackManager = playbackManager,
                 )
             }
         }

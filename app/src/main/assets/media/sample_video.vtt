@@ -1,0 +1,16 @@
+WEBVTT - MPx Player Sample Subtitles
+
+00:00:01.000 --> 00:00:05.000
+Welcome to MPx Player — Native Jetpack Compose
+
+00:00:06.000 --> 00:00:11.000
+Real Media3 ExoPlayer Engine Active
+
+00:00:12.000 --> 00:00:18.000
+Testing multi-track audio & subtitle stream switching
+
+00:00:19.000 --> 00:00:25.000
+Seek, speed, gestures, and in-memory resume verified
+
+00:00:26.000 --> 00:00:29.500
+Enjoy clean, high-performance playback!
