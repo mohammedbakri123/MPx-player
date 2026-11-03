@@ -317,7 +317,7 @@ fun MpxApp(
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
                                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
                             ),
                         )
                     }

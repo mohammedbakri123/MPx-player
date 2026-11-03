@@ -181,7 +181,7 @@ fun MiniPlayer(
                             imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                             contentDescription = if (state.isPlaying) stringResource(R.string.mini_player_pause) else stringResource(R.string.mini_player_play),
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(24.dp),
                         )
                     }
 
