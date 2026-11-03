@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextPrimary
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
@@ -63,7 +62,7 @@ fun FastScrollbar(
     modifier: Modifier = Modifier,
     getSectionText: ((Int) -> String)? = null,
     thumbColor: Color = MpxPrimary,
-    trackColor: Color = MpxSurfaceElevated.copy(alpha = 0.4f),
+    trackColor: Color = Color.Transparent,
 ) {
     if (itemCount <= 3) return
 
@@ -242,7 +241,7 @@ fun GridFastScrollbar(
     modifier: Modifier = Modifier,
     getSectionText: ((Int) -> String)? = null,
     thumbColor: Color = MpxPrimary,
-    trackColor: Color = MpxSurfaceElevated.copy(alpha = 0.4f),
+    trackColor: Color = Color.Transparent,
 ) {
     if (itemCount <= 4) return
 

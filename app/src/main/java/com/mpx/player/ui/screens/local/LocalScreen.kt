@@ -3,6 +3,7 @@ package com.mpx.player.ui.screens.local
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -94,11 +96,8 @@ import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.FavouritesDialog
 import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
 import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
-import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurface
-import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
@@ -254,7 +253,7 @@ fun LocalScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MpxBlack,
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -264,16 +263,16 @@ fun LocalScreen(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text(stringResource(R.string.local_search_placeholder), color = MpxTextSecondary, fontSize = 14.sp) },
+                            placeholder = { Text(stringResource(R.string.local_search_placeholder), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = MpxSurfaceElevated,
-                                unfocusedContainerColor = MpxSurfaceElevated,
-                                focusedBorderColor = MpxPrimary,
-                                unfocusedBorderColor = MpxBorder,
-                                focusedTextColor = MpxTextPrimary,
-                                unfocusedTextColor = MpxTextPrimary,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             ),
                         )
                     } else {
@@ -283,12 +282,12 @@ fun LocalScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
                             ),
-                            color = MpxTextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MpxSurface,
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
                 actions = {
                     if (isSearching) {
@@ -517,12 +516,13 @@ fun LocalScreen(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(MpxSurfaceElevated)
+                                .background(MaterialTheme.colorScheme.surface)
+                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                         ) {
                             Text(
                                 text = "${filteredFolders.size}",
-                                color = MpxTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -670,12 +670,14 @@ fun LocalScreen(
     if (featureDialogMessage != null) {
         AlertDialog(
             onDismissRequest = { featureDialogMessage = null },
-            containerColor = MpxSurface,
-            title = { Text(stringResource(R.string.dialog_feature_placeholder_title), color = MpxTextPrimary) },
-            text = { Text(featureDialogMessage ?: "", color = MpxTextSecondary) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
+            title = { Text(stringResource(R.string.dialog_feature_placeholder_title), color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text(featureDialogMessage ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(onClick = { featureDialogMessage = null }) {
-                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
+                    Text(stringResource(R.string.action_ok), color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -754,7 +756,9 @@ fun LocalScreen(
     if (showPlaylistsDialog) {
         AlertDialog(
             onDismissRequest = { showPlaylistsDialog = false },
-            containerColor = MpxSurface,
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -764,13 +768,13 @@ fun LocalScreen(
                     Text(
                         text = stringResource(R.string.dialog_video_playlists_title, customPlaylists.size),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     TextButton(onClick = {
                         showPlaylistsDialog = false
                         showCreatePlaylistDialog = true
                     }) {
-                        Text(stringResource(R.string.dialog_new_playlist), color = MpxPrimary, fontSize = 12.sp)
+                        Text(stringResource(R.string.dialog_new_playlist), color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
                     }
                 }
             },
@@ -785,7 +789,7 @@ fun LocalScreen(
                         Text(
                             text = stringResource(R.string.dialog_playlists_empty),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 } else {
@@ -812,19 +816,20 @@ fun LocalScreen(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(MpxSurfaceElevated),
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                         contentDescription = null,
-                                        tint = MpxPrimary,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp),
                                     )
                                 }
                                 Spacer(Modifier.width(12.dp))
                                 Column {
-                                    Text(text = pl.name, style = MaterialTheme.typography.bodyMedium, color = MpxTextPrimary)
+                                    Text(text = pl.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                                     Text(
                                         text = stringResource(R.string.playlist_items_count, pl.itemCount),
                                         style = MaterialTheme.typography.bodySmall,

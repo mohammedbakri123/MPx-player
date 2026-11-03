@@ -30,7 +30,7 @@ import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurfaceElevated
+import androidx.compose.material3.MaterialTheme
 import com.mpx.player.util.ThumbnailLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -80,7 +80,7 @@ fun AsyncThumbnail(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MpxSurfaceElevated),
+                    .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(

@@ -1,6 +1,8 @@
 package com.mpx.player.ui.screens.transfer
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,12 +62,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.HonestStatusBanner
-import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurface
-import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
@@ -84,7 +82,7 @@ fun TransferScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MpxBlack,
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -95,11 +93,11 @@ fun TransferScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MpxSurface,
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
         },
@@ -111,7 +109,7 @@ fun TransferScreen(
         ) {
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = MpxSurface,
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MpxPrimary,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
@@ -120,7 +118,7 @@ fun TransferScreen(
                     )
                 },
                 divider = {
-                    HorizontalDivider(color = MpxBorder, thickness = 0.5.dp)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                 },
             ) {
                 Tab(
@@ -163,7 +161,8 @@ fun TransferScreen(
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         shape = RoundedCornerShape(16.dp),
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -178,7 +177,7 @@ fun TransferScreen(
                                 Text(
                                     text = "URL Downloader",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = MpxTextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold,
                                 )
                             }
@@ -188,7 +187,7 @@ fun TransferScreen(
                             Text(
                                 text = "Paste a direct video link below to download to device storage.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MpxTextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
 
                             Spacer(Modifier.height(14.dp))
@@ -200,7 +199,7 @@ fun TransferScreen(
                                 placeholder = {
                                     Text(
                                         "Paste video URL (https://...)",
-                                        color = MpxTextMuted,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 14.sp,
                                     )
                                 },
@@ -208,7 +207,7 @@ fun TransferScreen(
                                     Icon(
                                         imageVector = Icons.Filled.Link,
                                         contentDescription = null,
-                                        tint = MpxTextMuted,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 },
                                 trailingIcon = {
@@ -232,12 +231,12 @@ fun TransferScreen(
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MpxSurfaceElevated,
-                                    unfocusedContainerColor = MpxSurfaceElevated,
-                                    focusedBorderColor = MpxPrimary,
-                                    unfocusedBorderColor = MpxBorder,
-                                    focusedTextColor = MpxTextPrimary,
-                                    unfocusedTextColor = MpxTextPrimary,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 ),
                             )
 
@@ -308,7 +307,8 @@ fun TransferScreen(
                         modifier = Modifier
                             .size(80.dp)
                             .clip(RoundedCornerShape(20.dp))
-                            .background(MpxSurfaceElevated),
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(

@@ -1,6 +1,7 @@
 package com.mpx.player.ui.components.persistence
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -59,9 +61,6 @@ import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.ui.theme.MpxBorder
 import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurface
-import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextMuted
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
@@ -82,7 +81,9 @@ fun FavouritesDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MpxSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -158,7 +159,8 @@ fun FavouritesDialog(
                                 modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(MpxSurfaceElevated),
+                                .background(MaterialTheme.colorScheme.surface)
+                                .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
@@ -226,7 +228,9 @@ fun PlaybackHistoryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MpxSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -306,7 +310,8 @@ fun PlaybackHistoryDialog(
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(MpxSurfaceElevated),
+                                        .background(MaterialTheme.colorScheme.surface)
+                                .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
@@ -359,7 +364,7 @@ fun PlaybackHistoryDialog(
                                         .height(3.dp)
                                         .clip(RoundedCornerShape(1.5.dp)),
                                     color = MpxPrimary,
-                                    trackColor = MpxSurfaceElevated,
+                                    trackColor = MaterialTheme.colorScheme.outline,
                                 )
                             }
                         }
@@ -389,7 +394,9 @@ fun CreatePlaylistDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MpxSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Text(
                 text = stringResource(R.string.playlist_create_dialog_title),
@@ -454,7 +461,9 @@ fun AddToPlaylistDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MpxSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Text(
                 text = stringResource(R.string.playlist_add_dialog_title),
@@ -574,7 +583,9 @@ fun PlaylistDetailsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MpxSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -665,7 +676,8 @@ fun PlaylistDetailsDialog(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(MpxSurfaceElevated),
+                                        .background(MaterialTheme.colorScheme.surface)
+                                .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(
@@ -745,6 +757,8 @@ fun PlaylistsDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),

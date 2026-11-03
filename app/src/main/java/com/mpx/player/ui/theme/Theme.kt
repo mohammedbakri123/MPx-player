@@ -7,8 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import java.util.Locale
 
-// MPx Midnight Theme: Pure OLED black background, deep navy surfaces, electric blue accent.
-// Distinct MPx visual identity inspired by MX Player's utility-first, high-density layout.
+// MPx Midnight Theme: TRUE AMOLED pure OLED black (#000000) background and surfaces,
+// electric blue accent, accessible high-contrast text, and zero grey surface leaks.
 val MpxMidnightScheme = darkColorScheme(
     primary = MpxPrimary,
     onPrimary = Color.White,
@@ -16,17 +16,24 @@ val MpxMidnightScheme = darkColorScheme(
     onPrimaryContainer = Color.White,
     secondary = MpxAccentCyan,
     onSecondary = Color.Black,
-    secondaryContainer = MpxSurfaceElevated,
+    secondaryContainer = Color(0xFF000000),
     onSecondaryContainer = Color.White,
     tertiary = MpxAccentAmber,
     onTertiary = Color.Black,
-    background = MpxBlack,
+    background = Color(0xFF000000),
     onBackground = MpxTextPrimary,
-    surface = MpxSurface,
+    surface = Color(0xFF000000),
     onSurface = MpxTextPrimary,
-    surfaceVariant = MpxSurfaceVariant,
+    surfaceVariant = Color(0xFF000000),
     onSurfaceVariant = MpxTextSecondary,
-    surfaceContainerHighest = MpxSurfaceElevated,
+    surfaceContainerHighest = Color(0xFF000000),
+    surfaceContainerHigh = Color(0xFF000000),
+    surfaceContainer = Color(0xFF000000),
+    surfaceContainerLow = Color(0xFF000000),
+    surfaceContainerLowest = Color(0xFF000000),
+    surfaceBright = Color(0xFF000000),
+    surfaceDim = Color(0xFF000000),
+    surfaceTint = Color.Transparent,
     outline = MpxBorder,
     outlineVariant = MpxBorderSubtle,
     error = MpxDestructive,
