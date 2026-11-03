@@ -3,6 +3,7 @@ package com.mpx.player.ui.screens.about
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import com.mpx.player.BuildConfig
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -234,7 +235,11 @@ fun AboutBetaScreen(
                         Spacer(Modifier.height(8.dp))
 
                         Text(
-                            text = stringResource(R.string.about_beta_build_info),
+                            text = stringResource(
+                                R.string.about_beta_build_info,
+                                BuildConfig.VERSION_CODE,
+                                BuildConfig.GIT_BRANCH,
+                            ),
                             fontFamily = FontFamily.Monospace,
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),

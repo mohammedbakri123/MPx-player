@@ -229,7 +229,7 @@
     <string name="help_diag_app">ऐप: MPx Player 0.1.0-beta (बिल्ड 2)</string>
     <string name="help_diag_os">Android OS: SDK %1$d (%2$s)</string>
     <string name="help_diag_device">डिवाइस: %1$s %2$s</string>
-    <string name="help_diag_engine">इंजन: AndroidX Media3 ExoPlayer 1.3.1</string>
+    <string name="help_diag_engine">इंजन: %1$s</string>
     <string name="help_diag_db">डेटाबेस: Room SQLite (mpx_player.db)</string>
 
     <string name="dialog_legal_title">कानूनी और ओपन सोर्स</string>
@@ -511,7 +511,7 @@
     <string name="about_beta_screen_title">के बारे में और बीटा स्थिति</string>
     <string name="about_beta_badge">बीटा रिलीज़</string>
     <string name="about_beta_tagline">Media3 ExoPlayer और Room पर्सिस्टेंस के साथ Android के लिए नेटिव Kotlin मीडिया प्लेयर।</string>
-    <string name="about_beta_build_info">बिल्ड 2 (VersionCode 2) • ब्रांच: feature/beta-readiness</string>
+    <string name="about_beta_build_info">बिल्ड %1$d (VersionCode %1$d) • ब्रांच: %2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">बीटा में क्या तैयार है</string>

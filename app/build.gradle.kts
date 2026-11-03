@@ -1,7 +1,21 @@
+import java.io.ByteArrayOutputStream
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+}
+
+// Current git branch at build time; "unknown" when git is unavailable or HEAD is detached.
+val gitBranch: String = try {
+    val stdout = ByteArrayOutputStream()
+    exec {
+        commandLine("git", "rev-parse", "--abbrev-ref", "HEAD")
+        standardOutput = stdout
+    }
+    stdout.toString().trim().takeIf { it.isNotEmpty() && it != "HEAD" } ?: "unknown"
+} catch (_: Exception) {
+    "unknown"
 }
 
 android {
@@ -14,6 +28,8 @@ android {
         targetSdk = 34
         versionCode = 2
         versionName = "0.1.0-beta"
+
+        buildConfigField("String", "GIT_BRANCH", "\"$gitBranch\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
@@ -38,6 +54,7 @@ android {
         jvmTarget = "17"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
     composeOptions {
