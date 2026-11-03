@@ -54,7 +54,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import com.mpx.player.data.repository.MediaRepositoryStub
+import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.ShortcutChipRow
 import com.mpx.player.ui.theme.MpxBlack
@@ -75,6 +77,7 @@ fun LocalScreen(
     onOpenTransfer: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    playbackManager: PlaybackManager = PlaybackManager.getInstance(LocalContext.current),
 ) {
     val repository = remember { MediaRepositoryStub() }
     val folders = remember { repository.getMediaFolders() }
@@ -168,7 +171,10 @@ fun LocalScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onOpenPlayer,
+                onClick = {
+                    playbackManager.playVideoQueue()
+                    onOpenPlayer()
+                },
                 containerColor = MpxPrimary,
                 contentColor = MpxTextPrimary,
                 shape = RoundedCornerShape(16.dp),
@@ -256,7 +262,10 @@ fun LocalScreen(
                     items(folders, key = { it.id }) { folder ->
                         FolderItemRow(
                             folder = folder,
-                            onClick = onOpenPlayer,
+                            onClick = {
+                                playbackManager.playVideoQueue(folder.id)
+                                onOpenPlayer()
+                            },
                             onMenuClick = {
                                 scope.launch {
                                     snackbarHostState.showSnackbar("Folder options for ${folder.name}")
@@ -281,7 +290,10 @@ fun LocalScreen(
                     items(folders, key = { it.id }) { folder ->
                         FolderItemGridCard(
                             folder = folder,
-                            onClick = onOpenPlayer,
+                            onClick = {
+                                playbackManager.playVideoQueue(folder.id)
+                                onOpenPlayer()
+                            },
                         )
                     }
                 }

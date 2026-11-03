@@ -64,6 +64,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.platform.LocalContext
+import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.data.repository.MediaRepositoryStub
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
@@ -87,6 +90,7 @@ import kotlinx.coroutines.launch
 fun MusicScreen(
     onOpenPlayer: () -> Unit,
     modifier: Modifier = Modifier,
+    playbackManager: PlaybackManager = PlaybackManager.getInstance(LocalContext.current),
 ) {
     val repository = remember { MediaRepositoryStub() }
     val tracks = remember { repository.getAudioTracks() }
@@ -226,7 +230,10 @@ fun MusicScreen(
                 Spacer(Modifier.width(10.dp))
 
                 Button(
-                    onClick = onOpenPlayer,
+                    onClick = {
+                        playbackManager.playAudioQueue(tracks.shuffled(), startIndex = 0)
+                        onOpenPlayer()
+                    },
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MpxPrimary,
@@ -255,11 +262,41 @@ fun MusicScreen(
 
             // Tab Content
             when (selectedTab) {
-                0 -> TracksTabContent(tracks = tracks, onTrackClick = onOpenPlayer)
-                1 -> PlaylistsTabContent(playlists = playlists, onPlaylistClick = onOpenPlayer)
-                2 -> AlbumsTabContent(albums = albums, onAlbumClick = onOpenPlayer)
-                3 -> ArtistsTabContent(artists = artists, onArtistClick = onOpenPlayer)
-                4 -> FoldersTabContent(folders = folders, onFolderClick = onOpenPlayer)
+                0 -> TracksTabContent(
+                    tracks = tracks,
+                    onTrackClick = { index ->
+                        playbackManager.playAudioQueue(tracks, startIndex = index)
+                        onOpenPlayer()
+                    },
+                )
+                1 -> PlaylistsTabContent(
+                    playlists = playlists,
+                    onPlaylistClick = {
+                        playbackManager.playAudioQueue(tracks, startIndex = 0)
+                        onOpenPlayer()
+                    },
+                )
+                2 -> AlbumsTabContent(
+                    albums = albums,
+                    onAlbumClick = {
+                        playbackManager.playAudioQueue(tracks, startIndex = 0)
+                        onOpenPlayer()
+                    },
+                )
+                3 -> ArtistsTabContent(
+                    artists = artists,
+                    onArtistClick = {
+                        playbackManager.playAudioQueue(tracks, startIndex = 0)
+                        onOpenPlayer()
+                    },
+                )
+                4 -> FoldersTabContent(
+                    folders = folders,
+                    onFolderClick = {
+                        playbackManager.playAudioQueue(tracks, startIndex = 0)
+                        onOpenPlayer()
+                    },
+                )
             }
         }
     }
@@ -268,17 +305,17 @@ fun MusicScreen(
 @Composable
 private fun TracksTabContent(
     tracks: List<AudioTrack>,
-    onTrackClick: () -> Unit,
+    onTrackClick: (trackIndex: Int) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 80.dp),
     ) {
-        items(tracks, key = { it.id }) { track ->
+        itemsIndexed(tracks, key = { _, track -> track.id }) { index, track ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onTrackClick() }
+                    .clickable { onTrackClick(index) }
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -332,7 +369,7 @@ private fun TracksTabContent(
                 Spacer(Modifier.width(8.dp))
 
                 IconButton(
-                    onClick = { onTrackClick() },
+                    onClick = { onTrackClick(index) },
                     modifier = Modifier.size(32.dp),
                 ) {
                     Icon(

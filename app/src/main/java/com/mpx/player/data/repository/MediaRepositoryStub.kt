@@ -9,10 +9,10 @@ import com.mpx.player.domain.model.Playlist
 import com.mpx.player.domain.repository.MediaRepository
 
 /**
- * Baseline repository providing realistic UI layout fixtures for the shell.
- * This ensures the MX Player layout, typography, badges, and row metrics
- * match real device proportions without faking background scan operations.
- * Real MediaStore scanning replaces this in Phase 1.
+ * Baseline repository providing realistic UI layout fixtures and queue source for playback.
+ * Note: Real MediaStore scanning and Room persistence arrive from the scan/Room worktrees.
+ * The audio tracks and folders here provide immediate queue sources wired to packaged
+ * media assets so Media3 ExoPlayer performs real playback, seeking, and multi-track selection.
  */
 class MediaRepositoryStub : MediaRepository {
 
@@ -60,11 +60,11 @@ class MediaRepositoryStub : MediaRepository {
     )
 
     override fun getAudioTracks(): List<AudioTrack> = listOf(
-        AudioTrack("1", "Midnight Drive", "Synthetix", "Neon Horizon", "3:42"),
-        AudioTrack("2", "Electric Echoes", "CyberPulse", "Retrowave Vol. 1", "4:15"),
-        AudioTrack("3", "Acoustic Morning", "Clara Brooks", "Simple Days", "2:58"),
-        AudioTrack("4", "Deep Horizon", "Nordic Waves", "Ambient Sounds", "5:20"),
-        AudioTrack("5", "Solar Flares", "Astral Unit", "Galactic Run", "3:34"),
+        AudioTrack("1", "Midnight Drive", "Synthetix", "Neon Horizon", "0:15", "asset:///media/midnight_drive.mp3"),
+        AudioTrack("2", "Electric Echoes", "CyberPulse", "Retrowave Vol. 1", "0:15", "asset:///media/electric_echoes.mp3"),
+        AudioTrack("3", "Acoustic Morning", "Clara Brooks", "Simple Days", "0:15", "asset:///media/acoustic_morning.mp3"),
+        AudioTrack("4", "Deep Horizon", "Nordic Waves", "Ambient Sounds", "0:30", "asset:///media/sample_video.mp4"),
+        AudioTrack("5", "Solar Flares", "Astral Unit", "Galactic Run", "0:15", "asset:///media/midnight_drive.mp3"),
     )
 
     override fun getPlaylists(): List<Playlist> = listOf(
