@@ -8,6 +8,7 @@ import com.mpx.player.domain.model.AudioFolder
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.Playlist
+import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.repository.MediaRepository
 import java.io.File
 import java.util.Locale
@@ -104,6 +105,48 @@ class MediaStoreRepository(
                 lastModified = acc.lastModified,
             )
         }.sortedBy { it.name.lowercase(Locale.US) }
+    }
+
+    override fun getVideosInFolder(bucketId: String): List<VideoFile> {
+        val videos = mutableListOf<VideoFile>()
+        val projection = arrayOf(
+            MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.TITLE,
+            MediaStore.Video.Media.DATA,
+            MediaStore.Video.Media.DURATION,
+        )
+        try {
+            context.contentResolver.query(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                "${MediaStore.Video.Media.BUCKET_ID} = ?",
+                arrayOf(bucketId),
+                "${MediaStore.Video.Media.TITLE} COLLATE NOCASE ASC",
+            )?.use { cursor ->
+                val idCol = cursor.getColumnIndex(MediaStore.Video.Media._ID)
+                val titleCol = cursor.getColumnIndex(MediaStore.Video.Media.TITLE)
+                val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
+                val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
+                while (cursor.moveToNext()) {
+                    val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
+                    if (path.isBlank()) continue
+                    val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
+                    videos.add(
+                        VideoFile(
+                            id = if (idCol >= 0) cursor.getLong(idCol).toString() else path,
+                            title = rawTitle?.ifBlank { File(path).name } ?: File(path).name,
+                            path = path,
+                            durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L,
+                        )
+                    )
+                }
+            }
+        } catch (_: SecurityException) {
+            return emptyList()
+        } catch (_: Exception) {
+            return emptyList()
+        }
+        return videos
     }
 
     override fun getAudioTracks(): List<AudioTrack> {

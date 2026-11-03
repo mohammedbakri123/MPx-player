@@ -1,6 +1,7 @@
 package com.mpx.player.domain.repository
 
 import com.mpx.player.domain.model.AudioAlbum
+import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioFolder
 import com.mpx.player.domain.model.AudioTrack
@@ -13,6 +14,7 @@ import com.mpx.player.domain.model.Playlist
  */
 interface MediaRepository {
     fun getMediaFolders(): List<MediaFolder>
+    fun getVideosInFolder(bucketId: String): List<VideoFile> = emptyList()
     fun getAudioTracks(): List<AudioTrack>
     fun getPlaylists(): List<Playlist>
     fun getAudioAlbums(): List<AudioAlbum>
