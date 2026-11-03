@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.ScreenRotation
@@ -93,6 +94,7 @@ import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.util.PipUtils
 
 @Composable
 fun PlayerScreen(
@@ -100,6 +102,7 @@ fun PlayerScreen(
     modifier: Modifier = Modifier,
     playbackManager: PlaybackManager = PlaybackManager.getInstance(LocalContext.current),
 ) {
+    val context = LocalContext.current
     val state by playbackManager.playbackState.collectAsState()
 
     // Initialize default video queue if opened empty
@@ -486,6 +489,24 @@ fun PlayerScreen(
                                 imageVector = Icons.Filled.Subtitles,
                                 contentDescription = "Subtitles",
                                 tint = if (state.selectedSubtitleTrackIndex != -1) MpxPrimary else Color.White,
+                            )
+                        }
+
+                        IconButton(onClick = {
+                            val entered = PipUtils.enterPip(context)
+                            if (!entered) {
+                                val msg = if (!PipUtils.isPipSupported(context)) {
+                                    "Pop-up Play (PiP) is not supported on this device"
+                                } else {
+                                    "Unable to enter Picture-in-Picture mode"
+                                }
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.PictureInPictureAlt,
+                                contentDescription = "Pop-up Play (PiP)",
+                                tint = Color.White,
                             )
                         }
 
@@ -926,6 +947,28 @@ fun PlayerScreen(
                         Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
                         Text("Subtitles (${if (state.selectedSubtitleTrackIndex == -1) "Off" else "Active"})", color = MpxTextPrimary)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                activeDialog = null
+                                val entered = PipUtils.enterPip(context)
+                                if (!entered) {
+                                    val msg = if (!PipUtils.isPipSupported(context)) {
+                                        "Pop-up Play (PiP) is not supported on this device"
+                                    } else {
+                                        "Unable to enter Picture-in-Picture mode"
+                                    }
+                                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null, tint = MpxPrimary)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Pop-up Play (PiP Mode)", color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
