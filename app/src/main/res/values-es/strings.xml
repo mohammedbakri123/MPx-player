@@ -48,6 +48,8 @@
     <string name="lang_hindi_desc">Interfaz en hindi (diseño LTR)</string>
     <string name="lang_chinese">Chino (Chinese)</string>
     <string name="lang_chinese_desc">Interfaz en chino (diseño LTR)</string>
+    <string name="lang_russian">Ruso (Russian)</string>
+    <string name="lang_russian_desc">Interfaz en ruso (diseño LTR)</string>
     <string name="lang_applied_msg">Idioma actualizado: %s</string>
     <string name="lang_settings_note">Selecciona tu idioma preferido para la app. El idioma y la dirección del diseño se aplican de inmediato sin reiniciar.</string>
 

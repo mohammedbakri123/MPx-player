@@ -1,0 +1,693 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & General -->
+    <string name="app_name">MPx Player</string>
+    <string name="app_version_name">Версия 0.1.0-beta</string>
+    <string name="app_version_full">MPx Player 0.1.0-beta</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_local">Локально</string>
+    <string name="nav_music">Музыка</string>
+    <string name="nav_transfer">Передача</string>
+    <string name="nav_me">Я</string>
+
+    <!-- Mini Player -->
+    <string name="mini_player_video">Видео</string>
+    <string name="mini_player_audio">Аудио</string>
+    <string name="mini_player_prev">Предыдущий трек</string>
+    <string name="mini_player_pause">Пауза</string>
+    <string name="mini_player_play">Играть</string>
+    <string name="mini_player_next">Следующий трек</string>
+    <string name="mini_player_close">Закрыть плеер</string>
+
+    <!-- Common Actions -->
+    <string name="action_back">Назад</string>
+    <string name="action_close">Закрыть</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_ok">ОК</string>
+    <string name="action_paste">Вставить</string>
+    <string name="action_understood">Понятно</string>
+    <string name="action_done">Готово</string>
+
+    <!-- Language Settings & Dialog -->
+    <string name="pref_app_language">Язык приложения</string>
+    <string name="pref_app_language_desc">Переключение между английским, арабским, испанским, французским, хинди, русским и системным языком по умолчанию</string>
+    <string name="lang_dialog_title">Выбрать язык приложения</string>
+    <string name="lang_system_default">Системный по умолчанию</string>
+    <string name="lang_system_default_desc">Следовать системным языковым настройкам</string>
+    <string name="lang_english">English</string>
+    <string name="lang_english_desc">Английский интерфейс (LTR-раскладка)</string>
+    <string name="lang_arabic">العربية (Arabic)</string>
+    <string name="lang_arabic_desc">Арабский интерфейс с полной раскладкой справа налево (RTL)</string>
+    <string name="lang_spanish">Español (Spanish)</string>
+    <string name="lang_spanish_desc">Испанский интерфейс (LTR-раскладка)</string>
+    <string name="lang_french">Français (French)</string>
+    <string name="lang_french_desc">Французский интерфейс (LTR-раскладка)</string>
+    <string name="lang_hindi">हिन्दी (Hindi)</string>
+    <string name="lang_hindi_desc">Интерфейс на хинди (LTR-раскладка)</string>
+    <string name="lang_chinese">中文 (Chinese)</string>
+    <string name="lang_chinese_desc">Китайский интерфейс (LTR-раскладка)</string>
+    <string name="lang_russian">Русский (Russian)</string>
+    <string name="lang_russian_desc">Русский интерфейс (LTR-раскладка)</string>
+    <string name="lang_applied_msg">Язык обновлён: %s</string>
+    <string name="lang_settings_note">Выберите предпочитаемый язык приложения. Язык и направление раскладки применяются сразу, без перезапуска приложения.</string>
+
+    <!-- Settings Screen Categories -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_category_language">Язык приложения</string>
+    <string name="settings_category_language_sub">English, العربية, Español, Français, हिन्दी, Русский, System Default</string>
+    <string name="settings_category_theme">Тема приложения</string>
+    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
+    <string name="settings_category_pip">Пользовательский режим «картинка в картинке»</string>
+    <string name="settings_category_pip_sub">Элементы управления «картинка в картинке» и фоновое воспроизведение</string>
+    <string name="settings_category_tabs">Музыкальные вкладки</string>
+    <string name="settings_category_tabs_sub">Показывать или скрывать треки, плейлисты, альбомы, исполнителей, папки</string>
+    <string name="settings_category_list">Список</string>
+    <string name="settings_category_list_sub">Вид папок, скрытые файлы, миниатюры, музыкальные вкладки</string>
+    <string name="settings_category_player">Плеер</string>
+    <string name="settings_category_player_sub">Продолжение воспроизведения, фоновое воспроизведение, жесты</string>
+    <string name="settings_category_decoder">Декодер</string>
+    <string name="settings_category_decoder_sub">Аппаратное ускорение (HW / HW+), программное (SW)</string>
+    <string name="settings_category_audio">Аудио</string>
+    <string name="settings_category_audio_sub">Усиление громкости</string>
+    <string name="settings_category_subtitle">Субтитры</string>
+    <string name="settings_category_subtitle_sub">Размер и цветовой стиль субтитров</string>
+    <string name="settings_category_general">Общие</string>
+    <string name="settings_category_general_sub">Сбросить все настройки к значениям по умолчанию</string>
+    <string name="settings_category_development">Разработка</string>
+    <string name="settings_category_development_sub">Диагностика, состояние базы данных, метрики сканирования и движок воспроизведения</string>
+    <string name="settings_category_about">О программе</string>
+    <string name="settings_category_about_sub">Версия 0.1.0-beta • Статус бета-версии и отзывы</string>
+
+    <!-- Settings Category Options -->
+    <string name="theme_midnight">Midnight OLED (чисто чёрный)</string>
+    <string name="theme_dark">Dark Slate (графитовый)</string>
+    <string name="theme_classic">Classic MX Navy</string>
+    <string name="theme_light">Light Cinema (чисто белый)</string>
+    <string name="theme_applied_snackbar">Тема применена: %s</string>
+
+    <string name="pip_not_supported">Примечание: режим «картинка в картинке» не поддерживается на этом устройстве/в этой среде (требуется Android 8.0+ с FEATURE_PICTURE_IN_PICTURE).</string>
+    <string name="pip_enable_toggle">Включить режим «картинка в картинке» (PiP)</string>
+    <string name="pip_window_controls_header">Элементы управления окном PiP:</string>
+    <string name="pip_controls_prev_next">Назад / Вперёд (по умолчанию)</string>
+    <string name="pip_controls_seek10">Перемотка вперёд / назад (10 с)</string>
+
+    <string name="list_show_all_folders">Показывать все папки</string>
+    <string name="list_show_all_folders_desc">Показывать все отсканированные папки, включая пустые и скрытые</string>
+    <string name="list_show_hidden">Показывать скрытые файлы</string>
+    <string name="list_show_thumbnails">Показывать миниатюры</string>
+
+    <string name="player_resume_playback">Продолжить воспроизведение</string>
+    <string name="player_background_play">Фоновое воспроизведение</string>
+    <string name="player_background_play_desc">Звук продолжает играть, когда приложение свёрнуто или экран выключен. Для видео звук честно продолжает играть, а отрисовка видео приостанавливается.</string>
+    <string name="player_menu_background_play">Фоновое воспроизведение (для видео — только звук)</string>
+    <string name="player_background_active_banner">Фоновое воспроизведение активно: звук продолжает играть (отрисовка видео приостановлена)</string>
+    <string name="player_gestures">Жесты (двойное касание, перетаскивание для перемотки)</string>
+
+    <string name="decoder_hw">HW (аппаратный — аппаратное ускорение Android MediaCodec)</string>
+    <string name="decoder_hw_plus">HW+ (аппаратный плюс — асинхронный конвейер буферов)</string>
+    <string name="decoder_sw">SW (программный — декодирование на CPU как запасной вариант)</string>
+    <string name="decoder_explanation">Выбор предпочитаемого декодера плеера по умолчанию. HW использует аппаратные кодеки чипсета устройства; SW обеспечивает программный запасной вариант. Если Android не позволяет использовать запрошенный декодер (например, неподдерживаемый кодек), MPx честно показывает примечание о запасном варианте.</string>
+
+    <string name="audio_volume_boost">Усиление громкости</string>
+
+    <string name="subtitle_size_header">Размер текста субтитров:</string>
+    <string name="subtitle_size_small">Маленький (14sp)</string>
+    <string name="subtitle_size_normal">Обычный (18sp)</string>
+    <string name="subtitle_size_large">Большой (24sp)</string>
+    <string name="subtitle_style_header">Стиль и цвет субтитров:</string>
+    <string name="subtitle_style_white">Белый текст, чёрный контур (классический)</string>
+    <string name="subtitle_style_yellow">Жёлтый текст, чёрный контур (высокий контраст)</string>
+    <string name="subtitle_style_cyan">Голубой текст, чёрный контур</string>
+    <string name="subtitle_style_default">Системный стиль субтитров по умолчанию</string>
+
+    <string name="general_reset_button">Сбросить всё к значениям по умолчанию</string>
+    <string name="general_reset_done">Все настройки сброшены к значениям по умолчанию.</string>
+    <string name="general_language_hint">Язык приложения можно изменить в разделе «Язык приложения» или на экране «Я».</string>
+
+    <string name="about_app_description">MPx Player 0.1.0-beta. Нативная переработка на Kotlin, раскладка в духе MX, полностью созданная на собственном коде и стилях MPx.</string>
+
+    <!-- Me Screen Headers & Profile -->
+    <string name="me_title">Я</string>
+    <string name="me_profile_user">Локальный пользователь MPx</string>
+    <string name="me_profile_desc">Приватный медиаплеер на устройстве</string>
+    <string name="me_status_banner">Сетка инструментов «Я»: реальные функции, связанные с локальными файлами, музыкой, плейлистами, избранным, историей, сетевым потоком. Заполнители честно помечены для задачи 32.</string>
+    <string name="section_tools">ИНСТРУМЕНТЫ</string>
+    <string name="section_preferences">НАСТРОЙКИ</string>
+    <string name="section_about_legal">О ПРОГРАММЕ И ПРАВОВАЯ ИНФОРМАЦИЯ</string>
+
+    <!-- Me Screen Tools -->
+    <string name="tool_local_title">Локальные видео</string>
+    <string name="tool_local_desc">Папки с видео</string>
+    <string name="tool_music_title">Музыка</string>
+    <string name="tool_music_desc">Аудиотека</string>
+    <string name="tool_playlists_title">Плейлисты</string>
+    <string name="tool_playlists_desc">Пользовательские подборки</string>
+    <string name="tool_favourites_title">Избранное</string>
+    <string name="tool_favourites_desc">Отмеченные медиа</string>
+    <string name="tool_history_title">История</string>
+    <string name="tool_history_desc">Недавно воспроизведённое</string>
+    <string name="tool_network_title">Сетевой поток</string>
+    <string name="tool_network_desc">Воспроизвести URL потока</string>
+    <string name="tool_transfer_title">Передача файлов</string>
+    <string name="tool_transfer_desc">P2P-передача</string>
+    <string name="tool_equalizer_title">Эквалайзер</string>
+    <string name="tool_equalizer_desc">Системный настройщик звука</string>
+    <string name="tool_status_title">Сохранение статусов</string>
+    <string name="tool_status_desc">Статусы WhatsApp</string>
+    <string name="tool_private_title">Личная папка</string>
+    <string name="tool_private_desc">Хранилище с PIN-кодом</string>
+    <string name="tool_manager_title">Медиа-менеджер</string>
+    <string name="tool_manager_desc">Очистка хранилища</string>
+    <string name="tool_bin_title">Корзина</string>
+    <string name="tool_bin_desc">Удалённые файлы</string>
+
+    <!-- Me Screen Preferences -->
+    <string name="pref_music_player">Музыкальный плеер</string>
+    <string name="pref_music_player_desc">Открыть локальную аудиотеку</string>
+    <string name="pref_video_library">Видеотека</string>
+    <string name="pref_video_library_desc">Просмотр папок и видеоподборок</string>
+    <string name="pref_app_theme">Тема приложения</string>
+    <string name="pref_popup_play">Пользовательский режим «картинка в картинке»</string>
+    <string name="pip_status_enabled">PiP включён • %s</string>
+    <string name="pip_status_disabled">Режим «картинка в картинке» отключён</string>
+    <string name="pip_status_unsupported">Устройство не поддерживает PiP (требуется Android 8.0+)</string>
+    <string name="pref_settings">Настройки</string>
+    <string name="pref_settings_desc">Параметры плеера, декодера, списка и субтитров</string>
+
+    <!-- Me Screen About & Legal Rows -->
+    <string name="pref_privacy">Конфиденциальность и безопасность</string>
+    <string name="pref_privacy_desc">100% на устройстве. Ноль телеметрии, без рекламы, без трекеров.</string>
+    <string name="pref_help">Помощь и отзывы</string>
+    <string name="pref_help_desc">Руководство по жестам плеера, обучающие материалы и диагностика устройства</string>
+    <string name="pref_legal">Правовая информация и открытый код</string>
+    <string name="pref_legal_desc">Лицензии на ПО, условия и раскрытие источников вдохновения</string>
+    <string name="pref_about_mpx">О MPx Player (бета)</string>
+    <string name="pref_about_mpx_desc">Версия 0.1.0-beta • Статус, заполнители и отзывы</string>
+
+    <!-- Me Screen Dialogs Content -->
+    <string name="dialog_theme_title">Выбрать тему приложения</string>
+    <string name="theme_midnight_desc">Настоящий OLED #000000, кинематографический контраст. Максимальная экономия батареи.</string>
+    <string name="theme_dark_desc">Современная тёмная тема с более мягким графитовым контрастом #0F172A.</string>
+    <string name="theme_classic_desc">Глубокий сине-чёрный #0A0F1D, вдохновлённый классическими утилитарными плеерами.</string>
+    <string name="theme_light_desc">Высококонтрастная светлая палитра для яркого окружения.</string>
+
+    <string name="dialog_popup_play_title">Пользовательский режим «картинка в картинке»</string>
+    <string name="pip_banner_supported">Устройство поддерживает режим Android «картинка в картинке».</string>
+    <string name="pip_banner_unsupported">PiP не поддерживается: требуются Android 8.0+ и системная поддержка FEATURE_PICTURE_IN_PICTURE. Настройки остаются честными.</string>
+    <string name="pip_auto_title">Авто «картинка в картинке»</string>
+    <string name="pip_auto_desc">Переходить в плавающее окно при выходе из приложения во время воспроизведения видео</string>
+    <string name="pip_test_button">Проверить режим «картинка в картинке»</string>
+    <string name="pip_test_fail_playing">Сейчас нельзя перейти в режим PiP. Сначала воспроизведите видео в плеере.</string>
+
+    <string name="dialog_network_title">Сетевой поток</string>
+    <string name="dialog_network_desc">Введите любой URL потока HTTP, HTTPS или HLS для прямого воспроизведения в Media3 ExoPlayer:</string>
+    <string name="dialog_network_samples">Примеры публичных потоков:</string>
+    <string name="dialog_network_play">Воспроизвести поток</string>
+
+    <string name="dialog_privacy_title">Конфиденциальность и безопасность</string>
+    <string name="privacy_sec1_title">100% архитектура на устройстве</string>
+    <string name="privacy_sec1_body">MPx Player — медиаплеер, работающий в первую очередь офлайн. Индексация медиа, извлечение метаданных и воспроизведение происходят исключительно на вашем устройстве. Ваша библиотека файлов никогда не загружается на удалённые серверы.</string>
+    <string name="privacy_sec2_title">Ноль телеметрии и аналитики</string>
+    <string name="privacy_sec2_body">В MPx Player нет трекинговых SDK, рекламных идентификаторов и систем слежения за пользователем. Ваши привычки воспроизведения и файлы остаются строго вашими.</string>
+    <string name="privacy_sec3_title">Локальная песочница SQLite</string>
+    <string name="privacy_sec3_body">Избранное, пользовательские плейлисты и точки продолжения воспроизведения хранятся в приватной базе данных Room SQLite (mpx_player.db) внутри защищённой песочницы приложения Android.</string>
+    <string name="privacy_sec4_title">Прозрачные разрешения</string>
+    <string name="privacy_sec4_body">• READ_MEDIA_VIDEO / AUDIO: поиск локальных медиафайлов.\n• INTERNET: необязательно, используется только когда вы вставляете URL потока в «Сетевой поток».</string>
+
+    <string name="dialog_help_title">Помощь и руководство по плееру</string>
+    <string name="help_sec1_title">Жесты плеера</string>
+    <string name="help_sec1_body">• Двойное касание слева: перемотка назад на 10 секунд\n• Двойное касание справа: перемотка вперёд на 10 секунд\n• Горизонтальное перетаскивание: плавная точная перемотка видео\n• Кнопка блокировки: защита от случайных касаний во время просмотра\n• Соотношение сторон: переключение между Fit, Stretch, 16:9 и Original</string>
+    <string name="help_sec2_title">Аудио- и субтитровые дорожки</string>
+    <string name="help_sec2_body">• Значок аудио: переключение между отдельными аудиодорожками (двухголосый звук, комментарии)\n• Значок субтитров: выбор встроенных или внешних субтитровых дорожек .vtt / .srt\n• Размер субтитров: настраивается в настройках (маленький, обычный, большой)</string>
+    <string name="help_sec3_title">Диагностика устройства (в реальном времени)</string>
+    <string name="help_diag_app">Приложение: MPx Player 0.1.0-beta (сборка 2)</string>
+    <string name="help_diag_os">ОС Android: SDK %1$d (%2$s)</string>
+    <string name="help_diag_device">Устройство: %1$s %2$s</string>
+    <string name="help_diag_engine">Движок: AndroidX Media3 ExoPlayer 1.3.1</string>
+    <string name="help_diag_db">База данных: Room SQLite (mpx_player.db)</string>
+
+    <string name="dialog_legal_title">Правовая информация и открытый код</string>
+    <string name="legal_sec1_title">Лицензии открытого кода</string>
+    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: Apache License 2.0\n• Jetpack Compose и Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0</string>
+    <string name="legal_sec2_title">Уведомление об указании источника вдохновения</string>
+    <string name="legal_sec2_body">MPx Player — независимый нативный медиаплеер для Android, созданный с нуля. Его организация и UX-процессы вдохновлены MX Player (согласно спецификациям раскладки, полученным обратным инжинирингом). Весь код, представления и стили переписаны на 100% с нуля на нативном Kotlin и Jetpack Compose. Никакие проприетарные ресурсы, код или товарные знаки не используются.</string>
+    <string name="legal_sec3_title">Условия использования</string>
+    <string name="legal_sec3_body">MPx Player предоставляется «как есть» без гарантии по лицензии Apache 2.0. Пользователи сами отвечают за свои медиафайлы.</string>
+
+    <string name="dialog_about_body1">Чистая нативная переработка на Kotlin с Jetpack Compose, AndroidX Media3 ExoPlayer и сохранением Room SQLite.</string>
+    <string name="dialog_about_body2">Плотное утилитарное управление медиа без зависимости от облака, слежения и рекламы.</string>
+
+    <string name="equalizer_dialog_msg">Системный эквалайзер: на этом устройстве не найдена панель управления аудиоэффектами (например, MusicFX или системное приложение эквалайзера). Звук использует стандартный ровный выход.</string>
+
+    <string name="issue32_dialog_header">%s (задача 32)</string>
+    <string name="issue32_status_notice">Эта функция запланирована для задачи 32.</string>
+    <string name="issue32_status_honest">Статус: честный заполнитель — не подделка.</string>
+    <string name="issue32_status_detail">Для сохранения статусов WhatsApp требуется доступ к каталогу в рамках scoped storage. После создания оно будет сканировать и сохранять скачанные видео- и фотостатусы.</string>
+    <string name="issue32_private_detail">Для личной папки требуется зашифрованное хранилище SQLite или файловое хранилище, защищённое PIN-кодом или биометрической аутентификацией, чтобы скрывать конфиденциальные медиа.</string>
+    <string name="issue32_manager_detail">Медиа-менеджер и очистка хранилища проанализируют хранилище устройства, выявят дублирующиеся видео, большие файлы и временный кэш.</string>
+    <string name="issue32_bin_detail">Корзина будет хранить удалённые файлы в управляемом приложением каталоге временного хранения в течение 30 дней до окончательного удаления.</string>
+
+    <!-- Music Screen -->
+    <string name="music_screen_title">Музыка</string>
+    <string name="music_cd_equalizer">Эквалайзер</string>
+    <string name="music_equalizer_scheduled">Эквалайзер запланирован для аудио-фазы</string>
+    <string name="music_library_refreshed">Музыкальная библиотека обновлена</string>
+    <string name="music_search_placeholder">Поиск песен…</string>
+    <string name="music_shuffle_all">Перемешать всё</string>
+    <string name="music_banner_scanning">Активно реальное сканирование MediaStore. Аудиотреки, альбомы, исполнители и папки отражают медиа устройства.</string>
+
+    <!-- Music Tabs -->
+    <string name="music_tab_tracks">Треки</string>
+    <string name="music_tab_playlists">Плейлисты</string>
+    <string name="music_tab_albums">Альбомы</string>
+    <string name="music_tab_artists">Исполнители</string>
+    <string name="music_tab_folders">Папки</string>
+    <string name="settings_tabs_header">Музыкальные вкладки</string>
+    <string name="settings_tabs_desc">Выберите, какие вкладки отображаются на экране «Музыка». Как минимум одна вкладка всегда должна оставаться видимой.</string>
+    <string name="settings_tab_min_one_required">Как минимум одна вкладка должна оставаться видимой.</string>
+    <string name="settings_tab_last_active_sub">Должна оставаться видимой (требуется минимум одна вкладка)</string>
+    <string name="music_menu_manage_tabs">Управление вкладками</string>
+    <string name="music_dialog_tabs_title">Видимые музыкальные вкладки</string>
+    <string name="music_dialog_tabs_desc">Выберите, какие вкладки отображаются на экране «Музыка»:</string>
+
+    <!-- Music Permission & Empty States -->
+    <string name="music_permission_required_title">Требуется разрешение</string>
+    <string name="music_permission_required_desc">MPx нужно разрешение на доступ к вашим аудиофайлам, чтобы показать вашу музыкальную библиотеку.</string>
+    <string name="music_permission_grant_button">Предоставить разрешение</string>
+    <string name="music_empty_tracks_title">Музыка не найдена</string>
+    <string name="music_empty_tracks_desc">На этом устройстве не найдено аудиотреков.</string>
+    <string name="music_empty_refresh_action">Обновить</string>
+    <string name="music_search_no_matches_title">Совпадений не найдено</string>
+    <string name="music_search_no_matches_desc">Песен, соответствующих «%s», нет.</string>
+    <string name="music_empty_albums_title">Альбомы не найдены</string>
+    <string name="music_empty_albums_desc">На этом устройстве не найдено аудиоальбомов.</string>
+    <string name="music_empty_artists_title">Исполнители не найдены</string>
+    <string name="music_empty_artists_desc">На этом устройстве не найдено музыкальных исполнителей.</string>
+    <string name="music_empty_folders_title">Аудиопапки не найдены</string>
+    <string name="music_empty_folders_desc">На этом устройстве не найдено аудиопапок.</string>
+    <string name="music_empty_playlists_title">Плейлисты не найдены</string>
+    <string name="music_empty_playlists_desc">Плейлисты появятся здесь после создания или синхронизации.</string>
+
+    <!-- Music Content Rows & Subtitles -->
+    <string name="music_new_playlist_title">Новый плейлист</string>
+    <string name="music_new_playlist_subtitle">Создать пользовательский плейлист</string>
+    <string name="music_favourites_title">Избранное</string>
+    <string name="music_recently_played_title">Недавно воспроизведённое</string>
+    <string name="music_songs_count">%d песен</string>
+    <string name="music_playlist_songs_subtitle">%1$d песен • %2$s</string>
+    <string name="music_album_tracks_format">%1$s • %2$d треков</string>
+    <string name="music_artist_details_format">%1$d треков • %2$d альбом</string>
+    <string name="music_sd_card_badge">SD-КАРТА</string>
+    <string name="music_folder_tracks_format">%1$d треков • %2$s</string>
+
+    <!-- Music Track Menu & Feedback -->
+    <string name="music_cd_track_options">Параметры трека: %s</string>
+    <string name="music_menu_play_track">Воспроизвести трек</string>
+    <string name="music_menu_toggle_favourite">Переключить избранное</string>
+    <string name="music_menu_add_to_playlist">Добавить в плейлист…</string>
+    <string name="music_added_to_favourites">Добавлено в избранное</string>
+    <string name="music_removed_from_favourites">Удалено из избранного</string>
+    <string name="music_cleared_favourites_msg">Избранное очищено</string>
+    <string name="music_cleared_history_msg">История очищена</string>
+    <string name="music_playlist_created_msg">Плейлист «%s» создан</string>
+    <string name="music_added_to_playlist_msg">Добавлено в «%s»</string>
+    <string name="music_deleted_playlist_msg">Плейлист «%s» удалён</string>
+
+    <!-- Playlist & Persistence Dialogs -->
+    <string name="action_create">Создать</string>
+    <string name="action_clear_all">Очистить всё</string>
+    <string name="action_more">Ещё</string>
+    <string name="media_type_video">Видео</string>
+    <string name="media_type_audio">Аудио</string>
+    <string name="favourites_dialog_title">Избранное (%d)</string>
+    <string name="favourites_empty_title">Пока нет избранного</string>
+    <string name="favourites_empty_desc">Нажмите значок сердца в плеере или в параметрах трека, чтобы добавить избранное.</string>
+    <string name="favourites_cd_remove">Удалить из избранного</string>
+    <string name="history_dialog_title">История воспроизведения (%d)</string>
+    <string name="history_empty_title">История не записана</string>
+    <string name="history_empty_desc">Медиа, воспроизведённые в MPx Player, будут автоматически сохраняться здесь.</string>
+    <string name="history_resume_at">• Продолжить с %s</string>
+    <string name="history_cd_resume">Продолжить воспроизведение</string>
+    <string name="playlist_create_dialog_title">Новый плейлист</string>
+    <string name="playlist_create_dialog_desc">Введите имя для этого пользовательского плейлиста:</string>
+    <string name="playlist_name_placeholder">Имя плейлиста</string>
+    <string name="playlist_add_dialog_title">Добавить в плейлист</string>
+    <string name="playlist_add_to_header">Добавить «%s» в:</string>
+    <string name="playlist_create_new_action">Создать новый плейлист…</string>
+    <string name="playlist_no_custom_playlists">Пользовательские плейлисты ещё не созданы.</string>
+    <string name="playlist_items_subtitle">%d элементов • Пользовательский плейлист</string>
+    <string name="playlist_cd_delete">Удалить плейлист</string>
+    <string name="playlist_play_all">Воспроизвести всё</string>
+    <string name="playlist_empty_title">Плейлист пуст</string>
+    <string name="playlist_empty_desc">Добавляйте треки через меню параметров любого трека.</string>
+    <string name="playlist_cd_remove_item">Удалить элемент</string>
+    <string name="playlists_dialog_title">Плейлисты (%d)</string>
+    <string name="playlists_btn_new">+ Новый</string>
+    <string name="playlists_empty_msg">Пользовательских плейлистов пока нет.\nНажмите «+ Новый», чтобы создать один.</string>
+    <string name="playlist_items_type_format">%1$d элементов • %2$s</string>
+
+    <!-- Sort & Menu Options -->
+    <string name="menu_sort_by">СОРТИРОВАТЬ ПО</string>
+    <string name="sort_name">Название</string>
+    <string name="sort_date">Дата изменения</string>
+    <string name="sort_size">Размер файла</string>
+    <string name="sort_artist">Исполнитель</string>
+    <string name="sort_album">Альбом</string>
+    <!-- Local Screen -->
+    <string name="local_title">Медиа</string>
+    <string name="local_search_placeholder">Поиск папок…</string>
+    <string name="local_section_folders">ПАПКИ</string>
+    <string name="local_sort_label">Сортировка: %1$s</string>
+    <string name="local_status_banner">Активно реальное сканирование MediaStore. Папки и количество видео отражают медиа устройства.</string>
+    <string name="local_menu_view_sort">Параметры вида и сортировки</string>
+    <string name="local_menu_refresh">Обновить библиотеку</string>
+
+    <!-- Local Screen Content Descriptions -->
+    <string name="cd_close_search">Закрыть поиск</string>
+    <string name="cd_toggle_view">Переключить вид</string>
+    <string name="cd_search">Поиск</string>
+    <string name="cd_more_options">Дополнительные параметры</string>
+    <string name="cd_quick_play">Быстрое воспроизведение</string>
+
+    <!-- Shortcut Chips -->
+    <string name="chip_private">Личное</string>
+    <string name="chip_network">Сеть</string>
+
+    <!-- Folder Item Row & Grid Card -->
+    <string name="badge_sd_card">SD-КАРТА</string>
+    <string name="badge_new">НОВОЕ</string>
+    <string name="folder_item_videos_count">%1$d видео</string>
+    <string name="folder_item_videos_and_size">%1$d видео • %2$s</string>
+    <string name="local_status_strip">%1$d папок • %2$d видео</string>
+    <string name="folder_item_options_cd">Параметры папки: %1$s</string>
+
+    <!-- View & Sort Dialog -->
+    <string name="sort_dialog_title">Параметры вида и сортировки</string>
+    <string name="sort_section_view_mode">РЕЖИМ ПРОСМОТРА</string>
+    <string name="sort_section_sort_by">СОРТИРОВАТЬ ПО</string>
+    <string name="view_mode_list">Вид списком</string>
+    <string name="view_mode_grid">Вид сеткой</string>
+    <string name="sort_field_name">Название</string>
+    <string name="sort_field_date">Дата изменения</string>
+    <string name="sort_field_size">Размер файла</string>
+    <string name="sort_field_count">Количество видео</string>
+
+    <!-- Empty States -->
+    <string name="empty_permission_title">Требуется разрешение</string>
+    <string name="empty_permission_desc">MPx нужно разрешение на доступ к вашим видео, чтобы показать вашу медиатеку.</string>
+    <string name="empty_permission_action">Предоставить разрешение</string>
+    <string name="empty_search_title">Совпадений не найдено</string>
+    <string name="empty_search_desc">Папок, соответствующих «%1$s», нет.</string>
+    <string name="empty_search_action">Очистить поиск</string>
+    <string name="empty_videos_title">Видео не найдены</string>
+    <string name="empty_videos_desc">На этом устройстве не найдено папок с видео. Видео, которые вы записываете или скачиваете, появятся здесь.</string>
+    <string name="empty_videos_action">Обновить</string>
+
+    <!-- Snackbars -->
+    <string name="snackbar_no_playable_videos">В %1$s нет воспроизводимых видео.</string>
+    <string name="snackbar_library_refreshed">Библиотека обновлена</string>
+    <string name="snackbar_folder_options">Параметры папки: %1$s</string>
+    <string name="snackbar_removed_favourites">Удалено из избранного</string>
+    <string name="snackbar_cleared_favourites">Избранное очищено</string>
+    <string name="snackbar_cleared_history">История очищена</string>
+    <string name="snackbar_playlist_created">Плейлист «%1$s» создан</string>
+    <string name="snackbar_playlist_deleted">Плейлист «%1$s» удалён</string>
+
+    <!-- Feature Placeholder Dialog & Playlists -->
+    <string name="dialog_feature_placeholder_title">Заполнитель функции</string>
+    <string name="feature_placeholder_msg">%1$s запланировано для последующих фаз. Сейчас показан только макет.</string>
+    <string name="dialog_video_playlists_title">Видеоплейлисты (%1$d)</string>
+    <string name="dialog_new_playlist">Новый плейлист</string>
+    <string name="dialog_playlists_empty">Пользовательских плейлистов пока нет. Нажмите «Новый плейлист», чтобы создать один.</string>
+    <string name="playlist_items_count">%1$d элементов</string>
+    <string name="local_menu_filtered_view">Вид отфильтрованных папок</string>
+    <string name="local_snackbar_show_all">Показаны все папки (включая пустые и скрытые)</string>
+    <string name="local_snackbar_filtered">Показан вид отфильтрованных папок</string>
+    <string name="empty_folders_title">Папки не найдены</string>
+    <string name="empty_folders_desc">На томах хранилища не найдено медиапапок. Папки и медиа появятся здесь после создания или синхронизации.</string>
+    <string name="local_section_all_folders">ВСЕ ПАПКИ</string>
+    <string name="local_badge_show_all">ПОКАЗАТЬ ВСЕ</string>
+
+    <!-- Folder View Mode & Folder Contents -->
+    <string name="folder_view_mode">Режим просмотра папки</string>
+    <string name="pref_default_folder_view_mode">Режим просмотра папки по умолчанию</string>
+    <string name="pref_default_folder_view_mode_desc">Раскладка по умолчанию для просмотра видеофайлов внутри папок</string>
+    <string name="folder_view_subtitle">%1$d видео • %2$s</string>
+    <string name="folder_view_subtitle_single">1 видео • %1$s</string>
+    <string name="folder_view_search_placeholder">Поиск видео в папке…</string>
+    <string name="folder_view_empty_title">В папке нет видео</string>
+    <string name="folder_view_empty_desc">В этой папке не найдено видеофайлов.</string>
+    <string name="folder_view_search_empty_title">Видео не найдены</string>
+    <string name="folder_view_search_empty_desc">Видео, соответствующих «%1$s», нет.</string>
+    <string name="folder_menu_play_all">Воспроизвести всё</string>
+    <string name="folder_menu_open">Открыть папку</string>
+    <string name="folder_view_dialog_title">Вид и сортировка папки</string>
+    <string name="folder_view_set_as_default">Установить по умолчанию для всех папок</string>
+    <string name="folder_view_set_as_default_desc">Новые папки будут использовать этот режим просмотра</string>
+    <string name="folder_view_reset_default">Сбросить к глобальному значению по умолчанию</string>
+    <string name="folder_view_reset_default_snackbar">Вид папки сброшен к значению по умолчанию (%1$s)</string>
+    <string name="view_mode_switched_list">Переключено на вид списком</string>
+    <string name="view_mode_switched_grid">Переключено на вид сеткой</string>
+    <string name="video_item_options_cd">Параметры: %1$s</string>
+    <string name="video_item_play">Воспроизвести</string>
+    <string name="video_item_add_to_playlist">Добавить в плейлист…</string>
+    <string name="video_item_favourite">Добавить в избранное</string>
+    <string name="video_item_unfavourite">Удалить из избранного</string>
+    <string name="action_back_to_folders">Назад к папкам</string>
+    <string name="overlay_settings_title">Настройки наложения</string>
+    <string name="overlay_section_trigger">Когда показывать</string>
+    <string name="overlay_section_behavior">Поведение</string>
+    <string name="pip_banner_supported_details">Ваше устройство поддерживает режим «картинка в картинке». MPx может продолжать воспроизведение в маленьком плавающем окне.</string>
+    <string name="pip_banner_unsupported_reason">Режим «картинка в картинке» недоступен на этом устройстве или версии Android.</string>
+    <string name="pip_window_controls_desc">Выберите, какие элементы управления отображаются в плавающем окне.</string>
+    <string name="pip_controls_prev_next_desc">Кнопки «назад» и «вперёд» рядом с воспроизведением/паузой.</string>
+    <string name="pip_controls_seek10_desc">Перемотка назад и вперёд на 10 секунд.</string>
+    <string name="pip_controls_play_pause_only">Только воспроизведение / пауза</string>
+    <string name="pip_controls_play_pause_only_desc">Только кнопка воспроизведения/паузы в плавающем окне.</string>
+    <string name="pip_size_header">Размер окна</string>
+    <string name="pip_size_desc">Каким по размеру должно быть плавающее окно.</string>
+    <string name="pip_size_small">Маленькое</string>
+    <string name="pip_size_small_desc">Компактное плавающее окно.</string>
+    <string name="pip_size_medium">Среднее</string>
+    <string name="pip_size_medium_desc">Сбалансированный размер плавающего окна.</string>
+    <string name="pip_size_large">Большое</string>
+    <string name="pip_size_large_desc">Большое плавающее окно.</string>
+    <string name="pip_size_auto">Авто</string>
+    <string name="pip_size_auto_desc">Позволить системе выбрать размер окна.</string>
+    <string name="pip_position_header">Положение окна</string>
+    <string name="pip_position_desc">Где плавающее окно появится впервые. Система может его переместить.</string>
+    <string name="pip_position_bottom_right">Внизу справа</string>
+    <string name="pip_position_bottom_right_desc">Начать в правом нижнем углу.</string>
+    <string name="pip_position_bottom_left">Внизу слева</string>
+    <string name="pip_position_bottom_left_desc">Начать в левом нижнем углу.</string>
+    <string name="pip_position_top_right">Вверху справа</string>
+    <string name="pip_position_top_right_desc">Начать в правом верхнем углу.</string>
+    <string name="pip_position_top_left">Вверху слева</string>
+    <string name="pip_position_top_left_desc">Начать в левом верхнем углу.</string>
+    <string name="pip_position_center">По центру</string>
+    <string name="pip_position_center_desc">Начать в центре экрана.</string>
+    <string name="pip_position_remember_last">Запомнить последнее положение</string>
+    <string name="pip_position_remember_last_desc">Открывать окно там, где вы оставили его в прошлый раз.</string>
+    <string name="pip_snap_edge_title">Привязка к краю</string>
+    <string name="pip_snap_edge_desc">Привязывать плавающее окно к ближайшему краю экрана, когда вы его отпускаете.</string>
+    <string name="pip_close_on_done_title">Закрывать по завершении</string>
+    <string name="pip_close_on_done_desc">Автоматически закрывать плавающее окно по окончании воспроизведения.</string>
+    <string name="pip_limits_title">Системные ограничения</string>
+    <string name="pip_limit_hardware_title">Аппаратная поддержка</string>
+    <string name="pip_limit_hardware_desc">Некоторые устройства отключают режим «картинка в картинке» из соображений производительности или батареи.</string>
+    <string name="pip_limit_sandboxing_title">Ограничения приложения</string>
+    <string name="pip_limit_sandboxing_desc">Оптимизация батареи или ограниченные настройки приложения могут останавливать плавающее окно.</string>
+    <string name="pip_limit_window_manager_title">Оконный менеджер</string>
+    <string name="pip_limit_window_manager_desc">Система контролирует итоговый размер и положение, поэтому запросы MPx могут корректироваться.</string>
+    <string name="pip_limit_actions_title">Доступные действия</string>
+    <string name="pip_limit_actions_desc">В плавающем окне могут отображаться только действия, разрешённые Android.</string>
+    <!-- Beta & About Screen -->
+    <string name="about_beta_screen_title">О программе и статус бета-версии</string>
+    <string name="about_beta_badge">БЕТА-ВЕРСИЯ</string>
+    <string name="about_beta_tagline">Нативный медиаплеер на Kotlin для Android с Media3 ExoPlayer и сохранением Room.</string>
+    <string name="about_beta_build_info">Сборка 2 (VersionCode 2) • Ветка: feature/beta-readiness</string>
+
+    <!-- What is Ready in Beta -->
+    <string name="about_beta_section_ready">ЧТО ГОТОВО В БЕТА-ВЕРСИИ</string>
+    <string name="about_beta_ready_subtitle">Основные функции офлайн-воспроизведения и библиотеки — полностью рабочие нативные реализации:</string>
+    <string name="about_beta_feat_player_title">Движок воспроизведения видео Media3</string>
+    <string name="about_beta_feat_player_desc">Аппаратное (HW/HW+) и программное (SW) декодирование через AndroidX Media3 ExoPlayer. Жесты видео (двойное касание для перемотки на 10 с, горизонтальное перетаскивание для перемотки), элементы управления соотношением сторон (Fit/Stretch/16:9/Original), встроенные и внешние субтитры (.srt, .vtt) и переключение нескольких аудиодорожек.</string>
+    <string name="about_beta_feat_bg_pip_title">Фоновое воспроизведение и режим «картинка в картинке» (PiP)</string>
+    <string name="about_beta_feat_bg_pip_desc">Плавающий режим «картинка в картинке» с настраиваемыми элементами управления окном на Android 8.0+. Настоящее фоновое воспроизведение звука для видео и музыки через службу переднего плана.</string>
+    <string name="about_beta_feat_music_title">Музыкальный плеер и аудиотека</string>
+    <string name="about_beta_feat_music_desc">Полное сканирование MediaStore для локальных треков, альбомов, исполнителей и аудиопапок. Воспроизведение в случайном порядке, очередь треков и постоянный мини-плеер на всех основных вкладках.</string>
+    <string name="about_beta_feat_persistence_title">Сохранение Room SQLite на устройстве</string>
+    <string name="about_beta_feat_persistence_desc">Пользовательские плейлисты, избранное со звёздочками и история воспроизведения с точными отметками продолжения сохраняются локально в mpx_player.db.</string>
+    <string name="about_beta_feat_themes_title">Темы и настоящий тёмный режим</string>
+    <string name="about_beta_feat_themes_desc">Четыре темы: Midnight OLED (кинематографический чёрный #000000), Dark Slate, Classic Navy и Light Cinema. Мгновенное применение темы во время работы.</string>
+    <string name="about_beta_feat_i18n_title">Полный английский и современный стандартный арабский (RTL)</string>
+    <string name="about_beta_feat_i18n_desc">Двунаправленный интерфейс с полным зеркалированием справа налево (RTL), зеркальными значками и мгновенным переключением языка без перезапуска приложения.</string>
+
+    <!-- What is Placeholder -->
+    <string name="about_beta_section_placeholders">ЧТО ПОКА ОСТАЁТСЯ ЗАПОЛНИТЕЛЕМ</string>
+    <string name="about_beta_placeholders_subtitle">В соответствии с нашими честными принципами разработки следующие функции являются нефункциональными заполнителями интерфейса без смоделированных или поддельных операций:</string>
+    <string name="about_beta_holder_downloader_title">Загрузчик по URL (вкладка «Передача»)</string>
+    <string name="about_beta_holder_downloader_desc">Статус: только оболочка интерфейса. Никаких поддельных загрузок и искусственных индикаторов прогресса. Настоящий движок фоновой загрузки будет интегрирован в фазе 5.</string>
+    <string name="about_beta_holder_transfer_title">Прямая передача файлов (вкладка «Передача»)</string>
+    <string name="about_beta_holder_transfer_desc">Статус: заполнитель интерфейса. Протокол обмена файлами напрямую между устройствами офлайн (P2P / Wi-Fi Direct) будет подключён в фазе 5.</string>
+    <string name="about_beta_holder_status_title">Сохранение статусов (сетка инструментов «Я»)</string>
+    <string name="about_beta_holder_status_desc">Статус: честный заполнитель (задача 32). Сканирование и сохранение каталога статусов WhatsApp будут подключены, когда будет реализован процесс разрешения доступа к каталогу в рамках scoped storage.</string>
+    <string name="about_beta_holder_private_title">Личная папка (сетка инструментов «Я»)</string>
+    <string name="about_beta_holder_private_desc">Статус: честный заполнитель (задача 32). Зашифрованное медиахранилище с биометрической / PIN-аутентификацией запланировано для задачи 32.</string>
+    <string name="about_beta_holder_manager_title">Медиа-менеджер и очистка хранилища (сетка инструментов «Я»)</string>
+    <string name="about_beta_holder_manager_desc">Статус: честный заполнитель (задача 32). Обнаружение дублирующихся медиа, определение больших файлов и анализатор кэша запланированы для задачи 32.</string>
+    <string name="about_beta_holder_bin_title">Корзина (сетка инструментов «Я»)</string>
+    <string name="about_beta_holder_bin_desc">Статус: честный заполнитель (задача 32). Управляемый приложением временный каталог хранения удалённых файлов (хранение 30 дней) запланирован для задачи 32.</string>
+
+    <!-- Privacy & Integrity -->
+    <string name="about_beta_section_privacy">КОНФИДЕНЦИАЛЬНОСТЬ И ЦЕЛОСТНОСТЬ ТЕЛЕМЕТРИИ</string>
+    <string name="about_beta_privacy_body">MPx Player не содержит поддельных отчётов о сбоях, сторонней телеметрии, рекламных фреймворков и трекинговых SDK. Ваша история воспроизведения медиа, избранное и настройки строго приватны и никогда не покидают ваше устройство.</string>
+
+    <!-- Feedback & GitHub Issues -->
+    <string name="about_beta_section_feedback">ОТЗЫВЫ И СООБЩЕНИЯ ОБ ОШИБКАХ</string>
+    <string name="about_beta_feedback_body">Мы приветствуем сообщения об ошибках, находки регрессий и предложения функций в нашем публичном репозитории GitHub. Ваши отзывы напрямую формируют предстоящие выпуски.</string>
+    <string name="about_beta_open_github">Открыть задачи GitHub</string>
+    <string name="about_beta_copy_github_url">Скопировать ссылку на задачи</string>
+    <string name="about_beta_issues_url">https://github.com/mohammedbakri123/MPx-player/issues</string>
+    <string name="about_beta_copied_snackbar">URL задач GitHub скопирован в буфер обмена</string>
+    <string name="about_beta_browser_error">Не удаётся открыть веб-браузер. URL скопирован в ваш буфер обмена.</string>
+    <string name="about_beta_open_page_button">Просмотреть детали бета-версии и отзывы</string>
+    <!-- Separate View Layout (Issue 16) -->
+    <string name="settings_separate_view_title">Отдельная раскладка вида</string>
+    <string name="settings_separate_view_desc">Запоминать раскладку вида (список или сетка) отдельно для экранов «Локально» и «Музыка»</string>
+    <string name="sort_section_layout_settings">НАСТРОЙКИ РАСКЛАДКИ</string>
+    <string name="sort_separate_view_title">Отдельная раскладка вида</string>
+    <string name="sort_separate_view_desc">Запоминать раскладку независимо для этого экрана</string>
+    <string name="snackbar_separate_view_enabled">Отдельная раскладка вида включена</string>
+    <string name="snackbar_separate_view_disabled">Отдельная раскладка вида отключена: раскладки синхронизированы</string>
+    <!-- File View (Issue 19) -->
+    <string name="sort_section_view_type">ТИП ВИДА</string>
+    <string name="view_type_folders">Папки (группировка по папкам)</string>
+    <string name="view_type_files">Все файлы (отдельные файлы)</string>
+    <string name="sort_field_duration">Длительность</string>
+    <string name="section_files_header">ФАЙЛЫ</string>
+    <string name="list_file_view">Вид файлов</string>
+    <string name="list_file_view_desc">Список отдельных видеофайлов в виде «Локально» вместо группировки по папкам</string>
+    <string name="list_show_all_files">Показать все файлы</string>
+    <string name="list_show_all_files_desc">Включать скрытые файлы и пути внутреннего хранилища</string>
+    <string name="local_section_videos">ВИДЕО</string>
+    <string name="local_section_all_videos">ВСЕ ВИДЕО</string>
+    <string name="local_search_placeholder_files">Поиск видео…</string>
+    <string name="local_menu_switch_to_files">Переключиться на вид файлов</string>
+    <string name="local_menu_switch_to_folders">Переключиться на вид папок</string>
+    <string name="local_snackbar_file_view">Переключено на вид файлов</string>
+    <string name="local_snackbar_folder_view">Переключено на вид папок</string>
+    <string name="video_menu_play">Воспроизвести видео</string>
+    <string name="video_menu_play_folder">Воспроизвести папку (%1$s)</string>
+
+    <!-- Auto Screen Rotation (Issue 19) -->
+    <string name="player_auto_rotation">Автоповорот экрана</string>
+    <string name="player_auto_rotation_desc">Следовать ориентации устройства по датчику в плеере или зафиксировать альбомную/портретную ориентацию</string>
+    <string name="player_locked_orientation_header">Зафиксированная ориентация:</string>
+    <string name="player_rotation_dialog_title">Поворот экрана</string>
+    <string name="player_rotation_auto">Автоповорот (датчик)</string>
+    <string name="player_rotation_auto_desc">Плеер автоматически следует ориентации устройства</string>
+    <string name="player_orientation_landscape">Альбомная</string>
+    <string name="player_orientation_landscape_desc">Зафиксировать экран в горизонтальном альбомном режиме</string>
+    <string name="player_orientation_portrait">Портретная</string>
+    <string name="player_orientation_portrait_desc">Зафиксировать экран в вертикальном портретном режиме</string>
+    <string name="toast_rotation_auto">Автоповорот экрана включён (датчик)</string>
+    <string name="toast_rotation_landscape">Экран зафиксирован в альбомной ориентации</string>
+    <string name="toast_rotation_portrait">Экран зафиксирован в портретной ориентации</string>
+    <string name="cd_screen_rotation">Поворот экрана</string>
+    <string name="local_menu_folder_view">Вид папок</string>
+    <string name="local_menu_file_view">Вид файлов</string>
+    <string name="snackbar_added_to_favourites">Добавлено в избранное</string>
+
+    <!-- Development Category Diagnostics (Issue 60) -->
+    <string name="dev_section_app_build">Приложение и сборка</string>
+    <string name="dev_section_database">База данных Room SQLite</string>
+    <string name="dev_section_media_scan">Сканирование библиотеки MediaStore</string>
+    <string name="dev_section_playback_engine">Декодер и движок воспроизведения</string>
+    <string name="dev_label_package">ID приложения</string>
+    <string name="dev_label_version">Версия</string>
+    <string name="dev_label_build_code">Код версии</string>
+    <string name="dev_label_build_type">Тип сборки</string>
+    <string name="dev_label_target_sdk">Целевой SDK</string>
+    <string name="dev_label_min_sdk">Минимальный SDK</string>
+    <string name="dev_label_device">Устройство</string>
+    <string name="dev_label_os_version">ОС Android</string>
+    <string name="dev_label_db_name">Имя базы данных</string>
+    <string name="dev_label_db_path">Путь к базе данных</string>
+    <string name="dev_label_db_size">Размер базы данных</string>
+    <string name="dev_label_db_wal_size">Размер журнала WAL</string>
+    <string name="dev_label_db_records">Записи базы данных</string>
+    <string name="dev_label_db_not_created">Ещё не создана (0 Б)</string>
+    <string name="dev_label_permissions">Разрешения на медиа</string>
+    <string name="dev_label_scan_volumes">Тома хранилища</string>
+    <string name="dev_label_video_folders">Папки с видео</string>
+    <string name="dev_label_scanned_videos">Отсканированные видео</string>
+    <string name="dev_label_audio_tracks">Аудиотреки</string>
+    <string name="dev_label_audio_folders">Аудиопапки</string>
+    <string name="dev_label_audio_albums">Аудиоальбомы</string>
+    <string name="dev_label_audio_artists">Аудиоисполнители</string>
+    <string name="dev_label_playlists">Плейлисты</string>
+    <string name="dev_label_engine_name">Движок воспроизведения</string>
+    <string name="dev_label_engine_type">Архитектура движка</string>
+    <string name="dev_label_decoder_mode">Настроенный декодер</string>
+    <string name="dev_label_active_decoder">Активный видеодекодер</string>
+    <string name="dev_label_codec_type">Реализация кодека</string>
+    <string name="dev_label_player_state">Состояние плеера</string>
+    <string name="dev_label_active_media">Активное медиа</string>
+    <string name="dev_label_decoder_fallback">Запасной декодер</string>
+    <string name="dev_btn_refresh_diagnostics">Обновить диагностику</string>
+    <string name="dev_val_refreshing">Обновление…</string>
+    <string name="dev_val_none_idle">Нет (плеер бездействует)</string>
+    <string name="dev_val_direct_codec">Прямой (запасной вариант не требуется)</string>
+    <string name="dev_val_perm_video">Видео: %1$s • Аудио: %2$s</string>
+    <string name="dev_val_perm_granted">Предоставлено</string>
+    <string name="dev_val_perm_denied">Отклонено</string>
+    <string name="dev_val_codec_hw">Аппаратное ускорение (MediaCodec)</string>
+    <string name="dev_val_codec_sw">Программное (CPU)</string>
+    <string name="dev_label_last_updated">Последнее обновление: %1$s</string>
+    <!-- Issue 59: Secondary Sort, Fields, and Advanced Sort Options -->
+    <string name="sort_section_secondary_sort">ВТОРИЧНАЯ СОРТИРОВКА</string>
+    <string name="sort_secondary_sort_desc">Применяется как критерий разрешения равенства, когда первичные значения совпадают</string>
+    <string name="sort_field_none">Нет</string>
+    <string name="sort_section_fields">Поля</string>
+    <string name="sort_fields_dialog_title">Поля</string>
+    <string name="sort_fields_desc">Выберите столбцы метаданных для отображения в строках списка</string>
+    <string name="sort_field_show_size">Размер файла</string>
+    <string name="sort_field_show_date">Дата изменения</string>
+    <string name="sort_field_show_duration">Длительность</string>
+    <string name="sort_field_show_location">Местоположение / папка</string>
+    <string name="sort_field_show_count">Количество видео</string>
+    <string name="sort_section_advanced">Расширенные</string>
+    <string name="sort_advanced_dialog_title">Расширенные параметры сортировки</string>
+    <string name="sort_advanced_reverse_order">Обратить порядок первичной сортировки</string>
+    <string name="sort_advanced_reverse_order_desc">Переключение между порядком по возрастанию и по убыванию</string>
+    <string name="sort_advanced_secondary_reverse">Обратить порядок вторичной сортировки</string>
+    <string name="sort_advanced_secondary_reverse_desc">Переключение вторичной сортировки между возрастанием и убыванием</string>
+    <string name="sort_advanced_numeric">Естественная числовая сортировка</string>
+    <string name="sort_advanced_numeric_desc">Сортировка «2» перед «10» в именах</string>
+    <string name="sort_advanced_case_sensitive">Сортировка с учётом регистра</string>
+    <string name="sort_advanced_case_sensitive_desc">Различать заглавные и строчные буквы</string>
+    <string name="sort_advanced_ignore_extension">Игнорировать расширения файлов</string>
+    <string name="sort_advanced_ignore_extension_desc">Сортировать по названию файла без учёта расширения</string>
+    <string name="sort_advanced_summary_default">Стандартные параметры сортировки</string>
+    <!-- Issue 55: Continue Watching Row -->
+    <string name="continue_watching_title">Продолжить просмотр</string>
+    <string name="continue_watching_dismiss">Удалить из «Продолжить просмотр»</string>
+    <string name="continue_watching_dismissed">«%1$s» удалено из «Продолжить просмотр»</string>
+    <string name="continue_watching_resume_at">Продолжить с %1$s</string>
+    <!-- Issue 54: Sleep Timer -->
+    <string name="player_sleep_timer">Таймер сна</string>
+    <string name="player_sleep_timer_off">Выкл.</string>
+    <string name="player_sleep_timer_15">15 минут</string>
+    <string name="player_sleep_timer_30">30 минут</string>
+    <string name="player_sleep_timer_45">45 минут</string>
+    <string name="player_sleep_timer_60">60 минут</string>
+    <string name="player_sleep_timer_dialog_title">Таймер сна</string>
+    <string name="player_sleep_timer_chip">Сон: %1$s</string>
+    <string name="player_sleep_timer_cancel">Отменить таймер сна</string>
+    <string name="player_sleep_timer_set_toast">Таймер сна установлен на %1$d минут</string>
+    <string name="player_sleep_timer_canceled_toast">Таймер сна отключён</string>
+    <string name="player_gesture_hint">Двойное касание: −10 с (слева) / воспроизведение-пауза / +10 с (справа) • Свайп по горизонтали: перемотка • Свайп по вертикали: яркость (слева) / громкость (справа)</string>
+</resources>

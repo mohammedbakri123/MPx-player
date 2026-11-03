@@ -48,6 +48,8 @@
     <string name="lang_hindi_desc">Hindi interface (LTR layout)</string>
     <string name="lang_chinese">中文 (Chinese)</string>
     <string name="lang_chinese_desc">Chinese interface (LTR layout)</string>
+    <string name="lang_russian">Русский (Russian)</string>
+    <string name="lang_russian_desc">Russian interface (LTR layout)</string>
     <string name="lang_applied_msg">Language updated: %s</string>
     <string name="lang_settings_note">Select your preferred app language. Language and layout direction apply immediately without restarting.</string>
 

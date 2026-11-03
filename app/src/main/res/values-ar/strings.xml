@@ -48,6 +48,8 @@
     <string name="lang_hindi_desc">واجهة باللغة الهندية (تخطيط LTR)</string>
     <string name="lang_chinese">الصينية (Chinese)</string>
     <string name="lang_chinese_desc">واجهة باللغة الصينية (تخطيط LTR)</string>
+    <string name="lang_russian">الروسية (Russian)</string>
+    <string name="lang_russian_desc">واجهة باللغة الروسية (تخطيط LTR)</string>
     <string name="lang_applied_msg">تم تحديث اللغة: %s</string>
     <string name="lang_settings_note">اختر لغة التطبيق المفضلة. يتم تطبيق اللغة واتجاه الواجهة فوراً دون الحاجة لإعادة تشغيل التطبيق.</string>
 
