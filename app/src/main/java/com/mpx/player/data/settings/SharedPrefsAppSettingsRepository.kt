@@ -39,6 +39,17 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         playerEngine = prefs.getString("player_engine", "MEDIA3") ?: "MEDIA3",
         subtitleSize = prefs.getString("subtitle_size", "Normal") ?: "Normal",
         subtitleStyle = prefs.getString("subtitle_style", "White") ?: "White",
+        subtitleTypeface = prefs.getString("subtitle_typeface", "Default") ?: "Default",
+        subtitleTextColor = prefs.getString("subtitle_text_color", "Preset") ?: "Preset",
+        subtitleBackgroundColor = prefs.getString("subtitle_bg_color", "Transparent") ?: "Transparent",
+        subtitleBorderColor = prefs.getString("subtitle_border_color", "Black") ?: "Black",
+        subtitleBorderThickness = prefs.getString("subtitle_border_thickness", "Medium") ?: "Medium",
+        subtitleBold = prefs.getBoolean("subtitle_bold", true),
+        subtitleShadow = prefs.getBoolean("subtitle_shadow", false),
+        subtitleAlignment = prefs.getString("subtitle_alignment", "Bottom") ?: "Bottom",
+        subtitleBottomPadding = prefs.getString("subtitle_bottom_padding", "Medium") ?: "Medium",
+        subtitleScale = prefs.getString("subtitle_scale", "100") ?: "100",
+        subtitleAssOverride = prefs.getString("subtitle_ass_override", "Default") ?: "Default",
         appTheme = prefs.getString("app_theme", "Midnight") ?: "Midnight",
         popupPlayEnabled = prefs.getBoolean("popup_play_enabled", true),
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
@@ -89,6 +100,17 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("player_engine", settings.playerEngine)
             .putString("subtitle_size", settings.subtitleSize)
             .putString("subtitle_style", settings.subtitleStyle)
+            .putString("subtitle_typeface", settings.subtitleTypeface)
+            .putString("subtitle_text_color", settings.subtitleTextColor)
+            .putString("subtitle_bg_color", settings.subtitleBackgroundColor)
+            .putString("subtitle_border_color", settings.subtitleBorderColor)
+            .putString("subtitle_border_thickness", settings.subtitleBorderThickness)
+            .putBoolean("subtitle_bold", settings.subtitleBold)
+            .putBoolean("subtitle_shadow", settings.subtitleShadow)
+            .putString("subtitle_alignment", settings.subtitleAlignment)
+            .putString("subtitle_bottom_padding", settings.subtitleBottomPadding)
+            .putString("subtitle_scale", settings.subtitleScale)
+            .putString("subtitle_ass_override", settings.subtitleAssOverride)
             .putString("app_theme", settings.appTheme)
             .putBoolean("popup_play_enabled", settings.popupPlayEnabled)
             .putString("popup_play_controls", settings.popupPlayControls)

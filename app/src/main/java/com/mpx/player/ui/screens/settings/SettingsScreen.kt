@@ -486,6 +486,116 @@ fun SettingsScreen(
                                     ).forEach { (styleKey, styleLabel) ->
                                         ChoiceRow(styleLabel, settings.subtitleStyle == styleKey) { update(settings.copy(subtitleStyle = styleKey)) }
                                     }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.subtitle_typeface_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "Default" to stringResource(R.string.subtitle_typeface_default),
+                                        "Sans" to stringResource(R.string.subtitle_typeface_sans),
+                                        "Serif" to stringResource(R.string.subtitle_typeface_serif),
+                                        "Mono" to stringResource(R.string.subtitle_typeface_mono),
+                                    ).forEach { (face, label) ->
+                                        ChoiceRow(label, settings.subtitleTypeface == face) { update(settings.copy(subtitleTypeface = face)) }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.subtitle_text_color_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "Preset" to stringResource(R.string.subtitle_text_preset),
+                                        "White" to stringResource(R.string.player_subtitle_style_white),
+                                        "Yellow" to stringResource(R.string.player_subtitle_style_yellow),
+                                        "Cyan" to stringResource(R.string.player_subtitle_style_cyan),
+                                        "Green" to stringResource(R.string.subtitle_color_green),
+                                        "Magenta" to stringResource(R.string.subtitle_color_magenta),
+                                        "Red" to stringResource(R.string.subtitle_color_red),
+                                        "Black" to stringResource(R.string.subtitle_color_black),
+                                    ).forEach { (color, label) ->
+                                        ChoiceRow(label, settings.subtitleTextColor == color) { update(settings.copy(subtitleTextColor = color)) }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.subtitle_bg_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "Transparent" to stringResource(R.string.subtitle_bg_transparent),
+                                        "Black" to stringResource(R.string.subtitle_bg_black),
+                                        "SemiBlack" to stringResource(R.string.subtitle_bg_semi),
+                                        "White" to stringResource(R.string.subtitle_bg_white),
+                                    ).forEach { (bg, label) ->
+                                        ChoiceRow(label, settings.subtitleBackgroundColor == bg) { update(settings.copy(subtitleBackgroundColor = bg)) }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.subtitle_border_color_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "Black" to stringResource(R.string.subtitle_border_black),
+                                        "White" to stringResource(R.string.subtitle_border_white),
+                                        "Yellow" to stringResource(R.string.subtitle_border_yellow),
+                                        "Transparent" to stringResource(R.string.subtitle_border_transparent),
+                                    ).forEach { (border, label) ->
+                                        ChoiceRow(label, settings.subtitleBorderColor == border) { update(settings.copy(subtitleBorderColor = border)) }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.subtitle_border_thickness_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "None" to stringResource(R.string.sort_field_none),
+                                        "Thin" to stringResource(R.string.subtitle_thickness_thin),
+                                        "Medium" to stringResource(R.string.subtitle_thickness_medium),
+                                        "Thick" to stringResource(R.string.subtitle_thickness_thick),
+                                    ).forEach { (thickness, label) ->
+                                        ChoiceRow(label, settings.subtitleBorderThickness == thickness) { update(settings.copy(subtitleBorderThickness = thickness)) }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    ToggleRow(stringResource(R.string.subtitle_bold_label), settings.subtitleBold) { update(settings.copy(subtitleBold = it)) }
+                                    ToggleRow(stringResource(R.string.subtitle_shadow_label), settings.subtitleShadow) { update(settings.copy(subtitleShadow = it)) }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.subtitle_alignment_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "Bottom" to stringResource(R.string.subtitle_align_bottom),
+                                        "Center" to stringResource(R.string.subtitle_align_center),
+                                        "Top" to stringResource(R.string.subtitle_align_top),
+                                    ).forEach { (align, label) ->
+                                        ChoiceRow(label, settings.subtitleAlignment == align) { update(settings.copy(subtitleAlignment = align)) }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.subtitle_padding_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "Small" to stringResource(R.string.player_subtitle_size_small),
+                                        "Medium" to stringResource(R.string.pip_size_medium),
+                                        "Large" to stringResource(R.string.player_subtitle_size_large),
+                                    ).forEach { (padding, label) ->
+                                        ChoiceRow(label, settings.subtitleBottomPadding == padding) { update(settings.copy(subtitleBottomPadding = padding)) }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.subtitle_scale_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "75" to stringResource(R.string.subtitle_scale_75),
+                                        "100" to stringResource(R.string.subtitle_scale_100),
+                                        "125" to stringResource(R.string.subtitle_scale_125),
+                                        "150" to stringResource(R.string.subtitle_scale_150),
+                                    ).forEach { (scale, label) ->
+                                        ChoiceRow(label, settings.subtitleScale == scale) { update(settings.copy(subtitleScale = scale)) }
+                                    }
+
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.subtitle_ass_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                    listOf(
+                                        "Default" to stringResource(R.string.subtitle_ass_default),
+                                        "Scale" to stringResource(R.string.subtitle_ass_scale),
+                                        "Force" to stringResource(R.string.subtitle_ass_force),
+                                        "Strip" to stringResource(R.string.subtitle_ass_strip),
+                                    ).forEach { (mode, label) ->
+                                        ChoiceRow(label, settings.subtitleAssOverride == mode) { update(settings.copy(subtitleAssOverride = mode)) }
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        stringResource(R.string.subtitle_ass_mpv_note),
+                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                                 "general" -> {
                                     OutlinedButton(onClick = {

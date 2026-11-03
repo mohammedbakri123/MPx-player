@@ -133,6 +133,7 @@ import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
+import com.mpx.player.playback.resolveMedia3SubtitleStyle
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.player.formatTimeMs
@@ -244,6 +245,9 @@ fun PlayerScreen(
     val activity = remember(context) { context.findActivity() }
     val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     var currentSettings by remember { mutableStateOf(realSettingsRepo.load()) }
+    // Last subtitle settings pushed to the mpv engine. Plain holder (not state)
+    // so pushing options does not schedule extra recompositions.
+    val lastMpvSubtitleSettings = remember { arrayOfNulls<AppSettings>(1) }
     val state by playbackManager.playbackState.collectAsState()
 
     val targetOrientation = remember(currentSettings.autoScreenRotation, currentSettings.screenOrientation) {
@@ -648,7 +652,14 @@ fun PlayerScreen(
                         })
                     }
                 },
-                update = {},
+                update = {
+                    // Push subtitle style changes to a running mpv engine (issue #75).
+                    // Media3 subtitles are styled by the PlayerView update above instead.
+                    if (!playbackManager.isMedia3 && lastMpvSubtitleSettings[0] != currentSettings) {
+                        playbackManager.applySubtitleSettings(currentSettings)
+                        lastMpvSubtitleSettings[0] = currentSettings
+                    }
+                },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -2460,52 +2471,22 @@ fun PlayerScreen(
 
 private fun applySubtitleSettings(playerView: PlayerView, settings: AppSettings) {
     val subtitleView = playerView.subtitleView ?: return
-    when (settings.subtitleSize.lowercase()) {
-        "small" -> subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-        "large" -> subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
-        else -> subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+    val resolved = resolveMedia3SubtitleStyle(settings)
+    subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, resolved.textSizeSp)
+    if (resolved.useSystemDefaultStyle) {
+        subtitleView.setUserDefaultStyle()
+    } else {
+        subtitleView.setStyle(
+            CaptionStyleCompat(
+                resolved.foregroundColor,
+                resolved.backgroundColor,
+                android.graphics.Color.TRANSPARENT,
+                resolved.edgeType,
+                resolved.edgeColor,
+                resolved.typeface,
+            )
+        )
     }
-
-    when (settings.subtitleStyle.lowercase()) {
-        "yellow" -> {
-            subtitleView.setStyle(
-                CaptionStyleCompat(
-                    android.graphics.Color.YELLOW,
-                    android.graphics.Color.TRANSPARENT,
-                    android.graphics.Color.TRANSPARENT,
-                    CaptionStyleCompat.EDGE_TYPE_OUTLINE,
-                    android.graphics.Color.BLACK,
-                    Typeface.DEFAULT_BOLD,
-                )
-            )
-        }
-        "cyan" -> {
-            subtitleView.setStyle(
-                CaptionStyleCompat(
-                    android.graphics.Color.CYAN,
-                    android.graphics.Color.TRANSPARENT,
-                    android.graphics.Color.TRANSPARENT,
-                    CaptionStyleCompat.EDGE_TYPE_OUTLINE,
-                    android.graphics.Color.BLACK,
-                    Typeface.DEFAULT_BOLD,
-                )
-            )
-        }
-        "default" -> {
-            subtitleView.setUserDefaultStyle()
-        }
-        else -> { // "white"
-            subtitleView.setStyle(
-                CaptionStyleCompat(
-                    android.graphics.Color.WHITE,
-                    android.graphics.Color.TRANSPARENT,
-                    android.graphics.Color.TRANSPARENT,
-                    CaptionStyleCompat.EDGE_TYPE_OUTLINE,
-                    android.graphics.Color.BLACK,
-                    Typeface.DEFAULT_BOLD,
-                )
-            )
-        }
-    }
+    subtitleView.setBottomPaddingFraction(resolved.bottomPaddingFraction)
     subtitleView.setApplyEmbeddedStyles(true)
 }
