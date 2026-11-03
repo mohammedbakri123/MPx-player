@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTextPrimary
+import com.mpx.player.ui.theme.MpxTextSecondary
 
 enum class SortField(val labelRes: Int, val label: String) {
     NAME(R.string.sort_field_name, "Title / Name"),
