@@ -1212,11 +1212,28 @@ private fun FoldersTabContent(
                     }
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = folder.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MpxTextPrimary,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = folder.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MpxTextPrimary,
+                            )
+                            if (folder.isStorageRemovable) {
+                                Spacer(Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .background(MpxPrimary.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
+                                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                                ) {
+                                    Text(
+                                        text = "SD CARD",
+                                        color = MpxPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 9.sp,
+                                    )
+                                }
+                            }
+                        }
                         Text(
                             text = "${folder.trackCount} tracks • ${folder.path}",
                             style = MaterialTheme.typography.bodySmall,

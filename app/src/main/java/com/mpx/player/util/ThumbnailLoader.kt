@@ -61,6 +61,42 @@ object ThumbnailLoader {
         return inSampleSize.coerceAtLeast(1)
     }
 
+    private fun getVideoContentUris(context: Context): List<Uri> {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val volumeNames = MediaStore.getExternalVolumeNames(context)
+                if (volumeNames.isNotEmpty()) {
+                    val uris = mutableListOf<Uri>()
+                    for (name in volumeNames) {
+                        try {
+                            uris.add(MediaStore.Video.Media.getContentUri(name))
+                        } catch (_: Exception) {}
+                    }
+                    if (uris.isNotEmpty()) return uris
+                }
+            } catch (_: Exception) {}
+        }
+        return listOf(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+    }
+
+    private fun getAudioContentUris(context: Context): List<Uri> {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val volumeNames = MediaStore.getExternalVolumeNames(context)
+                if (volumeNames.isNotEmpty()) {
+                    val uris = mutableListOf<Uri>()
+                    for (name in volumeNames) {
+                        try {
+                            uris.add(MediaStore.Audio.Media.getContentUri(name))
+                        } catch (_: Exception) {}
+                    }
+                    if (uris.isNotEmpty()) return uris
+                }
+            } catch (_: Exception) {}
+        }
+        return listOf(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+    }
+
     /**
      * Loads a real video thumbnail using MediaStore ContentResolver or legacy ThumbnailUtils.
      */
@@ -77,15 +113,18 @@ object ThumbnailLoader {
         var bitmap: Bitmap? = null
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val contentUri = ContentUris.withAppendedId(
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                    videoId,
-                )
-                bitmap = context.contentResolver.loadThumbnail(
-                    contentUri,
-                    Size(width, height),
-                    null,
-                )
+                val uris = getVideoContentUris(context)
+                for (baseUri in uris) {
+                    try {
+                        val contentUri = ContentUris.withAppendedId(baseUri, videoId)
+                        bitmap = context.contentResolver.loadThumbnail(
+                            contentUri,
+                            Size(width, height),
+                            null,
+                        )
+                        if (bitmap != null) break
+                    } catch (_: Exception) {}
+                }
             } else {
                 @Suppress("DEPRECATION")
                 bitmap = MediaStore.Video.Thumbnails.getThumbnail(
@@ -137,30 +176,15 @@ object ThumbnailLoader {
             MediaStore.Video.Media.DATA,
         )
 
-        try {
-            // Try bucket ID first
-            context.contentResolver.query(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                "${MediaStore.Video.Media.BUCKET_ID} = ?",
-                arrayOf(folderId),
-                "${MediaStore.Video.Media.DATE_MODIFIED} DESC LIMIT 1",
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val idCol = cursor.getColumnIndex(MediaStore.Video.Media._ID)
-                    val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
-                    if (idCol >= 0) representativeVideoId = cursor.getLong(idCol)
-                    if (dataCol >= 0) representativeFilePath = cursor.getString(dataCol).orEmpty()
-                }
-            }
-
-            // Fallback by folder path pattern if bucket id did not match
-            if (representativeVideoId == null && folderPath.isNotBlank()) {
+        val uris = getVideoContentUris(context)
+        for (uri in uris) {
+            try {
+                // Try bucket ID first
                 context.contentResolver.query(
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    uri,
                     projection,
-                    "${MediaStore.Video.Media.DATA} LIKE ?",
-                    arrayOf("$folderPath/%"),
+                    "${MediaStore.Video.Media.BUCKET_ID} = ?",
+                    arrayOf(folderId),
                     "${MediaStore.Video.Media.DATE_MODIFIED} DESC LIMIT 1",
                 )?.use { cursor ->
                     if (cursor.moveToFirst()) {
@@ -170,9 +194,28 @@ object ThumbnailLoader {
                         if (dataCol >= 0) representativeFilePath = cursor.getString(dataCol).orEmpty()
                     }
                 }
+
+                // Fallback by folder path pattern if bucket id did not match
+                if (representativeVideoId == null && folderPath.isNotBlank()) {
+                    context.contentResolver.query(
+                        uri,
+                        projection,
+                        "${MediaStore.Video.Media.DATA} LIKE ?",
+                        arrayOf("$folderPath/%"),
+                        "${MediaStore.Video.Media.DATE_MODIFIED} DESC LIMIT 1",
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val idCol = cursor.getColumnIndex(MediaStore.Video.Media._ID)
+                            val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
+                            if (idCol >= 0) representativeVideoId = cursor.getLong(idCol)
+                            if (dataCol >= 0) representativeFilePath = cursor.getString(dataCol).orEmpty()
+                        }
+                    }
+                }
+                if (representativeVideoId != null) break
+            } catch (_: Exception) {
+                // Continue to next volume
             }
-        } catch (_: Exception) {
-            return null
         }
 
         val videoId = representativeVideoId ?: return null
@@ -202,13 +245,14 @@ object ThumbnailLoader {
         // 1. Android Q+ ContentResolver.loadThumbnail for Audio
         val numericId = trackId.toLongOrNull()
         if (numericId != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                val uri = ContentUris.withAppendedId(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    numericId,
-                )
-                bitmap = context.contentResolver.loadThumbnail(uri, Size(width, height), null)
-            } catch (_: Exception) {}
+            val uris = getAudioContentUris(context)
+            for (baseUri in uris) {
+                try {
+                    val uri = ContentUris.withAppendedId(baseUri, numericId)
+                    bitmap = context.contentResolver.loadThumbnail(uri, Size(width, height), null)
+                    if (bitmap != null) break
+                } catch (_: Exception) {}
+            }
         }
 
         // 2. Embedded ID3 Picture in local audio file
@@ -276,23 +320,27 @@ object ThumbnailLoader {
         var trackId: String? = null
         var trackPath: String = ""
 
-        try {
-            context.contentResolver.query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DATA),
-                "${MediaStore.Audio.Media.ALBUM} = ? AND ${MediaStore.Audio.Media.IS_MUSIC} != 0",
-                arrayOf(albumTitle),
-                "${MediaStore.Audio.Media.TITLE} ASC LIMIT 1",
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val idCol = cursor.getColumnIndex(MediaStore.Audio.Media._ID)
-                    val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
-                    if (idCol >= 0) trackId = cursor.getLong(idCol).toString()
-                    if (dataCol >= 0) trackPath = cursor.getString(dataCol).orEmpty()
+        val uris = getAudioContentUris(context)
+        for (baseUri in uris) {
+            try {
+                context.contentResolver.query(
+                    baseUri,
+                    arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DATA),
+                    "${MediaStore.Audio.Media.ALBUM} = ? AND ${MediaStore.Audio.Media.IS_MUSIC} != 0",
+                    arrayOf(albumTitle),
+                    "${MediaStore.Audio.Media.TITLE} ASC LIMIT 1",
+                )?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val idCol = cursor.getColumnIndex(MediaStore.Audio.Media._ID)
+                        val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+                        if (idCol >= 0) trackId = cursor.getLong(idCol).toString()
+                        if (dataCol >= 0) trackPath = cursor.getString(dataCol).orEmpty()
+                    }
                 }
+                if (trackId != null) break
+            } catch (_: Exception) {
+                // Continue to next volume
             }
-        } catch (_: Exception) {
-            return null
         }
 
         val id = trackId ?: return null

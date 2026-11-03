@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.ui.components.AsyncFolderThumbnail
 import com.mpx.player.ui.theme.MpxAccentAmber
+import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxSurfaceVariant
 import com.mpx.player.ui.theme.MpxTextMuted
@@ -90,6 +91,22 @@ fun FolderItemRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
+
+                if (folder.isStorageRemovable) {
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(MpxPrimary.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                    ) {
+                        Text(
+                            text = "SD CARD",
+                            color = MpxPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                        )
+                    }
+                }
 
                 if (folder.isNew) {
                     Spacer(Modifier.width(6.dp))
@@ -162,6 +179,23 @@ fun FolderItemGridCard(
                     modifier = Modifier.fillMaxSize(),
                     iconSize = 40.dp,
                 )
+                if (folder.isStorageRemovable) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .background(MpxPrimary.copy(alpha = 0.85f), RoundedCornerShape(3.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                    ) {
+                        Text(
+                            text = "SD CARD",
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                        )
+                    }
+                }
+
                 if (folder.isNew) {
                     Box(
                         modifier = Modifier

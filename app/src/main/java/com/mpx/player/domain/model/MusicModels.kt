@@ -40,6 +40,7 @@ data class AudioFolder(
     val name: String,
     val path: String,
     val trackCount: Int,
+    val isStorageRemovable: Boolean = false,
 )
 
 /**
