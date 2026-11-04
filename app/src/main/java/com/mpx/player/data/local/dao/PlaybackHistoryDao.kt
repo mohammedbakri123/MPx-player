@@ -16,13 +16,13 @@ interface PlaybackHistoryDao {
     suspend fun getHistory(limit: Int = 100): List<PlaybackHistoryEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertHistory(history: PlaybackHistoryEntity)
+    suspend fun upsertHistory(history: PlaybackHistoryEntity): Long
 
     @Query("DELETE FROM playback_history WHERE mediaUri = :mediaUri")
-    suspend fun deleteHistoryByUri(mediaUri: String)
+    suspend fun deleteHistoryByUri(mediaUri: String): Int
 
     @Query("DELETE FROM playback_history")
-    suspend fun clearHistory()
+    suspend fun clearHistory(): Int
 
     @Query("SELECT COUNT(*) FROM playback_history")
     suspend fun getCount(): Int

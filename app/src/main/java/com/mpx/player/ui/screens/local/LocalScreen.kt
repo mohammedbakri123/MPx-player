@@ -53,8 +53,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -76,7 +75,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -492,15 +490,9 @@ fun LocalScreen(
         else sortedFolderVideos.filter { it.title.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
     }
 
-    val pullRefreshState = rememberPullToRefreshState()
-    if (pullRefreshState.isRefreshing) {
-        LaunchedEffect(pullRefreshState.isRefreshing) {
-            val folder = currentFolder
-            if (folder != null) refreshFolderVideos(folder.id) else refreshFolders()
-        }
-    }
+    var isRefreshing by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading, isFolderLoading) {
-        if (!isLoading && !isFolderLoading) pullRefreshState.endRefresh()
+        if (!isLoading && !isFolderLoading) isRefreshing = false
     }
 
     Scaffold(
@@ -838,11 +830,16 @@ fun LocalScreen(
             }
         },
     ) { padding ->
-        Box(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                val folder = currentFolder
+                if (folder != null) refreshFolderVideos(folder.id) else refreshFolders()
+            },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .nestedScroll(pullRefreshState.nestedScrollConnection),
+                .padding(padding),
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -1466,10 +1463,6 @@ fun LocalScreen(
                 }
             }
             }
-            PullToRefreshContainer(
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-            )
         }
     }
 

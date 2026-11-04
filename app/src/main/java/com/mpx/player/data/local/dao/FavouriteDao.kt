@@ -22,16 +22,16 @@ interface FavouriteDao {
     suspend fun isFavourite(mediaUri: String): Boolean
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertFavourite(favourite: FavouriteEntity)
+    suspend fun insertFavourite(favourite: FavouriteEntity): Long
 
     @Query("DELETE FROM favourites WHERE mediaUri = :mediaUri")
-    suspend fun deleteFavouriteByUri(mediaUri: String)
+    suspend fun deleteFavouriteByUri(mediaUri: String): Int
 
     @Query("DELETE FROM favourites WHERE mediaId = :mediaId")
-    suspend fun deleteFavouriteById(mediaId: String)
+    suspend fun deleteFavouriteById(mediaId: String): Int
 
     @Query("DELETE FROM favourites")
-    suspend fun clearFavourites()
+    suspend fun clearFavourites(): Int
 
     @Query("SELECT COUNT(*) FROM favourites")
     suspend fun getCount(): Int
