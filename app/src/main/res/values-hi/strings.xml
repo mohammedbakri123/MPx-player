@@ -781,6 +781,11 @@
     <string name="player_cd_previous">पिछला ट्रैक</string>
     <string name="player_cd_next">अगला ट्रैक</string>
     <string name="player_cd_pause">रोकें</string>
+    <string name="player_cd_shuffle">शफ़ल</string>
+    <string name="player_cd_repeat_off">दोहराना बंद</string>
+    <string name="player_cd_repeat_one">एक दोहराएँ</string>
+    <string name="player_cd_repeat_all">सभी दोहराएँ</string>
+    <string name="player_default_speed_header">डिफ़ॉल्ट प्लेबैक गति</string>
     <string name="player_cd_play">चलाएं</string>
     <string name="player_toast_subtitle_loaded">उपशीर्षक लोड किया गया: %1$s</string>
     <string name="player_subtitle_load_error">\'%1$s\' लोड नहीं किया जा सका:\n\n%2$s</string>

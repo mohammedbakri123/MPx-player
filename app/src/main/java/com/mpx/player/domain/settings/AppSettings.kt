@@ -10,6 +10,7 @@ data class AppSettings(
     val showThumbnails: Boolean = true,
     val resumePlayback: Boolean = true,
     val backgroundPlay: Boolean = false,
+    val defaultPlaybackSpeed: Float = 1.0f, // Persisted default speed (issue #76); new sessions start here
     val gesturesEnabled: Boolean = true,
     val decoderMode: String = "HW", // HW, HW+, SW
     val playerEngine: String = "MEDIA3", // MEDIA3, MPV

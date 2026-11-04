@@ -781,6 +781,11 @@
     <string name="player_cd_previous">المسار السابق</string>
     <string name="player_cd_next">المسار التالي</string>
     <string name="player_cd_pause">إيقاف مؤقت</string>
+    <string name="player_cd_shuffle">خلط</string>
+    <string name="player_cd_repeat_off">إيقاف التكرار</string>
+    <string name="player_cd_repeat_one">تكرار واحد</string>
+    <string name="player_cd_repeat_all">تكرار الكل</string>
+    <string name="player_default_speed_header">سرعة التشغيل الافتراضية</string>
     <string name="player_cd_play">تشغيل</string>
     <string name="player_toast_subtitle_loaded">تم تحميل الترجمة: %1$s</string>
     <string name="player_subtitle_load_error">تعذر تحميل \'%1$s\':\n\n%2$s</string>

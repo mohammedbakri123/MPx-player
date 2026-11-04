@@ -24,6 +24,14 @@ enum class DecoderMode(val label: String, val title: String, val description: St
     ),
 }
 
+/** Repeat mode for queue playback (issue #76). OFF = stop at the end of the
+ * queue, ONE = replay the current item, ALL = wrap to the first item. */
+enum class RepeatMode {
+    OFF,
+    ONE,
+    ALL,
+}
+
 enum class AspectRatioMode(val label: String) {
     FIT("FIT"),
     FILL("FILL"),
@@ -119,6 +127,8 @@ data class PlaybackState(
     val durationMs: Long = 0L,
     val bufferedPositionMs: Long = 0L,
     val speed: Float = 1.0f,
+    val repeatMode: RepeatMode = RepeatMode.OFF,
+    val shuffleEnabled: Boolean = false,
     val aspectRatio: AspectRatioMode = AspectRatioMode.FIT,
     val decoderMode: DecoderMode = DecoderMode.HW,
     val activeDecoderName: String? = null,

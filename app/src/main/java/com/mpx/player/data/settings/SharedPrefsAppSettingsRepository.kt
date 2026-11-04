@@ -29,6 +29,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         showHiddenFiles = prefs.getBoolean("show_hidden_files", false),
         showThumbnails = prefs.getBoolean("show_thumbnails", true),
         resumePlayback = prefs.getBoolean("resume_playback", true),
+        defaultPlaybackSpeed = prefs.getFloat("default_playback_speed", 1.0f),
         backgroundPlay = if (prefs.contains("background_play")) {
             prefs.getBoolean("background_play", false)
         } else {
@@ -93,6 +94,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("show_hidden_files", settings.showHiddenFiles)
             .putBoolean("show_thumbnails", settings.showThumbnails)
             .putBoolean("resume_playback", settings.resumePlayback)
+            .putFloat("default_playback_speed", settings.defaultPlaybackSpeed)
             .putBoolean("backgroundPlay", settings.backgroundPlay)
             .putBoolean("background_play", settings.backgroundPlay)
             .putBoolean("gestures_enabled", settings.gesturesEnabled)
