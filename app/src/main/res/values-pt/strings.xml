@@ -817,6 +817,12 @@
     <string name="player_dialog_decoder_selection">Seleção de decodificador</string>
     <string name="player_active_codec">Codec de vídeo ativo: %1$s</string>
     <string name="player_codec_initializing">Inicializando / aguardando quadro de vídeo...</string>
+    <string name="player_codec_error">Falha na reprodução: codec %1$s não suportado</string>
+    <string name="player_no_audio_codec">Sem som: as faixas de áudio deste arquivo (%1$s) não podem ser decodificadas neste dispositivo. Tente o motor MPV.</string>
+    <string name="player_media3_failed_mpv">O Media3 falhou com o codec %1$s. Mudou para o motor MPV.</string>
+    <string name="player_try_mpv">Tentar MPV</string>
+    <string name="player_mpv_start_failed">Falha ao iniciar o motor MPV: %1$s. Usando Media3.</string>
+    <string name="player_mpv_failed_media3">O motor MPV falhou (%1$s). Mudou para o motor Media3.</string>
     <string name="player_dialog_unsupported_subtitle">Formato de legendas não suportado</string>
     <string name="player_menu_title">Configurações de reprodução</string>
     <string name="player_menu_decoder_mode">Modo de decodificador (%1$s)</string>

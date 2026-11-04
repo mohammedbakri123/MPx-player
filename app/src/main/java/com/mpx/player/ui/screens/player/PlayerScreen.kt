@@ -1026,6 +1026,21 @@ fun PlayerScreen(
                         lineHeight = 16.sp,
                         modifier = Modifier.weight(1f),
                     )
+                    // One-tap engine switch for codec failures on Media3 (issue #82/#83).
+                    // Deliberately inside the existing banner, not a popup on playback.
+                    if (state.showMpvSwitchOffer) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.player_try_mpv),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable {
+                                playbackManager.setPlayerEngine("MPV")
+                                playbackManager.clearUserNotification()
+                            },
+                        )
+                    }
                     Spacer(Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Filled.Close,

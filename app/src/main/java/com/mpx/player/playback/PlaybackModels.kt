@@ -106,6 +106,10 @@ data class AudioTrackInfo(
     val label: String,
     val language: String,
     val isSelected: Boolean,
+    /** ExoPlayer sample MIME type (e.g. audio/ac4), null on mpv where only the codec string is known. */
+    val mimeType: String? = null,
+    /** False when the current engine reports this track as undecodable (Media3 track support). */
+    val isSupported: Boolean = true,
 )
 
 data class SubtitleTrackInfo(
@@ -134,6 +138,9 @@ data class PlaybackState(
     val activeDecoderName: String? = null,
     val decoderFallbackNote: String? = null,
     val userNotification: String? = null,
+    /** True when the current userNotification is a codec failure on Media3 and the banner
+     * should offer a one-tap switch to the MPV engine. Cleared with the notification. */
+    val showMpvSwitchOffer: Boolean = false,
     val hasPrevious: Boolean = false,
     val hasNext: Boolean = false,
     val audioTracks: List<AudioTrackInfo> = emptyList(),

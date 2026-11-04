@@ -817,6 +817,12 @@
     <string name="player_dialog_decoder_selection">डिकोडर चयन</string>
     <string name="player_active_codec">सक्रिय वीडियो कोडेक: %1$s</string>
     <string name="player_codec_initializing">प्रारंभ हो रहा है / वीडियो फ़्रेम की प्रतीक्षा हो रही है...</string>
+    <string name="player_codec_error">प्लेबैक विफल: कोडेक %1$s समर्थित नहीं है</string>
+    <string name="player_no_audio_codec">कोई ध्वनि नहीं: इस फ़ाइल के ऑडियो ट्रैक (%1$s) इस डिवाइस पर डिकोड नहीं किए जा सकते। MPV इंजन आज़माएँ।</string>
+    <string name="player_media3_failed_mpv">कोडेक %1$s के लिए Media3 विफल हुआ। MPV इंजन पर स्विच किया गया।</string>
+    <string name="player_try_mpv">MPV आज़माएँ</string>
+    <string name="player_mpv_start_failed">MPV इंजन प्रारंभ करने में विफल: %1$s। इसके बजाय Media3 का उपयोग किया जा रहा है।</string>
+    <string name="player_mpv_failed_media3">MPV इंजन विफल हुआ (%1$s)। Media3 इंजन पर स्विच किया गया।</string>
     <string name="player_dialog_unsupported_subtitle">असमर्थित उपशीर्षक प्रारूप</string>
     <string name="player_menu_title">प्लेबैक सेटिंग</string>
     <string name="player_menu_decoder_mode">डिकोडर मोड (%1$s)</string>

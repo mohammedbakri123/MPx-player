@@ -6,6 +6,7 @@ import android.view.SurfaceView
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
@@ -57,6 +58,13 @@ class Media3PlayerEngine(
 
         override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
             engineListener?.onPlaybackParametersChanged(playbackParameters.speed)
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            // Without this, ExoPlayer decoder failures never reached PlaybackManager,
+            // so Media3 failures were silent (issue #82/#83). Forward everything; the
+            // manager decides between a codec-named message and an mpv fallback.
+            engineListener?.onError(error)
         }
     }
 
@@ -346,6 +354,8 @@ class Media3PlayerEngine(
                         label = label,
                         language = language,
                         isSelected = isSelected,
+                        mimeType = format.sampleMimeType,
+                        isSupported = group.isTrackSupported(trackIndex),
                     )
                 )
             }
