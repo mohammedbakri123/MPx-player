@@ -131,12 +131,12 @@ object SubtitleUtils {
         val extension = if (fileName.contains('.')) {
             ".${fileName.substringAfterLast('.')}"
         } else {
-            "unrecognized format"
+            context.getString(com.mpx.player.R.string.subtitle_unknown_format)
         }
 
         return SubtitleValidationResult.Unsupported(
             fileName = fileName,
-            reason = "Unsupported format '$extension'. MPx Player currently supports .srt (SubRip) and .vtt (WebVTT) subtitle files.",
+            reason = context.getString(com.mpx.player.R.string.subtitle_unsupported_format, extension),
         )
     }
 }

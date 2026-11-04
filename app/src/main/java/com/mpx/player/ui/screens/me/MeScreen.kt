@@ -4,6 +4,7 @@ import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
+import com.mpx.player.BuildConfig
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -1755,7 +1756,7 @@ private fun HelpFeedbackDialog(onDismiss: () -> Unit, isMpv: Boolean = false) {
                             .padding(10.dp),
                     ) {
                         Column {
-                            Text(stringResource(R.string.help_diag_app), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.help_diag_app, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE.toString()), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                             Text(stringResource(R.string.help_diag_os, Build.VERSION.SDK_INT, Build.VERSION.RELEASE), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                             Text(stringResource(R.string.help_diag_device, Build.MANUFACTURER, Build.MODEL), fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                             Text(

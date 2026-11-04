@@ -1158,7 +1158,7 @@ fun PlayerScreen(
                                     playbackManager.setDecoderMode(nextDecoder)
                                     realSettingsRepo.save(realSettingsRepo.load().copy(decoderMode = nextDecoder.label))
                                     currentSettings = realSettingsRepo.load()
-                                    Toast.makeText(context, context.getString(R.string.player_toast_decoder, nextDecoder.title), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.player_toast_decoder, context.getString(nextDecoder.titleRes)), Toast.LENGTH_SHORT).show()
                                 },
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
                             shape = RoundedCornerShape(6.dp),
@@ -1432,7 +1432,7 @@ fun PlayerScreen(
                                 shape = RoundedCornerShape(6.dp),
                             ) {
                                 Text(
-                                    text = state.aspectRatio.label,
+                                    text = stringResource(state.aspectRatio.labelRes),
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
@@ -1992,12 +1992,12 @@ fun PlayerScreen(
                             Spacer(Modifier.width(8.dp))
                             Column {
                                 Text(
-                                    text = mode.title,
+                                    text = stringResource(mode.titleRes),
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = if (state.decoderMode == mode) FontWeight.Bold else FontWeight.Normal,
                                 )
                                 Text(
-                                    text = mode.description,
+                                    text = stringResource(mode.descriptionRes),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp,
                                 )
@@ -2240,7 +2240,7 @@ fun PlayerScreen(
                     ) {
                         Icon(Icons.Filled.AspectRatio, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_aspect, state.aspectRatio.label), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_aspect, stringResource(state.aspectRatio.labelRes)), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(
                         modifier = Modifier

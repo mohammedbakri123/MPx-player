@@ -115,6 +115,18 @@
     <string name="decoder_hw">HW (Hardware – Android MediaCodec-Hardwarebeschleunigung)</string>
     <string name="decoder_hw_plus">HW+ (Hardware Plus – asynchrone Puffer-Pipeline)</string>
     <string name="decoder_sw">SW (Software – CPU-Decodierung als Fallback)</string>
+    <string name="decoder_mode_hw_title">Hardware (HW)</string>
+    <string name="decoder_mode_hw_desc">Standardmäßige Hardwarebeschleunigung des Geräts über Android-MediaCodec-Chipsatz-Decoder.</string>
+    <string name="decoder_mode_hw_plus_title">Hardware Plus (HW+)</string>
+    <string name="decoder_mode_hw_plus_desc">Verbesserte Hardware-Decoding-Pipeline mit asynchroner Warteschlange und latenzarmem Beitritt.</string>
+    <string name="decoder_mode_sw_title">Software (SW)</string>
+    <string name="decoder_mode_sw_desc">Direkte CPU-Software-Decodierung (Google-/Android-Software-Codecs) für maximale Kompatibilität.</string>
+    <string name="aspect_fit">Anpassen</string>
+    <string name="aspect_fill">Füllen</string>
+    <string name="aspect_zoom">Zoom</string>
+    <string name="aspect_16_9">16:9</string>
+    <string name="aspect_4_3">4:3</string>
+    <string name="aspect_original">100%</string>
     <string name="decoder_explanation">Wählt die Standard-Decoder-Präferenz des Players. HW nutzt die Hardware-Codecs des Geräte-Chipsatzes; SW bietet einen Software-Fallback. Wo Android den angeforderten Decoder nicht zulässt (z. B. nicht unterstützter Codec), zeigt MPx ehrlich einen Fallback-Hinweis an.</string>
 
     <string name="audio_volume_boost">Lautstärkeverstärkung</string>
@@ -285,7 +297,7 @@
     <string name="help_sec2_title">Audio- &amp; Untertitelspuren</string>
     <string name="help_sec2_body">• Audio-Symbol: Zwischen einzelnen Audiospuren wechseln (Dual-Audio, Kommentar)\n• Untertitel-Symbol: Eingebettete oder Sidecar-Untertitelspuren (.vtt / .srt) wählen\n• Untertitelgröße: Unter Einstellungen konfigurierbar (klein, normal, groß)</string>
     <string name="help_sec3_title">Gerätediagnose (live)</string>
-    <string name="help_diag_app">App: MPx Player 0.1.0-beta (Build 2)</string>
+    <string name="help_diag_app">App: MPx Player %1$s (Build %2$s)</string>
     <string name="help_diag_os">Android-Betriebssystem: SDK %1$d (%2$s)</string>
     <string name="help_diag_device">Gerät: %1$s %2$s</string>
     <string name="help_diag_engine">Engine: %1$s</string>
@@ -793,6 +805,8 @@
     <string name="player_cd_play">Abspielen</string>
     <string name="player_toast_subtitle_loaded">Untertitel geladen: %1$s</string>
     <string name="player_subtitle_load_error">\'%1$s\' konnte nicht geladen werden:\n\n%2$s</string>
+    <string name="subtitle_unsupported_format">Nicht unterstütztes Format ’%1$s’. MPx Player unterstützt derzeit .srt- (SubRip) und .vtt- (WebVTT) Untertiteldateien.</string>
+    <string name="subtitle_unknown_format">unbekanntes Format</string>
     <string name="player_toast_decoder">Decoder: %1$s</string>
     <string name="player_pip_unsupported">Pop-up-Wiedergabe (PiP) wird auf diesem Gerät nicht unterstützt</string>
     <string name="player_pip_unable">Bild-im-Bild-Modus konnte nicht gestartet werden</string>

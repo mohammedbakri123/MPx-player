@@ -115,6 +115,18 @@
     <string name="decoder_hw">HW (हार्डवेयर - Android MediaCodec हार्डवेयर एक्सेलेरेशन)</string>
     <string name="decoder_hw_plus">HW+ (हार्डवेयर प्लस - असिंक्रोनस बफ़र पाइपलाइन)</string>
     <string name="decoder_sw">SW (सॉफ़्टवेयर - CPU डीकोडिंग फ़ॉलबैक)</string>
+    <string name="decoder_mode_hw_title">हार्डवेयर (HW)</string>
+    <string name="decoder_mode_hw_desc">Android MediaCodec चिपसेट डिकोडर के माध्यम से मानक डिवाइस हार्डवेयर त्वरण।</string>
+    <string name="decoder_mode_hw_plus_title">हार्डवेयर प्लस (HW+)</string>
+    <string name="decoder_mode_hw_plus_desc">एसिंक्रोनस क्यूइंग और कम-विलंबता जुड़ाव के साथ उन्नत हार्डवेयर डिकोडिंग पाइपलाइन।</string>
+    <string name="decoder_mode_sw_title">सॉफ़्टवेयर (SW)</string>
+    <string name="decoder_mode_sw_desc">अधिकतम संगतता के लिए प्रत्यक्ष CPU सॉफ़्टवेयर डिकोडिंग (Google/Android सॉफ़्टवेयर कोडेक)।</string>
+    <string name="aspect_fit">फिट</string>
+    <string name="aspect_fill">भरें</string>
+    <string name="aspect_zoom">ज़ूम</string>
+    <string name="aspect_16_9">16:9</string>
+    <string name="aspect_4_3">4:3</string>
+    <string name="aspect_original">100%</string>
     <string name="decoder_explanation">डिफ़ॉल्ट प्लेयर डीकोडर प्राथमिकता चुनें। HW डिवाइस चिपसेट हार्डवेयर कोडेक का उपयोग करता है; SW सॉफ़्टवेयर फ़ॉलबैक देता है। जहाँ Android अनुरोधित डीकोडर की अनुमति नहीं देता (जैसे असमर्थित कोडेक), MPx ईमानदारी से फ़ॉलबैक नोट दिखाता है।</string>
 
     <string name="audio_volume_boost">वॉल्यूम बूस्ट</string>
@@ -285,7 +297,7 @@
     <string name="help_sec2_title">ऑडियो और सबटाइटल ट्रैक</string>
     <string name="help_sec2_body">• ऑडियो आइकन: अलग-अलग ऑडियो ट्रैक के बीच बदलें (डुअल-ऑडियो, कमेंटरी)\n• सबटाइटल आइकन: एम्बेडेड या साइडकार .vtt / .srt सबटाइटल ट्रैक चुनें\n• सबटाइटल आकार: सेटिंग्स में कॉन्फ़िगर किया जा सकता है (छोटा, सामान्य, बड़ा)</string>
     <string name="help_sec3_title">डिवाइस डायग्नोस्टिक्स (लाइव)</string>
-    <string name="help_diag_app">ऐप: MPx Player 0.1.0-beta (बिल्ड 2)</string>
+    <string name="help_diag_app">ऐप: MPx Player %1$s (बिल्ड %2$s)</string>
     <string name="help_diag_os">Android OS: SDK %1$d (%2$s)</string>
     <string name="help_diag_device">डिवाइस: %1$s %2$s</string>
     <string name="help_diag_engine">इंजन: %1$s</string>
@@ -793,6 +805,8 @@
     <string name="player_cd_play">चलाएं</string>
     <string name="player_toast_subtitle_loaded">उपशीर्षक लोड किया गया: %1$s</string>
     <string name="player_subtitle_load_error">\'%1$s\' लोड नहीं किया जा सका:\n\n%2$s</string>
+    <string name="subtitle_unsupported_format">असमर्थित प्रारूप ’%1$s’। MPx Player वर्तमान में .srt (SubRip) और .vtt (WebVTT) उपशीर्षक फ़ाइलों का समर्थन करता है।</string>
+    <string name="subtitle_unknown_format">अज्ञात प्रारूप</string>
     <string name="player_toast_decoder">डिकोडर: %1$s</string>
     <string name="player_pip_unsupported">इस डिवाइस पर पॉप-अप प्ले (PiP) समर्थित नहीं है</string>
     <string name="player_pip_unable">पिक्चर-इन-पिक्चर मोड में प्रवेश करने में असमर्थ</string>

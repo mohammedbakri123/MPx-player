@@ -115,6 +115,18 @@
     <string name="decoder_hw">HW (matériel : accélération matérielle MediaCodec d’Android)</string>
     <string name="decoder_hw_plus">HW+ (matériel plus : pipeline de tampons asynchrone)</string>
     <string name="decoder_sw">SW (logiciel : décodage CPU de secours)</string>
+    <string name="decoder_mode_hw_title">Matériel (HW)</string>
+    <string name="decoder_mode_hw_desc">Accélération matérielle standard de l’appareil via les décodeurs MediaCodec d’Android.</string>
+    <string name="decoder_mode_hw_plus_title">Matériel Plus (HW+)</string>
+    <string name="decoder_mode_hw_plus_desc">Pipeline de décodage matériel amélioré avec files d’attente asynchrones et jonction à faible latence.</string>
+    <string name="decoder_mode_sw_title">Logiciel (SW)</string>
+    <string name="decoder_mode_sw_desc">Décodage logiciel direct par le processeur (codecs logiciels Google/Android) pour une compatibilité maximale.</string>
+    <string name="aspect_fit">Ajuster</string>
+    <string name="aspect_fill">Remplir</string>
+    <string name="aspect_zoom">Zoom</string>
+    <string name="aspect_16_9">16:9</string>
+    <string name="aspect_4_3">4:3</string>
+    <string name="aspect_original">100%</string>
     <string name="decoder_explanation">Choisit la préférence de décodeur par défaut du lecteur. HW utilise les codecs matériels de l’appareil ; SW offre un secours logiciel. Quand Android ne permet pas le décodeur demandé (par exemple codec non pris en charge), MPx affiche honnêtement une note de secours.</string>
 
     <string name="audio_volume_boost">Amplification du volume</string>
@@ -285,7 +297,7 @@
     <string name="help_sec2_title">Pistes audio et sous-titres</string>
     <string name="help_sec2_body">• Icône audio : basculer entre les pistes audio (double audio, commentaires)\n• Icône sous-titres : sélectionner les sous-titres intégrés ou les fichiers .vtt / .srt\n• Taille des sous-titres : configurable dans Paramètres (Petite, Normale, Grande)</string>
     <string name="help_sec3_title">Diagnostics de l’appareil (en direct)</string>
-    <string name="help_diag_app">Appli : MPx Player 0.1.0-beta (build 2)</string>
+    <string name="help_diag_app">Appli : MPx Player %1$s (build %2$s)</string>
     <string name="help_diag_os">Android : SDK %1$d (%2$s)</string>
     <string name="help_diag_device">Appareil : %1$s %2$s</string>
     <string name="help_diag_engine">Moteur : %1$s</string>
@@ -793,6 +805,8 @@
     <string name="player_cd_play">Lire</string>
     <string name="player_toast_subtitle_loaded">Sous-titre chargé : %1$s</string>
     <string name="player_subtitle_load_error">Impossible de charger \'%1$s\' :\n\n%2$s</string>
+    <string name="subtitle_unsupported_format">Format non pris en charge « %1$s ». MPx Player prend actuellement en charge les fichiers de sous-titres .srt (SubRip) et .vtt (WebVTT).</string>
+    <string name="subtitle_unknown_format">format non reconnu</string>
     <string name="player_toast_decoder">Décodeur : %1$s</string>
     <string name="player_pip_unsupported">La lecture en incrustation (PiP) n\'est pas prise en charge sur cet appareil</string>
     <string name="player_pip_unable">Impossible de passer en mode Picture-in-Picture</string>

@@ -115,6 +115,18 @@
     <string name="decoder_hw">HW (عتاد - تسريع عتاد Android MediaCodec)</string>
     <string name="decoder_hw_plus">HW+ (عتاد بلس - مسار مخزن مؤقت غير متزامن)</string>
     <string name="decoder_sw">SW (برمجي - بديل فك الترميز عبر المعالج)</string>
+    <string name="decoder_mode_hw_title">العتاد (HW)</string>
+    <string name="decoder_mode_hw_desc">تسريع عتادي قياسي للجهاز عبر مفككات ترميز MediaCodec من Android.</string>
+    <string name="decoder_mode_hw_plus_title">العتاد بلس (HW+)</string>
+    <string name="decoder_mode_hw_plus_desc">خط أنابيب فك ترميز عتادي محسّن مع قوائم انتظار غير متزامنة وانضمام منخفض زمن الاستجابة.</string>
+    <string name="decoder_mode_sw_title">برمجي (SW)</string>
+    <string name="decoder_mode_sw_desc">فك ترميز برمجي مباشر عبر المعالج (مفككات ترميز Google/Android البرمجية) لأقصى قدر من التوافق.</string>
+    <string name="aspect_fit">ملاءمة</string>
+    <string name="aspect_fill">ملء</string>
+    <string name="aspect_zoom">تكبير</string>
+    <string name="aspect_16_9">16:9</string>
+    <string name="aspect_4_3">4:3</string>
+    <string name="aspect_original">100%</string>
     <string name="decoder_explanation">يحدد تفضيل فك ترميز المشغل الافتراضي. يستخدم HW برامج فك الترميز العتادية لمجموعة شرائح الجهاز؛ بينما يوفر SW بديلاً برمجياً. عندما لا يسمح نظام أندرويد ببرنامج فك الترميز المطلوب (مثل برنامج ترميز غير مدعوم)، يعرض MPx ملاحظة البديل بصدق.</string>
 
     <string name="audio_volume_boost">تضخيم مستوى الصوت</string>
@@ -285,7 +297,7 @@
     <string name="help_sec2_title">المسارات الصوتية ومسارات الترجمة</string>
     <string name="help_sec2_body">• أيقونة الصوت: التبديل بين المسارات الصوتية المستقلة (صوت ثنائي، تعليق)\n• أيقونة الترجمة: اختيار مسارات الترجمة المدمجة أو الخارجية بتنسيق vtt. أو srt.\n• حجم الترجمة: قابل للضبط من الإعدادات (صغير، عادي، كبير)</string>
     <string name="help_sec3_title">تشخيصات الجهاز (مباشرة)</string>
-    <string name="help_diag_app">التطبيق: مشغل MPx 0.1.0-beta (البناء 2)</string>
+    <string name="help_diag_app">التطبيق: مشغل MPx %1$s (البناء %2$s)</string>
     <string name="help_diag_os">نظام أندرويد: SDK %1$d (%2$s)</string>
     <string name="help_diag_device">الجهاز: %1$s %2$s</string>
     <string name="help_diag_engine">المحرك: %1$s</string>
@@ -793,6 +805,8 @@
     <string name="player_cd_play">تشغيل</string>
     <string name="player_toast_subtitle_loaded">تم تحميل الترجمة: %1$s</string>
     <string name="player_subtitle_load_error">تعذر تحميل \'%1$s\':\n\n%2$s</string>
+    <string name="subtitle_unsupported_format">تنسيق غير مدعوم ’%1$s’. يدعم مشغل MPx حاليًا ملفات الترجمة .srt (SubRip) و .vtt (WebVTT).</string>
+    <string name="subtitle_unknown_format">تنسيق غير معروف</string>
     <string name="player_toast_decoder">وحدة فك التشفير: %1$s</string>
     <string name="player_pip_unsupported">التشغيل المنبثق (PiP) غير مدعوم على هذا الجهاز</string>
     <string name="player_pip_unable">تعذر الدخول إلى وضع الصورة داخل الصورة</string>
