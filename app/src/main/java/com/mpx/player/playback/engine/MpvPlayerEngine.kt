@@ -821,8 +821,18 @@ class MpvPlayerEngine(
         try {
             mpv.command("playlist-clear")
 
-            val startSec = if (resumeMs > 0L) (resumeMs / 1000.0).toString() else "0"
-            mpv.command("loadfile", targetItem.uri, "replace", "start=$startSec")
+            // DO NOT pass "start=..." as a loadfile option: libmpv rejects it
+            // outright ("The loadfile option must be an integer: start=0" in
+            // the device log, on every attempt, even start=0), the file never
+            // opens, and command() does not throw — so the old code believed
+            // the load was issued while nothing played. Resume position goes
+            // through the pending-seek mechanism instead: it is applied on
+            // FILE_LOADED, exactly like a seek fired during prepare.
+            if (resumeMs > 0L) {
+                pendingSeekMs = resumeMs
+                cachedPositionMs = resumeMs
+            }
+            mpv.command("loadfile", targetItem.uri, "replace")
 
             // Append subsequent items to playlist
             for (i in (targetIndex + 1) until items.size) {
@@ -834,9 +844,11 @@ class MpvPlayerEngine(
                 mpv.command("loadfile", items[i].uri, "append")
             }
 
-            // The loadfile commands above returned without throwing: the load
-            // is genuinely issued, even if libmpv now stalls without events.
-            // (Subtitle adds below are separate commands and must not mask it.)
+            // Note: mpv command() does NOT throw on a rejected command — a
+            // bad loadfile fails silently in the log only (this hid the
+            // "start=" rejection for a whole round). loadIssued therefore
+            // means "command sent", and the preparing watchdog is the backstop
+            // if no START_FILE/FILE_LOADED event follows.
             loadIssued = true
 
             // Load external subtitles
