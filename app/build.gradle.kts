@@ -90,6 +90,9 @@ dependencies {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "androidx.appcompat")
     }
+    // SMB client for Local Network browsing (issue #78): pure-Java SMB2/3,
+    // Apache 2.0, no native code, no MX code.
+    implementation("com.hierynomus:smbj:0.12.0")
     // Data layer dependency (Room persistence)
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
