@@ -32,6 +32,29 @@ class MediaStoreRepository(
     private val context: Context,
 ) : MediaRepository {
 
+    companion object {
+        // Process-lifetime cache of the last scan, keyed by the
+        // (show-all-folders, show-hidden-files) flags that shape the lists.
+        // Plain remember state is wiped when a tab's back-stack entry is
+        // popped (tab switch with saveState), so without this, returning to
+        // Local rebuilt from empty lists and flashed an empty page for a
+        // few ms before the rescan filled it. The rescan still runs on
+        // return and refreshes both the cache and the screen; this only
+        // covers the gap with the previous real content. It dies with the
+        // process, so a fresh launch always scans.
+        @Volatile
+        private var cachedFolders: Triple<Boolean, Boolean, List<MediaFolder>>? = null
+
+        @Volatile
+        private var cachedVideos: Triple<Boolean, Boolean, List<VideoFile>>? = null
+
+        fun cachedFolders(showAllFolders: Boolean, showHiddenFiles: Boolean): List<MediaFolder>? =
+            cachedFolders?.takeIf { it.first == showAllFolders && it.second == showHiddenFiles }?.third
+
+        fun cachedVideos(showAll: Boolean, showHiddenFiles: Boolean): List<VideoFile>? =
+            cachedVideos?.takeIf { it.first == showAll && it.second == showHiddenFiles }?.third
+    }
+
     /**
      * Resolves all active external storage volume names available on the device.
      * On Android 10+ (API 29+), includes [MediaStore.VOLUME_EXTERNAL_PRIMARY] and
@@ -388,7 +411,7 @@ class MediaStoreRepository(
             }
         }
 
-        return foldersToDisplay.map { acc ->
+        val result = foldersToDisplay.map { acc ->
             MediaFolder(
                 id = acc.id,
                 name = acc.name,
@@ -401,6 +424,8 @@ class MediaStoreRepository(
                 isStorageRemovable = acc.isRemovable,
             )
         }.sortedBy { it.name.lowercase(Locale.US) }
+        cachedFolders = Triple(showAllFolders, showHidden, result)
+        return result
     }
 
     override fun getVideosInFolder(bucketId: String): List<VideoFile> {
@@ -613,6 +638,7 @@ class MediaStoreRepository(
                 // Continue to next volume
             }
         }
+        cachedVideos = Triple(showAll, showHidden, videos)
         return videos
     }
 

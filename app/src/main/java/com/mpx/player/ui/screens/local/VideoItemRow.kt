@@ -149,21 +149,6 @@ fun VideoItemRow(
                     }
                 }
 
-                if (video.isNew) {
-                    Spacer(Modifier.width(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(3.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.badge_new),
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.sp,
-                        )
-                    }
-                }
             }
 
             val metaParts = mutableListOf<String>()
@@ -334,22 +319,7 @@ fun VideoItemGridCard(
                     }
                 }
 
-                if (video.isNew) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(6.dp)
-                            .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(3.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.badge_new),
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.sp,
-                        )
-                    }
-                }
+
             }
 
             Spacer(Modifier.height(8.dp))

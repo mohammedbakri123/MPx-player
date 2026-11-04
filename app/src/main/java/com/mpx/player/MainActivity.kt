@@ -11,17 +11,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.Surface
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import com.mpx.player.ui.theme.MpxTheme
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -330,66 +334,72 @@ fun MpxApp(
                 return@Scaffold
             }
 
-            // Floating frosted dock: the mini-player and the nav bar share
-            // one inset, rounded, translucent container instead of two
-            // full-width bars divided by a hairline. The translucency is
-            // the frosted-glass look; true backdrop blur would need the
-            // content drawn underneath the bar (edge-to-edge overlay),
-            // which this Scaffold layout does not do — the surface stays
-            // near-opaque so labels stay readable on every device.
-            Column(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
-                    tonalElevation = 2.dp,
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
+            // MX-style bottom bar: full-width navigation bar in the theme's
+            // surface colour (defined in every theme, unlike the old
+            // surfaceContainerHigh dock, which fell back to a foreign grey
+            // in Dark Slate / Classic Navy). The mini-player sits above it
+            // as its own full-width strip, separated by a hairline — the
+            // same two-bar shape MX uses — instead of one floating
+            // rounded container.
+            Column {
+                // Real Media3 persistent MiniPlayer bar
+                MiniPlayer(
+                    playbackManager = playbackManager,
+                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                )
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    thickness = 0.5.dp,
+                )
+                // MX-style tab strip (structure from MX's bottom tab bar in
+                // the decoded layouts: full-width horizontal strip on a
+                // near-black tab background, 0.5dp divider above, icon above
+                // a small label, selection by colour only). This is a
+                // custom Row, deliberately NOT the old M3 NavigationBar
+                // (80dp, pill indicator, container grey) and NOT the #84
+                // floating rounded dock.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .background(MaterialTheme.colorScheme.surface),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
-                    Column {
-                        // Real Media3 persistent MiniPlayer bar
-                        MiniPlayer(
-                            playbackManager = playbackManager,
-                            onOpenPlayer = { navController.navigate(Screen.Player.route) },
-                        )
-                        NavigationBar(
-                            containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            tonalElevation = 0.dp,
-                        ) {
                     navigationTabs.forEach { tab ->
                         val selected = currentDestination?.hierarchy?.any {
                             it.route == tab.route
                         } == true
 
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable {
+                                    navController.navigate(tab.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
-                                    contentDescription = stringResource(tab.labelRes),
-                                )
-                            },
-                            label = { Text(stringResource(tab.labelRes)) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            ),
-                        )
-                    }
-                }
+                                },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(
+                                imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                                contentDescription = stringResource(tab.labelRes),
+                                tint = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp),
+                            )
+                            Text(
+                                text = stringResource(tab.labelRes),
+                                color = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 11.sp,
+                            )
+                        }
                     }
                 }
             }
