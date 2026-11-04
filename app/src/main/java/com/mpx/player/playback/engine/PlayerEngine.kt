@@ -3,6 +3,7 @@ package com.mpx.player.playback.engine
 import android.view.Surface
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
+import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
 
@@ -36,6 +37,13 @@ interface PlayerEngine {
         fun onVideoDecoderInitialized(decoderName: String) {}
         fun onError(error: Exception) {}
     }
+
+    /**
+     * Measured playback metrics for the comparison use (MPV engine only).
+     * Default null: engines that do not measure (Media3) report nothing
+     * rather than invented numbers.
+     */
+    fun getPlaybackMetrics(): EnginePlaybackMetrics? = null
 
     /**
      * Attaches a native video rendering surface to the engine.

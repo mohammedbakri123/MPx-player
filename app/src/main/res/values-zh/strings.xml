@@ -719,6 +719,11 @@
     <string name="dev_label_player_state">播放器状态</string>
     <string name="dev_label_active_media">当前媒体</string>
     <string name="dev_label_decoder_fallback">解码器后备</string>
+    <string name="dev_label_metrics_ready">就绪时间（上个视频）</string>
+    <string name="dev_label_metrics_first_frame">首帧时间（上个视频）</string>
+    <string name="dev_label_metrics_seek">跳转延迟（上次跳转）</string>
+    <string name="dev_label_metrics_fallbacks">解码器回退（会话）</string>
+    <string name="dev_label_metrics_errors">播放错误（会话）</string>
     <string name="dev_btn_refresh_diagnostics">刷新诊断</string>
     <string name="dev_val_refreshing">正在刷新…</string>
     <string name="dev_val_none_idle">无（播放器空闲）</string>
@@ -775,6 +780,7 @@
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">没有排队的视频</string>
+    <string name="player_loading">正在加载…</string>
     <string name="player_empty_select_video">从本地选择一个视频开始播放</string>
     <string name="player_cd_audio_track">音轨</string>
     <string name="player_hud_scrub">拖动 %1$s</string>

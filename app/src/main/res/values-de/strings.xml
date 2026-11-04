@@ -719,6 +719,11 @@
     <string name="dev_label_player_state">Player-Status</string>
     <string name="dev_label_active_media">Aktive Medien</string>
     <string name="dev_label_decoder_fallback">Decoder-Fallback</string>
+    <string name="dev_label_metrics_ready">Zeit bis bereit (letztes Video)</string>
+    <string name="dev_label_metrics_first_frame">Zeit bis zum ersten Bild (letztes Video)</string>
+    <string name="dev_label_metrics_seek">Suchlatenz (letzte Suche)</string>
+    <string name="dev_label_metrics_fallbacks">Decoderwechsel (Sitzung)</string>
+    <string name="dev_label_metrics_errors">Wiedergabefehler (Sitzung)</string>
     <string name="dev_btn_refresh_diagnostics">Diagnose aktualisieren</string>
     <string name="dev_val_refreshing">Aktualisieren…</string>
     <string name="dev_val_none_idle">Keine (Player inaktiv)</string>
@@ -775,6 +780,7 @@
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">Kein Video in der Warteschlange</string>
+    <string name="player_loading">Wird geladen…</string>
     <string name="player_empty_select_video">Wähle ein Video aus „Lokal“, um die Wiedergabe zu starten</string>
     <string name="player_cd_audio_track">Audiospur</string>
     <string name="player_hud_scrub">Spulen %1$s</string>

@@ -719,6 +719,11 @@
     <string name="dev_label_player_state">حالة المشغل</string>
     <string name="dev_label_active_media">الوسيط النشط</string>
     <string name="dev_label_decoder_fallback">الرجوع التلقائي لمفكك الترميز</string>
+    <string name="dev_label_metrics_ready">الوقت حتى الجاهزية (آخر فيديو)</string>
+    <string name="dev_label_metrics_first_frame">الوقت حتى الإطار الأول (آخر فيديو)</string>
+    <string name="dev_label_metrics_seek">زمن الاستجابة للتنقل (آخر تنقل)</string>
+    <string name="dev_label_metrics_fallbacks">التراجعات إلى مفكك ترميز آخر (الجلسة)</string>
+    <string name="dev_label_metrics_errors">أخطاء التشغيل (الجلسة)</string>
     <string name="dev_btn_refresh_diagnostics">تحديث التشخيصات</string>
     <string name="dev_val_refreshing">جاري التحديث…</string>
     <string name="dev_val_none_idle">لا يوجد (المشغل في وضع السكون)</string>
@@ -775,6 +780,7 @@
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">لا يوجد فيديو في قائمة التشغيل</string>
+    <string name="player_loading">جارٍ التحميل…</string>
     <string name="player_empty_select_video">اختر فيديو من المحلي لبدء التشغيل</string>
     <string name="player_cd_audio_track">المسار الصوتي</string>
     <string name="player_hud_scrub">التمرير %1$s</string>

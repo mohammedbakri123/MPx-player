@@ -1110,6 +1110,30 @@ private fun DevelopmentSettingsSection(
             label = stringResource(R.string.dev_label_decoder_fallback),
             value = fallbackNote,
         )
+        // Playback metrics (MPV-vs-Media3 comparison): measured values for the
+        // current engine, refreshed by the position ticker. "—" means not
+        // observed yet (e.g. no video played, or Media3's unmeasured fields).
+        val metrics = playbackState.playbackMetrics
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_metrics_ready),
+            value = metrics?.lastTimeToReadyMs?.let { "$it ms" } ?: "—",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_metrics_first_frame),
+            value = metrics?.lastTimeToFirstFrameMs?.let { "$it ms" } ?: "—",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_metrics_seek),
+            value = metrics?.lastSeekLatencyMs?.let { "$it ms" } ?: "—",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_metrics_fallbacks),
+            value = metrics?.let { "${it.decoderFallbackCount}" } ?: "—",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_metrics_errors),
+            value = metrics?.let { "${it.hardErrorCount}" } ?: "—",
+        )
     }
 
     Spacer(Modifier.height(10.dp))

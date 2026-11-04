@@ -1,6 +1,10 @@
 package com.mpx.player.playback.engine
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.util.Log
 import android.view.Surface
 import android.view.SurfaceView
 import androidx.media3.common.C
@@ -15,6 +19,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
+import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
@@ -36,13 +41,82 @@ class Media3PlayerEngine(
     var decoderMode: DecoderMode = initialDecoderMode
         private set
 
+    // --- Playback metrics (same definitions as the MPV engine, so the two
+    // engines are comparable through identical MPx plumbing) ---
+    private var loadStartMs: Long = 0L
+    private var firstFrameRecorded: Boolean = false
+    private var lastTimeToReadyMs: Long? = null
+    private var lastTimeToFirstFrameMs: Long? = null
+    private var lastSeekLatencyMs: Long? = null
+    private var seekStartMs: Long? = null
+    private var seekTargetMs: Long? = null
+    private var hardErrorCount: Int = 0
+    private val metricsHandler = Handler(Looper.getMainLooper())
+    private val seekPollRunnable = object : Runnable {
+        override fun run() {
+            val start = seekStartMs
+            val target = seekTargetMs
+            if (start == null || target == null) return
+            val pos = player.currentPosition.coerceAtLeast(0L)
+            if (kotlin.math.abs(pos - target) <= 500L) {
+                lastSeekLatencyMs = SystemClock.elapsedRealtime() - start
+                Log.i("MpxMetrics", "seek seek_ms=$lastSeekLatencyMs target_ms=$target")
+                seekStartMs = null
+                seekTargetMs = null
+            } else if (SystemClock.elapsedRealtime() - start > 5000L) {
+                // Give up silently: a missing number is honest, a fake one is not.
+                seekStartMs = null
+                seekTargetMs = null
+            } else {
+                metricsHandler.postDelayed(this, 100L)
+            }
+        }
+    }
+
+    private fun startSeekPoll(target: Long) {
+        seekStartMs = SystemClock.elapsedRealtime()
+        seekTargetMs = target
+        metricsHandler.removeCallbacks(seekPollRunnable)
+        metricsHandler.postDelayed(seekPollRunnable, 100L)
+    }
+
+    private fun cancelSeekPoll() {
+        metricsHandler.removeCallbacks(seekPollRunnable)
+        seekStartMs = null
+        seekTargetMs = null
+    }
+
+    override fun getPlaybackMetrics(): EnginePlaybackMetrics =
+        EnginePlaybackMetrics(
+            lastTimeToReadyMs = lastTimeToReadyMs,
+            lastTimeToFirstFrameMs = lastTimeToFirstFrameMs,
+            lastSeekLatencyMs = lastSeekLatencyMs,
+            // Media3 has no in-engine HW→HW+→SW stage chain (its renderer
+            // fallback is internal), so this stays 0 — not a claim of zero
+            // fallbacks elsewhere, just no counted stage step-downs here.
+            decoderFallbackCount = 0,
+            hardErrorCount = hardErrorCount,
+        )
+
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             engineListener?.onIsPlayingChanged(isPlaying)
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_READY && loadStartMs != 0L && lastTimeToReadyMs == null) {
+                lastTimeToReadyMs = SystemClock.elapsedRealtime() - loadStartMs
+                Log.i("MpxMetrics", "ready ready_ms=$lastTimeToReadyMs")
+            }
             engineListener?.onPlaybackStateChanged(playbackState)
+        }
+
+        override fun onRenderedFirstFrame() {
+            if (loadStartMs != 0L && !firstFrameRecorded) {
+                firstFrameRecorded = true
+                lastTimeToFirstFrameMs = SystemClock.elapsedRealtime() - loadStartMs
+                Log.i("MpxMetrics", "first_frame first_frame_ms=$lastTimeToFirstFrameMs")
+            }
         }
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -64,6 +138,8 @@ class Media3PlayerEngine(
             // Without this, ExoPlayer decoder failures never reached PlaybackManager,
             // so Media3 failures were silent (issue #82/#83). Forward everything; the
             // manager decides between a codec-named message and an mpv fallback.
+            hardErrorCount++
+            Log.i("MpxMetrics", "error hard_errors=$hardErrorCount")
             engineListener?.onError(error)
         }
     }
@@ -131,6 +207,11 @@ class Media3PlayerEngine(
     override fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
         currentQueue = items
         if (items.isEmpty()) return
+        cancelSeekPoll()
+        loadStartMs = SystemClock.elapsedRealtime()
+        firstFrameRecorded = false
+        lastTimeToReadyMs = null
+        lastTimeToFirstFrameMs = null
         val mediaItems = items.map { it.toMediaItem() }
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
         player.setMediaItems(mediaItems, targetIndex, resumeMs)
@@ -152,10 +233,12 @@ class Media3PlayerEngine(
         val dur = player.duration.coerceAtLeast(0L)
         val target = if (dur > 0L) positionMs.coerceIn(0L, dur) else positionMs.coerceAtLeast(0L)
         player.seekTo(target)
+        startSeekPoll(target)
     }
 
     override fun seekTo(index: Int, positionMs: Long) {
         player.seekTo(index, positionMs)
+        startSeekPoll(positionMs.coerceAtLeast(0L))
     }
 
     override fun setSpeed(speed: Float) {
@@ -255,10 +338,12 @@ class Media3PlayerEngine(
     }
 
     override fun stop() {
+        cancelSeekPoll()
         player.stop()
     }
 
     override fun release() {
+        cancelSeekPoll()
         player.removeListener(playerListener)
         player.removeAnalyticsListener(analyticsListener)
         player.stop()
@@ -267,6 +352,11 @@ class Media3PlayerEngine(
 
     override fun setDecoderMode(mode: DecoderMode) {
         if (decoderMode == mode) return
+        cancelSeekPoll()
+        // The rebuild below prepares a fresh player without going through
+        // load(): clear the load clock so its READY cannot be mistaken for a
+        // tap-to-ready measurement from an earlier load.
+        loadStartMs = 0L
 
         val wasPlaying = player.isPlaying
         val currentPos = player.currentPosition.coerceAtLeast(0L)

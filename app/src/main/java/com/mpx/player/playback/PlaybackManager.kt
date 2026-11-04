@@ -106,7 +106,14 @@ class PlaybackManager private constructor(context: Context) {
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
-            _playbackState.update { it.copy(playbackState = playbackState) }
+            _playbackState.update {
+                it.copy(
+                    playbackState = playbackState,
+                    // Preparing ends the moment the engine is READY or ENDED;
+                    // anything else (BUFFERING, IDLE mid-load) keeps the splash.
+                    isPreparing = if (playbackState == Player.STATE_READY || playbackState == Player.STATE_ENDED) false else it.isPreparing,
+                )
+            }
             updatePosition()
             updateTracksState()
             if (playbackState == Player.STATE_ENDED) {
@@ -217,6 +224,8 @@ class PlaybackManager private constructor(context: Context) {
 
         override fun onError(error: Exception) {
             Log.e("PlaybackManager", "Engine error encountered", error)
+            // An error ends preparing: the banner below replaces the splash.
+            _playbackState.update { it.copy(isPreparing = false) }
             if (isMpv) {
                 val codec = if (error is MpvPlaybackException) error.codecName else _playbackState.value.activeDecoderName
                 fallbackToMedia3(failedCodecName = codec ?: "unknown", reason = error.message)
@@ -402,6 +411,8 @@ class PlaybackManager private constructor(context: Context) {
                 activeDecoderName = null,
                 decoderFallbackNote = null,
                 userNotification = "Switched engine to $target",
+                // The new engine load is itself a fresh prepare.
+                isPreparing = queue.getOrNull(currentIndex.coerceIn(0, queue.lastIndex.coerceAtLeast(0)))?.isVideo == true,
             )
         }
         updatePosition()
@@ -461,6 +472,8 @@ class PlaybackManager private constructor(context: Context) {
                 } else {
                     "MPV decoder failed for codec '$failedCodecName'. Switched to Media3 engine."
                 },
+                // The fallback engine load is itself a fresh prepare.
+                isPreparing = queue.getOrNull(currentIndex.coerceIn(0, queue.lastIndex.coerceAtLeast(0)))?.isVideo == true,
             )
         }
         updatePosition()
@@ -514,6 +527,8 @@ class PlaybackManager private constructor(context: Context) {
                 decoderFallbackNote = null,
                 userNotification = appContext.getString(R.string.player_media3_failed_mpv, failedCodecName),
                 showMpvSwitchOffer = false,
+                // The fallback engine load is itself a fresh prepare.
+                isPreparing = queue.getOrNull(currentIndex.coerceIn(0, queue.lastIndex.coerceAtLeast(0)))?.isVideo == true,
             )
         }
         updatePosition()
@@ -600,6 +615,8 @@ class PlaybackManager private constructor(context: Context) {
                 resumedFromMs = if (shouldResume) savedPos else null,
                 speed = settings.defaultPlaybackSpeed,
                 shuffleEnabled = false,
+                // A fresh video load is preparing until the engine reports READY.
+                isPreparing = targetItem.isVideo,
             )
         }
         updatePosition()
@@ -929,6 +946,8 @@ class PlaybackManager private constructor(context: Context) {
                 isVideoBackgroundActive = false,
                 currentPositionMs = 0L,
                 durationMs = 0L,
+                isPreparing = false,
+                playbackMetrics = null,
             )
         }
     }
@@ -999,6 +1018,10 @@ class PlaybackManager private constructor(context: Context) {
                 bufferedPositionMs = buffered,
                 hasPrevious = engine.hasPreviousMediaItem,
                 hasNext = engine.hasNextMediaItem,
+                // Refresh measured engine metrics on every tick so the
+                // diagnostics rows track the live engine (MPV values, null
+                // for Media3's unmeasured fields is handled by the rows).
+                playbackMetrics = engine.getPlaybackMetrics(),
             )
         }
     }
