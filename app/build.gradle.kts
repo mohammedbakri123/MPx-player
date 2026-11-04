@@ -1,26 +1,28 @@
-import java.io.ByteArrayOutputStream
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
 
 // Current git branch at build time; "unknown" when git is unavailable or HEAD is detached.
+// (Project.exec was removed in Gradle 9; providers.exec is the configuration-time replacement.)
 val gitBranch: String = try {
-    val stdout = ByteArrayOutputStream()
-    exec {
+    providers.exec {
         commandLine("git", "rev-parse", "--abbrev-ref", "HEAD")
-        standardOutput = stdout
-    }
-    stdout.toString().trim().takeIf { it.isNotEmpty() && it != "HEAD" } ?: "unknown"
+    }.standardOutput.asText.get().trim()
+        .takeIf { it.isNotEmpty() && it != "HEAD" } ?: "unknown"
 } catch (_: Exception) {
     "unknown"
 }
 
 android {
     namespace = "com.mpx.player"
-    compileSdk = 34
+    compileSdk = 36
+    // Installed platform package is android-36-ext19 (API 36 + extension level 19).
+    compileSdkExtension = 19
 
     defaultConfig {
         applicationId = "com.mpx.player"
@@ -74,15 +76,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
     }
     buildFeatures {
         buildConfig = true
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
     packaging {
         resources {
@@ -92,7 +93,7 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.06.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
@@ -114,10 +115,12 @@ dependencies {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "androidx.appcompat")
     }
+    // Haze 2.0 visual effects (M2.5 UI revolution)
+    implementation("dev.chrisbanes.haze:haze:1.6.0")
     // Data layer dependency (Room persistence)
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.8.5")
+    implementation("androidx.room:room-ktx:2.8.5")
+    ksp("androidx.room:room-compiler:2.8.5")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

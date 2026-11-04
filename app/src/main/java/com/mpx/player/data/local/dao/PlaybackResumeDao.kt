@@ -19,11 +19,11 @@ interface PlaybackResumeDao {
     suspend fun getResumePosition(mediaId: String): PlaybackResumeEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertResumePosition(resume: PlaybackResumeEntity)
+    suspend fun upsertResumePosition(resume: PlaybackResumeEntity): Long
 
     @Query("DELETE FROM playback_resume WHERE mediaId = :mediaId")
-    suspend fun deleteResumePosition(mediaId: String)
+    suspend fun deleteResumePosition(mediaId: String): Int
 
     @Query("DELETE FROM playback_resume")
-    suspend fun clearAllResumePositions()
+    suspend fun clearAllResumePositions(): Int
 }

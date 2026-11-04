@@ -44,13 +44,13 @@ interface PlaylistDao {
     suspend fun insertPlaylist(playlist: CustomPlaylistEntity): Long
 
     @Update
-    suspend fun updatePlaylist(playlist: CustomPlaylistEntity)
+    suspend fun updatePlaylist(playlist: CustomPlaylistEntity): Int
 
     @Query("DELETE FROM custom_playlists WHERE id = :id")
-    suspend fun deletePlaylistById(id: Long)
+    suspend fun deletePlaylistById(id: Long): Int
 
     @Query("DELETE FROM custom_playlists")
-    suspend fun clearPlaylists()
+    suspend fun clearPlaylists(): Int
 
     @Query("SELECT * FROM playlist_items WHERE playlistId = :playlistId ORDER BY orderIndex ASC, addedAt ASC")
     fun observePlaylistItems(playlistId: Long): Flow<List<PlaylistItemEntity>>
@@ -62,13 +62,13 @@ interface PlaylistDao {
     suspend fun insertPlaylistItem(item: PlaylistItemEntity): Long
 
     @Query("DELETE FROM playlist_items WHERE id = :itemId")
-    suspend fun deletePlaylistItem(itemId: Long)
+    suspend fun deletePlaylistItem(itemId: Long): Int
 
     @Query("DELETE FROM playlist_items WHERE playlistId = :playlistId AND mediaUri = :mediaUri")
-    suspend fun removeMediaFromPlaylist(playlistId: Long, mediaUri: String)
+    suspend fun removeMediaFromPlaylist(playlistId: Long, mediaUri: String): Int
 
     @Query("DELETE FROM playlist_items WHERE playlistId = :playlistId")
-    suspend fun clearPlaylistItems(playlistId: Long)
+    suspend fun clearPlaylistItems(playlistId: Long): Int
 
     @Query("SELECT COUNT(*) FROM playlist_items WHERE playlistId = :playlistId")
     suspend fun getItemCount(playlistId: Long): Int
