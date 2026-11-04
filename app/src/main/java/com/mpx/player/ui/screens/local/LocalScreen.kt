@@ -70,7 +70,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -133,12 +133,38 @@ fun LocalScreen(
         settingsRepository ?: SharedPrefsAppSettingsRepository(context)
     }
     var appSettings by remember { mutableStateOf(realSettingsRepo.load()) }
-    var hasPermission by remember {
+    // #100: permission state survives back-stack restore (rememberSaveable),
+    // and the last scan survives tab switches via the repository's
+    // process-lifetime cache, so returning to Local renders the previous
+    // content instantly instead of flashing an empty page while the rescan
+    // runs. First launch (no cache) still starts in the loading state.
+    var hasPermission by rememberSaveable {
         mutableStateOf(MediaPermissions.hasVideoPermission(context))
     }
-    var folders by remember { mutableStateOf<List<MediaFolder>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(false) }
-    var allVideos by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
+    var folders by remember {
+        mutableStateOf(
+            MediaStoreRepository.cachedFolders(
+                appSettings.showAllFolders,
+                appSettings.showHiddenFiles,
+            ) ?: emptyList()
+        )
+    }
+    var isLoading by remember {
+        mutableStateOf(
+            MediaStoreRepository.cachedFolders(
+                appSettings.showAllFolders,
+                appSettings.showHiddenFiles,
+            ) == null
+        )
+    }
+    var allVideos by remember {
+        mutableStateOf(
+            MediaStoreRepository.cachedVideos(
+                appSettings.showAllFolders,
+                appSettings.showHiddenFiles,
+            ) ?: emptyList()
+        )
+    }
 
     // Root folder list view mode: loaded from persisted localViewMode
     var viewMode by remember {
@@ -315,100 +341,8 @@ fun LocalScreen(
     }
     val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
     val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
-    val resumePositions by persistenceRepository.observeResumePositions().collectAsState(initial = emptyList())
     val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
 
-    val resumePositionsMap = remember(resumePositions) {
-        resumePositions.associateBy { it.mediaId }
-    }
-
-    val continueWatchingItems = remember(history, resumePositionsMap, allVideos) {
-        history
-            .filter { it.isVideo }
-            .mapNotNull { item ->
-                val resumeEntry = resumePositionsMap[item.mediaId] ?: resumePositionsMap[item.mediaUri]
-                val savedPosition = when {
-                    resumeEntry != null && resumeEntry.positionMs > 0L -> resumeEntry.positionMs
-                    item.playbackPositionMs > 0L -> item.playbackPositionMs
-                    else -> 0L
-                }
-                val rawDuration = when {
-                    item.durationMs > 0L -> item.durationMs
-                    resumeEntry != null && resumeEntry.durationMs > 0L -> resumeEntry.durationMs
-                    else -> allVideos.find { it.path == item.mediaUri || it.id == item.mediaId }?.durationMs ?: 0L
-                }
-                // Only include if there is a real saved position and it has not been watched to completion
-                if (savedPosition > 0L && (rawDuration <= 0L || savedPosition < rawDuration - 2000L)) {
-                    val resolvedTitle = item.title.ifBlank {
-                        allVideos.find { it.path == item.mediaUri || it.id == item.mediaId }?.title
-                            ?: item.mediaUri.substringAfterLast('/').substringBeforeLast('.')
-                    }
-                    ContinueWatchingItem(
-                        mediaUri = item.mediaUri,
-                        mediaId = item.mediaId,
-                        title = resolvedTitle,
-                        subtitle = item.subtitle,
-                        positionMs = savedPosition,
-                        durationMs = rawDuration,
-                        lastPlayedAt = item.lastPlayedAt,
-                    )
-                } else {
-                    null
-                }
-            }
-            .take(10)
-    }
-
-    fun resumeVideo(item: ContinueWatchingItem) {
-        val matchingVideo = allVideos.find { it.path == item.mediaUri || it.id == item.mediaId }
-        if (matchingVideo != null && matchingVideo.bucketId.isNotBlank()) {
-            scope.launch(Dispatchers.IO) {
-                val vids = repository.getVideosInFolder(matchingVideo.bucketId)
-                val playlist = if (vids.isNotEmpty()) vids else listOf(matchingVideo)
-                val startIndex = playlist.indexOfFirst { it.id == matchingVideo.id }.coerceAtLeast(0)
-                playbackManager?.resumeManager?.saveResumePosition(
-                    id = matchingVideo.id,
-                    positionMs = item.positionMs,
-                    mediaUri = matchingVideo.path,
-                    durationMs = item.durationMs,
-                )
-                withContext(Dispatchers.Main) {
-                    playbackManager?.playVideoFiles(playlist, startIndex)
-                    onOpenPlayer()
-                }
-            }
-        } else {
-            val media = PlayableMedia(
-                id = item.mediaId,
-                title = item.title,
-                subtitle = item.subtitle,
-                uri = item.mediaUri,
-                isVideo = true,
-                durationMs = item.durationMs,
-            )
-            playbackManager?.load(media, resumeMs = item.positionMs)
-            onOpenPlayer()
-        }
-    }
-
-    fun dismissContinueWatching(item: ContinueWatchingItem) {
-        scope.launch(Dispatchers.IO) {
-            persistenceRepository.deleteHistoryItem(item.mediaUri)
-            persistenceRepository.clearResumePosition(item.mediaId)
-            if (item.mediaUri.isNotBlank()) {
-                persistenceRepository.clearResumePosition(item.mediaUri)
-            }
-            playbackManager?.resumeManager?.clearResumePosition(item.mediaId)
-            if (item.mediaUri.isNotBlank()) {
-                playbackManager?.resumeManager?.clearResumePosition(item.mediaUri)
-            }
-            withContext(Dispatchers.Main) {
-                snackbarHostState.showSnackbar(
-                    context.getString(R.string.continue_watching_dismissed, item.title)
-                )
-            }
-        }
-    }
 
     var showFavouritesDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
@@ -868,7 +802,7 @@ fun LocalScreen(
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onSurface,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(16.dp),
             ) {
                 Icon(
@@ -1136,16 +1070,6 @@ fun LocalScreen(
                     },
                 )
 
-                // Continue Watching Row (Issue #55)
-                if (continueWatchingItems.isNotEmpty() && searchQuery.isBlank() && hasPermission && !isLoading) {
-                    ContinueWatchingRow(
-                        items = continueWatchingItems,
-                        showThumbnails = appSettings.showThumbnails,
-                        onItemClick = { item -> resumeVideo(item) },
-                        onDismissItem = { item -> dismissContinueWatching(item) },
-                    )
-                }
-
                 if (!hasPermission) {
                     EmptyStateView(
                         title = stringResource(R.string.empty_permission_title),
@@ -1156,7 +1080,7 @@ fun LocalScreen(
                             permissionLauncher.launch(MediaPermissions.videoPermission())
                         },
                     )
-                } else if (isLoading) {
+                } else if (isLoading && rootEmpty) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()

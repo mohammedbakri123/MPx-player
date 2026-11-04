@@ -151,21 +151,6 @@ fun FolderItemRow(
                     }
                 }
 
-                if (folder.isNew) {
-                    Spacer(Modifier.width(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(3.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.badge_new),
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.sp,
-                        )
-                    }
-                }
             }
 
             // Subtitle is a single line: the real folder size in a small
@@ -286,22 +271,7 @@ fun FolderItemGridCard(
                     }
                 }
 
-                if (folder.isNew) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(6.dp)
-                            .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(3.dp))
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.badge_new),
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.sp,
-                        )
-                    }
-                }
+
 
                 // Same red count badge as the list row, at the thumbnail's
                 // bottom-end to avoid colliding with the SD/NEW badges.

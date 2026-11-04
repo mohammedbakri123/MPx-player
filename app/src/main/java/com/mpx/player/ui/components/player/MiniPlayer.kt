@@ -120,7 +120,7 @@ fun MiniPlayer(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onOpenPlayer() },
-            color = androidx.compose.ui.graphics.Color.Transparent,
+            color = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
