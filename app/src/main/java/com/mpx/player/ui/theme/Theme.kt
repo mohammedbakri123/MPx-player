@@ -7,32 +7,34 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import java.util.Locale
 
-// MPx Midnight Theme: TRUE AMOLED pure OLED black (#000000) background and surfaces,
-// electric blue accent, accessible high-contrast text, and zero grey surface leaks.
+// MPx Midnight Theme (M2.5 canonical scheme, #105): TRUE AMOLED pure
+// black (#000000) background and surfaces, identity blue as the ONLY
+// accent, accessible high-contrast text, hairline outlines only.
+// Built entirely from the tokens in Color.kt — no hardcoded colours.
 val MpxMidnightScheme = darkColorScheme(
     primary = MpxPrimary,
     onPrimary = Color.White,
     primaryContainer = MpxPrimaryVariant,
     onPrimaryContainer = Color.White,
-    secondary = MpxAccentCyan,
-    onSecondary = Color.Black,
-    secondaryContainer = Color(0xFF000000),
+    secondary = MpxPrimary,
+    onSecondary = Color.White,
+    secondaryContainer = MpxPrimaryVariant,
     onSecondaryContainer = Color.White,
-    tertiary = MpxAccentAmber,
-    onTertiary = Color.Black,
-    background = Color(0xFF000000),
+    tertiary = MpxPrimary,
+    onTertiary = Color.White,
+    background = MpxBlack,
     onBackground = MpxTextPrimary,
-    surface = Color(0xFF000000),
+    surface = MpxSurface,
     onSurface = MpxTextPrimary,
-    surfaceVariant = Color(0xFF000000),
+    surfaceVariant = MpxSurfaceVariant,
     onSurfaceVariant = MpxTextSecondary,
-    surfaceContainerHighest = Color(0xFF000000),
-    surfaceContainerHigh = Color(0xFF000000),
-    surfaceContainer = Color(0xFF000000),
-    surfaceContainerLow = Color(0xFF000000),
-    surfaceContainerLowest = Color(0xFF000000),
-    surfaceBright = Color(0xFF000000),
-    surfaceDim = Color(0xFF000000),
+    surfaceContainerHighest = MpxSurfaceElevated,
+    surfaceContainerHigh = MpxSurfaceVariant,
+    surfaceContainer = MpxSurfaceRaised,
+    surfaceContainerLow = MpxSurface,
+    surfaceContainerLowest = MpxBlack,
+    surfaceBright = MpxSurfaceElevated,
+    surfaceDim = MpxBlack,
     surfaceTint = Color.Transparent,
     outline = MpxBorder,
     outlineVariant = MpxBorderSubtle,
@@ -50,7 +52,7 @@ val MpxDarkSlateScheme = darkColorScheme(
     onSecondary = Color.Black,
     secondaryContainer = Color(0xFF334155),
     onSecondaryContainer = Color.White,
-    tertiary = MpxAccentAmber,
+    tertiary = MpxPrimary, // M2.5 law: one accent only (legacy scheme, removed in #112)
     onTertiary = Color.Black,
     background = Color(0xFF0F172A),
     onBackground = Color(0xFFF8FAFC),
@@ -75,7 +77,7 @@ val MpxClassicNavyScheme = darkColorScheme(
     onSecondary = Color.Black,
     secondaryContainer = Color(0xFF273555),
     onSecondaryContainer = Color.White,
-    tertiary = MpxAccentAmber,
+    tertiary = MpxPrimary, // M2.5 law: one accent only (legacy scheme, removed in #112)
     onTertiary = Color.Black,
     background = Color(0xFF0A0F1D),
     onBackground = Color(0xFFFFFFFF),
@@ -100,7 +102,7 @@ val MpxLightScheme = lightColorScheme(
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFE0F2FE),
     onSecondaryContainer = Color(0xFF075985),
-    tertiary = Color(0xFFD97706),
+    tertiary = MpxPrimary, // M2.5 law: one accent only (legacy scheme, removed in #112)
     onTertiary = Color.White,
     background = Color(0xFFF8FAFC),
     onBackground = Color(0xFF0F172A),
@@ -129,6 +131,7 @@ fun MpxTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = MpxTypography,
+        shapes = MpxShapes,
         content = content,
     )
 }
