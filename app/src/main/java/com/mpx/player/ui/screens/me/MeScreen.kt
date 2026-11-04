@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
 import com.mpx.player.BuildConfig
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -109,7 +108,6 @@ import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
-import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.FavouritesDialog
 import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
@@ -356,9 +354,8 @@ fun MeScreen(
                         .fillMaxWidth()
                         .padding(16.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                ) {
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                                    ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -400,13 +397,6 @@ fun MeScreen(
                 }
             }
 
-            item {
-                HonestStatusBanner(
-                    text = stringResource(R.string.me_status_banner),
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-            }
-
             // Tools Section Header
             item {
                 Text(
@@ -425,9 +415,8 @@ fun MeScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                ) {
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                                    ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         // 4-column rows, chunked so the grid grows with the tool list
                         tools.chunked(4).forEachIndexed { rowIndex, row ->
@@ -468,9 +457,8 @@ fun MeScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                ) {
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                                    ) {
                     Column {
                         PreferenceRow(
                             icon = Icons.Filled.MusicNote,
@@ -576,9 +564,8 @@ fun MeScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                ) {
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                                    ) {
                     Column {
                         PreferenceRow(
                             icon = Icons.Filled.Security,

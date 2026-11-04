@@ -12,8 +12,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -319,18 +322,33 @@ fun MpxApp(
                 return@Scaffold
             }
 
-            Column {
-                // Real Media3 persistent MiniPlayer bar
-                MiniPlayer(
-                    playbackManager = playbackManager,
-                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    tonalElevation = 0.dp,
+            // Floating frosted dock: the mini-player and the nav bar share
+            // one inset, rounded, translucent container instead of two
+            // full-width bars divided by a hairline. The translucency is
+            // the frosted-glass look; true backdrop blur would need the
+            // content drawn underneath the bar (edge-to-edge overlay),
+            // which this Scaffold layout does not do — the surface stays
+            // near-opaque so labels stay readable on every device.
+            Column(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
+                    tonalElevation = 2.dp,
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
                 ) {
+                    Column {
+                        // Real Media3 persistent MiniPlayer bar
+                        MiniPlayer(
+                            playbackManager = playbackManager,
+                            onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                        )
+                        NavigationBar(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            tonalElevation = 0.dp,
+                        ) {
                     navigationTabs.forEach { tab ->
                         val selected = currentDestination?.hierarchy?.any {
                             it.route == tab.route
@@ -359,9 +377,11 @@ fun MpxApp(
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
                                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                             ),
                         )
+                    }
+                }
                     }
                 }
             }

@@ -279,8 +279,8 @@ fun VideoItemGridCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Column(
             modifier = Modifier.padding(10.dp),
@@ -406,21 +406,21 @@ fun VideoItemGridCard(
                 }
                 Spacer(Modifier.weight(1f))
                 if (onMenuClick != null) {
-                    IconButton(onClick = onMenuClick, modifier = Modifier.size(24.dp)) {
+                    IconButton(onClick = onMenuClick, modifier = Modifier.size(40.dp)) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
-                IconButton(onClick = onToggleFavourite, modifier = Modifier.size(24.dp)) {
+                IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                         contentDescription = null,
                         tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }

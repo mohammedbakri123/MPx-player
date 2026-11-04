@@ -102,7 +102,6 @@ import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.FastScrollbar
 import com.mpx.player.ui.components.GridFastScrollbar
-import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.ShortcutChipRow
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
@@ -1135,11 +1134,6 @@ fun LocalScreen(
                             )
                         }
                     },
-                )
-
-                // Honest milestone notice
-                HonestStatusBanner(
-                    text = stringResource(R.string.local_status_banner),
                 )
 
                 // Continue Watching Row (Issue #55)

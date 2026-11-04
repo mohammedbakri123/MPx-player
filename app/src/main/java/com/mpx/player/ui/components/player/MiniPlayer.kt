@@ -5,7 +5,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -121,9 +120,8 @@ fun MiniPlayer(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onOpenPlayer() },
-            color = MaterialTheme.colorScheme.surface,
+            color = androidx.compose.ui.graphics.Color.Transparent,
             tonalElevation = 0.dp,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Real live progress indicator bar
