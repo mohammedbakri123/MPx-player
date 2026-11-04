@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -95,6 +96,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -1060,35 +1062,48 @@ private fun ToolGridItem(
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Icon + badge: the badge must NOT live inside the clipped circle —
+        // that clipped "Soon"/"Plugin"/"Planned"/"Issue 32" text at the circle
+        // edge and overlapped the glyph. The badge sits on an unclipped outer
+        // box instead, overlapping the circle's top-end corner cleanly.
         Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .border(0.5.dp, MaterialTheme.colorScheme.outline, CircleShape),
+            modifier = Modifier.size(52.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = tool.icon,
-                contentDescription = tool.title,
-                tint = if (tool.isAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(24.dp),
-            )
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .border(0.5.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = tool.icon,
+                    contentDescription = tool.title,
+                    tint = if (tool.isAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
             if (tool.badge != null) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
+                        .offset(x = 2.dp, y = (-2).dp)
+                        .heightIn(min = 14.dp)
                         .background(
                             if (tool.isAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
-                            RoundedCornerShape(3.dp),
+                            RoundedCornerShape(7.dp),
                         )
-                        .padding(horizontal = 3.dp, vertical = 1.dp),
+                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = tool.badge,
                         color = if (tool.isAvailable) Color.White else Color.Black,
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
+                        maxLines = 1,
                     )
                 }
             }
@@ -1102,8 +1117,12 @@ private fun ToolGridItem(
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
-            maxLines = 1,
+            // Single-line labels truncated mid-word in the 4-column grid
+            // ("Network Stre…"); two centered lines fit every tool name.
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            lineHeight = 13.sp,
         )
     }
 }
