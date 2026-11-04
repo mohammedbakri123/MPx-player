@@ -269,6 +269,24 @@ class MpvPlayerEngine(
         setOption("keep-open", "always")
         setOption("ytdl", "no")
 
+        // ROOT-CAUSE FIX (mpv "keeps loading forever", issue #96): mpv quits
+        // when there is no file to play unless idle is set (manual default:
+        // no). mpv-android's own BaseMPVView sets idle=once for exactly this
+        // reason ("need to idle at least once for playFile() logic to work"),
+        // and libmpv's core thread runs mp_play_files() right after init,
+        // which breaks out immediately on an empty playlist when idle < yes
+        // and then shuts the core down. MPx never set idle at all, so the
+        // core died at app start (the engine is constructed in
+        // MainActivity.onStart, long before the first tap) and every later
+        // loadfile went to a dead core: no events, no error, spinner
+        // forever. MPx uses "yes", not upstream's "once", because this
+        // engine is a long-lived singleton: "once" would let the core quit
+        // after the first queue finishes and break the NEXT session. Set
+        // pre-init (upstream sets it post-init, but between init() and the
+        // post-init block MPx loads subtitle settings, a window in which
+        // the core could already quit).
+        setOption("idle", "yes")
+
         // Subtitle configuration: use system fonts via fontconfig.
         // The font itself comes from saved settings so the first frame already
         // matches; the full option set is applied post-init below.
