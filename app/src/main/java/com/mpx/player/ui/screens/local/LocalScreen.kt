@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -180,7 +181,6 @@ fun LocalScreen(
         appSettings = updated
     }
     var showSortDialog by remember { mutableStateOf(false) }
-    var menuExpanded by remember { mutableStateOf(false) }
     var featureDialogMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
@@ -832,82 +832,21 @@ fun LocalScreen(
                                 tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
-                        Box {
-                            IconButton(onClick = { menuExpanded = true }) {
-                                Icon(
-                                    imageVector = Icons.Filled.MoreVert,
-                                    contentDescription = stringResource(R.string.cd_more_options),
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = menuExpanded,
-                                onDismissRequest = { menuExpanded = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.local_menu_view_sort)) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        showSortDialog = true
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (appSettings.fileView) stringResource(R.string.local_menu_folder_view)
-                                            else stringResource(R.string.local_menu_file_view)
-                                        )
-                                    },
-                                    onClick = {
-                                        menuExpanded = false
-                                        val updated = appSettings.copy(fileView = !appSettings.fileView)
-                                        realSettingsRepo.save(updated)
-                                        appSettings = updated
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (appSettings.showAllFolders) stringResource(R.string.local_menu_filtered_view)
-                                            else stringResource(R.string.list_show_all_folders)
-                                        )
-                                    },
-                                    onClick = {
-                                        menuExpanded = false
-                                        val updated = appSettings.copy(showAllFolders = !appSettings.showAllFolders)
-                                        realSettingsRepo.save(updated)
-                                        appSettings = updated
-                                        refreshFolders(updated.showAllFolders)
-                                        scope.launch {
-                                            val msg = if (updated.showAllFolders) {
-                                                context.getString(R.string.local_snackbar_show_all)
-                                            } else {
-                                                context.getString(R.string.local_snackbar_filtered)
-                                            }
-                                            snackbarHostState.showSnackbar(msg)
-                                        }
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.local_menu_refresh)) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        refreshFolders()
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                context.getString(R.string.snackbar_library_refreshed)
-                                            )
-                                        }
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.settings_title)) },
-                                    onClick = {
-                                        menuExpanded = false
-                                        onOpenSettings()
-                                    },
-                                )
-                            }
+                        // MX parity (#80): MX's Local header shows no overflow
+                        // button in its default state (screenshot + decoded
+                        // menu_list_local_only.xml, where the options_menu
+                        // entry is visible=false by default). Sort/View is
+                        // promoted to a visible action like MX's always-visible
+                        // View Mode action; the removed overflow items all
+                        // have other paths (file view / show-all in
+                        // Settings > List, refresh via pull-to-refresh,
+                        // Settings via the Me page), so nothing is stranded.
+                        IconButton(onClick = { showSortDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.Sort,
+                                contentDescription = stringResource(R.string.local_menu_view_sort),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
                         }
                     },
                 )
