@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -50,6 +51,9 @@ fun AsyncThumbnail(
     iconSize: Dp = 26.dp,
     contentDescription: String? = null,
     showThumbnails: Boolean = true,
+    // Folder tiles pass the theme primary here so the folder placeholder reads
+    // as app-identity blue; other placeholders keep the neutral default.
+    placeholderTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     val cachedBitmap = remember(cacheKey) { ThumbnailLoader.getCached(cacheKey) }
     var bitmap by remember(cacheKey) { mutableStateOf(cachedBitmap) }
@@ -91,7 +95,7 @@ fun AsyncThumbnail(
                 Icon(
                     imageVector = placeholderIcon,
                     contentDescription = contentDescription,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = placeholderTint,
                     modifier = Modifier.size(iconSize),
                 )
             }
@@ -121,6 +125,7 @@ fun AsyncFolderThumbnail(
             )
         },
         placeholderIcon = Icons.Filled.Folder,
+        placeholderTint = MaterialTheme.colorScheme.primary,
         modifier = modifier,
         iconSize = iconSize,
         contentDescription = "Folder ${folder.name}",
