@@ -817,6 +817,12 @@
     <string name="player_dialog_decoder_selection">Выбор декодера</string>
     <string name="player_active_codec">Активный видеокодек: %1$s</string>
     <string name="player_codec_initializing">Инициализация / ожидание видеокадра...</string>
+    <string name="player_codec_error">Ошибка воспроизведения: кодек %1$s не поддерживается</string>
+    <string name="player_no_audio_codec">Нет звука: аудиодорожки этого файла (%1$s) не декодируются на этом устройстве. Попробуйте движок MPV.</string>
+    <string name="player_media3_failed_mpv">Media3 не справился с кодеком %1$s. Переключено на движок MPV.</string>
+    <string name="player_try_mpv">Попробовать MPV</string>
+    <string name="player_mpv_start_failed">Не удалось запустить движок MPV: %1$s. Используется Media3.</string>
+    <string name="player_mpv_failed_media3">Движок MPV дал сбой (%1$s). Переключено на движок Media3.</string>
     <string name="player_dialog_unsupported_subtitle">Неподдерживаемый формат субтитров</string>
     <string name="player_menu_title">Настройки воспроизведения</string>
     <string name="player_menu_decoder_mode">Режим декодера (%1$s)</string>

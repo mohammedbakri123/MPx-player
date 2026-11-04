@@ -6,6 +6,8 @@ import android.os.SystemClock
 import android.view.Surface
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.mediacodec.MediaCodecRenderer
+import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
@@ -49,6 +51,12 @@ class PlaybackManager private constructor(context: Context) {
     private var sleepTimerJob: Job? = null
     private var currentQueue: List<PlayableMedia> = emptyList()
     private var pendingSubtitleTrackLabel: String? = null
+    /** Media id the Media3->mpv auto-fallback already fired for; prevents mpv<->Media3 ping-pong on one item. */
+    private var lastMpvFallbackItemId: String? = null
+    /** Media id the no-supported-audio warning already fired for; avoids re-showing it after dismissal. */
+    private var lastNoAudioReportedItemId: String? = null
+    /** True when the user deliberately turned audio off for the current item; suppresses the no-sound warning. */
+    private var userDisabledAudio: Boolean = false
     /** Pre-shuffle queue order, restored when shuffle is turned off (issue #76). */
     private var unshuffledQueue: List<PlayableMedia>? = null
 
@@ -213,8 +221,26 @@ class PlaybackManager private constructor(context: Context) {
                 val codec = if (error is MpvPlaybackException) error.codecName else _playbackState.value.activeDecoderName
                 fallbackToMedia3(failedCodecName = codec ?: "unknown", reason = error.message)
             } else {
-                _playbackState.update {
-                    it.copy(userNotification = "Playback error: ${error.message}")
+                // Media3 errors previously never arrived here (no onPlayerError
+                // forwarding) — now they do. Decoder failures auto-fall back to
+                // mpv once per item; anything else gets a codec-named message
+                // plus a one-tap mpv offer in the banner.
+                val codec = extractCodecName(error)
+                val itemId = _playbackState.value.currentItem?.id
+                if (codec != null && itemId != null && itemId != lastMpvFallbackItemId) {
+                    lastMpvFallbackItemId = itemId
+                    fallbackToMpv(failedCodecName = codec, reason = error.message)
+                } else {
+                    _playbackState.update {
+                        it.copy(
+                            userNotification = if (codec != null) {
+                                appContext.getString(R.string.player_codec_error, codec)
+                            } else {
+                                "Playback error: ${error.message}"
+                            },
+                            showMpvSwitchOffer = true,
+                        )
+                    }
                 }
             }
         }
@@ -263,8 +289,20 @@ class PlaybackManager private constructor(context: Context) {
                     setListener(engineListener)
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            // Throwable, not just Exception: a missing native libmpv raises
+            // UnsatisfiedLinkError, which previously would have crashed the
+            // app on engine switch. Degrade to Media3 and SAY so.
             Log.e("PlaybackManager", "Error instantiating engine $engineType, falling back to Media3", e)
+            _playbackState.update {
+                it.copy(
+                    userNotification = appContext.getString(
+                        R.string.player_mpv_start_failed,
+                        e.message ?: "unknown error",
+                    ),
+                    showMpvSwitchOffer = false,
+                )
+            }
             Media3PlayerEngine(appContext, mode).apply {
                 setListener(engineListener)
             }
@@ -408,11 +446,80 @@ class PlaybackManager private constructor(context: Context) {
             it.copy(
                 activeDecoderName = null,
                 decoderFallbackNote = null,
-                userNotification = "MPV decoder failed for codec '$failedCodecName'. Switched to Media3 engine.",
+                // When the codec is unknown (e.g. mpv could not even open the
+                // file), naming a codec would be a lie — show the real reason.
+                userNotification = if (failedCodecName == "unknown" && reason != null) {
+                    appContext.getString(R.string.player_mpv_failed_media3, reason)
+                } else {
+                    "MPV decoder failed for codec '$failedCodecName'. Switched to Media3 engine."
+                },
             )
         }
         updatePosition()
         updateTracksState()
+    }
+
+    /**
+     * Mirror of [fallbackToMedia3]: Media3 decoder failure falls back to mpv,
+     * preserving queue/position/speed/surface. Temporary only — the saved
+     * engine setting is NOT changed, so the next session still starts on the
+     * user's chosen engine. Guarded per item by [lastMpvFallbackItemId].
+     */
+    fun fallbackToMpv(failedCodecName: String = "unknown", reason: String? = null) {
+        if (isMpv) return
+
+        val wasPlaying = engine.isPlaying
+        val currentPos = engine.currentPosition.coerceAtLeast(0L)
+        val currentIndex = engine.currentMediaItemIndex
+        val currentSpeed = _playbackState.value.speed
+        val queue = currentQueue
+        val currentMode = _playbackState.value.decoderMode
+        val surface = activeSurface
+
+        Log.e("PlaybackManager", "Hard failure in Media3 for codec '$failedCodecName': $reason. Falling back to mpv.")
+
+        engine.setListener(null)
+        engine.stop()
+        engine.release()
+
+        val fallbackEngine = MpvPlayerEngine(appContext, currentMode).apply {
+            setListener(engineListener)
+        }
+        engine = fallbackEngine
+        fallbackEngine.setSpeed(currentSpeed)
+
+        if (surface != null) {
+            fallbackEngine.attachSurface(surface)
+        }
+
+        if (queue.isNotEmpty()) {
+            val targetIndex = currentIndex.coerceIn(0, queue.lastIndex)
+            fallbackEngine.load(queue, targetIndex, currentPos)
+            if (wasPlaying) {
+                fallbackEngine.play()
+            }
+        }
+
+        _playbackState.update {
+            it.copy(
+                activeDecoderName = null,
+                decoderFallbackNote = null,
+                userNotification = appContext.getString(R.string.player_media3_failed_mpv, failedCodecName),
+                showMpvSwitchOffer = false,
+            )
+        }
+        updatePosition()
+        updateTracksState()
+    }
+
+    /** Walks the cause chain for an ExoPlayer DecoderInitializationException and returns its MIME type. */
+    private fun extractCodecName(error: Throwable): String? {
+        var cause: Throwable? = error
+        while (cause != null) {
+            if (cause is MediaCodecRenderer.DecoderInitializationException) return cause.mimeType
+            cause = cause.cause
+        }
+        return null
     }
 
     /**
@@ -437,6 +544,7 @@ class PlaybackManager private constructor(context: Context) {
         if (items.isEmpty()) return
         // A new queue is a new session: shuffle order does not carry over.
         unshuffledQueue = null
+        userDisabledAudio = false
         currentQueue = items
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
@@ -673,6 +781,9 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     fun selectTrack(type: TrackType, id: String?) {
+        if (type == TrackType.AUDIO) {
+            userDisabledAudio = (id == null || id == "-1" || id.isBlank())
+        }
         engine.selectTrack(type, id)
         updateTracksState()
     }
@@ -743,7 +854,7 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     fun clearUserNotification() {
-        _playbackState.update { it.copy(userNotification = null) }
+        _playbackState.update { it.copy(userNotification = null, showMpvSwitchOffer = false) }
     }
 
     fun setSleepTimer(minutes: Int) {
@@ -904,6 +1015,27 @@ class PlaybackManager private constructor(context: Context) {
                 subtitleTracks = subtitleList,
                 selectedSubtitleTrackIndex = selectedSubtitleIdx,
             )
+        }
+
+        // Silent no-sound detection (issue #82/#83): ExoPlayer excludes
+        // undecodable audio tracks from selection and plays video anyway, so
+        // a file can play with no sound and no error. When the current video
+        // has audio tracks but none is selected AND none is supported, say so
+        // naming the codecs, and offer the mpv switch — once per item, and
+        // only on Media3 (mpv reports its tracks as supported).
+        val currentItem = _playbackState.value.currentItem
+        if (isMedia3 && !userDisabledAudio && currentItem?.isVideo == true && audioList.isNotEmpty() &&
+            selectedAudioIdx < 0 && audioList.none { it.isSupported } &&
+            currentItem.id != lastNoAudioReportedItemId
+        ) {
+            lastNoAudioReportedItemId = currentItem.id
+            val codecs = audioList.mapNotNull { it.mimeType }.distinct().joinToString(", ").ifBlank { "unknown" }
+            _playbackState.update {
+                it.copy(
+                    userNotification = appContext.getString(R.string.player_no_audio_codec, codecs),
+                    showMpvSwitchOffer = true,
+                )
+            }
         }
     }
 

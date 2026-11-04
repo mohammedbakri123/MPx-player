@@ -817,6 +817,12 @@
     <string name="player_dialog_decoder_selection">اختيار وحدة فك التشفير</string>
     <string name="player_active_codec">برنامج ترميز الفيديو النشط: %1$s</string>
     <string name="player_codec_initializing">جارٍ التهيئة / انتظار إطار الفيديو...</string>
+    <string name="player_codec_error">فشل التشغيل: الترميز %1$s غير مدعوم</string>
+    <string name="player_no_audio_codec">لا يوجد صوت: لا يمكن فك ترميز المسارات الصوتية لهذا الملف (%1$s) على هذا الجهاز. جرّب محرك MPV.</string>
+    <string name="player_media3_failed_mpv">فشل Media3 مع الترميز %1$s. تم التبديل إلى محرك MPV.</string>
+    <string name="player_try_mpv">جرّب MPV</string>
+    <string name="player_mpv_start_failed">فشل تشغيل محرك MPV: %1$s. سيتم استخدام Media3 بدلاً منه.</string>
+    <string name="player_mpv_failed_media3">فشل محرك MPV (%1$s). تم التبديل إلى محرك Media3.</string>
     <string name="player_dialog_unsupported_subtitle">تنسيق ترجمة غير مدعوم</string>
     <string name="player_menu_title">إعدادات التشغيل</string>
     <string name="player_menu_decoder_mode">وضع وحدة فك التشفير (%1$s)</string>

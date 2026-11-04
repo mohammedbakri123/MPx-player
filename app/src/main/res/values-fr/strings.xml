@@ -817,6 +817,12 @@
     <string name="player_dialog_decoder_selection">Sélection du décodeur</string>
     <string name="player_active_codec">Codec vidéo actif : %1$s</string>
     <string name="player_codec_initializing">Initialisation / attente d\'une image vidéo...</string>
+    <string name="player_codec_error">Échec de lecture : le codec %1$s n’est pas pris en charge</string>
+    <string name="player_no_audio_codec">Aucun son : les pistes audio de ce fichier (%1$s) ne peuvent pas être décodées sur cet appareil. Essayez le moteur MPV.</string>
+    <string name="player_media3_failed_mpv">Media3 a échoué pour le codec %1$s. Basculé vers le moteur MPV.</string>
+    <string name="player_try_mpv">Essayer MPV</string>
+    <string name="player_mpv_start_failed">Le moteur MPV n’a pas pu démarrer : %1$s. Media3 sera utilisé à la place.</string>
+    <string name="player_mpv_failed_media3">Le moteur MPV a échoué (%1$s). Basculé vers le moteur Media3.</string>
     <string name="player_dialog_unsupported_subtitle">Format de sous-titres non pris en charge</string>
     <string name="player_menu_title">Paramètres de lecture</string>
     <string name="player_menu_decoder_mode">Mode décodeur (%1$s)</string>

@@ -817,6 +817,12 @@
     <string name="player_dialog_decoder_selection">Decoder-Auswahl</string>
     <string name="player_active_codec">Aktiver Video-Codec: %1$s</string>
     <string name="player_codec_initializing">Initialisieren / Warten auf Videoframe...</string>
+    <string name="player_codec_error">Wiedergabe fehlgeschlagen: Codec %1$s wird nicht unterstützt</string>
+    <string name="player_no_audio_codec">Kein Ton: Die Audiospuren dieser Datei (%1$s) können auf diesem Gerät nicht decodiert werden. Versuche die MPV-Engine.</string>
+    <string name="player_media3_failed_mpv">Media3 ist für Codec %1$s fehlgeschlagen. Zur MPV-Engine gewechselt.</string>
+    <string name="player_try_mpv">MPV versuchen</string>
+    <string name="player_mpv_start_failed">MPV-Engine konnte nicht gestartet werden: %1$s. Media3 wird stattdessen verwendet.</string>
+    <string name="player_mpv_failed_media3">MPV-Engine fehlgeschlagen (%1$s). Zur Media3-Engine gewechselt.</string>
     <string name="player_dialog_unsupported_subtitle">Nicht unterstütztes Untertitelformat</string>
     <string name="player_menu_title">Wiedergabe-Einstellungen</string>
     <string name="player_menu_decoder_mode">Decoder-Modus (%1$s)</string>

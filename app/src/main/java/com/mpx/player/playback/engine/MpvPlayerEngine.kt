@@ -78,6 +78,15 @@ class MpvPlayerEngine(
     private var activeHwdec: String = ""
     private var activeVideoCodec: String = ""
 
+    /** True once libmpv confirms the current item actually loaded (FILE_LOADED).
+     * Stays false when loadfile fails outright — the key signal that distinguishes
+     * "mpv never started this file" from a mid-playback decoder error. */
+    private var fileLoadedForCurrentItem: Boolean = false
+    /** Last error/warning log lines from libmpv (capped); surfaced when a file fails to load. */
+    private val lastErrorLogs: ArrayDeque<String> = ArrayDeque()
+    /** Init failure captured instead of thrown, so the manager can report it instead of crashing. */
+    private var pendingInitError: Exception? = null
+
     private val mpv: MPV = MPV()
 
     private val eventObserver = object : MPV.EventObserver {
@@ -114,6 +123,13 @@ class MpvPlayerEngine(
         override fun logMessage(prefix: String, level: Int, text: String) {
             if (level <= 20) { // MPV_LOG_LEVEL_WARN or ERROR
                 Log.w(TAG, "[$prefix] $text")
+                // Keep a short ring buffer of the real libmpv diagnostics. When
+                // a file fails to load, these lines (e.g. demuxer/ffmpeg errors)
+                // are the only record of WHY — previously they were only in logcat.
+                synchronized(lastErrorLogs) {
+                    lastErrorLogs.addLast("[$prefix] ${text.trim()}")
+                    while (lastErrorLogs.size > 10) lastErrorLogs.removeFirst()
+                }
                 if (prefix.equals("mediacodec", ignoreCase = true) &&
                     (text.contains("failed", ignoreCase = true) || text.contains("error", ignoreCase = true))
                 ) {
@@ -126,7 +142,18 @@ class MpvPlayerEngine(
     }
 
     init {
-        initializeMpv(initialDecoderMode)
+        // Init failure must NOT throw out of the constructor: previously a
+        // throw here made the manager silently fall back to Media3 while the
+        // setting still said MPV. Capture it and report it via the listener.
+        try {
+            initializeMpv(initialDecoderMode)
+        } catch (e: Exception) {
+            Log.e(TAG, "MPV init failed", e)
+            pendingInitError = e
+        } catch (e: Throwable) {
+            Log.e(TAG, "MPV init failed (native)", e)
+            pendingInitError = Exception("MPV native init failed: ${e.message}", e)
+        }
     }
 
     private fun initializeMpv(mode: DecoderMode) {
@@ -417,11 +444,12 @@ class MpvPlayerEngine(
         }
     }
 
-    private fun handleMpvEvent(eventId: Int, @Suppress("UNUSED_PARAMETER") data: MPVNode) {
+    private fun handleMpvEvent(eventId: Int, data: MPVNode) {
         if (isReleased) return
 
         when (eventId) {
             MPV.mpvEvent.MPV_EVENT_FILE_LOADED -> {
+                fileLoadedForCurrentItem = true
                 cachedPlaybackState = Player.STATE_READY
                 mainHandler.post {
                     engineListener?.onPlaybackStateChanged(Player.STATE_READY)
@@ -433,6 +461,26 @@ class MpvPlayerEngine(
                 notifyDecoderChanged()
             }
             MPV.mpvEvent.MPV_EVENT_END_FILE -> {
+                // A file that never loaded is a STARTUP failure, not a decoder
+                // failure: previously this fell through every check (duration
+                // is 0, eof flag unset) and playback died silently. Report it
+                // with libmpv's own reason + last error log line when known.
+                if (!fileLoadedForCurrentItem) {
+                    val reason = try { data.get("reason")?.asString() } catch (_: Exception) { null }
+                    val errCode = try { data.get("error")?.asInt() } catch (_: Exception) { null }
+                    val lastLog = synchronized(lastErrorLogs) { lastErrorLogs.lastOrNull() }
+                    val detail = listOfNotNull(
+                        reason?.let { "reason=$it" },
+                        errCode?.let { "error=$it" },
+                        lastLog,
+                    ).joinToString("; ").ifBlank { "unknown libmpv error" }
+                    mainHandler.post {
+                        engineListener?.onError(
+                            MpvPlaybackException("MPV could not play this file ($detail)")
+                        )
+                    }
+                    return
+                }
                 // Check if end of file was an error
                 val eofReached = mpv.getPropertyBoolean("eof-reached") ?: false
                 if (!eofReached && cachedPositionMs < cachedDurationMs - 1000L && cachedDurationMs > 0L) {
@@ -447,6 +495,11 @@ class MpvPlayerEngine(
 
     override fun setListener(listener: PlayerEngine.Listener?) {
         this.engineListener = listener
+        // Flush a captured init failure as soon as anyone is listening.
+        pendingInitError?.let { err ->
+            pendingInitError = null
+            mainHandler.post { engineListener?.onError(err) }
+        }
     }
 
     override fun attachSurface(surface: Surface) {
@@ -459,6 +512,15 @@ class MpvPlayerEngine(
             } catch (e: Exception) {
                 Log.e(TAG, "Error in attachSurface", e)
             }
+        }
+        // Load-before-surface recovery: playback is normally started from the
+        // library BEFORE the player screen (and its SurfaceView) exists, so
+        // the first loadfile can run with no video output attached and die.
+        // If that load never produced FILE_LOADED, retry it now that a
+        // surface exists. No-op when the file already loaded (rotation, etc.).
+        if (mpvInitialized && !isReleased && !fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
+            load(currentQueue, currentMediaIndex, cachedPositionMs)
+            play()
         }
     }
 
@@ -488,6 +550,7 @@ class MpvPlayerEngine(
     override fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
         currentQueue = items
         if (items.isEmpty()) return
+        fileLoadedForCurrentItem = false
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
         currentMediaIndex = targetIndex
@@ -519,8 +582,15 @@ class MpvPlayerEngine(
                 mpv.command("sub-add", ext.uri, "auto", ext.name)
             }
         } catch (e: Exception) {
+            // A loadfile command failure is NOT a decoder-stage failure: stepping
+            // HW->HW+->SW here only delayed the error. Report it directly so the
+            // manager falls back to Media3 with a real message.
             Log.e(TAG, "Error loading media items in MPV", e)
-            attemptDecoderFallback("Media load failure: ${e.message}")
+            mainHandler.post {
+                engineListener?.onError(
+                    MpvPlaybackException("MPV could not load this file: ${e.message}")
+                )
+            }
         }
 
         mainHandler.post {
@@ -531,8 +601,10 @@ class MpvPlayerEngine(
     override fun play() {
         try {
             mpv.setPropertyBoolean("pause", false)
-            cachedIsPlaying = true
-            mainHandler.post { engineListener?.onIsPlayingChanged(true) }
+            // Deliberately NOT forcing cachedIsPlaying=true here: that lie is
+            // exactly the "pause button showing over a black 00:00 screen"
+            // symptom — the real playing state arrives via the pause/idle
+            // property observers once libmpv actually starts.
         } catch (e: Exception) {
             Log.e(TAG, "Error playing MPV", e)
         }
@@ -787,6 +859,8 @@ class MpvPlayerEngine(
                         label = label,
                         language = lang,
                         isSelected = selected,
+                        mimeType = mpv.getPropertyString("track-list/$i/codec"),
+                        isSupported = true,
                     )
                 )
                 audioGroup++

@@ -817,6 +817,12 @@
     <string name="player_dialog_decoder_selection">解码器选择</string>
     <string name="player_active_codec">当前视频编解码器：%1$s</string>
     <string name="player_codec_initializing">正在初始化 / 等待视频帧...</string>
+    <string name="player_codec_error">播放失败：不支持编解码器 %1$s</string>
+    <string name="player_no_audio_codec">无声音：此文件的音轨（%1$s）无法在此设备上解码。请尝试 MPV 引擎。</string>
+    <string name="player_media3_failed_mpv">Media3 处理编解码器“%1$s”失败。已切换到 MPV 引擎。</string>
+    <string name="player_try_mpv">尝试 MPV</string>
+    <string name="player_mpv_start_failed">MPV 引擎启动失败：%1$s。改用 Media3。</string>
+    <string name="player_mpv_failed_media3">MPV 引擎失败（%1$s）。已切换到 Media3 引擎。</string>
     <string name="player_dialog_unsupported_subtitle">不支持的字幕格式</string>
     <string name="player_menu_title">播放设置</string>
     <string name="player_menu_decoder_mode">解码器模式（%1$s）</string>
