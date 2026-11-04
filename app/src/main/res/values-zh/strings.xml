@@ -115,6 +115,18 @@
     <string name="decoder_hw">HW（硬件 - Android MediaCodec 硬件加速）</string>
     <string name="decoder_hw_plus">HW+（硬件增强 - 异步缓冲流水线）</string>
     <string name="decoder_sw">SW（软件 - CPU 解码后备）</string>
+    <string name="decoder_mode_hw_title">硬件 (HW)</string>
+    <string name="decoder_mode_hw_desc">通过 Android MediaCodec 芯片组解码器实现的标准设备硬件加速。</string>
+    <string name="decoder_mode_hw_plus_title">硬件 Plus (HW+)</string>
+    <string name="decoder_mode_hw_plus_desc">增强型硬件解码管道，支持异步排队和低延迟接入。</string>
+    <string name="decoder_mode_sw_title">软件 (SW)</string>
+    <string name="decoder_mode_sw_desc">直接 CPU 软件解码（Google/Android 软件编解码器），实现最大兼容性。</string>
+    <string name="aspect_fit">适应</string>
+    <string name="aspect_fill">填充</string>
+    <string name="aspect_zoom">缩放</string>
+    <string name="aspect_16_9">16:9</string>
+    <string name="aspect_4_3">4:3</string>
+    <string name="aspect_original">100%</string>
     <string name="decoder_explanation">选择默认播放器解码器偏好。HW 使用设备芯片组的硬件编解码器；SW 提供软件后备。在 Android 不允许所请求的解码器时（例如不支持的编解码器），MPx 会如实显示后备提示。</string>
 
     <string name="audio_volume_boost">音量增强</string>
@@ -285,7 +297,7 @@
     <string name="help_sec2_title">音频与字幕轨道</string>
     <string name="help_sec2_body">• 音频图标：在不同的音频轨道之间切换（双音频、解说）\n• 字幕图标：选择内嵌或外挂 .vtt / .srt 字幕轨道\n• 字幕大小：可在设置中配置（小、标准、大）</string>
     <string name="help_sec3_title">设备诊断（实时）</string>
-    <string name="help_diag_app">应用：MPx Player 0.1.0-beta（构建 2）</string>
+    <string name="help_diag_app">应用：MPx Player %1$s（构建 %2$s）</string>
     <string name="help_diag_os">Android 系统：SDK %1$d（%2$s）</string>
     <string name="help_diag_device">设备：%1$s %2$s</string>
     <string name="help_diag_engine">引擎：%1$s</string>
@@ -793,6 +805,8 @@
     <string name="player_cd_play">播放</string>
     <string name="player_toast_subtitle_loaded">已加载字幕：%1$s</string>
     <string name="player_subtitle_load_error">无法加载“%1$s”：\n\n%2$s</string>
+    <string name="subtitle_unsupported_format">不支持的格式“%1$s”。MPx Player 目前支持 .srt (SubRip) 和 .vtt (WebVTT) 字幕文件。</string>
+    <string name="subtitle_unknown_format">无法识别的格式</string>
     <string name="player_toast_decoder">解码器：%1$s</string>
     <string name="player_pip_unsupported">此设备不支持画中画播放 (PiP)</string>
     <string name="player_pip_unable">无法进入画中画模式</string>

@@ -5,22 +5,28 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
+import com.mpx.player.R
 
-enum class DecoderMode(val label: String, val title: String, val description: String) {
+/**
+ * Decoder modes. [label] is the stable persisted identifier (stored in
+ * settings and matched on load) and is intentionally NOT localised; the
+ * user-facing [titleRes]/[descriptionRes] are string resources.
+ */
+enum class DecoderMode(val label: String, val titleRes: Int, val descriptionRes: Int) {
     HW(
         label = "HW",
-        title = "Hardware (HW)",
-        description = "Standard device hardware acceleration via Android MediaCodec chipset decoders.",
+        titleRes = R.string.decoder_mode_hw_title,
+        descriptionRes = R.string.decoder_mode_hw_desc,
     ),
     HW_PLUS(
         label = "HW+",
-        title = "Hardware Plus (HW+)",
-        description = "Enhanced hardware decoding pipeline with asynchronous queuing and low-latency joining.",
+        titleRes = R.string.decoder_mode_hw_plus_title,
+        descriptionRes = R.string.decoder_mode_hw_plus_desc,
     ),
     SW(
         label = "SW",
-        title = "Software (SW)",
-        description = "Direct CPU software decoding (Google/Android software codecs) for maximum compatibility.",
+        titleRes = R.string.decoder_mode_sw_title,
+        descriptionRes = R.string.decoder_mode_sw_desc,
     ),
 }
 
@@ -32,13 +38,18 @@ enum class RepeatMode {
     ALL,
 }
 
-enum class AspectRatioMode(val label: String) {
-    FIT("FIT"),
-    FILL("FILL"),
-    ZOOM("ZOOM"),
-    SIXTEEN_NINE("16:9"),
-    FOUR_THREE("4:3"),
-    ORIGINAL("100%"),
+/**
+ * Aspect ratio modes. [label] is the stable identifier; the displayed text
+ * comes from [labelRes] so FIT/FILL/ZOOM localise (16:9, 4:3 and 100% are
+ * symbols and stay identical in every locale).
+ */
+enum class AspectRatioMode(val label: String, val labelRes: Int) {
+    FIT("FIT", R.string.aspect_fit),
+    FILL("FILL", R.string.aspect_fill),
+    ZOOM("ZOOM", R.string.aspect_zoom),
+    SIXTEEN_NINE("16:9", R.string.aspect_16_9),
+    FOUR_THREE("4:3", R.string.aspect_4_3),
+    ORIGINAL("100%", R.string.aspect_original),
 }
 
 data class ExternalSubtitle(

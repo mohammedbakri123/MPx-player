@@ -115,6 +115,18 @@
     <string name="decoder_hw">HW (Hardware - aceleração por hardware Android MediaCodec)</string>
     <string name="decoder_hw_plus">HW+ (Hardware Plus - pipeline de buffer assíncrono)</string>
     <string name="decoder_sw">SW (Software - decodificação por CPU como alternativa)</string>
+    <string name="decoder_mode_hw_title">Hardware (HW)</string>
+    <string name="decoder_mode_hw_desc">Aceleração de hardware padrão do dispositivo via decodificadores MediaCodec do Android.</string>
+    <string name="decoder_mode_hw_plus_title">Hardware Plus (HW+)</string>
+    <string name="decoder_mode_hw_plus_desc">Pipeline de decodificação por hardware aprimorado com filas assíncronas e junção de baixa latência.</string>
+    <string name="decoder_mode_sw_title">Software (SW)</string>
+    <string name="decoder_mode_sw_desc">Decodificação por software direta da CPU (codecs de software do Google/Android) para máxima compatibilidade.</string>
+    <string name="aspect_fit">Ajustar</string>
+    <string name="aspect_fill">Preencher</string>
+    <string name="aspect_zoom">Zoom</string>
+    <string name="aspect_16_9">16:9</string>
+    <string name="aspect_4_3">4:3</string>
+    <string name="aspect_original">100%</string>
     <string name="decoder_explanation">Seleciona a preferência padrão do decodificador do player. HW usa os codecs de hardware do chipset do dispositivo; SW oferece alternativa por software. Onde o Android não permite o decodificador solicitado (por exemplo, codec não suportado), o MPx mostra honestamente uma nota de alternativa.</string>
 
     <string name="audio_volume_boost">Amplificação de volume</string>
@@ -285,7 +297,7 @@
     <string name="help_sec2_title">Faixas de áudio e legenda</string>
     <string name="help_sec2_body">• Ícone de áudio: alternar entre faixas de áudio distintas (áudio duplo, comentários)\n• Ícone de legenda: selecionar faixas de legenda embutidas ou laterais .vtt / .srt\n• Tamanho da legenda: configurável em Configurações (Pequeno, Normal, Grande)</string>
     <string name="help_sec3_title">Diagnósticos do dispositivo (ao vivo)</string>
-    <string name="help_diag_app">App: MPx Player 0.1.0-beta (Build 2)</string>
+    <string name="help_diag_app">App: MPx Player %1$s (Build %2$s)</string>
     <string name="help_diag_os">Android: SDK %1$d (%2$s)</string>
     <string name="help_diag_device">Dispositivo: %1$s %2$s</string>
     <string name="help_diag_engine">Mecanismo: %1$s</string>
@@ -793,6 +805,8 @@
     <string name="player_cd_play">Reproduzir</string>
     <string name="player_toast_subtitle_loaded">Legenda carregada: %1$s</string>
     <string name="player_subtitle_load_error">Não foi possível carregar \'%1$s\':\n\n%2$s</string>
+    <string name="subtitle_unsupported_format">Formato não suportado ’%1$s’. O MPx Player suporta atualmente ficheiros de legendas .srt (SubRip) e .vtt (WebVTT).</string>
+    <string name="subtitle_unknown_format">formato não reconhecido</string>
     <string name="player_toast_decoder">Decodificador: %1$s</string>
     <string name="player_pip_unsupported">A reprodução pop-up (PiP) não é suportada neste dispositivo</string>
     <string name="player_pip_unable">Não foi possível entrar no modo Picture-in-Picture</string>

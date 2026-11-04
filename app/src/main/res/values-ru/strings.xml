@@ -115,6 +115,18 @@
     <string name="decoder_hw">HW (аппаратный — аппаратное ускорение Android MediaCodec)</string>
     <string name="decoder_hw_plus">HW+ (аппаратный плюс — асинхронный конвейер буферов)</string>
     <string name="decoder_sw">SW (программный — декодирование на CPU как запасной вариант)</string>
+    <string name="decoder_mode_hw_title">Аппаратный (HW)</string>
+    <string name="decoder_mode_hw_desc">Стандартное аппаратное ускорение устройства через декодеры чипсета Android MediaCodec.</string>
+    <string name="decoder_mode_hw_plus_title">Аппаратный Plus (HW+)</string>
+    <string name="decoder_mode_hw_plus_desc">Улучшенный конвейер аппаратного декодирования с асинхронной очередью и подключением с низкой задержкой.</string>
+    <string name="decoder_mode_sw_title">Программный (SW)</string>
+    <string name="decoder_mode_sw_desc">Прямое программное декодирование на ЦП (программные кодеки Google/Android) для максимальной совместимости.</string>
+    <string name="aspect_fit">По размеру</string>
+    <string name="aspect_fill">Заполнение</string>
+    <string name="aspect_zoom">Масштаб</string>
+    <string name="aspect_16_9">16:9</string>
+    <string name="aspect_4_3">4:3</string>
+    <string name="aspect_original">100%</string>
     <string name="decoder_explanation">Выбор предпочитаемого декодера плеера по умолчанию. HW использует аппаратные кодеки чипсета устройства; SW обеспечивает программный запасной вариант. Если Android не позволяет использовать запрошенный декодер (например, неподдерживаемый кодек), MPx честно показывает примечание о запасном варианте.</string>
 
     <string name="audio_volume_boost">Усиление громкости</string>
@@ -285,7 +297,7 @@
     <string name="help_sec2_title">Аудио- и субтитровые дорожки</string>
     <string name="help_sec2_body">• Значок аудио: переключение между отдельными аудиодорожками (двухголосый звук, комментарии)\n• Значок субтитров: выбор встроенных или внешних субтитровых дорожек .vtt / .srt\n• Размер субтитров: настраивается в настройках (маленький, обычный, большой)</string>
     <string name="help_sec3_title">Диагностика устройства (в реальном времени)</string>
-    <string name="help_diag_app">Приложение: MPx Player 0.1.0-beta (сборка 2)</string>
+    <string name="help_diag_app">Приложение: MPx Player %1$s (сборка %2$s)</string>
     <string name="help_diag_os">ОС Android: SDK %1$d (%2$s)</string>
     <string name="help_diag_device">Устройство: %1$s %2$s</string>
     <string name="help_diag_engine">Движок: %1$s</string>
@@ -793,6 +805,8 @@
     <string name="player_cd_play">Играть</string>
     <string name="player_toast_subtitle_loaded">Субтитры загружены: %1$s</string>
     <string name="player_subtitle_load_error">Не удалось загрузить \'%1$s\':\n\n%2$s</string>
+    <string name="subtitle_unsupported_format">Неподдерживаемый формат ’%1$s’. MPx Player в настоящее время поддерживает файлы субтитров .srt (SubRip) и .vtt (WebVTT).</string>
+    <string name="subtitle_unknown_format">неизвестный формат</string>
     <string name="player_toast_decoder">Декодер: %1$s</string>
     <string name="player_pip_unsupported">Всплывающее воспроизведение (PiP) не поддерживается на этом устройстве</string>
     <string name="player_pip_unable">Не удалось перейти в режим «картинка в картинке»</string>
