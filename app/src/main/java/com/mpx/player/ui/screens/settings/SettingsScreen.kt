@@ -160,18 +160,30 @@ fun SettingsScreen(
         else -> stringResource(R.string.lang_system_default)
     }
 
+    val themeSubtitle = when (settings.appTheme.lowercase()) {
+        "dark" -> stringResource(R.string.theme_dark)
+        "classic" -> stringResource(R.string.theme_classic)
+        "light" -> stringResource(R.string.theme_light)
+        else -> stringResource(R.string.theme_midnight)
+    }
+
+    // Order follows the decoded MX Settings headers (List, Player, Decoder,
+    // Subtitle, General, Development), with MPx extras after them and About
+    // last. Audio was removed in #66 and is not re-added. Only Language
+    // (current language) and Theme (current theme) keep a subtitle, since
+    // those carry real state at a glance; all other rows are title-only.
     val categories = listOf(
+        SettingCategory("list", stringResource(R.string.settings_category_list), null, Icons.AutoMirrored.Filled.FormatListBulleted),
+        SettingCategory("player", stringResource(R.string.settings_category_player), null, Icons.Filled.PlayCircleOutline),
+        SettingCategory("decoder", stringResource(R.string.settings_category_decoder), null, Icons.Filled.Memory),
+        SettingCategory("subtitle", stringResource(R.string.settings_category_subtitle), null, Icons.Filled.Subtitles),
+        SettingCategory("general", stringResource(R.string.settings_category_general), null, Icons.Filled.Tune),
+        SettingCategory("development", stringResource(R.string.settings_category_development), null, Icons.Filled.DeveloperMode),
+        SettingCategory("theme", stringResource(R.string.settings_category_theme), themeSubtitle, Icons.Filled.ColorLens),
+        SettingCategory("pip", stringResource(R.string.settings_category_pip), null, Icons.Filled.PictureInPictureAlt),
+        SettingCategory("tabs", stringResource(R.string.settings_category_tabs), null, Icons.Filled.Tab),
         SettingCategory("language", stringResource(R.string.settings_category_language), languageSubtitle, Icons.Filled.Language),
-        SettingCategory("theme", stringResource(R.string.settings_category_theme), stringResource(R.string.settings_category_theme_sub), Icons.Filled.ColorLens),
-        SettingCategory("pip", stringResource(R.string.settings_category_pip), stringResource(R.string.settings_category_pip_sub), Icons.Filled.PictureInPictureAlt),
-        SettingCategory("tabs", stringResource(R.string.settings_category_tabs), stringResource(R.string.settings_category_tabs_sub), Icons.Filled.Tab),
-        SettingCategory("list", stringResource(R.string.settings_category_list), stringResource(R.string.settings_category_list_sub), Icons.AutoMirrored.Filled.FormatListBulleted),
-        SettingCategory("player", stringResource(R.string.settings_category_player), stringResource(R.string.settings_category_player_sub), Icons.Filled.PlayCircleOutline),
-        SettingCategory("decoder", stringResource(R.string.settings_category_decoder), stringResource(R.string.settings_category_decoder_sub), Icons.Filled.Memory),
-        SettingCategory("subtitle", stringResource(R.string.settings_category_subtitle), stringResource(R.string.settings_category_subtitle_sub), Icons.Filled.Subtitles),
-        SettingCategory("general", stringResource(R.string.settings_category_general), stringResource(R.string.settings_category_general_sub), Icons.Filled.Tune),
-        SettingCategory("development", stringResource(R.string.settings_category_development), stringResource(R.string.settings_category_development_sub), Icons.Filled.DeveloperMode),
-        SettingCategory("about", stringResource(R.string.settings_category_about), stringResource(R.string.settings_category_about_sub), Icons.Filled.Info),
+        SettingCategory("about", stringResource(R.string.settings_category_about), null, Icons.Filled.Info),
     )
 
     Scaffold(
@@ -222,8 +234,10 @@ fun SettingsScreen(
                         Spacer(Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(category.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp), color = MaterialTheme.colorScheme.onSurface)
-                            Spacer(Modifier.height(2.dp))
-                            Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
+                            if (category.subtitle != null) {
+                                Spacer(Modifier.height(2.dp))
+                                Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
+                            }
                         }
                         Spacer(Modifier.width(8.dp))
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))

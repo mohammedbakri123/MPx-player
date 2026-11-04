@@ -20,6 +20,6 @@ data class MeTool(
 data class SettingCategory(
     val id: String,
     val title: String,
-    val subtitle: String,
+    val subtitle: String? = null,
     val icon: ImageVector,
 )
