@@ -124,7 +124,6 @@ import com.mpx.player.ui.screens.local.SortField
 import com.mpx.player.ui.screens.local.SortViewDialog
 import com.mpx.player.ui.screens.local.ViewMode
 import com.mpx.player.ui.components.EmptyStateView
-import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.FavouritesDialog
@@ -578,11 +577,6 @@ fun MusicScreen(
                     )
                 }
             }
-
-            // Honest milestone notice
-            HonestStatusBanner(
-                text = stringResource(R.string.music_banner_scanning),
-            )
 
             // Tab Content
             if (!hasPermission) {
@@ -1262,8 +1256,8 @@ private fun TracksTabContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onTrackClick(index) },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                     ) {
                         Column(
                             modifier = Modifier.padding(10.dp),
@@ -1306,13 +1300,13 @@ private fun TracksTabContent(
                                 }
                                 IconButton(
                                     onClick = { onTrackOptionsClick(track) },
-                                    modifier = Modifier.size(32.dp),
+                                    modifier = Modifier.size(40.dp),
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.MoreVert,
                                         contentDescription = stringResource(R.string.music_cd_track_options, track.title),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(16.dp),
+                                        modifier = Modifier.size(20.dp),
                                     )
                                 }
                             }
@@ -1704,8 +1698,8 @@ private fun FoldersTabContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onFolderClick() },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Box(

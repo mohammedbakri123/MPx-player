@@ -1,6 +1,5 @@
 package com.mpx.player.ui.screens.local
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -93,7 +92,7 @@ fun FolderItemRow(
                     showThumbnails = showThumbnails,
                 )
             }
-            if (folder.videoCount > 0) {
+            if (showCount && folder.videoCount > 0) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -169,32 +168,23 @@ fun FolderItemRow(
                 }
             }
 
-            // Count as plain text + real folder size in a small rounded box
-            // beside it, matching the boxed info value confirmed in MX's
-            // decoded folder row. No subfolder counts: MediaFolder has no such
-            // field and a recursive scan is out of scope.
+            // Subtitle is a single line: the real folder size in a small
+            // rounded box, matching MX's one-subtitle-slot row shape
+            // (list_grid_media: one title, one subtitle). The count is NOT
+            // repeated here — the red badge on the thumbnail already shows
+            // it (gated by the same showCount setting), and the exact count
+            // for 99+ folders stays one tap away in the folder menu dialog.
+            // No subfolder counts: MediaFolder has no such field and a
+            // recursive scan is out of scope.
             val folderDateStr = formatFolderDate(folder.lastModified)
-            val hasSubtitle = showCount ||
-                (showSize && folder.totalSizeFormatted.isNotBlank()) ||
+            val hasSubtitle = (showSize && folder.totalSizeFormatted.isNotBlank()) ||
                 (showDate && folderDateStr.isNotBlank())
             if (hasSubtitle) {
                 Spacer(Modifier.height(3.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (showCount) {
-                        Text(
-                            text = stringResource(R.string.folder_item_videos_count, folder.videoCount),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
                     if (showSize && folder.totalSizeFormatted.isNotBlank()) {
-                        if (showCount) {
-                            Spacer(Modifier.width(6.dp))
-                        }
                         Box(
                             modifier = Modifier
                                 .background(
@@ -258,9 +248,8 @@ fun FolderItemGridCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -316,7 +305,8 @@ fun FolderItemGridCard(
 
                 // Same red count badge as the list row, at the thumbnail's
                 // bottom-end to avoid colliding with the SD/NEW badges.
-                if (folder.videoCount > 0) {
+                // Gated by showCount, like the list row badge.
+                if (showCount && folder.videoCount > 0) {
                     val gridBadgeText = if (folder.videoCount > 99) "99+" else folder.videoCount.toString()
                     Box(
                         modifier = Modifier
@@ -348,30 +338,19 @@ fun FolderItemGridCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            // Count as plain text + real size in a small rounded box, as in
-            // the list row. No subfolder counts (no such field exists).
+            // Subtitle is a single line: the real size in a small rounded
+            // box, as in the list row. The count lives on the thumbnail
+            // badge only, not repeated here. No subfolder counts (no such
+            // field exists).
             val gridDateStr = formatFolderDate(folder.lastModified)
-            val gridHasSubtitle = showCount ||
-                (showSize && folder.totalSizeFormatted.isNotBlank()) ||
+            val gridHasSubtitle = (showSize && folder.totalSizeFormatted.isNotBlank()) ||
                 (showDate && gridDateStr.isNotBlank())
             if (gridHasSubtitle) {
                 Spacer(Modifier.height(2.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (showCount) {
-                        Text(
-                            text = stringResource(R.string.folder_item_videos_count, folder.videoCount),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
                     if (showSize && folder.totalSizeFormatted.isNotBlank()) {
-                        if (showCount) {
-                            Spacer(Modifier.width(6.dp))
-                        }
                         Box(
                             modifier = Modifier
                                 .background(
