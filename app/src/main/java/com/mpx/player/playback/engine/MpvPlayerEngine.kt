@@ -84,6 +84,14 @@ class MpvPlayerEngine(
     private var fileLoadedForCurrentItem: Boolean = false
     /** Last error/warning log lines from libmpv (capped); surfaced when a file fails to load. */
     private val lastErrorLogs: ArrayDeque<String> = ArrayDeque()
+    /** mpv options libmpv rejected (setOptionString returns non-zero). Previously every
+     * setOptionString result was ignored, so a rejected vo/gpu-context/hwdec/ao option
+     * was completely invisible — the phone banner now names them (see END_FILE detail). */
+    private val rejectedOptions: ArrayDeque<String> = ArrayDeque()
+    /** A video load deferred because no surface exists yet (see load()). Flushed by
+     * attachSurface(); audio loads are never deferred (no video output needed). */
+    @Volatile
+    private var pendingLoad: Triple<List<PlayableMedia>, Int, Long>? = null
     /** Init failure captured instead of thrown, so the manager can report it instead of crashing. */
     private var pendingInitError: Exception? = null
 
@@ -156,6 +164,40 @@ class MpvPlayerEngine(
         }
     }
 
+    /**
+     * Checked setOptionString: the wrapper returns 0 on success and a negative
+     * MPV_ERROR_* code on failure, and never throws — so the old code, which
+     * ignored every return value, could never tell a rejected option from an
+     * applied one. Rejections are logged and kept for the phone error banner.
+     */
+    private fun setOption(key: String, value: String) {
+        val rc = try {
+            mpv.setOptionString(key, value)
+        } catch (e: Exception) {
+            Log.w(TAG, "setOption $key failed", e)
+            return
+        }
+        if (rc != 0) {
+            val msg = "mpv option rejected: $key=$value (rc=$rc)"
+            Log.w(TAG, msg)
+            synchronized(rejectedOptions) {
+                rejectedOptions.addLast(msg)
+                while (rejectedOptions.size > 5) rejectedOptions.removeFirst()
+            }
+        }
+    }
+
+    private fun rejectedOptionsText(): String =
+        synchronized(rejectedOptions) {
+            if (rejectedOptions.isEmpty()) "" else "; rejected options: " + rejectedOptions.joinToString(", ")
+        }
+
+    private fun hwdecValueFor(mode: DecoderMode): String = when (mode) {
+        DecoderMode.HW -> "mediacodec"
+        DecoderMode.HW_PLUS -> "mediacodec-copy"
+        DecoderMode.SW -> "no"
+    }
+
     private fun initializeMpv(mode: DecoderMode) {
         val configDir = File(appContext.filesDir, "mpv").apply { mkdirs() }
         val cacheDir = File(appContext.cacheDir, "mpv_cache").apply { mkdirs() }
@@ -166,39 +208,53 @@ class MpvPlayerEngine(
         mpv.create(appContext)
 
         // Set configuration options before init()
-        mpv.setOptionString("config", "yes")
-        mpv.setOptionString("config-dir", configDir.absolutePath)
-        mpv.setOptionString("gpu-shader-cache-dir", cacheDir.absolutePath)
-        mpv.setOptionString("icc-cache-dir", cacheDir.absolutePath)
-        mpv.setOptionString("vo", "gpu")
-        mpv.setOptionString("gpu-context", "android")
-        mpv.setOptionString("opengl-es", "yes")
-        mpv.setOptionString("ao", "audiotrack,opensles")
-        mpv.setOptionString("keep-open", "always")
-        mpv.setOptionString("ytdl", "no")
+        setOption("config", "yes")
+        setOption("config-dir", configDir.absolutePath)
+        setOption("gpu-shader-cache-dir", cacheDir.absolutePath)
+        setOption("icc-cache-dir", cacheDir.absolutePath)
+        setOption("vo", "gpu")
+        setOption("gpu-context", "android")
+        setOption("opengl-es", "yes")
+        setOption("ao", "audiotrack,opensles")
+        setOption("keep-open", "always")
+        setOption("ytdl", "no")
 
         // Subtitle configuration: use system fonts via fontconfig.
         // The font itself comes from saved settings so the first frame already
         // matches; the full option set is applied post-init below.
-        mpv.setOptionString("sub-font-provider", "fontconfig")
-        mpv.setOptionString("sub-fonts-dir", "/system/fonts")
-        mpv.setOptionString("sub-font", subtitleMpvOptions(loadSavedSubtitleSettings())["sub-font"] ?: "sans-serif")
-        mpv.setOptionString("sub-fix-timing", "yes")
-        mpv.setOptionString("sub-auto", "fuzzy")
+        setOption("sub-font-provider", "fontconfig")
+        setOption("sub-fonts-dir", "/system/fonts")
+        setOption("sub-font", subtitleMpvOptions(loadSavedSubtitleSettings())["sub-font"] ?: "sans-serif")
+        setOption("sub-fix-timing", "yes")
+        setOption("sub-auto", "fuzzy")
 
         val cacertFile = File(appContext.filesDir, "cacert.pem")
         if (cacertFile.exists()) {
-            mpv.setOptionString("tls-ca-file", cacertFile.absolutePath)
+            setOption("tls-ca-file", cacertFile.absolutePath)
         }
 
-        // Apply hardware decoding mode
-        applyHwdecForMode(mode)
+        // Hardware decoding mode, as a pre-init OPTION (not a property: the old
+        // code called setPropertyString("hwdec") here, before mpv_initialize(),
+        // which libmpv silently drops — the value only took effect later via
+        // load()'s post-init property set). Record the stage for the fallback chain.
+        decoderMode = mode
+        currentDecoderStage = when (mode) {
+            DecoderMode.HW -> DecoderStage.HW
+            DecoderMode.HW_PLUS -> DecoderStage.HW_PLUS
+            DecoderMode.SW -> DecoderStage.SW
+        }
+        setOption("hwdec", hwdecValueFor(mode))
 
         mpv.init()
         mpvInitialized = true
 
-        // Post-init options
-        mpv.setOptionString("force-window", "yes")
+        // Post-init options. force-window stays NO here on purpose (mpv-android's
+        // own BaseMPVView carries the comment "could mess up VO init before
+        // surfaceCreated() is called"): forcing a window with no surface yet
+        // makes the first loadfile attempt VO init with no ANativeWindow, which
+        // aborts the file before the player screen's SurfaceView even exists.
+        // attachSurface() flips it to yes once a real surface is attached.
+        setOption("force-window", "no")
 
         // Apply the full saved subtitle style (issue #75) now that mpv accepts live options.
         applySubtitleSettings(loadSavedSubtitleSettings())
@@ -238,7 +294,7 @@ class MpvPlayerEngine(
         if (!mpvInitialized || isReleased) return
         try {
             subtitleMpvOptions(settings).forEach { (key, value) ->
-                mpv.setOptionString(key, value)
+                setOption(key, value)
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed applying subtitle settings to mpv", e)
@@ -313,11 +369,7 @@ class MpvPlayerEngine(
             DecoderMode.HW_PLUS -> DecoderStage.HW_PLUS
             DecoderMode.SW -> DecoderStage.SW
         }
-        val hwdecVal = when (mode) {
-            DecoderMode.HW -> "mediacodec"
-            DecoderMode.HW_PLUS -> "mediacodec-copy"
-            DecoderMode.SW -> "no"
-        }
+        val hwdecVal = hwdecValueFor(mode)
         try {
             mpv.setPropertyString("hwdec", hwdecVal)
         } catch (e: Exception) {
@@ -473,7 +525,7 @@ class MpvPlayerEngine(
                         reason?.let { "reason=$it" },
                         errCode?.let { "error=$it" },
                         lastLog,
-                    ).joinToString("; ").ifBlank { "unknown libmpv error" }
+                    ).joinToString("; ").ifBlank { "unknown libmpv error" } + rejectedOptionsText()
                     mainHandler.post {
                         engineListener?.onError(
                             MpvPlaybackException("MPV could not play this file ($detail)")
@@ -507,20 +559,45 @@ class MpvPlayerEngine(
             currentSurface = surface
             try {
                 mpv.attachSurface(surface)
-                mpv.setOptionString("force-window", "yes")
+                setOption("force-window", "yes")
                 mpv.setPropertyString("vo", "gpu")
             } catch (e: Exception) {
                 Log.e(TAG, "Error in attachSurface", e)
             }
         }
-        // Load-before-surface recovery: playback is normally started from the
-        // library BEFORE the player screen (and its SurfaceView) exists, so
-        // the first loadfile can run with no video output attached and die.
-        // If that load never produced FILE_LOADED, retry it now that a
+        // Flush a load deferred for lack of surface (see load()). This is the
+        // only path by which a video loadfile now runs: with a real surface
+        // attached, so VO init cannot fail for want of an ANativeWindow.
+        // Returns early so the legacy reload below cannot double-load.
+        val pending = pendingLoad
+        if (pending != null) {
+            pendingLoad = null
+            load(pending.first, pending.second, pending.third)
+            play()
+            return
+        }
+        // Legacy load-before-surface recovery (kept as a safety net for loads
+        // that ran surfaceless before this fix, e.g. engine switches): if the
+        // current file never produced FILE_LOADED, retry it now that a
         // surface exists. No-op when the file already loaded (rotation, etc.).
         if (mpvInitialized && !isReleased && !fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
             load(currentQueue, currentMediaIndex, cachedPositionMs)
             play()
+        }
+    }
+
+    /**
+     * Surface size change (SurfaceHolder.Callback.surfaceChanged). mpv-android's
+     * own BaseMPVView reports this as the "android-surface-size" property on
+     * every change; MPx previously left surfaceChanged empty, so the android
+     * gpu-context never learned the real surface size.
+     */
+    override fun onSurfaceChanged(width: Int, height: Int) {
+        if (!mpvInitialized || isReleased || width <= 0 || height <= 0) return
+        try {
+            mpv.setPropertyString("android-surface-size", "${width}x${height}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed reporting android-surface-size", e)
         }
     }
 
@@ -556,6 +633,25 @@ class MpvPlayerEngine(
         currentMediaIndex = targetIndex
         val targetItem = items[targetIndex]
 
+        // ROOT-CAUSE FIX (mpv "never works at all"): playback is normally
+        // started from the library BEFORE the player screen (and its
+        // SurfaceView) exists. The old code fired loadfile immediately, and
+        // with force-window=yes libmpv attempted VO init with no ANativeWindow
+        // attached: the video chain failed, the file aborted with END_FILE,
+        // and PlaybackManager fell back to Media3 before surfaceCreated ever
+        // ran — so mpv never got a fair load. Now a VIDEO load with no surface
+        // is deferred, not fired: attachSurface() flushes it the moment a
+        // real surface exists. Audio loads are never deferred (no video
+        // output is needed, so a missing surface cannot fail them).
+        val hasSurface = synchronized(surfaceLock) { currentSurface != null }
+        if (targetItem.isVideo && !hasSurface) {
+            pendingLoad = Triple(items, targetIndex, resumeMs)
+            mainHandler.post {
+                engineListener?.onMediaItemTransition(targetIndex, false)
+            }
+            return
+        }
+
         applyHwdecForMode(decoderMode)
 
         try {
@@ -588,7 +684,7 @@ class MpvPlayerEngine(
             Log.e(TAG, "Error loading media items in MPV", e)
             mainHandler.post {
                 engineListener?.onError(
-                    MpvPlaybackException("MPV could not load this file: ${e.message}")
+                    MpvPlaybackException("MPV could not load this file: ${e.message}${rejectedOptionsText()}")
                 )
             }
         }
@@ -771,6 +867,7 @@ class MpvPlayerEngine(
     }
 
     override fun stop() {
+        pendingLoad = null
         try {
             mpv.command("stop")
             cachedIsPlaying = false
@@ -781,6 +878,7 @@ class MpvPlayerEngine(
     }
 
     override fun release() {
+        pendingLoad = null
         isReleased = true
         mainHandler.removeCallbacksAndMessages(null)
         detachSurface()

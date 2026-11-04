@@ -707,7 +707,9 @@ fun PlayerScreen(
                                 playbackManager.attachSurface(holder.surface)
                             }
 
-                            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
+                            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+                                playbackManager.surfaceChanged(width, height)
+                            }
 
                             override fun surfaceDestroyed(holder: SurfaceHolder) {
                                 // SYNCHRONOUS barrier:

@@ -327,6 +327,14 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     /**
+     * Forwards SurfaceView size changes to the engine (mpv reports them as
+     * "android-surface-size"; Media3 ignores them via the interface default).
+     */
+    fun surfaceChanged(width: Int, height: Int) {
+        engine.onSurfaceChanged(width, height)
+    }
+
+    /**
      * Detaches the video surface from the active playback engine.
      */
     fun detachSurface() {
