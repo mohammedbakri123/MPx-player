@@ -731,6 +731,11 @@
     <string name="dev_val_yes">Sim</string>
     <string name="dev_val_no">Não</string>
     <string name="dev_btn_refresh_diagnostics">Atualizar diagnósticos</string>
+    <string name="dev_section_diagnostics_export">Exportar diagnóstico</string>
+    <string name="dev_btn_copy_summary">Copiar resumo do diagnóstico</string>
+    <string name="dev_btn_share_file">Partilhar ficheiro de diagnóstico</string>
+    <string name="dev_val_copied">Resumo do diagnóstico copiado</string>
+    <string name="dev_val_share_failed">Não foi possível partilhar o ficheiro de diagnóstico</string>
     <string name="dev_val_refreshing">Atualizando…</string>
     <string name="dev_val_none_idle">Nenhum (player ocioso)</string>
     <string name="dev_val_direct_codec">Direto (nenhuma alternativa necessária)</string>

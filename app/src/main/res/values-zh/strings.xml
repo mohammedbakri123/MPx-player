@@ -731,6 +731,11 @@
     <string name="dev_val_yes">是</string>
     <string name="dev_val_no">否</string>
     <string name="dev_btn_refresh_diagnostics">刷新诊断</string>
+    <string name="dev_section_diagnostics_export">导出诊断</string>
+    <string name="dev_btn_copy_summary">复制诊断摘要</string>
+    <string name="dev_btn_share_file">分享诊断文件</string>
+    <string name="dev_val_copied">诊断摘要已复制</string>
+    <string name="dev_val_share_failed">无法分享诊断文件</string>
     <string name="dev_val_refreshing">正在刷新…</string>
     <string name="dev_val_none_idle">无（播放器空闲）</string>
     <string name="dev_val_direct_codec">直接（无需后备）</string>
