@@ -49,6 +49,41 @@ class PlaybackManager private constructor(context: Context) {
     private val scope = CoroutineScope(Dispatchers.Main)
     private var tickerJob: Job? = null
     private var sleepTimerJob: Job? = null
+
+    /** Preparing watchdog: a video load that produces neither READY nor an
+     * error within 20s is a stuck load, not a slow one (local files). Firing
+     * routes a real timeout error through onError, which clears the splash
+     * and (for mpv) falls back to Media3 — the spinner must never spin
+     * forever again. Armed per video load; cancelled on READY/ENDED, on any
+     * error, and on stop. The timeout message names the observed mpv stage,
+     * so the banner itself becomes the next diagnostic. */
+    private var preparingWatchdogJob: Job? = null
+    private fun cancelPreparingWatchdog() {
+        preparingWatchdogJob?.cancel()
+        preparingWatchdogJob = null
+    }
+    private fun armPreparingWatchdog() {
+        val item = _playbackState.value.currentItem ?: return
+        if (!item.isVideo) return
+        cancelPreparingWatchdog()
+        preparingWatchdogJob = scope.launch {
+            delay(20_000L)
+            val st = _playbackState.value
+            if (st.isPreparing && st.currentItem?.id == item.id &&
+                st.playbackState != Player.STATE_READY && st.playbackState != Player.STATE_ENDED
+            ) {
+                val stage = engine.getLoadStage()
+                val detail = if (stage != null) {
+                    "engine=${if (isMpv) "MPV" else "MEDIA3"}, initialized=${stage.initialized}, " +
+                        "surface=${stage.surfaceAttached}, loadIssued=${stage.loadIssued}, " +
+                        "lastEvent=${stage.lastEvent}"
+                } else {
+                    "engine=${if (isMpv) "MPV" else "MEDIA3"}"
+                }
+                engineListener.onError(Exception("Playback load timed out after 20s ($detail)"))
+            }
+        }
+    }
     private var currentQueue: List<PlayableMedia> = emptyList()
     private var pendingSubtitleTrackLabel: String? = null
     /** Media id the Media3->mpv auto-fallback already fired for; prevents mpv<->Media3 ping-pong on one item. */
@@ -106,6 +141,9 @@ class PlaybackManager private constructor(context: Context) {
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_READY || playbackState == Player.STATE_ENDED) {
+                cancelPreparingWatchdog()
+            }
             _playbackState.update {
                 it.copy(
                     playbackState = playbackState,
@@ -223,6 +261,7 @@ class PlaybackManager private constructor(context: Context) {
         }
 
         override fun onError(error: Exception) {
+            cancelPreparingWatchdog()
             Log.e("PlaybackManager", "Engine error encountered", error)
             // An error ends preparing: the banner below replaces the splash.
             _playbackState.update { it.copy(isPreparing = false) }
@@ -417,6 +456,8 @@ class PlaybackManager private constructor(context: Context) {
         }
         updatePosition()
         updateTracksState()
+        startTicker()
+        armPreparingWatchdog()
     }
 
     /**
@@ -478,6 +519,8 @@ class PlaybackManager private constructor(context: Context) {
         }
         updatePosition()
         updateTracksState()
+        startTicker()
+        armPreparingWatchdog()
     }
 
     /**
@@ -533,6 +576,8 @@ class PlaybackManager private constructor(context: Context) {
         }
         updatePosition()
         updateTracksState()
+        startTicker()
+        armPreparingWatchdog()
     }
 
     /** Walks the cause chain for an ExoPlayer DecoderInitializationException and returns its MIME type. */
@@ -621,6 +666,8 @@ class PlaybackManager private constructor(context: Context) {
         }
         updatePosition()
         updateTracksState()
+        startTicker()
+        armPreparingWatchdog()
     }
 
     fun playAudioQueue(tracks: List<AudioTrack>, startIndex: Int = 0) {
@@ -932,6 +979,7 @@ class PlaybackManager private constructor(context: Context) {
 
     fun stop() {
         cancelSleepTimer()
+        cancelPreparingWatchdog()
         engine.stop()
         stopTicker()
         PlaybackService.stop(appContext)
@@ -948,12 +996,14 @@ class PlaybackManager private constructor(context: Context) {
                 durationMs = 0L,
                 isPreparing = false,
                 playbackMetrics = null,
+                mpvLoadStage = null,
             )
         }
     }
 
     fun release() {
         cancelSleepTimer()
+        cancelPreparingWatchdog()
         engine.release()
         stopTicker()
         PlaybackService.stop(appContext)
@@ -1022,6 +1072,7 @@ class PlaybackManager private constructor(context: Context) {
                 // diagnostics rows track the live engine (MPV values, null
                 // for Media3's unmeasured fields is handled by the rows).
                 playbackMetrics = engine.getPlaybackMetrics(),
+                mpvLoadStage = engine.getLoadStage(),
             )
         }
     }

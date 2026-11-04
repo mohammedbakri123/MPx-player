@@ -150,6 +150,23 @@ data class EnginePlaybackMetrics(
     val hardErrorCount: Int = 0,
 )
 
+/** Step-level mpv load diagnostics (issue #96 follow-up): every field is a
+ * directly observed fact, never inferred. Null (via the engine default) means
+ * "this engine does not report stages" — Media3 rows show "—", not zeroes. */
+data class MpvLoadStage(
+    /** libmpv created + initialized without a captured init failure. */
+    val initialized: Boolean = false,
+    /** A real Surface is currently attached to the engine. */
+    val surfaceAttached: Boolean = false,
+    /** A loadfile command was actually issued for the current item (false
+     * while the load is still deferred waiting for a surface). */
+    val loadIssued: Boolean = false,
+    /** Last mpv event observed for the current item: "none", "START_FILE",
+     * "FILE_LOADED", "VIDEO_RECONFIG", "END_FILE", "SHUTDOWN",
+     * "loadfile-failed", or "init-failed". */
+    val lastEvent: String = "none",
+)
+
 data class PlaybackState(
     val currentItem: PlayableMedia? = null,
     val queue: List<PlayableMedia> = emptyList(),
@@ -189,4 +206,6 @@ data class PlaybackState(
     val sleepTimerRemainingSeconds: Long? = null,
     /** Latest measured engine metrics (MPV only; null for Media3 / nothing yet). */
     val playbackMetrics: EnginePlaybackMetrics? = null,
+    /** Latest observed mpv load stage (mpv only; null for Media3). */
+    val mpvLoadStage: MpvLoadStage? = null,
 )

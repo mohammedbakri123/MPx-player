@@ -724,6 +724,12 @@
     <string name="dev_label_metrics_seek">सीक विलंबता (अंतिम सीक)</string>
     <string name="dev_label_metrics_fallbacks">डीकोडर फ़ॉलबैक (सत्र)</string>
     <string name="dev_label_metrics_errors">प्लेबैक त्रुटियाँ (सत्र)</string>
+    <string name="dev_label_mpv_initialized">MPV प्रारंभ हो गया</string>
+    <string name="dev_label_mpv_surface">सरफ़ेस जुड़ा हुआ है</string>
+    <string name="dev_label_mpv_load_issued">लोड जारी किया गया</string>
+    <string name="dev_label_mpv_last_event">अंतिम MPV इवेंट</string>
+    <string name="dev_val_yes">हाँ</string>
+    <string name="dev_val_no">नहीं</string>
     <string name="dev_btn_refresh_diagnostics">डायग्नोस्टिक्स रिफ़्रेश करें</string>
     <string name="dev_val_refreshing">रिफ़्रेश हो रहा है…</string>
     <string name="dev_val_none_idle">कोई नहीं (प्लेयर निष्क्रिय)</string>

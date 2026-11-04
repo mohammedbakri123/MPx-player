@@ -724,6 +724,12 @@
     <string name="dev_label_metrics_seek">跳转延迟（上次跳转）</string>
     <string name="dev_label_metrics_fallbacks">解码器回退（会话）</string>
     <string name="dev_label_metrics_errors">播放错误（会话）</string>
+    <string name="dev_label_mpv_initialized">MPV 已初始化</string>
+    <string name="dev_label_mpv_surface">画面已连接</string>
+    <string name="dev_label_mpv_load_issued">已发出加载</string>
+    <string name="dev_label_mpv_last_event">上次 MPV 事件</string>
+    <string name="dev_val_yes">是</string>
+    <string name="dev_val_no">否</string>
     <string name="dev_btn_refresh_diagnostics">刷新诊断</string>
     <string name="dev_val_refreshing">正在刷新…</string>
     <string name="dev_val_none_idle">无（播放器空闲）</string>

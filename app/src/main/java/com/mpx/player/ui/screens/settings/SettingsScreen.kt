@@ -1134,6 +1134,35 @@ private fun DevelopmentSettingsSection(
             label = stringResource(R.string.dev_label_metrics_errors),
             value = metrics?.let { "${it.hardErrorCount}" } ?: "—",
         )
+        // mpv load stage (issue #96 follow-up): step-level facts for the
+        // current mpv load, refreshed by the same ticker. "—" on Media3
+        // (no stage reporting) or before any load. How to read a stuck mpv
+        // load: initialized=no → libmpv never started (init failure, see the
+        // banner); surface=no → PlayerScreen never attached a surface, so
+        // the load is still deferred; load=no → loadfile was never issued;
+        // last event=none with load=yes → libmpv swallowed the load without
+        // any event (the infinite-spinner case) — that is when the 20s
+        // watchdog fires and the banner names this stage.
+        val stage = playbackState.mpvLoadStage
+        val yes = stringResource(R.string.dev_val_yes)
+        val no = stringResource(R.string.dev_val_no)
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_mpv_initialized),
+            value = stage?.let { if (it.initialized) yes else no } ?: "—",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_mpv_surface),
+            value = stage?.let { if (it.surfaceAttached) yes else no } ?: "—",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_mpv_load_issued),
+            value = stage?.let { if (it.loadIssued) yes else no } ?: "—",
+        )
+        DiagnosticRow(
+            label = stringResource(R.string.dev_label_mpv_last_event),
+            value = stage?.lastEvent ?: "—",
+            isMonospace = stage != null,
+        )
     }
 
     Spacer(Modifier.height(10.dp))
