@@ -107,7 +107,9 @@ fun SettingsScreen(
     val context = LocalContext.current
     val actualPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
     var settings by remember { mutableStateOf(settingsRepository.load()) }
-    var expandedId by remember { mutableStateOf<String?>(null) }
+    // Drill-down navigation (#77): null shows the category list, otherwise
+    // the selected category's own sub-screen, like MX's per-header fragments.
+    var selectedId by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -186,6 +188,8 @@ fun SettingsScreen(
         SettingCategory("about", stringResource(R.string.settings_category_about), null, Icons.Filled.Info),
     )
 
+    val selectedCategory = categories.find { it.id == selectedId }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -194,13 +198,13 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(R.string.settings_title),
+                        text = selectedCategory?.title ?: stringResource(R.string.settings_title),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = { if (selectedCategory != null) selectedId = null else onNavigateBack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back), tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
@@ -208,462 +212,470 @@ fun SettingsScreen(
             )
         },
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(bottom = 32.dp),
-        ) {
-            items(categories, key = { it.id }) { category ->
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { expandedId = if (expandedId == category.id) null else category.id }
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
+        if (selectedCategory == null) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(bottom = 32.dp),
+            ) {
+                items(categories, key = { it.id }) { category ->
+                    Column {
+                        Row(
                             modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp)),
-                            contentAlignment = Alignment.Center,
+                                .fillMaxWidth()
+                                .clickable { selectedId = category.id }
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(category.icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(category.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp), color = MaterialTheme.colorScheme.onSurface)
-                            if (category.subtitle != null) {
-                                Spacer(Modifier.height(2.dp))
-                                Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                                    .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(category.icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                             }
+                            Spacer(Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(category.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp), color = MaterialTheme.colorScheme.onSurface)
+                                if (category.subtitle != null) {
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
+                                }
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
                         }
-                        Spacer(Modifier.width(8.dp))
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+                        HorizontalDivider(modifier = Modifier.padding(start = 74.dp), color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                     }
-
-                    if (expandedId == category.id) {
-                        Column(modifier = Modifier.padding(start = 74.dp, end = 16.dp, bottom = 12.dp)) {
-                            when (category.id) {
-                                "language" -> {
-                                    val languageOptions = listOf(
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_SYSTEM,
-                                            stringResource(R.string.lang_system_default),
-                                            stringResource(R.string.lang_system_default_desc),
-                                        ),
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_ENGLISH,
-                                            stringResource(R.string.lang_english),
-                                            stringResource(R.string.lang_english_desc),
-                                        ),
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_ARABIC,
-                                            stringResource(R.string.lang_arabic),
-                                            stringResource(R.string.lang_arabic_desc),
-                                        ),
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_SPANISH,
-                                            stringResource(R.string.lang_spanish),
-                                            stringResource(R.string.lang_spanish_desc),
-                                        ),
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_FRENCH,
-                                            stringResource(R.string.lang_french),
-                                            stringResource(R.string.lang_french_desc),
-                                        ),
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_HINDI,
-                                            stringResource(R.string.lang_hindi),
-                                            stringResource(R.string.lang_hindi_desc),
-                                        ),
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_CHINESE,
-                                            stringResource(R.string.lang_chinese),
-                                            stringResource(R.string.lang_chinese_desc),
-                                        ),
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_RUSSIAN,
-                                            stringResource(R.string.lang_russian),
-                                            stringResource(R.string.lang_russian_desc),
-                                        ),
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_GERMAN,
-                                            stringResource(R.string.lang_german),
-                                            stringResource(R.string.lang_german_desc),
-                                        ),
-                                        Triple(
-                                            LocaleHelper.LANGUAGE_PORTUGUESE,
-                                            stringResource(R.string.lang_portuguese),
-                                            stringResource(R.string.lang_portuguese_desc),
-                                        ),
-                                    )
-                                    languageOptions.forEach { (langCode, langTitle, langDesc) ->
-                                        ChoiceRowWithSubtitle(
-                                            title = langTitle,
-                                            subtitle = langDesc,
-                                            selected = activeLanguage.equals(langCode, ignoreCase = true),
-                                        ) {
-                                            update(settings.copy(appLanguage = langCode))
-                                        }
+                }
+            }
+        } else {
+            // Dedicated sub-screen for one category: only its own options.
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                item {
+                    Column {
+                        when (selectedCategory.id) {
+                            "language" -> {
+                                val languageOptions = listOf(
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_SYSTEM,
+                                        stringResource(R.string.lang_system_default),
+                                        stringResource(R.string.lang_system_default_desc),
+                                    ),
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_ENGLISH,
+                                        stringResource(R.string.lang_english),
+                                        stringResource(R.string.lang_english_desc),
+                                    ),
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_ARABIC,
+                                        stringResource(R.string.lang_arabic),
+                                        stringResource(R.string.lang_arabic_desc),
+                                    ),
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_SPANISH,
+                                        stringResource(R.string.lang_spanish),
+                                        stringResource(R.string.lang_spanish_desc),
+                                    ),
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_FRENCH,
+                                        stringResource(R.string.lang_french),
+                                        stringResource(R.string.lang_french_desc),
+                                    ),
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_HINDI,
+                                        stringResource(R.string.lang_hindi),
+                                        stringResource(R.string.lang_hindi_desc),
+                                    ),
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_CHINESE,
+                                        stringResource(R.string.lang_chinese),
+                                        stringResource(R.string.lang_chinese_desc),
+                                    ),
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_RUSSIAN,
+                                        stringResource(R.string.lang_russian),
+                                        stringResource(R.string.lang_russian_desc),
+                                    ),
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_GERMAN,
+                                        stringResource(R.string.lang_german),
+                                        stringResource(R.string.lang_german_desc),
+                                    ),
+                                    Triple(
+                                        LocaleHelper.LANGUAGE_PORTUGUESE,
+                                        stringResource(R.string.lang_portuguese),
+                                        stringResource(R.string.lang_portuguese_desc),
+                                    ),
+                                )
+                                languageOptions.forEach { (langCode, langTitle, langDesc) ->
+                                    ChoiceRowWithSubtitle(
+                                        title = langTitle,
+                                        subtitle = langDesc,
+                                        selected = activeLanguage.equals(langCode, ignoreCase = true),
+                                    ) {
+                                        update(settings.copy(appLanguage = langCode))
                                     }
-                                    Spacer(Modifier.height(6.dp))
+                                }
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    stringResource(R.string.lang_settings_note),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            "theme" -> {
+                                listOf(
+                                    "Midnight" to stringResource(R.string.theme_midnight),
+                                    "Dark" to stringResource(R.string.theme_dark),
+                                    "Classic" to stringResource(R.string.theme_classic),
+                                    "Light" to stringResource(R.string.theme_light),
+                                ).forEach { (themeKey, themeLabel) ->
+                                    ChoiceRow(themeLabel, settings.appTheme.equals(themeKey, ignoreCase = true)) {
+                                        update(settings.copy(appTheme = themeKey))
+                                    }
+                                }
+                            }
+                            "pip" -> {
+                                if (onOpenOverlaySettings != null) {
+                                    TextButton(onClick = onOpenOverlaySettings) {
+                                        Text(stringResource(R.string.overlay_settings_title), color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                                val isSupported = PipUtils.isPipSupported(context)
+                                if (!isSupported) {
                                     Text(
-                                        stringResource(R.string.lang_settings_note),
+                                        text = stringResource(R.string.pip_not_supported),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(bottom = 8.dp),
                                     )
                                 }
-                                "theme" -> {
-                                    listOf(
-                                        "Midnight" to stringResource(R.string.theme_midnight),
-                                        "Dark" to stringResource(R.string.theme_dark),
-                                        "Classic" to stringResource(R.string.theme_classic),
-                                        "Light" to stringResource(R.string.theme_light),
-                                    ).forEach { (themeKey, themeLabel) ->
-                                        ChoiceRow(themeLabel, settings.appTheme.equals(themeKey, ignoreCase = true)) {
-                                            update(settings.copy(appTheme = themeKey))
-                                        }
+                                ToggleRow(stringResource(R.string.pip_enable_toggle), settings.popupPlayEnabled) {
+                                    update(settings.copy(popupPlayEnabled = it))
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(stringResource(R.string.pip_window_controls_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                ChoiceRow(stringResource(R.string.pip_controls_prev_next), settings.popupPlayControls == "PrevNext") {
+                                    update(settings.copy(popupPlayControls = "PrevNext"))
+                                }
+                                ChoiceRow(stringResource(R.string.pip_controls_seek10), settings.popupPlayControls == "Seek10") {
+                                    update(settings.copy(popupPlayControls = "Seek10"))
+                                }
+                            }
+                            "tabs" -> {
+                                MusicTabsSettingsSection(settings = settings, onToggleTab = ::toggleMusicTab)
+                            }
+                            "list" -> {
+                                Text(
+                                    stringResource(R.string.pref_default_folder_view_mode),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
+                                )
+                                ChoiceRow(stringResource(R.string.view_mode_list), settings.folderViewMode.equals("LIST", ignoreCase = true)) {
+                                    update(settings.copy(folderViewMode = "LIST"))
+                                }
+                                ChoiceRow(stringResource(R.string.view_mode_grid), settings.folderViewMode.equals("GRID", ignoreCase = true)) {
+                                    update(settings.copy(folderViewMode = "GRID"))
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                ToggleRow(stringResource(R.string.settings_separate_view_title), settings.separateViewLayout) {
+                                    update(settings.copy(separateViewLayout = it))
+                                }
+                                Text(
+                                    stringResource(R.string.settings_separate_view_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 6.dp),
+                                )
+                                ToggleRow(stringResource(R.string.list_file_view), settings.fileView) { update(settings.copy(fileView = it)) }
+                                Text(
+                                    stringResource(R.string.list_file_view_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                                )
+                                ToggleRow(stringResource(R.string.list_show_all_folders), settings.showAllFolders) { update(settings.copy(showAllFolders = it)) }
+                                ToggleRow(stringResource(R.string.list_show_hidden), settings.showHiddenFiles) { update(settings.copy(showHiddenFiles = it)) }
+                                ToggleRow(stringResource(R.string.list_show_thumbnails), settings.showThumbnails) { update(settings.copy(showThumbnails = it)) }
+                                Spacer(Modifier.height(10.dp))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 0.5.dp)
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    text = stringResource(R.string.settings_tabs_header),
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(bottom = 4.dp),
+                                )
+                                MusicTabsSettingsSection(settings = settings, onToggleTab = ::toggleMusicTab)
+                            }
+                            "player" -> {
+                                ToggleRow(stringResource(R.string.player_resume_playback), settings.resumePlayback) { update(settings.copy(resumePlayback = it)) }
+                                ToggleRow(stringResource(R.string.player_background_play), settings.backgroundPlay) { enabled ->
+                                    update(settings.copy(backgroundPlay = enabled))
+                                    if (!enabled) {
+                                        PlaybackService.stop(context)
+                                        val pm = PlaybackManager.getInstance(context)
+                                        pm.setVideoBackgroundActive(false)
+                                        pm.setBackgroundPlaying(false)
                                     }
                                 }
-                                "pip" -> {
-                                    if (onOpenOverlaySettings != null) {
-                                        TextButton(onClick = onOpenOverlaySettings) {
-                                            Text(stringResource(R.string.overlay_settings_title), color = MaterialTheme.colorScheme.primary)
-                                        }
-                                    }
-                                    val isSupported = PipUtils.isPipSupported(context)
-                                    if (!isSupported) {
-                                        Text(
-                                            text = stringResource(R.string.pip_not_supported),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.padding(bottom = 8.dp),
-                                        )
-                                    }
-                                    ToggleRow(stringResource(R.string.pip_enable_toggle), settings.popupPlayEnabled) {
-                                        update(settings.copy(popupPlayEnabled = it))
-                                    }
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(stringResource(R.string.pip_window_controls_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    ChoiceRow(stringResource(R.string.pip_controls_prev_next), settings.popupPlayControls == "PrevNext") {
-                                        update(settings.copy(popupPlayControls = "PrevNext"))
-                                    }
-                                    ChoiceRow(stringResource(R.string.pip_controls_seek10), settings.popupPlayControls == "Seek10") {
-                                        update(settings.copy(popupPlayControls = "Seek10"))
-                                    }
+                                Text(
+                                    stringResource(R.string.player_background_play_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                                )
+                                ToggleRow(stringResource(R.string.player_auto_rotation), settings.autoScreenRotation) {
+                                    val nextOrient = if (it) "auto" else "landscape"
+                                    update(settings.copy(autoScreenRotation = it, screenOrientation = nextOrient))
                                 }
-                                "tabs" -> {
-                                    MusicTabsSettingsSection(settings = settings, onToggleTab = ::toggleMusicTab)
-                                }
-                                "list" -> {
+                                Text(
+                                    stringResource(R.string.player_auto_rotation_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                                )
+                                if (!settings.autoScreenRotation) {
                                     Text(
-                                        stringResource(R.string.pref_default_folder_view_mode),
+                                        stringResource(R.string.player_locked_orientation_header),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
                                     )
-                                    ChoiceRow(stringResource(R.string.view_mode_list), settings.folderViewMode.equals("LIST", ignoreCase = true)) {
-                                        update(settings.copy(folderViewMode = "LIST"))
+                                    ChoiceRow(stringResource(R.string.player_orientation_landscape), settings.screenOrientation.equals("landscape", ignoreCase = true)) {
+                                        update(settings.copy(screenOrientation = "landscape"))
                                     }
-                                    ChoiceRow(stringResource(R.string.view_mode_grid), settings.folderViewMode.equals("GRID", ignoreCase = true)) {
-                                        update(settings.copy(folderViewMode = "GRID"))
+                                    ChoiceRow(stringResource(R.string.player_orientation_portrait), settings.screenOrientation.equals("portrait", ignoreCase = true)) {
+                                        update(settings.copy(screenOrientation = "portrait"))
                                     }
-                                    Spacer(Modifier.height(8.dp))
-                                    ToggleRow(stringResource(R.string.settings_separate_view_title), settings.separateViewLayout) {
-                                        update(settings.copy(separateViewLayout = it))
-                                    }
-                                    Text(
-                                        stringResource(R.string.settings_separate_view_desc),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(bottom = 6.dp),
-                                    )
-                                    ToggleRow(stringResource(R.string.list_file_view), settings.fileView) { update(settings.copy(fileView = it)) }
-                                    Text(
-                                        stringResource(R.string.list_file_view_desc),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
-                                    )
-                                    ToggleRow(stringResource(R.string.list_show_all_folders), settings.showAllFolders) { update(settings.copy(showAllFolders = it)) }
-                                    ToggleRow(stringResource(R.string.list_show_hidden), settings.showHiddenFiles) { update(settings.copy(showHiddenFiles = it)) }
-                                    ToggleRow(stringResource(R.string.list_show_thumbnails), settings.showThumbnails) { update(settings.copy(showThumbnails = it)) }
-                                    Spacer(Modifier.height(10.dp))
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 0.5.dp)
-                                    Spacer(Modifier.height(10.dp))
-                                    Text(
-                                        text = stringResource(R.string.settings_tabs_header),
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.padding(bottom = 4.dp),
-                                    )
-                                    MusicTabsSettingsSection(settings = settings, onToggleTab = ::toggleMusicTab)
+                                    Spacer(Modifier.height(4.dp))
                                 }
-                                "player" -> {
-                                    ToggleRow(stringResource(R.string.player_resume_playback), settings.resumePlayback) { update(settings.copy(resumePlayback = it)) }
-                                    ToggleRow(stringResource(R.string.player_background_play), settings.backgroundPlay) { enabled ->
-                                        update(settings.copy(backgroundPlay = enabled))
-                                        if (!enabled) {
-                                            PlaybackService.stop(context)
-                                            val pm = PlaybackManager.getInstance(context)
-                                            pm.setVideoBackgroundActive(false)
-                                            pm.setBackgroundPlaying(false)
-                                        }
+                                ToggleRow(stringResource(R.string.player_gestures), settings.gesturesEnabled) { update(settings.copy(gesturesEnabled = it)) }
+                            }
+                            "decoder" -> {
+                                Text(
+                                    "Playback Engine",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                )
+                                listOf(
+                                    "MEDIA3" to "Media3 ExoPlayer (Default)",
+                                    "MPV" to "libmpv (Experimental Native Engine)",
+                                ).forEach { (engine, label) ->
+                                    ChoiceRow(label, settings.playerEngine.equals(engine, ignoreCase = true)) {
+                                        update(settings.copy(playerEngine = engine))
                                     }
-                                    Text(
-                                        stringResource(R.string.player_background_play_desc),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
-                                    )
-                                    ToggleRow(stringResource(R.string.player_auto_rotation), settings.autoScreenRotation) {
-                                        val nextOrient = if (it) "auto" else "landscape"
-                                        update(settings.copy(autoScreenRotation = it, screenOrientation = nextOrient))
-                                    }
-                                    Text(
-                                        stringResource(R.string.player_auto_rotation_desc),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
-                                    )
-                                    if (!settings.autoScreenRotation) {
-                                        Text(
-                                            stringResource(R.string.player_locked_orientation_header),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Decoder Mode",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                )
+                                listOf(
+                                    "HW" to stringResource(R.string.decoder_hw),
+                                    "HW+" to stringResource(R.string.decoder_hw_plus),
+                                    "SW" to stringResource(R.string.decoder_sw),
+                                ).forEach { (mode, label) ->
+                                    ChoiceRow(label, settings.decoderMode == mode) { update(settings.copy(decoderMode = mode)) }
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    stringResource(R.string.decoder_explanation),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            "subtitle" -> {
+                                Text(stringResource(R.string.subtitle_size_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "Small" to stringResource(R.string.subtitle_size_small),
+                                    "Normal" to stringResource(R.string.subtitle_size_normal),
+                                    "Large" to stringResource(R.string.subtitle_size_large),
+                                ).forEach { (size, label) ->
+                                    ChoiceRow(label, settings.subtitleSize == size) { update(settings.copy(subtitleSize = size)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_style_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "White" to stringResource(R.string.subtitle_style_white),
+                                    "Yellow" to stringResource(R.string.subtitle_style_yellow),
+                                    "Cyan" to stringResource(R.string.subtitle_style_cyan),
+                                    "Default" to stringResource(R.string.subtitle_style_default),
+                                ).forEach { (styleKey, styleLabel) ->
+                                    ChoiceRow(styleLabel, settings.subtitleStyle == styleKey) { update(settings.copy(subtitleStyle = styleKey)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_typeface_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "Default" to stringResource(R.string.subtitle_typeface_default),
+                                    "Sans" to stringResource(R.string.subtitle_typeface_sans),
+                                    "Serif" to stringResource(R.string.subtitle_typeface_serif),
+                                    "Mono" to stringResource(R.string.subtitle_typeface_mono),
+                                ).forEach { (face, label) ->
+                                    ChoiceRow(label, settings.subtitleTypeface == face) { update(settings.copy(subtitleTypeface = face)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_text_color_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "Preset" to stringResource(R.string.subtitle_text_preset),
+                                    "White" to stringResource(R.string.player_subtitle_style_white),
+                                    "Yellow" to stringResource(R.string.player_subtitle_style_yellow),
+                                    "Cyan" to stringResource(R.string.player_subtitle_style_cyan),
+                                    "Green" to stringResource(R.string.subtitle_color_green),
+                                    "Magenta" to stringResource(R.string.subtitle_color_magenta),
+                                    "Red" to stringResource(R.string.subtitle_color_red),
+                                    "Black" to stringResource(R.string.subtitle_color_black),
+                                ).forEach { (color, label) ->
+                                    ChoiceRow(label, settings.subtitleTextColor == color) { update(settings.copy(subtitleTextColor = color)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_bg_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "Transparent" to stringResource(R.string.subtitle_bg_transparent),
+                                    "Black" to stringResource(R.string.subtitle_bg_black),
+                                    "SemiBlack" to stringResource(R.string.subtitle_bg_semi),
+                                    "White" to stringResource(R.string.subtitle_bg_white),
+                                ).forEach { (bg, label) ->
+                                    ChoiceRow(label, settings.subtitleBackgroundColor == bg) { update(settings.copy(subtitleBackgroundColor = bg)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_border_color_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "Black" to stringResource(R.string.subtitle_border_black),
+                                    "White" to stringResource(R.string.subtitle_border_white),
+                                    "Yellow" to stringResource(R.string.subtitle_border_yellow),
+                                    "Transparent" to stringResource(R.string.subtitle_border_transparent),
+                                ).forEach { (border, label) ->
+                                    ChoiceRow(label, settings.subtitleBorderColor == border) { update(settings.copy(subtitleBorderColor = border)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_border_thickness_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "None" to stringResource(R.string.sort_field_none),
+                                    "Thin" to stringResource(R.string.subtitle_thickness_thin),
+                                    "Medium" to stringResource(R.string.subtitle_thickness_medium),
+                                    "Thick" to stringResource(R.string.subtitle_thickness_thick),
+                                ).forEach { (thickness, label) ->
+                                    ChoiceRow(label, settings.subtitleBorderThickness == thickness) { update(settings.copy(subtitleBorderThickness = thickness)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                ToggleRow(stringResource(R.string.subtitle_bold_label), settings.subtitleBold) { update(settings.copy(subtitleBold = it)) }
+                                ToggleRow(stringResource(R.string.subtitle_shadow_label), settings.subtitleShadow) { update(settings.copy(subtitleShadow = it)) }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_alignment_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "Bottom" to stringResource(R.string.subtitle_align_bottom),
+                                    "Center" to stringResource(R.string.subtitle_align_center),
+                                    "Top" to stringResource(R.string.subtitle_align_top),
+                                ).forEach { (align, label) ->
+                                    ChoiceRow(label, settings.subtitleAlignment == align) { update(settings.copy(subtitleAlignment = align)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_padding_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "Small" to stringResource(R.string.player_subtitle_size_small),
+                                    "Medium" to stringResource(R.string.pip_size_medium),
+                                    "Large" to stringResource(R.string.player_subtitle_size_large),
+                                ).forEach { (padding, label) ->
+                                    ChoiceRow(label, settings.subtitleBottomPadding == padding) { update(settings.copy(subtitleBottomPadding = padding)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_scale_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "75" to stringResource(R.string.subtitle_scale_75),
+                                    "100" to stringResource(R.string.subtitle_scale_100),
+                                    "125" to stringResource(R.string.subtitle_scale_125),
+                                    "150" to stringResource(R.string.subtitle_scale_150),
+                                ).forEach { (scale, label) ->
+                                    ChoiceRow(label, settings.subtitleScale == scale) { update(settings.copy(subtitleScale = scale)) }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.subtitle_ass_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                listOf(
+                                    "Default" to stringResource(R.string.subtitle_ass_default),
+                                    "Scale" to stringResource(R.string.subtitle_ass_scale),
+                                    "Force" to stringResource(R.string.subtitle_ass_force),
+                                    "Strip" to stringResource(R.string.subtitle_ass_strip),
+                                ).forEach { (mode, label) ->
+                                    ChoiceRow(label, settings.subtitleAssOverride == mode) { update(settings.copy(subtitleAssOverride = mode)) }
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    stringResource(R.string.subtitle_ass_mpv_note),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            "general" -> {
+                                OutlinedButton(onClick = {
+                                    val defaultSettings = AppSettings()
+                                    update(defaultSettings)
+                                }) {
+                                    Text(stringResource(R.string.general_reset_button), color = MaterialTheme.colorScheme.primary)
+                                }
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    stringResource(R.string.general_language_hint),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            "development" -> {
+                                DevelopmentSettingsSection(
+                                    context = context,
+                                    playbackManager = actualPlaybackManager,
+                                    settings = settings,
+                                )
+                            }
+                            "about" -> {
+                                Text(
+                                    stringResource(R.string.about_app_description),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                if (onOpenAboutBeta != null) {
+                                    OutlinedButton(
+                                        onClick = onOpenAboutBeta,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(10.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Info,
+                                            null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp),
                                         )
-                                        ChoiceRow(stringResource(R.string.player_orientation_landscape), settings.screenOrientation.equals("landscape", ignoreCase = true)) {
-                                            update(settings.copy(screenOrientation = "landscape"))
-                                        }
-                                        ChoiceRow(stringResource(R.string.player_orientation_portrait), settings.screenOrientation.equals("portrait", ignoreCase = true)) {
-                                            update(settings.copy(screenOrientation = "portrait"))
-                                        }
-                                        Spacer(Modifier.height(4.dp))
-                                    }
-                                    ToggleRow(stringResource(R.string.player_gestures), settings.gesturesEnabled) { update(settings.copy(gesturesEnabled = it)) }
-                                }
-                                "decoder" -> {
-                                    Text(
-                                        "Playback Engine",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(vertical = 4.dp),
-                                    )
-                                    listOf(
-                                        "MEDIA3" to "Media3 ExoPlayer (Default)",
-                                        "MPV" to "libmpv (Experimental Native Engine)",
-                                    ).forEach { (engine, label) ->
-                                        ChoiceRow(label, settings.playerEngine.equals(engine, ignoreCase = true)) {
-                                            update(settings.copy(playerEngine = engine))
-                                        }
-                                    }
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(
-                                        "Decoder Mode",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(vertical = 4.dp),
-                                    )
-                                    listOf(
-                                        "HW" to stringResource(R.string.decoder_hw),
-                                        "HW+" to stringResource(R.string.decoder_hw_plus),
-                                        "SW" to stringResource(R.string.decoder_sw),
-                                    ).forEach { (mode, label) ->
-                                        ChoiceRow(label, settings.decoderMode == mode) { update(settings.copy(decoderMode = mode)) }
-                                    }
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        stringResource(R.string.decoder_explanation),
-                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                "subtitle" -> {
-                                    Text(stringResource(R.string.subtitle_size_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "Small" to stringResource(R.string.subtitle_size_small),
-                                        "Normal" to stringResource(R.string.subtitle_size_normal),
-                                        "Large" to stringResource(R.string.subtitle_size_large),
-                                    ).forEach { (size, label) ->
-                                        ChoiceRow(label, settings.subtitleSize == size) { update(settings.copy(subtitleSize = size)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_style_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "White" to stringResource(R.string.subtitle_style_white),
-                                        "Yellow" to stringResource(R.string.subtitle_style_yellow),
-                                        "Cyan" to stringResource(R.string.subtitle_style_cyan),
-                                        "Default" to stringResource(R.string.subtitle_style_default),
-                                    ).forEach { (styleKey, styleLabel) ->
-                                        ChoiceRow(styleLabel, settings.subtitleStyle == styleKey) { update(settings.copy(subtitleStyle = styleKey)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_typeface_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "Default" to stringResource(R.string.subtitle_typeface_default),
-                                        "Sans" to stringResource(R.string.subtitle_typeface_sans),
-                                        "Serif" to stringResource(R.string.subtitle_typeface_serif),
-                                        "Mono" to stringResource(R.string.subtitle_typeface_mono),
-                                    ).forEach { (face, label) ->
-                                        ChoiceRow(label, settings.subtitleTypeface == face) { update(settings.copy(subtitleTypeface = face)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_text_color_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "Preset" to stringResource(R.string.subtitle_text_preset),
-                                        "White" to stringResource(R.string.player_subtitle_style_white),
-                                        "Yellow" to stringResource(R.string.player_subtitle_style_yellow),
-                                        "Cyan" to stringResource(R.string.player_subtitle_style_cyan),
-                                        "Green" to stringResource(R.string.subtitle_color_green),
-                                        "Magenta" to stringResource(R.string.subtitle_color_magenta),
-                                        "Red" to stringResource(R.string.subtitle_color_red),
-                                        "Black" to stringResource(R.string.subtitle_color_black),
-                                    ).forEach { (color, label) ->
-                                        ChoiceRow(label, settings.subtitleTextColor == color) { update(settings.copy(subtitleTextColor = color)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_bg_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "Transparent" to stringResource(R.string.subtitle_bg_transparent),
-                                        "Black" to stringResource(R.string.subtitle_bg_black),
-                                        "SemiBlack" to stringResource(R.string.subtitle_bg_semi),
-                                        "White" to stringResource(R.string.subtitle_bg_white),
-                                    ).forEach { (bg, label) ->
-                                        ChoiceRow(label, settings.subtitleBackgroundColor == bg) { update(settings.copy(subtitleBackgroundColor = bg)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_border_color_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "Black" to stringResource(R.string.subtitle_border_black),
-                                        "White" to stringResource(R.string.subtitle_border_white),
-                                        "Yellow" to stringResource(R.string.subtitle_border_yellow),
-                                        "Transparent" to stringResource(R.string.subtitle_border_transparent),
-                                    ).forEach { (border, label) ->
-                                        ChoiceRow(label, settings.subtitleBorderColor == border) { update(settings.copy(subtitleBorderColor = border)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_border_thickness_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "None" to stringResource(R.string.sort_field_none),
-                                        "Thin" to stringResource(R.string.subtitle_thickness_thin),
-                                        "Medium" to stringResource(R.string.subtitle_thickness_medium),
-                                        "Thick" to stringResource(R.string.subtitle_thickness_thick),
-                                    ).forEach { (thickness, label) ->
-                                        ChoiceRow(label, settings.subtitleBorderThickness == thickness) { update(settings.copy(subtitleBorderThickness = thickness)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    ToggleRow(stringResource(R.string.subtitle_bold_label), settings.subtitleBold) { update(settings.copy(subtitleBold = it)) }
-                                    ToggleRow(stringResource(R.string.subtitle_shadow_label), settings.subtitleShadow) { update(settings.copy(subtitleShadow = it)) }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_alignment_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "Bottom" to stringResource(R.string.subtitle_align_bottom),
-                                        "Center" to stringResource(R.string.subtitle_align_center),
-                                        "Top" to stringResource(R.string.subtitle_align_top),
-                                    ).forEach { (align, label) ->
-                                        ChoiceRow(label, settings.subtitleAlignment == align) { update(settings.copy(subtitleAlignment = align)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_padding_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "Small" to stringResource(R.string.player_subtitle_size_small),
-                                        "Medium" to stringResource(R.string.pip_size_medium),
-                                        "Large" to stringResource(R.string.player_subtitle_size_large),
-                                    ).forEach { (padding, label) ->
-                                        ChoiceRow(label, settings.subtitleBottomPadding == padding) { update(settings.copy(subtitleBottomPadding = padding)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_scale_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "75" to stringResource(R.string.subtitle_scale_75),
-                                        "100" to stringResource(R.string.subtitle_scale_100),
-                                        "125" to stringResource(R.string.subtitle_scale_125),
-                                        "150" to stringResource(R.string.subtitle_scale_150),
-                                    ).forEach { (scale, label) ->
-                                        ChoiceRow(label, settings.subtitleScale == scale) { update(settings.copy(subtitleScale = scale)) }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(stringResource(R.string.subtitle_ass_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                                    listOf(
-                                        "Default" to stringResource(R.string.subtitle_ass_default),
-                                        "Scale" to stringResource(R.string.subtitle_ass_scale),
-                                        "Force" to stringResource(R.string.subtitle_ass_force),
-                                        "Strip" to stringResource(R.string.subtitle_ass_strip),
-                                    ).forEach { (mode, label) ->
-                                        ChoiceRow(label, settings.subtitleAssOverride == mode) { update(settings.copy(subtitleAssOverride = mode)) }
-                                    }
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        stringResource(R.string.subtitle_ass_mpv_note),
-                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                "general" -> {
-                                    OutlinedButton(onClick = {
-                                        val defaultSettings = AppSettings()
-                                        update(defaultSettings)
-                                    }) {
-                                        Text(stringResource(R.string.general_reset_button), color = MaterialTheme.colorScheme.primary)
-                                    }
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(
-                                        stringResource(R.string.general_language_hint),
-                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                "development" -> {
-                                    DevelopmentSettingsSection(
-                                        context = context,
-                                        playbackManager = actualPlaybackManager,
-                                        settings = settings,
-                                    )
-                                }
-                                "about" -> {
-                                    Text(
-                                        stringResource(R.string.about_app_description),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Spacer(Modifier.height(10.dp))
-                                    if (onOpenAboutBeta != null) {
-                                        OutlinedButton(
-                                            onClick = onOpenAboutBeta,
-                                            modifier = Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(10.dp),
-                                        ) {
-                                            Icon(
-                                                Icons.Filled.Info,
-                                                null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(18.dp),
-                                            )
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(
-                                                stringResource(R.string.about_beta_open_page_button),
-                                                color = MaterialTheme.colorScheme.primary,
-                                                fontWeight = FontWeight.SemiBold,
-                                            )
-                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            stringResource(R.string.about_beta_open_page_button),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
                                     }
                                 }
                             }
                         }
                     }
                 }
-                HorizontalDivider(modifier = Modifier.padding(start = 74.dp), color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
             }
         }
     }
