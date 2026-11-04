@@ -875,4 +875,9 @@
     <string name="transfer_p2p_spec">第 5 阶段的 P2P 文件传输协议规范。</string>
     <string name="transfer_send">发送</string>
     <string name="transfer_receive">接收</string>
+
+    <string name="notification_subtext_bg_video">后台音频 • 视频已暂停</string>
+    <string name="notification_subtext_music">MPx 音乐</string>
+    <string name="notification_content_video_bg">视频（后台仅音频）</string>
+    <string name="notification_content_track">MPx 曲目</string>
 </resources>

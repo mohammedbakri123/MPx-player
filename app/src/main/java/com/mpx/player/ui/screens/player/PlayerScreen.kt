@@ -113,6 +113,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -239,6 +240,58 @@ private fun VerticalIndicatorBar(
     }
 }
 
+// Slim gesture HUD modelled on MX's brightbar (issue #94): a narrow vertical
+// strip — percent text on top, a slim 4dp bar, a small icon at the bottom —
+// over a subtle vertical gradient. No heavy black box, no colored border.
+@Composable
+private fun GestureHud(
+    percentText: String,
+    fraction: Float,
+    icon: ImageVector,
+    iconDescription: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .width(56.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Black.copy(alpha = 0.45f),
+                        Color.Black.copy(alpha = 0.65f),
+                    ),
+                ),
+            )
+            .padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = percentText,
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(8.dp))
+            VerticalIndicatorBar(
+                fraction = fraction,
+                height = 92.dp,
+                width = 4.dp,
+                trackColor = Color.White.copy(alpha = 0.25f),
+                progressColor = Color.White,
+            )
+            Spacer(Modifier.height(8.dp))
+            Icon(
+                imageVector = icon,
+                contentDescription = iconDescription,
+                tint = Color.White,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
 // Modern blur for player dialogs (issue #85): on Android 12+ the dialog
 // window blurs whatever is behind it, so the dialog reads as frosted
 // glass instead of a flat panel. On older Android the flag is a no-op
@@ -269,6 +322,9 @@ fun PlayerScreen(
     modifier: Modifier = Modifier,
     playbackManager: PlaybackManager = PlaybackManager.getInstance(LocalContext.current),
     settingsRepository: AppSettingsRepository? = null,
+    // True while the activity is in system PiP mode: hide every overlay so
+    // the PiP window shows video only (issue #98).
+    isInPipMode: Boolean = false,
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
@@ -806,16 +862,24 @@ fun PlayerScreen(
             }
         }
 
-        // Horizontal Scrubbing HUD Indicator
-        if (isDraggingSeek) {
-            Surface(
-                color = Color.Black.copy(alpha = 0.85f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
-                modifier = Modifier.align(Alignment.Center),
+        // Horizontal Scrubbing HUD — compact gradient pill, no heavy box
+        if (!isInPipMode && isDraggingSeek) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.45f),
+                                Color.Black.copy(alpha = 0.65f),
+                            ),
+                        ),
+                    )
+                    .padding(horizontal = 24.dp, vertical = 14.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     val sign = if (seekDeltaMs >= 0) "+" else "-"
@@ -824,136 +888,92 @@ fun PlayerScreen(
 
                     Text(
                         text = stringResource(R.string.player_hud_scrub, deltaStr),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = "${formatTimeMs(seekTargetMs)} / ${formatTimeMs(currentDuration)}",
-                        color = Color.White,
+                        color = Color.White.copy(alpha = 0.8f),
                         fontSize = 13.sp,
                     )
                 }
             }
         }
 
-        // Brightness HUD Indicator (Left half vertical drag)
-        if (showBrightnessIndicator) {
-            Surface(
-                color = Color.Black.copy(alpha = 0.85f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+        // Brightness HUD (Left half vertical drag) — slim MX-brightbar strip
+        if (!isInPipMode && showBrightnessIndicator) {
+            val brightnessPercent = (appliedBrightness * 100).roundToInt().coerceIn(0, 100)
+            val icon = when {
+                brightnessPercent < 33 -> Icons.Filled.BrightnessLow
+                brightnessPercent < 67 -> Icons.Filled.BrightnessMedium
+                else -> Icons.Filled.BrightnessHigh
+            }
+            GestureHud(
+                percentText = "$brightnessPercent%",
+                fraction = appliedBrightness,
+                icon = icon,
+                iconDescription = stringResource(R.string.player_cd_brightness),
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .padding(start = 48.dp),
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    val brightnessPercent = (appliedBrightness * 100).roundToInt().coerceIn(0, 100)
-                    val icon = when {
-                        brightnessPercent < 33 -> Icons.Filled.BrightnessLow
-                        brightnessPercent < 67 -> Icons.Filled.BrightnessMedium
-                        else -> Icons.Filled.BrightnessHigh
-                    }
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = stringResource(R.string.player_cd_brightness),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp),
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    VerticalIndicatorBar(
-                        fraction = appliedBrightness,
-                        height = 96.dp,
-                        width = 6.dp,
-                        trackColor = Color.White.copy(alpha = 0.25f),
-                        progressColor = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text = "$brightnessPercent%",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                    )
-                }
-            }
+                    .padding(start = 32.dp),
+            )
         }
 
-        // Volume HUD Indicator (Right half vertical drag)
-        if (showVolumeIndicator) {
-            Surface(
-                color = Color.Black.copy(alpha = 0.85f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+        // Volume HUD (Right half vertical drag) — slim MX-brightbar strip
+        if (!isInPipMode && showVolumeIndicator) {
+            val volumeRange = (volumeMax - volumeMin).coerceAtLeast(1)
+            val volumePercent = (((appliedVolume - volumeMin).toFloat() / volumeRange.toFloat()) * 100).roundToInt().coerceIn(0, 100)
+            val icon = when {
+                appliedVolume <= volumeMin -> Icons.AutoMirrored.Filled.VolumeMute
+                volumePercent < 50 -> Icons.AutoMirrored.Filled.VolumeDown
+                else -> Icons.AutoMirrored.Filled.VolumeUp
+            }
+            GestureHud(
+                percentText = "$volumePercent%",
+                fraction = (appliedVolume - volumeMin).toFloat() / volumeRange.toFloat(),
+                icon = icon,
+                iconDescription = stringResource(R.string.player_cd_volume),
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .padding(end = 48.dp),
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    val volumeRange = (volumeMax - volumeMin).coerceAtLeast(1)
-                    val volumePercent = (((appliedVolume - volumeMin).toFloat() / volumeRange.toFloat()) * 100).roundToInt().coerceIn(0, 100)
-                    val icon = when {
-                        appliedVolume <= volumeMin -> Icons.AutoMirrored.Filled.VolumeMute
-                        volumePercent < 50 -> Icons.AutoMirrored.Filled.VolumeDown
-                        else -> Icons.AutoMirrored.Filled.VolumeUp
-                    }
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = stringResource(R.string.player_cd_volume),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp),
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    VerticalIndicatorBar(
-                        fraction = (appliedVolume - volumeMin).toFloat() / volumeRange.toFloat(),
-                        height = 96.dp,
-                        width = 6.dp,
-                        trackColor = Color.White.copy(alpha = 0.25f),
-                        progressColor = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text = "$volumePercent%",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                    )
-                }
-            }
+                    .padding(end = 32.dp),
+            )
         }
 
-        // Side Seek HUD Indicator (Double-tap left -10s / right +10s feedback)
-        sideSeekDirection?.let { direction ->
+        // Side Seek HUD (Double-tap left -10s / right +10s feedback) —
+        // same slim gradient-strip language as the volume/brightness HUDs
+        if (!isInPipMode) sideSeekDirection?.let { direction ->
             val isBackward = direction == SideSeekDirection.BACKWARD
-            Surface(
-                color = Color.Black.copy(alpha = 0.85f),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+            Box(
                 modifier = Modifier
                     .align(if (isBackward) Alignment.CenterStart else Alignment.CenterEnd)
-                    .padding(start = if (isBackward) 48.dp else 0.dp, end = if (!isBackward) 48.dp else 0.dp),
+                    .padding(start = if (isBackward) 32.dp else 0.dp, end = if (!isBackward) 32.dp else 0.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.45f),
+                                Color.Black.copy(alpha = 0.65f),
+                            ),
+                        ),
+                    )
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Icon(
                         imageVector = if (isBackward) Icons.Filled.Replay10 else Icons.Filled.Forward10,
                         contentDescription = if (isBackward) stringResource(R.string.player_cd_seek_back) else stringResource(R.string.player_cd_seek_forward),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp),
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp),
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = if (isBackward) "-10s" else "+10s",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                     )
@@ -964,22 +984,21 @@ fun PlayerScreen(
                         } else {
                             formatTimeMs(state.currentPositionMs)
                         },
-                        color = Color.White,
+                        color = Color.White.copy(alpha = 0.8f),
                         fontSize = 12.sp,
                     )
                 }
             }
         }
 
-        // In-memory Resume Notice Banner
-        state.resumedFromMs?.let { resumeMs ->
+        // In-memory Resume Notice Banner (theme surface, no heavy box)
+        if (!isInPipMode) state.resumedFromMs?.let { resumeMs ->
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 72.dp),
-                color = Color.Black.copy(alpha = 0.85f),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -987,7 +1006,7 @@ fun PlayerScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.player_resumed_from, formatTimeMs(resumeMs)),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
@@ -1003,27 +1022,29 @@ fun PlayerScreen(
                         },
                     )
                     Spacer(Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.player_cd_dismiss),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clickable { playbackManager.clearResumedNotification() },
-                    )
+                    IconButton(
+                        onClick = { playbackManager.clearResumedNotification() },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = stringResource(R.string.player_cd_dismiss),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
                 }
             }
         }
 
-        // Platform Decoder Fallback Notice Banner
-        state.decoderFallbackNote?.let { fallbackMsg ->
+        // Platform Decoder Fallback Notice Banner (theme surface, no orange box)
+        if (!isInPipMode) state.decoderFallbackNote?.let { fallbackMsg ->
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = if (state.resumedFromMs != null) 124.dp else 72.dp, start = 16.dp, end = 16.dp),
-                color = Color.Black.copy(alpha = 0.90f),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, Color(0xFFFFB74D)),
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -1032,32 +1053,35 @@ fun PlayerScreen(
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = Color(0xFFFFB74D),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = fallbackMsg,
-                        color = Color(0xFFFFE082),
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.player_cd_dismiss),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clickable { playbackManager.clearDecoderFallbackNote() },
-                    )
+                    IconButton(
+                        onClick = { playbackManager.clearDecoderFallbackNote() },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = stringResource(R.string.player_cd_dismiss),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
             }
         }
 
-        // Honest User Notification Banner (Background play status, external subtitle notice, etc.)
-        state.userNotification?.let { userMsg ->
+        // Honest User Notification Banner (theme surface, compact)
+        if (!isInPipMode) state.userNotification?.let { userMsg ->
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -1066,9 +1090,8 @@ fun PlayerScreen(
                         start = 16.dp,
                         end = 16.dp,
                     ),
-                color = Color.Black.copy(alpha = 0.90f),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -1077,13 +1100,13 @@ fun PlayerScreen(
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = userMsg,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                         modifier = Modifier.weight(1f),
@@ -1104,20 +1127,24 @@ fun PlayerScreen(
                         )
                     }
                     Spacer(Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.player_cd_dismiss),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clickable { playbackManager.clearUserNotification() },
-                    )
+                    IconButton(
+                        onClick = { playbackManager.clearUserNotification() },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = stringResource(R.string.player_cd_dismiss),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
             }
         }
 
         // Single floating unlock button when screen is locked
-        if (state.isLocked) {
+        // (hidden in PiP: the window shows video only)
+        if (!isInPipMode && state.isLocked) {
             AnimatedVisibility(
                 visible = controlsVisible,
                 enter = fadeIn(),
@@ -1144,9 +1171,9 @@ fun PlayerScreen(
             return@Box
         }
 
-        // Full Controls Overlay
+        // Full Controls Overlay (hidden in PiP: the window shows video only)
         AnimatedVisibility(
-            visible = controlsVisible,
+            visible = controlsVisible && !isInPipMode,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.fillMaxSize(),
@@ -1222,9 +1249,8 @@ fun PlayerScreen(
                                     currentSettings = realSettingsRepo.load()
                                     Toast.makeText(context, context.getString(R.string.player_toast_decoder, context.getString(nextDecoder.titleRes)), Toast.LENGTH_SHORT).show()
                                 },
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                            color = Color.Transparent,
                             shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                         ) {
                             Text(
                                 text = decoderPillText,
@@ -1348,17 +1374,13 @@ fun PlayerScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            // Screen lock, in-row instead of floating mid-video
-                            // Glassmorphic button: translucent fill + hairline
-                            // border (ui-ux-pro-max glassmorphism spec), icon
-                            // stays full white for contrast on the dark scrim.
+                            // Screen lock, in-row instead of floating mid-video.
+                            // MX-faithful transparent button (issue #94): no
+                            // glass fill, no border — white icon on the scrim.
                             IconButton(
                                 onClick = { playbackManager.setLocked(true) },
                                 modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.12f))
-                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+                                    .size(50.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.LockOpen,
@@ -1373,10 +1395,7 @@ fun PlayerScreen(
                                 onClick = { playbackManager.skipPrevious() },
                                 enabled = state.hasPrevious,
                                 modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.12f))
-                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+                                    .size(50.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.SkipPrevious,
@@ -1390,10 +1409,7 @@ fun PlayerScreen(
                             IconButton(
                                 onClick = { playbackManager.skipBackward(10_000L) },
                                 modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.12f))
-                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+                                    .size(50.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Replay10,
@@ -1404,12 +1420,12 @@ fun PlayerScreen(
                             }
 
                             // Hero Play/Pause Button
+                            // MX-faithful: transparent play/pause, larger white
+                            // icon instead of a filled hero circle.
                             IconButton(
                                 onClick = { playbackManager.togglePlayPause() },
                                 modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary),
+                                    .size(50.dp),
                             ) {
                                 Icon(
                                     imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -1423,10 +1439,7 @@ fun PlayerScreen(
                             IconButton(
                                 onClick = { playbackManager.skipForward(10_000L) },
                                 modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.12f))
-                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+                                    .size(50.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Forward10,
@@ -1441,10 +1454,7 @@ fun PlayerScreen(
                                 onClick = { playbackManager.skipNext() },
                                 enabled = state.hasNext,
                                 modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.12f))
-                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+                                    .size(50.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.SkipNext,

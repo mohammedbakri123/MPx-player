@@ -875,4 +875,9 @@
     <string name="transfer_p2p_spec">Спецификация протокола P2P-передачи файлов на этапе 5.</string>
     <string name="transfer_send">Отправить</string>
     <string name="transfer_receive">Получить</string>
+
+    <string name="notification_subtext_bg_video">Фоновый звук • Видео приостановлено</string>
+    <string name="notification_subtext_music">Музыка MPx</string>
+    <string name="notification_content_video_bg">Видео (только звук в фоне)</string>
+    <string name="notification_content_track">Трек MPx</string>
 </resources>

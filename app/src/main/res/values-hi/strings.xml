@@ -875,4 +875,9 @@
     <string name="transfer_p2p_spec">चरण 5 में P2P फ़ाइल स्थानांतरण प्रोटोकॉल विनिर्देश।</string>
     <string name="transfer_send">भेजें</string>
     <string name="transfer_receive">प्राप्त करें</string>
+
+    <string name="notification_subtext_bg_video">बैकग्राउंड ऑडियो • वीडियो रुका हुआ</string>
+    <string name="notification_subtext_music">MPx संगीत</string>
+    <string name="notification_content_video_bg">वीडियो (बैकग्राउंड में केवल ऑडियो)</string>
+    <string name="notification_content_track">MPx ट्रैक</string>
 </resources>

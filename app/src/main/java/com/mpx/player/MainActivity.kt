@@ -209,6 +209,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
+        // Never pause/stop for PiP: entering PiP pauses the activity but
+        // keeps it visible, and some OEMs also deliver onStop on PiP entry
+        // (issue #98). The original logic below is untouched for non-PiP.
+        if (isInPipMode) return
         val settings = settingsRepository.load()
         val playbackManager = PlaybackManager.getInstance(this)
         val state = playbackManager.playbackState.value
@@ -271,7 +275,11 @@ class MainActivity : ComponentActivity() {
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         val settings = settingsRepository.load()
-        if (settings.backgroundPlay && settings.popupPlayEnabled) {
+        // Home-button PiP follows the PiP setting alone (issue #98): with
+        // the old backgroundPlay requirement, the default backgroundPlay=false
+        // meant pressing Home just stopped playback and never entered PiP.
+        // PiP keeps the video visible, so it is not "background play".
+        if (settings.popupPlayEnabled) {
             val playbackManager = PlaybackManager.getInstance(this)
             val state = playbackManager.playbackState.value
             if (state.isPlaying && state.currentItem?.isVideo == true) {
@@ -491,6 +499,7 @@ fun MpxApp(
                     onClose = { navController.popBackStack() },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
+                    isInPipMode = isInPipMode,
                 )
             }
         }

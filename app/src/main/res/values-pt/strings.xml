@@ -875,4 +875,9 @@
     <string name="transfer_p2p_spec">Especificação do protocolo de transferência de arquivos P2P na fase 5.</string>
     <string name="transfer_send">Enviar</string>
     <string name="transfer_receive">Receber</string>
+
+    <string name="notification_subtext_bg_video">Áudio em segundo plano • Vídeo pausado</string>
+    <string name="notification_subtext_music">Música MPx</string>
+    <string name="notification_content_video_bg">Vídeo (apenas áudio em segundo plano)</string>
+    <string name="notification_content_track">Faixa MPx</string>
 </resources>

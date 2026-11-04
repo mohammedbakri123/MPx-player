@@ -875,4 +875,9 @@
     <string name="transfer_p2p_spec">مواصفات بروتوكول نقل الملفات المباشر (P2P) في المرحلة 5.</string>
     <string name="transfer_send">إرسال</string>
     <string name="transfer_receive">استلام</string>
+
+    <string name="notification_subtext_bg_video">صوت في الخلفية • إيقاف عرض الفيديو مؤقتًا</string>
+    <string name="notification_subtext_music">موسيقى MPx</string>
+    <string name="notification_content_video_bg">فيديو (صوت فقط في الخلفية)</string>
+    <string name="notification_content_track">مقطع MPx</string>
 </resources>
