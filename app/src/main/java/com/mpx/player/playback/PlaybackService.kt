@@ -243,16 +243,18 @@ class PlaybackService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        // Localised notification text (issue #99): action titles and
+        // subtexts were hardcoded English before.
         val honestSubtext = if (currentItem.isVideo) {
-            "Background Audio • Video rendering paused"
+            getString(R.string.notification_subtext_bg_video)
         } else {
-            "MPx Music"
+            getString(R.string.notification_subtext_music)
         }
 
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_small)
             .setContentTitle(currentItem.title)
-            .setContentText(currentItem.subtitle.ifBlank { if (currentItem.isVideo) "Video (Audio only in background)" else "MPx Track" })
+            .setContentText(currentItem.subtitle.ifBlank { if (currentItem.isVideo) getString(R.string.notification_content_video_bg) else getString(R.string.notification_content_track) })
             .setSubText(honestSubtext)
             .setContentIntent(openAppPendingIntent)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -260,28 +262,28 @@ class PlaybackService : Service() {
             .addAction(
                 NotificationCompat.Action(
                     R.drawable.ic_notification_prev,
-                    "Previous",
+                    getString(R.string.mini_player_prev),
                     prevPendingIntent,
                 ),
             )
             .addAction(
                 NotificationCompat.Action(
                     if (state.isPlaying) R.drawable.ic_notification_pause else R.drawable.ic_notification_play,
-                    if (state.isPlaying) "Pause" else "Play",
+                    if (state.isPlaying) getString(R.string.mini_player_pause) else getString(R.string.mini_player_play),
                     togglePendingIntent,
                 ),
             )
             .addAction(
                 NotificationCompat.Action(
                     R.drawable.ic_notification_next,
-                    "Next",
+                    getString(R.string.mini_player_next),
                     nextPendingIntent,
                 ),
             )
             .addAction(
                 NotificationCompat.Action(
                     R.drawable.ic_notification_close,
-                    "Stop",
+                    getString(R.string.mini_player_close),
                     stopPendingIntent,
                 ),
             )

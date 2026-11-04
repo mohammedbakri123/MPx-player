@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.app.PictureInPictureParams
 import android.app.RemoteAction
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Rect
@@ -162,13 +163,32 @@ object PipUtils {
         }
         builder.setActions(actions)
 
-        // 4. Android 12+ (API 31+) platform integration
+        // 4. Android 12+ (API 31+) platform integration.
+        // Auto-enter follows the PiP setting alone (issue #98): tying it to
+        // backgroundPlay meant Home never entered PiP with the default
+        // backgroundPlay=false, even though PiP itself keeps video visible.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            builder.setAutoEnterEnabled(settings.backgroundPlay && settings.popupPlayEnabled)
+            builder.setAutoEnterEnabled(settings.popupPlayEnabled)
             builder.setSeamlessResizeEnabled(true)
         }
 
         return builder.build()
+    }
+
+    /**
+     * Unwraps [ContextWrapper] layers (dialog windows, themed wrappers) to
+     * find the host [Activity]. This matters: the PiP button lives inside
+     * the Player Menu dialog, whose LocalContext is a dialog wrapper, not
+     * the activity — a plain `as? Activity` cast fails there and PiP entry
+     * silently returns false (issue #98).
+     */
+    private fun Context.findActivity(): Activity? {
+        var ctx: Context = this
+        while (ctx is ContextWrapper) {
+            if (ctx is Activity) return ctx
+            ctx = ctx.baseContext
+        }
+        return null
     }
 
     /**
@@ -183,7 +203,7 @@ object PipUtils {
         videoHeight: Int = 0,
     ): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val activity = context as? Activity ?: return false
+            val activity = context.findActivity() ?: return false
             if (activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
                 return try {
                     val realSettings = settings ?: SharedPrefsAppSettingsRepository(context).load()

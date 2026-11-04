@@ -938,7 +938,7 @@ class PlaybackManager private constructor(context: Context) {
                 isVideoBackgroundActive = active,
                 isBackgroundPlaying = active,
                 userNotification = if (active) {
-                    "Video background playback active: continuing audio only (video rendering paused)."
+                    appContext.getString(R.string.player_background_active_banner)
                 } else null,
             )
         }
