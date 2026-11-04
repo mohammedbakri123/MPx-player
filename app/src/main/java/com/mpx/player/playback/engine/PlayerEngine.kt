@@ -48,6 +48,12 @@ interface PlayerEngine {
     fun detachSurface()
 
     /**
+     * Surface size changed (SurfaceHolder.Callback.surfaceChanged). Default
+     * no-op; the mpv engine reports it as the "android-surface-size" property.
+     */
+    fun onSurfaceChanged(width: Int, height: Int) {}
+
+    /**
      * Loads a single media item with optional resume position.
      *
      * @param media Media item to load.
