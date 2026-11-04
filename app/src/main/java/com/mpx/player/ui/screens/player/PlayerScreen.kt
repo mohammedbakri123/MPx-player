@@ -115,6 +115,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -233,6 +235,28 @@ private fun VerticalIndicatorBar(
                     .clip(RoundedCornerShape(width / 2))
                     .background(progressColor),
             )
+        }
+    }
+}
+
+// Modern blur for player dialogs (issue #85): on Android 12+ the dialog
+// window blurs whatever is behind it, so the dialog reads as frosted
+// glass instead of a flat panel. On older Android the flag is a no-op
+// and the dialog keeps its solid surface, so readability never depends
+// on blur. Call this from inside a dialog's content (AlertDialog title
+// or text block), where LocalView resolves to the dialog's own window.
+@Composable
+private fun PlayerDialogBackdropBlur() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val view = LocalView.current
+        SideEffect {
+            val window = (view.parent as? DialogWindowProvider)?.window
+            window?.let {
+                it.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                it.attributes = it.attributes.apply {
+                    blurBehindRadius = (16 * view.resources.displayMetrics.density).toInt()
+                }
+            }
         }
     }
 }
@@ -385,6 +409,19 @@ fun PlayerScreen(
     // Double-tap side seek gesture state
     var sideSeekDirection by remember { mutableStateOf<SideSeekDirection?>(null) }
     var hideSideSeekJob by remember { mutableStateOf<Job?>(null) }
+
+    // MX-style auto-hide (issue #85): MX's bottom controller in screen.xml
+    // is visibility=gone by default and only appears on interaction. Mirror
+    // that here: while playing, hide the chrome a few seconds after it
+    // appears, so the video is not permanently covered. Stay visible while
+    // paused, while scrubbing/dragging, or while a dialog is open, so no
+    // interaction is ever cut off mid-use. Tap the video to bring it back.
+    LaunchedEffect(controlsVisible, state.isPlaying, activeDialog, isScrubbingSlider, isDraggingSeek) {
+        if (controlsVisible && state.isPlaying && activeDialog == null && !isScrubbingSlider && !isDraggingSeek) {
+            delay(3000)
+            controlsVisible = false
+        }
+    }
 
     val currentDuration = state.durationMs.coerceAtLeast(0L)
     val displayedCurrentTime = if (isScrubbingSlider && currentDuration > 0) {
@@ -1097,7 +1134,7 @@ fun PlayerScreen(
                         .align(Alignment.TopCenter)
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Black.copy(alpha = 0.85f), Color.Transparent),
+                                colors = listOf(Color.Black.copy(alpha = 0.75f), Color.Transparent),
                             ),
                         )
                         .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 24.dp),
@@ -1173,90 +1210,10 @@ fun PlayerScreen(
                             )
                         }
 
-                        IconButton(onClick = {
-                            state.currentItem?.let { item ->
-                                scope.launch {
-                                    playbackManager.persistenceRepository.toggleFavourite(
-                                        FavouriteItem(
-                                            mediaUri = item.uri,
-                                            mediaId = item.id,
-                                            title = item.title,
-                                            subtitle = item.subtitle,
-                                            isVideo = item.isVideo,
-                                            durationMs = item.durationMs,
-                                        )
-                                    )
-                                }
-                            }
-                        }) {
-                            Icon(
-                                imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = if (isFavourite) stringResource(R.string.player_cd_favourite_remove) else stringResource(R.string.player_cd_favourite_add),
-                                tint = if (isFavourite) Color(0xFFFF5252) else Color.White,
-                            )
-                        }
-
-                        IconButton(onClick = { activeDialog = "Audio Tracks" }) {
-                            Icon(
-                                imageVector = Icons.Filled.Audiotrack,
-                                contentDescription = stringResource(R.string.player_cd_audio_track),
-                                tint = if (state.audioTracks.size > 1) MaterialTheme.colorScheme.primary else Color.White,
-                            )
-                        }
-
-                        IconButton(onClick = { activeDialog = "Subtitles" }) {
-                            Icon(
-                                imageVector = Icons.Filled.Subtitles,
-                                contentDescription = stringResource(R.string.player_cd_subtitles),
-                                tint = if (state.selectedSubtitleTrackIndex != -1) MaterialTheme.colorScheme.primary else Color.White,
-                            )
-                        }
-
-                        IconButton(onClick = {
-                            val entered = PipUtils.enterPip(context)
-                            if (!entered) {
-                                val msg = if (!PipUtils.isPipSupported(context)) {
-                                    context.getString(R.string.player_pip_unsupported)
-                                } else {
-                                    context.getString(R.string.player_pip_unable)
-                                }
-                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                            }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.PictureInPictureAlt,
-                                contentDescription = stringResource(R.string.player_cd_popup_play),
-                                tint = Color.White,
-                            )
-                        }
-
-                        IconButton(onClick = {
-                            val nextMode = when {
-                                currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" -> "landscape"
-                                currentSettings.screenOrientation.equals("landscape", ignoreCase = true) -> "portrait"
-                                else -> "auto"
-                            }
-                            val isAuto = nextMode == "auto"
-                            val updated = currentSettings.copy(
-                                autoScreenRotation = isAuto,
-                                screenOrientation = nextMode,
-                            )
-                            currentSettings = updated
-                            realSettingsRepo.save(updated)
-                            val msg = when (nextMode) {
-                                "landscape" -> context.getString(R.string.toast_rotation_landscape)
-                                "portrait" -> context.getString(R.string.toast_rotation_portrait)
-                                else -> context.getString(R.string.toast_rotation_auto)
-                            }
-                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.ScreenRotation,
-                                contentDescription = stringResource(R.string.cd_screen_rotation),
-                                tint = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto") MaterialTheme.colorScheme.primary else Color.White,
-                            )
-                        }
-
+                        // (Favourite, audio tracks, subtitles, PiP and rotation
+                        // all live in the Player Menu dialog now, MX-overflow
+                        // style, so the top bar is just back + title + decoder
+                        // pill + menu. See the Player Menu rows below.)
                         IconButton(onClick = { activeDialog = "Player Menu" }) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
@@ -1267,24 +1224,8 @@ fun PlayerScreen(
                     }
                 }
 
-                // Left Side Screen Lock Button
-                IconButton(
-                    onClick = { playbackManager.setLocked(true) },
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 16.dp)
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.6f)),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.LockOpen,
-                        contentDescription = stringResource(R.string.player_cd_lock),
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
-
+                // (Screen lock lives in the transport row now, like MX's
+                // subnavibar lock, instead of floating mid-video.)
                 // Bottom Overlay Scrim
                 Box(
                     modifier = Modifier
@@ -1292,7 +1233,7 @@ fun PlayerScreen(
                         .align(Alignment.BottomCenter)
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.9f)),
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
                             ),
                         )
                         .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -1373,70 +1314,32 @@ fun PlayerScreen(
 
                         Spacer(Modifier.height(4.dp))
 
-                        // Shuffle / Repeat Row (issue #76): modes that really
-                        // change queue behaviour in PlaybackManager. Active
-                        // modes are tinted primary; repeat cycles OFF -> ALL -> ONE.
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            IconButton(
-                                onClick = { playbackManager.setShuffleEnabled(!state.shuffleEnabled) },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Shuffle,
-                                    contentDescription = stringResource(R.string.player_cd_shuffle),
-                                    tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(24.dp),
-                                )
-                            }
-                            IconButton(
-                                onClick = { playbackManager.cycleRepeatMode() },
-                            ) {
-                                Icon(
-                                    imageVector = if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
-                                    contentDescription = when (state.repeatMode) {
-                                        RepeatMode.ONE -> stringResource(R.string.player_cd_repeat_one)
-                                        RepeatMode.ALL -> stringResource(R.string.player_cd_repeat_all)
-                                        else -> stringResource(R.string.player_cd_repeat_off)
-                                    },
-                                    tint = if (state.repeatMode == RepeatMode.OFF) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp),
-                                )
-                            }
-                        }
-
-                        // Controls Row: Aspect Ratio, Prev, 10s Replay, Play/Pause Hero, 10s Forward, Next, Speed
+                        // Controls Row: Lock, Prev, 10s Replay, Play/Pause Hero,
+                        // 10s Forward, Next — MX's subnavibar transport set.
+                        // Aspect and speed live in the Player Menu dialog now;
+                        // shuffle/repeat moved there too (rows below).
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            // Aspect Ratio Toggle
-                            Surface(
+                            // Screen lock, in-row instead of floating mid-video
+                            // Glassmorphic button: translucent fill + hairline
+                            // border (ui-ux-pro-max glassmorphism spec), icon
+                            // stays full white for contrast on the dark scrim.
+                            IconButton(
+                                onClick = { playbackManager.setLocked(true) },
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .clickable {
-                                        val nextMode = when (state.aspectRatio) {
-                                            AspectRatioMode.FIT -> AspectRatioMode.FILL
-                                            AspectRatioMode.FILL -> AspectRatioMode.ZOOM
-                                            AspectRatioMode.ZOOM -> AspectRatioMode.SIXTEEN_NINE
-                                            AspectRatioMode.SIXTEEN_NINE -> AspectRatioMode.FOUR_THREE
-                                            AspectRatioMode.FOUR_THREE -> AspectRatioMode.ORIGINAL
-                                            AspectRatioMode.ORIGINAL -> AspectRatioMode.FIT
-                                        }
-                                        playbackManager.setAspectRatio(nextMode)
-                                    },
-                                color = Color.White.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(6.dp),
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.12f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
                             ) {
-                                Text(
-                                    text = stringResource(state.aspectRatio.labelRes),
-                                    color = Color.White,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                Icon(
+                                    imageVector = Icons.Filled.LockOpen,
+                                    contentDescription = stringResource(R.string.player_cd_lock),
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp),
                                 )
                             }
 
@@ -1444,6 +1347,11 @@ fun PlayerScreen(
                             IconButton(
                                 onClick = { playbackManager.skipPrevious() },
                                 enabled = state.hasPrevious,
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.12f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.SkipPrevious,
@@ -1454,7 +1362,14 @@ fun PlayerScreen(
                             }
 
                             // Replay 10s
-                            IconButton(onClick = { playbackManager.skipBackward(10_000L) }) {
+                            IconButton(
+                                onClick = { playbackManager.skipBackward(10_000L) },
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.12f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+                            ) {
                                 Icon(
                                     imageVector = Icons.Filled.Replay10,
                                     contentDescription = stringResource(R.string.player_cd_seek_back),
@@ -1480,7 +1395,14 @@ fun PlayerScreen(
                             }
 
                             // Forward 10s
-                            IconButton(onClick = { playbackManager.skipForward(10_000L) }) {
+                            IconButton(
+                                onClick = { playbackManager.skipForward(10_000L) },
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.12f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+                            ) {
                                 Icon(
                                     imageVector = Icons.Filled.Forward10,
                                     contentDescription = stringResource(R.string.player_cd_seek_forward),
@@ -1493,6 +1415,11 @@ fun PlayerScreen(
                             IconButton(
                                 onClick = { playbackManager.skipNext() },
                                 enabled = state.hasNext,
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.12f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.SkipNext,
@@ -1502,33 +1429,8 @@ fun PlayerScreen(
                                 )
                             }
 
-                            // Speed Toggle
-                            Surface(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .clickable {
-                                        val nextSpeed = when (state.speed) {
-                                            0.5f -> 0.75f
-                                            0.75f -> 1.0f
-                                            1.0f -> 1.25f
-                                            1.25f -> 1.5f
-                                            1.5f -> 2.0f
-                                            else -> 1.0f
-                                        }
-                                        playbackManager.setSpeed(nextSpeed)
-                                    },
-                                color = Color.White.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(6.dp),
-                            ) {
-                                Text(
-                                    text = "${state.speed}x",
-                                    color = Color.White,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                )
-                            }
                         }
+                        // (Speed lives in the Player Menu dialog now.)
 
                         // Sleep Timer active chip near controls
                         if (state.sleepTimerRemainingSeconds != null) {
@@ -1604,6 +1506,7 @@ fun PlayerScreen(
             tonalElevation = 0.dp,
             modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
+                PlayerDialogBackdropBlur()
                 Text(
                     text = stringResource(R.string.player_dialog_audio_tracks),
                     color = MaterialTheme.colorScheme.onSurface,
@@ -1671,6 +1574,7 @@ fun PlayerScreen(
             tonalElevation = 0.dp,
             modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
+                PlayerDialogBackdropBlur()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1952,6 +1856,7 @@ fun PlayerScreen(
             tonalElevation = 0.dp,
             modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
+                PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
@@ -2089,6 +1994,7 @@ fun PlayerScreen(
             tonalElevation = 0.dp,
             modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
             title = {
+                PlayerDialogBackdropBlur()
                 Text(
                     text = stringResource(R.string.player_menu_title),
                     color = MaterialTheme.colorScheme.onSurface,
@@ -2129,6 +2035,79 @@ fun PlayerScreen(
                         Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
                         Text(stringResource(R.string.player_menu_subtitles, if (state.selectedSubtitleTrackIndex == -1) stringResource(R.string.player_state_off) else stringResource(R.string.player_state_on)), color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                state.currentItem?.let { item ->
+                                    scope.launch {
+                                        playbackManager.persistenceRepository.toggleFavourite(
+                                            FavouriteItem(
+                                                mediaUri = item.uri,
+                                                mediaId = item.id,
+                                                title = item.title,
+                                                subtitle = item.subtitle,
+                                                isVideo = item.isVideo,
+                                                durationMs = item.durationMs,
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = null,
+                            tint = if (isFavourite) Color(0xFFFF5252) else MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            if (isFavourite) stringResource(R.string.player_cd_favourite_remove) else stringResource(R.string.player_cd_favourite_add),
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { playbackManager.setShuffleEnabled(!state.shuffleEnabled) }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Filled.Shuffle,
+                            contentDescription = null,
+                            tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.primary else Color.Gray,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "${stringResource(R.string.player_cd_shuffle)} (${if (state.shuffleEnabled) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)})",
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { playbackManager.cycleRepeatMode() }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
+                            contentDescription = null,
+                            tint = if (state.repeatMode == RepeatMode.OFF) Color.Gray else MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            when (state.repeatMode) {
+                                RepeatMode.ONE -> stringResource(R.string.player_cd_repeat_one)
+                                RepeatMode.ALL -> stringResource(R.string.player_cd_repeat_all)
+                                else -> stringResource(R.string.player_cd_repeat_off)
+                            },
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                     Row(
                         modifier = Modifier
@@ -2313,6 +2292,7 @@ fun PlayerScreen(
             onDismissRequest = { activeDialog = null },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             title = {
+                PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
@@ -2453,6 +2433,7 @@ fun PlayerScreen(
             onDismissRequest = { activeDialog = null },
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             title = {
+                PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
