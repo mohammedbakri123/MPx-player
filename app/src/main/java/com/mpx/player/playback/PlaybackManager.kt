@@ -49,6 +49,8 @@ class PlaybackManager private constructor(context: Context) {
     private var sleepTimerJob: Job? = null
     private var currentQueue: List<PlayableMedia> = emptyList()
     private var pendingSubtitleTrackLabel: String? = null
+    /** Pre-shuffle queue order, restored when shuffle is turned off (issue #76). */
+    private var unshuffledQueue: List<PlayableMedia>? = null
 
     private val initialDecoderMode: DecoderMode = resolveInitialDecoderMode()
 
@@ -100,8 +102,25 @@ class PlaybackManager private constructor(context: Context) {
             updatePosition()
             updateTracksState()
             if (playbackState == Player.STATE_ENDED) {
-                _playbackState.value.currentItem?.let {
-                    resumeManager.clearResumePosition(it.id)
+                // Repeat handling (issue #76): both engines report STATE_ENDED
+                // at the end of the playlist (Media3 only at the last item, mpv
+                // on eof-reached). Repeat ONE restarts the current item; repeat
+                // ALL wraps to the first item; OFF keeps the old behaviour.
+                val state = _playbackState.value
+                val current = state.currentItem
+                when {
+                    state.repeatMode == RepeatMode.ONE && current != null -> {
+                        engine.seekTo(0L)
+                        engine.play()
+                    }
+                    state.repeatMode == RepeatMode.ALL && current != null &&
+                        currentQueue.isNotEmpty() -> {
+                        engine.seekTo(0, 0L)
+                        engine.play()
+                    }
+                    else -> {
+                        current?.let { resumeManager.clearResumePosition(it.id) }
+                    }
                 }
             }
         }
@@ -416,15 +435,21 @@ class PlaybackManager private constructor(context: Context) {
         forceResume: Boolean = false,
     ) {
         if (items.isEmpty()) return
+        // A new queue is a new session: shuffle order does not carry over.
+        unshuffledQueue = null
         currentQueue = items
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
         val targetItem = items[targetIndex]
         val savedPos = resumeManager.getResumePosition(targetItem.id) ?: 0L
-        val shouldResume = (forceResume || settingsRepository.load().resumePlayback) &&
+        val settings = settingsRepository.load()
+        val shouldResume = (forceResume || settings.resumePlayback) &&
             savedPos > 2_000L
 
         engine.load(items, targetIndex, if (shouldResume) savedPos else 0L)
+        // Persisted default speed (issue #76): every new session starts here.
+        // The in-player speed toggle stays session-only (see setSpeed).
+        engine.setSpeed(settings.defaultPlaybackSpeed)
         if (autoPlay) {
             engine.play()
         }
@@ -457,6 +482,8 @@ class PlaybackManager private constructor(context: Context) {
                 hasPrevious = engine.hasPreviousMediaItem,
                 hasNext = engine.hasNextMediaItem,
                 resumedFromMs = if (shouldResume) savedPos else null,
+                speed = settings.defaultPlaybackSpeed,
+                shuffleEnabled = false,
             )
         }
         updatePosition()
@@ -539,6 +566,79 @@ class PlaybackManager private constructor(context: Context) {
     fun setSpeed(speed: Float) {
         engine.setSpeed(speed)
         _playbackState.update { it.copy(speed = speed) }
+    }
+
+    /** Cycles OFF -> ALL -> ONE -> OFF. The mode only changes end-of-queue
+     * behaviour (see the STATE_ENDED branch); it never invents tracks. */
+    fun cycleRepeatMode() {
+        val next = when (_playbackState.value.repeatMode) {
+            RepeatMode.OFF -> RepeatMode.ALL
+            RepeatMode.ALL -> RepeatMode.ONE
+            RepeatMode.ONE -> RepeatMode.OFF
+        }
+        _playbackState.update { it.copy(repeatMode = next) }
+    }
+
+    /**
+     * Toggles shuffle (issue #76). Enabling reorders the live queue with the
+     * currently playing item first and the rest shuffled, reloading the engine
+     * at the same position so playback continues uninterrupted; the current
+     * speed is re-applied after reload. Disabling restores the pre-shuffle
+     * order. A no-op with no current item (the flag still flips so the button
+     * reflects the request, and the next queue starts unshuffled).
+     */
+    fun setShuffleEnabled(enabled: Boolean) {
+        val state = _playbackState.value
+        if (enabled == state.shuffleEnabled && currentQueue.isNotEmpty()) return
+        val current = state.currentItem
+        if (current == null || currentQueue.isEmpty()) {
+            _playbackState.update { it.copy(shuffleEnabled = enabled) }
+            return
+        }
+        val position = engine.currentPosition
+        val wasPlaying = engine.isPlaying
+        val speed = state.speed
+        if (enabled) {
+            unshuffledQueue = currentQueue
+            val currentIndex = state.currentIndex.coerceIn(0, currentQueue.lastIndex)
+            val rest = currentQueue.filterIndexed { index, _ -> index != currentIndex }.shuffled()
+            val newQueue = listOf(currentQueue[currentIndex]) + rest
+            currentQueue = newQueue
+            engine.load(newQueue, 0, position)
+            engine.setSpeed(speed)
+            if (wasPlaying) engine.play()
+            _playbackState.update {
+                it.copy(
+                    queue = newQueue,
+                    currentIndex = 0,
+                    hasPrevious = false,
+                    hasNext = newQueue.size > 1,
+                    shuffleEnabled = true,
+                )
+            }
+        } else {
+            val original = unshuffledQueue
+            unshuffledQueue = null
+            if (original != null && original.isNotEmpty()) {
+                val index = original.indexOfFirst { it.id == current.id }.coerceAtLeast(0)
+                currentQueue = original
+                engine.load(original, index, position)
+                engine.setSpeed(speed)
+                if (wasPlaying) engine.play()
+                _playbackState.update {
+                    it.copy(
+                        queue = original,
+                        currentIndex = index,
+                        hasPrevious = index > 0,
+                        hasNext = index < original.lastIndex,
+                        shuffleEnabled = false,
+                    )
+                }
+            } else {
+                _playbackState.update { it.copy(shuffleEnabled = false) }
+            }
+        }
+        updatePosition()
     }
 
     fun setAspectRatio(mode: AspectRatioMode) {
@@ -699,10 +799,12 @@ class PlaybackManager private constructor(context: Context) {
         engine.stop()
         stopTicker()
         PlaybackService.stop(appContext)
+        unshuffledQueue = null
         _playbackState.update {
             it.copy(
                 currentItem = null,
                 queue = emptyList(),
+                shuffleEnabled = false,
                 isPlaying = false,
                 isBackgroundPlaying = false,
                 isVideoBackgroundActive = false,

@@ -67,7 +67,10 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -132,6 +135,7 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.RepeatMode
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.playback.resolveMedia3SubtitleStyle
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
@@ -1352,6 +1356,40 @@ fun PlayerScreen(
                         }
 
                         Spacer(Modifier.height(4.dp))
+
+                        // Shuffle / Repeat Row (issue #76): modes that really
+                        // change queue behaviour in PlaybackManager. Active
+                        // modes are tinted primary; repeat cycles OFF -> ALL -> ONE.
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            IconButton(
+                                onClick = { playbackManager.setShuffleEnabled(!state.shuffleEnabled) },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Shuffle,
+                                    contentDescription = stringResource(R.string.player_cd_shuffle),
+                                    tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            }
+                            IconButton(
+                                onClick = { playbackManager.cycleRepeatMode() },
+                            ) {
+                                Icon(
+                                    imageVector = if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
+                                    contentDescription = when (state.repeatMode) {
+                                        RepeatMode.ONE -> stringResource(R.string.player_cd_repeat_one)
+                                        RepeatMode.ALL -> stringResource(R.string.player_cd_repeat_all)
+                                        else -> stringResource(R.string.player_cd_repeat_off)
+                                    },
+                                    tint = if (state.repeatMode == RepeatMode.OFF) Color.White.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            }
+                        }
 
                         // Controls Row: Aspect Ratio, Prev, 10s Replay, Play/Pause Hero, 10s Forward, Next, Speed
                         Row(

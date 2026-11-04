@@ -404,6 +404,20 @@ fun SettingsScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
                                     )
+                                    // Default playback speed (issue #76): persisted;
+                                    // every new playback session starts at this speed.
+                                    // The in-player speed toggle stays session-only.
+                                    Text(
+                                        stringResource(R.string.player_default_speed_header),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(bottom = 4.dp),
+                                    )
+                                    listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { speed ->
+                                        ChoiceRow("${speed}x", settings.defaultPlaybackSpeed == speed) {
+                                            update(settings.copy(defaultPlaybackSpeed = speed))
+                                        }
+                                    }
                                     ToggleRow(stringResource(R.string.player_auto_rotation), settings.autoScreenRotation) {
                                         val nextOrient = if (it) "auto" else "landscape"
                                         update(settings.copy(autoScreenRotation = it, screenOrientation = nextOrient))
