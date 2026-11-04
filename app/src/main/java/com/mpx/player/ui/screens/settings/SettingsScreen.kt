@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.text.format.Formatter
+import com.mpx.player.BuildConfig
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -939,11 +940,11 @@ private fun DevelopmentSettingsSection(
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_version),
-            value = stats?.versionName ?: "0.1.0-beta",
+            value = stats?.versionName ?: BuildConfig.VERSION_NAME,
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_build_code),
-            value = stats?.versionCode ?: "2",
+            value = stats?.versionCode ?: BuildConfig.VERSION_CODE.toString(),
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_build_type),
@@ -1210,12 +1211,12 @@ private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = w
     } catch (_: Exception) {
         null
     }
-    val versionName = pInfo?.versionName ?: "0.1.0-beta"
+    val versionName = pInfo?.versionName ?: BuildConfig.VERSION_NAME
     val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        pInfo?.longVersionCode?.toString() ?: "2"
+        pInfo?.longVersionCode?.toString() ?: BuildConfig.VERSION_CODE.toString()
     } else {
         @Suppress("DEPRECATION")
-        pInfo?.versionCode?.toString() ?: "2"
+        pInfo?.versionCode?.toString() ?: BuildConfig.VERSION_CODE.toString()
     }
     val isDebug = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     val buildType = if (isDebug) "Debug" else "Release"
