@@ -306,6 +306,29 @@ fun PlayerScreen(
     DisposableEffect(subtitleResultHandler) {
         onDispose { subtitleResultHandler.callback = null }
     }
+
+    // Issue #92: leaving the player screen stops playback and clears the
+    // mini-player preview — unless background play is explicitly enabled.
+    // This fires for both the top-bar back action and system back, because
+    // both pop this destination and dispose the screen. Rotation does NOT
+    // trigger it: MainActivity declares orientation in configChanges, so
+    // rotation recomposes without disposing. Settings are re-read at
+    // dispose time, so toggling background play in the player menu and
+    // then leaving is honoured. PiP is excluded as a guard (PiP entry
+    // itself already requires background play). stop() is the established
+    // full-stop path (same as the mini-player close button): it stops the
+    // engine and service, clears currentItem (which hides the mini-player)
+    // and the queue, and cancels a running sleep timer — which is moot
+    // once playback has stopped. With background play on, nothing here
+    // runs, so the timer and background playback continue untouched.
+    DisposableEffect(Unit) {
+        onDispose {
+            val activityInPip = activity?.isInPictureInPictureMode == true
+            if (!activityInPip && !realSettingsRepo.load().backgroundPlay) {
+                playbackManager.stop()
+            }
+        }
+    }
     SideEffect {
         subtitleResultHandler.callback = { uri: Uri? ->
         if (uri != null) {
