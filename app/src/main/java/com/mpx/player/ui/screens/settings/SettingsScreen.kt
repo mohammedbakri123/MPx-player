@@ -77,6 +77,7 @@ import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.ui.components.StepperRow
 import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
@@ -87,6 +88,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -636,6 +638,43 @@ fun SettingsScreen(
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     stringResource(R.string.subtitle_ass_mpv_note),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+
+                                // Subtitle timing (issue #79, MX menu_subtitle sync/speed):
+                                // persisted; applied on mpv only (see note below).
+                                Spacer(Modifier.height(8.dp))
+                                StepperRow(
+                                    label = stringResource(R.string.subtitle_sync_header),
+                                    valueText = if (settings.subtitleDelayMs == 0) "0.00s" else "%+.2fs".format(settings.subtitleDelayMs / 1000.0),
+                                    minusContentDescription = stringResource(R.string.subtitle_sync_header),
+                                    plusContentDescription = stringResource(R.string.subtitle_sync_header),
+                                    onMinus = { update(settings.copy(subtitleDelayMs = (settings.subtitleDelayMs - 100).coerceIn(-10000, 10000))) },
+                                    onPlus = { update(settings.copy(subtitleDelayMs = (settings.subtitleDelayMs + 100).coerceIn(-10000, 10000))) },
+                                    onReset = if (settings.subtitleDelayMs != 0) {
+                                        { update(settings.copy(subtitleDelayMs = 0)) }
+                                    } else null,
+                                )
+                                StepperRow(
+                                    label = stringResource(R.string.subtitle_speed_header),
+                                    valueText = "%.1f×".format(settings.subtitleSpeed),
+                                    minusContentDescription = stringResource(R.string.subtitle_speed_header),
+                                    plusContentDescription = stringResource(R.string.subtitle_speed_header),
+                                    onMinus = {
+                                        val stepped = ((settings.subtitleSpeed * 10).roundToInt() - 1) / 10f
+                                        update(settings.copy(subtitleSpeed = stepped.coerceIn(0.5f, 2.0f)))
+                                    },
+                                    onPlus = {
+                                        val stepped = ((settings.subtitleSpeed * 10).roundToInt() + 1) / 10f
+                                        update(settings.copy(subtitleSpeed = stepped.coerceIn(0.5f, 2.0f)))
+                                    },
+                                    onReset = if (settings.subtitleSpeed != 1.0f) {
+                                        { update(settings.copy(subtitleSpeed = 1.0f)) }
+                                    } else null,
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    stringResource(R.string.subtitle_timing_mpv_note),
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }

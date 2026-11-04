@@ -20,7 +20,20 @@ import com.mpx.player.domain.settings.AppSettings
  * - Media3's SubtitleView has no alignment API, so alignment is approximated
  *   with a bottom padding fraction (Center ~0.45, Top ~0.85 of view height).
  * - ASS override is mpv-only; Media3 always applies embedded styles.
+ * - Subtitle timing (issue #79) is mpv-only too: mpv exposes runtime-changeable
+ *   sub-delay (seconds, may be negative) and sub-speed (timing multiplier).
+ *   Media3 1.3.1 exposes no subtitle timing API — cues render at decoder
+ *   timestamps — so delay/speed values are persisted but never applied on
+ *   Media3, and the UIs say so. Clamp helpers keep persisted values in range.
  */
+
+/** Clamped subtitle delay in ms (-10000..10000). */
+fun subtitleDelayMsClamped(settings: AppSettings): Int =
+    settings.subtitleDelayMs.coerceIn(-10000, 10000)
+
+/** Clamped subtitle speed multiplier (0.5..2.0). */
+fun subtitleSpeedClamped(settings: AppSettings): Float =
+    settings.subtitleSpeed.coerceIn(0.5f, 2.0f)
 
 /** Named subtitle colour -> ARGB int. Unknown names fall back to white. */
 fun subtitleColorArgb(name: String): Int = when (name.lowercase()) {
@@ -98,7 +111,9 @@ fun subtitleUsesSystemDefaultStyle(settings: AppSettings): Boolean =
         settings.subtitleAlignment.equals("Bottom", ignoreCase = true) &&
         settings.subtitleBottomPadding.equals("Medium", ignoreCase = true) &&
         settings.subtitleScale == "100" &&
-        settings.subtitleTypeface.equals("Default", ignoreCase = true)
+        settings.subtitleTypeface.equals("Default", ignoreCase = true) &&
+        settings.subtitleDelayMs == 0 &&
+        settings.subtitleSpeed == 1.0f
 
 data class ResolvedMedia3SubtitleStyle(
     val textSizeSp: Float,
@@ -213,5 +228,9 @@ fun subtitleMpvOptions(settings: AppSettings): Map<String, String> {
         "strip" -> options["sub-ass-override"] = "strip"
         else -> { /* "Default": leave mpv's own default untouched */ }
     }
+    // Subtitle timing (issue #79): runtime-changeable in mpv, applied live
+    // by the same PlayerScreen push path as the other sub-* options.
+    options["sub-delay"] = (subtitleDelayMsClamped(settings) / 1000.0).toString()
+    options["sub-speed"] = subtitleSpeedClamped(settings).toString()
     return options
 }

@@ -140,6 +140,10 @@
     <string name="subtitle_scale_header">Масштаб:</string>
     <string name="subtitle_ass_header">Дополнительно (стили ASS):</string>
     <string name="subtitle_ass_mpv_note">Только движок MPV; Media3 всегда применяет встроенные стили.</string>
+    <string name="subtitle_sync_header">Синхронизация субтитров</string>
+    <string name="subtitle_speed_header">Скорость субтитров</string>
+    <string name="subtitle_timing_mpv_note">Синхронизация и скорость применяются только к движку MPV.</string>
+    <string name="subtitle_timing_reset">Сбросить</string>
     <string name="subtitle_typeface_default">По умолчанию</string>
     <string name="subtitle_typeface_sans">Без засечек</string>
     <string name="subtitle_typeface_serif">С засечками</string>

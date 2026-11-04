@@ -28,6 +28,13 @@ data class AppSettings(
     val subtitleBottomPadding: String = "Medium", // Small, Medium, Large (used when alignment is Bottom)
     val subtitleScale: String = "100", // Percent: 75, 100, 125, 150
     val subtitleAssOverride: String = "Default", // Default, Scale, Force, Strip (mpv-only; Media3 always applies embedded styles)
+    // Subtitle timing (issue #79, MX menu_subtitle sync/speed rows): mpv-only.
+    // Media3 (1.3.1) exposes no subtitle timing API — cue timestamps come
+    // straight from the decoder — so these values are persisted and shown
+    // in both UIs but only applied on mpv (sub-delay/sub-speed). The UIs
+    // carry an honest mpv-only note; nothing is faked on Media3.
+    val subtitleDelayMs: Int = 0, // -10000..10000, 100 ms steps; positive = subtitles later
+    val subtitleSpeed: Float = 1.0f, // 0.5..2.0, 0.1 steps; multiplies subtitle timing rate
     val appTheme: String = "Midnight", // Midnight, Dark, Classic, Light
     val popupPlayEnabled: Boolean = true,
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10, PlayPauseOnly

@@ -138,6 +138,7 @@ import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.RepeatMode
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.playback.resolveMedia3SubtitleStyle
+import com.mpx.player.ui.components.StepperRow
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.player.formatTimeMs
@@ -1824,6 +1825,68 @@ fun PlayerScreen(
                                 ),
                             )
                         }
+                    }
+
+                    Spacer(Modifier.height(6.dp))
+                    // Subtitle timing (issue #79, MX menu_subtitle sync/speed):
+                    // persisted; applied live on mpv only (see mpv note below).
+                    run {
+                        val delayMs = currentSettings.subtitleDelayMs
+                        val delayText = if (delayMs == 0) "0.00s" else "%+.2fs".format(delayMs / 1000.0)
+                        StepperRow(
+                            label = stringResource(R.string.subtitle_sync_header),
+                            valueText = delayText,
+                            minusContentDescription = stringResource(R.string.subtitle_sync_header),
+                            plusContentDescription = stringResource(R.string.subtitle_sync_header),
+                            onMinus = {
+                                val updated = currentSettings.copy(subtitleDelayMs = (delayMs - 100).coerceIn(-10000, 10000))
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                            },
+                            onPlus = {
+                                val updated = currentSettings.copy(subtitleDelayMs = (delayMs + 100).coerceIn(-10000, 10000))
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                            },
+                            onReset = if (delayMs != 0) {
+                                {
+                                    val updated = currentSettings.copy(subtitleDelayMs = 0)
+                                    currentSettings = updated
+                                    realSettingsRepo.save(updated)
+                                }
+                            } else null,
+                        )
+                        val speed = currentSettings.subtitleSpeed
+                        StepperRow(
+                            label = stringResource(R.string.subtitle_speed_header),
+                            valueText = "%.1f×".format(speed),
+                            minusContentDescription = stringResource(R.string.subtitle_speed_header),
+                            plusContentDescription = stringResource(R.string.subtitle_speed_header),
+                            onMinus = {
+                                val stepped = ((speed * 10).roundToInt() - 1) / 10f
+                                val updated = currentSettings.copy(subtitleSpeed = stepped.coerceIn(0.5f, 2.0f))
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                            },
+                            onPlus = {
+                                val stepped = ((speed * 10).roundToInt() + 1) / 10f
+                                val updated = currentSettings.copy(subtitleSpeed = stepped.coerceIn(0.5f, 2.0f))
+                                currentSettings = updated
+                                realSettingsRepo.save(updated)
+                            },
+                            onReset = if (speed != 1.0f) {
+                                {
+                                    val updated = currentSettings.copy(subtitleSpeed = 1.0f)
+                                    currentSettings = updated
+                                    realSettingsRepo.save(updated)
+                                }
+                            } else null,
+                        )
+                        Text(
+                            stringResource(R.string.subtitle_timing_mpv_note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
 
                     Spacer(Modifier.height(6.dp))

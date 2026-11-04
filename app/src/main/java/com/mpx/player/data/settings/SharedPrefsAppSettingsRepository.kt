@@ -51,6 +51,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         subtitleBottomPadding = prefs.getString("subtitle_bottom_padding", "Medium") ?: "Medium",
         subtitleScale = prefs.getString("subtitle_scale", "100") ?: "100",
         subtitleAssOverride = prefs.getString("subtitle_ass_override", "Default") ?: "Default",
+        subtitleDelayMs = prefs.getInt("subtitle_delay_ms", 0),
+        subtitleSpeed = prefs.getFloat("subtitle_speed", 1.0f),
         appTheme = prefs.getString("app_theme", "Midnight") ?: "Midnight",
         popupPlayEnabled = prefs.getBoolean("popup_play_enabled", true),
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
@@ -113,6 +115,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("subtitle_bottom_padding", settings.subtitleBottomPadding)
             .putString("subtitle_scale", settings.subtitleScale)
             .putString("subtitle_ass_override", settings.subtitleAssOverride)
+            .putInt("subtitle_delay_ms", settings.subtitleDelayMs)
+            .putFloat("subtitle_speed", settings.subtitleSpeed)
             .putString("app_theme", settings.appTheme)
             .putBoolean("popup_play_enabled", settings.popupPlayEnabled)
             .putString("popup_play_controls", settings.popupPlayControls)

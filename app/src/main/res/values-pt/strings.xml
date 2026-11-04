@@ -140,6 +140,10 @@
     <string name="subtitle_scale_header">Escala:</string>
     <string name="subtitle_ass_header">Avançado (estilos ASS):</string>
     <string name="subtitle_ass_mpv_note">Apenas motor MPV; o Media3 aplica sempre os estilos incorporados.</string>
+    <string name="subtitle_sync_header">Sincronização de legendas</string>
+    <string name="subtitle_speed_header">Velocidade das legendas</string>
+    <string name="subtitle_timing_mpv_note">A sincronização e a velocidade aplicam-se apenas ao motor MPV.</string>
+    <string name="subtitle_timing_reset">Repor</string>
     <string name="subtitle_typeface_default">Padrão</string>
     <string name="subtitle_typeface_sans">Sans-serif</string>
     <string name="subtitle_typeface_serif">Serif</string>

@@ -140,6 +140,10 @@
     <string name="subtitle_scale_header">缩放：</string>
     <string name="subtitle_ass_header">高级（ASS 样式）：</string>
     <string name="subtitle_ass_mpv_note">仅 MPV 引擎；Media3 始终应用内嵌样式。</string>
+    <string name="subtitle_sync_header">字幕同步</string>
+    <string name="subtitle_speed_header">字幕速度</string>
+    <string name="subtitle_timing_mpv_note">同步和速度仅适用于 MPV 引擎。</string>
+    <string name="subtitle_timing_reset">重置</string>
     <string name="subtitle_typeface_default">默认</string>
     <string name="subtitle_typeface_sans">无衬线</string>
     <string name="subtitle_typeface_serif">衬线</string>
