@@ -32,12 +32,36 @@ android {
         buildConfigField("String", "GIT_BRANCH", "\"$gitBranch\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        // NOTE: no ndk abiFilters here — ABI splits below govern which ABIs
+        // are packaged, and AGP rejects abiFilters when splits are set.
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            // No universal (fat) APK: each split carries only its own .so files.
+            // armeabi-v7a is NOT dropped — it ships as its own split APK.
+            isUniversalApk = false
         }
     }
 
     buildTypes {
+        // Minified test build: R8 + resource shrinking, still signed with the
+        // debug key, so no release key is needed. Produces per-ABI splits
+        // (app-arm64-v8a-minified.apk, app-armeabi-v7a-minified.apk).
+        create("minified") {
+            initWith(getByName("debug"))
+            isDebuggable = true
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
