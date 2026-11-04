@@ -719,6 +719,11 @@
     <string name="dev_label_player_state">Player State</string>
     <string name="dev_label_active_media">Active Media</string>
     <string name="dev_label_decoder_fallback">Decoder Fallback</string>
+    <string name="dev_label_metrics_ready">Time to Ready (last video)</string>
+    <string name="dev_label_metrics_first_frame">Time to First Frame (last video)</string>
+    <string name="dev_label_metrics_seek">Seek Latency (last seek)</string>
+    <string name="dev_label_metrics_fallbacks">Decoder Fallbacks (session)</string>
+    <string name="dev_label_metrics_errors">Playback Errors (session)</string>
     <string name="dev_btn_refresh_diagnostics">Refresh Diagnostics</string>
     <string name="dev_val_refreshing">Refreshing…</string>
     <string name="dev_val_none_idle">None (Player Idle)</string>
@@ -775,6 +780,7 @@
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">No video queued</string>
+    <string name="player_loading">Loading…</string>
     <string name="player_empty_select_video">Select a video from Local to start playback</string>
     <string name="player_cd_audio_track">Audio track</string>
     <string name="player_hud_scrub">Scrub %1$s</string>

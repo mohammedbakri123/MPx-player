@@ -719,6 +719,11 @@
     <string name="dev_label_player_state">Состояние плеера</string>
     <string name="dev_label_active_media">Активное медиа</string>
     <string name="dev_label_decoder_fallback">Запасной декодер</string>
+    <string name="dev_label_metrics_ready">Время до готовности (последнее видео)</string>
+    <string name="dev_label_metrics_first_frame">Время до первого кадра (последнее видео)</string>
+    <string name="dev_label_metrics_seek">Задержка перемотки (последняя перемотка)</string>
+    <string name="dev_label_metrics_fallbacks">Переключения декодера (сеанс)</string>
+    <string name="dev_label_metrics_errors">Ошибки воспроизведения (сеанс)</string>
     <string name="dev_btn_refresh_diagnostics">Обновить диагностику</string>
     <string name="dev_val_refreshing">Обновление…</string>
     <string name="dev_val_none_idle">Нет (плеер бездействует)</string>
@@ -775,6 +780,7 @@
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">Нет видео в очереди</string>
+    <string name="player_loading">Загрузка…</string>
     <string name="player_empty_select_video">Выберите видео из раздела «Локальные», чтобы начать воспроизведение</string>
     <string name="player_cd_audio_track">Аудиодорожка</string>
     <string name="player_hud_scrub">Перемотка %1$s</string>

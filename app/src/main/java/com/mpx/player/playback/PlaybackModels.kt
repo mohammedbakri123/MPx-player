@@ -132,12 +132,35 @@ data class SubtitleTrackInfo(
     val isExternal: Boolean = false,
 )
 
+/** Lightweight playback metrics for the MPV engine only (comparison use).
+ * All values are measured, never estimated: null means "not observed yet".
+ * Media3 returns null (no metrics) — the comparison is MPV-vs-MX-app, and
+ * these numbers describe MPx's mpv path only. */
+data class EnginePlaybackMetrics(
+    /** Load call → FILE_LOADED (READY), last video item, ms. */
+    val lastTimeToReadyMs: Long? = null,
+    /** Load call → first VIDEO_RECONFIG (first video frame), last video, ms. */
+    val lastTimeToFirstFrameMs: Long? = null,
+    /** Last direct seek command → position reached, ms. */
+    val lastSeekLatencyMs: Long? = null,
+    /** HW→HW+ and HW+→SW decoder step-downs, session total. */
+    val decoderFallbackCount: Int = 0,
+    /** Hard playback errors reported (startup failures, load failures,
+     * exhausted decoder chain), session total. */
+    val hardErrorCount: Int = 0,
+)
+
 data class PlaybackState(
     val currentItem: PlayableMedia? = null,
     val queue: List<PlayableMedia> = emptyList(),
     val currentIndex: Int = -1,
     val isPlaying: Boolean = false,
     val playbackState: Int = 1, // Player.STATE_IDLE
+    /** MX-style preparing state: true from a video load until the engine reports
+     * READY (FILE_LOADED) or an error. While true the player shows a loading
+     * splash instead of dead 00:00 chrome — MX never presents an unloaded file
+     * as if it were playing (screen.xml loadingSplash/loading). */
+    val isPreparing: Boolean = false,
     val currentPositionMs: Long = 0L,
     val durationMs: Long = 0L,
     val bufferedPositionMs: Long = 0L,
@@ -164,4 +187,6 @@ data class PlaybackState(
     val isVideoBackgroundActive: Boolean = false,
     val sleepTimerMinutes: Int? = null,
     val sleepTimerRemainingSeconds: Long? = null,
+    /** Latest measured engine metrics (MPV only; null for Media3 / nothing yet). */
+    val playbackMetrics: EnginePlaybackMetrics? = null,
 )

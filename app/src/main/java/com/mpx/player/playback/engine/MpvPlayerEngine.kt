@@ -3,6 +3,7 @@ package com.mpx.player.playback.engine
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.system.Os
 import android.util.Log
 import android.view.Surface
@@ -12,6 +13,7 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
+import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
 import com.mpx.player.playback.subtitleMpvOptions
@@ -92,6 +94,37 @@ class MpvPlayerEngine(
      * attachSurface(); audio loads are never deferred (no video output needed). */
     @Volatile
     private var pendingLoad: Triple<List<PlayableMedia>, Int, Long>? = null
+    /** A seek requested before the current file loaded (e.g. resume position fired
+     * on item transition while the load was still deferred for lack of surface).
+     * Applied the moment FILE_LOADED arrives, so a seek is never silently lost. */
+    private var pendingSeekMs: Long? = null
+
+    // --- Playback metrics (MPV comparison use; measured only, never estimated) ---
+    private val metricsLock = Any()
+    private var loadStartMs: Long = 0L
+    private var firstFrameRecorded: Boolean = false
+    private var lastTimeToReadyMs: Long? = null
+    private var lastTimeToFirstFrameMs: Long? = null
+    private var lastSeekLatencyMs: Long? = null
+    private var seekStartMs: Long? = null
+    private var seekTargetMs: Long? = null
+    private var decoderFallbackCount: Int = 0
+    private var hardErrorCount: Int = 0
+
+    override fun getPlaybackMetrics(): EnginePlaybackMetrics =
+        synchronized(metricsLock) {
+            EnginePlaybackMetrics(
+                lastTimeToReadyMs = lastTimeToReadyMs,
+                lastTimeToFirstFrameMs = lastTimeToFirstFrameMs,
+                lastSeekLatencyMs = lastSeekLatencyMs,
+                decoderFallbackCount = decoderFallbackCount,
+                hardErrorCount = hardErrorCount,
+            )
+        }
+
+    private fun logMetrics(tag: String, detail: String) {
+        Log.i("MpxMetrics", "$tag $detail")
+    }
     /** Init failure captured instead of thrown, so the manager can report it instead of crashing. */
     private var pendingInitError: Exception? = null
 
@@ -386,6 +419,7 @@ class MpvPlayerEngine(
         val codec = mpv.getPropertyString("video-codec") ?: activeVideoCodec.ifBlank { "unknown" }
         when (currentDecoderStage) {
             DecoderStage.HW -> {
+                synchronized(metricsLock) { decoderFallbackCount++ }
                 Log.w(TAG, "HW mediacodec failed for $codec ($reason). Stepping down to HW+ (mediacodec-copy)...")
                 currentDecoderStage = DecoderStage.HW_PLUS
                 try {
@@ -396,6 +430,7 @@ class MpvPlayerEngine(
                 }
             }
             DecoderStage.HW_PLUS -> {
+                synchronized(metricsLock) { decoderFallbackCount++ }
                 Log.w(TAG, "HW+ mediacodec-copy failed for $codec ($reason). Stepping down to SW (hwdec=no)...")
                 currentDecoderStage = DecoderStage.SW
                 try {
@@ -406,6 +441,7 @@ class MpvPlayerEngine(
                 }
             }
             DecoderStage.SW -> {
+                synchronized(metricsLock) { hardErrorCount++ }
                 Log.e(TAG, "SW decoding failed for codec $codec ($reason). Escalating to hard engine fallback.")
                 val exception = MpvPlaybackException(
                     message = "MPV playback failed for codec '$codec' after exhausting HW, HW+, and SW decoders: $reason",
@@ -425,6 +461,20 @@ class MpvPlayerEngine(
             "time-pos" -> {
                 val sec = mpv.getPropertyDouble("time-pos") ?: 0.0
                 cachedPositionMs = (sec * 1000).toLong().coerceAtLeast(0L)
+                // Seek latency: first position update landing within 500 ms of
+                // the seek target after a direct seek command.
+                synchronized(metricsLock) {
+                    val start = seekStartMs
+                    val target = seekTargetMs
+                    if (start != null && target != null &&
+                        kotlin.math.abs(cachedPositionMs - target) <= 500L
+                    ) {
+                        lastSeekLatencyMs = SystemClock.elapsedRealtime() - start
+                        logMetrics("seek", "seek_ms=$lastSeekLatencyMs target_ms=$target")
+                        seekStartMs = null
+                        seekTargetMs = null
+                    }
+                }
             }
             "duration" -> {
                 val sec = mpv.getPropertyDouble("duration") ?: 0.0
@@ -503,6 +553,23 @@ class MpvPlayerEngine(
             MPV.mpvEvent.MPV_EVENT_FILE_LOADED -> {
                 fileLoadedForCurrentItem = true
                 cachedPlaybackState = Player.STATE_READY
+                synchronized(metricsLock) {
+                    if (loadStartMs != 0L && lastTimeToReadyMs == null) {
+                        lastTimeToReadyMs = SystemClock.elapsedRealtime() - loadStartMs
+                        logMetrics("ready", "ready_ms=$lastTimeToReadyMs")
+                    }
+                }
+                // Apply a seek that arrived before the file loaded (resume or
+                // scrub during prepare) instead of dropping it.
+                pendingSeekMs?.let { target ->
+                    pendingSeekMs = null
+                    try {
+                        mpv.command("seek", (target / 1000.0).toString(), "absolute+exact")
+                        cachedPositionMs = target
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed applying pending seek $target", e)
+                    }
+                }
                 mainHandler.post {
                     engineListener?.onPlaybackStateChanged(Player.STATE_READY)
                     engineListener?.onTracksChanged()
@@ -510,6 +577,15 @@ class MpvPlayerEngine(
                 }
             }
             MPV.mpvEvent.MPV_EVENT_VIDEO_RECONFIG -> {
+                // First video reconfig after a load is the first presented video
+                // frame — the honest "first frame" signal on the mpv path.
+                synchronized(metricsLock) {
+                    if (loadStartMs != 0L && !firstFrameRecorded) {
+                        firstFrameRecorded = true
+                        lastTimeToFirstFrameMs = SystemClock.elapsedRealtime() - loadStartMs
+                        logMetrics("first_frame", "first_frame_ms=$lastTimeToFirstFrameMs")
+                    }
+                }
                 notifyDecoderChanged()
             }
             MPV.mpvEvent.MPV_EVENT_END_FILE -> {
@@ -526,6 +602,7 @@ class MpvPlayerEngine(
                         errCode?.let { "error=$it" },
                         lastLog,
                     ).joinToString("; ").ifBlank { "unknown libmpv error" } + rejectedOptionsText()
+                    synchronized(metricsLock) { hardErrorCount++ }
                     mainHandler.post {
                         engineListener?.onError(
                             MpvPlaybackException("MPV could not play this file ($detail)")
@@ -628,6 +705,15 @@ class MpvPlayerEngine(
         currentQueue = items
         if (items.isEmpty()) return
         fileLoadedForCurrentItem = false
+        pendingSeekMs = null
+        synchronized(metricsLock) {
+            // Tap time for tap-to-first-frame: load() is called at tap time
+            // even when the actual loadfile is deferred for lack of surface.
+            loadStartMs = SystemClock.elapsedRealtime()
+            firstFrameRecorded = false
+            lastTimeToReadyMs = null
+            lastTimeToFirstFrameMs = null
+        }
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
         currentMediaIndex = targetIndex
@@ -682,6 +768,7 @@ class MpvPlayerEngine(
             // HW->HW+->SW here only delayed the error. Report it directly so the
             // manager falls back to Media3 with a real message.
             Log.e(TAG, "Error loading media items in MPV", e)
+            synchronized(metricsLock) { hardErrorCount++ }
             mainHandler.post {
                 engineListener?.onError(
                     MpvPlaybackException("MPV could not load this file: ${e.message}${rejectedOptionsText()}")
@@ -719,6 +806,18 @@ class MpvPlayerEngine(
     override fun seekTo(positionMs: Long) {
         val dur = duration
         val target = if (dur > 0L) positionMs.coerceIn(0L, dur) else positionMs.coerceAtLeast(0L)
+        // A seek before FILE_LOADED (resume fired on transition, scrub during
+        // prepare, or a seek while the load is still deferred for lack of
+        // surface) must not vanish: park it and apply it on FILE_LOADED.
+        if (!fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
+            pendingSeekMs = target
+            cachedPositionMs = target
+            return
+        }
+        synchronized(metricsLock) {
+            seekStartMs = SystemClock.elapsedRealtime()
+            seekTargetMs = target
+        }
         try {
             mpv.command("seek", (target / 1000.0).toString(), "absolute+exact")
             cachedPositionMs = target
@@ -817,7 +916,26 @@ class MpvPlayerEngine(
                 }
             }
             TrackType.VIDEO -> {
-                // Video track selection placeholder
+                // Video track selection (multi-angle / multi-quality files):
+                // same id scheme as audio — "group:track" or a plain ordinal
+                // among video tracks — driving mpv's "vid" property.
+                if (id == null || id == "-1" || id.isBlank()) {
+                    try { mpv.setPropertyString("vid", "auto") } catch (_: Exception) {}
+                } else {
+                    val videoIds = getVideoTrackIds()
+                    val targetId = run {
+                        val parts = id.split(":")
+                        if (parts.size == 2) {
+                            val groupIndex = parts[0].toIntOrNull() ?: return
+                            val trackIndex = parts[1].toIntOrNull() ?: return
+                            videoIds.getOrNull(groupIndex) ?: videoIds.getOrNull(trackIndex)
+                        } else {
+                            val ordinal = id.toIntOrNull() ?: return
+                            videoIds.getOrNull(ordinal)
+                        }
+                    } ?: return
+                    try { mpv.setPropertyString("vid", targetId.toString()) } catch (_: Exception) {}
+                }
             }
         }
     }
@@ -868,6 +986,7 @@ class MpvPlayerEngine(
 
     override fun stop() {
         pendingLoad = null
+        pendingSeekMs = null
         try {
             mpv.command("stop")
             cachedIsPlaying = false
@@ -879,6 +998,7 @@ class MpvPlayerEngine(
 
     override fun release() {
         pendingLoad = null
+        pendingSeekMs = null
         isReleased = true
         mainHandler.removeCallbacksAndMessages(null)
         detachSurface()
@@ -894,6 +1014,15 @@ class MpvPlayerEngine(
     override fun setDecoderMode(mode: DecoderMode) {
         if (decoderMode == mode) return
         applyHwdecForMode(mode)
+        // A live hwdec property change only affects the NEXT decoder init, so
+        // the current stream would keep its old decoder and the pill would go
+        // stale. MX restarts playback with the newly chosen decoder — do the
+        // same: reload the current item at its position. No-op before any load.
+        if (mpvInitialized && !isReleased && fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
+            val pos = cachedPositionMs
+            load(currentQueue, currentMediaIndex, pos)
+            play()
+        }
     }
 
     override val currentPosition: Long
@@ -936,6 +1065,19 @@ class MpvPlayerEngine(
         } else {
             seekTo(0L)
         }
+    }
+
+    /** mpv track-list ids of video tracks, in order — used by VIDEO selection. */
+    private fun getVideoTrackIds(): List<Int> {
+        val count = mpv.getPropertyInt("track-list/count") ?: 0
+        val ids = mutableListOf<Int>()
+        for (i in 0 until count) {
+            val type = mpv.getPropertyString("track-list/$i/type")
+            if (type.equals("video", ignoreCase = true)) {
+                ids.add(mpv.getPropertyInt("track-list/$i/id") ?: (ids.size + 1))
+            }
+        }
+        return ids
     }
 
     override fun getAudioTracks(): List<AudioTrackInfo> {

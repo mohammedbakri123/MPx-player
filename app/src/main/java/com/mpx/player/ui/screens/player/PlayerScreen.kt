@@ -79,6 +79,7 @@ import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -806,6 +807,27 @@ fun PlayerScreen(
             }
         }
 
+        // MX-style loading splash (screen.xml loadingSplash/loading): while a
+        // video is preparing, show a spinner + text over black instead of dead
+        // 00:00 chrome. The full controls overlay stays hidden until READY.
+        if (state.isPreparing && currentMedia?.isVideo == true) {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp),
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.player_loading),
+                    color = Color.White,
+                    fontSize = 14.sp,
+                )
+            }
+        }
+
         // Horizontal Scrubbing HUD Indicator
         if (isDraggingSeek) {
             Surface(
@@ -1144,9 +1166,10 @@ fun PlayerScreen(
             return@Box
         }
 
-        // Full Controls Overlay
+        // Full Controls Overlay (hidden while preparing: MX's controller is
+        // gone while its loading splash shows).
         AnimatedVisibility(
-            visible = controlsVisible,
+            visible = controlsVisible && !state.isPreparing,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.fillMaxSize(),

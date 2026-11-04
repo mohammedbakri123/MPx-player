@@ -719,6 +719,11 @@
     <string name="dev_label_player_state">प्लेयर स्थिति</string>
     <string name="dev_label_active_media">सक्रिय मीडिया</string>
     <string name="dev_label_decoder_fallback">डीकोडर फ़ॉलबैक</string>
+    <string name="dev_label_metrics_ready">तैयार होने तक का समय (अंतिम वीडियो)</string>
+    <string name="dev_label_metrics_first_frame">पहले फ़्रेम तक का समय (अंतिम वीडियो)</string>
+    <string name="dev_label_metrics_seek">सीक विलंबता (अंतिम सीक)</string>
+    <string name="dev_label_metrics_fallbacks">डीकोडर फ़ॉलबैक (सत्र)</string>
+    <string name="dev_label_metrics_errors">प्लेबैक त्रुटियाँ (सत्र)</string>
     <string name="dev_btn_refresh_diagnostics">डायग्नोस्टिक्स रिफ़्रेश करें</string>
     <string name="dev_val_refreshing">रिफ़्रेश हो रहा है…</string>
     <string name="dev_val_none_idle">कोई नहीं (प्लेयर निष्क्रिय)</string>
@@ -775,6 +780,7 @@
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">कोई वीडियो कतार में नहीं है</string>
+    <string name="player_loading">लोड हो रहा है…</string>
     <string name="player_empty_select_video">प्लेबैक शुरू करने के लिए स्थानीय से एक वीडियो चुनें</string>
     <string name="player_cd_audio_track">ऑडियो ट्रैक</string>
     <string name="player_hud_scrub">स्क्रब %1$s</string>

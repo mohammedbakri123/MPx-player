@@ -719,6 +719,11 @@
     <string name="dev_label_player_state">Estado del reproductor</string>
     <string name="dev_label_active_media">Contenido activo</string>
     <string name="dev_label_decoder_fallback">Respaldo de decodificador</string>
+    <string name="dev_label_metrics_ready">Tiempo hasta listo (último vídeo)</string>
+    <string name="dev_label_metrics_first_frame">Tiempo hasta el primer fotograma (último vídeo)</string>
+    <string name="dev_label_metrics_seek">Latencia de búsqueda (última búsqueda)</string>
+    <string name="dev_label_metrics_fallbacks">Cambios de decodificador (sesión)</string>
+    <string name="dev_label_metrics_errors">Errores de reproducción (sesión)</string>
     <string name="dev_btn_refresh_diagnostics">Actualizar diagnósticos</string>
     <string name="dev_val_refreshing">Actualizando…</string>
     <string name="dev_val_none_idle">Ninguno (reproductor inactivo)</string>
@@ -775,6 +780,7 @@
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">No hay ningún vídeo en cola</string>
+    <string name="player_loading">Cargando…</string>
     <string name="player_empty_select_video">Elige un vídeo de Local para iniciar la reproducción</string>
     <string name="player_cd_audio_track">Pista de audio</string>
     <string name="player_hud_scrub">Buscar %1$s</string>
