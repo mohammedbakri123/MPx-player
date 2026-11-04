@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FileProvider paths for diagnostics sharing: only the diagnostics
+     subfolder of the app cache directory is ever shared. -->
+<paths>
+    <cache-path name="diagnostics" path="diagnostics/" />
+</paths>

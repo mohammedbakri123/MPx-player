@@ -731,6 +731,11 @@
     <string name="dev_val_yes">Yes</string>
     <string name="dev_val_no">No</string>
     <string name="dev_btn_refresh_diagnostics">Refresh Diagnostics</string>
+    <string name="dev_section_diagnostics_export">Diagnostics export</string>
+    <string name="dev_btn_copy_summary">Copy diagnostics summary</string>
+    <string name="dev_btn_share_file">Share diagnostics file</string>
+    <string name="dev_val_copied">Diagnostics summary copied</string>
+    <string name="dev_val_share_failed">Could not share diagnostics file</string>
     <string name="dev_val_refreshing">Refreshing…</string>
     <string name="dev_val_none_idle">None (Player Idle)</string>
     <string name="dev_val_direct_codec">Direct (no fallback required)</string>

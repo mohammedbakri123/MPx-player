@@ -731,6 +731,11 @@
     <string name="dev_val_yes">Ja</string>
     <string name="dev_val_no">Nein</string>
     <string name="dev_btn_refresh_diagnostics">Diagnose aktualisieren</string>
+    <string name="dev_section_diagnostics_export">Diagnose exportieren</string>
+    <string name="dev_btn_copy_summary">Diagnose-Zusammenfassung kopieren</string>
+    <string name="dev_btn_share_file">Diagnosedatei teilen</string>
+    <string name="dev_val_copied">Diagnose-Zusammenfassung kopiert</string>
+    <string name="dev_val_share_failed">Diagnosedatei konnte nicht geteilt werden</string>
     <string name="dev_val_refreshing">Aktualisieren…</string>
     <string name="dev_val_none_idle">Keine (Player inaktiv)</string>
     <string name="dev_val_direct_codec">Direkt (kein Fallback erforderlich)</string>

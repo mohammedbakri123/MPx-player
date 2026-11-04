@@ -731,6 +731,11 @@
     <string name="dev_val_yes">हाँ</string>
     <string name="dev_val_no">नहीं</string>
     <string name="dev_btn_refresh_diagnostics">डायग्नोस्टिक्स रिफ़्रेश करें</string>
+    <string name="dev_section_diagnostics_export">डायग्नोस्टिक निर्यात करें</string>
+    <string name="dev_btn_copy_summary">डायग्नोस्टिक सारांश कॉपी करें</string>
+    <string name="dev_btn_share_file">डायग्नोस्टिक फ़ाइल साझा करें</string>
+    <string name="dev_val_copied">डायग्नोस्टिक सारांश कॉपी हो गया</string>
+    <string name="dev_val_share_failed">डायग्नोस्टिक फ़ाइल साझा नहीं हो सकी</string>
     <string name="dev_val_refreshing">रिफ़्रेश हो रहा है…</string>
     <string name="dev_val_none_idle">कोई नहीं (प्लेयर निष्क्रिय)</string>
     <string name="dev_val_direct_codec">डायरेक्ट (कोई फ़ॉलबैक आवश्यक नहीं)</string>
