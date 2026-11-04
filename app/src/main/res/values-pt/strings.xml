@@ -734,6 +734,7 @@
     <string name="dev_section_diagnostics_export">Exportar diagnóstico</string>
     <string name="dev_btn_copy_summary">Copiar resumo do diagnóstico</string>
     <string name="dev_btn_share_file">Partilhar ficheiro de diagnóstico</string>
+    <string name="dev_btn_share_mpv_log">Partilhar registo MPV</string>
     <string name="dev_val_copied">Resumo do diagnóstico copiado</string>
     <string name="dev_val_share_failed">Não foi possível partilhar o ficheiro de diagnóstico</string>
     <string name="dev_val_refreshing">Atualizando…</string>

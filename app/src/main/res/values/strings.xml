@@ -734,6 +734,7 @@
     <string name="dev_section_diagnostics_export">Diagnostics export</string>
     <string name="dev_btn_copy_summary">Copy diagnostics summary</string>
     <string name="dev_btn_share_file">Share diagnostics file</string>
+    <string name="dev_btn_share_mpv_log">Share MPV log</string>
     <string name="dev_val_copied">Diagnostics summary copied</string>
     <string name="dev_val_share_failed">Could not share diagnostics file</string>
     <string name="dev_val_refreshing">Refreshing…</string>

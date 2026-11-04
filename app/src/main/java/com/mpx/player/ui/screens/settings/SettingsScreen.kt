@@ -89,6 +89,9 @@ import com.mpx.player.ui.components.StepperRow
 import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackState
+import com.mpx.player.playback.buildDiagnosticsReport
+import com.mpx.player.playback.buildDiagnosticsSummary
+import com.mpx.player.ui.components.MpvLogShareButton
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.MediaPermissions
@@ -1175,15 +1178,14 @@ private fun DevelopmentSettingsSection(
 
     Spacer(Modifier.height(8.dp))
 
-    // Section 5: Diagnostics export — copy a short summary, or share a
-    // detailed diagnostics file. Text comes from DiagnosticsReportStub at
-    // the end of this file; the parent swaps it for the sibling builder
-    // (playback/DiagnosticsReport.kt) at merge time. Values are a snapshot
-    // of the current playback state; nulls render as "not observed".
+    // Section 5: Diagnostics export — copy a short summary, share a
+    // detailed diagnostics file (playback/DiagnosticsReport.kt), or share
+    // the mpv engine log file. Values are a snapshot of the current
+    // playback state; nulls render as "not observed".
     DiagnosticSection(title = stringResource(R.string.dev_section_diagnostics_export)) {
         OutlinedButton(
             onClick = {
-                val text = DiagnosticsReportStub.buildSummary(playbackState, settings, playbackManager.isMpv)
+                val text = buildDiagnosticsSummary(playbackState, settings, playbackManager.isMpv)
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                 clipboard?.setPrimaryClip(ClipData.newPlainText("MPx diagnostics", text))
                 Toast.makeText(context, context.getString(R.string.dev_val_copied), Toast.LENGTH_SHORT).show()
@@ -1208,7 +1210,7 @@ private fun DevelopmentSettingsSection(
         OutlinedButton(
             onClick = {
                 try {
-                    val text = DiagnosticsReportStub.buildFull(context, playbackState, settings, playbackManager.isMpv)
+                    val text = buildDiagnosticsReport(playbackState, settings, context.packageName)
                     val dir = File(context.cacheDir, "diagnostics").apply { mkdirs() }
                     val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
                     val file = File(dir, "mpx-diagnostics-$stamp.txt")
@@ -1242,6 +1244,12 @@ private fun DevelopmentSettingsSection(
             )
         }
     }
+
+    Spacer(Modifier.height(8.dp))
+    MpvLogShareButton(
+        modifier = Modifier.fillMaxWidth(),
+        label = stringResource(R.string.dev_btn_share_mpv_log),
+    )
 
     Spacer(Modifier.height(10.dp))
 
@@ -1452,102 +1460,4 @@ private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = w
         playlistsCount = playlists,
         lastScannedTime = timeFormat.format(Date()),
     )
-}
-
-// ===========================================================================
-// STUB — DiagnosticsReportStub (UI worktree only, DO NOT SHIP AS-IS).
-// The parent replaces this object at merge time with the sibling worktree's
-// real builder in playback/DiagnosticsReport.kt, expected as:
-//     DiagnosticsReport.build(...)  (summary + full report from the same
-//     PlaybackState + AppSettings + Build info sources used below).
-// Until that swap, these functions assemble the same texts from live state
-// so the UI compiles, builds, and behaves correctly. No value here is
-// invented: nulls render as "not observed", Media3 shows no mpv stage, and
-// the current item is identified by title only (never a full device path).
-// ===========================================================================
-internal object DiagnosticsReportStub {
-
-    private const val NOT_OBSERVED = "not observed"
-
-    /** Short plain-text summary for the clipboard button. */
-    fun buildSummary(
-        state: PlaybackState,
-        settings: AppSettings,
-        isMpv: Boolean,
-    ): String {
-        val metrics = state.playbackMetrics
-        val stage = state.mpvLoadStage
-        val lines = mutableListOf<String>()
-        lines += "MPx diagnostics summary"
-        lines += "App version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
-        lines += "Engine: ${if (isMpv) "mpv" else "Media3"} (setting: ${settings.playerEngine})"
-        lines += "Decoder mode: ${settings.decoderMode}"
-        lines += "Current item: ${state.currentItem?.let { "${it.title} (${if (it.isVideo) "Video" else "Audio"})" } ?: NOT_OBSERVED}"
-        lines += "Active decoder: ${state.activeDecoderName ?: NOT_OBSERVED}"
-        if (isMpv) {
-            lines += "MPV initialized: ${stage?.let { if (it.initialized) "yes" else "no" } ?: NOT_OBSERVED}"
-            lines += "MPV surface attached: ${stage?.let { if (it.surfaceAttached) "yes" else "no" } ?: NOT_OBSERVED}"
-            lines += "MPV load issued: ${stage?.let { if (it.loadIssued) "yes" else "no" } ?: NOT_OBSERVED}"
-            lines += "MPV last event: ${stage?.lastEvent ?: NOT_OBSERVED}"
-        }
-        lines += "Time to ready: ${metrics?.lastTimeToReadyMs?.let { "$it ms" } ?: NOT_OBSERVED}"
-        lines += "Time to first frame: ${metrics?.lastTimeToFirstFrameMs?.let { "$it ms" } ?: NOT_OBSERVED}"
-        lines += "Seek latency: ${metrics?.lastSeekLatencyMs?.let { "$it ms" } ?: NOT_OBSERVED}"
-        lines += "Decoder fallbacks: ${metrics?.decoderFallbackCount?.toString() ?: NOT_OBSERVED}"
-        lines += "Playback errors: ${metrics?.hardErrorCount?.toString() ?: NOT_OBSERVED}"
-        return lines.joinToString("\n")
-    }
-
-    /** Detailed plain-text report for the shareable file. */
-    fun buildFull(
-        context: Context,
-        state: PlaybackState,
-        settings: AppSettings,
-        isMpv: Boolean,
-    ): String {
-        val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
-        val metrics = state.playbackMetrics
-        val stage = state.mpvLoadStage
-        val sb = StringBuilder()
-        sb.appendLine("MPx diagnostics report")
-        sb.appendLine("Generated: $stamp")
-        sb.appendLine()
-        sb.appendLine("== App & device ==")
-        sb.appendLine("Package: ${context.packageName}")
-        sb.appendLine("Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-        sb.appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}")
-        sb.appendLine("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
-        sb.appendLine()
-        sb.appendLine("== Settings ==")
-        sb.appendLine("Playback engine setting: ${settings.playerEngine}")
-        sb.appendLine("Decoder mode: ${settings.decoderMode}")
-        sb.appendLine("Background play: ${settings.backgroundPlay}")
-        sb.appendLine("Popup play: ${settings.popupPlayEnabled}")
-        sb.appendLine("Default speed: ${settings.defaultPlaybackSpeed}")
-        sb.appendLine()
-        sb.appendLine("== Playback now ==")
-        sb.appendLine("Engine in use: ${if (isMpv) "mpv" else "Media3"}")
-        sb.appendLine("Playing: ${state.isPlaying}")
-        sb.appendLine("Current item: ${state.currentItem?.let { "${it.title} (${if (it.isVideo) "Video" else "Audio"})" } ?: NOT_OBSERVED}")
-        sb.appendLine("Active decoder: ${state.activeDecoderName ?: NOT_OBSERVED}")
-        sb.appendLine("Decoder fallback note: ${state.decoderFallbackNote ?: NOT_OBSERVED}")
-        sb.appendLine()
-        sb.appendLine("== MPV load stage ==")
-        if (isMpv) {
-            sb.appendLine("Initialized: ${stage?.let { if (it.initialized) "yes" else "no" } ?: NOT_OBSERVED}")
-            sb.appendLine("Surface attached: ${stage?.let { if (it.surfaceAttached) "yes" else "no" } ?: NOT_OBSERVED}")
-            sb.appendLine("Load issued: ${stage?.let { if (it.loadIssued) "yes" else "no" } ?: NOT_OBSERVED}")
-            sb.appendLine("Last event: ${stage?.lastEvent ?: NOT_OBSERVED}")
-        } else {
-            sb.appendLine("Not applicable (Media3 engine)")
-        }
-        sb.appendLine()
-        sb.appendLine("== Playback metrics ==")
-        sb.appendLine("Time to ready: ${metrics?.lastTimeToReadyMs?.let { "$it ms" } ?: NOT_OBSERVED}")
-        sb.appendLine("Time to first frame: ${metrics?.lastTimeToFirstFrameMs?.let { "$it ms" } ?: NOT_OBSERVED}")
-        sb.appendLine("Seek latency: ${metrics?.lastSeekLatencyMs?.let { "$it ms" } ?: NOT_OBSERVED}")
-        sb.appendLine("Decoder fallbacks: ${metrics?.decoderFallbackCount?.toString() ?: NOT_OBSERVED}")
-        sb.appendLine("Playback errors: ${metrics?.hardErrorCount?.toString() ?: NOT_OBSERVED}")
-        return sb.toString()
-    }
 }

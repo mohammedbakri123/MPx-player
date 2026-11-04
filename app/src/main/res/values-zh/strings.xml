@@ -734,6 +734,7 @@
     <string name="dev_section_diagnostics_export">导出诊断</string>
     <string name="dev_btn_copy_summary">复制诊断摘要</string>
     <string name="dev_btn_share_file">分享诊断文件</string>
+    <string name="dev_btn_share_mpv_log">分享 MPV 日志</string>
     <string name="dev_val_copied">诊断摘要已复制</string>
     <string name="dev_val_share_failed">无法分享诊断文件</string>
     <string name="dev_val_refreshing">正在刷新…</string>

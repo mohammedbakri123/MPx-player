@@ -734,6 +734,7 @@
     <string name="dev_section_diagnostics_export">Экспорт диагностики</string>
     <string name="dev_btn_copy_summary">Скопировать сводку диагностики</string>
     <string name="dev_btn_share_file">Поделиться файлом диагностики</string>
+    <string name="dev_btn_share_mpv_log">Поделиться журналом MPV</string>
     <string name="dev_val_copied">Сводка диагностики скопирована</string>
     <string name="dev_val_share_failed">Не удалось поделиться файлом диагностики</string>
     <string name="dev_val_refreshing">Обновление…</string>

@@ -734,6 +734,7 @@
     <string name="dev_section_diagnostics_export">تصدير التشخيصات</string>
     <string name="dev_btn_copy_summary">نسخ ملخص التشخيصات</string>
     <string name="dev_btn_share_file">مشاركة ملف التشخيصات</string>
+    <string name="dev_btn_share_mpv_log">مشاركة سجل MPV</string>
     <string name="dev_val_copied">تم نسخ ملخص التشخيصات</string>
     <string name="dev_val_share_failed">تعذرت مشاركة ملف التشخيصات</string>
     <string name="dev_val_refreshing">جاري التحديث…</string>

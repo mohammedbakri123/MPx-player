@@ -122,3 +122,34 @@ fun buildDiagnosticsReport(
         }
     }.joinToString("\n")
 }
+
+/** Short plain-text summary for the clipboard button (same observed values
+ * as the full report, condensed). Kept here so the UI never ships a stub. */
+fun buildDiagnosticsSummary(
+    state: PlaybackState,
+    settings: AppSettings,
+    isMpv: Boolean,
+): String {
+    val notObserved = "not observed"
+    val metrics = state.playbackMetrics
+    val stage = state.mpvLoadStage
+    val lines = mutableListOf<String>()
+    lines += "MPx diagnostics summary"
+    lines += "App version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+    lines += "Engine: ${if (isMpv) "mpv" else "Media3"} (setting: ${settings.playerEngine})"
+    lines += "Decoder mode: ${settings.decoderMode}"
+    lines += "Current item: ${state.currentItem?.let { "${it.title} (${if (it.isVideo) "Video" else "Audio"})" } ?: notObserved}"
+    lines += "Active decoder: ${state.activeDecoderName ?: notObserved}"
+    if (isMpv) {
+        lines += "MPV initialized: ${stage?.let { if (it.initialized) "yes" else "no" } ?: notObserved}"
+        lines += "MPV surface attached: ${stage?.let { if (it.surfaceAttached) "yes" else "no" } ?: notObserved}"
+        lines += "MPV load issued: ${stage?.let { if (it.loadIssued) "yes" else "no" } ?: notObserved}"
+        lines += "MPV last event: ${stage?.lastEvent ?: notObserved}"
+    }
+    lines += "Time to ready: ${metrics?.lastTimeToReadyMs?.let { "$it ms" } ?: notObserved}"
+    lines += "Time to first frame: ${metrics?.lastTimeToFirstFrameMs?.let { "$it ms" } ?: notObserved}"
+    lines += "Seek latency: ${metrics?.lastSeekLatencyMs?.let { "$it ms" } ?: notObserved}"
+    lines += "Decoder fallbacks: ${metrics?.decoderFallbackCount?.toString() ?: notObserved}"
+    lines += "Playback errors: ${metrics?.hardErrorCount?.toString() ?: notObserved}"
+    return lines.joinToString("\n")
+}
