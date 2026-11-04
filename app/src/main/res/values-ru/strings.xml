@@ -724,6 +724,12 @@
     <string name="dev_label_metrics_seek">Задержка перемотки (последняя перемотка)</string>
     <string name="dev_label_metrics_fallbacks">Переключения декодера (сеанс)</string>
     <string name="dev_label_metrics_errors">Ошибки воспроизведения (сеанс)</string>
+    <string name="dev_label_mpv_initialized">MPV инициализирован</string>
+    <string name="dev_label_mpv_surface">Поверхность подключена</string>
+    <string name="dev_label_mpv_load_issued">Загрузка отправлена</string>
+    <string name="dev_label_mpv_last_event">Последнее событие MPV</string>
+    <string name="dev_val_yes">Да</string>
+    <string name="dev_val_no">Нет</string>
     <string name="dev_btn_refresh_diagnostics">Обновить диагностику</string>
     <string name="dev_val_refreshing">Обновление…</string>
     <string name="dev_val_none_idle">Нет (плеер бездействует)</string>

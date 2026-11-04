@@ -4,6 +4,7 @@ import android.view.Surface
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
+import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
 
@@ -44,6 +45,12 @@ interface PlayerEngine {
      * rather than invented numbers.
      */
     fun getPlaybackMetrics(): EnginePlaybackMetrics? = null
+
+    /**
+     * Step-level load diagnostics (mpv only). Default null: engines that do
+     * not report stages report nothing rather than invented stages.
+     */
+    fun getLoadStage(): MpvLoadStage? = null
 
     /**
      * Attaches a native video rendering surface to the engine.

@@ -14,6 +14,7 @@ import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
+import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
 import com.mpx.player.playback.subtitleMpvOptions
@@ -99,7 +100,21 @@ class MpvPlayerEngine(
      * Applied the moment FILE_LOADED arrives, so a seek is never silently lost. */
     private var pendingSeekMs: Long? = null
 
-    // --- Playback metrics (MPV comparison use; measured only, never estimated) ---
+    // --- Step-level load diagnostics (shown on-phone in Settings → Development) ---
+    @Volatile
+    private var loadIssued: Boolean = false
+    @Volatile
+    private var lastMpvEvent: String = "none"
+
+    override fun getLoadStage(): MpvLoadStage {
+        val surfaceAttached = synchronized(surfaceLock) { currentSurface != null }
+        return MpvLoadStage(
+            initialized = mpvInitialized && pendingInitError == null,
+            surfaceAttached = surfaceAttached,
+            loadIssued = loadIssued,
+            lastEvent = lastMpvEvent,
+        )
+    }
     private val metricsLock = Any()
     private var loadStartMs: Long = 0L
     private var firstFrameRecorded: Boolean = false
@@ -191,9 +206,11 @@ class MpvPlayerEngine(
         } catch (e: Exception) {
             Log.e(TAG, "MPV init failed", e)
             pendingInitError = e
+            lastMpvEvent = "init-failed"
         } catch (e: Throwable) {
             Log.e(TAG, "MPV init failed (native)", e)
             pendingInitError = Exception("MPV native init failed: ${e.message}", e)
+            lastMpvEvent = "init-failed"
         }
     }
 
@@ -550,8 +567,29 @@ class MpvPlayerEngine(
         if (isReleased) return
 
         when (eventId) {
+            MPV.mpvEvent.MPV_EVENT_START_FILE -> {
+                // Demuxer opened the file: the load got past issue into
+                // libmpv. If the stage sticks here, the stall is inside
+                // demux/decode/VO init, not in load issue or event delivery.
+                lastMpvEvent = "START_FILE"
+            }
+            MPV.mpvEvent.MPV_EVENT_SHUTDOWN -> {
+                // Previously IGNORED: a core shutdown produced no event the
+                // app acted on, so a dead core looked exactly like infinite
+                // loading. Surface it as a real error so the manager clears
+                // the splash and falls back (release() sets isReleased first,
+                // so normal teardown never reaches here).
+                lastMpvEvent = "SHUTDOWN"
+                synchronized(metricsLock) { hardErrorCount++ }
+                mainHandler.post {
+                    engineListener?.onError(
+                        MpvPlaybackException("MPV player shut down unexpectedly${rejectedOptionsText()}")
+                    )
+                }
+            }
             MPV.mpvEvent.MPV_EVENT_FILE_LOADED -> {
                 fileLoadedForCurrentItem = true
+                lastMpvEvent = "FILE_LOADED"
                 cachedPlaybackState = Player.STATE_READY
                 synchronized(metricsLock) {
                     if (loadStartMs != 0L && lastTimeToReadyMs == null) {
@@ -579,6 +617,7 @@ class MpvPlayerEngine(
             MPV.mpvEvent.MPV_EVENT_VIDEO_RECONFIG -> {
                 // First video reconfig after a load is the first presented video
                 // frame — the honest "first frame" signal on the mpv path.
+                lastMpvEvent = "VIDEO_RECONFIG"
                 synchronized(metricsLock) {
                     if (loadStartMs != 0L && !firstFrameRecorded) {
                         firstFrameRecorded = true
@@ -589,6 +628,7 @@ class MpvPlayerEngine(
                 notifyDecoderChanged()
             }
             MPV.mpvEvent.MPV_EVENT_END_FILE -> {
+                lastMpvEvent = "END_FILE"
                 // A file that never loaded is a STARTUP failure, not a decoder
                 // failure: previously this fell through every check (duration
                 // is 0, eof flag unset) and playback died silently. Report it
@@ -632,12 +672,28 @@ class MpvPlayerEngine(
     }
 
     override fun attachSurface(surface: Surface) {
+        // Reference-pattern alignment (mpv-android's own BaseMPVView.surfaceCreated):
+        // when a file load is about to run, it attaches the surface, sets
+        // force-window=yes, and issues loadfile WITHOUT touching the "vo"
+        // property — the load itself initialises VO against the attached
+        // surface. It only (re)sets "vo" when no file is pending. MPx
+        // previously set "vo" unconditionally on every attach, forcing a VO
+        // teardown/recreation immediately before the loadfile — a needless
+        // race on the exact path that was hanging with no error. Match the
+        // reference: skip the vo set whenever a load is about to run.
+        val willLoad = pendingLoad != null ||
+            (mpvInitialized && !isReleased && !fileLoadedForCurrentItem && currentQueue.isNotEmpty())
         synchronized(surfaceLock) {
             currentSurface = surface
             try {
                 mpv.attachSurface(surface)
                 setOption("force-window", "yes")
-                mpv.setPropertyString("vo", "gpu")
+                if (willLoad) {
+                    // A load is about to run: loadfile itself initialises
+                    // VO against the attached surface; do not touch "vo".
+                } else {
+                    mpv.setPropertyString("vo", "gpu")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error in attachSurface", e)
             }
@@ -706,6 +762,8 @@ class MpvPlayerEngine(
         if (items.isEmpty()) return
         fileLoadedForCurrentItem = false
         pendingSeekMs = null
+        loadIssued = false
+        lastMpvEvent = "none"
         synchronized(metricsLock) {
             // Tap time for tap-to-first-frame: load() is called at tap time
             // even when the actual loadfile is deferred for lack of surface.
@@ -756,6 +814,11 @@ class MpvPlayerEngine(
                 mpv.command("loadfile", items[i].uri, "append")
             }
 
+            // The loadfile commands above returned without throwing: the load
+            // is genuinely issued, even if libmpv now stalls without events.
+            // (Subtitle adds below are separate commands and must not mask it.)
+            loadIssued = true
+
             // Load external subtitles
             targetItem.subtitleUri?.let { subUri ->
                 mpv.command("sub-add", subUri, "select")
@@ -768,6 +831,7 @@ class MpvPlayerEngine(
             // HW->HW+->SW here only delayed the error. Report it directly so the
             // manager falls back to Media3 with a real message.
             Log.e(TAG, "Error loading media items in MPV", e)
+            lastMpvEvent = "loadfile-failed"
             synchronized(metricsLock) { hardErrorCount++ }
             mainHandler.post {
                 engineListener?.onError(
@@ -987,6 +1051,8 @@ class MpvPlayerEngine(
     override fun stop() {
         pendingLoad = null
         pendingSeekMs = null
+        loadIssued = false
+        lastMpvEvent = "none"
         try {
             mpv.command("stop")
             cachedIsPlaying = false

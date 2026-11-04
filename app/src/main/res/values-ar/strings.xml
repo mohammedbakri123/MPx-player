@@ -724,6 +724,12 @@
     <string name="dev_label_metrics_seek">زمن الاستجابة للتنقل (آخر تنقل)</string>
     <string name="dev_label_metrics_fallbacks">التراجعات إلى مفكك ترميز آخر (الجلسة)</string>
     <string name="dev_label_metrics_errors">أخطاء التشغيل (الجلسة)</string>
+    <string name="dev_label_mpv_initialized">تم تهيئة MPV</string>
+    <string name="dev_label_mpv_surface">السطح متصل</string>
+    <string name="dev_label_mpv_load_issued">تم إصدار التحميل</string>
+    <string name="dev_label_mpv_last_event">آخر حدث من MPV</string>
+    <string name="dev_val_yes">نعم</string>
+    <string name="dev_val_no">لا</string>
     <string name="dev_btn_refresh_diagnostics">تحديث التشخيصات</string>
     <string name="dev_val_refreshing">جاري التحديث…</string>
     <string name="dev_val_none_idle">لا يوجد (المشغل في وضع السكون)</string>

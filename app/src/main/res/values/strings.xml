@@ -724,6 +724,12 @@
     <string name="dev_label_metrics_seek">Seek Latency (last seek)</string>
     <string name="dev_label_metrics_fallbacks">Decoder Fallbacks (session)</string>
     <string name="dev_label_metrics_errors">Playback Errors (session)</string>
+    <string name="dev_label_mpv_initialized">MPV initialized</string>
+    <string name="dev_label_mpv_surface">Surface attached</string>
+    <string name="dev_label_mpv_load_issued">Load issued</string>
+    <string name="dev_label_mpv_last_event">Last MPV event</string>
+    <string name="dev_val_yes">Yes</string>
+    <string name="dev_val_no">No</string>
     <string name="dev_btn_refresh_diagnostics">Refresh Diagnostics</string>
     <string name="dev_val_refreshing">Refreshing…</string>
     <string name="dev_val_none_idle">None (Player Idle)</string>

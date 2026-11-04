@@ -724,6 +724,12 @@
     <string name="dev_label_metrics_seek">Suchlatenz (letzte Suche)</string>
     <string name="dev_label_metrics_fallbacks">Decoderwechsel (Sitzung)</string>
     <string name="dev_label_metrics_errors">Wiedergabefehler (Sitzung)</string>
+    <string name="dev_label_mpv_initialized">MPV initialisiert</string>
+    <string name="dev_label_mpv_surface">Oberfläche verbunden</string>
+    <string name="dev_label_mpv_load_issued">Laden ausgelöst</string>
+    <string name="dev_label_mpv_last_event">Letztes MPV-Ereignis</string>
+    <string name="dev_val_yes">Ja</string>
+    <string name="dev_val_no">Nein</string>
     <string name="dev_btn_refresh_diagnostics">Diagnose aktualisieren</string>
     <string name="dev_val_refreshing">Aktualisieren…</string>
     <string name="dev_val_none_idle">Keine (Player inaktiv)</string>
