@@ -1,0 +1,3 @@
+# Hide Dart files from GitHub language detection so the repo is classified as Kotlin/Android.
+*.dart linguist-detectable=false
+*.dart linguist-vendored
