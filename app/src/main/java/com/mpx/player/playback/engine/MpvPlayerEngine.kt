@@ -105,6 +105,36 @@ class MpvPlayerEngine(
     @Volatile
     private var pendingSeekMs: Long? = null
 
+    private data class PendingSubtitle(
+        val uri: String,
+        val flag: String,
+        val title: String? = null,
+    )
+
+    private data class PendingSubtitles(
+        val mediaUri: String,
+        val mediaId: String,
+        val subtitles: List<PendingSubtitle>,
+    )
+
+    @Volatile
+    private var activeMediaId: String? = null
+    @Volatile
+    private var activeMediaUri: String? = null
+    /** External subtitles queued before FILE_LOADED (issue #102). Dispatched once libmpv
+     * confirms the file is loaded and active, avoiding "no file loaded" sub-add rejections.
+     * Written on Main, read/cleared on the event thread: volatile. */
+    @Volatile
+    private var pendingSubtitles: PendingSubtitles? = null
+
+    private fun isPathMatch(path1: String?, path2: String?): Boolean {
+        if (path1 == null || path2 == null) return false
+        if (path1 == path2) return true
+        val p1 = path1.removePrefix("file://")
+        val p2 = path2.removePrefix("file://")
+        return p1 == p2
+    }
+
     // --- Step-level load diagnostics (shown on-phone in Settings → Development) ---
     @Volatile
     private var loadIssued: Boolean = false
@@ -286,7 +316,10 @@ class MpvPlayerEngine(
         setOption("gpu-context", "android")
         setOption("opengl-es", "yes")
         setOption("ao", "audiotrack,opensles")
-        setOption("keep-open", "always")
+        // Issue #103: keep-open=yes pauses on EOF so the last frame stays visible
+        // and eof-reached signals to PlaybackManager. PlaybackManager owns queue
+        // transitions; mpv holds only the active item.
+        setOption("keep-open", "yes")
         setOption("ytdl", "no")
 
         // ROOT-CAUSE FIX (mpv "keeps loading forever", issue #96): mpv quits
@@ -628,6 +661,18 @@ class MpvPlayerEngine(
                 }
             }
             MPV.mpvEvent.MPV_EVENT_FILE_LOADED -> {
+                // Drop stale FILE_LOADED event if the file changed before FILE_LOADED arrived
+                val loadedPath = try { mpv.getPropertyString("path") } catch (_: Exception) { null }
+                val isStale = if (!loadedPath.isNullOrBlank() && !activeMediaUri.isNullOrBlank()) {
+                    !isPathMatch(loadedPath, activeMediaUri)
+                } else {
+                    false
+                }
+                if (isStale) {
+                    Log.w(TAG, "Ignoring stale FILE_LOADED for $loadedPath; currently loading $activeMediaUri")
+                    return
+                }
+
                 fileLoadedForCurrentItem = true
                 lastMpvEvent = "FILE_LOADED"
                 cachedPlaybackState = Player.STATE_READY
@@ -642,10 +687,33 @@ class MpvPlayerEngine(
                 pendingSeekMs?.let { target ->
                     pendingSeekMs = null
                     try {
-                        mpv.command("seek", (target / 1000.0).toString(), "absolute+exact")
-                        cachedPositionMs = target
+                        val dur = cachedDurationMs
+                        val clamped = if (dur > 0L) target.coerceIn(0L, dur) else target.coerceAtLeast(0L)
+                        mpv.command("seek", (clamped / 1000.0).toString(), "absolute+exact")
+                        cachedPositionMs = clamped
                     } catch (e: Exception) {
                         Log.w(TAG, "Failed applying pending seek $target", e)
+                    }
+                }
+                // Issue #102: Dispatch queued external subtitles for the current item now that file context is active
+                val pending = pendingSubtitles
+                pendingSubtitles = null
+                if (pending != null) {
+                    val matches = activeMediaUri == null || isPathMatch(pending.mediaUri, activeMediaUri)
+                    if (matches) {
+                        pending.subtitles.forEach { sub ->
+                            try {
+                                if (sub.title != null) {
+                                    mpv.command("sub-add", sub.uri, sub.flag, sub.title)
+                                } else {
+                                    mpv.command("sub-add", sub.uri, sub.flag)
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed adding pending subtitle ${sub.uri}", e)
+                            }
+                        }
+                    } else {
+                        Log.w(TAG, "Dropping stale pending subtitles for ${pending.mediaUri} (active: $activeMediaUri)")
                     }
                 }
                 mainHandler.post {
@@ -838,6 +906,23 @@ class MpvPlayerEngine(
 
         applyHwdecForMode(decoderMode)
 
+        activeMediaId = targetItem.id
+        activeMediaUri = targetItem.uri
+
+        // Issue #102: Queue pending external subtitles to dispatch only on MPV_EVENT_FILE_LOADED
+        val subs = mutableListOf<PendingSubtitle>()
+        targetItem.subtitleUri?.let { subUri ->
+            subs.add(PendingSubtitle(uri = subUri, flag = "select"))
+        }
+        targetItem.externalSubtitles.forEach { ext ->
+            subs.add(PendingSubtitle(uri = ext.uri, flag = "auto", title = ext.name))
+        }
+        pendingSubtitles = if (subs.isNotEmpty()) {
+            PendingSubtitles(mediaUri = targetItem.uri, mediaId = targetItem.id, subtitles = subs)
+        } else {
+            null
+        }
+
         try {
             mpv.command("playlist-clear")
 
@@ -856,15 +941,9 @@ class MpvPlayerEngine(
                 mpv.command("loadfile", targetItem.uri, "replace")
             }
 
-            // Append subsequent items to playlist
-            for (i in (targetIndex + 1) until items.size) {
-                mpv.command("loadfile", items[i].uri, "append")
-            }
-
-            // Append prior items to playlist
-            for (i in 0 until targetIndex) {
-                mpv.command("loadfile", items[i].uri, "append")
-            }
+            // Issue #103: PlaybackManager alone owns queue transitions. mpv holds
+            // only the current active item; internal appends were redundant and
+            // scrambled playlist order.
 
             // Note: mpv command() does NOT throw on a rejected command — a
             // bad loadfile fails silently in the log only (this hid the
@@ -872,14 +951,6 @@ class MpvPlayerEngine(
             // means "command sent", and the preparing watchdog is the backstop
             // if no START_FILE/FILE_LOADED event follows.
             loadIssued = true
-
-            // Load external subtitles
-            targetItem.subtitleUri?.let { subUri ->
-                mpv.command("sub-add", subUri, "select")
-            }
-            targetItem.externalSubtitles.forEach { ext ->
-                mpv.command("sub-add", ext.uri, "auto", ext.name)
-            }
         } catch (e: Exception) {
             // A loadfile command failure is NOT a decoder-stage failure: stepping
             // HW->HW+->SW here only delayed the error. Report it directly so the
@@ -964,11 +1035,11 @@ class MpvPlayerEngine(
         try {
             when (mode) {
                 AspectRatioMode.FIT -> {
-                    mpv.setPropertyString("video-aspect-override", "-1")
+                    mpv.setPropertyString("video-aspect-override", "no")
                     mpv.setPropertyDouble("panscan", 0.0)
                 }
                 AspectRatioMode.FILL, AspectRatioMode.ZOOM -> {
-                    mpv.setPropertyString("video-aspect-override", "-1")
+                    mpv.setPropertyString("video-aspect-override", "no")
                     mpv.setPropertyDouble("panscan", 1.0)
                 }
                 AspectRatioMode.SIXTEEN_NINE -> {
@@ -980,7 +1051,7 @@ class MpvPlayerEngine(
                     mpv.setPropertyDouble("panscan", 0.0)
                 }
                 AspectRatioMode.ORIGINAL -> {
-                    mpv.setPropertyString("video-aspect-override", "-1")
+                    mpv.setPropertyString("video-aspect-override", "no")
                     mpv.setPropertyDouble("panscan", 0.0)
                 }
             }
@@ -1090,12 +1161,37 @@ class MpvPlayerEngine(
             updated[index] = media
             currentQueue = updated
 
+            val pending = pendingLoad
+            if (pending != null && index == pending.second) {
+                pendingLoad = Triple(updated, pending.second, pending.third)
+            }
+
             if (index == currentMediaIndex) {
-                media.externalSubtitles.forEach { ext ->
-                    try {
-                        mpv.command("sub-add", ext.uri, "select", ext.name)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed adding external subtitle ${ext.name}", e)
+                if (fileLoadedForCurrentItem) {
+                    media.externalSubtitles.forEach { ext ->
+                        try {
+                            mpv.command("sub-add", ext.uri, "select", ext.name)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed adding external subtitle ${ext.name}", e)
+                        }
+                    }
+                } else {
+                    // Queue for dispatch when FILE_LOADED arrives
+                    val subs = mutableListOf<PendingSubtitle>()
+                    media.subtitleUri?.let { subUri ->
+                        subs.add(PendingSubtitle(uri = subUri, flag = "select"))
+                    }
+                    media.externalSubtitles.forEach { ext ->
+                        subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name))
+                    }
+                    pendingSubtitles = if (subs.isNotEmpty()) {
+                        PendingSubtitles(
+                            mediaUri = media.uri,
+                            mediaId = media.id,
+                            subtitles = subs,
+                        )
+                    } else {
+                        null
                     }
                 }
             }
@@ -1105,6 +1201,9 @@ class MpvPlayerEngine(
     override fun stop() {
         pendingLoad = null
         pendingSeekMs = null
+        pendingSubtitles = null
+        activeMediaId = null
+        activeMediaUri = null
         loadIssued = false
         lastMpvEvent = "none"
         try {
@@ -1119,6 +1218,9 @@ class MpvPlayerEngine(
     override fun release() {
         pendingLoad = null
         pendingSeekMs = null
+        pendingSubtitles = null
+        activeMediaId = null
+        activeMediaUri = null
         isReleased = true
         mainHandler.removeCallbacksAndMessages(null)
         detachSurface()
