@@ -42,7 +42,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -99,6 +98,7 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
+import com.mpx.player.ui.components.MpxLoadingIndicator
 import com.mpx.player.ui.components.FastScrollbar
 import com.mpx.player.ui.components.GridFastScrollbar
 import com.mpx.player.ui.components.ShortcutChipRow
@@ -853,7 +853,7 @@ fun LocalScreen(
                             .padding(32.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        MpxLoadingIndicator()
                     }
                 } else if (filteredFolderVideos.isEmpty() && folderSearchQuery.isNotBlank()) {
                     EmptyStateView(
@@ -872,73 +872,19 @@ fun LocalScreen(
                         onActionClick = { currentFolder = null },
                     )
                 } else {
-                    // Folder contents section header
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(R.string.mini_player_video).uppercase(Locale.US),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = "${filteredFolderVideos.size}",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                            if (realSettingsRepo.hasFolderViewModeOverride(currentFolder!!.id)) {
-                                Spacer(Modifier.width(6.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                                        .padding(horizontal = 6.dp, vertical = 1.dp),
-                                ) {
-                                    Text(
-                                        text = stringResource(folderViewMode.labelRes),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                }
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .clickable { showFolderSortDialog = true }
-                                .padding(horizontal = 6.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            val folderSortLabelText = if (folderSecondarySortField != SortField.NONE && folderSecondarySortField != folderSortField) {
-                                "${stringResource(folderSortField.labelRes)} / ${stringResource(folderSecondarySortField.labelRes)}"
-                            } else {
-                                stringResource(folderSortField.labelRes)
-                            }
-                            Text(
-                                text = stringResource(R.string.local_sort_label, folderSortLabelText),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 12.sp,
-                            )
-                        }
+                    // Folder contents section header (shared header, #107)
+                    val folderSortLabelText = if (folderSecondarySortField != SortField.NONE && folderSecondarySortField != folderSortField) {
+                        "${stringResource(folderSortField.labelRes)} / ${stringResource(folderSecondarySortField.labelRes)}"
+                    } else {
+                        stringResource(folderSortField.labelRes)
                     }
+                    LocalSectionHeader(
+                        title = stringResource(R.string.mini_player_video),
+                        count = filteredFolderVideos.size,
+                        sortLabel = stringResource(R.string.local_sort_label, folderSortLabelText),
+                        onSortClick = { showFolderSortDialog = true },
+                        badgeText = if (realSettingsRepo.hasFolderViewModeOverride(currentFolder!!.id)) stringResource(folderViewMode.labelRes) else null,
+                    )
 
                     // Video list or grid based on folderViewMode
                     if (folderViewMode == ViewMode.LIST) {
@@ -1085,7 +1031,7 @@ fun LocalScreen(
                             .padding(32.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        MpxLoadingIndicator()
                     }
                 } else if (rootEmpty && searchQuery.isNotBlank()) {
                     EmptyStateView(
@@ -1126,56 +1072,18 @@ fun LocalScreen(
                         )
                     }
                 } else if (appSettings.fileView) {
-                    // Section Header: FILES + Sort Button
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(R.string.section_files_header),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = "${filteredVideos.size}",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .clickable { showSortDialog = true }
-                                .padding(horizontal = 6.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            val sortLabelText = if (secondarySortField != SortField.NONE && secondarySortField != sortField) {
-                                "${stringResource(sortField.labelRes)} / ${stringResource(secondarySortField.labelRes)}"
-                            } else {
-                                stringResource(sortField.labelRes)
-                            }
-                            Text(
-                                text = stringResource(R.string.local_sort_label, sortLabelText),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 12.sp,
-                            )
-                        }
+                    // Section Header: FILES (shared header, #107)
+                    val sortLabelText = if (secondarySortField != SortField.NONE && secondarySortField != sortField) {
+                        "${stringResource(sortField.labelRes)} / ${stringResource(secondarySortField.labelRes)}"
+                    } else {
+                        stringResource(sortField.labelRes)
                     }
+                    LocalSectionHeader(
+                        title = stringResource(R.string.section_files_header),
+                        count = filteredVideos.size,
+                        sortLabel = stringResource(R.string.local_sort_label, sortLabelText),
+                        onSortClick = { showSortDialog = true },
+                    )
                     if (viewMode == ViewMode.LIST) {
                         val listState = rememberLazyListState()
                         Box(modifier = Modifier.fillMaxSize()) {
@@ -1314,74 +1222,20 @@ fun LocalScreen(
                         }
                     }
                 } else {
-                    // Section Header: FOLDERS + Sort Button
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = if (appSettings.showAllFolders) stringResource(R.string.local_section_all_folders)
-                                else stringResource(R.string.local_section_folders),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = "${filteredFolders.size}",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                            if (appSettings.showAllFolders) {
-                                Spacer(Modifier.width(6.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                                        .padding(horizontal = 6.dp, vertical = 1.dp),
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.local_badge_show_all),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                }
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .clickable { showSortDialog = true }
-                                .padding(horizontal = 6.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            val sortLabelText = if (secondarySortField != SortField.NONE && secondarySortField != sortField) {
-                                "${stringResource(sortField.labelRes)} / ${stringResource(secondarySortField.labelRes)}"
-                            } else {
-                                stringResource(sortField.labelRes)
-                            }
-                            Text(
-                                text = stringResource(R.string.local_sort_label, sortLabelText),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 12.sp,
-                            )
-                        }
+                    // Section Header: FOLDERS (shared header, #107)
+                    val sortLabelText = if (secondarySortField != SortField.NONE && secondarySortField != sortField) {
+                        "${stringResource(sortField.labelRes)} / ${stringResource(secondarySortField.labelRes)}"
+                    } else {
+                        stringResource(sortField.labelRes)
                     }
+                    LocalSectionHeader(
+                        title = if (appSettings.showAllFolders) stringResource(R.string.local_section_all_folders)
+                        else stringResource(R.string.local_section_folders),
+                        count = filteredFolders.size,
+                        sortLabel = stringResource(R.string.local_sort_label, sortLabelText),
+                        onSortClick = { showSortDialog = true },
+                        badgeText = if (appSettings.showAllFolders) stringResource(R.string.local_badge_show_all) else null,
+                    )
 
                     // Folder list / grid with smooth LazyColumn/LazyGrid, stable keys and fast scrollbar
                     if (viewMode == ViewMode.LIST) {
