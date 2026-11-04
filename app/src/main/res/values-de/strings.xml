@@ -140,6 +140,10 @@
     <string name="subtitle_scale_header">Skalierung:</string>
     <string name="subtitle_ass_header">Erweitert (ASS-Stile):</string>
     <string name="subtitle_ass_mpv_note">Nur MPV-Engine; Media3 wendet eingebettete Stile immer an.</string>
+    <string name="subtitle_sync_header">Untertitel-Synchronisation</string>
+    <string name="subtitle_speed_header">Untertitelgeschwindigkeit</string>
+    <string name="subtitle_timing_mpv_note">Sync und Geschwindigkeit gelten nur für die MPV-Engine.</string>
+    <string name="subtitle_timing_reset">Zurücksetzen</string>
     <string name="subtitle_typeface_default">Standard</string>
     <string name="subtitle_typeface_sans">Sans-Serif</string>
     <string name="subtitle_typeface_serif">Serif</string>
