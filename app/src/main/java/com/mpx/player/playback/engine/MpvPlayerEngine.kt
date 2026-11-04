@@ -84,7 +84,9 @@ class MpvPlayerEngine(
 
     /** True once libmpv confirms the current item actually loaded (FILE_LOADED).
      * Stays false when loadfile fails outright — the key signal that distinguishes
-     * "mpv never started this file" from a mid-playback decoder error. */
+     * "mpv never started this file" from a mid-playback decoder error. Written on
+     * the event thread, read on Main: volatile. */
+    @Volatile
     private var fileLoadedForCurrentItem: Boolean = false
     /** Last error/warning log lines from libmpv (capped); surfaced when a file fails to load. */
     private val lastErrorLogs: ArrayDeque<String> = ArrayDeque()
@@ -98,7 +100,9 @@ class MpvPlayerEngine(
     private var pendingLoad: Triple<List<PlayableMedia>, Int, Long>? = null
     /** A seek requested before the current file loaded (e.g. resume position fired
      * on item transition while the load was still deferred for lack of surface).
-     * Applied the moment FILE_LOADED arrives, so a seek is never silently lost. */
+     * Applied the moment FILE_LOADED arrives, so a seek is never silently lost.
+     * Written on Main, read/cleared on the event thread: volatile. */
+    @Volatile
     private var pendingSeekMs: Long? = null
 
     // --- Step-level load diagnostics (shown on-phone in Settings → Development) ---
@@ -239,6 +243,20 @@ class MpvPlayerEngine(
         }
     }
 
+    /**
+     * Runtime property set for use AFTER mpv.init(). mpv_set_option_string is
+     * pre-init only and returns MPV_ERROR_OPTION_CHANGE_UNAVAILABLE (-13)
+     * after init — that silently broke post-init force-window flips and live
+     * subtitle styling. Runtime changes must go through the property API.
+     */
+    private fun setRuntimeProperty(key: String, value: String) {
+        try {
+            mpv.setPropertyString(key, value)
+        } catch (e: Exception) {
+            Log.w(TAG, "setProperty $key failed", e)
+        }
+    }
+
     private fun rejectedOptionsText(): String =
         synchronized(rejectedOptions) {
             if (rejectedOptions.isEmpty()) "" else "; rejected options: " + rejectedOptions.joinToString(", ")
@@ -318,13 +336,14 @@ class MpvPlayerEngine(
         mpv.init()
         mpvInitialized = true
 
-        // Post-init options. force-window stays NO here on purpose (mpv-android's
+        // Post-init options must use the property API: setOptionString after
+        // init() returns -13. force-window stays NO here on purpose (mpv-android's
         // own BaseMPVView carries the comment "could mess up VO init before
         // surfaceCreated() is called"): forcing a window with no surface yet
         // makes the first loadfile attempt VO init with no ANativeWindow, which
         // aborts the file before the player screen's SurfaceView even exists.
         // attachSurface() flips it to yes once a real surface is attached.
-        setOption("force-window", "no")
+        setRuntimeProperty("force-window", "no")
 
         // Apply the full saved subtitle style (issue #75) now that mpv accepts live options.
         applySubtitleSettings(loadSavedSubtitleSettings())
@@ -357,14 +376,15 @@ class MpvPlayerEngine(
     /**
      * Applies the subtitle style options (issue #75) to a running mpv instance.
      * All sub-* options used here are runtime-changeable in mpv, so this is
-     * safe to call whenever settings change mid-playback. No-op before init
-     * or after release.
+     * safe to call whenever settings change mid-playback — but only through
+     * the property API, since setOptionString is pre-init only. No-op before
+     * init or after release.
      */
     fun applySubtitleSettings(settings: AppSettings) {
         if (!mpvInitialized || isReleased) return
         try {
             subtitleMpvOptions(settings).forEach { (key, value) ->
-                setOption(key, value)
+                setRuntimeProperty(key, value)
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed applying subtitle settings to mpv", e)
@@ -707,7 +727,7 @@ class MpvPlayerEngine(
             currentSurface = surface
             try {
                 mpv.attachSurface(surface)
-                setOption("force-window", "yes")
+                setRuntimeProperty("force-window", "yes")
                 if (willLoad) {
                     // A load is about to run: loadfile itself initialises
                     // VO against the attached surface; do not touch "vo".
@@ -821,18 +841,20 @@ class MpvPlayerEngine(
         try {
             mpv.command("playlist-clear")
 
-            // DO NOT pass "start=..." as a loadfile option: libmpv rejects it
-            // outright ("The loadfile option must be an integer: start=0" in
-            // the device log, on every attempt, even start=0), the file never
-            // opens, and command() does not throw — so the old code believed
-            // the load was issued while nothing played. Resume position goes
-            // through the pending-seek mechanism instead: it is applied on
-            // FILE_LOADED, exactly like a seek fired during prepare.
+            // Resume via libmpv's own start option, NOT via a post-load seek:
+            // seeking on FILE_LOADED plays a 0:00 audio/video blip first.
+            // mpv 0.38+ loadfile signature is url, flags, index, options —
+            // the index slot MUST be an integer, which is exactly why the old
+            // "start=..." in that slot was rejected ("must be an integer").
+            // "-1" is the default index and carries the options argument.
+            // pendingSeekMs stays reserved for user scrubs during prepare.
             if (resumeMs > 0L) {
-                pendingSeekMs = resumeMs
+                val startSec = (resumeMs / 1000.0).toString()
                 cachedPositionMs = resumeMs
+                mpv.command("loadfile", targetItem.uri, "replace", "-1", "start=$startSec")
+            } else {
+                mpv.command("loadfile", targetItem.uri, "replace")
             }
-            mpv.command("loadfile", targetItem.uri, "replace")
 
             // Append subsequent items to playlist
             for (i in (targetIndex + 1) until items.size) {
