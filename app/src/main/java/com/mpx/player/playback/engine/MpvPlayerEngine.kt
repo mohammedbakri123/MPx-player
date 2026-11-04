@@ -15,6 +15,7 @@ import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.MpvLoadStage
+import com.mpx.player.playback.MpvLogFile
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
 import com.mpx.player.playback.subtitleMpvOptions
@@ -177,6 +178,7 @@ class MpvPlayerEngine(
 
     private val logObserver = object : MPV.LogObserver {
         override fun logMessage(prefix: String, level: Int, text: String) {
+            MpvLogFile.append(appContext, prefix, level, text)
             if (level <= 20) { // MPV_LOG_LEVEL_WARN or ERROR
                 Log.w(TAG, "[$prefix] $text")
                 // Keep a short ring buffer of the real libmpv diagnostics. When
