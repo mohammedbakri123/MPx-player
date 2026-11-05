@@ -116,20 +116,10 @@ fun VideoItemRow(
             }
 
             if (showDuration && video.formattedDuration.isNotBlank()) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(3.dp)
-                        .background(MpxTheme.colors.black.copy(alpha = 0.75f), MpxShapes.extraSmall)
-                        .padding(horizontal = 4.dp, vertical = 1.dp),
-                ) {
-                    Text(
-                        text = video.formattedDuration,
-                        color = MpxTheme.colors.textPrimary,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
+                VideoDurationBadge(
+                    duration = video.formattedDuration,
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                )
             }
         }
 
@@ -262,20 +252,10 @@ fun VideoItemGridCard(
                 )
 
                 if (showDuration && video.formattedDuration.isNotBlank()) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(4.dp)
-                            .background(MpxTheme.colors.black.copy(alpha = 0.8f), MpxShapes.extraSmall)
-                            .padding(horizontal = 4.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text = video.formattedDuration,
-                            color = MpxTheme.colors.textPrimary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
+                    VideoDurationBadge(
+                        duration = video.formattedDuration,
+                        modifier = Modifier.align(Alignment.BottomEnd),
+                    )
                 }
 
                 if (isSelected) {
@@ -385,5 +365,37 @@ fun VideoItemGridCard(
                 }
             }
         }
+    }
+}
+
+/**
+ * The video duration badge shown on thumbnails (issue #163).
+ *
+ * One shared size for every thumbnail — list rows, grid cards, and (once the
+ * search tiles adopt it) search results — so all tiles look uniform. Small
+ * and quiet on purpose: 8sp semibold white text on a soft black scrim,
+ * tucked 2dp into the bottom-right corner. Fixed black/white (not theme
+ * colors) so it reads identically in the dark and light themes, matching
+ * the search results' badge.
+ */
+@Composable
+fun VideoDurationBadge(
+    duration: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .padding(2.dp)
+            .background(Color.Black.copy(alpha = 0.65f), MpxShapes.extraSmall)
+            .padding(horizontal = 3.dp, vertical = 1.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = duration,
+            color = Color.White,
+            fontSize = 8.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
     }
 }
