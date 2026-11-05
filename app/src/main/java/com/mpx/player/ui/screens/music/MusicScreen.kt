@@ -311,7 +311,9 @@ fun MusicScreen(
         } else {
             appSettings.copy(musicViewMode = newMode.name, localViewMode = newMode.name)
         }
-        realSettingsRepo.save(updated)
+        // Issue #191: layout save — commit() so a swipe-away right after
+        // the tap cannot lose the view-mode choice.
+        realSettingsRepo.save(updated, commit = true)
         appSettings = updated
     }
 
@@ -1947,13 +1949,13 @@ fun MusicScreen(
             onSortChange = { newSort ->
                 sortField = newSort
                 val updated = appSettings.copy(musicPrimarySortField = newSort.name)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortReverse = appSettings.sortReverse,
             onSortReverseChange = { reversed ->
                 val updated = appSettings.copy(sortReverse = reversed)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             currentView = viewMode,

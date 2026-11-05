@@ -158,5 +158,20 @@ data class AppSettings(
 
 interface AppSettingsRepository {
     fun load(): AppSettings
-    fun save(settings: AppSettings)
+
+    /**
+     * Persists the whole settings blob. By default the write is queued
+     * with [android.content.SharedPreferences.Editor.apply] — the
+     * in-memory map updates at once, the disk write lands later.
+     *
+     * Layout settings (#191) must not use the queued write: if the app
+     * is swiped away right after the user picks List/Grid or a sort, the
+     * process can be killed before the queued write flushes and the
+     * choice is lost on the next launch. Pass [commit] = true for
+     * layout saves so the value is on disk before the change returns.
+     * Layout changes are user taps (a few per session at most), so the
+     * synchronous write is cheap; high-frequency saves (pinch zoom,
+     * tab switches, playback tweaks) stay on apply().
+     */
+    fun save(settings: AppSettings, commit: Boolean = false)
 }
