@@ -1,6 +1,7 @@
 package com.mpx.player.ui.screens.music
 import com.mpx.player.ui.theme.MpxTheme
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
@@ -29,7 +30,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.mpx.player.ui.components.AsyncAlbumThumbnail
 import com.mpx.player.ui.ActivityResultHandler
-import com.mpx.player.ui.components.AsyncAudioTrackThumbnail
 import com.mpx.player.ui.components.FastScrollbar
 import com.mpx.player.ui.components.GridFastScrollbar
 import java.util.Locale
@@ -39,6 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
@@ -66,6 +67,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SnackbarHost
@@ -118,9 +120,12 @@ import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
-import com.mpx.player.ui.screens.local.MX_SORT_FIELDS
+import com.mpx.player.ui.screens.local.AudioTrackGridCard
+import com.mpx.player.ui.screens.local.AudioTrackRow
+import com.mpx.player.ui.screens.local.LocalSortPopup
+import com.mpx.player.ui.screens.local.MediaSortComparator
+import com.mpx.player.ui.screens.local.MultiSelectAction
 import com.mpx.player.ui.screens.local.SortField
-import com.mpx.player.ui.screens.local.SortViewDialog
 import com.mpx.player.ui.screens.local.ViewMode
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.MpxLoadingIndicator
@@ -176,9 +181,40 @@ fun MusicScreen(
     var viewMode by remember {
         mutableStateOf(if (appSettings.musicViewMode == "GRID") ViewMode.GRID else ViewMode.LIST)
     }
-    var sortField by remember { mutableStateOf(SortField.NAME) }
-    var showSortDialog by remember { mutableStateOf(false) }
+    // #185: Tracks sort uses the shared MediaSortComparator + the #156
+    // Sort & View popup, like Local. Persisted in
+    // AppSettings.musicPrimarySortField; direction is the shared global
+    // sortReverse, same as Local's popup.
+    var sortField by remember {
+        mutableStateOf(
+            try {
+                SortField.valueOf(appSettings.musicPrimarySortField)
+            } catch (_: Exception) {
+                SortField.NAME
+            }
+        )
+    }
+    var showSortPopup by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
+
+    // #185: long-press multi-select on the Tracks tab, mirroring Local's
+    // #144. Keyed like Local (id, falling back to path). Long-press
+    // toggles an item (entering selection mode when empty); a tap while
+    // selecting toggles too. Back / the X exits and clears.
+    var selectedTrackIds by remember { mutableStateOf(setOf<String>()) }
+    val isTrackSelectionMode = selectedTrackIds.isNotEmpty()
+    val trackSelectionCount = selectedTrackIds.size
+
+    fun clearTrackSelection() {
+        selectedTrackIds = emptySet()
+    }
+
+    fun toggleTrackSelection(track: AudioTrack) {
+        val key = track.id.ifBlank { track.path }
+        selectedTrackIds =
+            if (selectedTrackIds.contains(key)) selectedTrackIds - key
+            else selectedTrackIds + key
+    }
 
     fun updateViewMode(newMode: ViewMode) {
         viewMode = newMode
@@ -206,6 +242,9 @@ fun MusicScreen(
     var showHistoryDialog by remember { mutableStateOf(false) }
     var trackForOptions by remember { mutableStateOf<AudioTrack?>(null) }
     var trackForPlaylistAdd by remember { mutableStateOf<AudioTrack?>(null) }
+    // #185: tracks queued for "Add to playlist" from the multi-select bar.
+    var tracksForPlaylistAdd by remember { mutableStateOf<List<AudioTrack>>(emptyList()) }
+    var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     var selectedCustomPlaylist by remember { mutableStateOf<CustomPlaylist?>(null) }
     var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
@@ -235,6 +274,18 @@ fun MusicScreen(
         if (selectedTab !in visibleTabs) {
             selectedTab = visibleTabs.firstOrNull() ?: MusicTab.TRACKS
         }
+    }
+
+    // #185: Back exits Tracks multi-select (exactly one step), like Local.
+    BackHandler(enabled = isTrackSelectionMode) {
+        clearTrackSelection()
+    }
+
+    // #185: leaving the Tracks tab drops its selection — the other tabs
+    // have no multi-select yet, so a selection must not linger (and its
+    // action bar must not show) on them.
+    LaunchedEffect(selectedTab) {
+        if (selectedTab != MusicTab.TRACKS) clearTrackSelection()
     }
 
     var showManageTabsDialog by remember { mutableStateOf(false) }
@@ -358,28 +409,80 @@ fun MusicScreen(
         }
     }
 
-    val sortedTracks = remember(filteredTracks, sortField) {
-        when (sortField) {
-            SortField.NAME -> filteredTracks.sortedBy { it.title.lowercase(Locale.US) }
-            SortField.DATE -> filteredTracks.sortedByDescending { it.id }
-            SortField.SIZE -> filteredTracks.sortedByDescending { it.durationMs }
-            SortField.COUNT, SortField.NONE -> filteredTracks
-            SortField.DURATION -> filteredTracks.sortedByDescending { it.durationMs }
-            // MX combined keys (issue #70). Audio carries no date or
-            // resolution: DATE_DURATION falls back to id recency, and
-            // RESOLUTION_FRAMERATE leaves order unchanged.
-            SortField.DATE_DURATION -> filteredTracks.sortedWith(
-                compareByDescending<AudioTrack> { it.id }.thenByDescending { it.durationMs },
+    // #185: the shared MediaSortComparator (natural numeric order,
+    // secondary tie-break) replaces the hand-rolled when() on SortField.
+    // Reverse is the shared global sortReverse, like Local's popup.
+    // With reverse off the order is identical to the old hand-rolled one
+    // (Name A-Z, Date newest first, Size/Duration longest first).
+    val sortedTracks = remember(filteredTracks, sortField, appSettings.sortReverse) {
+        filteredTracks.sortedWith(
+            MediaSortComparator.audioTrackComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
             )
-            SortField.RESOLUTION_FRAMERATE -> filteredTracks
-            SortField.STATUS_TYPE_LOCATION -> filteredTracks.sortedWith(
-                compareBy<AudioTrack> {
-                    val name = it.path.substringAfterLast('/', it.path)
-                    val dot = name.lastIndexOf('.')
-                    if (dot > 0) name.substring(dot + 1).lowercase(Locale.US) else ""
-                }.thenBy { it.path },
-            )
+        )
+    }
+
+    fun selectedTracksInView(): List<AudioTrack> =
+        sortedTracks.filter { selectedTrackIds.contains(it.id.ifBlank { it.path }) }
+
+    fun playTrackSelection() {
+        val selected = selectedTracksInView()
+        if (selected.isNotEmpty()) {
+            playbackManager?.playAudioQueue(selected, startIndex = 0)
+            onOpenPlayer()
+            clearTrackSelection()
         }
+    }
+
+    fun addTrackSelectionToPlaylist() {
+        val selected = selectedTracksInView()
+        if (selected.isNotEmpty()) {
+            tracksForPlaylistAdd = selected
+            showAddToPlaylistDialog = true
+        }
+    }
+
+    fun toggleTrackSelectionFavourite() {
+        val selected = selectedTracksInView()
+        if (selected.isEmpty()) return
+        val favUris = favourites.map { it.mediaUri }.toSet()
+        scope.launch(Dispatchers.IO) {
+            // Toggle as a group: if every selected track is already a
+            // favourite, remove them all; otherwise add the missing ones.
+            val allFav = selected.all { favUris.contains(it.path) }
+            if (allFav) {
+                selected.forEach { persistenceRepository.removeFavourite(it.path) }
+            } else {
+                selected.filter { !favUris.contains(it.path) }.forEach { track ->
+                    persistenceRepository.addFavourite(
+                        FavouriteItem(
+                            mediaId = track.id,
+                            title = track.title,
+                            subtitle = "${track.artist} • ${track.album}",
+                            mediaUri = track.path,
+                            isVideo = false,
+                            durationMs = track.durationMs,
+                        )
+                    )
+                }
+            }
+            withContext(Dispatchers.Main) {
+                clearTrackSelection()
+                snackbarHostState.showSnackbar(
+                    context.getString(
+                        if (allFav) R.string.snackbar_removed_favourites
+                        else R.string.snackbar_added_to_favourites
+                    )
+                )
+            }
+        }
+    }
+
+    var isRefreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(isLoading) {
+        if (!isLoading) isRefreshing = false
     }
 
     Scaffold(
@@ -387,6 +490,33 @@ fun MusicScreen(
         containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
+            if (isTrackSelectionMode) {
+                // #185: selection top bar — count + close. Back exits too.
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = { clearTrackSelection() }) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.cd_exit_selection),
+                                tint = MpxTheme.colors.textPrimary,
+                            )
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.multiselect_selected_count, trackSelectionCount),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                            ),
+                            color = MpxTheme.colors.textPrimary,
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MpxTheme.colors.black,
+                    ),
+                )
+            } else {
             TopAppBar(
                 title = {
                     Text(
@@ -438,7 +568,7 @@ fun MusicScreen(
                                 text = { Text(stringResource(R.string.local_menu_view_sort)) },
                                 onClick = {
                                     menuExpanded = false
-                                    showSortDialog = true
+                                    showSortPopup = true
                                 },
                             )
                             DropdownMenuItem(
@@ -465,6 +595,41 @@ fun MusicScreen(
                     }
                 },
             )
+            }
+        },
+        bottomBar = {
+            if (isTrackSelectionMode) {
+                // #185: multi-select action bar — exactly the track-menu
+                // actions: Play, Add to playlist, Favourite. No delete.
+                Column {
+                    HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MpxTheme.colors.black)
+                            .padding(vertical = 4.dp),
+                    ) {
+                        MultiSelectAction(
+                            icon = Icons.Filled.PlayArrow,
+                            label = stringResource(R.string.video_item_play),
+                            onClick = { playTrackSelection() },
+                            modifier = Modifier.weight(1f),
+                        )
+                        MultiSelectAction(
+                            icon = Icons.AutoMirrored.Filled.QueueMusic,
+                            label = stringResource(R.string.music_menu_add_to_playlist),
+                            onClick = { addTrackSelectionToPlaylist() },
+                            modifier = Modifier.weight(1f),
+                        )
+                        MultiSelectAction(
+                            icon = Icons.Filled.Favorite,
+                            label = stringResource(R.string.music_menu_toggle_favourite),
+                            onClick = { toggleTrackSelectionFavourite() },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
         },
     ) { padding ->
         Column(
@@ -618,17 +783,31 @@ fun MusicScreen(
                                 icon = Icons.Filled.Search,
                             )
                         } else {
-                            TracksTabContent(
-                                tracks = sortedTracks,
-                                viewMode = viewMode,
-                                onTrackClick = { index ->
-                                    playbackManager?.playAudioQueue(sortedTracks, startIndex = index)
-                                    onOpenPlayer()
+                            // #185: pull to refresh, like Local's content.
+                            PullToRefreshBox(
+                                isRefreshing = isRefreshing,
+                                onRefresh = {
+                                    isRefreshing = true
+                                    refreshMusic()
                                 },
-                                onTrackOptionsClick = { track ->
-                                    trackForOptions = track
-                                },
-                            )
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                TracksTabContent(
+                                    tracks = sortedTracks,
+                                    viewMode = viewMode,
+                                    showThumbnails = appSettings.showThumbnails,
+                                    selectedTrackIds = selectedTrackIds,
+                                    isSelectionMode = isTrackSelectionMode,
+                                    onToggleTrackSelection = { toggleTrackSelection(it) },
+                                    onTrackClick = { index ->
+                                        playbackManager?.playAudioQueue(sortedTracks, startIndex = index)
+                                        onOpenPlayer()
+                                    },
+                                    onTrackOptionsClick = { track ->
+                                        trackForOptions = track
+                                    },
+                                )
+                            }
                         }
                     }
                     MusicTab.PLAYLISTS -> PlaylistsTabContent(
@@ -751,6 +930,50 @@ fun MusicScreen(
             },
             onCreateNewPlaylist = {
                 trackForPlaylistAdd = null
+                showCreatePlaylistDialog = true
+            },
+        )
+    }
+
+    // #185: multi-select "Add to playlist" — the whole selection, added
+    // to an audio playlist (video playlists filtered out, mirroring
+    // Local's video filter the other way).
+    if (showAddToPlaylistDialog && tracksForPlaylistAdd.isNotEmpty()) {
+        val selected = tracksForPlaylistAdd
+        val audioPlaylists = customPlaylists.filter { !it.isVideoPlaylist }
+        AddToPlaylistDialog(
+            playlists = audioPlaylists,
+            mediaTitle = if (selected.size == 1) selected.first().title
+            else stringResource(R.string.playlist_items_count, selected.size),
+            onDismiss = {
+                showAddToPlaylistDialog = false
+                tracksForPlaylistAdd = emptyList()
+            },
+            onSelectPlaylist = { pl ->
+                scope.launch {
+                    selected.forEach { track ->
+                        persistenceRepository.addItemToPlaylist(
+                            PlaylistItem(
+                                playlistId = pl.id,
+                                mediaUri = track.path,
+                                mediaId = track.id,
+                                title = track.title,
+                                subtitle = "${track.artist} • ${track.album}",
+                                isVideo = false,
+                                durationMs = track.durationMs,
+                            )
+                        )
+                    }
+                    showAddToPlaylistDialog = false
+                    tracksForPlaylistAdd = emptyList()
+                    clearTrackSelection()
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.music_added_to_playlist_msg, pl.name)
+                    )
+                }
+            },
+            onCreateNewPlaylist = {
+                showAddToPlaylistDialog = false
                 showCreatePlaylistDialog = true
             },
         )
@@ -975,28 +1198,53 @@ fun MusicScreen(
         )
     }
 
-    if (showSortDialog) {
-        SortViewDialog(
+    // #185: the shared #156 Sort & View popup, like Local. It offers
+    // Title / Date / Size; for audio, Size sorts by duration (the
+    // comparator maps both to durationMs). Tree mode, grid columns and
+    // Fields are Local-only and hidden here. The old SortViewDialog's
+    // separate-view-layout toggle is not in this popup (it lives in
+    // Settings, as it does for Local); the full field set stays out —
+    // the popup is the quick picker, not the full sort dialog.
+    if (showSortPopup) {
+        LocalSortPopup(
+            isFolderScope = false,
             currentSort = sortField,
-            currentView = viewMode,
-            separateViewLayout = appSettings.separateViewLayout,
-            availableSortFields = MX_SORT_FIELDS,
-            onSortChange = { sortField = it },
-            onViewChange = { updateViewMode(it) },
-            onSeparateViewLayoutChange = { isChecked ->
-                val updated = appSettings.copy(separateViewLayout = isChecked)
+            onSortChange = { newSort ->
+                sortField = newSort
+                val updated = appSettings.copy(musicPrimarySortField = newSort.name)
                 realSettingsRepo.save(updated)
                 appSettings = updated
-                scope.launch {
-                    val msg = if (isChecked) {
-                        context.getString(R.string.snackbar_separate_view_enabled)
-                    } else {
-                        context.getString(R.string.snackbar_separate_view_disabled)
-                    }
-                    snackbarHostState.showSnackbar(msg)
-                }
             },
-            onDismiss = { showSortDialog = false },
+            sortReverse = appSettings.sortReverse,
+            onSortReverseChange = { reversed ->
+                val updated = appSettings.copy(sortReverse = reversed)
+                realSettingsRepo.save(updated)
+                appSettings = updated
+            },
+            currentView = viewMode,
+            onViewChange = { updateViewMode(it) },
+            isTreeMode = false,
+            onTreeModeChange = {},
+            folderGridColumns = 2,
+            onFolderGridColumnsChange = {},
+            videoGridColumns = 2,
+            onVideoGridColumnsChange = {},
+            showFullName = false,
+            onShowFullNameChange = {},
+            showFieldLocation = false,
+            onShowFieldLocationChange = {},
+            showFieldCount = false,
+            onShowFieldCountChange = {},
+            showFieldDuration = false,
+            onShowFieldDurationChange = {},
+            showFieldSize = false,
+            onShowFieldSizeChange = {},
+            showFieldDate = false,
+            onShowFieldDateChange = {},
+            showTreeMode = false,
+            showGridColumns = false,
+            showFieldsSection = false,
+            onDismiss = { showSortPopup = false },
         )
     }
 
@@ -1139,6 +1387,10 @@ private fun getPlayableUri(track: AudioTrack): String = track.path
 private fun TracksTabContent(
     tracks: List<AudioTrack>,
     viewMode: ViewMode = ViewMode.LIST,
+    showThumbnails: Boolean = true,
+    selectedTrackIds: Set<String> = emptySet(),
+    isSelectionMode: Boolean = false,
+    onToggleTrackSelection: (AudioTrack) -> Unit = {},
     onTrackClick: (Int) -> Unit,
     onTrackOptionsClick: (AudioTrack) -> Unit,
 ) {
@@ -1155,73 +1407,18 @@ private fun TracksTabContent(
                     key = { index, track -> track.id.ifBlank { "${track.path}_$index" } },
                     contentType = { _, _ -> "track_row" },
                 ) { index, track ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onTrackClick(index) }
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(MpxShapes.small)
-                                .background(MpxTheme.colors.surfaceVariant),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            AsyncAudioTrackThumbnail(
-                                track = track,
-                                modifier = Modifier.fillMaxSize(),
-                                iconSize = 24.dp,
-                            )
-                        }
-
-                        Spacer(Modifier.width(14.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(
-                                text = track.title,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 15.sp,
-                                ),
-                                color = MpxTheme.colors.textPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Spacer(Modifier.height(2.dp))
-                            Text(
-                                text = "${track.artist} • ${track.album}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MpxTheme.colors.textSecondary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-
-                        Text(
-                            text = track.durationFormatted,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                        )
-
-                        Spacer(Modifier.width(8.dp))
-
-                        IconButton(
-                            onClick = { onTrackOptionsClick(track) },
-                            modifier = Modifier.size(48.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = stringResource(R.string.music_cd_track_options, track.title),
-                                tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                    }
+                    val isSelected = selectedTrackIds.contains(track.id.ifBlank { track.path })
+                    AudioTrackRow(
+                        track = track,
+                        showThumbnails = showThumbnails,
+                        isSelected = isSelected,
+                        onLongClick = { onToggleTrackSelection(track) },
+                        onOptionsClick = { onTrackOptionsClick(track) },
+                        onClick = {
+                            if (isSelectionMode) onToggleTrackSelection(track)
+                            else onTrackClick(index)
+                        },
+                    )
                     HorizontalDivider(
                         modifier = Modifier.padding(start = 78.dp),
                         color = MpxTheme.colors.border,
@@ -1254,73 +1451,18 @@ private fun TracksTabContent(
                     key = { index, track -> track.id.ifBlank { "${track.path}_$index" } },
                     contentType = { _, _ -> "track_grid_card" },
                 ) { index, track ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onTrackClick(index) },
-                        shape = MpxShapes.large,
-                        colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(10.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(110.dp)
-                                    .clip(MpxShapes.small)
-                                    .background(MpxTheme.colors.surfaceVariant),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                AsyncAudioTrackThumbnail(
-                                    track = track,
-                                    modifier = Modifier.fillMaxSize(),
-                                    iconSize = 44.dp,
-                                )
-                            }
-                            Spacer(Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = track.title,
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MpxTheme.colors.textPrimary,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                    Spacer(Modifier.height(2.dp))
-                                    Text(
-                                        text = "${track.artist} • ${track.album}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MpxTheme.colors.textSecondary,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                                IconButton(
-                                    onClick = { onTrackOptionsClick(track) },
-                                    modifier = Modifier.size(40.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.MoreVert,
-                                        contentDescription = stringResource(R.string.music_cd_track_options, track.title),
-                                        tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = track.durationFormatted,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                                fontSize = 11.sp,
-                            )
-                        }
-                    }
+                    val isSelected = selectedTrackIds.contains(track.id.ifBlank { track.path })
+                    AudioTrackGridCard(
+                        track = track,
+                        showThumbnails = showThumbnails,
+                        isSelected = isSelected,
+                        onLongClick = { onToggleTrackSelection(track) },
+                        onOptionsClick = { onTrackOptionsClick(track) },
+                        onClick = {
+                            if (isSelectionMode) onToggleTrackSelection(track)
+                            else onTrackClick(index)
+                        },
+                    )
                 }
             }
             GridFastScrollbar(

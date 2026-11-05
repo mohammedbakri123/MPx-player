@@ -80,6 +80,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         showFullName = prefs.getBoolean("show_full_name", false),
         separateViewLayout = prefs.getBoolean("separate_view_layout", true),
         musicViewMode = prefs.getString("music_view_mode", "LIST") ?: "LIST",
+        musicPrimarySortField = prefs.getString("music_primary_sort_field", "NAME") ?: "NAME",
         fileView = prefs.getBoolean("file_view", false),
         autoScreenRotation = prefs.getBoolean("auto_screen_rotation", true),
         screenOrientation = prefs.getString("screen_orientation", "auto") ?: "auto",
@@ -157,6 +158,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("show_full_name", settings.showFullName)
             .putBoolean("separate_view_layout", settings.separateViewLayout)
             .putString("music_view_mode", settings.musicViewMode)
+            .putString("music_primary_sort_field", settings.musicPrimarySortField)
             .putBoolean("file_view", settings.fileView)
             .putBoolean("auto_screen_rotation", settings.autoScreenRotation)
             .putString("screen_orientation", settings.screenOrientation)
