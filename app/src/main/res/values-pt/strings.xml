@@ -8,7 +8,6 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Início</string>
     <string name="nav_music">Música</string>
-    <string name="nav_transfer">Transferência</string>
     <string name="nav_me">Eu</string>
 
     <!-- Mini Player -->
@@ -230,8 +229,6 @@
     <string name="tool_history_desc">Reproduzidos recentemente</string>
     <string name="tool_network_title">Transmissão de rede</string>
     <string name="tool_network_desc">Reproduzir URL de stream</string>
-    <string name="tool_transfer_title">Transferência de arquivos</string>
-    <string name="tool_transfer_desc">Transferência P2P</string>
     <string name="tool_equalizer_title">Equalizador</string>
     <string name="tool_equalizer_desc">Ajuste de som do sistema</string>
     <string name="tool_local_network_title">Rede local</string>
@@ -636,10 +633,8 @@
     <!-- What is Placeholder -->
     <string name="about_beta_section_placeholders">O QUE AINDA É MARCADOR</string>
     <string name="about_beta_placeholders_subtitle">De acordo com nossos princípios de desenvolvimento honesto, os recursos a seguir são marcadores de interface não funcionais, sem operações simuladas ou falsas:</string>
-    <string name="about_beta_holder_downloader_title">Baixador de URL (aba Transferência)</string>
+    <string name="about_beta_holder_downloader_title">Baixador de URL</string>
     <string name="about_beta_holder_downloader_desc">Status: somente estrutura de interface. Sem downloads falsos ou barras de progresso artificiais. O mecanismo real de download em segundo plano será integrado na Fase 5.</string>
-    <string name="about_beta_holder_transfer_title">Transferência direta de arquivos (aba Transferência)</string>
-    <string name="about_beta_holder_transfer_desc">Status: marcador de interface. O protocolo de compartilhamento de arquivos peer-to-peer offline (P2P / Wi-Fi Direct) será conectado na Fase 5.</string>
     <string name="about_beta_holder_status_title">Salvar status (grade de ferramentas Eu)</string>
     <string name="about_beta_holder_status_desc">Status: marcador honesto (Issue 32). A varredura e o salvamento do diretório de status do WhatsApp serão conectados quando o fluxo de permissão de diretório com armazenamento com escopo for implementado.</string>
     <string name="about_beta_holder_private_title">Pasta privada (grade de ferramentas Eu)</string>
@@ -836,7 +831,7 @@
     <string name="player_tutorial_got_it">Entendi</string>
     <string name="player_menu_tutorial">Tutorial de gestos</string>
 
-    <!-- Player screen + Transfer strings (issue #67) -->
+    <!-- Player screen strings (issue #67) -->
     <string name="player_empty_no_video">Nenhum vídeo na fila</string>
     <string name="player_loading">Carregando…</string>
     <string name="player_empty_select_video">Selecione um vídeo em Local para iniciar a reprodução</string>
@@ -935,26 +930,6 @@
     <string name="playback_sheet_about_duration">Duração</string>
     <string name="playback_sheet_about_codec">Codec ativo</string>
     <string name="playback_sheet_mpv_only_note">Aplica-se apenas ao motor MPV.</string>
-    <string name="transfer_title">Transferência e downloads</string>
-    <string name="transfer_tab_downloader">Downloader</string>
-    <string name="transfer_tab_file_transfer">Transferência de arquivos</string>
-    <string name="transfer_downloader_banner">Espaço reservado honesto do downloader: nenhum download falso é simulado. O motor real será conectado na fase 5.</string>
-    <string name="transfer_url_downloader">Downloader por URL</string>
-    <string name="transfer_url_desc">Cole um link direto de vídeo abaixo para baixá-lo para o armazenamento do dispositivo.</string>
-    <string name="transfer_url_placeholder">Colar URL do vídeo (https://...)</string>
-    <string name="transfer_cd_paste">Colar da área de transferência</string>
-    <string name="transfer_clipboard_no_url">A área de transferência não contém uma URL.</string>
-    <string name="transfer_downloader_placeholder_toast">O motor do downloader é um espaço reservado — os downloads reais serão conectados na fase 5.</string>
-    <string name="transfer_start_download">Iniciar download</string>
-    <string name="transfer_download_tasks">TAREFAS DE DOWNLOAD</string>
-    <string name="transfer_no_downloads_title">Nenhum download ativo</string>
-    <string name="transfer_no_downloads_msg">Os arquivos baixados aparecerão aqui quando o motor do downloader for integrado na fase 5.</string>
-    <string name="transfer_p2p_banner">Espaço reservado de transferência P2P offline: o protocolo será conectado na fase 5.</string>
-    <string name="transfer_direct_title">Transferência direta de arquivos</string>
-    <string name="transfer_direct_desc">Envie e receba vídeos e arquivos de áudio com dispositivos próximos em alta velocidade sem usar dados de internet.</string>
-    <string name="transfer_p2p_spec">Especificação do protocolo de transferência de arquivos P2P na fase 5.</string>
-    <string name="transfer_send">Enviar</string>
-    <string name="transfer_receive">Receber</string>
 
     <string name="notification_subtext_bg_video">Áudio em segundo plano • Vídeo pausado</string>
     <string name="notification_subtext_music">Música MPx</string>

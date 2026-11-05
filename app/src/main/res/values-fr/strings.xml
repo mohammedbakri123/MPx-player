@@ -8,7 +8,6 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Accueil</string>
     <string name="nav_music">Musique</string>
-    <string name="nav_transfer">Transfert</string>
     <string name="nav_me">Moi</string>
 
     <!-- Mini Player -->
@@ -230,8 +229,6 @@
     <string name="tool_history_desc">Lus récemment</string>
     <string name="tool_network_title">Flux réseau</string>
     <string name="tool_network_desc">Lire une URL de flux</string>
-    <string name="tool_transfer_title">Transfert de fichiers</string>
-    <string name="tool_transfer_desc">Transfert P2P</string>
     <string name="tool_equalizer_title">Égaliseur</string>
     <string name="tool_equalizer_desc">Réglage sonore du système</string>
     <string name="tool_local_network_title">Réseau local</string>
@@ -636,10 +633,8 @@
     <!-- What is Placeholder -->
     <string name="about_beta_section_placeholders">CE QUI RESTE UN MARQUEUR</string>
     <string name="about_beta_placeholders_subtitle">Conformément à nos principes de développement honnête, les fonctions suivantes sont des marqueurs d’interface non fonctionnels sans opérations simulées ni truquées :</string>
-    <string name="about_beta_holder_downloader_title">Téléchargeur d’URL (onglet Transfert)</string>
+    <string name="about_beta_holder_downloader_title">Téléchargeur d’URL</string>
     <string name="about_beta_holder_downloader_desc">Statut : structure d’interface seulement. Aucun faux téléchargement ni fausse barre de progression. Le vrai moteur de téléchargement en arrière-plan sera intégré à la phase 5.</string>
-    <string name="about_beta_holder_transfer_title">Transfert direct de fichiers (onglet Transfert)</string>
-    <string name="about_beta_holder_transfer_desc">Statut : marqueur d’interface. Le protocole de partage de fichiers pair-à-pair hors ligne (P2P / Wi-Fi Direct) sera connecté à la phase 5.</string>
     <string name="about_beta_holder_status_title">Enregistreur de statuts (grille d’outils Moi)</string>
     <string name="about_beta_holder_status_desc">Statut : marqueur honnête (incidence 32). L’analyse et l’enregistrement du répertoire des statuts WhatsApp seront connectés quand le flux d’autorisation de répertoire avec stockage à portée limitée sera implémenté.</string>
     <string name="about_beta_holder_private_title">Dossier privé (grille d’outils Moi)</string>
@@ -836,7 +831,7 @@
     <string name="player_tutorial_got_it">Compris</string>
     <string name="player_menu_tutorial">Tutoriel des gestes</string>
 
-    <!-- Player screen + Transfer strings (issue #67) -->
+    <!-- Player screen strings (issue #67) -->
     <string name="player_empty_no_video">Aucune vidéo en attente</string>
     <string name="player_loading">Chargement…</string>
     <string name="player_empty_select_video">Sélectionnez une vidéo dans Local pour lancer la lecture</string>
@@ -935,26 +930,6 @@
     <string name="playback_sheet_about_duration">Durée</string>
     <string name="playback_sheet_about_codec">Codec actif</string>
     <string name="playback_sheet_mpv_only_note">S’applique uniquement au moteur MPV.</string>
-    <string name="transfer_title">Transfert et téléchargement</string>
-    <string name="transfer_tab_downloader">Téléchargeur</string>
-    <string name="transfer_tab_file_transfer">Transfert de fichiers</string>
-    <string name="transfer_downloader_banner">Espace réservé honnête du téléchargeur : aucun faux téléchargement n\'est simulé. Le vrai moteur sera connecté à la phase 5.</string>
-    <string name="transfer_url_downloader">Téléchargeur par URL</string>
-    <string name="transfer_url_desc">Collez un lien vidéo direct ci-dessous pour le télécharger sur le stockage de l\'appareil.</string>
-    <string name="transfer_url_placeholder">Coller l\'URL de la vidéo (https://...)</string>
-    <string name="transfer_cd_paste">Coller depuis le presse-papiers</string>
-    <string name="transfer_clipboard_no_url">Le presse-papiers ne contient pas d\'URL.</string>
-    <string name="transfer_downloader_placeholder_toast">Le moteur du téléchargeur est un espace réservé — les vrais téléchargements seront connectés à la phase 5.</string>
-    <string name="transfer_start_download">Démarrer le téléchargement</string>
-    <string name="transfer_download_tasks">TÂCHES DE TÉLÉCHARGEMENT</string>
-    <string name="transfer_no_downloads_title">Aucun téléchargement actif</string>
-    <string name="transfer_no_downloads_msg">Les fichiers téléchargés apparaîtront ici une fois le moteur du téléchargeur intégré à la phase 5.</string>
-    <string name="transfer_p2p_banner">Espace réservé du transfert P2P hors ligne : le protocole sera connecté à la phase 5.</string>
-    <string name="transfer_direct_title">Transfert direct de fichiers</string>
-    <string name="transfer_direct_desc">Envoyez et recevez des vidéos et des fichiers audio avec des appareils proches à haute vitesse sans utiliser de données internet.</string>
-    <string name="transfer_p2p_spec">Spécification du protocole de transfert de fichiers P2P à la phase 5.</string>
-    <string name="transfer_send">Envoyer</string>
-    <string name="transfer_receive">Recevoir</string>
 
     <string name="notification_subtext_bg_video">Audio en arrière-plan • Vidéo en pause</string>
     <string name="notification_subtext_music">Musique MPx</string>

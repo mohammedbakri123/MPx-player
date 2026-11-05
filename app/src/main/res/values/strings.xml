@@ -8,7 +8,6 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Home</string>
     <string name="nav_music">Music</string>
-    <string name="nav_transfer">Transfer</string>
     <string name="nav_me">Me</string>
 
     <!-- Mini Player -->
@@ -230,8 +229,6 @@
     <string name="tool_history_desc">Recently played</string>
     <string name="tool_network_title">Network Stream</string>
     <string name="tool_network_desc">Play stream URL</string>
-    <string name="tool_transfer_title">File Transfer</string>
-    <string name="tool_transfer_desc">P2P transfer</string>
     <string name="tool_equalizer_title">Equalizer</string>
     <string name="tool_equalizer_desc">System sound tuner</string>
     <string name="tool_local_network_title">Local Network</string>
@@ -636,10 +633,8 @@
     <!-- What is Placeholder -->
     <string name="about_beta_section_placeholders">WHAT IS STILL PLACEHOLDER</string>
     <string name="about_beta_placeholders_subtitle">In accordance with our honest development principles, the following features are non-functional UI placeholders with no simulated or faked operations:</string>
-    <string name="about_beta_holder_downloader_title">URL Downloader (Transfer tab)</string>
+    <string name="about_beta_holder_downloader_title">URL Downloader</string>
     <string name="about_beta_holder_downloader_desc">Status: UI shell only. No fake downloads or artificial progress bars. Real background download engine will be integrated in Phase 5.</string>
-    <string name="about_beta_holder_transfer_title">Direct File Transfer (Transfer tab)</string>
-    <string name="about_beta_holder_transfer_desc">Status: UI placeholder. Offline peer-to-peer (P2P / Wi-Fi Direct) file sharing protocol will connect in Phase 5.</string>
     <string name="about_beta_holder_status_title">Status Saver (Me tools grid)</string>
     <string name="about_beta_holder_status_desc">Status: Honest placeholder (Issue 32). WhatsApp status directory scanning and saving will connect when scoped storage directory permission flow is implemented.</string>
     <string name="about_beta_holder_private_title">Private Folder (Me tools grid)</string>
@@ -836,7 +831,7 @@
     <string name="player_tutorial_got_it">Got it</string>
     <string name="player_menu_tutorial">Gesture tutorial</string>
 
-    <!-- Player screen + Transfer strings (issue #67) -->
+    <!-- Player screen strings (issue #67) -->
     <string name="player_empty_no_video">No video queued</string>
     <string name="player_loading">Loading…</string>
     <string name="player_empty_select_video">Select a video from Local to start playback</string>
@@ -935,26 +930,6 @@
     <string name="playback_sheet_about_duration">Duration</string>
     <string name="playback_sheet_about_codec">Active codec</string>
     <string name="playback_sheet_mpv_only_note">Applies to the MPV engine only.</string>
-    <string name="transfer_title">Transfer &amp; Downloader</string>
-    <string name="transfer_tab_downloader">Downloader</string>
-    <string name="transfer_tab_file_transfer">File Transfer</string>
-    <string name="transfer_downloader_banner">Honest Downloader Placeholder: no fake downloads are simulated. Real engine connects in Phase 5.</string>
-    <string name="transfer_url_downloader">URL Downloader</string>
-    <string name="transfer_url_desc">Paste a direct video link below to download to device storage.</string>
-    <string name="transfer_url_placeholder">Paste video URL (https://...)</string>
-    <string name="transfer_cd_paste">Paste from clipboard</string>
-    <string name="transfer_clipboard_no_url">Clipboard does not contain a URL.</string>
-    <string name="transfer_downloader_placeholder_toast">Downloader engine is a placeholder — real downloads will connect in Phase 5.</string>
-    <string name="transfer_start_download">Start Download</string>
-    <string name="transfer_download_tasks">DOWNLOAD TASKS</string>
-    <string name="transfer_no_downloads_title">No Active Downloads</string>
-    <string name="transfer_no_downloads_msg">Downloaded files will appear here once the downloader engine is integrated in Phase 5.</string>
-    <string name="transfer_p2p_banner">Offline P2P Transfer placeholder: protocol will be wired in Phase 5.</string>
-    <string name="transfer_direct_title">Direct File Transfer</string>
-    <string name="transfer_direct_desc">Send and receive videos and audio files with nearby devices at high speed without using internet data.</string>
-    <string name="transfer_p2p_spec">P2P File Transfer protocol specification in Phase 5.</string>
-    <string name="transfer_send">Send</string>
-    <string name="transfer_receive">Receive</string>
 
     <string name="notification_subtext_bg_video">Background Audio • Video rendering paused</string>
     <string name="notification_subtext_music">MPx Music</string>

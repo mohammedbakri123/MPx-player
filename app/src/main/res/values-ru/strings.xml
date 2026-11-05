@@ -8,7 +8,6 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Главная</string>
     <string name="nav_music">Музыка</string>
-    <string name="nav_transfer">Передача</string>
     <string name="nav_me">Я</string>
 
     <!-- Mini Player -->
@@ -230,8 +229,6 @@
     <string name="tool_history_desc">Недавно воспроизведённое</string>
     <string name="tool_network_title">Сетевой поток</string>
     <string name="tool_network_desc">Воспроизвести URL потока</string>
-    <string name="tool_transfer_title">Передача файлов</string>
-    <string name="tool_transfer_desc">P2P-передача</string>
     <string name="tool_equalizer_title">Эквалайзер</string>
     <string name="tool_equalizer_desc">Системный настройщик звука</string>
     <string name="tool_local_network_title">Локальная сеть</string>
@@ -636,10 +633,8 @@
     <!-- What is Placeholder -->
     <string name="about_beta_section_placeholders">ЧТО ПОКА ОСТАЁТСЯ ЗАПОЛНИТЕЛЕМ</string>
     <string name="about_beta_placeholders_subtitle">В соответствии с нашими честными принципами разработки следующие функции являются нефункциональными заполнителями интерфейса без смоделированных или поддельных операций:</string>
-    <string name="about_beta_holder_downloader_title">Загрузчик по URL (вкладка «Передача»)</string>
+    <string name="about_beta_holder_downloader_title">Загрузчик по URL</string>
     <string name="about_beta_holder_downloader_desc">Статус: только оболочка интерфейса. Никаких поддельных загрузок и искусственных индикаторов прогресса. Настоящий движок фоновой загрузки будет интегрирован в фазе 5.</string>
-    <string name="about_beta_holder_transfer_title">Прямая передача файлов (вкладка «Передача»)</string>
-    <string name="about_beta_holder_transfer_desc">Статус: заполнитель интерфейса. Протокол обмена файлами напрямую между устройствами офлайн (P2P / Wi-Fi Direct) будет подключён в фазе 5.</string>
     <string name="about_beta_holder_status_title">Сохранение статусов (сетка инструментов «Я»)</string>
     <string name="about_beta_holder_status_desc">Статус: честный заполнитель (задача 32). Сканирование и сохранение каталога статусов WhatsApp будут подключены, когда будет реализован процесс разрешения доступа к каталогу в рамках scoped storage.</string>
     <string name="about_beta_holder_private_title">Личная папка (сетка инструментов «Я»)</string>
@@ -836,7 +831,7 @@
     <string name="player_tutorial_got_it">Понятно</string>
     <string name="player_menu_tutorial">Обучение жестам</string>
 
-    <!-- Player screen + Transfer strings (issue #67) -->
+    <!-- Player screen strings (issue #67) -->
     <string name="player_empty_no_video">Нет видео в очереди</string>
     <string name="player_loading">Загрузка…</string>
     <string name="player_empty_select_video">Выберите видео из раздела «Локальные», чтобы начать воспроизведение</string>
@@ -935,26 +930,6 @@
     <string name="playback_sheet_about_duration">Длительность</string>
     <string name="playback_sheet_about_codec">Активный кодек</string>
     <string name="playback_sheet_mpv_only_note">Применяется только к движку MPV.</string>
-    <string name="transfer_title">Передача и загрузки</string>
-    <string name="transfer_tab_downloader">Загрузчик</string>
-    <string name="transfer_tab_file_transfer">Передача файлов</string>
-    <string name="transfer_downloader_banner">Честная заглушка загрузчика: поддельные загрузки не симулируются. Настоящий движок будет подключён на этапе 5.</string>
-    <string name="transfer_url_downloader">Загрузка по ссылке</string>
-    <string name="transfer_url_desc">Вставьте прямую ссылку на видео ниже, чтобы скачать его в хранилище устройства.</string>
-    <string name="transfer_url_placeholder">Вставьте ссылку на видео (https://...)</string>
-    <string name="transfer_cd_paste">Вставить из буфера обмена</string>
-    <string name="transfer_clipboard_no_url">В буфере обмена нет ссылки.</string>
-    <string name="transfer_downloader_placeholder_toast">Движок загрузчика — заглушка: настоящие загрузки будут подключены на этапе 5.</string>
-    <string name="transfer_start_download">Начать загрузку</string>
-    <string name="transfer_download_tasks">ЗАДАЧИ ЗАГРУЗКИ</string>
-    <string name="transfer_no_downloads_title">Нет активных загрузок</string>
-    <string name="transfer_no_downloads_msg">Загруженные файлы появятся здесь после интеграции движка загрузчика на этапе 5.</string>
-    <string name="transfer_p2p_banner">Заглушка офлайн-P2P-передачи: протокол будет подключён на этапе 5.</string>
-    <string name="transfer_direct_title">Прямая передача файлов</string>
-    <string name="transfer_direct_desc">Отправляйте и получайте видео и аудиофайлы с находящимися рядом устройствами на высокой скорости без использования интернет-трафика.</string>
-    <string name="transfer_p2p_spec">Спецификация протокола P2P-передачи файлов на этапе 5.</string>
-    <string name="transfer_send">Отправить</string>
-    <string name="transfer_receive">Получить</string>
 
     <string name="notification_subtext_bg_video">Фоновый звук • Видео приостановлено</string>
     <string name="notification_subtext_music">Музыка MPx</string>

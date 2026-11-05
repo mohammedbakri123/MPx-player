@@ -8,7 +8,6 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Inicio</string>
     <string name="nav_music">Música</string>
-    <string name="nav_transfer">Transferencia</string>
     <string name="nav_me">Yo</string>
 
     <!-- Mini Player -->
@@ -230,8 +229,6 @@
     <string name="tool_history_desc">Reproducido recientemente</string>
     <string name="tool_network_title">Transmisión en red</string>
     <string name="tool_network_desc">Reproducir URL de transmisión</string>
-    <string name="tool_transfer_title">Transferencia de archivos</string>
-    <string name="tool_transfer_desc">Transferencia P2P</string>
     <string name="tool_equalizer_title">Ecualizador</string>
     <string name="tool_equalizer_desc">Ajuste de sonido del sistema</string>
     <string name="tool_local_network_title">Red local</string>
@@ -636,10 +633,8 @@
     <!-- What is Placeholder -->
     <string name="about_beta_section_placeholders">QUÉ SIGUE SIENDO MARCADOR</string>
     <string name="about_beta_placeholders_subtitle">Conforme a nuestros principios de desarrollo honesto, las siguientes funciones son marcadores de interfaz no funcionales sin operaciones simuladas ni fingidas:</string>
-    <string name="about_beta_holder_downloader_title">Descargador de URL (pestaña Transferencia)</string>
+    <string name="about_beta_holder_downloader_title">Descargador de URL</string>
     <string name="about_beta_holder_downloader_desc">Estado: solo estructura de interfaz. Sin descargas falsas ni barras de progreso artificiales. El motor real de descarga en segundo plano se integrará en la fase 5.</string>
-    <string name="about_beta_holder_transfer_title">Transferencia directa de archivos (pestaña Transferencia)</string>
-    <string name="about_beta_holder_transfer_desc">Estado: marcador de interfaz. El protocolo de intercambio de archivos entre pares sin conexión (P2P / Wi-Fi Direct) se conectará en la fase 5.</string>
     <string name="about_beta_holder_status_title">Guardar estados (cuadrícula de herramientas de Yo)</string>
     <string name="about_beta_holder_status_desc">Estado: marcador honesto (incidencia 32). El escaneo y guardado del directorio de estados de WhatsApp se conectará cuando se implemente el flujo de permiso de directorio con almacenamiento de ámbito.</string>
     <string name="about_beta_holder_private_title">Carpeta privada (cuadrícula de herramientas de Yo)</string>
@@ -836,7 +831,7 @@
     <string name="player_tutorial_got_it">Entendido</string>
     <string name="player_menu_tutorial">Tutorial de gestos</string>
 
-    <!-- Player screen + Transfer strings (issue #67) -->
+    <!-- Player screen strings (issue #67) -->
     <string name="player_empty_no_video">No hay ningún vídeo en cola</string>
     <string name="player_loading">Cargando…</string>
     <string name="player_empty_select_video">Elige un vídeo de Local para iniciar la reproducción</string>
@@ -935,26 +930,6 @@
     <string name="playback_sheet_about_duration">Duración</string>
     <string name="playback_sheet_about_codec">Códec activo</string>
     <string name="playback_sheet_mpv_only_note">Solo se aplica al motor MPV.</string>
-    <string name="transfer_title">Transferencia y descargas</string>
-    <string name="transfer_tab_downloader">Descargador</string>
-    <string name="transfer_tab_file_transfer">Transferencia de archivos</string>
-    <string name="transfer_downloader_banner">Marcador honesto del descargador: no se simulan descargas falsas. El motor real se conectará en la fase 5.</string>
-    <string name="transfer_url_downloader">Descargador por URL</string>
-    <string name="transfer_url_desc">Pega un enlace directo de vídeo abajo para descargarlo al almacenamiento del dispositivo.</string>
-    <string name="transfer_url_placeholder">Pegar URL de vídeo (https://...)</string>
-    <string name="transfer_cd_paste">Pegar desde el portapapeles</string>
-    <string name="transfer_clipboard_no_url">El portapapeles no contiene una URL.</string>
-    <string name="transfer_downloader_placeholder_toast">El motor del descargador es un marcador — las descargas reales se conectarán en la fase 5.</string>
-    <string name="transfer_start_download">Iniciar descarga</string>
-    <string name="transfer_download_tasks">TAREAS DE DESCARGA</string>
-    <string name="transfer_no_downloads_title">Sin descargas activas</string>
-    <string name="transfer_no_downloads_msg">Los archivos descargados aparecerán aquí cuando el motor del descargador se integre en la fase 5.</string>
-    <string name="transfer_p2p_banner">Marcador de transferencia P2P sin conexión: el protocolo se conectará en la fase 5.</string>
-    <string name="transfer_direct_title">Transferencia directa de archivos</string>
-    <string name="transfer_direct_desc">Envía y recibe vídeos y archivos de audio con dispositivos cercanos a alta velocidad sin usar datos de internet.</string>
-    <string name="transfer_p2p_spec">Especificación del protocolo de transferencia de archivos P2P en la fase 5.</string>
-    <string name="transfer_send">Enviar</string>
-    <string name="transfer_receive">Recibir</string>
 
     <string name="notification_subtext_bg_video">Audio en segundo plano • Vídeo en pausa</string>
     <string name="notification_subtext_music">Música MPx</string>
