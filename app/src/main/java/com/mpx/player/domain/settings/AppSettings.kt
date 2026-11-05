@@ -54,6 +54,10 @@ data class AppSettings(
     val showAllFolders: Boolean = false,
     val folderViewMode: String = "LIST", // Global default folder contents view mode: LIST, GRID
     val localViewMode: String = "LIST", // Local root folders list view mode: LIST, GRID
+    // Tree view (#164): Local root shows the folder hierarchy inline
+    // (Folder / Tree in the Sort & View popup) instead of a flat list.
+    // Applies to the folders LIST layout; the GRID layout is unchanged.
+    val localTreeMode: Boolean = false,
     // Tile size (#141) was removed by #156: the mpvEx-style Sort & View
     // popup uses grid-column counts instead (folderGridColumns /
     // videoGridColumns, 1-4). List rows are unaffected.

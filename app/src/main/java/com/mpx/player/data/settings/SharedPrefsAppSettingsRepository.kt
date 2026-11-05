@@ -74,6 +74,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         showAllFolders = prefs.getBoolean("show_all_folders", false),
         folderViewMode = prefs.getString("folder_view_mode", "LIST") ?: "LIST",
         localViewMode = prefs.getString("local_view_mode", "LIST") ?: "LIST",
+        localTreeMode = prefs.getBoolean("local_tree_mode", false),
         folderGridColumns = prefs.getInt("folder_grid_columns", 2),
         videoGridColumns = prefs.getInt("video_grid_columns", 2),
         showFullName = prefs.getBoolean("show_full_name", false),
@@ -150,6 +151,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("show_all_folders", settings.showAllFolders)
             .putString("folder_view_mode", settings.folderViewMode)
             .putString("local_view_mode", settings.localViewMode)
+            .putBoolean("local_tree_mode", settings.localTreeMode)
             .putInt("folder_grid_columns", settings.folderGridColumns)
             .putInt("video_grid_columns", settings.videoGridColumns)
             .putBoolean("show_full_name", settings.showFullName)

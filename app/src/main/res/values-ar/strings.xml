@@ -997,6 +997,8 @@
     <string name="sort_popup_view_mode">وضع العرض</string>
     <string name="sort_popup_view_folder">مجلد</string>
     <string name="view_mode_tree">شجرة</string>
+    <string name="tree_expand">توسيع</string>
+    <string name="tree_collapse">طي</string>
     <string name="sort_popup_tree_soon">قريبًا</string>
     <string name="sort_popup_layout">التخطيط</string>
     <string name="sort_popup_layout_list">قائمة</string>
