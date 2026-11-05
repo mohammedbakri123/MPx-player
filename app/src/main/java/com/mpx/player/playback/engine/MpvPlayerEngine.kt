@@ -22,6 +22,7 @@ import `is`.xyz.mpv.MPV
 import `is`.xyz.mpv.MPVNode
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.log2
 
 /**
  * Exception raised when libmpv encounters an unrecoverable decoding or playback error.
@@ -295,6 +296,16 @@ class MpvPlayerEngine(
         }
     }
 
+    /**
+     * mpv's video-zoom is log2, not a plain multiplier (#172): 0 is
+     * unscaled, 1 doubles the size, -1 halves it. MPx's videoZoom is a
+     * plain multiplier (1.0 = no zoom), so convert with log2. Clamped to
+     * the 0.5..2.0 UI range first, so a stray persisted value can never
+     * produce NaN (log2 of 0) or an extreme zoom.
+     */
+    private fun mpvVideoZoom(mpxZoom: Float): Double =
+        log2(mpxZoom.coerceIn(0.5f, 2.0f).toDouble())
+
     private fun rejectedOptionsText(): String =
         synchronized(rejectedOptions) {
             if (rejectedOptions.isEmpty()) "" else "; rejected options: " + rejectedOptions.joinToString(", ")
@@ -439,16 +450,34 @@ class MpvPlayerEngine(
      * running mpv instance. Both are runtime-changeable mpv properties, so
      * this is safe to call whenever settings change mid-playback — same
      * pattern as [applySubtitleSettings]. No-op before init or after release.
-     * audio-delay is in seconds (positive = audio later); video-zoom is a
-     * multiplier (1.0 = no zoom).
+     * audio-delay is in seconds (positive = audio later). videoZoom is
+     * MPx's plain multiplier (1.0 = no zoom, 0.5..2.0) — it is converted
+     * to mpv's log2 video-zoom ([mpvVideoZoom]) because mpv reads the
+     * property as log2: 0 is unscaled, 1 doubles the size. Sending the
+     * plain multiplier straight through (#172) made every video play at
+     * 2x the fit size, cropped and zoomed.
      */
     fun applyPlaybackTweaks(settings: AppSettings) {
         if (!mpvInitialized || isReleased) return
         try {
             setRuntimeProperty("audio-delay", (settings.audioDelayMs / 1000.0).toString())
-            setRuntimeProperty("video-zoom", settings.videoZoom.toString())
+            setRuntimeProperty("video-zoom", mpvVideoZoom(settings.videoZoom).toString())
         } catch (e: Exception) {
             Log.w(TAG, "Failed applying playback tweaks to mpv", e)
+        }
+    }
+
+    /**
+     * Live video-zoom for the pinch gesture (#172): same log2 conversion
+     * as [applyPlaybackTweaks], without persisting — the caller saves the
+     * final zoom to settings when the gesture ends.
+     */
+    fun setVideoZoom(zoom: Float) {
+        if (!mpvInitialized || isReleased) return
+        try {
+            setRuntimeProperty("video-zoom", mpvVideoZoom(zoom).toString())
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed setting video zoom in MPV", e)
         }
     }
 

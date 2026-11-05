@@ -228,6 +228,14 @@ private fun VerticalIndicatorBar(
 // Slim gesture HUD modelled on MX's brightbar (issue #94): a narrow vertical
 // strip — percent text on top, a slim 4dp bar, a small icon at the bottom —
 // over a subtle vertical gradient. No heavy black box, no colored border.
+
+// "1×" / "1.5×" / "0.75×" — rounds to 2 decimals (pinch produces
+// long floats) and trims the trailing ".0" off whole values (#172).
+private fun formatZoomMultiplier(value: Float): String {
+    val rounded = (value * 100).roundToInt() / 100f
+    return rounded.toString().removeSuffix(".0") + "×"
+}
+
 @Composable
 private fun GestureHud(
     percentText: String,
@@ -511,6 +519,17 @@ fun PlayerScreen(
     // area, playback runs at 2x; releasing restores the previous speed.
     var isLongPress2x by remember { mutableStateOf(false) }
 
+    // Pinch-to-zoom state (issue #172): two fingers on the video area
+    // zoom the picture. The zoom is applied live to mpv and saved to
+    // settings when the gesture ends, so it survives the next video.
+    var showZoomIndicator by remember { mutableStateOf(false) }
+    var zoomDisplayText by remember { mutableStateOf("") }
+    var hideZoomJob by remember { mutableStateOf<Job?>(null) }
+    var isPinching by remember { mutableStateOf(false) }
+    var pinchStartDistance by remember { mutableFloatStateOf(0f) }
+    var pinchStartZoom by remember { mutableFloatStateOf(1f) }
+    var pinchCurrentZoom by remember { mutableFloatStateOf(1f) }
+
     // Double-tap side seek gesture state
     var sideSeekDirection by remember { mutableStateOf<SideSeekDirection?>(null) }
     var hideSideSeekJob by remember { mutableStateOf<Job?>(null) }
@@ -521,8 +540,8 @@ fun PlayerScreen(
     // appears, so the video is not permanently covered. Stay visible while
     // paused, while scrubbing/dragging, or while a dialog is open, so no
     // interaction is ever cut off mid-use. Tap the video to bring it back.
-    LaunchedEffect(controlsVisible, state.isPlaying, playbackSheetPage, isScrubbingSlider, isDraggingSeek, showBrightnessIndicator, showVolumeIndicator) {
-        if (controlsVisible && state.isPlaying && playbackSheetPage == null && !isScrubbingSlider && !isDraggingSeek && !showBrightnessIndicator && !showVolumeIndicator) {
+    LaunchedEffect(controlsVisible, state.isPlaying, playbackSheetPage, isScrubbingSlider, isDraggingSeek, showBrightnessIndicator, showVolumeIndicator, showZoomIndicator) {
+        if (controlsVisible && state.isPlaying && playbackSheetPage == null && !isScrubbingSlider && !isDraggingSeek && !showBrightnessIndicator && !showVolumeIndicator && !showZoomIndicator) {
             delay(3000)
             controlsVisible = false
         }
@@ -767,6 +786,54 @@ fun PlayerScreen(
                     var dragLoopDone = false
                     while (!dragLoopDone) {
                         val event = awaitPointerEvent()
+                        val pressed = event.changes.filter { it.pressed }
+                        if (pressed.size >= 2) {
+                            // Pinch-to-zoom (#172): a second finger joined
+                            // the drag. Stop any single-finger drag in its
+                            // tracks (a mid-seek drag is abandoned, not
+                            // committed) and zoom from the finger distance.
+                            if (!isPinching) {
+                                if (isDraggingSeek) isDraggingSeek = false
+                                currentDragMode = DragGestureMode.NONE
+                                pinchStartDistance = (pressed[0].position - pressed[1].position).getDistance()
+                                pinchStartZoom = currentSettings.videoZoom
+                                pinchCurrentZoom = pinchStartZoom
+                                isPinching = true
+                                hideZoomJob?.cancel()
+                                showZoomIndicator = true
+                                zoomDisplayText = formatZoomMultiplier(pinchStartZoom)
+                            } else {
+                                val distance = (pressed[0].position - pressed[1].position).getDistance()
+                                if (pinchStartDistance > 0f && distance > 0f) {
+                                    val newZoom = (pinchStartZoom * (distance / pinchStartDistance)).coerceIn(0.5f, 2.0f)
+                                    if (newZoom != pinchCurrentZoom) {
+                                        pinchCurrentZoom = newZoom
+                                        playbackManager.setVideoZoom(newZoom)
+                                        zoomDisplayText = formatZoomMultiplier(newZoom)
+                                    }
+                                }
+                            }
+                            // The pinch owns both pointers for this event.
+                            pressed.forEach { it.consume() }
+                            continue
+                        }
+                        if (isPinching) {
+                            // Pinch over (a finger lifted): save the final
+                            // zoom so it survives the next video, then end
+                            // this gesture — the remaining finger does not
+                            // resume a single-finger drag.
+                            isPinching = false
+                            val updated = currentSettings.copy(videoZoom = pinchCurrentZoom)
+                            currentSettings = updated
+                            realSettingsRepo.save(updated)
+                            hideZoomJob?.cancel()
+                            hideZoomJob = scope.launch {
+                                delay(1000)
+                                showZoomIndicator = false
+                            }
+                            dragLoopDone = true
+                            continue
+                        }
                         val dragChange = event.changes.firstOrNull { it.id == down.id }
                         if (dragChange == null) {
                             dragLoopDone = true
@@ -1058,6 +1125,34 @@ fun PlayerScreen(
             ) {
                 Text(
                     text = "2×",
+                    color = MpxTheme.colors.textPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                )
+            }
+        }
+
+        // Pinch-zoom indicator — small centered pill while pinching and
+        // for a second after release (issue #172). Same gradient-pill
+        // language as the 2x pill above it.
+        if (!isInPipMode && showZoomIndicator) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .clip(MpxShapes.large)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MpxTheme.colors.black.copy(alpha = 0.45f),
+                                MpxTheme.colors.black.copy(alpha = 0.65f),
+                            ),
+                        ),
+                    )
+                    .padding(horizontal = 24.dp, vertical = 14.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = zoomDisplayText,
                     color = MpxTheme.colors.textPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
