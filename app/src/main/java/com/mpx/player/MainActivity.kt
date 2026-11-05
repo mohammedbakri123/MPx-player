@@ -27,9 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import com.mpx.player.ui.theme.MpxTheme
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -86,6 +88,7 @@ import com.mpx.player.ui.theme.MpxMotionStandard
  */
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.mpxTabEnter(
     tabOrder: List<String>,
+    density: Density,
 ): EnterTransition {
     val from = tabOrder.indexOf(initialState.destination.route)
     val to = tabOrder.indexOf(targetState.destination.route)
@@ -103,6 +106,7 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.mpxTabEnter(
 
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.mpxTabExit(
     tabOrder: List<String>,
+    density: Density,
 ): ExitTransition {
     val from = tabOrder.indexOf(initialState.destination.route)
     val to = tabOrder.indexOf(targetState.destination.route)
@@ -443,14 +447,20 @@ fun MpxApp(
             realSettingsRepo.load().lastTabRoute
         }.takeIf { it in tabOrder } ?: Screen.Local.route
 
+        // #157: density is captured here (composable scope) because
+        // AnimatedContentTransitionScope has no density in this Compose
+        // version — mpvEx's identical with(density) usage relies on a
+        // newer animation artifact. The transition lambdas below are
+        // not composable, so they take the captured value.
+        val density = LocalDensity.current
         NavHost(
             navController = navController,
             startDestination = startTabRoute,
             modifier = Modifier.padding(padding),
-            enterTransition = { mpxTabEnter(tabOrder) },
-            exitTransition = { mpxTabExit(tabOrder) },
-            popEnterTransition = { mpxTabEnter(tabOrder) },
-            popExitTransition = { mpxTabExit(tabOrder) },
+            enterTransition = { mpxTabEnter(tabOrder, density) },
+            exitTransition = { mpxTabExit(tabOrder, density) },
+            popEnterTransition = { mpxTabEnter(tabOrder, density) },
+            popExitTransition = { mpxTabExit(tabOrder, density) },
         ) {
             composable(Screen.Local.route) {
                 LocalScreen(
