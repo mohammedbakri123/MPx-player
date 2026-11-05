@@ -1250,6 +1250,21 @@ class MpvPlayerEngine(
             fallbackReloadPending = false
             return
         }
+        // Issue #221: drop the previous file's cached position/duration
+        // NOW, before anything else reads them. They only update when the
+        // new file's time-pos/duration property events arrive, so without
+        // this the seek bar briefly shows the old file's time/duration,
+        // a seek near a track change clamps to the OLD duration (seekTo
+        // and the FILE_LOADED pending-seek clamp both trust
+        // cachedDurationMs), and the END_FILE premature-failure check can
+        // misread a stale duration. Placed here — before the
+        // surface-deferral return below — so a deferred load also starts
+        // clean, and before the fallback-stage block, which does not read
+        // the caches. reloadForDecoderFallback reads cachedPositionMs
+        // BEFORE calling load(), so this reset cannot eat its position.
+        cachedPositionMs = resumeMs
+        cachedDurationMs = 0L
+        cachedBufferedMs = 0L
         fileLoadedForCurrentItem = false
         // Issue #199: a pending pin belongs to the item it was picked
         // for — a new load must never let it pin a track on this item.
