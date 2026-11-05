@@ -6,7 +6,7 @@
     <string name="app_version_full">MPx Player 0.1.0-beta</string>
 
     <!-- Navigation Tabs -->
-    <string name="nav_local">本地</string>
+    <string name="nav_local">首页</string>
     <string name="nav_music">音乐</string>
     <string name="nav_transfer">传输</string>
     <string name="nav_me">我的</string>

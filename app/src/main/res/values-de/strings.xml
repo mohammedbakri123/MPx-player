@@ -6,7 +6,7 @@
     <string name="app_version_full">MPx Player 0.1.0-beta</string>
 
     <!-- Navigation Tabs -->
-    <string name="nav_local">Lokal</string>
+    <string name="nav_local">Startseite</string>
     <string name="nav_music">Musik</string>
     <string name="nav_transfer">Übertragen</string>
     <string name="nav_me">Ich</string>

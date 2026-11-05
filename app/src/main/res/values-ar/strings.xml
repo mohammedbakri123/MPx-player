@@ -6,7 +6,7 @@
     <string name="app_version_full">مشغل MPx الإصدار 0.1.0-beta</string>
 
     <!-- Navigation Tabs -->
-    <string name="nav_local">محلي</string>
+    <string name="nav_local">الرئيسية</string>
     <string name="nav_music">موسيقى</string>
     <string name="nav_transfer">نقل</string>
     <string name="nav_me">أنا</string>

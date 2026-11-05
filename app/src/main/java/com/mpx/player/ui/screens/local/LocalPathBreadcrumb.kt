@@ -32,10 +32,10 @@ data class PathSegment(
 )
 
 /**
- * Local's path visualizer / breadcrumb (#146). Replaces the old
- * "FOLDERS n + Sort:" section-header row: at the root it shows just
- * "Local"; inside a folder it shows "Local / FolderName". Every ancestor
- * segment is tappable and navigates back to that level; the current level
+ * Local's path visualizer / breadcrumb (#146, root label renamed to
+ * "Home" by #170). Replaces the old "FOLDERS n + Sort:" section-header
+ * row: at the root it shows just "Home"; inside a folder it shows
+ * "Home / FolderName". Every ancestor segment is tappable and navigates
  * is plain text and ellipsizes instead of pushing the row off-screen.
  *
  * Segments must be ordered root-first with the current level last. The
