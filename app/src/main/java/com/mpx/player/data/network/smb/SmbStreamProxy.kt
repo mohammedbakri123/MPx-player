@@ -126,7 +126,17 @@ class SmbStreamProxy {
             } else {
                 writeHeaders(output, 200, "OK", "application/octet-stream", length, null)
             }
-            if (parts[0].equals("HEAD", ignoreCase = true)) return
+            if (parts[0].equals("HEAD", ignoreCase = true)) {
+                // Issue #229: the HEAD response carries no body, but the
+                // stream was already opened above — close it here instead
+                // of leaking one SMB file handle per HEAD request. (The
+                // GET path closes it in streamTo's finally.)
+                try {
+                    handle.input.close()
+                } catch (_: Exception) {
+                }
+                return
+            }
             streamTo(handle.input, output, length)
         } catch (_: Exception) {
             // Client went away mid-stream; nothing to report.
