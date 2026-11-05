@@ -442,6 +442,7 @@
     <string name="playlist_play_all">تشغيل الكل</string>
     <string name="playlist_empty_title">قائمة التشغيل فارغة</string>
     <string name="playlist_empty_desc">أضف مسارات باستخدام قائمة الخيارات في أي مسار.</string>
+    <string name="music_nothing_to_play_msg">لا يوجد شيء للتشغيل هنا</string>
     <string name="playlist_cd_remove_item">إزالة العنصر</string>
     <string name="playlists_dialog_title">قوائم التشغيل (%d)</string>
     <string name="playlists_btn_new">+ جديدة</string>

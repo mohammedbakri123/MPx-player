@@ -442,6 +442,7 @@
     <string name="playlist_play_all">Play All</string>
     <string name="playlist_empty_title">Playlist is Empty</string>
     <string name="playlist_empty_desc">Add tracks using the options menu on any track.</string>
+    <string name="music_nothing_to_play_msg">Nothing to play here</string>
     <string name="playlist_cd_remove_item">Remove item</string>
     <string name="playlists_dialog_title">Playlists (%d)</string>
     <string name="playlists_btn_new">+ New</string>

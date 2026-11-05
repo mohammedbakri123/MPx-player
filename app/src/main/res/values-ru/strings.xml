@@ -442,6 +442,7 @@
     <string name="playlist_play_all">Воспроизвести всё</string>
     <string name="playlist_empty_title">Плейлист пуст</string>
     <string name="playlist_empty_desc">Добавляйте треки через меню параметров любого трека.</string>
+    <string name="music_nothing_to_play_msg">Здесь нечего воспроизводить</string>
     <string name="playlist_cd_remove_item">Удалить элемент</string>
     <string name="playlists_dialog_title">Плейлисты (%d)</string>
     <string name="playlists_btn_new">+ Новый</string>

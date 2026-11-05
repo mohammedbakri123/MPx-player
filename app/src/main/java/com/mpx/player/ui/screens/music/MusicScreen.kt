@@ -1111,6 +1111,11 @@ fun MusicScreen(
                                         if (memberTracks.isNotEmpty()) {
                                             playbackManager?.playAudioQueue(memberTracks, startIndex = 0)
                                             onOpenPlayer()
+                                        } else {
+                                            // #207: an empty playlist tap used
+                                            // to do nothing at all — say so,
+                                            // instead of looking like a dead tap.
+                                            snackbarHostState.showSnackbar(context.getString(R.string.playlist_empty_title))
                                         }
                                     }
                                 }
@@ -1155,6 +1160,13 @@ fun MusicScreen(
                                         if (albumTrackList.isNotEmpty()) {
                                             playbackManager?.playAudioQueue(albumTrackList, startIndex = 0)
                                             onOpenPlayer()
+                                        } else {
+                                            // #207: same silent-tap problem as
+                                            // playlists — say so instead of
+                                            // doing nothing.
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(context.getString(R.string.music_nothing_to_play_msg))
+                                            }
                                         }
                                     },
                                 )
@@ -1198,6 +1210,13 @@ fun MusicScreen(
                                         if (artistTrackList.isNotEmpty()) {
                                             playbackManager?.playAudioQueue(artistTrackList, startIndex = 0)
                                             onOpenPlayer()
+                                        } else {
+                                            // #207: same silent-tap problem as
+                                            // playlists — say so instead of
+                                            // doing nothing.
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(context.getString(R.string.music_nothing_to_play_msg))
+                                            }
                                         }
                                     },
                                 )
@@ -1223,6 +1242,13 @@ fun MusicScreen(
                                     if (folderTrackList.isNotEmpty()) {
                                         playbackManager?.playAudioQueue(folderTrackList, startIndex = 0)
                                         onOpenPlayer()
+                                    } else {
+                                        // #207: same silent-tap problem as
+                                        // playlists — say so instead of
+                                        // doing nothing.
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(context.getString(R.string.music_nothing_to_play_msg))
+                                        }
                                     }
                                 },
                             )

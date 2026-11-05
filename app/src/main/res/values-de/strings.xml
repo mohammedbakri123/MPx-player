@@ -442,6 +442,7 @@
     <string name="playlist_play_all">Alle abspielen</string>
     <string name="playlist_empty_title">Wiedergabeliste ist leer</string>
     <string name="playlist_empty_desc">Fügen Sie Titel über das Optionsmenü eines beliebigen Titels hinzu.</string>
+    <string name="music_nothing_to_play_msg">Hier gibt es nichts abzuspielen</string>
     <string name="playlist_cd_remove_item">Element entfernen</string>
     <string name="playlists_dialog_title">Wiedergabelisten (%d)</string>
     <string name="playlists_btn_new">+ Neu</string>

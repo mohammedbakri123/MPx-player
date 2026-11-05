@@ -442,6 +442,7 @@
     <string name="playlist_play_all">Reproducir todo</string>
     <string name="playlist_empty_title">La lista está vacía</string>
     <string name="playlist_empty_desc">Añade pistas desde el menú de opciones de cualquier pista.</string>
+    <string name="music_nothing_to_play_msg">No hay nada que reproducir aquí</string>
     <string name="playlist_cd_remove_item">Quitar elemento</string>
     <string name="playlists_dialog_title">Listas (%d)</string>
     <string name="playlists_btn_new">+ Nueva</string>
