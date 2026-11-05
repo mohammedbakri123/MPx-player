@@ -821,9 +821,19 @@ class MpvPlayerEngine(
                 // failure: previously this fell through every check (duration
                 // is 0, eof flag unset) and playback died silently. Report it
                 // with libmpv's own reason + last error log line when known.
+                // Issue #187: only a REAL failure counts. A loadfile replace
+                // ends the previous file with reason=stop before the new
+                // file's FILE_LOADED arrives, and fileLoadedForCurrentItem
+                // was just reset for the new load — reporting that stop as
+                // 'could not play' showed a spurious error banner while the
+                // new file then loaded and played fine. Benign reasons
+                // (stop/quit/eof/redirect) are not startup failures.
                 if (!fileLoadedForCurrentItem) {
                     val reason = try { data.get("reason")?.asString() } catch (_: Exception) { null }
                     val errCode = try { data.get("error")?.asInt() } catch (_: Exception) { null }
+                    val isBenignStop = reason in setOf("stop", "quit", "eof", "redirect")
+                    val isRealFailure = !isBenignStop || (errCode != null && errCode != 0)
+                    if (!isRealFailure) return
                     val lastLog = synchronized(lastErrorLogs) { lastErrorLogs.lastOrNull() }
                     val detail = listOfNotNull(
                         reason?.let { "reason=$it" },

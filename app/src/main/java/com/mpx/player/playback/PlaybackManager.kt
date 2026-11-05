@@ -146,6 +146,11 @@ class PlaybackManager private constructor(context: Context) {
                     // Preparing ends the moment the engine is READY or ENDED;
                     // anything else (BUFFERING, IDLE mid-load) keeps the splash.
                     isPreparing = if (playbackState == PlayerEngine.STATE_READY || playbackState == PlayerEngine.STATE_ENDED) false else it.isPreparing,
+                    // Issue #187: a stale 'Playback error' banner must not
+                    // outlive a recovery — a file that loads fine after a
+                    // spurious error clears it. Other notifications (e.g.
+                    // 'External subtitle loaded') are left alone.
+                    userNotification = if (playbackState == PlayerEngine.STATE_READY && it.userNotification?.startsWith("Playback error:") == true) null else it.userNotification,
                 )
             }
             updatePosition()
