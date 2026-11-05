@@ -132,8 +132,6 @@ fun LocalSortPopup(
     onShowFieldSizeChange: (Boolean) -> Unit,
     showFieldDate: Boolean,
     onShowFieldDateChange: (Boolean) -> Unit,
-    hasFolderOverride: Boolean,
-    onResetToDefault: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     var fieldsExpanded by remember { mutableStateOf(false) }
@@ -447,16 +445,6 @@ fun LocalSortPopup(
                     }
                 }
 
-                // ---- Folder scope: reset the view-mode override ----
-                if (isFolderScope && hasFolderOverride && onResetToDefault != null) {
-                    TextButton(onClick = onResetToDefault) {
-                        Text(
-                            text = stringResource(R.string.folder_view_reset_default),
-                            color = MpxTheme.colors.primary,
-                            fontSize = 14.sp,
-                        )
-                    }
-                }
             }
         },
         confirmButton = {

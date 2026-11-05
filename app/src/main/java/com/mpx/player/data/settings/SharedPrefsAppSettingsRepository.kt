@@ -72,7 +72,6 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         popupPlayCloseOnDone = prefs.getBoolean("popup_play_close_on_done", true),
         appLanguage = prefs.getString("app_language", "system") ?: "system",
         showAllFolders = prefs.getBoolean("show_all_folders", false),
-        folderViewMode = prefs.getString("folder_view_mode", "LIST") ?: "LIST",
         localViewMode = prefs.getString("local_view_mode", "LIST") ?: "LIST",
         localTreeMode = prefs.getBoolean("local_tree_mode", false),
         folderGridColumns = prefs.getInt("folder_grid_columns", 2),
@@ -149,7 +148,6 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("last_smb_host", settings.lastSmbHost)
             .putString("app_language", settings.appLanguage)
             .putBoolean("show_all_folders", settings.showAllFolders)
-            .putString("folder_view_mode", settings.folderViewMode)
             .putString("local_view_mode", settings.localViewMode)
             .putBoolean("local_tree_mode", settings.localTreeMode)
             .putInt("folder_grid_columns", settings.folderGridColumns)
@@ -184,29 +182,5 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("player_menu_layout", settings.playerMenuLayout)
             .putInt("double_tap_seek_seconds", settings.doubleTapSeekSeconds)
             .apply()
-    }
-
-    override fun getFolderViewMode(folderId: String): String {
-        val overrideKey = "folder_view_mode_$folderId"
-        val override = prefs.getString(overrideKey, null)
-        if (!override.isNullOrBlank()) {
-            return override
-        }
-        return prefs.getString("folder_view_mode", "LIST") ?: "LIST"
-    }
-
-    override fun setFolderViewMode(folderId: String, mode: String) {
-        val overrideKey = "folder_view_mode_$folderId"
-        prefs.edit().putString(overrideKey, mode).apply()
-    }
-
-    override fun clearFolderViewModeOverride(folderId: String) {
-        val overrideKey = "folder_view_mode_$folderId"
-        prefs.edit().remove(overrideKey).apply()
-    }
-
-    override fun hasFolderViewModeOverride(folderId: String): Boolean {
-        val overrideKey = "folder_view_mode_$folderId"
-        return prefs.contains(overrideKey)
     }
 }
