@@ -85,6 +85,10 @@ interface PlayerEngine {
     /**
      * Loads a single media item with optional resume position.
      *
+     * The item is passed RAW (original URIs): the implementation resolves
+     * only the target to an fd at load time (issues #213/#219), so a
+     * re-load always opens a fresh descriptor.
+     *
      * @param media Media item to load.
      * @param resumeMs Position in milliseconds from which playback should start/resume.
      */
@@ -92,6 +96,11 @@ interface PlayerEngine {
 
     /**
      * Loads a playlist/queue of media items starting at [startIndex].
+     *
+     * The items are passed RAW (original URIs) and stored as such: the
+     * implementation resolves only the target item at load time, so every
+     * re-load (Next/Previous, indexed seek, decoder reload) opens a fresh
+     * fd instead of reusing a closed one (issues #213/#219).
      *
      * @param items Queue of media items to load.
      * @param startIndex Initial item index to play.
@@ -142,6 +151,10 @@ interface PlayerEngine {
 
     /**
      * Dynamically replaces the media item at [index] (e.g. when external subtitles are loaded).
+     *
+     * The item is passed RAW (original URIs): the implementation resolves
+     * only the subtitle URIs for the sub-add and never the media URI,
+     * which is not reloaded here (issues #213/#219).
      */
     fun replaceMediaItem(index: Int, media: PlayableMedia)
 

@@ -200,10 +200,10 @@ class PlaybackManager private constructor(context: Context) {
                         // A finished item keeps no resume position.
                         resumeManager.clearResumePosition(current.id)
                         val next = if (endedIndex >= currentQueue.lastIndex) 0 else endedIndex + 1
-                        // Fresh-fd load, NOT an indexed seek: an indexed
-                        // seek re-issues loadfile with the item's old
-                        // fd:// URI, and mpv closes the fd when its
-                        // stream ends.
+                        // Fresh-fd load via engineLoad: the engine resolves
+                        // the target from its original URI at load time, so
+                        // this never reuses the fd mpv closed when the
+                        // previous stream ended (issues #213/#219).
                         engineLoad(currentQueue, next, 0L)
                         engine.play()
                     }
@@ -352,17 +352,16 @@ class PlaybackManager private constructor(context: Context) {
         private set
 
     /**
-     * Opens `content://` URIs as `fd://` descriptors for mpv (issue #150):
-     * libmpv cannot open content URIs, and with the Media3 fallback gone
-     * those files would fail outright. Only the copy handed to the engine
-     * is resolved — the live queue, the persisted queue and history keep
-     * the original URI, so a restored queue re-opens a fresh fd.
+     * Loads [items] into the engine. The items are passed RAW (original
+     * content:// URIs) — the engine resolves only the target item to an
+     * fd at load time (issues #213/#219): an fd is single-use, so
+     * resolving the whole queue up front leaked N-1 descriptors and left
+     * the engine holding dead fd:// URIs for every re-load. The live
+     * queue, the persisted queue and history keep the original URI, so a
+     * restored queue re-opens a fresh fd.
      */
-    private val fdOpener = MpvFdOpener(appContext)
-
-    /** Loads [items] into the engine with content URIs resolved to fds. */
     private fun engineLoad(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
-        engine.load(fdOpener.resolveAllForEngine(items), startIndex, resumeMs)
+        engine.load(items, startIndex, resumeMs)
     }
 
     private fun resolveInitialDecoderMode(): DecoderMode {
@@ -792,18 +791,18 @@ class PlaybackManager private constructor(context: Context) {
         val currentPos = engine.currentPosition
         val wasPlaying = engine.isPlaying
 
-        // Replace current media item in engine timeline. Only the copy
-        // handed to the engine has its subtitle URIs resolved to fds
+        // Replace current media item in engine timeline. The raw item is
+        // handed over — the engine resolves only the subtitle URIs itself
         // (content:// subtitles need the same treatment as content://
-        // media); the stored item keeps the original URI so the persisted
-        // queue stays restorable.
-        engine.replaceMediaItem(index, fdOpener.resolveForEngine(updatedItem))
+        // media); the media URI is never resolved here, because
+        // replaceMediaItem never reloads the file and the fd would leak
+        // (issue #219). The stored item keeps the original URI so the
+        // persisted queue stays restorable.
+        engine.replaceMediaItem(index, updatedItem)
 
         // Plain seek, NOT seekTo(index, pos): the mpv engine's
         // replaceMediaItem never reloads the file (sub-add only), so the
-        // position is already where it was. An indexed seek would re-issue
-        // loadfile with the same fd:// URI — and mpv closes the fd when its
-        // stream ends, so a content:// file would fail to reload.
+        // position is already where it was — no reload is needed at all.
         if (currentPos > 0L) {
             engine.seekTo(currentPos)
         }
