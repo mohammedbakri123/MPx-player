@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -123,6 +124,8 @@ import com.mpx.player.ui.screens.local.AudioAlbumGridCard
 import com.mpx.player.ui.screens.local.AudioAlbumRow
 import com.mpx.player.ui.screens.local.AudioArtistGridCard
 import com.mpx.player.ui.screens.local.AudioArtistRow
+import com.mpx.player.ui.screens.local.AudioPlaylistGridCard
+import com.mpx.player.ui.screens.local.AudioPlaylistRow
 import com.mpx.player.ui.screens.local.AudioTrackGridCard
 import com.mpx.player.ui.screens.local.AudioTrackRow
 import com.mpx.player.ui.screens.local.LocalSortPopup
@@ -259,6 +262,26 @@ fun MusicScreen(
             else selectedArtistIds + key
     }
 
+    // #185: long-press multi-select on the Playlists tab, mirroring the
+    // Albums/Artists slices / Local's #144. Keyed like Albums (id,
+    // falling back to title). Long-press toggles an item (entering
+    // selection mode when empty); a tap while selecting toggles too.
+    // Back / the X exits and clears.
+    var selectedPlaylistIds by remember { mutableStateOf(setOf<String>()) }
+    val isPlaylistSelectionMode = selectedPlaylistIds.isNotEmpty()
+    val playlistSelectionCount = selectedPlaylistIds.size
+
+    fun clearPlaylistSelection() {
+        selectedPlaylistIds = emptySet()
+    }
+
+    fun togglePlaylistSelection(playlist: Playlist) {
+        val key = playlist.id.ifBlank { playlist.title }
+        selectedPlaylistIds =
+            if (selectedPlaylistIds.contains(key)) selectedPlaylistIds - key
+            else selectedPlaylistIds + key
+    }
+
     fun updateViewMode(newMode: ViewMode) {
         viewMode = newMode
         val updated = if (appSettings.separateViewLayout) {
@@ -320,10 +343,11 @@ fun MusicScreen(
     }
 
     // #185: Back exits multi-select (exactly one step), like Local.
-    BackHandler(enabled = isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode) {
+    BackHandler(enabled = isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode || isPlaylistSelectionMode) {
         clearTrackSelection()
         clearAlbumSelection()
         clearArtistSelection()
+        clearPlaylistSelection()
     }
 
     // #185: leaving a tab drops its selection — a selection must not
@@ -332,6 +356,7 @@ fun MusicScreen(
         if (selectedTab != MusicTab.TRACKS) clearTrackSelection()
         if (selectedTab != MusicTab.ALBUMS) clearAlbumSelection()
         if (selectedTab != MusicTab.ARTISTS) clearArtistSelection()
+        if (selectedTab != MusicTab.PLAYLISTS) clearPlaylistSelection()
     }
 
     var showManageTabsDialog by remember { mutableStateOf(false) }
@@ -525,6 +550,37 @@ fun MusicScreen(
         )
     }
 
+    // #185: the Playlists tab shares the screen search box
+    // (contains-filter on title, like Tracks/Albums/Artists) and the
+    // shared sort state — one sortField / sortReverse for the whole
+    // Music screen, like Local. There is no separate playlists sort:
+    // the popup edits the same field. The list filtered here is the
+    // combined one (custom playlists first, then device playlists);
+    // the 3 header rows are not filtered — they are actions, not rows.
+    val filteredPlaylists = remember(allPlaylists, searchQuery) {
+        if (searchQuery.isBlank()) {
+            allPlaylists
+        } else {
+            allPlaylists.filter {
+                it.title.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    // #185: the shared MediaSortComparator for playlists — same field
+    // semantics as the audio album comparator. Playlists carry no
+    // duration: SIZE / DURATION / COUNT sort by item count (most items
+    // first); DATE is id recency, like albums/artists.
+    val sortedPlaylists = remember(filteredPlaylists, sortField, appSettings.sortReverse) {
+        filteredPlaylists.sortedWith(
+            MediaSortComparator.audioPlaylistComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
     fun selectedTracksInView(): List<AudioTrack> =
         sortedTracks.filter { selectedTrackIds.contains(it.id.ifBlank { it.path }) }
 
@@ -711,6 +767,140 @@ fun MusicScreen(
         }
     }
 
+    // #185: Playlists multi-select actions, mirroring the Albums/Artists
+    // ones — except a playlist's tracks are NOT an in-memory filter.
+    // A device playlist's members come from MediaStore
+    // (repository.getPlaylistTracks, a blocking call — IO only, like the
+    // single-tap path), and a custom playlist's items come from Room
+    // (persistenceRepository.getPlaylistItems, suspend). Both lookups
+    // skip members that are no longer in the library, so the result is
+    // exactly what tapping the playlist would queue. Two shapes are
+    // needed because the two kinds of playlist play differently:
+    // playlistAudioTracks() for Add-to-playlist / Favourite (which work
+    // on library AudioTracks, like the album/artist actions), and
+    // playlistPlayableMedia() for Play (which maps straight to the
+    // queue's PlayableMedia — the same mapping the custom-playlist
+    // details dialog's onPlayAll uses — so a custom playlist keeps its
+    // video items and its own order instead of being forced through the
+    // audio-only path).
+    suspend fun playlistAudioTracks(playlist: Playlist): List<AudioTrack> {
+        val custom = customPlaylists.find { it.id.toString() == playlist.id }
+        if (custom != null) {
+            val items = persistenceRepository.getPlaylistItems(custom.id)
+            // Library resolution only: a video item has no AudioTrack,
+            // and an item whose file is gone has no library row — both
+            // are skipped, not faked.
+            return items.filter { !it.isVideo }.mapNotNull { item ->
+                tracks.firstOrNull { it.path == item.mediaUri }
+            }
+        }
+        return repository.getPlaylistTracks(playlist.id)
+    }
+
+    suspend fun playlistPlayableMedia(playlist: Playlist): List<PlayableMedia> {
+        val custom = customPlaylists.find { it.id.toString() == playlist.id }
+        if (custom != null) {
+            return persistenceRepository.getPlaylistItems(custom.id).map { item ->
+                PlayableMedia(
+                    id = item.mediaId,
+                    title = item.title,
+                    subtitle = item.subtitle,
+                    uri = item.mediaUri,
+                    isVideo = item.isVideo,
+                    durationMs = item.durationMs,
+                )
+            }
+        }
+        return repository.getPlaylistTracks(playlist.id).map { track ->
+            PlayableMedia(
+                id = track.id,
+                title = track.title,
+                subtitle = "${track.artist} • ${track.album}",
+                uri = track.path,
+                isVideo = false,
+                durationMs = track.durationMs,
+            )
+        }
+    }
+
+    fun selectedPlaylistsInView(): List<Playlist> =
+        sortedPlaylists.filter { selectedPlaylistIds.contains(it.id.ifBlank { it.title }) }
+
+    fun playPlaylistSelection() {
+        scope.launch(Dispatchers.IO) {
+            val playable = selectedPlaylistsInView().flatMap { playlistPlayableMedia(it) }
+            withContext(Dispatchers.Main) {
+                if (playable.isNotEmpty()) {
+                    playbackManager?.playQueue(playable, startIndex = 0)
+                    onOpenPlayer()
+                    clearPlaylistSelection()
+                } else {
+                    // #207: same silent-tap problem as a single empty
+                    // playlist tap — say so instead of doing nothing.
+                    // The selection stays, so another action can be tried.
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_nothing_to_play_msg))
+                }
+            }
+        }
+    }
+
+    fun addPlaylistSelectionToPlaylist() {
+        scope.launch(Dispatchers.IO) {
+            val audioTracks = selectedPlaylistsInView().flatMap { playlistAudioTracks(it) }
+            withContext(Dispatchers.Main) {
+                if (audioTracks.isNotEmpty()) {
+                    tracksForPlaylistAdd = audioTracks
+                    showAddToPlaylistDialog = true
+                } else {
+                    // Only video items / vanished files: nothing an
+                    // audio playlist could take. Keep the selection.
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_nothing_to_play_msg))
+                }
+            }
+        }
+    }
+
+    fun togglePlaylistSelectionFavourite() {
+        scope.launch(Dispatchers.IO) {
+            val selected = selectedPlaylistsInView().flatMap { playlistAudioTracks(it) }
+            if (selected.isEmpty()) {
+                withContext(Dispatchers.Main) {
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_nothing_to_play_msg))
+                }
+                return@launch
+            }
+            val favUris = favourites.map { it.mediaUri }.toSet()
+            // Toggle as a group: if every selected track is already a
+            // favourite, remove them all; otherwise add the missing ones.
+            val allFav = selected.all { favUris.contains(it.path) }
+            if (allFav) {
+                selected.forEach { persistenceRepository.removeFavourite(it.path) }
+            } else {
+                selected.filter { !favUris.contains(it.path) }.forEach { track ->
+                    persistenceRepository.addFavourite(
+                        FavouriteItem(
+                            mediaId = track.id,
+                            title = track.title,
+                            subtitle = "${track.artist} • ${track.album}",
+                            mediaUri = track.path,
+                            isVideo = false,
+                            durationMs = track.durationMs,
+                        )
+                    )
+                }
+            }
+            withContext(Dispatchers.Main) {
+                clearPlaylistSelection()
+                snackbarHostState.showSnackbar(
+                    context.getString(
+                        if (allFav) R.string.snackbar_removed_favourites
+                        else R.string.snackbar_added_to_favourites
+                    )
+                )
+            }
+        }
+    }
+
     // #200: a folder's tracks are its library tracks, grouped exactly the
     // way MediaStoreRepository.getAudioFolders() groups them (parent dir of
     // the file path, blank paths fall back to /storage/emulated/0/Music) —
@@ -735,7 +925,7 @@ fun MusicScreen(
         containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode) {
+            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode || isPlaylistSelectionMode) {
                 // #185: selection top bar — count + close. Back exits too.
                 TopAppBar(
                     navigationIcon = {
@@ -743,6 +933,7 @@ fun MusicScreen(
                             clearTrackSelection()
                             clearAlbumSelection()
                             clearArtistSelection()
+                            clearPlaylistSelection()
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
@@ -756,6 +947,7 @@ fun MusicScreen(
                             text = stringResource(
                                 R.string.multiselect_selected_count,
                                 when {
+                                    isPlaylistSelectionMode -> playlistSelectionCount
                                     isAlbumSelectionMode -> albumSelectionCount
                                     isArtistSelectionMode -> artistSelectionCount
                                     else -> trackSelectionCount
@@ -854,11 +1046,11 @@ fun MusicScreen(
             }
         },
         bottomBar = {
-            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode) {
+            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode || isPlaylistSelectionMode) {
                 // #185: multi-select action bar — exactly the track-menu
                 // actions: Play, Add to playlist, Favourite. No delete.
-                // On Albums / Artists the same three actions run over the
-                // selected albums' / artists' tracks.
+                // On Albums / Artists / Playlists the same three actions
+                // run over the selected items' tracks.
                 Column {
                     HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
                     Row(
@@ -872,6 +1064,7 @@ fun MusicScreen(
                             label = stringResource(R.string.video_item_play),
                             onClick = {
                                 when {
+                                    isPlaylistSelectionMode -> playPlaylistSelection()
                                     isAlbumSelectionMode -> playAlbumSelection()
                                     isArtistSelectionMode -> playArtistSelection()
                                     else -> playTrackSelection()
@@ -884,6 +1077,7 @@ fun MusicScreen(
                             label = stringResource(R.string.music_menu_add_to_playlist),
                             onClick = {
                                 when {
+                                    isPlaylistSelectionMode -> addPlaylistSelectionToPlaylist()
                                     isAlbumSelectionMode -> addAlbumSelectionToPlaylist()
                                     isArtistSelectionMode -> addArtistSelectionToPlaylist()
                                     else -> addTrackSelectionToPlaylist()
@@ -896,6 +1090,7 @@ fun MusicScreen(
                             label = stringResource(R.string.music_menu_toggle_favourite),
                             onClick = {
                                 when {
+                                    isPlaylistSelectionMode -> togglePlaylistSelectionFavourite()
                                     isAlbumSelectionMode -> toggleAlbumSelectionFavourite()
                                     isArtistSelectionMode -> toggleArtistSelectionFavourite()
                                     else -> toggleTrackSelectionFavourite()
@@ -1086,42 +1281,66 @@ fun MusicScreen(
                             }
                         }
                     }
-                    MusicTab.PLAYLISTS -> PlaylistsTabContent(
-                        playlists = allPlaylists,
-                        favouritesCount = favourites.size,
-                        historyCount = history.size,
-                        onCreatePlaylist = { showCreatePlaylistDialog = true },
-                        onFavouritesClick = { showFavouritesDialog = true },
-                        onHistoryClick = { showHistoryDialog = true },
-                        onPlaylistClick = { playlist ->
-                            val custom = customPlaylists.find { it.id.toString() == playlist.id }
-                            if (custom != null) {
-                                selectedCustomPlaylist = custom
-                                scope.launch {
-                                    playlistItemsForDialog = persistenceRepository.getPlaylistItems(custom.id)
-                                }
-                            } else {
-                                // Device (MediaStore) playlist: queue exactly its
-                                // member tracks, in playlist order. An empty
-                                // member list queues nothing instead of
-                                // falling back to the whole library.
-                                scope.launch(Dispatchers.IO) {
-                                    val memberTracks = repository.getPlaylistTracks(playlist.id)
-                                    withContext(Dispatchers.Main) {
-                                        if (memberTracks.isNotEmpty()) {
-                                            playbackManager?.playAudioQueue(memberTracks, startIndex = 0)
-                                            onOpenPlayer()
+                    MusicTab.PLAYLISTS -> {
+                        if (filteredPlaylists.isEmpty() && searchQuery.isNotBlank()) {
+                            EmptyStateView(
+                                title = stringResource(R.string.music_search_no_matches_title),
+                                message = stringResource(R.string.music_search_no_matches_desc, searchQuery),
+                                icon = Icons.Filled.Search,
+                            )
+                        } else {
+                            // #185: pull to refresh, like Local's content.
+                            PullToRefreshBox(
+                                isRefreshing = isRefreshing,
+                                onRefresh = {
+                                    isRefreshing = true
+                                    refreshMusic()
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                PlaylistsTabContent(
+                                    playlists = sortedPlaylists,
+                                    viewMode = viewMode,
+                                    selectedPlaylistIds = selectedPlaylistIds,
+                                    isSelectionMode = isPlaylistSelectionMode,
+                                    onTogglePlaylistSelection = { togglePlaylistSelection(it) },
+                                    favouritesCount = favourites.size,
+                                    historyCount = history.size,
+                                    onCreatePlaylist = { showCreatePlaylistDialog = true },
+                                    onFavouritesClick = { showFavouritesDialog = true },
+                                    onHistoryClick = { showHistoryDialog = true },
+                                    onPlaylistClick = { playlist ->
+                                        val custom = customPlaylists.find { it.id.toString() == playlist.id }
+                                        if (custom != null) {
+                                            selectedCustomPlaylist = custom
+                                            scope.launch {
+                                                playlistItemsForDialog = persistenceRepository.getPlaylistItems(custom.id)
+                                            }
                                         } else {
-                                            // #207: an empty playlist tap used
-                                            // to do nothing at all — say so,
-                                            // instead of looking like a dead tap.
-                                            snackbarHostState.showSnackbar(context.getString(R.string.playlist_empty_title))
+                                            // Device (MediaStore) playlist: queue exactly its
+                                            // member tracks, in playlist order. An empty
+                                            // member list queues nothing instead of
+                                            // falling back to the whole library.
+                                            scope.launch(Dispatchers.IO) {
+                                                val memberTracks = repository.getPlaylistTracks(playlist.id)
+                                                withContext(Dispatchers.Main) {
+                                                    if (memberTracks.isNotEmpty()) {
+                                                        playbackManager?.playAudioQueue(memberTracks, startIndex = 0)
+                                                        onOpenPlayer()
+                                                    } else {
+                                                        // #207: an empty playlist tap used
+                                                        // to do nothing at all — say so,
+                                                        // instead of looking like a dead tap.
+                                                        snackbarHostState.showSnackbar(context.getString(R.string.playlist_empty_title))
+                                                    }
+                                                }
+                                            }
                                         }
-                                    }
-                                }
+                                    },
+                                )
                             }
-                        },
-                    )
+                        }
+                    }
                     MusicTab.ALBUMS -> {
                         if (albums.isEmpty()) {
                             EmptyStateView(
@@ -1336,6 +1555,7 @@ fun MusicScreen(
                     clearTrackSelection()
                     clearAlbumSelection()
                     clearArtistSelection()
+                    clearPlaylistSelection()
                     snackbarHostState.showSnackbar(
                         context.getString(R.string.music_added_to_playlist_msg, pl.name)
                     )
@@ -1569,11 +1789,12 @@ fun MusicScreen(
 
     // #185: the shared #156 Sort & View popup, like Local. It offers
     // Title / Date / Size; for audio, Size sorts by duration (the
-    // comparator maps both to durationMs). Tree mode, grid columns and
-    // Fields are Local-only and hidden here. The old SortViewDialog's
-    // separate-view-layout toggle is not in this popup (it lives in
-    // Settings, as it does for Local); the full field set stays out —
-    // the popup is the quick picker, not the full sort dialog.
+    // comparator maps both to durationMs). Playlists carry no duration:
+    // SIZE / DURATION sort by item count instead. Tree mode, grid
+    // columns and Fields are Local-only and hidden here. The old
+    // SortViewDialog's separate-view-layout toggle is not in this popup
+    // (it lives in Settings, as it does for Local); the full field set
+    // stays out — the popup is the quick picker, not the full sort dialog.
     if (showSortPopup) {
         LocalSortPopup(
             isFolderScope = false,
@@ -1849,6 +2070,10 @@ private fun TracksTabContent(
 @Composable
 private fun PlaylistsTabContent(
     playlists: List<Playlist>,
+    viewMode: ViewMode = ViewMode.LIST,
+    selectedPlaylistIds: Set<String> = emptySet(),
+    isSelectionMode: Boolean = false,
+    onTogglePlaylistSelection: (Playlist) -> Unit = {},
     favouritesCount: Int,
     historyCount: Int,
     onCreatePlaylist: () -> Unit,
@@ -1856,114 +2081,193 @@ private fun PlaylistsTabContent(
     onHistoryClick: () -> Unit,
     onPlaylistClick: (Playlist) -> Unit,
 ) {
-    val listState = rememberLazyListState()
-    // Issue #209: the scrollbar count must match what the LazyColumn below
-    // actually emits — 3 header rows (new playlist, favourites, history) +
-    // one row per playlist + the empty-state row when there are no playlists.
-    // The old `playlists.size + 3` was right with playlists but one short
-    // when empty (3 counted, 4 emitted).
-    val playlistItemCount = 3 + playlists.size + if (playlists.isEmpty()) 1 else 0
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp),
-        ) {
-            item(key = "new_playlist_header", contentType = "new_playlist_action") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onCreatePlaylist() }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(MpxShapes.small)
-                            .background(MpxTheme.colors.primary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxTheme.colors.primary)
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column {
-                        Text(text = stringResource(R.string.music_new_playlist_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, color = MpxTheme.colors.primary))
-                        Text(text = stringResource(R.string.music_new_playlist_subtitle), style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary)
+    // #209: the count must match what the list / grid actually emits:
+    // 3 header rows + the playlist rows + the empty-state item when the
+    // list is empty (the old `playlists.size + 3` missed the empty item).
+    // List and grid emit the same number of items, so one count serves
+    // both scrollbars.
+    val playlistItemCount = playlists.size + 3 + if (playlists.isEmpty()) 1 else 0
+    if (viewMode == ViewMode.LIST) {
+        val listState = rememberLazyListState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp),
+            ) {
+                item(key = "new_playlist_header", contentType = "new_playlist_action") {
+                    NewPlaylistActionRow(onCreatePlaylist)
+                }
+                item(key = "favourites_row", contentType = "favourites_action") {
+                    FavouritesActionRow(favouritesCount, onFavouritesClick)
+                }
+                item(key = "history_row", contentType = "history_action") {
+                    HistoryActionRow(historyCount, onHistoryClick)
+                }
+                if (playlists.isEmpty()) {
+                    item(key = "empty_playlists", contentType = "empty_state") {
+                        EmptyPlaylistsState()
                     }
                 }
-                HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
-            }
-            item(key = "favourites_row", contentType = "favourites_action") {
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable { onFavouritesClick() }.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.size(46.dp).clip(MpxShapes.small).background(MpxTheme.colors.primary.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                        Icon(imageVector = Icons.Filled.Favorite, contentDescription = null, tint = MpxTheme.colors.primary)
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.music_favourites_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MpxTheme.colors.textPrimary)
-                        Text(text = stringResource(R.string.music_songs_count, favouritesCount), style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary)
-                    }
-                }
-                HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
-            }
-            item(key = "history_row", contentType = "history_action") {
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable { onHistoryClick() }.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.size(46.dp).clip(MpxShapes.small).background(MpxTheme.colors.primary.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                        Icon(imageVector = Icons.Filled.History, contentDescription = null, tint = MpxTheme.colors.primary)
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.music_recently_played_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MpxTheme.colors.textPrimary)
-                        Text(text = stringResource(R.string.music_songs_count, historyCount), style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary)
-                    }
-                }
-                HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
-            }
-            if (playlists.isEmpty()) {
-                item(key = "empty_playlists", contentType = "empty_state") {
-                    Box(modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 48.dp), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f), modifier = Modifier.size(48.dp))
-                            Spacer(Modifier.height(12.dp))
-                            Text(text = stringResource(R.string.music_empty_playlists_title), style = MaterialTheme.typography.titleMedium, color = MpxTheme.colors.textPrimary)
-                            Spacer(Modifier.height(4.dp))
-                            Text(text = stringResource(R.string.music_empty_playlists_desc), style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary)
-                        }
-                    }
+                items(items = playlists, key = { it.id.ifBlank { it.title } }, contentType = { "playlist_row" }) { playlist ->
+                    val isSelected = selectedPlaylistIds.contains(playlist.id.ifBlank { playlist.title })
+                    AudioPlaylistRow(
+                        playlist = playlist,
+                        isSelected = isSelected,
+                        onLongClick = { onTogglePlaylistSelection(playlist) },
+                        onClick = {
+                            if (isSelectionMode) onTogglePlaylistSelection(playlist)
+                            else onPlaylistClick(playlist)
+                        },
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 78.dp),
+                        color = MpxTheme.colors.border,
+                        thickness = MpxHairline,
+                    )
                 }
             }
-            items(items = playlists, key = { it.id.ifBlank { it.title } }, contentType = { "playlist_row" }) { playlist ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable { onPlaylistClick(playlist) }.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.size(46.dp).clip(MpxShapes.small).background(MpxTheme.colors.surfaceVariant), contentAlignment = Alignment.Center) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MpxTheme.colors.primary)
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = playlist.title, style = MaterialTheme.typography.titleMedium, color = MpxTheme.colors.textPrimary)
-                        Text(text = stringResource(R.string.music_playlist_songs_subtitle, playlist.itemCount, playlist.subtitle), style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary)
-                    }
-                }
-                HorizontalDivider(modifier = Modifier.padding(start = 76.dp), color = MpxTheme.colors.border, thickness = MpxHairline)
-            }
+            FastScrollbar(
+                listState = listState,
+                itemCount = playlistItemCount,
+                getSectionText = { index ->
+                    if (index < 3) "" else playlists.getOrNull(index - 3)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
         }
-        FastScrollbar(
-            listState = listState,
-            itemCount = playlistItemCount,
-            getSectionText = { index ->
-                if (index < 3) "" else playlists.getOrNull(index - 3)?.title?.take(1)?.uppercase(Locale.US) ?: ""
-            },
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
+    } else {
+        val gridState = rememberLazyGridState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyVerticalGrid(
+                state = gridState,
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // #185: the 3 header rows are actions, not playlists —
+                // they stay visible in grid mode as full-span items.
+                item(key = "new_playlist_header", contentType = "new_playlist_action", span = { GridItemSpan(maxLineSpan) }) {
+                    NewPlaylistActionRow(onCreatePlaylist)
+                }
+                item(key = "favourites_row", contentType = "favourites_action", span = { GridItemSpan(maxLineSpan) }) {
+                    FavouritesActionRow(favouritesCount, onFavouritesClick)
+                }
+                item(key = "history_row", contentType = "history_action", span = { GridItemSpan(maxLineSpan) }) {
+                    HistoryActionRow(historyCount, onHistoryClick)
+                }
+                if (playlists.isEmpty()) {
+                    item(key = "empty_playlists", contentType = "empty_state", span = { GridItemSpan(maxLineSpan) }) {
+                        EmptyPlaylistsState()
+                    }
+                }
+                items(
+                    items = playlists,
+                    key = { playlist -> playlist.id.ifBlank { playlist.title } },
+                    contentType = { "playlist_grid_card" },
+                ) { playlist ->
+                    val isSelected = selectedPlaylistIds.contains(playlist.id.ifBlank { playlist.title })
+                    AudioPlaylistGridCard(
+                        playlist = playlist,
+                        isSelected = isSelected,
+                        onLongClick = { onTogglePlaylistSelection(playlist) },
+                        onClick = {
+                            if (isSelectionMode) onTogglePlaylistSelection(playlist)
+                            else onPlaylistClick(playlist)
+                        },
+                    )
+                }
+            }
+            GridFastScrollbar(
+                gridState = gridState,
+                itemCount = playlistItemCount,
+                getSectionText = { index ->
+                    if (index < 3) "" else playlists.getOrNull(index - 3)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
+        }
+    }
+}
+
+// #185: the Playlists tab's 3 header rows are actions, not playlists —
+// extracted so the list and grid branches share them (the grid shows
+// them as full-span items). Each row keeps the divider it had inline.
+@Composable
+private fun NewPlaylistActionRow(onCreatePlaylist: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCreatePlaylist() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(46.dp)
+                .clip(MpxShapes.small)
+                .background(MpxTheme.colors.primary.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(imageVector = Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxTheme.colors.primary)
+        }
+        Spacer(Modifier.width(14.dp))
+        Column {
+            Text(text = stringResource(R.string.music_new_playlist_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, color = MpxTheme.colors.primary))
+            Text(text = stringResource(R.string.music_new_playlist_subtitle), style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary)
+        }
+    }
+    HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+}
+
+@Composable
+private fun FavouritesActionRow(favouritesCount: Int, onFavouritesClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onFavouritesClick() }.padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.size(46.dp).clip(MpxShapes.small).background(MpxTheme.colors.primary.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+            Icon(imageVector = Icons.Filled.Favorite, contentDescription = null, tint = MpxTheme.colors.primary)
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = stringResource(R.string.music_favourites_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MpxTheme.colors.textPrimary)
+            Text(text = stringResource(R.string.music_songs_count, favouritesCount), style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary)
+        }
+    }
+    HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+}
+
+@Composable
+private fun HistoryActionRow(historyCount: Int, onHistoryClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onHistoryClick() }.padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.size(46.dp).clip(MpxShapes.small).background(MpxTheme.colors.primary.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+            Icon(imageVector = Icons.Filled.History, contentDescription = null, tint = MpxTheme.colors.primary)
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = stringResource(R.string.music_recently_played_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MpxTheme.colors.textPrimary)
+            Text(text = stringResource(R.string.music_songs_count, historyCount), style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary)
+        }
+    }
+    HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+}
+
+@Composable
+private fun EmptyPlaylistsState() {
+    Box(modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 48.dp), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(imageVector = Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f), modifier = Modifier.size(48.dp))
+            Spacer(Modifier.height(12.dp))
+            Text(text = stringResource(R.string.music_empty_playlists_title), style = MaterialTheme.typography.titleMedium, color = MpxTheme.colors.textPrimary)
+            Spacer(Modifier.height(4.dp))
+            Text(text = stringResource(R.string.music_empty_playlists_desc), style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary)
+        }
     }
 }
 
