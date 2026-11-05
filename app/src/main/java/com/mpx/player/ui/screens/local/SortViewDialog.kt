@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.local
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,12 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 enum class SortField(val labelRes: Int, val label: String) {
     NONE(R.string.sort_field_none, "None"),

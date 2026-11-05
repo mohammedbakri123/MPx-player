@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -21,13 +22,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceRaised
-import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
 
 /**
  * M2.5 tile atoms (#106). Data-free: callers pass strings and a

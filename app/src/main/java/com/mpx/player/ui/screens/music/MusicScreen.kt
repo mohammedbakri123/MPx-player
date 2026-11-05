@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.music
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -132,14 +133,8 @@ import com.mpx.player.util.MediaPermissions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 enum class MusicTab(
     val id: String,

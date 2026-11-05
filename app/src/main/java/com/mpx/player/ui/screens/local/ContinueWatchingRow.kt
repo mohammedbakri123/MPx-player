@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.local
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,13 +40,8 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.ui.components.AsyncVideoThumbnail
 import com.mpx.player.ui.components.player.formatTimeMs
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 /**
  * Domain model representing an item in the Continue Watching row.

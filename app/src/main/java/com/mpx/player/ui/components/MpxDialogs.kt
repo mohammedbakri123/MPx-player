@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.material3.AlertDialog
@@ -9,9 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
 
 /**
  * M2.5 dialog + sheet atoms (#106). Black containers, blue confirm

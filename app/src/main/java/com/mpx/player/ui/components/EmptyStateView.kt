@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,8 +20,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 @Composable
 fun EmptyStateView(

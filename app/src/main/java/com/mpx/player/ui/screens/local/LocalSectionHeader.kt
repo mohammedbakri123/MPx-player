@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.local
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -13,11 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.components.MpxBadge
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
-import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
 
 /**
  * Local's shared section header (#107): uppercase muted label, count

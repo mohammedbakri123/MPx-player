@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components.persistence
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -61,14 +62,8 @@ import com.mpx.player.domain.model.PlaylistItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceElevated
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 import androidx.compose.runtime.saveable.rememberSaveable
 
 /**

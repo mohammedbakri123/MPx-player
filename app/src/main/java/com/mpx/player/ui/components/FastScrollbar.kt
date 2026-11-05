@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -46,9 +47,7 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
 
 /**
  * Fast draggable scrollbar with real-time section preview bubble for long Compose LazyColumn lists.

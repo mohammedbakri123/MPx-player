@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.transfer
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -64,14 +65,8 @@ import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.MpxCard
 import com.mpx.player.ui.components.MpxPrimaryButton
 import kotlinx.coroutines.launch
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

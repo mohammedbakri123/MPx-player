@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.player
+import com.mpx.player.ui.theme.MpxTheme
 
 import android.app.Activity
 import android.content.Context
@@ -154,16 +155,8 @@ import com.mpx.player.util.SubtitleValidationResult
 import java.util.Locale
 import kotlinx.coroutines.launch
 import com.mpx.player.ui.components.MpxLoadingIndicator
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
-import com.mpx.player.ui.theme.MpxTheme.colors.borderSubtle
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
-import com.mpx.player.ui.theme.MpxTheme.colors.primaryVariant
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 private fun Context.findActivity(): Activity? {
     var ctx = this

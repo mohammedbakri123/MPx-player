@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,12 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 @Composable
 fun HonestStatusBanner(

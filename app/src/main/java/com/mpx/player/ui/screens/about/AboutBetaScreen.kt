@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.about
+import com.mpx.player.ui.theme.MpxTheme
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -76,16 +77,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import kotlinx.coroutines.launch
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.success
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
-import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.settings
+import com.mpx.player.ui.theme.MpxTheme
 
 import android.app.Activity
 import android.os.Build
@@ -57,14 +58,8 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.util.PipUtils
 import com.mpx.player.ui.components.MpxSecondaryButton
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceElevated
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 import android.content.Context
 import android.content.ContextWrapper
 

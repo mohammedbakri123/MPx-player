@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.me
+import com.mpx.player.ui.theme.MpxTheme
 
 import android.content.ClipDescription
 import android.content.ClipboardManager
@@ -116,16 +117,8 @@ import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import java.util.Locale
 import kotlinx.coroutines.launch
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceElevated
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
-import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

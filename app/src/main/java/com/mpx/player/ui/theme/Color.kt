@@ -1,4 +1,5 @@
 package com.mpx.player.ui.theme
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf

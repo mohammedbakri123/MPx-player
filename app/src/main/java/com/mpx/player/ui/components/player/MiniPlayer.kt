@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components.player
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -59,16 +60,8 @@ import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.AsyncThumbnail
 import com.mpx.player.ui.components.AsyncVideoThumbnail
 import com.mpx.player.util.ThumbnailLoader
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
-import com.mpx.player.ui.theme.MpxTheme.colors.borderSubtle
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
-import com.mpx.player.ui.theme.MpxTheme.colors.primaryVariant
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 fun formatTimeMs(millis: Long): String {
     if (millis <= 0) return "00:00"

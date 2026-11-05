@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.local
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,14 +47,8 @@ import com.mpx.player.ui.components.AsyncVideoThumbnail
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 private fun formatVideoDate(epochSeconds: Long): String {
     if (epochSeconds <= 0L) return ""

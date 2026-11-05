@@ -1,4 +1,5 @@
 package com.mpx.player.ui.screens.settings
+import com.mpx.player.ui.theme.MpxTheme
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -104,15 +105,8 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.border
-import com.mpx.player.ui.theme.MpxTheme.colors.destructive
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceElevated
-import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 import com.mpx.player.ui.components.MpxDialog
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.saveable.rememberSaveable

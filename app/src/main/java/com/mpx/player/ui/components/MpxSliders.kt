@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components
+import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CircularProgressIndicator
@@ -8,9 +9,6 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceElevated
-import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
 
 /**
  * M2.5 slider + progress atoms (#106). Progress is blue, sparingly;

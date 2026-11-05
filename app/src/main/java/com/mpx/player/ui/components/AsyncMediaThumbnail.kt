@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components
+import com.mpx.player.ui.theme.MpxTheme
 
 import android.graphics.Bitmap
 import androidx.compose.animation.Crossfade
@@ -35,9 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import com.mpx.player.util.ThumbnailLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.mpx.player.ui.theme.MpxTheme.colors.black
-import com.mpx.player.ui.theme.MpxTheme.colors.primary
-import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 import androidx.compose.ui.graphics.Color
 
 /**
