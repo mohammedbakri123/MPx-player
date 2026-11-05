@@ -478,7 +478,7 @@ fun PlayerScreen(
     // actions, so they are defined once here and passed to both. The
     // lambdas read state/currentSettings when invoked, never when created,
     // so they always see the latest values.
-    val toggleFavourite = {
+    val toggleFavourite: () -> Unit = {
         state.currentItem?.let { item ->
             scope.launch {
                 playbackManager.persistenceRepository.toggleFavourite(
