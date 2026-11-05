@@ -95,6 +95,10 @@
     <string name="theme_option_system">Système</string>
     <string name="theme_option_dark">Sombre</string>
     <string name="theme_option_light">Clair</string>
+    <string name="theme_color_section_title">Couleur du thème</string>
+    <string name="theme_surface_true_black">Noir pur</string>
+    <string name="theme_surface_charcoal">Charbon</string>
+    <string name="theme_surface_graphite">Graphite</string>
     <string name="theme_applied_snackbar">Thème appliqué : %s</string>
     <string name="palette_section_title">Couleur d’accent</string>
     <string name="palette_name_blue">Bleu</string>

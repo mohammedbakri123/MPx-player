@@ -95,6 +95,10 @@
     <string name="theme_option_system">النظام</string>
     <string name="theme_option_dark">داكن</string>
     <string name="theme_option_light">فاتح</string>
+    <string name="theme_color_section_title">لون السمة</string>
+    <string name="theme_surface_true_black">أسود حقيقي</string>
+    <string name="theme_surface_charcoal">فحمي</string>
+    <string name="theme_surface_graphite">غرافيتي</string>
     <string name="theme_applied_snackbar">تم تطبيق المظهر: %s</string>
     <string name="palette_section_title">لون التمييز</string>
     <string name="palette_name_blue">أزرق</string>

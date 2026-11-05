@@ -19,6 +19,9 @@ import androidx.compose.ui.graphics.Color
 // as System / Dark / Light instead of the four legacy schemes.
 // #147 adds an accent palette (Blue default, Emerald, Violet, Amber,
 // Rose, Teal) that recolours only the accent over those surfaces.
+// #182 adds a dark-surface preset (TrueBlack default, Charcoal,
+// Graphite) that shifts the whole Dark surface scale; Light is
+// untouched and the player route (always Dark) follows it too.
 object MpxTheme {
     val colors: MpxColors
         @Composable get() = LocalMpxColors.current
@@ -98,6 +101,10 @@ fun MpxTheme(
     // back to Blue. Only primary / primaryHover / primaryVariant
     // change; the base theme's surfaces and text are untouched.
     palette: String = "Blue",
+    // Dark-surface preset id (#182): "TrueBlack" (default),
+    // "Charcoal", "Graphite". Applies only when the resolved theme is
+    // Dark; Light ignores it. Unknown ids fall back to True Black.
+    darkSurface: String = "TrueBlack",
     content: @Composable () -> Unit,
 ) {
     val useDark = when (theme) {
@@ -105,7 +112,7 @@ fun MpxTheme(
         "Dark", "Midnight", "Classic" -> true
         else -> isSystemInDarkTheme()
     }
-    val base = if (useDark) MpxDarkColors else MpxLightColors
+    val base = if (useDark) mpxDarkColorsFor(darkSurface) else MpxLightColors
     val accent = mpxPaletteFor(palette)
     val colors = base.copy(
         primary = accent.primary,

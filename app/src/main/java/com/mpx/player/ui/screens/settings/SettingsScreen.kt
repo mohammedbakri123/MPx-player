@@ -126,6 +126,7 @@ fun SettingsScreen(
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
+    onDarkSurfaceChanged: ((String) -> Unit)? = null,
     playbackManager: PlaybackManager? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -152,6 +153,7 @@ fun SettingsScreen(
         val oldLanguage = settings.appLanguage
         val oldTheme = settings.appTheme
         val oldPalette = settings.colorPalette
+        val oldDarkSurface = settings.darkSurface
         val oldDecoder = settings.decoderMode
         settings = next
         settingsRepository.save(next)
@@ -163,6 +165,9 @@ fun SettingsScreen(
         }
         if (next.colorPalette != oldPalette) {
             onPaletteChanged?.invoke(next.colorPalette)
+        }
+        if (next.darkSurface != oldDarkSurface) {
+            onDarkSurfaceChanged?.invoke(next.darkSurface)
         }
         if (next.decoderMode != oldDecoder) {
             val decMode = com.mpx.player.playback.DecoderMode.values().find { it.label == next.decoderMode } ?: com.mpx.player.playback.DecoderMode.HW
@@ -426,6 +431,36 @@ fun SettingsScreen(
                                         scope.launch {
                                             snackbarHostState.showSnackbar(
                                                 context.getString(R.string.theme_applied_snackbar, themeLabel)
+                                            )
+                                        }
+                                    }
+                                }
+                                // #182: dark-surface presets — the Dark
+                                // theme's own colour. Applies whenever the
+                                // resolved theme is Dark (Dark choice, or
+                                // System on a dark system); Light ignores
+                                // it. The whole surface scale shifts
+                                // together, accent and text untouched.
+                                Spacer(Modifier.height(16.dp))
+                                HorizontalDivider(color = MpxTheme.colors.border.copy(alpha = 0.5f), thickness = MpxHairline)
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    stringResource(R.string.theme_color_section_title),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MpxTheme.colors.textPrimary,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                val surfaceOptions = listOf(
+                                    "TrueBlack" to stringResource(R.string.theme_surface_true_black),
+                                    "Charcoal" to stringResource(R.string.theme_surface_charcoal),
+                                    "Graphite" to stringResource(R.string.theme_surface_graphite),
+                                )
+                                surfaceOptions.forEach { (surfaceCode, surfaceLabel) ->
+                                    ChoiceRow(surfaceLabel, settings.darkSurface == surfaceCode) {
+                                        update(settings.copy(darkSurface = surfaceCode))
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                context.getString(R.string.theme_applied_snackbar, surfaceLabel)
                                             )
                                         }
                                     }

@@ -95,6 +95,10 @@
     <string name="theme_option_system">System</string>
     <string name="theme_option_dark">Dark</string>
     <string name="theme_option_light">Light</string>
+    <string name="theme_color_section_title">Theme color</string>
+    <string name="theme_surface_true_black">True Black</string>
+    <string name="theme_surface_charcoal">Charcoal</string>
+    <string name="theme_surface_graphite">Graphite</string>
     <string name="theme_applied_snackbar">Theme applied: %s</string>
     <string name="palette_section_title">Accent color</string>
     <string name="palette_name_blue">Blue</string>
