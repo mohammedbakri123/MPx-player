@@ -114,6 +114,8 @@ import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
 import com.mpx.player.ui.components.MpxDialog
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,8 +134,12 @@ fun SettingsScreen(
     var settings by remember { mutableStateOf(settingsRepository.load()) }
     // Drill-down navigation (#77): null shows the category list, otherwise
     // the selected category's own sub-screen, like MX's per-header fragments.
-    var selectedId by remember { mutableStateOf<String?>(null) }
-    var showResetDialog by remember { mutableStateOf(false) }
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showResetDialog by rememberSaveable { mutableStateOf(false) }
+    // System back mirrors the TopAppBar icon: from a drilled-down
+    // category it returns to the category list (#124); only at the
+    // root list does it leave Settings.
+    BackHandler(enabled = selectedId != null) { selectedId = null }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
