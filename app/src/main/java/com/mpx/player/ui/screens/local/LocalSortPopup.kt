@@ -132,6 +132,14 @@ fun LocalSortPopup(
     onShowFieldSizeChange: (Boolean) -> Unit,
     showFieldDate: Boolean,
     onShowFieldDateChange: (Boolean) -> Unit,
+    // #185: Music reuses this popup for the Tracks tab, but the Folder /
+    // Tree mode, the grid-column sliders and the Fields chips are Local-only
+    // (tree hierarchy, folder/video grids, video row fields) — hiding them
+    // leaves the shared core: sort tiles, sort order, layout. All default
+    // true, so Local's two call sites are unchanged.
+    showTreeMode: Boolean = true,
+    showGridColumns: Boolean = true,
+    showFieldsSection: Boolean = true,
     onDismiss: () -> Unit,
 ) {
     var fieldsExpanded by remember { mutableStateOf(false) }
@@ -229,6 +237,8 @@ fun LocalSortPopup(
                 }
 
                 // ---- View Mode (Folder / Tree) | Layout (List / Grid) ----
+                // #185: the View Mode column is Local-only (tree hierarchy);
+                // Music hides it and the divider, leaving Layout full-width.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -236,45 +246,47 @@ fun LocalSortPopup(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.Top,
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.sort_popup_view_mode),
-                            style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MpxTheme.colors.textPrimary,
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.Top,
+                    if (showTreeMode) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            ModeTile(
-                                icon = Icons.Filled.ViewModule,
-                                label = stringResource(R.string.sort_popup_view_folder),
-                                selected = !isTreeMode,
-                                enabled = true,
-                                comingSoon = false,
-                                onClick = { onTreeModeChange(false) },
+                            Text(
+                                text = stringResource(R.string.sort_popup_view_mode),
+                                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MpxTheme.colors.textPrimary,
                             )
-                            ModeTile(
-                                icon = Icons.Filled.AccountTree,
-                                label = stringResource(R.string.view_mode_tree),
-                                selected = isTreeMode,
-                                enabled = true,
-                                comingSoon = false,
-                                onClick = { onTreeModeChange(true) },
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                ModeTile(
+                                    icon = Icons.Filled.ViewModule,
+                                    label = stringResource(R.string.sort_popup_view_folder),
+                                    selected = !isTreeMode,
+                                    enabled = true,
+                                    comingSoon = false,
+                                    onClick = { onTreeModeChange(false) },
+                                )
+                                ModeTile(
+                                    icon = Icons.Filled.AccountTree,
+                                    label = stringResource(R.string.view_mode_tree),
+                                    selected = isTreeMode,
+                                    enabled = true,
+                                    comingSoon = false,
+                                    onClick = { onTreeModeChange(true) },
+                                )
+                            }
                         }
-                    }
 
-                    VerticalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        color = MpxTheme.colors.border,
-                        thickness = MpxHairline,
-                    )
+                        VerticalDivider(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            color = MpxTheme.colors.border,
+                            thickness = MpxHairline,
+                        )
+                    }
 
                     Column(
                         modifier = Modifier.weight(1f),
@@ -312,7 +324,9 @@ fun LocalSortPopup(
                 }
 
                 // ---- Grid Columns: Folder Grid / Video Grid sliders ----
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // #185: Local-only (folder/video grids); Music hides it.
+                if (showGridColumns) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = stringResource(R.string.sort_popup_grid_columns),
                         style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
@@ -359,10 +373,13 @@ fun LocalSortPopup(
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                         )
                     }
+                    }
                 }
 
                 // ---- Fields: expandable FilterChip section ----
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // #185: Local-only (video row fields); Music hides it.
+                if (showFieldsSection) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -442,6 +459,7 @@ fun LocalSortPopup(
                                 onClick = { onShowFieldDateChange(!showFieldDate) },
                             )
                         }
+                    }
                     }
                 }
 

@@ -68,7 +68,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -1986,37 +1985,3 @@ fun LocalScreen(
     }
 }
 
-/**
- * #144: one action in the multi-select action bar — icon above a short
- * label, identity-blue icon, 48dp+ tap target, no new colors.
- */
-@Composable
-private fun MultiSelectAction(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .padding(vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MpxTheme.colors.primary,
-            modifier = Modifier.size(24.dp),
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MpxTheme.colors.textPrimary,
-            fontSize = 11.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}

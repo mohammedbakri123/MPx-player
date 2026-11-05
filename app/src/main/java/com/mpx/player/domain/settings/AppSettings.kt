@@ -66,6 +66,9 @@ data class AppSettings(
     val showFullName: Boolean = false,
     val separateViewLayout: Boolean = true,
     val musicViewMode: String = "LIST", // LIST, GRID
+    // Tracks sort (#185): persisted like Local's primarySortField, so the
+    // Music Tracks sort sticks across launches instead of resetting to NAME.
+    val musicPrimarySortField: String = "NAME",
     val fileView: Boolean = false, // false = folder view, true = individual files view
     val autoScreenRotation: Boolean = true, // true = follows sensor, false = locked orientation
     val screenOrientation: String = "auto", // auto (sensor), landscape, portrait
