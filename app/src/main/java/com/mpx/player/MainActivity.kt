@@ -164,6 +164,10 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // #171: the manifest launch theme is Theme.MPx.Splash so cold start
+        // shows the branded splash; switch back to the normal theme before
+        // the window is created so the running UI is unaffected.
+        setTheme(R.style.Theme_MPx)
         super.onCreate(savedInstanceState)
         settingsRepository = SharedPrefsAppSettingsRepository(this)
         val initialSettings = settingsRepository.load()

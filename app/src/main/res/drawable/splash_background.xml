@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- #171: launch splash, shown from process start until the first frame.
+     The background color is night-qualified (@color/splash_background:
+     true black in dark mode, white in light mode), so this one drawable
+     serves both themes. On Android 12+ the system splash takes over the
+     launch period and uses the windowSplashScreen* attributes from
+     Theme.MPx.Splash instead; this drawable is the pre-12 path. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+    <item
+        android:drawable="@drawable/ic_launcher_foreground"
+        android:gravity="center"
+        android:width="120dp"
+        android:height="120dp" />
+</layer-list>
