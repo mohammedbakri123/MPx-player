@@ -196,6 +196,9 @@ class RoomMediaPersistenceRepository(
     }
 
     // --- Resume Positions ---
+    // Issue #227: `mediaId` here is the resume key — the stable media URI/
+    // path passed in by PlaybackResumeManager, not the bare MediaStore id.
+    // No migration: the PK stays a String; only the values written changed.
 
     override fun observeResumePositions(): Flow<List<PlaybackResumePosition>> {
         return playbackResumeDao.observeResumePositions().map { list ->

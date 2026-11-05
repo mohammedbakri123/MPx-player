@@ -51,6 +51,10 @@ interface MediaPersistenceRepository {
     suspend fun clearPlaylistItems(playlistId: Long)
 
     // --- Resume Positions ---
+    // Issue #227: the `mediaId` parameters below are the resume KEY — the
+    // stable media URI/path (see `PlaybackResumeManager.resumeKey`), not the
+    // bare MediaStore row id. Rows written before the fix may still be keyed
+    // by legacy bare ids; they are orphans and are never looked up again.
     fun observeResumePositions(): Flow<List<PlaybackResumePosition>>
     suspend fun getAllResumePositions(): List<PlaybackResumePosition>
     suspend fun getResumePosition(mediaId: String): Long?

@@ -65,6 +65,10 @@ data class PlaylistItem(
 
 /**
  * Domain model representing a persistent media resume position.
+ *
+ * Issue #227: [mediaId] is the resume key — the stable media URI/path, not
+ * the bare MediaStore row id. For rows written before the fix it may still
+ * hold a legacy bare id (orphan, never looked up again).
  */
 data class PlaybackResumePosition(
     val mediaId: String,

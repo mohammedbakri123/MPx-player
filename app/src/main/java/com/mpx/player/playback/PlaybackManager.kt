@@ -198,7 +198,9 @@ class PlaybackManager private constructor(context: Context) {
                         currentQueue.isNotEmpty() -> {
                         // Advance, wrapping to 0 only from the last item.
                         // A finished item keeps no resume position.
-                        resumeManager.clearResumePosition(current.id)
+                        // Issue #227: the resume key is the media URI, not
+                        // the bare id — pass both so the manager can derive it.
+                        resumeManager.clearResumePosition(current.id, current.uri)
                         val next = if (endedIndex >= currentQueue.lastIndex) 0 else endedIndex + 1
                         // Fresh-fd load via engineLoad: the engine resolves
                         // the target from its original URI at load time, so
@@ -210,12 +212,14 @@ class PlaybackManager private constructor(context: Context) {
                     hasNext -> {
                         // Repeat OFF: keep going through the queue; only
                         // the last item stops at EOF.
-                        current?.let { resumeManager.clearResumePosition(it.id) }
+                        // Issue #227: resume key is the media URI, not the bare id.
+                        current?.let { resumeManager.clearResumePosition(it.id, it.uri) }
                         engineLoad(currentQueue, endedIndex + 1, 0L)
                         engine.play()
                     }
                     else -> {
-                        current?.let { resumeManager.clearResumePosition(it.id) }
+                        // Issue #227: resume key is the media URI, not the bare id.
+                        current?.let { resumeManager.clearResumePosition(it.id, it.uri) }
                     }
                 }
             }
@@ -224,7 +228,9 @@ class PlaybackManager private constructor(context: Context) {
         override fun onMediaItemTransition(index: Int, isAuto: Boolean) {
             val current = currentQueue.getOrNull(index)
 
-            val savedPos = current?.let { resumeManager.getResumePosition(it.id) }
+            // Issue #227: the resume lookup key is the media URI, not the
+            // bare id — pass both so the manager can derive it.
+            val savedPos = current?.let { resumeManager.getResumePosition(it.id, it.uri) }
             val shouldResume = settingsRepository.load().resumePlayback &&
                 isAuto && savedPos != null && savedPos > 2_000L
 
@@ -431,6 +437,8 @@ class PlaybackManager private constructor(context: Context) {
      */
     fun load(media: PlayableMedia, resumeMs: Long = 0L) {
         if (resumeMs > 0L) {
+            // Issue #227: the manager keys this row by media.uri, not the
+            // bare id — both are passed so the key can be derived.
             resumeManager.saveResumePosition(media.id, resumeMs, media.uri, media.durationMs)
         }
         playQueue(listOf(media), startIndex = 0, autoPlay = true, forceResume = resumeMs > 0L)
@@ -469,7 +477,9 @@ class PlaybackManager private constructor(context: Context) {
         // Issue #149: persist the new session immediately, before the engine
         // load, so even a crash mid-load leaves a restorable queue behind.
         persistQueue(targetIndex)
-        val savedPos = resumeManager.getResumePosition(targetItem.id) ?: 0L
+        // Issue #227: the resume lookup key is the media URI, not the bare
+        // id — pass both so the manager can derive it.
+        val savedPos = resumeManager.getResumePosition(targetItem.id, targetItem.uri) ?: 0L
         val settings = settingsRepository.load()
         val shouldResume = (forceResume || settings.resumePlayback) &&
             savedPos > 2_000L
@@ -992,7 +1002,9 @@ class PlaybackManager private constructor(context: Context) {
         val duration = engine.duration
         val buffered = engine.bufferedPosition
 
-        // Save position into persistent resume store
+        // Save position into persistent resume store. Issue #227: the
+        // manager keys this row by the media URI, not the bare id — both
+        // are passed so the key can be derived.
         _playbackState.value.currentItem?.let { item ->
             if (current > 1_500L && (duration <= 0L || current < duration - 2_000L)) {
                 resumeManager.saveResumePosition(
