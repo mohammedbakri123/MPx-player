@@ -229,6 +229,9 @@ private fun VerticalIndicatorBar(
 // Slim gesture HUD modelled on MX's brightbar (issue #94): a narrow vertical
 // strip — percent text on top, a slim 4dp bar, a small icon at the bottom —
 // over a subtle vertical gradient. No heavy black box, no colored border.
+// Issue #190: the first slimming still read too big on the phone, so the
+// HUD shrinks again — 40dp wide, 64dp bar, 16dp icon, 11sp text — closer
+// to MX's brightbar proportions while staying readable at a glance.
 
 // "1×" / "1.5×" / "0.75×" — rounds to 2 decimals (pinch produces
 // long floats) and trims the trailing ".0" off whole values (#172).
@@ -247,7 +250,7 @@ private fun GestureHud(
 ) {
     Box(
         modifier = modifier
-            .width(56.dp)
+            .width(40.dp)
             .clip(MpxShapes.large)
             .background(
                 Brush.verticalGradient(
@@ -257,30 +260,30 @@ private fun GestureHud(
                     ),
                 ),
             )
-            .padding(vertical = 12.dp),
+            .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = percentText,
                 color = MpxTheme.colors.textPrimary,
-                fontSize = 13.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             VerticalIndicatorBar(
                 fraction = fraction,
-                height = 92.dp,
+                height = 64.dp,
                 width = 4.dp,
                 trackColor = MpxTheme.colors.textPrimary.copy(alpha = 0.25f),
                 progressColor = MpxTheme.colors.textPrimary,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             Icon(
                 imageVector = icon,
                 contentDescription = iconDescription,
                 tint = MpxTheme.colors.textPrimary,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(16.dp),
             )
         }
     }
