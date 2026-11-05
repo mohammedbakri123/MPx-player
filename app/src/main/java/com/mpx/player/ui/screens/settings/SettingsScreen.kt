@@ -113,6 +113,7 @@ import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.components.MpxDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,6 +133,7 @@ fun SettingsScreen(
     // Drill-down navigation (#77): null shows the category list, otherwise
     // the selected category's own sub-screen, like MX's per-header fragments.
     var selectedId by remember { mutableStateOf<String?>(null) }
+    var showResetDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -675,11 +677,29 @@ fun SettingsScreen(
                                 )
                             }
                             "general" -> {
-                                OutlinedButton(onClick = {
-                                    val defaultSettings = AppSettings()
-                                    update(defaultSettings)
-                                }) {
+                                OutlinedButton(onClick = { showResetDialog = true }) {
                                     Text(stringResource(R.string.general_reset_button), color = MpxPrimary)
+                                }
+                                if (showResetDialog) {
+                                    MpxDialog(
+                                        title = stringResource(R.string.general_reset_button),
+                                        onDismiss = { showResetDialog = false },
+                                        confirmText = stringResource(R.string.general_reset_button),
+                                        onConfirm = {
+                                            update(AppSettings())
+                                            showResetDialog = false
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(context.getString(R.string.general_reset_done))
+                                            }
+                                        },
+                                        dismissText = stringResource(R.string.action_cancel),
+                                        body = {
+                                            Text(
+                                                stringResource(R.string.reset_confirm_message),
+                                                color = MpxTextSecondary,
+                                            )
+                                        },
+                                    )
                                 }
                                 Spacer(Modifier.height(6.dp))
                                 Text(
