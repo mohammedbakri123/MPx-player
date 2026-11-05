@@ -108,6 +108,8 @@ import kotlinx.coroutines.withContext
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.components.MpxDialog
+import com.mpx.player.ui.components.MpxPalettePicker
+import com.mpx.player.ui.theme.mpxPaletteFor
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.saveable.rememberSaveable
 
@@ -121,6 +123,7 @@ fun SettingsScreen(
     currentLanguage: String = "system",
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
+    onPaletteChanged: ((String) -> Unit)? = null,
     playbackManager: PlaybackManager? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -141,6 +144,7 @@ fun SettingsScreen(
     fun update(next: AppSettings) {
         val oldLanguage = settings.appLanguage
         val oldTheme = settings.appTheme
+        val oldPalette = settings.colorPalette
         val oldEngine = settings.playerEngine
         val oldDecoder = settings.decoderMode
         settings = next
@@ -150,6 +154,9 @@ fun SettingsScreen(
         }
         if (next.appTheme != oldTheme) {
             onThemeChanged?.invoke(next.appTheme)
+        }
+        if (next.colorPalette != oldPalette) {
+            onPaletteChanged?.invoke(next.colorPalette)
         }
         if (next.playerEngine != oldEngine) {
             actualPlaybackManager.setPlayerEngine(next.playerEngine)
@@ -372,6 +379,33 @@ fun SettingsScreen(
                                         }
                                     }
                                 }
+                                // #147: accent palette picker, Appearance
+                                // page only. Changes only the accent over
+                                // the Dark / Light surfaces above; the
+                                // System / Dark / Light choice is untouched.
+                                Spacer(Modifier.height(16.dp))
+                                HorizontalDivider(color = MpxTheme.colors.border.copy(alpha = 0.5f), thickness = MpxHairline)
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    stringResource(R.string.palette_section_title),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MpxTheme.colors.textPrimary,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                MpxPalettePicker(
+                                    selectedId = settings.colorPalette,
+                                    onPaletteSelected = { paletteId ->
+                                        update(settings.copy(colorPalette = paletteId))
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                context.getString(
+                                                    R.string.palette_applied_snackbar,
+                                                    context.getString(mpxPaletteFor(paletteId).nameRes),
+                                                )
+                                            )
+                                        }
+                                    },
+                                )
                             }
                             "pip" -> {
                                 if (onOpenOverlaySettings != null) {

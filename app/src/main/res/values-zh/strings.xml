@@ -96,6 +96,14 @@
     <string name="theme_option_dark">深色</string>
     <string name="theme_option_light">浅色</string>
     <string name="theme_applied_snackbar">主题已应用：%s</string>
+    <string name="palette_section_title">强调色</string>
+    <string name="palette_name_blue">蓝色</string>
+    <string name="palette_name_emerald">祖母绿</string>
+    <string name="palette_name_violet">紫罗兰</string>
+    <string name="palette_name_amber">琥珀色</string>
+    <string name="palette_name_rose">玫瑰色</string>
+    <string name="palette_name_teal">青色</string>
+    <string name="palette_applied_snackbar">已应用强调色：%s</string>
 
     <string name="pip_not_supported">注意：此设备/环境不支持画中画模式（需要 Android 8.0+ 并支持 FEATURE_PICTURE_IN_PICTURE）。</string>
     <string name="pip_enable_toggle">启用画中画播放（PiP）</string>
