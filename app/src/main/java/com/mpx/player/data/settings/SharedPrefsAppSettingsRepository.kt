@@ -3,6 +3,7 @@ package com.mpx.player.data.settings
 import android.content.Context
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.domain.settings.DEFAULT_PLAYER_MENU_LAYOUT
 
 /**
  * SharedPreferences implementation. Simple, real persistence with no
@@ -96,6 +97,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             showMusicAlbumsTab = albums,
             showMusicArtistsTab = artists,
             showMusicFoldersTab = folders,
+            blacklistedFolders = prefs.getStringSet("blacklisted_folders", emptySet())?.toSet() ?: emptySet(),
+            playerMenuLayout = prefs.getString("player_menu_layout", DEFAULT_PLAYER_MENU_LAYOUT) ?: DEFAULT_PLAYER_MENU_LAYOUT,
+            doubleTapSeekSeconds = prefs.getInt("double_tap_seek_seconds", 10),
         )
     }
 
@@ -162,6 +166,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("show_music_albums_tab", settings.showMusicAlbumsTab)
             .putBoolean("show_music_artists_tab", settings.showMusicArtistsTab)
             .putBoolean("show_music_folders_tab", settings.showMusicFoldersTab)
+            .putStringSet("blacklisted_folders", settings.blacklistedFolders)
+            .putString("player_menu_layout", settings.playerMenuLayout)
+            .putInt("double_tap_seek_seconds", settings.doubleTapSeekSeconds)
             .apply()
     }
 

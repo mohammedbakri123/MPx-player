@@ -99,6 +99,7 @@ import com.mpx.player.ui.components.GridFastScrollbar
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.util.MediaPermissions
+import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -345,6 +346,21 @@ fun LocalScreen(
 
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
 
+    // #158: folder blacklist (Preferences > Folders). A blacklisted
+    // folder and its videos never reach the UI; the filter runs on the
+    // scanned result at every load site, so it also applies after
+    // returning from Preferences.
+    fun applyFolderBlacklist(
+        scanned: List<MediaFolder>,
+        scannedVideos: List<VideoFile>,
+        blacklist: Set<String>,
+    ): Pair<List<MediaFolder>, List<VideoFile>> {
+        if (blacklist.isEmpty()) return scanned to scannedVideos
+        val visibleFolders = scanned.filter { it.path !in blacklist }
+        val visibleVideos = scannedVideos.filter { File(it.path).parent !in blacklist }
+        return visibleFolders to visibleVideos
+    }
+
     fun refreshFolders(showAll: Boolean = appSettings.showAllFolders) {
         if (isLoading) return
         if (MediaPermissions.hasVideoPermission(context)) {
@@ -353,9 +369,10 @@ fun LocalScreen(
                 isLoading = true
                 val scanned = repository.getMediaFolders(showAll)
                 val scannedVideos = repository.getAllVideos(showAll)
+                val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, appSettings.blacklistedFolders)
                 withContext(Dispatchers.Main) {
-                    folders = scanned
-                    allVideos = scannedVideos
+                    folders = visibleFolders
+                    allVideos = visibleVideos
                     isLoading = false
                 }
             }
@@ -376,9 +393,10 @@ fun LocalScreen(
                 isLoading = true
                 val scanned = repository.getMediaFolders(appSettings.showAllFolders)
                 val scannedVideos = repository.getAllVideos(appSettings.showAllFolders)
+                val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, appSettings.blacklistedFolders)
                 withContext(Dispatchers.Main) {
-                    folders = scanned
-                    allVideos = scannedVideos
+                    folders = visibleFolders
+                    allVideos = visibleVideos
                     isLoading = false
                 }
             }
@@ -396,15 +414,20 @@ fun LocalScreen(
                 hasPermission = currentPerm
                 val loadedSettings = realSettingsRepo.load()
                 appSettings = loadedSettings
+                // #158: if the open folder was just blacklisted, leave it.
+                if (currentFolder != null && currentFolder!!.path in loadedSettings.blacklistedFolders) {
+                    currentFolder = null
+                }
                 viewMode = if (loadedSettings.localViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
                 if (currentPerm) {
                     scope.launch(Dispatchers.IO) {
                         isLoading = true
                         val scanned = repository.getMediaFolders(loadedSettings.showAllFolders)
                         val scannedVideos = repository.getAllVideos(loadedSettings.showAllFolders)
+                        val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, loadedSettings.blacklistedFolders)
                         withContext(Dispatchers.Main) {
-                            folders = scanned
-                            allVideos = scannedVideos
+                            folders = visibleFolders
+                            allVideos = visibleVideos
                             isLoading = false
                         }
                     }

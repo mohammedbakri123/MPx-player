@@ -132,6 +132,7 @@ import androidx.media3.ui.PlayerView
 import com.mpx.player.R
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.mpx.player.ui.screens.settings.parsePlayerMenuLayout
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.settings.AppSettings
@@ -541,7 +542,7 @@ fun PlayerScreen(
                             val twoThirds = size.width * (2f / 3f)
                             when {
                                 offset.x < oneThird -> {
-                                    playbackManager.skipBackward(10_000L)
+                                    playbackManager.skipBackward(realSettingsRepo.load().doubleTapSeekSeconds * 1000L)
                                     sideSeekDirection = SideSeekDirection.BACKWARD
                                     hideBrightnessJob?.cancel()
                                     showBrightnessIndicator = false
@@ -554,7 +555,7 @@ fun PlayerScreen(
                                     }
                                 }
                                 offset.x > twoThirds -> {
-                                    playbackManager.skipForward(10_000L)
+                                    playbackManager.skipForward(realSettingsRepo.load().doubleTapSeekSeconds * 1000L)
                                     sideSeekDirection = SideSeekDirection.FORWARD
                                     hideBrightnessJob?.cancel()
                                     showBrightnessIndicator = false
@@ -2047,6 +2048,311 @@ fun PlayerScreen(
 
     // Player Options Menu
     if (activeDialog == "Player Menu") {
+        // #158: Player Menu rows, keyed by layout id; rendered in the
+        // persisted Player Layout order (Preferences > Player Layout).
+        // Each row's code is unchanged from before the refactor.
+        val menuRows: Map<String, @Composable () -> Unit> = mapOf(
+            "decoder" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { activeDialog = "Decoder" }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxTheme.colors.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.player_menu_decoder_mode, state.decoderMode.label), color = MpxTheme.colors.textPrimary)
+                }
+            },
+            "audio" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { activeDialog = "Audio Tracks" }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Audiotrack, contentDescription = null, tint = MpxTheme.colors.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.player_menu_audio_tracks, state.audioTracks.size), color = MpxTheme.colors.textPrimary)
+                }
+            },
+            "subtitles" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { activeDialog = "Subtitles" }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxTheme.colors.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.player_menu_subtitles, if (state.selectedSubtitleTrackIndex == -1) stringResource(R.string.player_state_off) else stringResource(R.string.player_state_on)), color = MpxTheme.colors.textPrimary)
+                }
+            },
+            "favourite" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            state.currentItem?.let { item ->
+                                scope.launch {
+                                    playbackManager.persistenceRepository.toggleFavourite(
+                                        FavouriteItem(
+                                            mediaUri = item.uri,
+                                            mediaId = item.id,
+                                            title = item.title,
+                                            subtitle = item.subtitle,
+                                            isVideo = item.isVideo,
+                                            durationMs = item.durationMs,
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = null,
+                        tint = if (isFavourite) Color(0xFFFF5252) else MpxTheme.colors.primary,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        if (isFavourite) stringResource(R.string.player_cd_favourite_remove) else stringResource(R.string.player_cd_favourite_add),
+                        color = MpxTheme.colors.textPrimary,
+                    )
+                }
+            },
+            "shuffle" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { playbackManager.setShuffleEnabled(!state.shuffleEnabled) }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Filled.Shuffle,
+                        contentDescription = null,
+                        tint = if (state.shuffleEnabled) MpxTheme.colors.primary else Color.Gray,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "${stringResource(R.string.player_cd_shuffle)} (${if (state.shuffleEnabled) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)})",
+                        color = MpxTheme.colors.textPrimary,
+                    )
+                }
+            },
+            "repeat" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { playbackManager.cycleRepeatMode() }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
+                        contentDescription = null,
+                        tint = if (state.repeatMode == RepeatMode.OFF) Color.Gray else MpxTheme.colors.primary,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        when (state.repeatMode) {
+                            RepeatMode.ONE -> stringResource(R.string.player_cd_repeat_one)
+                            RepeatMode.ALL -> stringResource(R.string.player_cd_repeat_all)
+                            else -> stringResource(R.string.player_cd_repeat_off)
+                        },
+                        color = MpxTheme.colors.textPrimary,
+                    )
+                }
+            },
+            "pip" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            activeDialog = null
+                            val entered = PipUtils.enterPip(context)
+                            if (!entered) {
+                                val msg = if (!PipUtils.isPipSupported(context)) {
+                                    context.getString(R.string.player_pip_unsupported)
+                                } else {
+                                    context.getString(R.string.player_pip_unable)
+                                }
+                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null, tint = MpxTheme.colors.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.player_menu_popup_play), color = MpxTheme.colors.textPrimary)
+                }
+            },
+            "background" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val nextBackgroundPlay = !currentSettings.backgroundPlay
+                            val updated = currentSettings.copy(backgroundPlay = nextBackgroundPlay)
+                            currentSettings = updated
+                            realSettingsRepo.save(updated)
+                            if (!nextBackgroundPlay) {
+                                PlaybackService.stop(context)
+                                playbackManager.setVideoBackgroundActive(false)
+                                playbackManager.setBackgroundPlaying(false)
+                            }
+                            val note = if (nextBackgroundPlay) {
+                                if (state.currentItem?.isVideo == true) {
+                                    context.getString(R.string.player_bg_enabled_video)
+                                } else {
+                                    context.getString(R.string.player_bg_enabled_audio)
+                                }
+                            } else {
+                                context.getString(R.string.player_bg_disabled)
+                            }
+                            Toast.makeText(context, note, Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = null,
+                        tint = if (currentSettings.backgroundPlay) MpxTheme.colors.primary else Color.Gray,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.player_menu_background_play_row, if (currentSettings.backgroundPlay) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)),
+                            color = MpxTheme.colors.textPrimary,
+                        )
+                        Text(
+                            if (state.currentItem?.isVideo == true) {
+                                stringResource(R.string.player_bg_desc_video)
+                            } else {
+                                stringResource(R.string.player_bg_desc_audio)
+                            },
+                            color = MpxTheme.colors.textSecondary,
+                            fontSize = 11.sp,
+                        )
+                    }
+                }
+            },
+            "speed" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val nextSpeed = when (state.speed) {
+                                1.0f -> 1.25f
+                                1.25f -> 1.5f
+                                1.5f -> 2.0f
+                                2.0f -> 0.75f
+                                else -> 1.0f
+                            }
+                            playbackManager.setSpeed(nextSpeed)
+                        }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Speed, contentDescription = null, tint = MpxTheme.colors.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.player_menu_speed, "${state.speed}x"), color = MpxTheme.colors.textPrimary)
+                }
+            },
+            "aspect" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val nextMode = when (state.aspectRatio) {
+                                AspectRatioMode.FIT -> AspectRatioMode.FILL
+                                AspectRatioMode.FILL -> AspectRatioMode.ZOOM
+                                AspectRatioMode.ZOOM -> AspectRatioMode.SIXTEEN_NINE
+                                AspectRatioMode.SIXTEEN_NINE -> AspectRatioMode.FOUR_THREE
+                                AspectRatioMode.FOUR_THREE -> AspectRatioMode.ORIGINAL
+                                AspectRatioMode.ORIGINAL -> AspectRatioMode.FIT
+                            }
+                            playbackManager.setAspectRatio(nextMode)
+                        }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.AspectRatio, contentDescription = null, tint = MpxTheme.colors.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.player_menu_aspect, stringResource(state.aspectRatio.labelRes)), color = MpxTheme.colors.textPrimary)
+                }
+            },
+            "rotation" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { activeDialog = "Screen Rotation" }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxTheme.colors.primary)
+                    Spacer(Modifier.width(12.dp))
+                    val rotationLabel = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto") {
+                        stringResource(R.string.player_rotation_auto)
+                    } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
+                        stringResource(R.string.player_orientation_portrait)
+                    } else {
+                        stringResource(R.string.player_orientation_landscape)
+                    }
+                    Text(stringResource(R.string.player_menu_rotation, rotationLabel), color = MpxTheme.colors.textPrimary)
+                }
+            },
+            "sleep" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { activeDialog = "Sleep Timer" }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Timer, contentDescription = null, tint = MpxTheme.colors.primary)
+                    Spacer(Modifier.width(12.dp))
+                    val sleepTimerSubtext = if (state.sleepTimerRemainingSeconds != null) {
+                        val remaining = state.sleepTimerRemainingSeconds ?: 0L
+                        val hours = remaining / 3600
+                        val mins = (remaining % 3600) / 60
+                        val secs = remaining % 60
+                        if (hours > 0) {
+                            String.format(Locale.getDefault(), "%d:%02d:%02d", hours, mins, secs)
+                        } else {
+                            String.format(Locale.getDefault(), "%02d:%02d", mins, secs)
+                        }
+                    } else {
+                        stringResource(R.string.player_sleep_timer_off)
+                    }
+                    Text("${stringResource(R.string.player_sleep_timer)} ($sleepTimerSubtext)", color = MpxTheme.colors.textPrimary)
+                }
+            },
+            "playlist" to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            activeDialog = null
+                            showAddToPlaylistDialog = true
+                        }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxTheme.colors.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.player_menu_add_playlist), color = MpxTheme.colors.textPrimary)
+                }
+            },
+        )
         AlertDialog(
             onDismissRequest = { activeDialog = null },
             containerColor = MpxTheme.colors.black,
@@ -2062,279 +2368,8 @@ fun PlayerScreen(
             },
             text = {
                 Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { activeDialog = "Decoder" }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_decoder_mode, state.decoderMode.label), color = MpxTheme.colors.textPrimary)
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { activeDialog = "Audio Tracks" }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Audiotrack, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_audio_tracks, state.audioTracks.size), color = MpxTheme.colors.textPrimary)
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { activeDialog = "Subtitles" }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_subtitles, if (state.selectedSubtitleTrackIndex == -1) stringResource(R.string.player_state_off) else stringResource(R.string.player_state_on)), color = MpxTheme.colors.textPrimary)
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                state.currentItem?.let { item ->
-                                    scope.launch {
-                                        playbackManager.persistenceRepository.toggleFavourite(
-                                            FavouriteItem(
-                                                mediaUri = item.uri,
-                                                mediaId = item.id,
-                                                title = item.title,
-                                                subtitle = item.subtitle,
-                                                isVideo = item.isVideo,
-                                                durationMs = item.durationMs,
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                            contentDescription = null,
-                            tint = if (isFavourite) Color(0xFFFF5252) else MpxTheme.colors.primary,
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            if (isFavourite) stringResource(R.string.player_cd_favourite_remove) else stringResource(R.string.player_cd_favourite_add),
-                            color = MpxTheme.colors.textPrimary,
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { playbackManager.setShuffleEnabled(!state.shuffleEnabled) }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Filled.Shuffle,
-                            contentDescription = null,
-                            tint = if (state.shuffleEnabled) MpxTheme.colors.primary else Color.Gray,
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            "${stringResource(R.string.player_cd_shuffle)} (${if (state.shuffleEnabled) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)})",
-                            color = MpxTheme.colors.textPrimary,
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { playbackManager.cycleRepeatMode() }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
-                            contentDescription = null,
-                            tint = if (state.repeatMode == RepeatMode.OFF) Color.Gray else MpxTheme.colors.primary,
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            when (state.repeatMode) {
-                                RepeatMode.ONE -> stringResource(R.string.player_cd_repeat_one)
-                                RepeatMode.ALL -> stringResource(R.string.player_cd_repeat_all)
-                                else -> stringResource(R.string.player_cd_repeat_off)
-                            },
-                            color = MpxTheme.colors.textPrimary,
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                activeDialog = null
-                                val entered = PipUtils.enterPip(context)
-                                if (!entered) {
-                                    val msg = if (!PipUtils.isPipSupported(context)) {
-                                        context.getString(R.string.player_pip_unsupported)
-                                    } else {
-                                        context.getString(R.string.player_pip_unable)
-                                    }
-                                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_popup_play), color = MpxTheme.colors.textPrimary)
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val nextBackgroundPlay = !currentSettings.backgroundPlay
-                                val updated = currentSettings.copy(backgroundPlay = nextBackgroundPlay)
-                                currentSettings = updated
-                                realSettingsRepo.save(updated)
-                                if (!nextBackgroundPlay) {
-                                    PlaybackService.stop(context)
-                                    playbackManager.setVideoBackgroundActive(false)
-                                    playbackManager.setBackgroundPlaying(false)
-                                }
-                                val note = if (nextBackgroundPlay) {
-                                    if (state.currentItem?.isVideo == true) {
-                                        context.getString(R.string.player_bg_enabled_video)
-                                    } else {
-                                        context.getString(R.string.player_bg_enabled_audio)
-                                    }
-                                } else {
-                                    context.getString(R.string.player_bg_disabled)
-                                }
-                                Toast.makeText(context, note, Toast.LENGTH_SHORT).show()
-                            }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.PlayArrow,
-                            contentDescription = null,
-                            tint = if (currentSettings.backgroundPlay) MpxTheme.colors.primary else Color.Gray,
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(R.string.player_menu_background_play_row, if (currentSettings.backgroundPlay) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)),
-                                color = MpxTheme.colors.textPrimary,
-                            )
-                            Text(
-                                if (state.currentItem?.isVideo == true) {
-                                    stringResource(R.string.player_bg_desc_video)
-                                } else {
-                                    stringResource(R.string.player_bg_desc_audio)
-                                },
-                                color = MpxTheme.colors.textSecondary,
-                                fontSize = 11.sp,
-                            )
-                        }
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val nextSpeed = when (state.speed) {
-                                    1.0f -> 1.25f
-                                    1.25f -> 1.5f
-                                    1.5f -> 2.0f
-                                    2.0f -> 0.75f
-                                    else -> 1.0f
-                                }
-                                playbackManager.setSpeed(nextSpeed)
-                            }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Speed, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_speed, "${state.speed}x"), color = MpxTheme.colors.textPrimary)
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val nextMode = when (state.aspectRatio) {
-                                    AspectRatioMode.FIT -> AspectRatioMode.FILL
-                                    AspectRatioMode.FILL -> AspectRatioMode.ZOOM
-                                    AspectRatioMode.ZOOM -> AspectRatioMode.SIXTEEN_NINE
-                                    AspectRatioMode.SIXTEEN_NINE -> AspectRatioMode.FOUR_THREE
-                                    AspectRatioMode.FOUR_THREE -> AspectRatioMode.ORIGINAL
-                                    AspectRatioMode.ORIGINAL -> AspectRatioMode.FIT
-                                }
-                                playbackManager.setAspectRatio(nextMode)
-                            }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.AspectRatio, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_aspect, stringResource(state.aspectRatio.labelRes)), color = MpxTheme.colors.textPrimary)
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { activeDialog = "Screen Rotation" }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        val rotationLabel = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto") {
-                            stringResource(R.string.player_rotation_auto)
-                        } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
-                            stringResource(R.string.player_orientation_portrait)
-                        } else {
-                            stringResource(R.string.player_orientation_landscape)
-                        }
-                        Text(stringResource(R.string.player_menu_rotation, rotationLabel), color = MpxTheme.colors.textPrimary)
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { activeDialog = "Sleep Timer" }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Timer, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        val sleepTimerSubtext = if (state.sleepTimerRemainingSeconds != null) {
-                            val remaining = state.sleepTimerRemainingSeconds ?: 0L
-                            val hours = remaining / 3600
-                            val mins = (remaining % 3600) / 60
-                            val secs = remaining % 60
-                            if (hours > 0) {
-                                String.format(Locale.getDefault(), "%d:%02d:%02d", hours, mins, secs)
-                            } else {
-                                String.format(Locale.getDefault(), "%02d:%02d", mins, secs)
-                            }
-                        } else {
-                            stringResource(R.string.player_sleep_timer_off)
-                        }
-                        Text("${stringResource(R.string.player_sleep_timer)} ($sleepTimerSubtext)", color = MpxTheme.colors.textPrimary)
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                activeDialog = null
-                                showAddToPlaylistDialog = true
-                            }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_add_playlist), color = MpxTheme.colors.textPrimary)
+                    parsePlayerMenuLayout(realSettingsRepo.load().playerMenuLayout).forEach { id ->
+                        menuRows[id]?.invoke()
                     }
                 }
             },
