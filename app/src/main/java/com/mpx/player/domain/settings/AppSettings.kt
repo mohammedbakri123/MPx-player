@@ -5,6 +5,11 @@ package com.mpx.player.domain.settings
  * Room-persistence worktree may later swap the implementation; the
  * interface and defaults here are the contract.
  */
+
+/** Default Player Menu layout (#158): visible row ids in display order. */
+const val DEFAULT_PLAYER_MENU_LAYOUT =
+    "decoder,audio,subtitles,favourite,shuffle,repeat,pip,background,speed,aspect,rotation,sleep,playlist"
+
 data class AppSettings(
     val showHiddenFiles: Boolean = false,
     val showThumbnails: Boolean = true,
@@ -81,6 +86,14 @@ data class AppSettings(
     val showMusicArtistsTab: Boolean = true,
     val showMusicFoldersTab: Boolean = true,
     val lastTabRoute: String = "local", // Last dock tab (#157): the app reopens on it
+    // Folder blacklist (#158, mpvEx parity): folder paths hidden from
+    // Local. Applied in LocalScreen when folders/videos are loaded.
+    val blacklistedFolders: Set<String> = emptySet(),
+    // Player Menu layout (#158, mpvEx parity): visible menu row ids in
+    // display order, comma-separated; see PlayerMenuLayout.kt.
+    val playerMenuLayout: String = DEFAULT_PLAYER_MENU_LAYOUT,
+    // Double-tap seek amount in seconds (#158, mpvEx parity): 5/10/15/30.
+    val doubleTapSeekSeconds: Int = 10,
 ) {
     /**
      * Total number of currently visible music tabs.

@@ -26,16 +26,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DashboardCustomize
 import androidx.compose.material.icons.filled.DeveloperMode
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
@@ -43,9 +43,10 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Tab
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -133,11 +134,16 @@ fun SettingsScreen(
     // Drill-down navigation (#77): null shows the category list, otherwise
     // the selected category's own sub-screen, like MX's per-header fragments.
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    // mpvEx-style search (#158): true shows the working settings search
+    // page; back closes search before leaving the category list.
+    var isSearching by rememberSaveable { mutableStateOf(false) }
     var showResetDialog by rememberSaveable { mutableStateOf(false) }
-    // System back mirrors the TopAppBar icon: from a drilled-down
-    // category it returns to the category list (#124); only at the
-    // root list does it leave Settings.
-    BackHandler(enabled = selectedId != null) { selectedId = null }
+    // System back mirrors the TopAppBar icon: search closes first, then a
+    // drilled-down category returns to the category list (#124); only at
+    // the root list does it leave Settings.
+    BackHandler(enabled = isSearching || selectedId != null) {
+        if (isSearching) isSearching = false else selectedId = null
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -200,23 +206,28 @@ fun SettingsScreen(
         else -> stringResource(R.string.theme_option_system)
     }
 
-    // Order follows the decoded MX Settings headers (List, Player, Decoder,
-    // Subtitle, General, Development), with MPx extras after them and About
-    // last. Audio was removed in #66 and is not re-added. Language and
-    // Theme keep subtitles, since they carry real state at a glance;
-    // all other rows are title-only.
+    // mpvEx Preferences page shape (#158): categories grouped into
+    // sections on the root list (UI & Appearance, Playback & Controls,
+    // File Management, Media Settings, Advanced & About). Theme (+ the
+    // #147 palette) is Appearance; gestures live in their own Gestures
+    // category; Development + the reset button are Advanced. Audio was
+    // removed in #66 and stays out — there is no real audio setting, so
+    // no dead Audio row. Language and Theme keep subtitles, since they
+    // carry real state at a glance.
     val categories = listOf(
-        SettingCategory("list", stringResource(R.string.settings_category_list), null, Icons.AutoMirrored.Filled.FormatListBulleted),
-        SettingCategory("player", stringResource(R.string.settings_category_player), null, Icons.Filled.PlayCircleOutline),
-        SettingCategory("decoder", stringResource(R.string.settings_category_decoder), null, Icons.Filled.Memory),
-        SettingCategory("subtitle", stringResource(R.string.settings_category_subtitle), null, Icons.Filled.Subtitles),
-        SettingCategory("general", stringResource(R.string.settings_category_general), null, Icons.Filled.Tune),
-        SettingCategory("development", stringResource(R.string.settings_category_development), null, Icons.Filled.DeveloperMode),
-        SettingCategory("pip", stringResource(R.string.settings_category_pip), null, Icons.Filled.PictureInPictureAlt),
-        SettingCategory("tabs", stringResource(R.string.settings_category_tabs), null, Icons.Filled.Tab),
+        SettingCategory("appearance", stringResource(R.string.pref_appearance_title), themeSubtitle, Icons.Filled.ColorLens),
+        SettingCategory("layout", stringResource(R.string.pref_layout_title), stringResource(R.string.pref_layout_summary), Icons.Filled.DashboardCustomize),
         SettingCategory("language", stringResource(R.string.settings_category_language), languageSubtitle, Icons.Filled.Language),
-        SettingCategory("theme", stringResource(R.string.settings_category_theme), themeSubtitle, Icons.Filled.ColorLens),
-        SettingCategory("about", stringResource(R.string.settings_category_about), null, Icons.Filled.Info),
+        SettingCategory("tabs", stringResource(R.string.settings_category_tabs), stringResource(R.string.settings_category_tabs_sub), Icons.Filled.Tab),
+        SettingCategory("player", stringResource(R.string.settings_category_player), stringResource(R.string.pref_player_summary), Icons.Filled.PlayCircleOutline),
+        SettingCategory("gestures", stringResource(R.string.pref_gestures_title), stringResource(R.string.pref_gestures_summary), Icons.Filled.TouchApp),
+        SettingCategory("pip", stringResource(R.string.settings_category_pip), stringResource(R.string.settings_category_pip_sub), Icons.Filled.PictureInPictureAlt),
+        SettingCategory("folders", stringResource(R.string.pref_folders_title), stringResource(R.string.pref_folders_summary), Icons.Filled.Folder),
+        SettingCategory("list", stringResource(R.string.settings_category_list), stringResource(R.string.settings_category_list_sub), Icons.AutoMirrored.Filled.FormatListBulleted),
+        SettingCategory("decoder", stringResource(R.string.settings_category_decoder), stringResource(R.string.settings_category_decoder_sub), Icons.Filled.Memory),
+        SettingCategory("subtitle", stringResource(R.string.settings_category_subtitle), stringResource(R.string.settings_category_subtitle_sub), Icons.Filled.Subtitles),
+        SettingCategory("advanced", stringResource(R.string.pref_advanced_title), stringResource(R.string.settings_category_development_sub), Icons.Filled.DeveloperMode),
+        SettingCategory("about", stringResource(R.string.settings_category_about), stringResource(R.string.settings_category_about_sub), Icons.Filled.Info),
     )
 
     val selectedCategory = categories.find { it.id == selectedId }
@@ -229,13 +240,19 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = selectedCategory?.title ?: stringResource(R.string.settings_title),
+                        text = selectedCategory?.title ?: stringResource(R.string.pref_preferences),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
                         color = MpxTheme.colors.textPrimary,
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { if (selectedCategory != null) selectedId = null else onNavigateBack() }) {
+                    IconButton(onClick = {
+                        when {
+                            isSearching -> isSearching = false
+                            selectedCategory != null -> selectedId = null
+                            else -> onNavigateBack()
+                        }
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back), tint = MpxTheme.colors.textPrimary)
                     }
                 },
@@ -243,44 +260,81 @@ fun SettingsScreen(
             )
         },
     ) { padding ->
-        if (selectedCategory == null) {
+        if (isSearching) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                PreferencesSearchScreen(onOpenCategory = { id ->
+                    isSearching = false
+                    selectedId = id
+                })
+            }
+        } else if (selectedCategory == null) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(bottom = 32.dp),
             ) {
-                items(categories, key = { it.id }) { category ->
-                    Column {
+                // 28dp rounded search bar opening the working search page.
+                item {
+                    PreferenceCard {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { selectedId = category.id }
+                                .clickable { isSearching = true }
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(MpxShapes.small)
-                                    .background(MpxTheme.colors.surfaceElevated)
-                                    .border(0.5.dp, MpxTheme.colors.border, MpxShapes.small),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(category.icon, null, tint = MpxTheme.colors.primary, modifier = Modifier.size(24.dp))
-                            }
+                            Icon(Icons.Filled.Search, null, tint = MpxTheme.colors.textMuted, modifier = Modifier.size(24.dp))
                             Spacer(Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(category.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp), color = MpxTheme.colors.textPrimary)
-                                if (category.subtitle != null) {
-                                    Spacer(Modifier.height(2.dp))
-                                    Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary, lineHeight = 16.sp)
-                                }
-                            }
-                            Spacer(Modifier.width(8.dp))
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+                            Text(stringResource(R.string.pref_search_hint), style = MaterialTheme.typography.bodyLarge, color = MpxTheme.colors.textMuted)
                         }
-                        HorizontalDivider(modifier = Modifier.padding(start = 74.dp), color = MpxTheme.colors.border, thickness = MpxHairline)
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
+                item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_appearance)) }
+                item {
+                    PreferenceCategoryCard(
+                        categories = listOf("appearance", "layout", "language", "tabs").mapNotNull { id -> categories.find { it.id == id } },
+                        onSelect = { selectedId = it },
+                    )
+                }
+                item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_playback)) }
+                item {
+                    PreferenceCategoryCard(
+                        categories = listOf("player", "gestures", "pip").mapNotNull { id -> categories.find { it.id == id } },
+                        onSelect = { selectedId = it },
+                    )
+                }
+                item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_files)) }
+                item {
+                    PreferenceCategoryCard(
+                        categories = listOf("folders", "list").mapNotNull { id -> categories.find { it.id == id } },
+                        onSelect = { selectedId = it },
+                    )
+                }
+                item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_media)) }
+                item {
+                    PreferenceCategoryCard(
+                        categories = listOf("decoder", "subtitle").mapNotNull { id -> categories.find { it.id == id } },
+                        onSelect = { selectedId = it },
+                    )
+                }
+                item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_advanced)) }
+                item {
+                    PreferenceCategoryCard(
+                        categories = listOf("advanced", "about").mapNotNull { id -> categories.find { it.id == id } },
+                        onSelect = { selectedId = it },
+                    )
+                }
+            }
+        } else if (selectedId == "folders") {
+            // #158: hosted at Scaffold level, not inside the drill-down
+            // LazyColumn — the screen scrolls itself.
+            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                FoldersBlacklistScreen(settings = settings, onSettingsChanged = ::update)
+            }
+        } else if (selectedId == "layout") {
+            // #158: same as above — the editor scrolls itself.
+            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                PlayerLayoutScreen(settings = settings, onSettingsChanged = ::update)
             }
         } else {
             // Dedicated sub-screen for one category: only its own options.
@@ -360,7 +414,7 @@ fun SettingsScreen(
                                     color = MpxTheme.colors.textSecondary,
                                 )
                             }
-                            "theme" -> {
+                            "appearance" -> {
                                 // #139: System / Dark / Light, like
                                 // Instagram/Facebook. Dark is the true-black
                                 // palette; Light is its white mirror.
@@ -405,6 +459,31 @@ fun SettingsScreen(
                                             )
                                         }
                                     },
+                                )
+                            }
+                            // #158: gestures live here now, not in Player.
+                            "gestures" -> {
+                                ToggleRow(stringResource(R.string.player_gestures), settings.gesturesEnabled) { update(settings.copy(gesturesEnabled = it)) }
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    stringResource(R.string.pref_gesture_seek_title),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MpxTheme.colors.textPrimary,
+                                    modifier = Modifier.padding(bottom = 4.dp),
+                                )
+                                listOf(5, 10, 15, 30).forEach { seconds ->
+                                    ChoiceRow(
+                                        stringResource(R.string.pref_gesture_seek_seconds, seconds),
+                                        settings.doubleTapSeekSeconds == seconds,
+                                    ) {
+                                        update(settings.copy(doubleTapSeekSeconds = seconds))
+                                    }
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    stringResource(R.string.pref_gesture_note),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MpxTheme.colors.textSecondary,
                                 )
                             }
                             "pip" -> {
@@ -541,7 +620,6 @@ fun SettingsScreen(
                                     }
                                     Spacer(Modifier.height(4.dp))
                                 }
-                                ToggleRow(stringResource(R.string.player_gestures), settings.gesturesEnabled) { update(settings.copy(gesturesEnabled = it)) }
                             }
                             "decoder" -> {
                                 Text(
@@ -746,7 +824,10 @@ fun SettingsScreen(
                                     style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary,
                                 )
                             }
-                            "general" -> {
+                            // #158: Advanced = the old Development section
+                            // plus the reset button from the old General
+                            // category (its only real setting).
+                            "advanced" -> {
                                 OutlinedButton(onClick = { showResetDialog = true }) {
                                     Text(stringResource(R.string.general_reset_button), color = MpxTheme.colors.primary)
                                 }
@@ -776,8 +857,7 @@ fun SettingsScreen(
                                     stringResource(R.string.general_language_hint),
                                     style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary,
                                 )
-                            }
-                            "development" -> {
+                                Spacer(Modifier.height(16.dp))
                                 DevelopmentSettingsSection(
                                     context = context,
                                     playbackManager = actualPlaybackManager,
