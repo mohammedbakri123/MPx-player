@@ -336,6 +336,12 @@ class MpvPlayerEngine(
         setOption("gpu-context", "android")
         setOption("opengl-es", "yes")
         setOption("ao", "audiotrack,opensles")
+        // Issue #181: audio device underruns during heavy software decode
+        // (HEVC software fallback on this device starves the audio thread
+        // after restarts/seeks). mpv's default audio buffer is 0.2s; 0.5s
+        // gives the audio output 2.5x the slack. Trade-off is slightly
+        // higher audio latency after seeks/pauses, negligible for a player.
+        setOption("audio-buffer", "0.5")
         // Issue #103: keep-open=yes pauses on EOF so the last frame stays visible
         // and eof-reached signals to PlaybackManager. PlaybackManager owns queue
         // transitions; mpv holds only the active item.
