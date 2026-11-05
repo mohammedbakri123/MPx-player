@@ -83,6 +83,28 @@ class MpvPlayerEngine(
     private enum class DecoderStage { HW, HW_PLUS, SW }
     private var currentDecoderStage: DecoderStage = DecoderStage.HW
 
+    /**
+     * Issue #212: the hwdec stage the fallback stepped down to, carried
+     * through the fallback reload. load() normally re-applies the USER's
+     * decoderMode (applyHwdecForMode), which would undo the step-down —
+     * so the reload consumes this override instead, without touching
+     * decoderMode (the user's setting stays; the active decoder is
+     * reported via notifyDecoderChanged). Consumed inside load() only
+     * once it actually proceeds to apply hwdec, so a surface-deferred
+     * reload still carries it when attachSurface() flushes it.
+     * Cleared by an explicit setDecoderMode (the user's choice wins).
+     */
+    private var fallbackHwdecStage: DecoderStage? = null
+    /**
+     * Issue #212: a fallback reload is in flight (loadfile issued,
+     * FILE_LOADED not yet arrived). Duplicate triggers for the same
+     * failure — several mediacodec log lines, or a log line plus a
+     * premature END_FILE — are ignored while this is set, so one
+     * failure steps down once. Cleared on FILE_LOADED, or by a fresh
+     * non-fallback load().
+     */
+    private var fallbackReloadPending: Boolean = false
+
     var decoderMode: DecoderMode = initialDecoderMode
         private set
 
@@ -333,10 +355,18 @@ class MpvPlayerEngine(
             if (rejectedOptions.isEmpty()) "" else "; rejected options: " + rejectedOptions.joinToString(", ")
         }
 
-    private fun hwdecValueFor(mode: DecoderMode): String = when (mode) {
-        DecoderMode.HW -> "mediacodec"
-        DecoderMode.HW_PLUS -> "mediacodec-copy"
-        DecoderMode.SW -> "no"
+    private fun hwdecValueFor(mode: DecoderMode): String = hwdecValueForStage(
+        when (mode) {
+            DecoderMode.HW -> DecoderStage.HW
+            DecoderMode.HW_PLUS -> DecoderStage.HW_PLUS
+            DecoderMode.SW -> DecoderStage.SW
+        }
+    )
+
+    private fun hwdecValueForStage(stage: DecoderStage): String = when (stage) {
+        DecoderStage.HW -> "mediacodec"
+        DecoderStage.HW_PLUS -> "mediacodec-copy"
+        DecoderStage.SW -> "no"
     }
 
     private fun initializeMpv(mode: DecoderMode) {
@@ -598,8 +628,22 @@ class MpvPlayerEngine(
      * Decoder chain fallback:
      * hwdec mediacodec (HW) -> mediacodec-copy (HW+) -> hwdec=no (SW) -> hard failure reported as a real error
      * on hard failure, surfacing a real error naming the codec (never a silent stall).
+     * Issue #212: a live hwdec change only affects the NEXT decoder init,
+     * so each step-down reloads the current item at its position (see
+     * reloadForDecoderFallback) — otherwise the failed decoder keeps
+     * decoding the current stream and the step-down is a no-op.
      */
     private fun attemptDecoderFallback(reason: String) {
+        // Issue #212: coalesce duplicate triggers for the same failure
+        // (several mediacodec log lines, or a log line plus a premature
+        // END_FILE) — while a fallback reload is in flight, one failure
+        // must step down once. Without this, stale duplicates could step
+        // down again after the reload recovered, and at SW surface a hard
+        // error while the file plays fine.
+        if (fallbackReloadPending) {
+            Log.d(TAG, "Decoder fallback already reloading; ignoring duplicate trigger ($reason)")
+            return
+        }
         val codec = mpv.getPropertyString("video-codec") ?: activeVideoCodec.ifBlank { "unknown" }
         when (currentDecoderStage) {
             DecoderStage.HW -> {
@@ -609,6 +653,7 @@ class MpvPlayerEngine(
                 try {
                     mpv.setPropertyString("hwdec", "mediacodec-copy")
                     notifyDecoderChanged()
+                    reloadForDecoderFallback()
                 } catch (e: Exception) {
                     attemptDecoderFallback("Failed to switch to mediacodec-copy: ${e.message}")
                 }
@@ -620,6 +665,7 @@ class MpvPlayerEngine(
                 try {
                     mpv.setPropertyString("hwdec", "no")
                     notifyDecoderChanged()
+                    reloadForDecoderFallback()
                 } catch (e: Exception) {
                     attemptDecoderFallback("Failed to switch to SW: ${e.message}")
                 }
@@ -635,6 +681,39 @@ class MpvPlayerEngine(
                     engineListener?.onError(exception)
                 }
             }
+        }
+    }
+
+    /**
+     * Issue #212: reload the current item at its position after a decoder
+     * step-down, exactly as setDecoderMode does — a live hwdec change only
+     * affects the NEXT decoder init, so without this the failed decoder
+     * keeps decoding the current stream. No-op when nothing is loaded.
+     * The stepped-down stage is carried through load() via
+     * fallbackHwdecStage (load() would otherwise re-apply the user's mode
+     * and undo the step-down); decoderMode itself is untouched.
+     * Playback resumes only if it was playing — a paused file stays
+     * paused (unlike setDecoderMode, which always resumes; see #224).
+     * Loop guard: the stage is monotonic within an item (only
+     * attemptDecoderFallback advances it; load() preserves the override
+     * stage instead of resetting it), so one item steps down at most
+     * twice (HW -> HW+ -> SW) and then hits the SW hard-error branch.
+     * A reload failure is NOT a decoder-stage failure (load() says the
+     * same about loadfile errors), so it never steps down further — the
+     * stage stays stepped down and the in-flight flag is cleared.
+     */
+    private fun reloadForDecoderFallback() {
+        if (!mpvInitialized || isReleased || !fileLoadedForCurrentItem || currentQueue.isEmpty()) return
+        val wasPlaying = cachedIsPlaying
+        val pos = cachedPositionMs
+        fallbackHwdecStage = currentDecoderStage
+        fallbackReloadPending = true
+        try {
+            load(currentQueue, currentMediaIndex, pos)
+            if (wasPlaying) play()
+        } catch (e: Exception) {
+            Log.w(TAG, "Decoder fallback reload failed", e)
+            fallbackReloadPending = false
         }
     }
 
@@ -846,6 +925,10 @@ class MpvPlayerEngine(
                 }
 
                 fileLoadedForCurrentItem = true
+                // Issue #212: the fallback reload landed — duplicate
+                // triggers for the old failure are behind us; a fresh
+                // failure may fall back again.
+                fallbackReloadPending = false
                 lastMpvEvent = "FILE_LOADED"
                 cachedPlaybackState = PlayerEngine.STATE_READY
                 synchronized(metricsLock) {
@@ -1146,7 +1229,13 @@ class MpvPlayerEngine(
 
     override fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
         currentQueue = items
-        if (items.isEmpty()) return
+        if (items.isEmpty()) {
+            // Issue #212: an empty queue is a fresh context — no current
+            // item, so no fallback override or in-flight reload survives.
+            fallbackHwdecStage = null
+            fallbackReloadPending = false
+            return
+        }
         fileLoadedForCurrentItem = false
         // Issue #199: a pending pin belongs to the item it was picked
         // for — a new load must never let it pin a track on this item.
@@ -1186,7 +1275,28 @@ class MpvPlayerEngine(
             return
         }
 
-        applyHwdecForMode(decoderMode)
+        // Issue #212: a fallback reload carries the stepped-down stage
+        // through; a fresh load re-applies the user's mode and clears
+        // any in-flight fallback (a new item is a new failure context).
+        // The override is consumed only here, after the surface-deferral
+        // check above, so a deferred fallback reload still carries it
+        // when attachSurface() flushes it.
+        val fallbackStage = fallbackHwdecStage
+        fallbackHwdecStage = null
+        if (fallbackStage != null) {
+            // Keep the stepped-down decoder; decoderMode (the user's
+            // setting) is untouched.
+            currentDecoderStage = fallbackStage
+            val hwdecVal = hwdecValueForStage(fallbackStage)
+            try {
+                mpv.setPropertyString("hwdec", hwdecVal)
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not set fallback hwdec to $hwdecVal", e)
+            }
+        } else {
+            applyHwdecForMode(decoderMode)
+            fallbackReloadPending = false
+        }
 
         activeMediaId = targetItem.id
         activeMediaUri = targetItem.uri
@@ -1635,6 +1745,10 @@ class MpvPlayerEngine(
 
     override fun setDecoderMode(mode: DecoderMode) {
         if (decoderMode == mode) return
+        // Issue #212: a deferred fallback reload must not override the
+        // user's explicit choice.
+        fallbackHwdecStage = null
+        fallbackReloadPending = false
         applyHwdecForMode(mode)
         // A live hwdec property change only affects the NEXT decoder init, so
         // the current stream would keep its old decoder and the pill would go
