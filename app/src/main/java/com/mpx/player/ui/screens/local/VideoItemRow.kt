@@ -19,20 +19,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,21 +53,14 @@ private fun formatVideoDate(epochSeconds: Long): String {
 @Composable
 fun VideoItemRow(
     video: VideoFile,
-    isFavourite: Boolean = false,
     showSize: Boolean = true,
     showDate: Boolean = false,
     showDuration: Boolean = true,
     showLocation: Boolean = true,
     showThumbnails: Boolean = true,
     onClick: () -> Unit,
-    onPlayFolder: () -> Unit = {},
-    onAddToPlaylist: () -> Unit = {},
-    onToggleFavourite: () -> Unit = {},
-    onMenuClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -195,54 +181,6 @@ fun VideoItemRow(
                 }
             }
         }
-
-        Box {
-            IconButton(
-                onClick = { if (onMenuClick != null) onMenuClick() else menuExpanded = true },
-                modifier = Modifier.size(48.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = stringResource(R.string.video_item_options_cd, video.title),
-                    tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false },
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.video_menu_play)) },
-                    onClick = {
-                        menuExpanded = false
-                        onClick()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.video_menu_play_folder, video.folderName)) },
-                    onClick = {
-                        menuExpanded = false
-                        onPlayFolder()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.music_menu_add_to_playlist)) },
-                    onClick = {
-                        menuExpanded = false
-                        onAddToPlaylist()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.music_menu_toggle_favourite)) },
-                    onClick = {
-                        menuExpanded = false
-                        onToggleFavourite()
-                    },
-                )
-            }
-        }
     }
 }
 
@@ -256,10 +194,7 @@ fun VideoItemGridCard(
     showLocation: Boolean = true,
     showThumbnails: Boolean = true,
     onClick: () -> Unit,
-    onPlayFolder: () -> Unit = {},
-    onAddToPlaylist: () -> Unit = {},
     onToggleFavourite: () -> Unit = {},
-    onMenuClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -377,16 +312,6 @@ fun VideoItemGridCard(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                if (onMenuClick != null) {
-                    IconButton(onClick = onMenuClick, modifier = Modifier.size(40.dp)) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = stringResource(R.string.cd_more_options),
-                            tint = MpxTheme.colors.textSecondary,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
                 IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,

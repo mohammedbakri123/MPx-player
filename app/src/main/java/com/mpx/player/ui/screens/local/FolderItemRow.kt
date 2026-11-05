@@ -15,12 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,7 +51,6 @@ fun FolderItemRow(
     showDate: Boolean = false,
     showThumbnails: Boolean = true,
     onClick: () -> Unit,
-    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -131,7 +126,7 @@ fun FolderItemRow(
             // rounded box, matching MX's one-subtitle-slot row shape
             // (list_grid_media: one title, one subtitle). The count is not
             // shown on the tile (#143); the exact count stays one tap away
-            // in the folder menu dialog.
+            // in the folder view subtitle (#155: the tile menu is gone).
             // No subfolder counts: MediaFolder has no such field and a
             // recursive scan is out of scope.
             val folderDateStr = formatFolderDate(folder.lastModified)
@@ -171,18 +166,6 @@ fun FolderItemRow(
                     )
                 }
             }
-        }
-
-        IconButton(
-            onClick = onMenuClick,
-            modifier = Modifier.size(48.dp), // 48dp Android touch target standard
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = stringResource(R.string.folder_item_options_cd, folder.name),
-                tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                modifier = Modifier.size(20.dp),
-            )
         }
     }
 }
