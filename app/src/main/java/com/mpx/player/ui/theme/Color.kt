@@ -35,6 +35,9 @@ val MpxTextMuted = Color(0xFF94A3B8)
 
 // Errors only. Never used for decoration, badges, or highlights.
 val MpxDestructive = Color(0xFFEF4444)
+// Success / ready only (never an accent, never a badge): the green
+// check on AboutBeta ready rows.
+val MpxSuccess = Color(0xFF10B981)
 
 // Hairlines only — no weird borders. Outlines are functional (divider,
 // focused control), never decorative frames.

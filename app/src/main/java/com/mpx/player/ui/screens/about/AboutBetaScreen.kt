@@ -633,14 +633,14 @@ private fun FeatureStatusRow(
                         Icon(
                             imageVector = Icons.Filled.CheckCircle,
                             contentDescription = null,
-                            tint = Color(0xFF10B981),
+                            tint = MpxSuccess,
                             modifier = Modifier.size(14.dp),
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "Ready",
+                            text = stringResource(R.string.about_status_ready),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = Color(0xFF10B981),
+                            color = MpxSuccess,
                             fontSize = 11.sp,
                         )
                     }
@@ -654,7 +654,7 @@ private fun FeatureStatusRow(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "Placeholder",
+                            text = stringResource(R.string.about_status_placeholder),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.tertiary,
                             fontSize = 11.sp,
