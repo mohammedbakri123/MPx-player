@@ -121,6 +121,7 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
+import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
@@ -1428,18 +1429,13 @@ fun PlayerScreen(
                         // Decoder Pill Badge: configured mode + real active codec
                         // (e.g. "HW • H.264") once the engine reports a decoder name;
                         // falls back to the mode label alone while initializing.
+                        // Issue #188: read the short codec label from the
+                        // shared helper instead of parsing the display name —
+                        // the old substring fallback mangled unknown names
+                        // ("software (unknown)" -> "HW • software (un…").
                         val decoderPillText = state.activeDecoderName?.let { name ->
-                            val lower = name.lowercase()
-                            val codec = when {
-                                "avc" in lower || "h264" in lower -> "H.264"
-                                "hevc" in lower || "h265" in lower -> "H.265"
-                                "vp9" in lower -> "VP9"
-                                "av1" in lower -> "AV1"
-                                "vp8" in lower -> "VP8"
-                                "mp4v" in lower || "mpeg4" in lower -> "MPEG-4"
-                                else -> name.substringAfterLast('.').take(12)
-                            }
-                            "${state.decoderMode.label} • $codec"
+                            val codec = MpxMediaCodecSelector.shortCodecLabel(name)
+                            if (codec != null) "${state.decoderMode.label} • $codec" else state.decoderMode.label
                         } ?: state.decoderMode.label
                         Surface(
                             modifier = Modifier
