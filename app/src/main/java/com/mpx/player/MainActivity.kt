@@ -229,7 +229,7 @@ class MainActivity : ComponentActivity() {
                         onLanguageChanged = { newLang ->
                             currentLanguage = newLang
                             val s = settingsRepository.load()
-                            settingsRepository.save(s.copy(appLanguage = newLang))
+                            settingsRepository.save(s.copy(appLanguage = newLang), commit = false)
                             LocaleHelper.applyAppLocale(this@MainActivity, newLang)
                         },
                         onThemeChanged = { currentTheme = it },

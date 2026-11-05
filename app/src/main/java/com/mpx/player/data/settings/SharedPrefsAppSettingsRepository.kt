@@ -112,7 +112,11 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         )
     }
 
-    override fun save(settings: AppSettings, commit: Boolean = false) {
+    // The commit default lives on the interface only: Kotlin forbids
+    // defaults on an overriding function, and MainActivity holds this
+    // repo as the concrete type, so its one-arg call passes commit
+    // explicitly (see MainActivity language change).
+    override fun save(settings: AppSettings, commit: Boolean) {
         val editor = prefs.edit()
             .putBoolean("show_hidden_files", settings.showHiddenFiles)
             .putBoolean("show_thumbnails", settings.showThumbnails)
