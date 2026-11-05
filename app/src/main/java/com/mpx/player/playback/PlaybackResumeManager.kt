@@ -3,8 +3,10 @@ package com.mpx.player.playback
 import com.mpx.player.domain.repository.MediaPersistenceRepository
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 /**
@@ -18,22 +20,57 @@ class PlaybackResumeManager(
 ) {
     private val resumeMap = ConcurrentHashMap<String, Long>()
 
-    init {
-        // Preload persisted resume positions from Room database on startup
+    /**
+     * Issue #220: the Room preload, as a [Deferred] so readers can wait
+     * for it. The manager used to fill the map with a fire-and-forget
+     * launch: a read in the first moments after construction (tapping a
+     * video right after a cold start, or the process-death restore in
+     * PlayerScreen) saw an empty map and started the video from 0.
+     * The deferred always completes normally — a load failure falls back
+     * to the empty map, exactly as before.
+     */
+    private val preloadDeferred: Deferred<Unit> = coroutineScope.async {
         persistenceRepository?.let { repo ->
-            coroutineScope.launch {
-                try {
-                    val persisted = repo.loadAllResumePositionsMap()
-                    resumeMap.putAll(persisted)
-                } catch (_: Exception) {
-                    // Fall back cleanly to empty in-memory map
-                }
+            try {
+                val persisted = repo.loadAllResumePositionsMap()
+                // putIfAbsent, NOT putAll: a position saved before the
+                // preload lands (saveResumePosition writes the map
+                // immediately; its Room write is async) is NEWER than the
+                // Room row the preload just read, and must never be
+                // clobbered by it.
+                persisted.forEach { (id, position) -> resumeMap.putIfAbsent(id, position) }
+            } catch (_: Exception) {
+                // Fall back cleanly to empty in-memory map
             }
         }
     }
 
+    /** Whether the Room preload has finished (successfully or not). */
+    val isPreloadComplete: Boolean
+        get() = preloadDeferred.isCompleted
+
+    /** Suspends until the Room preload has finished, then returns. */
+    suspend fun awaitPreload() {
+        preloadDeferred.await()
+    }
+
+    /**
+     * Suspends until the Room preload has finished, then returns the
+     * cached resume position. Use this wherever a read must not race
+     * the preload (playQueue, queue restore); the synchronous
+     * [getResumePosition] below is only for paths that tolerate a null
+     * before the preload lands.
+     */
+    suspend fun getResumePositionAfterPreload(id: String): Long? {
+        preloadDeferred.await()
+        return resumeMap[id]
+    }
+
     /**
      * Synchronously returns cached resume position for instantaneous seek setup.
+     * Returns null until the Room preload lands — only call this where a
+     * null is tolerated (issue #220); use [getResumePositionAfterPreload]
+     * where the position must be the saved one.
      */
     fun getResumePosition(id: String): Long? = resumeMap[id]
 
