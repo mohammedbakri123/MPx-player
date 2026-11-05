@@ -435,7 +435,9 @@
     <string name="sort_album">Álbum</string>
     <!-- Local Screen -->
     <string name="local_title">MPx</string>
-    <string name="local_search_placeholder">Buscar pastas…</string>
+    <string name="search_page_placeholder">Buscar arquivos e pastas…</string>
+    <string name="search_page_hint_title">Pesquisar sua mídia</string>
+    <string name="search_page_hint_desc">Escreva um nome para pesquisar em todas as pastas e arquivos.</string>
     <string name="local_section_folders">PASTAS</string>
     <string name="local_sort_label">Ordem: %1$s</string>
     <string name="local_status_banner">Varredura real do MediaStore ativa. Pastas e contagens de vídeo refletem a mídia do dispositivo.</string>
@@ -485,7 +487,7 @@
     <string name="empty_permission_desc">O MPx precisa de permissão para acessar seus vídeos para exibir sua biblioteca de mídia.</string>
     <string name="empty_permission_action">Conceder permissão</string>
     <string name="empty_search_title">Nenhum resultado encontrado</string>
-    <string name="empty_search_desc">Nenhuma pasta corresponde a \"%1$s\".</string>
+    <string name="empty_search_desc">Nenhum arquivo ou pasta corresponde a \"%1$s\".</string>
     <string name="empty_search_action">Limpar busca</string>
     <string name="empty_videos_title">Nenhum vídeo encontrado</string>
     <string name="empty_videos_desc">Nenhuma pasta de vídeo encontrada neste dispositivo. Vídeos que você gravar ou baixar aparecerão aqui.</string>

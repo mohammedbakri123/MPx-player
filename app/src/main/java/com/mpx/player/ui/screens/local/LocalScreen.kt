@@ -210,8 +210,8 @@ fun LocalScreen(
     var layoutSheetFolderScope by remember { mutableStateOf(false) }
     val layoutSheetState = rememberModalBottomSheetState()
     var featureDialogMessage by remember { mutableStateOf<String?>(null) }
-    var searchQuery by remember { mutableStateOf("") }
-    var isSearching by remember { mutableStateOf(false) }
+    // #142: the search page replaces the old inline root search.
+    var showSearchPage by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -246,6 +246,11 @@ fun LocalScreen(
     var videoForMenu by remember { mutableStateOf<VideoFile?>(null) }
     var videoForPlaylistAdd by remember { mutableStateOf<VideoFile?>(null) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
+
+    // #142: back from the search page returns to Local (exactly one step).
+    BackHandler(enabled = showSearchPage) {
+        showSearchPage = false
+    }
 
     // Intercept back button when viewing a folder to navigate back to folder list
     BackHandler(enabled = currentFolder != null) {
@@ -444,11 +449,9 @@ fun LocalScreen(
         )
     }
 
-    val filteredFolders = remember(sortedFolders, searchQuery) {
-        val q = searchQuery.trim()
-        if (q.isBlank()) sortedFolders
-        else sortedFolders.filter { it.name.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
-    }
+    // #142: root lists are no longer query-filtered — search lives on its
+    // own page over these same sorted lists.
+    val filteredFolders = sortedFolders
 
     // File view: all videos ungrouped, sorted and filtered
     val sortedVideos = remember(allVideos, sortField, secondarySortField, appSettings) {
@@ -465,11 +468,7 @@ fun LocalScreen(
         )
     }
 
-    val filteredVideos = remember(sortedVideos, searchQuery) {
-        val q = searchQuery.trim()
-        if (q.isBlank()) sortedVideos
-        else sortedVideos.filter { it.title.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
-    }
+    val filteredVideos = sortedVideos
 
     val rootEmpty = if (appSettings.fileView) filteredVideos.isEmpty() else filteredFolders.isEmpty()
 
@@ -504,7 +503,9 @@ fun LocalScreen(
         containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (currentFolder != null) {
+            if (showSearchPage) {
+                // #142: the search page draws its own header (back + field).
+            } else if (currentFolder != null) {
                 // Folder View Top Bar
                 val folder = currentFolder!!
                 TopAppBar(
@@ -677,47 +678,19 @@ fun LocalScreen(
                 // Root Folders List Top Bar
                 TopAppBar(
                     title = {
-                        if (isSearching) {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text(stringResource(R.string.local_search_placeholder), color = MpxTheme.colors.textSecondary, fontSize = 14.sp) },
-                                singleLine = true,
-                                shape = MpxShapes.medium,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MpxTheme.colors.surfaceVariant,
-                                    unfocusedContainerColor = MpxTheme.colors.surfaceVariant,
-                                    focusedBorderColor = MpxTheme.colors.primary,
-                                    unfocusedBorderColor = MpxTheme.colors.border,
-                                    focusedTextColor = MpxTheme.colors.textPrimary,
-                                    unfocusedTextColor = MpxTheme.colors.textPrimary,
-                                ),
-                            )
-                        } else {
-                            Text(
-                                text = stringResource(R.string.local_title),
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                ),
-                                color = MpxTheme.colors.textPrimary,
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.local_title),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                            ),
+                            color = MpxTheme.colors.textPrimary,
+                        )
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MpxTheme.colors.black,
                     ),
                     actions = {
-                        if (isSearching) {
-                            IconButton(onClick = { isSearching = false; searchQuery = "" }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = stringResource(R.string.cd_close_search),
-                                    tint = MpxTheme.colors.textPrimary,
-                                )
-                            }
-                        }
                         // #141: layout button opens the View sheet (layout, tile size, sort).
                         IconButton(onClick = {
                             layoutSheetFolderScope = false
@@ -729,7 +702,8 @@ fun LocalScreen(
                                 tint = MpxTheme.colors.textPrimary,
                             )
                         }
-                        IconButton(onClick = { isSearching = true }) {
+                        // #142: opens the whole search page over all files and folders.
+                        IconButton(onClick = { showSearchPage = true }) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
                                 contentDescription = stringResource(R.string.cd_search),
@@ -741,50 +715,53 @@ fun LocalScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    val played = if (currentFolder != null) {
-                        if (filteredFolderVideos.isNotEmpty()) {
-                            playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
-                            onOpenPlayer()
-                            true
-                        } else false
-                    } else if (appSettings.fileView) {
-                        val first = filteredVideos.firstOrNull()
-                        if (first != null) {
-                            playVideoWithFolder(first)
-                            true
-                        } else false
-                    } else {
-                        val first = filteredFolders.firstOrNull()
-                        if (first != null) {
-                            playFolder(first)
-                            true
-                        } else false
-                    }
-                    if (!played) {
-                        scope.launch {
-                            snackbarHostState.showSnackbar(context.getString(R.string.empty_videos_title))
+            // #142: no quick-play FAB while the search page is open.
+            if (!showSearchPage) {
+                FloatingActionButton(
+                    onClick = {
+                        val played = if (currentFolder != null) {
+                            if (filteredFolderVideos.isNotEmpty()) {
+                                playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
+                                onOpenPlayer()
+                                true
+                            } else false
+                        } else if (appSettings.fileView) {
+                            val first = filteredVideos.firstOrNull()
+                            if (first != null) {
+                                playVideoWithFolder(first)
+                                true
+                            } else false
+                        } else {
+                            val first = filteredFolders.firstOrNull()
+                            if (first != null) {
+                                playFolder(first)
+                                true
+                            } else false
                         }
-                    }
-                },
-                containerColor = MpxTheme.colors.primary,
-                // #148: the icon sits on the primary background, so it uses
-                // White (the schemes' onPrimary in both Dark and Light),
-                // not textPrimary, which is near-black in Light and showed
-                // a black triangle on the blue FAB.
-                contentColor = Color.White,
-                shape = MpxShapes.large,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = stringResource(R.string.cd_quick_play),
-                    modifier = Modifier.size(28.dp),
-                )
+                        if (!played) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(context.getString(R.string.empty_videos_title))
+                            }
+                        }
+                    },
+                    containerColor = MpxTheme.colors.primary,
+                    // #148: the icon sits on the primary background, so it uses
+                    // White (the schemes' onPrimary in both Dark and Light),
+                    // not textPrimary, which is near-black in Light and showed
+                    // a black triangle on the blue FAB.
+                    contentColor = Color.White,
+                    shape = MpxShapes.large,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = stringResource(R.string.cd_quick_play),
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
             }
         },
         bottomBar = {
-            if (currentFolder == null) {
+            if (currentFolder == null && !showSearchPage) {
                 Column {
                     HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
                     Row(
@@ -822,7 +799,32 @@ fun LocalScreen(
             Column(
                 modifier = Modifier.fillMaxSize(),
             ) {
-            if (currentFolder != null) {
+            if (showSearchPage) {
+                // ==================== SEARCH PAGE (#142) ====================
+                // Whole-page fuzzy search over all folders and files.
+                LocalSearchScreen(
+                    folders = folders,
+                    videos = allVideos,
+                    hasPermission = hasPermission,
+                    onRequestPermission = {
+                        permissionLauncher.launch(MediaPermissions.videoPermission())
+                    },
+                    showThumbnails = appSettings.showThumbnails,
+                    showFieldSize = appSettings.showFieldSize,
+                    showFieldDate = appSettings.showFieldDate,
+                    showFieldDuration = appSettings.showFieldDuration,
+                    showFieldLocation = appSettings.showFieldLocation,
+                    isFavourite = { video -> favourites.any { it.mediaUri == video.path } },
+                    onFolderClick = { folder ->
+                        showSearchPage = false
+                        openFolder(folder)
+                    },
+                    onFolderMenuClick = { folder -> folderForMenu = folder },
+                    onVideoClick = { video -> playVideoWithFolder(video) },
+                    onVideoMenuClick = { video -> videoForMenu = video },
+                    onBack = { showSearchPage = false },
+                )
+            } else if (currentFolder != null) {
                 // ==================== FOLDER VIEW (Drilled-Down Contents) ====================
                 if (isFolderLoading) {
                     Box(
@@ -974,14 +976,6 @@ fun LocalScreen(
                     ) {
                         MpxLoadingIndicator()
                     }
-                } else if (rootEmpty && searchQuery.isNotBlank()) {
-                    EmptyStateView(
-                        title = stringResource(R.string.empty_search_title),
-                        message = stringResource(R.string.empty_search_desc, searchQuery),
-                        icon = Icons.Filled.Folder,
-                        actionLabel = stringResource(R.string.empty_search_action),
-                        onActionClick = { searchQuery = "" },
-                    )
                 } else if (rootEmpty) {
                     if (!appSettings.showAllFolders) {
                         EmptyStateView(
