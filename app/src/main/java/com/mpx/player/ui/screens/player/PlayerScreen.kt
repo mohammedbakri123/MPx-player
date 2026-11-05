@@ -1587,7 +1587,7 @@ fun PlayerScreen(
                     )
                 } else {
                     LazyColumn {
-                        items(state.audioTracks, key = { "${it.groupIndex}_${it.trackIndex}" }) { track -> }
+                        items(state.audioTracks, key = { "${it.groupIndex}_${it.trackIndex}" }) { track ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

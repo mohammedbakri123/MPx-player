@@ -38,6 +38,7 @@ import kotlinx.coroutines.withContext
 import com.mpx.player.ui.theme.MpxBlack
 import com.mpx.player.ui.theme.MpxPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
+import androidx.compose.ui.graphics.Color
 
 /**
  * Reusable asynchronous thumbnail loader that checks the in-memory LruCache synchronously,
