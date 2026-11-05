@@ -23,10 +23,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitDragOrCancellation
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
-import androidx.compose.foundation.gestures.awaitUpOrCancellation
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -678,7 +677,7 @@ fun PlayerScreen(
                             playbackManager.setSpeed(2f)
                             isLongPress2x = true
                             try {
-                                awaitUpOrCancellation()
+                                waitForUpOrCancellation()
                             } finally {
                                 playbackManager.setSpeed(previousSpeed)
                                 isLongPress2x = false
@@ -758,11 +757,29 @@ fun PlayerScreen(
                         return@awaitEachGesture
                     }
                     applyDragDelta(slopChange.positionChange(), size.width.toFloat(), size.height.toFloat())
-                    val endedCleanly = awaitDragOrCancellation(down.id) { change, dragAmount ->
-                        change.consume()
-                        applyDragDelta(dragAmount, size.width.toFloat(), size.height.toFloat())
+                    // Stream the drag: awaitDragOrCancellation takes no delta
+                    // callback, so loop on awaitPointerEvent until the finger
+                    // lifts or the gesture is cancelled, feeding every move
+                    // through the shared delta path.
+                    var endedCleanly = false
+                    var dragLoopDone = false
+                    while (!dragLoopDone) {
+                        val event = awaitPointerEvent()
+                        val dragChange = event.changes.firstOrNull { it.id == down.id }
+                        if (dragChange == null) {
+                            dragLoopDone = true
+                        } else if (dragChange.changedToUpOrCancelled()) {
+                            if (dragChange.changedToUp()) endedCleanly = true
+                            dragLoopDone = true
+                        } else {
+                            val delta = dragChange.positionChange()
+                            if (delta != Offset.Zero) {
+                                dragChange.consume()
+                                applyDragDelta(delta, size.width.toFloat(), size.height.toFloat())
+                            }
+                        }
                     }
-                    if (endedCleanly != null) {
+                    if (endedCleanly) {
                         when (currentDragMode) {
                             DragGestureMode.HORIZONTAL_SEEK -> {
                                 if (isDraggingSeek) {
