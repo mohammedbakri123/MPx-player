@@ -762,7 +762,7 @@ fun PlayerScreen(
                         change.consume()
                         applyDragDelta(dragAmount, size.width.toFloat(), size.height.toFloat())
                     }
-                    if (endedCleanly) {
+                    if (endedCleanly != null) {
                         when (currentDragMode) {
                             DragGestureMode.HORIZONTAL_SEEK -> {
                                 if (isDraggingSeek) {
