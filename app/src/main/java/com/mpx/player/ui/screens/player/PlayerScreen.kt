@@ -14,7 +14,6 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.activity.compose.LocalActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -339,11 +338,11 @@ fun PlayerScreen(
     // so context.findActivity() returned null and every
     // activity?.requestedOrientation set below was a silent no-op (the
     // toast still showed and the setting still saved, which is why the
-    // chain "read correct"). LocalActivity is provided by
-    // ComponentActivity.setContent and is the real host activity. This
-    // also fixes #194 for free: the brightness get/set below uses this
-    // same activity reference.
-    val activity = LocalActivity.current
+    // chain "read correct"). The host view's context IS the real Activity
+    // (LocalActivity does not exist in activity-compose 1.9.2, verified
+    // against the AAR). This also fixes #194 for free: the brightness
+    // get/set below uses this same activity reference.
+    val activity = LocalView.current.context as? Activity
     val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     var currentSettings by remember { mutableStateOf(realSettingsRepo.load()) }
     // Last subtitle settings pushed to the mpv engine. Plain holder (not state)
