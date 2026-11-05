@@ -1087,17 +1087,12 @@ fun LocalScreen(
                     },
                     showThumbnails = appSettings.showThumbnails,
                     showFieldSize = appSettings.showFieldSize,
-                    showFieldDate = appSettings.showFieldDate,
                     showFieldDuration = appSettings.showFieldDuration,
-                    showFieldLocation = appSettings.showFieldLocation,
-                    isFavourite = { video -> favourites.any { it.mediaUri == video.path } },
                     onFolderClick = { folder ->
                         showSearchPage = false
                         openFolder(folder)
                     },
-                    onFolderMenuClick = { folder -> folderForMenu = folder },
                     onVideoClick = { video -> playVideoWithFolder(video) },
-                    onVideoMenuClick = { video -> videoForMenu = video },
                     onBack = { showSearchPage = false },
                 )
             } else if (currentFolder != null) {
