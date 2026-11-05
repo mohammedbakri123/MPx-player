@@ -26,6 +26,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -423,7 +424,26 @@ fun PlayerScreen(
 
     var controlsVisible by remember { mutableStateOf(true) }
     var activeDialog by remember { mutableStateOf<String?>(null) }
-    var showGestureHint by remember { mutableStateOf(true) }
+    // First-run gesture tutorial (#151): shown once, the first time the
+    // player opens with gestures enabled; replayable from the Player Menu.
+    var showTutorial by remember { mutableStateOf(false) }
+    var tutorialStep by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        val settings = realSettingsRepo.load()
+        if (!settings.playerTutorialSeen && settings.gesturesEnabled) {
+            showTutorial = true
+        }
+    }
+
+    // Dismissing (Skip, X, or finishing) marks the tutorial seen, so it
+    // never auto-shows again; the Player Menu entry can still replay it.
+    val dismissTutorial = {
+        val updated = currentSettings.copy(playerTutorialSeen = true)
+        currentSettings = updated
+        realSettingsRepo.save(updated)
+        showTutorial = false
+    }
 
     val scope = rememberCoroutineScope()
     val customPlaylists by playbackManager.persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
@@ -1314,38 +1334,6 @@ fun PlayerScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        // Gesture hint banner (hidden when gestures are off,
-                        // since the legend would describe disabled controls)
-                        if (showGestureHint && realSettingsRepo.load().gesturesEnabled) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(MpxShapes.small)
-                                    .background(MpxTheme.colors.textPrimary.copy(alpha = 0.12f))
-                                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.player_gesture_hint),
-                                    color = MpxTheme.colors.textPrimary.copy(alpha = 0.85f),
-                                    fontSize = 11.sp,
-                                )
-                                IconButton(
-                                    onClick = { showGestureHint = false },
-                                    modifier = Modifier.size(24.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Close,
-                                        contentDescription = stringResource(R.string.player_cd_dismiss_hint),
-                                        tint = MpxTheme.colors.textPrimary.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(14.dp),
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.height(8.dp))
-                        }
-
                         // Time & Slider Row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -2336,6 +2324,21 @@ fun PlayerScreen(
                         Spacer(Modifier.width(12.dp))
                         Text(stringResource(R.string.player_menu_add_playlist), color = MpxTheme.colors.textPrimary)
                     }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                activeDialog = null
+                                tutorialStep = 0
+                                showTutorial = true
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Info, contentDescription = null, tint = MpxTheme.colors.primary)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.player_menu_tutorial), color = MpxTheme.colors.textPrimary)
+                    }
                 }
             },
             confirmButton = {
@@ -2622,6 +2625,202 @@ fun PlayerScreen(
                 }
             },
         )
+    }
+
+    // First-run gesture tutorial overlay (#151): drawn last so it sits
+    // above every other player layer, and independent of controlsVisible.
+    // Hidden in PiP like every other overlay.
+    if (showTutorial && !isInPipMode) {
+        PlayerTutorialOverlay(
+            step = tutorialStep,
+            onStepChange = { tutorialStep = it },
+            onDismiss = dismissTutorial,
+        )
+    }
+}
+
+/**
+ * First-run gesture tutorial overlay (#151). One overlay, four tappable
+ * steps: double-tap zones, horizontal seek, left-side brightness,
+ * right-side volume. Tapping the card advances a step; Skip and the X
+ * dismiss at any time; the last step's button finishes. Dismissing in
+ * any way marks the tutorial seen (the caller persists the flag).
+ * Playback underneath is untouched: the scrim consumes all touches so
+ * the root gesture detector never fires while the tutorial is up.
+ */
+@Composable
+private fun PlayerTutorialOverlay(
+    step: Int,
+    onStepChange: (Int) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val lastStep = 3
+    val isLast = step >= lastStep
+    val advance = { if (isLast) onDismiss() else onStepChange(step + 1) }
+
+    val titleRes = when (step) {
+        0 -> R.string.player_tutorial_step_double_tap_title
+        1 -> R.string.player_tutorial_step_seek_title
+        2 -> R.string.player_tutorial_step_brightness_title
+        else -> R.string.player_tutorial_step_volume_title
+    }
+    val descRes = when (step) {
+        0 -> R.string.player_tutorial_step_double_tap_desc
+        1 -> R.string.player_tutorial_step_seek_desc
+        2 -> R.string.player_tutorial_step_brightness_desc
+        else -> R.string.player_tutorial_step_volume_desc
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.78f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.86f)
+                .clip(MpxShapes.large)
+                .background(MpxTheme.colors.surfaceVariant)
+                .border(MpxHairline, MpxTheme.colors.border, MpxShapes.large)
+                .clickable { advance() }
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.player_tutorial_title),
+                    color = MpxTheme.colors.textPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                )
+                IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.player_tutorial_skip),
+                        tint = MpxTheme.colors.textSecondary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(titleRes),
+                color = MpxTheme.colors.primary,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
+            )
+            Spacer(Modifier.height(16.dp))
+            when (step) {
+                0 -> Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Replay10, contentDescription = null, tint = MpxTheme.colors.textPrimary, modifier = Modifier.size(36.dp))
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MpxTheme.colors.primary, modifier = Modifier.size(44.dp))
+                    Icon(Icons.Filled.Forward10, contentDescription = null, tint = MpxTheme.colors.textPrimary, modifier = Modifier.size(36.dp))
+                }
+                1 -> Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .height(4.dp)
+                        .clip(MpxShapes.extraSmall)
+                        .background(MpxTheme.colors.textMuted.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(MpxTheme.colors.primary),
+                    )
+                }
+                2 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Filled.BrightnessHigh, contentDescription = null, tint = MpxTheme.colors.textPrimary, modifier = Modifier.size(28.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .width(4.dp)
+                            .height(72.dp)
+                            .clip(MpxShapes.extraSmall)
+                            .background(MpxTheme.colors.textMuted.copy(alpha = 0.4f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clip(CircleShape)
+                                .background(MpxTheme.colors.primary),
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Icon(Icons.Filled.BrightnessLow, contentDescription = null, tint = MpxTheme.colors.textPrimary, modifier = Modifier.size(28.dp))
+                }
+                else -> Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(104.dp)
+                        .clip(MpxShapes.extraSmall)
+                        .background(MpxTheme.colors.textMuted.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(14.dp)
+                            .clip(CircleShape)
+                            .background(MpxTheme.colors.primary),
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = stringResource(descRes),
+                color = MpxTheme.colors.textSecondary,
+                fontSize = 14.sp,
+            )
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                repeat(4) { index ->
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (index == step) MpxTheme.colors.primary
+                                else MpxTheme.colors.textMuted.copy(alpha = 0.4f),
+                            ),
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.player_tutorial_skip), color = MpxTheme.colors.textSecondary)
+                }
+                TextButton(onClick = advance) {
+                    Text(
+                        stringResource(if (isLast) R.string.player_tutorial_got_it else R.string.player_tutorial_next),
+                        color = MpxTheme.colors.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
     }
 }
 

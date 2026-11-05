@@ -791,7 +791,19 @@
     <string name="player_sleep_timer_cancel">取消睡眠定时器</string>
     <string name="player_sleep_timer_set_toast">睡眠定时器已设为 %1$d 分钟</string>
     <string name="player_sleep_timer_canceled_toast">睡眠定时器已关闭</string>
-    <string name="player_gesture_hint">双击：-10 秒（左）/ 播放-暂停 / +10 秒（右） • 水平滑动：拖动进度 • 垂直滑动：亮度（左）/ 音量（右）</string>
+    <string name="player_tutorial_title">播放器手势</string>
+    <string name="player_tutorial_step_double_tap_title">双击</string>
+    <string name="player_tutorial_step_double_tap_desc">点击左侧后退 10 秒，点击中间播放或暂停，点击右侧前进 10 秒。</string>
+    <string name="player_tutorial_step_seek_title">滑动快进</string>
+    <string name="player_tutorial_step_seek_desc">在视频上水平拖动即可快进或后退。</string>
+    <string name="player_tutorial_step_brightness_title">左侧：亮度</string>
+    <string name="player_tutorial_step_brightness_desc">在视频左侧上下滑动即可调节亮度。</string>
+    <string name="player_tutorial_step_volume_title">右侧：音量</string>
+    <string name="player_tutorial_step_volume_desc">在视频右侧上下滑动即可调节音量。</string>
+    <string name="player_tutorial_next">下一步</string>
+    <string name="player_tutorial_skip">跳过</string>
+    <string name="player_tutorial_got_it">知道了</string>
+    <string name="player_menu_tutorial">手势教程</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">没有排队的视频</string>
@@ -806,7 +818,6 @@
     <string name="player_resumed_from">从 %1$s 继续</string>
     <string name="player_start_over">重新开始</string>
     <string name="player_cd_dismiss">关闭</string>
-    <string name="player_cd_dismiss_hint">关闭提示</string>
     <string name="player_cd_unlock">解锁控件</string>
     <string name="player_cd_lock">锁定控件</string>
     <string name="player_cd_back">返回</string>

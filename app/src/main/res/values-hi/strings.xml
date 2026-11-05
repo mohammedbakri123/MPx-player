@@ -791,7 +791,19 @@
     <string name="player_sleep_timer_cancel">स्लीप टाइमर रद्द करें</string>
     <string name="player_sleep_timer_set_toast">स्लीप टाइमर %1$d मिनट के लिए सेट हुआ</string>
     <string name="player_sleep_timer_canceled_toast">स्लीप टाइमर बंद हुआ</string>
-    <string name="player_gesture_hint">डबल-टैप: -10 सेकंड (बाएँ) / प्ले-पॉज़ / +10 सेकंड (दाएँ) • क्षैतिज स्वाइप: सीक • ऊर्ध्वाधर स्वाइप: ब्राइटनेस (बाएँ) / वॉल्यूम (दाएँ)</string>
+    <string name="player_tutorial_title">प्लेयर जेस्चर</string>
+    <string name="player_tutorial_step_double_tap_title">डबल-टैप</string>
+    <string name="player_tutorial_step_double_tap_desc">10 सेकंड पीछे जाने के लिए बाईं ओर, प्ले या पॉज़ के लिए बीच में, और 10 सेकंड आगे जाने के लिए दाईं ओर टैप करें।</string>
+    <string name="player_tutorial_step_seek_title">सीक करने के लिए स्वाइप करें</string>
+    <string name="player_tutorial_step_seek_desc">आगे या पीछे सीक करने के लिए वीडियो पर क्षैतिज रूप से ड्रैग करें।</string>
+    <string name="player_tutorial_step_brightness_title">बाईं ओर: ब्राइटनेस</string>
+    <string name="player_tutorial_step_brightness_desc">ब्राइटनेस बदलने के लिए वीडियो के बाईं ओर ऊपर या नीचे स्वाइप करें।</string>
+    <string name="player_tutorial_step_volume_title">दाईं ओर: वॉल्यूम</string>
+    <string name="player_tutorial_step_volume_desc">वॉल्यूम बदलने के लिए वीडियो के दाईं ओर ऊपर या नीचे स्वाइप करें।</string>
+    <string name="player_tutorial_next">आगे</string>
+    <string name="player_tutorial_skip">छोड़ें</string>
+    <string name="player_tutorial_got_it">समझ गया</string>
+    <string name="player_menu_tutorial">जेस्चर ट्यूटोरियल</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">कोई वीडियो कतार में नहीं है</string>
@@ -806,7 +818,6 @@
     <string name="player_resumed_from">%1$s से फिर से शुरू किया गया</string>
     <string name="player_start_over">फिर से शुरू करें</string>
     <string name="player_cd_dismiss">खारिज करें</string>
-    <string name="player_cd_dismiss_hint">संकेत खारिज करें</string>
     <string name="player_cd_unlock">नियंत्रण अनलॉक करें</string>
     <string name="player_cd_lock">नियंत्रण लॉक करें</string>
     <string name="player_cd_back">वापस</string>

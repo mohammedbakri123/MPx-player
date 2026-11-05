@@ -791,7 +791,19 @@
     <string name="player_sleep_timer_cancel">Schlaf-Timer abbrechen</string>
     <string name="player_sleep_timer_set_toast">Schlaf-Timer auf %1$d Minuten eingestellt</string>
     <string name="player_sleep_timer_canceled_toast">Schlaf-Timer ausgeschaltet</string>
-    <string name="player_gesture_hint">Doppeltippen: -10 s (links) / Wiedergabe-Pause / +10 s (rechts) • Horizontal wischen: Spulen • Vertikal wischen: Helligkeit (links) / Lautstärke (rechts)</string>
+    <string name="player_tutorial_title">Player-Gesten</string>
+    <string name="player_tutorial_step_double_tap_title">Doppeltippen</string>
+    <string name="player_tutorial_step_double_tap_desc">Tippe links, um 10 Sekunden zurückzugehen, in der Mitte, um abzuspielen oder zu pausieren, und rechts, um 10 Sekunden vorzugehen.</string>
+    <string name="player_tutorial_step_seek_title">Wischen zum Spulen</string>
+    <string name="player_tutorial_step_seek_desc">Ziehe horizontal über das Video, um vor- oder zurückzuspulen.</string>
+    <string name="player_tutorial_step_brightness_title">Links: Helligkeit</string>
+    <string name="player_tutorial_step_brightness_desc">Wische auf der linken Seite des Videos nach oben oder unten, um die Helligkeit zu ändern.</string>
+    <string name="player_tutorial_step_volume_title">Rechts: Lautstärke</string>
+    <string name="player_tutorial_step_volume_desc">Wische auf der rechten Seite des Videos nach oben oder unten, um die Lautstärke zu ändern.</string>
+    <string name="player_tutorial_next">Weiter</string>
+    <string name="player_tutorial_skip">Überspringen</string>
+    <string name="player_tutorial_got_it">Verstanden</string>
+    <string name="player_menu_tutorial">Gesten-Tutorial</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">Kein Video in der Warteschlange</string>
@@ -806,7 +818,6 @@
     <string name="player_resumed_from">Fortgesetzt ab %1$s</string>
     <string name="player_start_over">Von vorne beginnen</string>
     <string name="player_cd_dismiss">Schließen</string>
-    <string name="player_cd_dismiss_hint">Hinweis schließen</string>
     <string name="player_cd_unlock">Steuerung entsperren</string>
     <string name="player_cd_lock">Steuerung sperren</string>
     <string name="player_cd_back">Zurück</string>

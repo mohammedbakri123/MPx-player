@@ -12,6 +12,7 @@ data class AppSettings(
     val backgroundPlay: Boolean = false,
     val defaultPlaybackSpeed: Float = 1.0f, // Persisted default speed (issue #76); new sessions start here
     val gesturesEnabled: Boolean = true,
+    val playerTutorialSeen: Boolean = false, // First-run gesture tutorial (#151) already shown
     val decoderMode: String = "HW", // HW, HW+, SW
     val playerEngine: String = "MEDIA3", // MEDIA3, MPV
     val subtitleSize: String = "Normal", // Small, Normal, Large
