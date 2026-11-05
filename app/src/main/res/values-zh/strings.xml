@@ -911,9 +911,6 @@
     <string name="player_menu_add_playlist">添加到播放列表...</string>
     <!-- Playback sheet (issue #153) -->
     <string name="playback_sheet_title">播放</string>
-    <string name="playback_sheet_section_video">视频</string>
-    <string name="playback_sheet_section_audio">音频</string>
-    <string name="playback_sheet_section_subtitles">字幕</string>
     <string name="playback_sheet_section_about">关于此文件</string>
     <string name="playback_sheet_repeat">重复</string>
     <string name="playback_sheet_background_play">后台播放</string>
@@ -1021,7 +1018,7 @@
     <string name="pref_folders_clear_confirm_title">清除所有已屏蔽的文件夹？</string>
     <string name="pref_folders_clear_confirm_message">所有文件夹将重新显示在“本地”中。</string>
     <string name="pref_folders_remove">移除</string>
-    <string name="pref_layout_editor_desc">选择播放器菜单中显示的行及其顺序。更改将在下次打开菜单时生效。</string>
+    <string name="pref_layout_editor_desc">选择在播放面板和操作栏中显示的操作及其顺序。</string>
     <string name="pref_layout_reset">恢复默认</string>
     <string name="pref_layout_visible_header">在菜单中显示</string>
     <string name="pref_layout_hidden_header">已隐藏</string>

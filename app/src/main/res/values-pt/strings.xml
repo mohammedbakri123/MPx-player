@@ -911,9 +911,6 @@
     <string name="player_menu_add_playlist">Adicionar à playlist...</string>
     <!-- Playback sheet (issue #153) -->
     <string name="playback_sheet_title">Reprodução</string>
-    <string name="playback_sheet_section_video">Vídeo</string>
-    <string name="playback_sheet_section_audio">Áudio</string>
-    <string name="playback_sheet_section_subtitles">Legendas</string>
     <string name="playback_sheet_section_about">Sobre este arquivo</string>
     <string name="playback_sheet_repeat">Repetir</string>
     <string name="playback_sheet_background_play">Reprodução em segundo plano</string>
@@ -1021,7 +1018,7 @@
     <string name="pref_folders_clear_confirm_title">Remover todas as pastas da lista negra?</string>
     <string name="pref_folders_clear_confirm_message">Todas as pastas voltam a aparecer em Local.</string>
     <string name="pref_folders_remove">Remover</string>
-    <string name="pref_layout_editor_desc">Escolhe que linhas aparecem no menu do leitor e a sua ordem. As alterações aplicam-se da próxima vez que abrires o menu.</string>
+    <string name="pref_layout_editor_desc">Escolhe que ações aparecem na folha de reprodução e na barra de ações, e em que ordem.</string>
     <string name="pref_layout_reset">Repor predefinições</string>
     <string name="pref_layout_visible_header">Visível no menu</string>
     <string name="pref_layout_hidden_header">Oculto</string>
