@@ -911,9 +911,6 @@
     <string name="player_menu_add_playlist">Добавить в плейлист...</string>
     <!-- Playback sheet (issue #153) -->
     <string name="playback_sheet_title">Воспроизведение</string>
-    <string name="playback_sheet_section_video">Видео</string>
-    <string name="playback_sheet_section_audio">Аудио</string>
-    <string name="playback_sheet_section_subtitles">Субтитры</string>
     <string name="playback_sheet_section_about">Об этом файле</string>
     <string name="playback_sheet_repeat">Повтор</string>
     <string name="playback_sheet_background_play">Фоновое воспроизведение</string>
@@ -1021,7 +1018,7 @@
     <string name="pref_folders_clear_confirm_title">Убрать все папки из чёрного списка?</string>
     <string name="pref_folders_clear_confirm_message">Все папки снова появятся в разделе «Локально».</string>
     <string name="pref_folders_remove">Убрать</string>
-    <string name="pref_layout_editor_desc">Выберите, какие строки показывать в меню плеера и в каком порядке. Изменения вступят в силу при следующем открытии меню.</string>
+    <string name="pref_layout_editor_desc">Выберите, какие действия показывать на панели воспроизведения и на панели действий, и в каком порядке.</string>
     <string name="pref_layout_reset">Сбросить к значениям по умолчанию</string>
     <string name="pref_layout_visible_header">Показано в меню</string>
     <string name="pref_layout_hidden_header">Скрыто</string>

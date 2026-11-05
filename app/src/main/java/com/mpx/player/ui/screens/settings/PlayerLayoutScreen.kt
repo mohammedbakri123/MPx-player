@@ -36,7 +36,9 @@ import com.mpx.player.ui.theme.MpxTheme
  * the Player Menu rows — visibility toggles + up/down reorder, persisted
  * in [AppSettings.playerMenuLayout] (visible ids) and
  * [AppSettings.hiddenPlayerMenuIds] (explicitly hidden ids, #201) and
- * applied by PlayerScreen the next time the menu opens.
+ * applied by the Playback sheet and the action stripe (#160): the sheet
+ * renders the rows in this order the next time it opens, and the stripe
+ * follows it live.
  *
  * Limitation vs mpvEx: mpvEx's editor is a full drag-to-arrange editor
  * covering every player button including the transport row and double-tap

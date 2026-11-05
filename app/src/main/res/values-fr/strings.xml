@@ -911,9 +911,6 @@
     <string name="player_menu_add_playlist">Ajouter à une playlist...</string>
     <!-- Playback sheet (issue #153) -->
     <string name="playback_sheet_title">Lecture</string>
-    <string name="playback_sheet_section_video">Vidéo</string>
-    <string name="playback_sheet_section_audio">Audio</string>
-    <string name="playback_sheet_section_subtitles">Sous-titres</string>
     <string name="playback_sheet_section_about">À propos de ce fichier</string>
     <string name="playback_sheet_repeat">Répéter</string>
     <string name="playback_sheet_background_play">Lecture en arrière-plan</string>
@@ -1021,7 +1018,7 @@
     <string name="pref_folders_clear_confirm_title">Retirer tous les dossiers bloqués ?</string>
     <string name="pref_folders_clear_confirm_message">Tous les dossiers réapparaîtront dans Local.</string>
     <string name="pref_folders_remove">Retirer</string>
-    <string name="pref_layout_editor_desc">Choisissez les lignes affichées dans le menu du lecteur et leur ordre. Les changements s’appliquent à la prochaine ouverture du menu.</string>
+    <string name="pref_layout_editor_desc">Choisissez les actions affichées dans la feuille de lecture et la barre d’actions, et leur ordre.</string>
     <string name="pref_layout_reset">Réinitialiser</string>
     <string name="pref_layout_visible_header">Affiché dans le menu</string>
     <string name="pref_layout_hidden_header">Masqué</string>

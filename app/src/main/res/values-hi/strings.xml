@@ -911,9 +911,6 @@
     <string name="player_menu_add_playlist">प्लेलिस्ट में जोड़ें...</string>
     <!-- Playback sheet (issue #153) -->
     <string name="playback_sheet_title">प्लेबैक</string>
-    <string name="playback_sheet_section_video">वीडियो</string>
-    <string name="playback_sheet_section_audio">ऑडियो</string>
-    <string name="playback_sheet_section_subtitles">उपशीर्षक</string>
     <string name="playback_sheet_section_about">इस फ़ाइल के बारे में</string>
     <string name="playback_sheet_repeat">दोहराएँ</string>
     <string name="playback_sheet_background_play">बैकग्राउंड प्लेबैक</string>
@@ -1021,7 +1018,7 @@
     <string name="pref_folders_clear_confirm_title">सभी ब्लैकलिस्ट किए गए फ़ोल्डर हटाएँ?</string>
     <string name="pref_folders_clear_confirm_message">सभी फ़ोल्डर लोकल में फिर से दिखेंगे।</string>
     <string name="pref_folders_remove">हटाएँ</string>
-    <string name="pref_layout_editor_desc">चुनें कि प्लेयर मेनू में कौन-सी पंक्तियाँ और किस क्रम में दिखें। बदलाव अगली बार मेनू खोलने पर लागू होंगे।</string>
+    <string name="pref_layout_editor_desc">चुनें कि प्लेबैक शीट और ऐक्शन स्ट्रिप में कौन-सी क्रियाएँ और किस क्रम में दिखें।</string>
     <string name="pref_layout_reset">डिफ़ॉल्ट पर रीसेट करें</string>
     <string name="pref_layout_visible_header">मेनू में दिखाया गया</string>
     <string name="pref_layout_hidden_header">छिपा हुआ</string>

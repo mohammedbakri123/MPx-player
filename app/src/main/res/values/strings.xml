@@ -911,9 +911,6 @@
     <string name="player_menu_add_playlist">Add to Playlist...</string>
     <!-- Playback sheet (issue #153) -->
     <string name="playback_sheet_title">Playback</string>
-    <string name="playback_sheet_section_video">Video</string>
-    <string name="playback_sheet_section_audio">Audio</string>
-    <string name="playback_sheet_section_subtitles">Subtitles</string>
     <string name="playback_sheet_section_about">About this file</string>
     <string name="playback_sheet_repeat">Repeat</string>
     <string name="playback_sheet_background_play">Background play</string>
@@ -1021,7 +1018,7 @@
     <string name="pref_folders_clear_confirm_title">Clear all blacklisted folders?</string>
     <string name="pref_folders_clear_confirm_message">All folders will appear in Local again.</string>
     <string name="pref_folders_remove">Remove</string>
-    <string name="pref_layout_editor_desc">Choose which rows appear in the Player Menu and their order. Changes apply the next time you open the menu.</string>
+    <string name="pref_layout_editor_desc">Choose which actions appear in the playback sheet and the action stripe, and in what order.</string>
     <string name="pref_layout_reset">Reset to default</string>
     <string name="pref_layout_visible_header">Shown in menu</string>
     <string name="pref_layout_hidden_header">Hidden</string>
