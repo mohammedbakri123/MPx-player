@@ -65,6 +65,8 @@ import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
+import android.content.Context
+import android.content.ContextWrapper
 
 /**
  * Real, complete settings screen for Picture-in-Picture (PiP) and floating pop-up play.
@@ -85,7 +87,7 @@ fun OverlaySettingsScreen(
     fun update(next: AppSettings) {
         settings = next
         settingsRepository.save(next)
-        (context as? Activity)?.let { activity ->
+        context.findActivity()?.let { activity ->
             PipUtils.updatePipParams(activity, next)
         }
     }
@@ -395,26 +397,13 @@ fun OverlaySettingsScreen(
                 )
             }
 
-            // 7. Section: Window Docking & Dismissal Behavior
+            // NOTE: the former section 7 (Window Docking & Dismissal
+            // Behavior) was removed in #132: popupPlaySnapToEdge and
+            // popupPlayCloseOnDone were presented as toggles but never
+            // read by any playback/PiP code (edge snapping is enforced
+            // by SystemUI; nothing checked close-on-done). The prefs
+            // stay stored untouched, so wiring them later loses nothing.
             item {
-                SectionHeader(stringResource(R.string.overlay_section_behavior))
-
-                SettingsToggleRow(
-                    title = stringResource(R.string.pip_snap_edge_title),
-                    subtitle = stringResource(R.string.pip_snap_edge_desc),
-                    checked = settings.popupPlaySnapToEdge,
-                    onCheckedChange = { update(settings.copy(popupPlaySnapToEdge = it)) },
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                SettingsToggleRow(
-                    title = stringResource(R.string.pip_close_on_done_title),
-                    subtitle = stringResource(R.string.pip_close_on_done_desc),
-                    checked = settings.popupPlayCloseOnDone,
-                    onCheckedChange = { update(settings.copy(popupPlayCloseOnDone = it)) },
-                )
-
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
                     color = MpxBorder,
@@ -608,4 +597,13 @@ private fun PlatformLimitItem(
             )
         }
     }
+}
+
+private fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
 }
