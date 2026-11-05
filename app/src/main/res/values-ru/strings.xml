@@ -162,7 +162,6 @@
     <string name="subtitle_padding_header">Нижний отступ:</string>
     <string name="subtitle_scale_header">Масштаб:</string>
     <string name="subtitle_ass_header">Дополнительно (стили ASS):</string>
-    <string name="subtitle_ass_mpv_note">Только движок MPV; Media3 всегда применяет встроенные стили.</string>
     <string name="subtitle_sync_header">Синхронизация субтитров</string>
     <string name="subtitle_speed_header">Скорость субтитров</string>
     <string name="subtitle_timing_mpv_note">Синхронизация и скорость применяются только к движку MPV.</string>
@@ -288,7 +287,7 @@
     <string name="pip_test_fail_playing">Сейчас нельзя перейти в режим PiP. Сначала воспроизведите видео в плеере.</string>
 
     <string name="dialog_network_title">Сетевой поток</string>
-    <string name="dialog_network_desc">Введите любой URL потока HTTP, HTTPS или HLS для прямого воспроизведения в Media3 ExoPlayer:</string>
+    <string name="dialog_network_desc">Введите любой URL потока HTTP, HTTPS или HLS для прямого воспроизведения:</string>
     <string name="dialog_network_samples">Примеры публичных потоков:</string>
     <string name="dialog_network_play">Воспроизвести поток</string>
 
@@ -316,13 +315,13 @@
 
     <string name="dialog_legal_title">Правовая информация и открытый код</string>
     <string name="legal_sec1_title">Лицензии открытого кода</string>
-    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: Apache License 2.0\n• Jetpack Compose и Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0</string>
+    <string name="legal_sec1_body">• Jetpack Compose и Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0</string>
     <string name="legal_sec2_title">Уведомление об указании источника вдохновения</string>
     <string name="legal_sec2_body">MPx Player — независимый нативный медиаплеер для Android, созданный с нуля. Его организация и UX-процессы вдохновлены MX Player (согласно спецификациям раскладки, полученным обратным инжинирингом). Весь код, представления и стили переписаны на 100% с нуля на нативном Kotlin и Jetpack Compose. Никакие проприетарные ресурсы, код или товарные знаки не используются.</string>
     <string name="legal_sec3_title">Условия использования</string>
     <string name="legal_sec3_body">MPx Player предоставляется «как есть» без гарантии по лицензии Apache 2.0. Пользователи сами отвечают за свои медиафайлы.</string>
 
-    <string name="dialog_about_body1">Чистая нативная переработка на Kotlin с Jetpack Compose, AndroidX Media3 ExoPlayer и сохранением Room SQLite.</string>
+    <string name="dialog_about_body1">Чистая нативная переработка на Kotlin с Jetpack Compose, libmpv и сохранением Room SQLite.</string>
     <string name="dialog_about_body2">Плотное утилитарное управление медиа без зависимости от облака, слежения и рекламы.</string>
 
     <string name="equalizer_dialog_msg">Системный эквалайзер: на этом устройстве не найдена панель управления аудиоэффектами (например, MusicFX или системное приложение эквалайзера). Звук использует стандартный ровный выход.</string>
@@ -597,14 +596,14 @@
     <!-- Beta & About Screen -->
     <string name="about_beta_screen_title">О программе и статус бета-версии</string>
     <string name="about_beta_badge">БЕТА-ВЕРСИЯ</string>
-    <string name="about_beta_tagline">Нативный медиаплеер на Kotlin для Android с Media3 ExoPlayer и сохранением Room.</string>
+    <string name="about_beta_tagline">Нативный медиаплеер на Kotlin для Android с libmpv и сохранением Room.</string>
     <string name="about_beta_build_info">Сборка %1$d (VersionCode %1$d) • Ветка: %2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">ЧТО ГОТОВО В БЕТА-ВЕРСИИ</string>
     <string name="about_beta_ready_subtitle">Основные функции офлайн-воспроизведения и библиотеки — полностью рабочие нативные реализации:</string>
-    <string name="about_beta_feat_player_title">Движок воспроизведения видео Media3</string>
-    <string name="about_beta_feat_player_desc">Аппаратное (HW/HW+) и программное (SW) декодирование через AndroidX Media3 ExoPlayer. Жесты видео (двойное касание для перемотки на 10 с, горизонтальное перетаскивание для перемотки), элементы управления соотношением сторон (Fit/Stretch/16:9/Original), встроенные и внешние субтитры (.srt, .vtt) и переключение нескольких аудиодорожек.</string>
+    <string name="about_beta_feat_player_title">Движок воспроизведения видео mpv</string>
+    <string name="about_beta_feat_player_desc">Аппаратное (HW/HW+) и программное (SW) декодирование через libmpv. Жесты видео (двойное касание для перемотки на 10 с, горизонтальное перетаскивание для перемотки), элементы управления соотношением сторон (Fit/Stretch/16:9/Original), встроенные и внешние субтитры (.srt, .vtt) и переключение нескольких аудиодорожек.</string>
     <string name="about_beta_feat_bg_pip_title">Фоновое воспроизведение и режим «картинка в картинке» (PiP)</string>
     <string name="about_beta_feat_bg_pip_desc">Плавающий режим «картинка в картинке» с настраиваемыми элементами управления окном на Android 8.0+. Настоящее фоновое воспроизведение звука для видео и музыки через службу переднего плана.</string>
     <string name="about_beta_feat_music_title">Музыкальный плеер и аудиотека</string>
@@ -805,7 +804,19 @@
     <string name="player_sleep_timer_cancel">Отменить таймер сна</string>
     <string name="player_sleep_timer_set_toast">Таймер сна установлен на %1$d минут</string>
     <string name="player_sleep_timer_canceled_toast">Таймер сна отключён</string>
-    <string name="player_gesture_hint">Двойное касание: −10 с (слева) / воспроизведение-пауза / +10 с (справа) • Свайп по горизонтали: перемотка • Свайп по вертикали: яркость (слева) / громкость (справа)</string>
+    <string name="player_tutorial_title">Жесты плеера</string>
+    <string name="player_tutorial_step_double_tap_title">Двойное касание</string>
+    <string name="player_tutorial_step_double_tap_desc">Коснитесь слева, чтобы вернуться на 10 секунд, по центру — чтобы воспроизвести или поставить на паузу, справа — чтобы перейти вперёд на 10 секунд.</string>
+    <string name="player_tutorial_step_seek_title">Свайп для перемотки</string>
+    <string name="player_tutorial_step_seek_desc">Проведите пальцем по горизонтали по видео, чтобы перемотать вперёд или назад.</string>
+    <string name="player_tutorial_step_brightness_title">Слева: яркость</string>
+    <string name="player_tutorial_step_brightness_desc">Проведите вверх или вниз по левой стороне видео, чтобы изменить яркость.</string>
+    <string name="player_tutorial_step_volume_title">Справа: громкость</string>
+    <string name="player_tutorial_step_volume_desc">Проведите вверх или вниз по правой стороне видео, чтобы изменить громкость.</string>
+    <string name="player_tutorial_next">Далее</string>
+    <string name="player_tutorial_skip">Пропустить</string>
+    <string name="player_tutorial_got_it">Понятно</string>
+    <string name="player_menu_tutorial">Обучение жестам</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">Нет видео в очереди</string>
@@ -820,7 +831,6 @@
     <string name="player_resumed_from">Продолжение с %1$s</string>
     <string name="player_start_over">Начать сначала</string>
     <string name="player_cd_dismiss">Закрыть</string>
-    <string name="player_cd_dismiss_hint">Скрыть подсказку</string>
     <string name="player_cd_unlock">Разблокировать элементы управления</string>
     <string name="player_cd_lock">Заблокировать элементы управления</string>
     <string name="player_cd_back">Назад</string>
@@ -867,11 +877,6 @@
     <string name="player_active_codec">Активный видеокодек: %1$s</string>
     <string name="player_codec_initializing">Инициализация / ожидание видеокадра...</string>
     <string name="player_codec_error">Ошибка воспроизведения: кодек %1$s не поддерживается</string>
-    <string name="player_no_audio_codec">Нет звука: аудиодорожки этого файла (%1$s) не декодируются на этом устройстве. Попробуйте движок MPV.</string>
-    <string name="player_media3_failed_mpv">Media3 не справился с кодеком %1$s. Переключено на движок MPV.</string>
-    <string name="player_try_mpv">Попробовать MPV</string>
-    <string name="player_mpv_start_failed">Не удалось запустить движок MPV: %1$s. Используется Media3.</string>
-    <string name="player_mpv_failed_media3">Движок MPV дал сбой (%1$s). Переключено на движок Media3.</string>
     <string name="player_dialog_unsupported_subtitle">Неподдерживаемый формат субтитров</string>
     <string name="player_menu_title">Настройки воспроизведения</string>
     <string name="player_menu_decoder_mode">Режим декодера (%1$s)</string>
@@ -890,6 +895,28 @@
     <string name="player_menu_aspect">Соотношение сторон: %1$s</string>
     <string name="player_menu_rotation">Поворот экрана (%1$s)</string>
     <string name="player_menu_add_playlist">Добавить в плейлист...</string>
+    <!-- Playback sheet (issue #153) -->
+    <string name="playback_sheet_title">Воспроизведение</string>
+    <string name="playback_sheet_section_video">Видео</string>
+    <string name="playback_sheet_section_audio">Аудио</string>
+    <string name="playback_sheet_section_subtitles">Субтитры</string>
+    <string name="playback_sheet_section_about">Об этом файле</string>
+    <string name="playback_sheet_repeat">Повтор</string>
+    <string name="playback_sheet_background_play">Фоновое воспроизведение</string>
+    <string name="playback_sheet_audio_track">Аудиодорожка</string>
+    <string name="playback_sheet_subtitle_track">Дорожка субтитров</string>
+    <string name="playback_sheet_subtitle_settings">Настройки субтитров</string>
+    <string name="playback_sheet_decoder">Декодер</string>
+    <string name="playback_sheet_aspect">Соотношение сторон</string>
+    <string name="playback_sheet_rotation">Поворот</string>
+    <string name="playback_sheet_audio_delay">Задержка звука</string>
+    <string name="playback_sheet_zoom">Масштаб</string>
+    <string name="playback_sheet_speed_title">Скорость воспроизведения</string>
+    <string name="playback_sheet_sleep_custom">Своё время</string>
+    <string name="playback_sheet_about_title">Название</string>
+    <string name="playback_sheet_about_duration">Длительность</string>
+    <string name="playback_sheet_about_codec">Активный кодек</string>
+    <string name="playback_sheet_mpv_only_note">Применяется только к движку MPV.</string>
     <string name="transfer_title">Передача и загрузки</string>
     <string name="transfer_tab_downloader">Загрузчик</string>
     <string name="transfer_tab_file_transfer">Передача файлов</string>
@@ -924,9 +951,6 @@
     <string name="subtitle_sync_increase">Увеличить синхронизацию субтитров</string>
     <string name="subtitle_speed_decrease">Уменьшить скорость субтитров</string>
     <string name="subtitle_speed_increase">Увеличить скорость субтитров</string>
-    <string name="playback_engine_title">Движок воспроизведения</string>
-    <string name="playback_engine_media3">Media3 ExoPlayer (По умолчанию)</string>
-    <string name="playback_engine_mpv">libmpv (Экспериментальный нативный движок)</string>
     <string name="decoder_mode_title">Режим декодера</string>
     <string name="dev_count_videos">%1$d видео</string>
     <string name="dev_count_tracks">%1$d треков</string>

@@ -4,9 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.os.SystemClock
 import android.view.Surface
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.mediacodec.MediaCodecRenderer
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
@@ -16,7 +13,6 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.repository.MediaPersistenceRepository
 import android.util.Log
-import com.mpx.player.playback.engine.Media3PlayerEngine
 import com.mpx.player.playback.engine.MpvPlaybackException
 import com.mpx.player.playback.engine.MpvPlayerEngine
 import com.mpx.player.playback.engine.PlayerEngine
@@ -46,6 +42,12 @@ class PlaybackManager private constructor(context: Context) {
     val resumeManager = PlaybackResumeManager(persistenceRepository)
     val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
 
+    /** Last playback queue, persisted so a process death in the background
+     * does not leave the restored Player screen empty (issue #149).
+     * Positions are NOT stored here: they already live in Room via
+     * PlaybackResumeManager and playQueue() re-applies them. */
+    private val queueStore = PlaybackQueueStore(appContext)
+
     private val scope = CoroutineScope(Dispatchers.Main)
     private var tickerJob: Job? = null
     private var sleepTimerJob: Job? = null
@@ -53,10 +55,10 @@ class PlaybackManager private constructor(context: Context) {
     /** Preparing watchdog: a video load that produces neither READY nor an
      * error within 20s is a stuck load, not a slow one (local files). Firing
      * routes a real timeout error through onError, which clears the splash
-     * and (for mpv) falls back to Media3 — the spinner must never spin
-     * forever again. Armed per video load; cancelled on READY/ENDED, on any
-     * error, and on stop. The timeout message names the observed mpv stage,
-     * so the banner itself becomes the next diagnostic. */
+     * and names the observed stage in a banner. Armed per video load;
+     * cancelled on READY/ENDED, on any error, and on stop. The timeout
+     * message names the observed mpv stage, so the banner itself becomes
+     * the next diagnostic. */
     private var preparingWatchdogJob: Job? = null
     private fun cancelPreparingWatchdog() {
         preparingWatchdogJob?.cancel()
@@ -70,15 +72,15 @@ class PlaybackManager private constructor(context: Context) {
             delay(20_000L)
             val st = _playbackState.value
             if (st.isPreparing && st.currentItem?.id == item.id &&
-                st.playbackState != Player.STATE_READY && st.playbackState != Player.STATE_ENDED
+                st.playbackState != PlayerEngine.STATE_READY && st.playbackState != PlayerEngine.STATE_ENDED
             ) {
                 val stage = engine.getLoadStage()
                 val detail = if (stage != null) {
-                    "engine=${if (isMpv) "MPV" else "MEDIA3"}, initialized=${stage.initialized}, " +
+                    "engine=MPV, initialized=${stage.initialized}, " +
                         "surface=${stage.surfaceAttached}, loadIssued=${stage.loadIssued}, " +
                         "lastEvent=${stage.lastEvent}"
                 } else {
-                    "engine=${if (isMpv) "MPV" else "MEDIA3"}"
+                    "engine=MPV"
                 }
                 engineListener.onError(Exception("Playback load timed out after 20s ($detail)"))
             }
@@ -86,12 +88,6 @@ class PlaybackManager private constructor(context: Context) {
     }
     private var currentQueue: List<PlayableMedia> = emptyList()
     private var pendingSubtitleTrackLabel: String? = null
-    /** Media id the Media3->mpv auto-fallback already fired for; prevents mpv<->Media3 ping-pong on one item. */
-    private var lastMpvFallbackItemId: String? = null
-    /** Media id the no-supported-audio warning already fired for; avoids re-showing it after dismissal. */
-    private var lastNoAudioReportedItemId: String? = null
-    /** True when the user deliberately turned audio off for the current item; suppresses the no-sound warning. */
-    private var userDisabledAudio: Boolean = false
     /** Pre-shuffle queue order, restored when shuffle is turned off (issue #76). */
     private var unshuffledQueue: List<PlayableMedia>? = null
 
@@ -141,7 +137,7 @@ class PlaybackManager private constructor(context: Context) {
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == Player.STATE_READY || playbackState == Player.STATE_ENDED) {
+            if (playbackState == PlayerEngine.STATE_READY || playbackState == PlayerEngine.STATE_ENDED) {
                 cancelPreparingWatchdog()
             }
             _playbackState.update {
@@ -149,16 +145,16 @@ class PlaybackManager private constructor(context: Context) {
                     playbackState = playbackState,
                     // Preparing ends the moment the engine is READY or ENDED;
                     // anything else (BUFFERING, IDLE mid-load) keeps the splash.
-                    isPreparing = if (playbackState == Player.STATE_READY || playbackState == Player.STATE_ENDED) false else it.isPreparing,
+                    isPreparing = if (playbackState == PlayerEngine.STATE_READY || playbackState == PlayerEngine.STATE_ENDED) false else it.isPreparing,
                 )
             }
             updatePosition()
             updateTracksState()
-            if (playbackState == Player.STATE_ENDED) {
-                // Repeat handling (issue #76): both engines report STATE_ENDED
-                // at the end of the playlist (Media3 only at the last item, mpv
-                // on eof-reached). Repeat ONE restarts the current item; repeat
-                // ALL wraps to the first item; OFF keeps the old behaviour.
+            if (playbackState == PlayerEngine.STATE_ENDED) {
+                // Repeat handling (issue #76): mpv reports STATE_ENDED at the
+                // end of the playlist (on eof-reached). Repeat ONE restarts
+                // the current item; repeat ALL wraps to the first item; OFF
+                // keeps the old behaviour.
                 val state = _playbackState.value
                 val current = state.currentItem
                 when {
@@ -168,7 +164,10 @@ class PlaybackManager private constructor(context: Context) {
                     }
                     state.repeatMode == RepeatMode.ALL && current != null &&
                         currentQueue.isNotEmpty() -> {
-                        engine.seekTo(0, 0L)
+                        // Fresh-fd load, NOT seekTo(0, 0): an indexed seek
+                        // re-issues loadfile with the first item's old fd://
+                        // URI, and mpv closes the fd when its stream ends.
+                        engineLoad(currentQueue, 0, 0L)
                         engine.play()
                     }
                     else -> {
@@ -220,6 +219,8 @@ class PlaybackManager private constructor(context: Context) {
             }
             updateTracksState()
             updatePosition()
+            // Issue #149: the current index moved; the queue itself did not.
+            persistQueue(index)
         }
 
         override fun onTracksChanged() {
@@ -264,32 +265,18 @@ class PlaybackManager private constructor(context: Context) {
             cancelPreparingWatchdog()
             Log.e("PlaybackManager", "Engine error encountered", error)
             // An error ends preparing: the banner below replaces the splash.
-            _playbackState.update { it.copy(isPreparing = false) }
-            if (isMpv) {
-                val codec = if (error is MpvPlaybackException) error.codecName else _playbackState.value.activeDecoderName
-                fallbackToMedia3(failedCodecName = codec ?: "unknown", reason = error.message)
-            } else {
-                // Media3 errors previously never arrived here (no onPlayerError
-                // forwarding) — now they do. Decoder failures auto-fall back to
-                // mpv once per item; anything else gets a codec-named message
-                // plus a one-tap mpv offer in the banner.
-                val codec = extractCodecName(error)
-                val itemId = _playbackState.value.currentItem?.id
-                if (codec != null && itemId != null && itemId != lastMpvFallbackItemId) {
-                    lastMpvFallbackItemId = itemId
-                    fallbackToMpv(failedCodecName = codec, reason = error.message)
-                } else {
-                    _playbackState.update {
-                        it.copy(
-                            userNotification = if (codec != null) {
-                                appContext.getString(R.string.player_codec_error, codec)
-                            } else {
-                                "Playback error: ${error.message}"
-                            },
-                            showMpvSwitchOffer = true,
-                        )
-                    }
-                }
+            // mpv-only (issue #150): there is no fallback engine any more,
+            // so every error is reported as-is — with the codec name when
+            // libmpv knows it — instead of silently switching engines.
+            _playbackState.update {
+                it.copy(
+                    isPreparing = false,
+                    userNotification = if (error is MpvPlaybackException && error.codecName != null) {
+                        appContext.getString(R.string.player_codec_error, error.codecName)
+                    } else {
+                        "Playback error: ${error.message}"
+                    },
+                )
             }
         }
     }
@@ -297,64 +284,30 @@ class PlaybackManager private constructor(context: Context) {
     private var activeSurface: Surface? = null
 
     /**
-     * Active player engine instance. Defaults to [Media3PlayerEngine] and supports
-     * switching to [MpvPlayerEngine] based on settings, keeping Media3 as fallback path.
+     * Active player engine instance. mpv-only (issue #150): the engine
+     * setting, the engine switch and both auto-fallbacks are gone, so the
+     * manager always owns exactly one [MpvPlayerEngine]. mpv captures init
+     * failures instead of throwing (see MpvPlayerEngine), so construction
+     * here cannot crash the app — a dead core surfaces as a real error
+     * through the listener instead.
      */
-    var engine: PlayerEngine = createEngine(resolveInitialEngineType(), initialDecoderMode)
+    var engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode).apply {
+        setListener(engineListener)
+    }
         private set
 
-    val isMedia3: Boolean
-        get() = engine is Media3PlayerEngine
-
-    val isMpv: Boolean
-        get() = engine is MpvPlayerEngine
-
     /**
-     * Compatibility accessor exposing the underlying ExoPlayer instance for Media3-specific UI.
+     * Opens `content://` URIs as `fd://` descriptors for mpv (issue #150):
+     * libmpv cannot open content URIs, and with the Media3 fallback gone
+     * those files would fail outright. Only the copy handed to the engine
+     * is resolved — the live queue, the persisted queue and history keep
+     * the original URI, so a restored queue re-opens a fresh fd.
      */
-    val player: ExoPlayer
-        get() = (engine as? Media3PlayerEngine)?.player
-            ?: throw IllegalStateException("Current engine is not Media3PlayerEngine")
+    private val fdOpener = MpvFdOpener(appContext)
 
-    val exoPlayer: ExoPlayer?
-        get() = (engine as? Media3PlayerEngine)?.player
-
-    private fun resolveInitialEngineType(): String {
-        return try {
-            settingsRepository.load().playerEngine
-        } catch (_: Exception) {
-            "MEDIA3"
-        }
-    }
-
-    private fun createEngine(engineType: String, mode: DecoderMode): PlayerEngine {
-        return try {
-            when (engineType.uppercase()) {
-                "MPV" -> MpvPlayerEngine(appContext, mode).apply {
-                    setListener(engineListener)
-                }
-                else -> Media3PlayerEngine(appContext, mode).apply {
-                    setListener(engineListener)
-                }
-            }
-        } catch (e: Throwable) {
-            // Throwable, not just Exception: a missing native libmpv raises
-            // UnsatisfiedLinkError, which previously would have crashed the
-            // app on engine switch. Degrade to Media3 and SAY so.
-            Log.e("PlaybackManager", "Error instantiating engine $engineType, falling back to Media3", e)
-            _playbackState.update {
-                it.copy(
-                    userNotification = appContext.getString(
-                        R.string.player_mpv_start_failed,
-                        e.message ?: "unknown error",
-                    ),
-                    showMpvSwitchOffer = false,
-                )
-            }
-            Media3PlayerEngine(appContext, mode).apply {
-                setListener(engineListener)
-            }
-        }
+    /** Loads [items] into the engine with content URIs resolved to fds. */
+    private fun engineLoad(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
+        engine.load(fdOpener.resolveAllForEngine(items), startIndex, resumeMs)
     }
 
     private fun resolveInitialDecoderMode(): DecoderMode {
@@ -376,7 +329,7 @@ class PlaybackManager private constructor(context: Context) {
 
     /**
      * Forwards SurfaceView size changes to the engine (mpv reports them as
-     * "android-surface-size"; Media3 ignores them via the interface default).
+     * "android-surface-size").
      */
     fun surfaceChanged(width: Int, height: Int) {
         engine.onSurfaceChanged(width, height)
@@ -391,204 +344,21 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     /**
-     * Applies subtitle style settings to the active engine. Only the mpv
-     * engine renders subtitles itself (Media3 subtitles are styled by the
-     * PlayerView in PlayerScreen), so this is a no-op for Media3.
+     * Applies subtitle style settings to the mpv engine, which renders
+     * subtitles itself.
      */
     fun applySubtitleSettings(settings: AppSettings) {
-        if (isMpv) {
-            (engine as? MpvPlayerEngine)?.applySubtitleSettings(settings)
-        }
+        (engine as? MpvPlayerEngine)?.applySubtitleSettings(settings)
     }
 
     /**
-     * Switches playback engine with a seamless live handover preserving active queue,
-     * timeline position, speed, and video surface.
+     * Applies audio delay + video zoom to the active engine (issue #153).
+     * mpv-only, mirroring [applySubtitleSettings].
      */
-    fun setPlayerEngine(engineType: String) {
-        val target = engineType.uppercase()
-        val currentType = if (isMpv) "MPV" else "MEDIA3"
-        if (currentType == target) return
-
-        val wasPlaying = engine.isPlaying
-        val currentPos = engine.currentPosition.coerceAtLeast(0L)
-        val currentIndex = engine.currentMediaItemIndex
-        val currentSpeed = _playbackState.value.speed
-        val queue = currentQueue
-        val currentMode = _playbackState.value.decoderMode
-        val surface = activeSurface
-
-        // 1. Release previous engine
-        engine.setListener(null)
-        engine.stop()
-        engine.release()
-
-        // 2. Persist new engine setting
-        val settings = settingsRepository.load().copy(playerEngine = target)
-        settingsRepository.save(settings)
-
-        // 3. Create new engine and restore bindings
-        val newEngine = createEngine(target, currentMode)
-        engine = newEngine
-        newEngine.setSpeed(currentSpeed)
-
-        if (surface != null) {
-            newEngine.attachSurface(surface)
-        }
-
-        // 4. Restore active queue and timeline position
-        if (queue.isNotEmpty()) {
-            val targetIndex = currentIndex.coerceIn(0, queue.lastIndex)
-            newEngine.load(queue, targetIndex, currentPos)
-            if (wasPlaying) {
-                newEngine.play()
-            }
-        }
-
-        _playbackState.update {
-            it.copy(
-                activeDecoderName = null,
-                decoderFallbackNote = null,
-                userNotification = "Switched engine to $target",
-                // The new engine load is itself a fresh prepare.
-                isPreparing = queue.getOrNull(currentIndex.coerceIn(0, queue.lastIndex.coerceAtLeast(0)))?.isVideo == true,
-            )
-        }
-        updatePosition()
-        updateTracksState()
-        startTicker()
-        armPreparingWatchdog()
+    fun applyPlaybackTweaks(settings: AppSettings) {
+        (engine as? MpvPlayerEngine)?.applyPlaybackTweaks(settings)
     }
 
-    /**
-     * Fallback to Media3 on hard failure from MPV engine, surfacing a real error
-     * naming the codec (never a silent stall) and preserving playback state.
-     */
-    fun fallbackToMedia3(failedCodecName: String = "unknown", reason: String? = null) {
-        if (isMedia3) return
-
-        val wasPlaying = engine.isPlaying
-        val currentPos = engine.currentPosition.coerceAtLeast(0L)
-        val currentIndex = engine.currentMediaItemIndex
-        val currentSpeed = _playbackState.value.speed
-        val queue = currentQueue
-        val currentMode = _playbackState.value.decoderMode
-        val surface = activeSurface
-
-        Log.e("PlaybackManager", "Hard failure in MPV for codec '$failedCodecName': $reason. Falling back to Media3.")
-
-        // Release failing MPV engine
-        engine.setListener(null)
-        engine.stop()
-        engine.release()
-
-        // Create Media3 engine fallback
-        val fallbackEngine = Media3PlayerEngine(appContext, currentMode).apply {
-            setListener(engineListener)
-        }
-        engine = fallbackEngine
-        fallbackEngine.setSpeed(currentSpeed)
-
-        if (surface != null) {
-            fallbackEngine.attachSurface(surface)
-        }
-
-        // Restore playback state
-        if (queue.isNotEmpty()) {
-            val targetIndex = currentIndex.coerceIn(0, queue.lastIndex)
-            fallbackEngine.load(queue, targetIndex, currentPos)
-            if (wasPlaying) {
-                fallbackEngine.play()
-            }
-        }
-
-        _playbackState.update {
-            it.copy(
-                activeDecoderName = null,
-                decoderFallbackNote = null,
-                // When the codec is unknown (e.g. mpv could not even open the
-                // file), naming a codec would be a lie — show the real reason.
-                userNotification = if (failedCodecName == "unknown" && reason != null) {
-                    appContext.getString(R.string.player_mpv_failed_media3, reason)
-                } else {
-                    "MPV decoder failed for codec '$failedCodecName'. Switched to Media3 engine."
-                },
-                // The fallback engine load is itself a fresh prepare.
-                isPreparing = queue.getOrNull(currentIndex.coerceIn(0, queue.lastIndex.coerceAtLeast(0)))?.isVideo == true,
-            )
-        }
-        updatePosition()
-        updateTracksState()
-        startTicker()
-        armPreparingWatchdog()
-    }
-
-    /**
-     * Mirror of [fallbackToMedia3]: Media3 decoder failure falls back to mpv,
-     * preserving queue/position/speed/surface. Temporary only — the saved
-     * engine setting is NOT changed, so the next session still starts on the
-     * user's chosen engine. Guarded per item by [lastMpvFallbackItemId].
-     */
-    fun fallbackToMpv(failedCodecName: String = "unknown", reason: String? = null) {
-        if (isMpv) return
-
-        val wasPlaying = engine.isPlaying
-        val currentPos = engine.currentPosition.coerceAtLeast(0L)
-        val currentIndex = engine.currentMediaItemIndex
-        val currentSpeed = _playbackState.value.speed
-        val queue = currentQueue
-        val currentMode = _playbackState.value.decoderMode
-        val surface = activeSurface
-
-        Log.e("PlaybackManager", "Hard failure in Media3 for codec '$failedCodecName': $reason. Falling back to mpv.")
-
-        engine.setListener(null)
-        engine.stop()
-        engine.release()
-
-        val fallbackEngine = MpvPlayerEngine(appContext, currentMode).apply {
-            setListener(engineListener)
-        }
-        engine = fallbackEngine
-        fallbackEngine.setSpeed(currentSpeed)
-
-        if (surface != null) {
-            fallbackEngine.attachSurface(surface)
-        }
-
-        if (queue.isNotEmpty()) {
-            val targetIndex = currentIndex.coerceIn(0, queue.lastIndex)
-            fallbackEngine.load(queue, targetIndex, currentPos)
-            if (wasPlaying) {
-                fallbackEngine.play()
-            }
-        }
-
-        _playbackState.update {
-            it.copy(
-                activeDecoderName = null,
-                decoderFallbackNote = null,
-                userNotification = appContext.getString(R.string.player_media3_failed_mpv, failedCodecName),
-                showMpvSwitchOffer = false,
-                // The fallback engine load is itself a fresh prepare.
-                isPreparing = queue.getOrNull(currentIndex.coerceIn(0, queue.lastIndex.coerceAtLeast(0)))?.isVideo == true,
-            )
-        }
-        updatePosition()
-        updateTracksState()
-        startTicker()
-        armPreparingWatchdog()
-    }
-
-    /** Walks the cause chain for an ExoPlayer DecoderInitializationException and returns its MIME type. */
-    private fun extractCodecName(error: Throwable): String? {
-        var cause: Throwable? = error
-        while (cause != null) {
-            if (cause is MediaCodecRenderer.DecoderInitializationException) return cause.mimeType
-            cause = cause.cause
-        }
-        return null
-    }
 
     /**
      * Loads a single media item with optional resume position and begins playback.
@@ -612,17 +382,19 @@ class PlaybackManager private constructor(context: Context) {
         if (items.isEmpty()) return
         // A new queue is a new session: shuffle order does not carry over.
         unshuffledQueue = null
-        userDisabledAudio = false
         currentQueue = items
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
         val targetItem = items[targetIndex]
+        // Issue #149: persist the new session immediately, before the engine
+        // load, so even a crash mid-load leaves a restorable queue behind.
+        persistQueue(targetIndex)
         val savedPos = resumeManager.getResumePosition(targetItem.id) ?: 0L
         val settings = settingsRepository.load()
         val shouldResume = (forceResume || settings.resumePlayback) &&
             savedPos > 2_000L
 
-        engine.load(items, targetIndex, if (shouldResume) savedPos else 0L)
+        engineLoad(items, targetIndex, if (shouldResume) savedPos else 0L)
         // Persisted default speed (issue #76): every new session starts here.
         // The in-player speed toggle stays session-only (see setSpeed).
         engine.setSpeed(settings.defaultPlaybackSpeed)
@@ -784,7 +556,7 @@ class PlaybackManager private constructor(context: Context) {
             val rest = currentQueue.filterIndexed { index, _ -> index != currentIndex }.shuffled()
             val newQueue = listOf(currentQueue[currentIndex]) + rest
             currentQueue = newQueue
-            engine.load(newQueue, 0, position)
+            engineLoad(newQueue, 0, position)
             engine.setSpeed(speed)
             if (wasPlaying) engine.play()
             _playbackState.update {
@@ -796,13 +568,15 @@ class PlaybackManager private constructor(context: Context) {
                     shuffleEnabled = true,
                 )
             }
+            // Issue #149: the shuffled order is the live order now.
+            persistQueue(0)
         } else {
             val original = unshuffledQueue
             unshuffledQueue = null
             if (original != null && original.isNotEmpty()) {
                 val index = original.indexOfFirst { it.id == current.id }.coerceAtLeast(0)
                 currentQueue = original
-                engine.load(original, index, position)
+                engineLoad(original, index, position)
                 engine.setSpeed(speed)
                 if (wasPlaying) engine.play()
                 _playbackState.update {
@@ -814,6 +588,8 @@ class PlaybackManager private constructor(context: Context) {
                         shuffleEnabled = false,
                     )
                 }
+                // Issue #149: the restored pre-shuffle order is live again.
+                persistQueue(index)
             } else {
                 _playbackState.update { it.copy(shuffleEnabled = false) }
             }
@@ -823,16 +599,19 @@ class PlaybackManager private constructor(context: Context) {
 
     fun setAspectRatio(mode: AspectRatioMode) {
         _playbackState.update { it.copy(aspectRatio = mode) }
-        if (isMpv) {
-            (engine as? MpvPlayerEngine)?.setAspectRatio(mode)
-        }
+        (engine as? MpvPlayerEngine)?.setAspectRatio(mode)
     }
 
     /**
-     * Changes the decoder mode (HW, HW+, SW).
-     * Rebuilds the underlying ExoPlayer instance in [Media3PlayerEngine] with the requested
-     * [MpxMediaCodecSelector] configuration, restoring playback position, speed,
-     * queue, and track selections seamlessly.
+     * Changes the decoder mode (HW, HW+, SW). The mpv engine applies the
+     * new hwdec value and reloads the current item so the pill matches the
+     * decoder actually in use.
+     *
+     * Known limit (issue #150): that reload is engine-internal and re-uses
+     * the queue's old fd:// URI. For a content:// file (blank MediaStore
+     * DATA) mpv has already closed that fd, so the reload can fail with a
+     * real error banner; re-tapping the file replays it under the new mode
+     * (playQueue re-opens a fresh fd). Path-based files are unaffected.
      */
     fun setDecoderMode(mode: DecoderMode) {
         if (_playbackState.value.decoderMode == mode) return
@@ -853,9 +632,6 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     fun selectTrack(type: TrackType, id: String?) {
-        if (type == TrackType.AUDIO) {
-            userDisabledAudio = (id == null || id == "-1" || id.isBlank())
-        }
         engine.selectTrack(type, id)
         updateTracksState()
     }
@@ -898,11 +674,20 @@ class PlaybackManager private constructor(context: Context) {
         val currentPos = engine.currentPosition
         val wasPlaying = engine.isPlaying
 
-        // Replace current media item in engine timeline
-        engine.replaceMediaItem(index, updatedItem)
+        // Replace current media item in engine timeline. Only the copy
+        // handed to the engine has its subtitle URIs resolved to fds
+        // (content:// subtitles need the same treatment as content://
+        // media); the stored item keeps the original URI so the persisted
+        // queue stays restorable.
+        engine.replaceMediaItem(index, fdOpener.resolveForEngine(updatedItem))
 
+        // Plain seek, NOT seekTo(index, pos): the mpv engine's
+        // replaceMediaItem never reloads the file (sub-add only), so the
+        // position is already where it was. An indexed seek would re-issue
+        // loadfile with the same fd:// URI — and mpv closes the fd when its
+        // stream ends, so a content:// file would fail to reload.
         if (currentPos > 0L) {
-            engine.seekTo(index, currentPos)
+            engine.seekTo(currentPos)
         }
         if (wasPlaying && !engine.isPlaying) {
             engine.play()
@@ -918,6 +703,8 @@ class PlaybackManager private constructor(context: Context) {
                 userNotification = "External subtitle loaded: $displayName",
             )
         }
+        // Issue #149: the queue item itself changed (new subtitle list).
+        persistQueue(index)
         return true
     }
 
@@ -926,7 +713,7 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     fun clearUserNotification() {
-        _playbackState.update { it.copy(userNotification = null, showMpvSwitchOffer = false) }
+        _playbackState.update { it.copy(userNotification = null) }
     }
 
     fun setSleepTimer(minutes: Int) {
@@ -977,6 +764,35 @@ class PlaybackManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * Writes the live queue + current index to the queue store (issue #149).
+     * Called on every queue mutation and on track transitions, never from
+     * the position ticker, so a write costs one small JSON encode per track
+     * change, not per tick. A write failure is swallowed inside the store:
+     * persistence must never break playback.
+     */
+    private fun persistQueue(currentIndex: Int = _playbackState.value.currentIndex) {
+        queueStore.save(currentQueue, currentIndex)
+    }
+
+    /**
+     * Restores the last persisted queue when the live queue is empty
+     * (issue #149): the process died in the background and Android restored
+     * the Player destination with a fresh, empty PlaybackManager. Loads the
+     * queue paused at the Room-saved position (playQueue's normal resume
+     * rules apply, so with resume playback off it starts at 0 instead).
+     * Returns false when there is nothing to restore, so the caller keeps
+     * the empty state. Deliberate stops clear the persisted queue in
+     * stop(), so this never resurrects a session the user ended. Shuffle
+     * order is not persisted: a restored queue always starts unshuffled.
+     */
+    fun restorePersistedQueueIfEmpty(): Boolean {
+        if (_playbackState.value.queue.isNotEmpty()) return false
+        val persisted = queueStore.load() ?: return false
+        playQueue(persisted.items, persisted.currentIndex, autoPlay = false)
+        return true
+    }
+
     fun stop() {
         cancelSleepTimer()
         cancelPreparingWatchdog()
@@ -984,6 +800,14 @@ class PlaybackManager private constructor(context: Context) {
         stopTicker()
         PlaybackService.stop(appContext)
         unshuffledQueue = null
+        queueStore.clear()
+        // Issue #149: a deliberate stop ends the session, so the persisted
+        // queue must not resurrect it later. This is also what makes the
+        // stop-on-leave effect (PlayerScreen) safe: leaving via back clears
+        // both the live and the persisted queue. release() deliberately does
+        // NOT clear: it can run while the Player destination is still on the
+        // stack (activity destroyed, process alive), and clearing there would
+        // destroy the queue a later process-death restore needs.
         _playbackState.update {
             it.copy(
                 currentItem = null,
@@ -1069,8 +893,8 @@ class PlaybackManager private constructor(context: Context) {
                 hasPrevious = engine.hasPreviousMediaItem,
                 hasNext = engine.hasNextMediaItem,
                 // Refresh measured engine metrics on every tick so the
-                // diagnostics rows track the live engine (MPV values, null
-                // for Media3's unmeasured fields is handled by the rows).
+                // diagnostics rows track the live engine (null before any
+                // video has played is rendered as "not observed").
                 playbackMetrics = engine.getPlaybackMetrics(),
                 mpvLoadStage = engine.getLoadStage(),
             )
@@ -1097,27 +921,6 @@ class PlaybackManager private constructor(context: Context) {
                 subtitleTracks = subtitleList,
                 selectedSubtitleTrackIndex = selectedSubtitleIdx,
             )
-        }
-
-        // Silent no-sound detection (issue #82/#83): ExoPlayer excludes
-        // undecodable audio tracks from selection and plays video anyway, so
-        // a file can play with no sound and no error. When the current video
-        // has audio tracks but none is selected AND none is supported, say so
-        // naming the codecs, and offer the mpv switch — once per item, and
-        // only on Media3 (mpv reports its tracks as supported).
-        val currentItem = _playbackState.value.currentItem
-        if (isMedia3 && !userDisabledAudio && currentItem?.isVideo == true && audioList.isNotEmpty() &&
-            selectedAudioIdx < 0 && audioList.none { it.isSupported } &&
-            currentItem.id != lastNoAudioReportedItemId
-        ) {
-            lastNoAudioReportedItemId = currentItem.id
-            val codecs = audioList.mapNotNull { it.mimeType }.distinct().joinToString(", ").ifBlank { "unknown" }
-            _playbackState.update {
-                it.copy(
-                    userNotification = appContext.getString(R.string.player_no_audio_codec, codecs),
-                    showMpvSwitchOffer = true,
-                )
-            }
         }
     }
 

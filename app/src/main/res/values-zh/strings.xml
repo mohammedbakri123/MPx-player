@@ -162,7 +162,6 @@
     <string name="subtitle_padding_header">底部边距：</string>
     <string name="subtitle_scale_header">缩放：</string>
     <string name="subtitle_ass_header">高级（ASS 样式）：</string>
-    <string name="subtitle_ass_mpv_note">仅 MPV 引擎；Media3 始终应用内嵌样式。</string>
     <string name="subtitle_sync_header">字幕同步</string>
     <string name="subtitle_speed_header">字幕速度</string>
     <string name="subtitle_timing_mpv_note">同步和速度仅适用于 MPV 引擎。</string>
@@ -288,7 +287,7 @@
     <string name="pip_test_fail_playing">目前无法进入 PiP 模式。请先在播放器中播放一段视频再试。</string>
 
     <string name="dialog_network_title">网络串流</string>
-    <string name="dialog_network_desc">输入任意 HTTP、HTTPS 或 HLS 串流 URL，即可在 Media3 ExoPlayer 中直接播放：</string>
+    <string name="dialog_network_desc">输入任意 HTTP、HTTPS 或 HLS 串流 URL，即可直接播放：</string>
     <string name="dialog_network_samples">公开串流示例：</string>
     <string name="dialog_network_play">播放串流</string>
 
@@ -316,13 +315,13 @@
 
     <string name="dialog_legal_title">法律与开源</string>
     <string name="legal_sec1_title">开源许可证</string>
-    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer：Apache License 2.0\n• Jetpack Compose 与 Material 3：Apache License 2.0\n• AndroidX Room Persistence Library：Apache License 2.0\n• Kotlin Coroutines：Apache License 2.0</string>
+    <string name="legal_sec1_body">• Jetpack Compose 与 Material 3：Apache License 2.0\n• AndroidX Room Persistence Library：Apache License 2.0\n• Kotlin Coroutines：Apache License 2.0</string>
     <string name="legal_sec2_title">灵感来源声明</string>
     <string name="legal_sec2_body">MPx Player 是一款独立的、净室开发的原生 Android 媒体播放器。其组织结构和 UX 流程受到 MX Player 的启发（依据逆向工程得出的布局规范）。所有代码、视图和样式均使用原生 Kotlin 和 Jetpack Compose 从零重写。未包含任何专有资产、代码或商标。</string>
     <string name="legal_sec3_title">使用条款</string>
     <string name="legal_sec3_body">MPx Player 依据 Apache 2.0 许可证按“现状”提供，不作任何保证。用户需对自己的媒体文件负责。</string>
 
-    <string name="dialog_about_body1">使用 Jetpack Compose、AndroidX Media3 ExoPlayer 和 Room SQLite 持久化的纯原生 Kotlin 重写。</string>
+    <string name="dialog_about_body1">使用 Jetpack Compose、libmpv 和 Room SQLite 持久化的纯原生 Kotlin 重写。</string>
     <string name="dialog_about_body2">无需依赖云端、追踪或广告的高密度、实用至上的媒体管理。</string>
 
     <string name="equalizer_dialog_msg">系统均衡器：在此设备上未找到音频效果控制面板（例如 MusicFX 或系统均衡器应用）。音频使用标准平直输出。</string>
@@ -597,14 +596,14 @@
     <!-- Beta & About Screen -->
     <string name="about_beta_screen_title">关于与 Beta 状态</string>
     <string name="about_beta_badge">BETA 版本</string>
-    <string name="about_beta_tagline">适用于 Android 的原生 Kotlin 媒体播放器，搭载 Media3 ExoPlayer 和 Room 持久化。</string>
+    <string name="about_beta_tagline">适用于 Android 的原生 Kotlin 媒体播放器，搭载 libmpv 和 Room 持久化。</string>
     <string name="about_beta_build_info">构建 %1$d（VersionCode %1$d）• 分支：%2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">BETA 版已就绪的内容</string>
     <string name="about_beta_ready_subtitle">核心离线播放和媒体库功能均为功能完备的原生实现：</string>
-    <string name="about_beta_feat_player_title">Media3 视频播放引擎</string>
-    <string name="about_beta_feat_player_desc">通过 AndroidX Media3 ExoPlayer 实现硬件（HW/HW+）和软件（SW）解码。视频手势（双击快进/快退 10 秒、水平拖动精确拖动进度）、画面比例控制（Fit/Stretch/16:9/Original）、内嵌和外挂字幕（.srt、.vtt）以及多音频轨道切换。</string>
+    <string name="about_beta_feat_player_title">mpv 视频播放引擎</string>
+    <string name="about_beta_feat_player_desc">通过 libmpv 实现硬件（HW/HW+）和软件（SW）解码。视频手势（双击快进/快退 10 秒、水平拖动精确拖动进度）、画面比例控制（Fit/Stretch/16:9/Original）、内嵌和外挂字幕（.srt、.vtt）以及多音频轨道切换。</string>
     <string name="about_beta_feat_bg_pip_title">后台播放与画中画播放（PiP）</string>
     <string name="about_beta_feat_bg_pip_desc">Android 8.0+ 上带自定义窗口控制的画中画悬浮模式。通过前台服务为视频和音乐提供真正的后台音频播放。</string>
     <string name="about_beta_feat_music_title">音乐播放器与音频库</string>
@@ -805,7 +804,19 @@
     <string name="player_sleep_timer_cancel">取消睡眠定时器</string>
     <string name="player_sleep_timer_set_toast">睡眠定时器已设为 %1$d 分钟</string>
     <string name="player_sleep_timer_canceled_toast">睡眠定时器已关闭</string>
-    <string name="player_gesture_hint">双击：-10 秒（左）/ 播放-暂停 / +10 秒（右） • 水平滑动：拖动进度 • 垂直滑动：亮度（左）/ 音量（右）</string>
+    <string name="player_tutorial_title">播放器手势</string>
+    <string name="player_tutorial_step_double_tap_title">双击</string>
+    <string name="player_tutorial_step_double_tap_desc">点击左侧后退 10 秒，点击中间播放或暂停，点击右侧前进 10 秒。</string>
+    <string name="player_tutorial_step_seek_title">滑动快进</string>
+    <string name="player_tutorial_step_seek_desc">在视频上水平拖动即可快进或后退。</string>
+    <string name="player_tutorial_step_brightness_title">左侧：亮度</string>
+    <string name="player_tutorial_step_brightness_desc">在视频左侧上下滑动即可调节亮度。</string>
+    <string name="player_tutorial_step_volume_title">右侧：音量</string>
+    <string name="player_tutorial_step_volume_desc">在视频右侧上下滑动即可调节音量。</string>
+    <string name="player_tutorial_next">下一步</string>
+    <string name="player_tutorial_skip">跳过</string>
+    <string name="player_tutorial_got_it">知道了</string>
+    <string name="player_menu_tutorial">手势教程</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">没有排队的视频</string>
@@ -820,7 +831,6 @@
     <string name="player_resumed_from">从 %1$s 继续</string>
     <string name="player_start_over">重新开始</string>
     <string name="player_cd_dismiss">关闭</string>
-    <string name="player_cd_dismiss_hint">关闭提示</string>
     <string name="player_cd_unlock">解锁控件</string>
     <string name="player_cd_lock">锁定控件</string>
     <string name="player_cd_back">返回</string>
@@ -867,11 +877,6 @@
     <string name="player_active_codec">当前视频编解码器：%1$s</string>
     <string name="player_codec_initializing">正在初始化 / 等待视频帧...</string>
     <string name="player_codec_error">播放失败：不支持编解码器 %1$s</string>
-    <string name="player_no_audio_codec">无声音：此文件的音轨（%1$s）无法在此设备上解码。请尝试 MPV 引擎。</string>
-    <string name="player_media3_failed_mpv">Media3 处理编解码器“%1$s”失败。已切换到 MPV 引擎。</string>
-    <string name="player_try_mpv">尝试 MPV</string>
-    <string name="player_mpv_start_failed">MPV 引擎启动失败：%1$s。改用 Media3。</string>
-    <string name="player_mpv_failed_media3">MPV 引擎失败（%1$s）。已切换到 Media3 引擎。</string>
     <string name="player_dialog_unsupported_subtitle">不支持的字幕格式</string>
     <string name="player_menu_title">播放设置</string>
     <string name="player_menu_decoder_mode">解码器模式（%1$s）</string>
@@ -890,6 +895,28 @@
     <string name="player_menu_aspect">宽高比：%1$s</string>
     <string name="player_menu_rotation">屏幕旋转（%1$s）</string>
     <string name="player_menu_add_playlist">添加到播放列表...</string>
+    <!-- Playback sheet (issue #153) -->
+    <string name="playback_sheet_title">播放</string>
+    <string name="playback_sheet_section_video">视频</string>
+    <string name="playback_sheet_section_audio">音频</string>
+    <string name="playback_sheet_section_subtitles">字幕</string>
+    <string name="playback_sheet_section_about">关于此文件</string>
+    <string name="playback_sheet_repeat">重复</string>
+    <string name="playback_sheet_background_play">后台播放</string>
+    <string name="playback_sheet_audio_track">音轨</string>
+    <string name="playback_sheet_subtitle_track">字幕轨</string>
+    <string name="playback_sheet_subtitle_settings">字幕设置</string>
+    <string name="playback_sheet_decoder">解码器</string>
+    <string name="playback_sheet_aspect">宽高比</string>
+    <string name="playback_sheet_rotation">旋转</string>
+    <string name="playback_sheet_audio_delay">音频延迟</string>
+    <string name="playback_sheet_zoom">缩放</string>
+    <string name="playback_sheet_speed_title">播放速度</string>
+    <string name="playback_sheet_sleep_custom">自定义时间</string>
+    <string name="playback_sheet_about_title">标题</string>
+    <string name="playback_sheet_about_duration">时长</string>
+    <string name="playback_sheet_about_codec">当前编解码器</string>
+    <string name="playback_sheet_mpv_only_note">仅适用于 MPV 引擎。</string>
     <string name="transfer_title">传输与下载</string>
     <string name="transfer_tab_downloader">下载器</string>
     <string name="transfer_tab_file_transfer">文件传输</string>
@@ -924,9 +951,6 @@
     <string name="subtitle_sync_increase">增大字幕同步</string>
     <string name="subtitle_speed_decrease">减小字幕速度</string>
     <string name="subtitle_speed_increase">增大字幕速度</string>
-    <string name="playback_engine_title">播放引擎</string>
-    <string name="playback_engine_media3">Media3 ExoPlayer (默认)</string>
-    <string name="playback_engine_mpv">libmpv (实验性原生引擎)</string>
     <string name="decoder_mode_title">解码器模式</string>
     <string name="dev_count_videos">%1$d 个视频</string>
     <string name="dev_count_tracks">%1$d 个音频</string>

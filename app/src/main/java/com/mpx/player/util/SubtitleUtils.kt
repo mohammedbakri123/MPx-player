@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
-import androidx.media3.common.MimeTypes
 
 sealed class SubtitleValidationResult {
     data class Supported(
@@ -25,6 +24,11 @@ sealed class SubtitleValidationResult {
  * honest user-facing explanations for unsupported formats.
  */
 object SubtitleUtils {
+
+    // MIME types for the two subtitle formats mpv accepts via sub-add
+    // (issue #150: these used to come from androidx.media3.common.MimeTypes).
+    private const val SUBRIP_MIME = "application/x-subrip"
+    private const val VTT_MIME = "text/vtt"
 
     fun getDisplayName(context: Context, uri: Uri): String {
         var queryName: String? = null
@@ -66,7 +70,7 @@ object SubtitleUtils {
             return SubtitleValidationResult.Supported(
                 uri = uri,
                 displayName = fileName,
-                mimeType = MimeTypes.APPLICATION_SUBRIP,
+                mimeType = SUBRIP_MIME,
             )
         }
 
@@ -75,29 +79,29 @@ object SubtitleUtils {
             return SubtitleValidationResult.Supported(
                 uri = uri,
                 displayName = fileName,
-                mimeType = MimeTypes.TEXT_VTT,
+                mimeType = VTT_MIME,
             )
         }
 
         // 3. MIME type checks if extension is missing or uninformative
-        if (mimeTypeFromResolver.equals(MimeTypes.TEXT_VTT, ignoreCase = true) ||
+        if (mimeTypeFromResolver.equals(VTT_MIME, ignoreCase = true) ||
             mimeTypeFromResolver.contains("text/vtt")
         ) {
             return SubtitleValidationResult.Supported(
                 uri = uri,
                 displayName = fileName,
-                mimeType = MimeTypes.TEXT_VTT,
+                mimeType = VTT_MIME,
             )
         }
 
-        if (mimeTypeFromResolver.equals(MimeTypes.APPLICATION_SUBRIP, ignoreCase = true) ||
+        if (mimeTypeFromResolver.equals(SUBRIP_MIME, ignoreCase = true) ||
             mimeTypeFromResolver.contains("subrip") ||
             mimeTypeFromResolver.contains("x-srt")
         ) {
             return SubtitleValidationResult.Supported(
                 uri = uri,
                 displayName = fileName,
-                mimeType = MimeTypes.APPLICATION_SUBRIP,
+                mimeType = SUBRIP_MIME,
             )
         }
 
@@ -112,14 +116,14 @@ object SubtitleUtils {
                         return SubtitleValidationResult.Supported(
                             uri = uri,
                             displayName = "$fileName (VTT)",
-                            mimeType = MimeTypes.TEXT_VTT,
+                            mimeType = VTT_MIME,
                         )
                     }
                     if (content.contains("-->")) {
                         return SubtitleValidationResult.Supported(
                             uri = uri,
                             displayName = "$fileName (SRT)",
-                            mimeType = MimeTypes.APPLICATION_SUBRIP,
+                            mimeType = SUBRIP_MIME,
                         )
                     }
                 }

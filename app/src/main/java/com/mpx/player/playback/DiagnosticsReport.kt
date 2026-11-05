@@ -1,9 +1,9 @@
 package com.mpx.player.playback
 
 import android.os.Build
-import androidx.media3.common.Player
 import com.mpx.player.BuildConfig
 import com.mpx.player.domain.settings.AppSettings
+import com.mpx.player.playback.engine.PlayerEngine
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -23,7 +23,7 @@ import java.util.Locale
  *   as the last stored message (there is no separate stored error history
  *   in state; the mpv error-log lines are the sibling mpv-log worktree's
  *   job, not this builder's).
- * - [AppSettings]: the settings snapshot (engine, decoder mode, language,
+ * - [AppSettings]: the settings snapshot (decoder mode, language,
  *   theme, playback flags).
  * - [Build]/[BuildConfig]: device and app version header.
  *
@@ -44,9 +44,9 @@ fun buildDiagnosticsReport(
     val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(Date())
 
     val playerStateText = when (state.playbackState) {
-        Player.STATE_READY -> if (state.isPlaying) "Playing" else "Paused"
-        Player.STATE_BUFFERING -> "Buffering"
-        Player.STATE_ENDED -> "Ended"
+        PlayerEngine.STATE_READY -> if (state.isPlaying) "Playing" else "Paused"
+        PlayerEngine.STATE_BUFFERING -> "Buffering"
+        PlayerEngine.STATE_ENDED -> "Ended"
         else -> "Idle"
     }
     val decoderDesc = when (settings.decoderMode) {
@@ -77,7 +77,7 @@ fun buildDiagnosticsReport(
         add("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
         add("")
         add("== Settings ==")
-        add("Playback engine: ${settings.playerEngine}")
+        add("Playback engine: libmpv (mpv-android-lib 0.1.12)")
         add("Decoder mode: ${settings.decoderMode} ($decoderDesc)")
         add("Language: ${settings.appLanguage}")
         add("Theme: ${settings.appTheme}")
@@ -100,14 +100,12 @@ fun buildDiagnosticsReport(
         add("Active decoder: ${state.activeDecoderName ?: notObserved}")
         add("Decoder fallback: ${state.decoderFallbackNote ?: notObserved}")
         add("")
-        if (settings.playerEngine == "MPV") {
-            add("== mpv stage ==")
-            add("MPV initialized: ${stage?.let { if (it.initialized) "yes" else "no" } ?: notObserved}")
-            add("MPV surface attached: ${stage?.let { if (it.surfaceAttached) "yes" else "no" } ?: notObserved}")
-            add("MPV load issued: ${stage?.let { if (it.loadIssued) "yes" else "no" } ?: notObserved}")
-            add("MPV last event: ${stage?.lastEvent ?: notObserved}")
-            add("")
-        }
+        add("== mpv stage ==")
+        add("MPV initialized: ${stage?.let { if (it.initialized) "yes" else "no" } ?: notObserved}")
+        add("MPV surface attached: ${stage?.let { if (it.surfaceAttached) "yes" else "no" } ?: notObserved}")
+        add("MPV load issued: ${stage?.let { if (it.loadIssued) "yes" else "no" } ?: notObserved}")
+        add("MPV last event: ${stage?.lastEvent ?: notObserved}")
+        add("")
         add("== Metrics ==")
         add("Time to ready: ${metrics?.lastTimeToReadyMs?.let { "$it ms" } ?: notObserved}")
         add("Time to first frame: ${metrics?.lastTimeToFirstFrameMs?.let { "$it ms" } ?: notObserved}")
@@ -129,7 +127,6 @@ fun buildDiagnosticsReport(
 fun buildDiagnosticsSummary(
     state: PlaybackState,
     settings: AppSettings,
-    isMpv: Boolean,
 ): String {
     val notObserved = "not observed"
     val metrics = state.playbackMetrics
@@ -137,16 +134,14 @@ fun buildDiagnosticsSummary(
     val lines = mutableListOf<String>()
     lines += "MPx diagnostics summary"
     lines += "App version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
-    lines += "Engine: ${if (isMpv) "mpv" else "Media3"} (setting: ${settings.playerEngine})"
+    lines += "Engine: libmpv (mpv-android-lib 0.1.12)"
     lines += "Decoder mode: ${settings.decoderMode}"
     lines += "Current item: ${state.currentItem?.let { "${it.title} (${if (it.isVideo) "Video" else "Audio"})" } ?: notObserved}"
     lines += "Active decoder: ${state.activeDecoderName ?: notObserved}"
-    if (isMpv) {
-        lines += "MPV initialized: ${stage?.let { if (it.initialized) "yes" else "no" } ?: notObserved}"
-        lines += "MPV surface attached: ${stage?.let { if (it.surfaceAttached) "yes" else "no" } ?: notObserved}"
-        lines += "MPV load issued: ${stage?.let { if (it.loadIssued) "yes" else "no" } ?: notObserved}"
-        lines += "MPV last event: ${stage?.lastEvent ?: notObserved}"
-    }
+    lines += "MPV initialized: ${stage?.let { if (it.initialized) "yes" else "no" } ?: notObserved}"
+    lines += "MPV surface attached: ${stage?.let { if (it.surfaceAttached) "yes" else "no" } ?: notObserved}"
+    lines += "MPV load issued: ${stage?.let { if (it.loadIssued) "yes" else "no" } ?: notObserved}"
+    lines += "MPV last event: ${stage?.lastEvent ?: notObserved}"
     lines += "Time to ready: ${metrics?.lastTimeToReadyMs?.let { "$it ms" } ?: notObserved}"
     lines += "Time to first frame: ${metrics?.lastTimeToFirstFrameMs?.let { "$it ms" } ?: notObserved}"
     lines += "Seek latency: ${metrics?.lastSeekLatencyMs?.let { "$it ms" } ?: notObserved}"

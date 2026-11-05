@@ -7,5 +7,5 @@
 # event loop by class/method name). Without this, R8 may rename or strip the
 # wrapper entry points that native code calls into. This is the only
 # library-specific keep in this project: Room uses generated code (no rules
-# needed) and Media3 ships its own consumer rules.
+# needed).
 -keep class is.xyz.mpv.** { *; }

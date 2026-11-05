@@ -162,7 +162,6 @@
     <string name="subtitle_padding_header">الحاشية السفلية:</string>
     <string name="subtitle_scale_header">الحجم:</string>
     <string name="subtitle_ass_header">متقدم (أنماط ASS):</string>
-    <string name="subtitle_ass_mpv_note">لمحرك MPV فقط؛ Media3 يطبق الأنماط المدمجة دائمًا.</string>
     <string name="subtitle_sync_header">مزامنة الترجمة</string>
     <string name="subtitle_speed_header">سرعة الترجمة</string>
     <string name="subtitle_timing_mpv_note">تنطبق المزامنة والسرعة على محرك MPV فقط.</string>
@@ -288,7 +287,7 @@
     <string name="pip_test_fail_playing">تعذر الدخول في وضع صورة في صورة حالياً. جرب تشغيل فيديو في المشغل أولاً.</string>
 
     <string name="dialog_network_title">بث شبكي</string>
-    <string name="dialog_network_desc">أدخل أي رابط بث HTTP أو HTTPS أو HLS للتشغيل مباشرة في Media3 ExoPlayer:</string>
+    <string name="dialog_network_desc">أدخل أي رابط بث HTTP أو HTTPS أو HLS للتشغيل مباشرة:</string>
     <string name="dialog_network_samples">روابط بث عامة تجريبية:</string>
     <string name="dialog_network_play">تشغيل البث</string>
 
@@ -316,13 +315,13 @@
 
     <string name="dialog_legal_title">المعلومات القانونية والمصادر المفتوحة</string>
     <string name="legal_sec1_title">تراخيص المصادر المفتوحة</string>
-    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: رخصة أباتشي 2.0\n• Jetpack Compose &amp; Material 3: رخصة أباتشي 2.0\n• AndroidX Room Persistence Library: رخصة أباتشي 2.0\n• Kotlin Coroutines: رخصة أباتشي 2.0</string>
+    <string name="legal_sec1_body">• Jetpack Compose &amp; Material 3: رخصة أباتشي 2.0\n• AndroidX Room Persistence Library: رخصة أباتشي 2.0\n• Kotlin Coroutines: رخصة أباتشي 2.0</string>
     <string name="legal_sec2_title">إشعار نسبة الاستلهام</string>
     <string name="legal_sec2_body">مشغل MPx هو مشغل وسائط أصلي ومستقل لنظام أندرويد. تم استلهام تنظيمه وتجربة الاستخدام فيه من MX Player (وفقاً لمواصفات التصميم العكسي). تمت إعادة كتابة جميع الأكواد والواجهات والتنسيقات بنسبة 100% من الصفر بلغة كوتلن الأصلية وJetpack Compose. لا يتضمن التطبيق أي أصول أو أكواد أو علامات تجارية خاصة بجهات أخرى.</string>
     <string name="legal_sec3_title">شروط الاستخدام</string>
     <string name="legal_sec3_body">يتم توفير مشغل MPx \'كما هو\' دون أي ضمان بموجب رخصة أباتشي 2.0. المستخدمون مسؤولون عن ملفات الوسائط الخاصة بهم.</string>
 
-    <string name="dialog_about_body1">إعادة كتابة أصلية بالكامل بلغة كوتلن مع Jetpack Compose، وAndroidX Media3 ExoPlayer، وحفظ دائم عبر Room SQLite.</string>
+    <string name="dialog_about_body1">إعادة كتابة أصلية بالكامل بلغة كوتلن مع Jetpack Compose، وlibmpv، وحفظ دائم عبر Room SQLite.</string>
     <string name="dialog_about_body2">إدارة وسائط عملية عالية الكثافة دون الاعتماد على السحابة، وبدون تتبع أو إعلانات.</string>
 
     <string name="equalizer_dialog_msg">معادل صوت النظام: لم يتم العثور على لوحة تحكم في المؤثرات الصوتية (مثل تطبيق MusicFX أو معادل صوت النظام) على هذا الجهاز. يستخدم الصوت إخراجاً قياسياً مسطحاً.</string>
@@ -597,14 +596,14 @@
     <!-- Beta & About Screen -->
     <string name="about_beta_screen_title">حول وحالة النسخة التجريبية</string>
     <string name="about_beta_badge">إصدار تجريبي</string>
-    <string name="about_beta_tagline">مشغل وسائط أصلي لنظام أندرويد بلغة كوتلن يعتمد على Media3 ExoPlayer وقاعدة بيانات Room.</string>
+    <string name="about_beta_tagline">مشغل وسائط أصلي لنظام أندرويد بلغة كوتلن يعتمد على libmpv وقاعدة بيانات Room.</string>
     <string name="about_beta_build_info">البناء %1$d (رمز الإصدار %1$d) • الفرع: %2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">الميزات الجاهزة في النسخة التجريبية</string>
     <string name="about_beta_ready_subtitle">ميزات التشغيل المحلي ومكتبة الوسائط مكتملة بالكامل وتعمل بشكل أصلي:</string>
-    <string name="about_beta_feat_player_title">محرك تشغيل الفيديو Media3</string>
-    <string name="about_beta_feat_player_desc">فك الترميز العتادي (HW/HW+) والبرمجي (SW) عبر AndroidX Media3 ExoPlayer. إيماءات الفيديو (النقر المزدوج لتقديم/تأخير 10 ثوانٍ، السحب للتمرير)، التحكم بنسبة العرض (ملاءمة/تمديد/16:9/الأصلي)، الترجمات المدمجة والخارجية (.srt، .vtt)، والتبديل بين المسارات الصوتية المتعددة.</string>
+    <string name="about_beta_feat_player_title">محرك تشغيل الفيديو mpv</string>
+    <string name="about_beta_feat_player_desc">فك الترميز العتادي (HW/HW+) والبرمجي (SW) عبر libmpv. إيماءات الفيديو (النقر المزدوج لتقديم/تأخير 10 ثوانٍ، السحب للتمرير)، التحكم بنسبة العرض (ملاءمة/تمديد/16:9/الأصلي)، الترجمات المدمجة والخارجية (.srt، .vtt)، والتبديل بين المسارات الصوتية المتعددة.</string>
     <string name="about_beta_feat_bg_pip_title">التشغيل في الخلفية والنافذة المنبثقة (صورة في صورة)</string>
     <string name="about_beta_feat_bg_pip_desc">وضع النافذة العائمة (صورة في صورة) مع عناصر تحكم مخصصة على أندرويد 8.0+. تشغيل صوتي حقيقي في الخلفية للفيديو والموسيقى عبر خدمة أمامية.</string>
     <string name="about_beta_feat_music_title">مشغل الموسيقى ومكتبة الصوتيات</string>
@@ -805,7 +804,19 @@
     <string name="player_sleep_timer_cancel">إلغاء مؤقت النوم</string>
     <string name="player_sleep_timer_set_toast">تم ضبط مؤقت النوم على %1$d دقيقة</string>
     <string name="player_sleep_timer_canceled_toast">تم إيقاف مؤقت النوم</string>
-    <string name="player_gesture_hint">النقر المزدوج: -10 ث (يسار) / تشغيل-إيقاف / +10 ث (يمين) • السحب أفقيًا: التقديم • السحب عموديًا: السطوع (يسار) / الصوت (يمين)</string>
+    <string name="player_tutorial_title">إيماءات المشغّل</string>
+    <string name="player_tutorial_step_double_tap_title">النقر المزدوج</string>
+    <string name="player_tutorial_step_double_tap_desc">انقر على الجانب الأيسر للرجوع 10 ثوانٍ، وعلى المنتصف للتشغيل أو الإيقاف المؤقت، وعلى الجانب الأيمن للتقدم 10 ثوانٍ.</string>
+    <string name="player_tutorial_step_seek_title">السحب للتقديم</string>
+    <string name="player_tutorial_step_seek_desc">اسحب أفقيًا عبر الفيديو للتقديم إلى الأمام أو الخلف.</string>
+    <string name="player_tutorial_step_brightness_title">الجانب الأيسر: السطوع</string>
+    <string name="player_tutorial_step_brightness_desc">اسحب لأعلى أو لأسفل على الجانب الأيسر من الفيديو لتغيير السطوع.</string>
+    <string name="player_tutorial_step_volume_title">الجانب الأيمن: الصوت</string>
+    <string name="player_tutorial_step_volume_desc">اسحب لأعلى أو لأسفل على الجانب الأيمن من الفيديو لتغيير الصوت.</string>
+    <string name="player_tutorial_next">التالي</string>
+    <string name="player_tutorial_skip">تخطي</string>
+    <string name="player_tutorial_got_it">فهمت</string>
+    <string name="player_menu_tutorial">درس الإيماءات</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">لا يوجد فيديو في قائمة التشغيل</string>
@@ -820,7 +831,6 @@
     <string name="player_resumed_from">الاستئناف من %1$s</string>
     <string name="player_start_over">البدء من جديد</string>
     <string name="player_cd_dismiss">تجاهل</string>
-    <string name="player_cd_dismiss_hint">تجاهل التلميح</string>
     <string name="player_cd_unlock">إلغاء قفل عناصر التحكم</string>
     <string name="player_cd_lock">قفل عناصر التحكم</string>
     <string name="player_cd_back">رجوع</string>
@@ -867,11 +877,6 @@
     <string name="player_active_codec">برنامج ترميز الفيديو النشط: %1$s</string>
     <string name="player_codec_initializing">جارٍ التهيئة / انتظار إطار الفيديو...</string>
     <string name="player_codec_error">فشل التشغيل: الترميز %1$s غير مدعوم</string>
-    <string name="player_no_audio_codec">لا يوجد صوت: لا يمكن فك ترميز المسارات الصوتية لهذا الملف (%1$s) على هذا الجهاز. جرّب محرك MPV.</string>
-    <string name="player_media3_failed_mpv">فشل Media3 مع الترميز %1$s. تم التبديل إلى محرك MPV.</string>
-    <string name="player_try_mpv">جرّب MPV</string>
-    <string name="player_mpv_start_failed">فشل تشغيل محرك MPV: %1$s. سيتم استخدام Media3 بدلاً منه.</string>
-    <string name="player_mpv_failed_media3">فشل محرك MPV (%1$s). تم التبديل إلى محرك Media3.</string>
     <string name="player_dialog_unsupported_subtitle">تنسيق ترجمة غير مدعوم</string>
     <string name="player_menu_title">إعدادات التشغيل</string>
     <string name="player_menu_decoder_mode">وضع وحدة فك التشفير (%1$s)</string>
@@ -890,6 +895,28 @@
     <string name="player_menu_aspect">نسبة العرض إلى الارتفاع: %1$s</string>
     <string name="player_menu_rotation">تدوير الشاشة (%1$s)</string>
     <string name="player_menu_add_playlist">إضافة إلى قائمة تشغيل...</string>
+    <!-- Playback sheet (issue #153) -->
+    <string name="playback_sheet_title">التشغيل</string>
+    <string name="playback_sheet_section_video">الفيديو</string>
+    <string name="playback_sheet_section_audio">الصوت</string>
+    <string name="playback_sheet_section_subtitles">الترجمة</string>
+    <string name="playback_sheet_section_about">حول هذا الملف</string>
+    <string name="playback_sheet_repeat">التكرار</string>
+    <string name="playback_sheet_background_play">التشغيل في الخلفية</string>
+    <string name="playback_sheet_audio_track">المسار الصوتي</string>
+    <string name="playback_sheet_subtitle_track">مسار الترجمة</string>
+    <string name="playback_sheet_subtitle_settings">إعدادات الترجمة</string>
+    <string name="playback_sheet_decoder">وحدة فك التشفير</string>
+    <string name="playback_sheet_aspect">نسبة العرض إلى الارتفاع</string>
+    <string name="playback_sheet_rotation">التدوير</string>
+    <string name="playback_sheet_audio_delay">تأخير الصوت</string>
+    <string name="playback_sheet_zoom">التكبير</string>
+    <string name="playback_sheet_speed_title">سرعة التشغيل</string>
+    <string name="playback_sheet_sleep_custom">وقت مخصص</string>
+    <string name="playback_sheet_about_title">العنوان</string>
+    <string name="playback_sheet_about_duration">المدة</string>
+    <string name="playback_sheet_about_codec">الترميز النشط</string>
+    <string name="playback_sheet_mpv_only_note">ينطبق على محرك MPV فقط.</string>
     <string name="transfer_title">النقل والتنزيل</string>
     <string name="transfer_tab_downloader">أداة التنزيل</string>
     <string name="transfer_tab_file_transfer">نقل الملفات</string>
@@ -924,9 +951,6 @@
     <string name="subtitle_sync_increase">زيادة مزامنة الترجمة</string>
     <string name="subtitle_speed_decrease">تقليل سرعة الترجمة</string>
     <string name="subtitle_speed_increase">زيادة سرعة الترجمة</string>
-    <string name="playback_engine_title">محرك التشغيل</string>
-    <string name="playback_engine_media3">Media3 ExoPlayer (الافتراضي)</string>
-    <string name="playback_engine_mpv">libmpv (محرك أصلي تجريبي)</string>
     <string name="decoder_mode_title">وضع فك التشفير</string>
     <string name="dev_count_videos">%1$d مقطع فيديو</string>
     <string name="dev_count_tracks">%1$d مقطع صوتي</string>

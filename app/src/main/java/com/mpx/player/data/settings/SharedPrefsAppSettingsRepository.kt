@@ -37,8 +37,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             prefs.getBoolean("backgroundPlay", false)
         },
         gesturesEnabled = prefs.getBoolean("gestures_enabled", true),
+        playerTutorialSeen = prefs.getBoolean("player_tutorial_seen", false),
         decoderMode = prefs.getString("decoder_mode", "HW") ?: "HW",
-        playerEngine = prefs.getString("player_engine", "MEDIA3") ?: "MEDIA3",
         subtitleSize = prefs.getString("subtitle_size", "Normal") ?: "Normal",
         subtitleStyle = prefs.getString("subtitle_style", "White") ?: "White",
         subtitleTypeface = prefs.getString("subtitle_typeface", "Default") ?: "Default",
@@ -54,6 +54,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         subtitleAssOverride = prefs.getString("subtitle_ass_override", "Default") ?: "Default",
         subtitleDelayMs = prefs.getInt("subtitle_delay_ms", 0),
         subtitleSpeed = prefs.getFloat("subtitle_speed", 1.0f),
+        audioDelayMs = prefs.getInt("audio_delay_ms", 0),
+        videoZoom = prefs.getFloat("video_zoom", 1.0f),
         // #139: legacy stored values Midnight/Dark/Classic all mean the
         // true-black theme, now called Dark; unknown values follow System.
         appTheme = when (prefs.getString("app_theme", "System")) {
@@ -115,8 +117,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("backgroundPlay", settings.backgroundPlay)
             .putBoolean("background_play", settings.backgroundPlay)
             .putBoolean("gestures_enabled", settings.gesturesEnabled)
+            .putBoolean("player_tutorial_seen", settings.playerTutorialSeen)
             .putString("decoder_mode", settings.decoderMode)
-            .putString("player_engine", settings.playerEngine)
             .putString("subtitle_size", settings.subtitleSize)
             .putString("subtitle_style", settings.subtitleStyle)
             .putString("subtitle_typeface", settings.subtitleTypeface)
@@ -132,6 +134,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("subtitle_ass_override", settings.subtitleAssOverride)
             .putInt("subtitle_delay_ms", settings.subtitleDelayMs)
             .putFloat("subtitle_speed", settings.subtitleSpeed)
+            .putInt("audio_delay_ms", settings.audioDelayMs)
+            .putFloat("video_zoom", settings.videoZoom)
             .putString("app_theme", settings.appTheme)
             .putString("color_palette", settings.colorPalette)
             .putBoolean("popup_play_enabled", settings.popupPlayEnabled)

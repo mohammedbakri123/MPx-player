@@ -1,10 +1,5 @@
 package com.mpx.player.playback
 
-import android.net.Uri
-import androidx.media3.common.C
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MimeTypes
 import com.mpx.player.R
 
 /**
@@ -67,49 +62,7 @@ data class PlayableMedia(
     val durationMs: Long = 0L,
     val subtitleUri: String? = null,
     val externalSubtitles: List<ExternalSubtitle> = emptyList(),
-) {
-    fun toMediaItem(): MediaItem {
-        val builder = MediaItem.Builder()
-            .setMediaId(id)
-            .setUri(Uri.parse(uri))
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(title)
-                    .setArtist(subtitle)
-                    .build()
-            )
-
-        val subConfigs = mutableListOf<MediaItem.SubtitleConfiguration>()
-
-        subtitleUri?.let { subUri ->
-            subConfigs.add(
-                MediaItem.SubtitleConfiguration.Builder(Uri.parse(subUri))
-                    .setMimeType(MimeTypes.TEXT_VTT)
-                    .setLanguage("en")
-                    .setLabel("Subtitles (VTT)")
-                    .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
-                    .build()
-            )
-        }
-
-        externalSubtitles.forEach { ext ->
-            val label = if (ext.name.isNotBlank()) ext.name else "External Subtitle"
-            subConfigs.add(
-                MediaItem.SubtitleConfiguration.Builder(Uri.parse(ext.uri))
-                    .setMimeType(ext.mimeType)
-                    .setLanguage("und")
-                    .setLabel(label)
-                    .build()
-            )
-        }
-
-        if (subConfigs.isNotEmpty()) {
-            builder.setSubtitleConfigurations(subConfigs)
-        }
-
-        return builder.build()
-    }
-}
+)
 
 data class AudioTrackInfo(
     val groupIndex: Int,
@@ -117,10 +70,8 @@ data class AudioTrackInfo(
     val label: String,
     val language: String,
     val isSelected: Boolean,
-    /** ExoPlayer sample MIME type (e.g. audio/ac4), null on mpv where only the codec string is known. */
+    /** Codec string from mpv's track-list (e.g. "aac", "ac3"), null when unknown. */
     val mimeType: String? = null,
-    /** False when the current engine reports this track as undecodable (Media3 track support). */
-    val isSupported: Boolean = true,
 )
 
 data class SubtitleTrackInfo(
@@ -132,10 +83,8 @@ data class SubtitleTrackInfo(
     val isExternal: Boolean = false,
 )
 
-/** Lightweight playback metrics for the MPV engine only (comparison use).
- * All values are measured, never estimated: null means "not observed yet".
- * Media3 returns null (no metrics) — the comparison is MPV-vs-MX-app, and
- * these numbers describe MPx's mpv path only. */
+/** Lightweight playback metrics for the MPV engine.
+ * All values are measured, never estimated: null means "not observed yet". */
 data class EnginePlaybackMetrics(
     /** Load call → FILE_LOADED (READY), last video item, ms. */
     val lastTimeToReadyMs: Long? = null,
@@ -151,8 +100,7 @@ data class EnginePlaybackMetrics(
 )
 
 /** Step-level mpv load diagnostics (issue #96 follow-up): every field is a
- * directly observed fact, never inferred. Null (via the engine default) means
- * "this engine does not report stages" — Media3 rows show "—", not zeroes. */
+ * directly observed fact, never inferred. Null means "no load observed yet". */
 data class MpvLoadStage(
     /** libmpv created + initialized without a captured init failure. */
     val initialized: Boolean = false,
@@ -172,7 +120,7 @@ data class PlaybackState(
     val queue: List<PlayableMedia> = emptyList(),
     val currentIndex: Int = -1,
     val isPlaying: Boolean = false,
-    val playbackState: Int = 1, // Player.STATE_IDLE
+    val playbackState: Int = 1, // PlayerEngine.STATE_IDLE
     /** MX-style preparing state: true from a video load until the engine reports
      * READY (FILE_LOADED) or an error. While true the player shows a loading
      * splash instead of dead 00:00 chrome — MX never presents an unloaded file
@@ -189,9 +137,6 @@ data class PlaybackState(
     val activeDecoderName: String? = null,
     val decoderFallbackNote: String? = null,
     val userNotification: String? = null,
-    /** True when the current userNotification is a codec failure on Media3 and the banner
-     * should offer a one-tap switch to the MPV engine. Cleared with the notification. */
-    val showMpvSwitchOffer: Boolean = false,
     val hasPrevious: Boolean = false,
     val hasNext: Boolean = false,
     val audioTracks: List<AudioTrackInfo> = emptyList(),
@@ -204,8 +149,8 @@ data class PlaybackState(
     val isVideoBackgroundActive: Boolean = false,
     val sleepTimerMinutes: Int? = null,
     val sleepTimerRemainingSeconds: Long? = null,
-    /** Latest measured engine metrics (MPV only; null for Media3 / nothing yet). */
+    /** Latest measured engine metrics (null when nothing observed yet). */
     val playbackMetrics: EnginePlaybackMetrics? = null,
-    /** Latest observed mpv load stage (mpv only; null for Media3). */
+    /** Latest observed mpv load stage (null before any load). */
     val mpvLoadStage: MpvLoadStage? = null,
 )

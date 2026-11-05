@@ -162,7 +162,6 @@
     <string name="subtitle_padding_header">Marge inférieure :</string>
     <string name="subtitle_scale_header">Échelle :</string>
     <string name="subtitle_ass_header">Avancé (styles ASS) :</string>
-    <string name="subtitle_ass_mpv_note">Moteur MPV uniquement ; Media3 applique toujours les styles intégrés.</string>
     <string name="subtitle_sync_header">Synchronisation des sous-titres</string>
     <string name="subtitle_speed_header">Vitesse des sous-titres</string>
     <string name="subtitle_timing_mpv_note">La synchronisation et la vitesse s’appliquent uniquement au moteur MPV.</string>
@@ -288,7 +287,7 @@
     <string name="pip_test_fail_playing">Impossible d’entrer en mode PiP pour le moment. Essayez d’abord de lire une vidéo dans le lecteur.</string>
 
     <string name="dialog_network_title">Flux réseau</string>
-    <string name="dialog_network_desc">Saisissez n’importe quelle URL de flux HTTP, HTTPS ou HLS pour la lire directement dans Media3 ExoPlayer :</string>
+    <string name="dialog_network_desc">Saisissez n’importe quelle URL de flux HTTP, HTTPS ou HLS pour la lire directement :</string>
     <string name="dialog_network_samples">Exemples de flux publics :</string>
     <string name="dialog_network_play">Lire le flux</string>
 
@@ -316,13 +315,13 @@
 
     <string name="dialog_legal_title">Mentions légales et open source</string>
     <string name="legal_sec1_title">Licences open source</string>
-    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer : licence Apache 2.0\n• Jetpack Compose et Material 3 : licence Apache 2.0\n• AndroidX Room Persistence Library : licence Apache 2.0\n• Kotlin Coroutines : licence Apache 2.0</string>
+    <string name="legal_sec1_body">• Jetpack Compose et Material 3 : licence Apache 2.0\n• AndroidX Room Persistence Library : licence Apache 2.0\n• Kotlin Coroutines : licence Apache 2.0</string>
     <string name="legal_sec2_title">Avis d’attribution d’inspiration</string>
     <string name="legal_sec2_body">MPx Player est un lecteur multimédia natif indépendant pour Android, créé en salle blanche. Son organisation et son flux d’expérience s’inspirent de MX Player (selon des spécifications de disposition obtenues par rétro-ingénierie). Tout le code, les vues et le style sont réécrits à 100 % depuis zéro en Kotlin natif et Jetpack Compose. Aucun élément, code ou marque propriétaire n’est incorporé.</string>
     <string name="legal_sec3_title">Conditions d’utilisation</string>
     <string name="legal_sec3_body">MPx Player est fourni \'tel quel\' sans garantie sous la licence Apache 2.0. Les utilisateurs sont responsables de leurs propres fichiers multimédias.</string>
 
-    <string name="dialog_about_body1">Réécriture native pure en Kotlin avec Jetpack Compose, AndroidX Media3 ExoPlayer et persistance Room SQLite.</string>
+    <string name="dialog_about_body1">Réécriture native pure en Kotlin avec Jetpack Compose, libmpv et persistance Room SQLite.</string>
     <string name="dialog_about_body2">Gestion multimédia dense et utilitaire sans dépendance au cloud, sans suivi ni pubs.</string>
 
     <string name="equalizer_dialog_msg">Égaliseur système : aucun panneau de contrôle d’effet audio (par exemple MusicFX ou l’application égaliseur du système) n’a été trouvé sur cet appareil. L’audio utilise une sortie plate standard.</string>
@@ -597,14 +596,14 @@
     <!-- Beta & About Screen -->
     <string name="about_beta_screen_title">À propos et statut bêta</string>
     <string name="about_beta_badge">VERSION BÊTA</string>
-    <string name="about_beta_tagline">Lecteur multimédia natif en Kotlin pour Android avec Media3 ExoPlayer et persistance Room.</string>
+    <string name="about_beta_tagline">Lecteur multimédia natif en Kotlin pour Android avec libmpv et persistance Room.</string>
     <string name="about_beta_build_info">Build %1$d (VersionCode %1$d) • Branche : %2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">CE QUI EST PRÊT DANS LA BÊTA</string>
     <string name="about_beta_ready_subtitle">Les fonctions principales de lecture hors ligne et de bibliothèque sont des implémentations natives entièrement fonctionnelles :</string>
-    <string name="about_beta_feat_player_title">Moteur de lecture vidéo Media3</string>
-    <string name="about_beta_feat_player_desc">Décodage matériel (HW/HW+) et logiciel (SW) via AndroidX Media3 ExoPlayer. Gestes vidéo (double appui pour avancer/reculer de 10 s, glisser horizontal pour naviguer), contrôles de format d’image (Ajuster/Étirer/16:9/Original), sous-titres intégrés et externes (.srt, .vtt) et bascule multi-piste audio.</string>
+    <string name="about_beta_feat_player_title">Moteur de lecture vidéo mpv</string>
+    <string name="about_beta_feat_player_desc">Décodage matériel (HW/HW+) et logiciel (SW) via libmpv. Gestes vidéo (double appui pour avancer/reculer de 10 s, glisser horizontal pour naviguer), contrôles de format d’image (Ajuster/Étirer/16:9/Original), sous-titres intégrés et externes (.srt, .vtt) et bascule multi-piste audio.</string>
     <string name="about_beta_feat_bg_pip_title">Lecture en arrière-plan et fenêtre flottante (PiP)</string>
     <string name="about_beta_feat_bg_pip_desc">Mode flottant image dans l’image avec contrôles de fenêtre personnalisés sur Android 8.0+. Vraie lecture audio en arrière-plan pour les vidéos et la musique via service de premier plan.</string>
     <string name="about_beta_feat_music_title">Lecteur de musique et bibliothèque audio</string>
@@ -805,7 +804,19 @@
     <string name="player_sleep_timer_cancel">Annuler le minuteur de mise en veille</string>
     <string name="player_sleep_timer_set_toast">Minuteur de mise en veille réglé sur %1$d minutes</string>
     <string name="player_sleep_timer_canceled_toast">Minuteur de mise en veille désactivé</string>
-    <string name="player_gesture_hint">Double appui : -10 s (gauche) / Lecture-Pause / +10 s (droite) • Glisser horiz. : naviguer • Glisser vert. : luminosité (gauche) / volume (droite)</string>
+    <string name="player_tutorial_title">Gestes du lecteur</string>
+    <string name="player_tutorial_step_double_tap_title">Double appui</string>
+    <string name="player_tutorial_step_double_tap_desc">Appuyez à gauche pour reculer de 10 secondes, au centre pour lire ou mettre en pause, et à droite pour avancer de 10 secondes.</string>
+    <string name="player_tutorial_step_seek_title">Glisser pour naviguer</string>
+    <string name="player_tutorial_step_seek_desc">Faites glisser horizontalement sur la vidéo pour avancer ou reculer.</string>
+    <string name="player_tutorial_step_brightness_title">Côté gauche : luminosité</string>
+    <string name="player_tutorial_step_brightness_desc">Glissez vers le haut ou le bas du côté gauche de la vidéo pour changer la luminosité.</string>
+    <string name="player_tutorial_step_volume_title">Côté droit : volume</string>
+    <string name="player_tutorial_step_volume_desc">Glissez vers le haut ou le bas du côté droit de la vidéo pour changer le volume.</string>
+    <string name="player_tutorial_next">Suivant</string>
+    <string name="player_tutorial_skip">Passer</string>
+    <string name="player_tutorial_got_it">Compris</string>
+    <string name="player_menu_tutorial">Tutoriel des gestes</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">Aucune vidéo en attente</string>
@@ -820,7 +831,6 @@
     <string name="player_resumed_from">Reprise à %1$s</string>
     <string name="player_start_over">Recommencer</string>
     <string name="player_cd_dismiss">Ignorer</string>
-    <string name="player_cd_dismiss_hint">Ignorer l\'astuce</string>
     <string name="player_cd_unlock">Déverrouiller les commandes</string>
     <string name="player_cd_lock">Verrouiller les commandes</string>
     <string name="player_cd_back">Retour</string>
@@ -867,11 +877,6 @@
     <string name="player_active_codec">Codec vidéo actif : %1$s</string>
     <string name="player_codec_initializing">Initialisation / attente d\'une image vidéo...</string>
     <string name="player_codec_error">Échec de lecture : le codec %1$s n’est pas pris en charge</string>
-    <string name="player_no_audio_codec">Aucun son : les pistes audio de ce fichier (%1$s) ne peuvent pas être décodées sur cet appareil. Essayez le moteur MPV.</string>
-    <string name="player_media3_failed_mpv">Media3 a échoué pour le codec %1$s. Basculé vers le moteur MPV.</string>
-    <string name="player_try_mpv">Essayer MPV</string>
-    <string name="player_mpv_start_failed">Le moteur MPV n’a pas pu démarrer : %1$s. Media3 sera utilisé à la place.</string>
-    <string name="player_mpv_failed_media3">Le moteur MPV a échoué (%1$s). Basculé vers le moteur Media3.</string>
     <string name="player_dialog_unsupported_subtitle">Format de sous-titres non pris en charge</string>
     <string name="player_menu_title">Paramètres de lecture</string>
     <string name="player_menu_decoder_mode">Mode décodeur (%1$s)</string>
@@ -890,6 +895,28 @@
     <string name="player_menu_aspect">Format d\'image : %1$s</string>
     <string name="player_menu_rotation">Rotation de l\'écran (%1$s)</string>
     <string name="player_menu_add_playlist">Ajouter à une playlist...</string>
+    <!-- Playback sheet (issue #153) -->
+    <string name="playback_sheet_title">Lecture</string>
+    <string name="playback_sheet_section_video">Vidéo</string>
+    <string name="playback_sheet_section_audio">Audio</string>
+    <string name="playback_sheet_section_subtitles">Sous-titres</string>
+    <string name="playback_sheet_section_about">À propos de ce fichier</string>
+    <string name="playback_sheet_repeat">Répéter</string>
+    <string name="playback_sheet_background_play">Lecture en arrière-plan</string>
+    <string name="playback_sheet_audio_track">Piste audio</string>
+    <string name="playback_sheet_subtitle_track">Piste de sous-titres</string>
+    <string name="playback_sheet_subtitle_settings">Réglages des sous-titres</string>
+    <string name="playback_sheet_decoder">Décodeur</string>
+    <string name="playback_sheet_aspect">Format d’image</string>
+    <string name="playback_sheet_rotation">Rotation</string>
+    <string name="playback_sheet_audio_delay">Délai audio</string>
+    <string name="playback_sheet_zoom">Zoom</string>
+    <string name="playback_sheet_speed_title">Vitesse de lecture</string>
+    <string name="playback_sheet_sleep_custom">Durée personnalisée</string>
+    <string name="playback_sheet_about_title">Titre</string>
+    <string name="playback_sheet_about_duration">Durée</string>
+    <string name="playback_sheet_about_codec">Codec actif</string>
+    <string name="playback_sheet_mpv_only_note">S’applique uniquement au moteur MPV.</string>
     <string name="transfer_title">Transfert et téléchargement</string>
     <string name="transfer_tab_downloader">Téléchargeur</string>
     <string name="transfer_tab_file_transfer">Transfert de fichiers</string>
@@ -924,9 +951,6 @@
     <string name="subtitle_sync_increase">Augmenter la synchronisation des sous-titres</string>
     <string name="subtitle_speed_decrease">Diminuer la vitesse des sous-titres</string>
     <string name="subtitle_speed_increase">Augmenter la vitesse des sous-titres</string>
-    <string name="playback_engine_title">Moteur de lecture</string>
-    <string name="playback_engine_media3">Media3 ExoPlayer (Par défaut)</string>
-    <string name="playback_engine_mpv">libmpv (Moteur natif expérimental)</string>
     <string name="decoder_mode_title">Mode décodeur</string>
     <string name="dev_count_videos">%1$d vidéos</string>
     <string name="dev_count_tracks">%1$d pistes</string>

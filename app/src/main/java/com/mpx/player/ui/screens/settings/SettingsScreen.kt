@@ -93,6 +93,7 @@ import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.buildDiagnosticsReport
 import com.mpx.player.playback.buildDiagnosticsSummary
+import com.mpx.player.playback.engine.PlayerEngine
 import com.mpx.player.ui.components.MpvLogShareButton
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.util.LocaleHelper
@@ -151,7 +152,6 @@ fun SettingsScreen(
         val oldLanguage = settings.appLanguage
         val oldTheme = settings.appTheme
         val oldPalette = settings.colorPalette
-        val oldEngine = settings.playerEngine
         val oldDecoder = settings.decoderMode
         settings = next
         settingsRepository.save(next)
@@ -163,9 +163,6 @@ fun SettingsScreen(
         }
         if (next.colorPalette != oldPalette) {
             onPaletteChanged?.invoke(next.colorPalette)
-        }
-        if (next.playerEngine != oldEngine) {
-            actualPlaybackManager.setPlayerEngine(next.playerEngine)
         }
         if (next.decoderMode != oldDecoder) {
             val decMode = com.mpx.player.playback.DecoderMode.values().find { it.label == next.decoderMode } ?: com.mpx.player.playback.DecoderMode.HW
@@ -623,21 +620,6 @@ fun SettingsScreen(
                             }
                             "decoder" -> {
                                 Text(
-                                    stringResource(R.string.playback_engine_title),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MpxTheme.colors.primary,
-                                    modifier = Modifier.padding(vertical = 4.dp),
-                                )
-                                listOf(
-                                    "MEDIA3" to stringResource(R.string.playback_engine_media3),
-                                    "MPV" to stringResource(R.string.playback_engine_mpv),
-                                ).forEach { (engine, label) ->
-                                    ChoiceRow(label, settings.playerEngine.equals(engine, ignoreCase = true)) {
-                                        update(settings.copy(playerEngine = engine))
-                                    }
-                                }
-                                Spacer(Modifier.height(8.dp))
-                                Text(
                                     stringResource(R.string.decoder_mode_title),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MpxTheme.colors.primary,
@@ -781,14 +763,9 @@ fun SettingsScreen(
                                 ).forEach { (mode, label) ->
                                     ChoiceRow(label, settings.subtitleAssOverride == mode) { update(settings.copy(subtitleAssOverride = mode)) }
                                 }
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    stringResource(R.string.subtitle_ass_mpv_note),
-                                    style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary,
-                                )
 
                                 // Subtitle timing (issue #79, MX menu_subtitle sync/speed):
-                                // persisted; applied on mpv only (see note below).
+                                // persisted; applied live on mpv.
                                 Spacer(Modifier.height(8.dp))
                                 StepperRow(
                                     label = stringResource(R.string.subtitle_sync_header),
@@ -817,11 +794,6 @@ fun SettingsScreen(
                                     onReset = if (settings.subtitleSpeed != 1.0f) {
                                         { update(settings.copy(subtitleSpeed = 1.0f)) }
                                     } else null,
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    stringResource(R.string.subtitle_timing_mpv_note),
-                                    style = MaterialTheme.typography.bodySmall, color = MpxTheme.colors.textSecondary,
                                 )
                             }
                             // #158: Advanced = the old Development section
@@ -1225,10 +1197,10 @@ private fun DevelopmentSettingsSection(
             else -> settings.decoderMode
         }
         val playerStateText = when (playbackState.playbackState) {
-            androidx.media3.common.Player.STATE_READY -> if (playbackState.isPlaying) stringResource(R.string.dev_state_playing) else stringResource(R.string.dev_state_paused)
-            androidx.media3.common.Player.STATE_BUFFERING -> stringResource(R.string.dev_state_buffering)
-            androidx.media3.common.Player.STATE_ENDED -> stringResource(R.string.dev_state_ended)
-            androidx.media3.common.Player.STATE_IDLE -> stringResource(R.string.dev_state_idle)
+            PlayerEngine.STATE_READY -> if (playbackState.isPlaying) stringResource(R.string.dev_state_playing) else stringResource(R.string.dev_state_paused)
+            PlayerEngine.STATE_BUFFERING -> stringResource(R.string.dev_state_buffering)
+            PlayerEngine.STATE_ENDED -> stringResource(R.string.dev_state_ended)
+            PlayerEngine.STATE_IDLE -> stringResource(R.string.dev_state_idle)
             else -> stringResource(R.string.dev_state_idle)
         }
         val activeMediaText = playbackState.currentItem?.let {
@@ -1246,11 +1218,11 @@ private fun DevelopmentSettingsSection(
 
         DiagnosticRow(
             label = stringResource(R.string.dev_label_engine_name),
-            value = if (playbackManager.isMpv) "libmpv (mpv-android-lib 0.1.12)" else "AndroidX Media3 ExoPlayer 1.3.1",
+            value = "libmpv (mpv-android-lib 0.1.12)",
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_engine_type),
-            value = if (playbackManager.isMpv) "C/C++ Native libmpv Core" else "Native Kotlin/Java Core (Standalone)",
+            value = "C/C++ Native libmpv Core",
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_decoder_mode),
@@ -1277,9 +1249,9 @@ private fun DevelopmentSettingsSection(
             label = stringResource(R.string.dev_label_decoder_fallback),
             value = fallbackNote,
         )
-        // Playback metrics (MPV-vs-Media3 comparison): measured values for the
-        // current engine, refreshed by the position ticker. "—" means not
-        // observed yet (e.g. no video played, or Media3's unmeasured fields).
+        // Playback metrics: measured values for the mpv engine, refreshed
+        // by the position ticker. "—" means not observed yet (e.g. no video
+        // played).
         val metrics = playbackState.playbackMetrics
         DiagnosticRow(
             label = stringResource(R.string.dev_label_metrics_ready),
@@ -1302,14 +1274,14 @@ private fun DevelopmentSettingsSection(
             value = metrics?.let { "${it.hardErrorCount}" } ?: "—",
         )
         // mpv load stage (issue #96 follow-up): step-level facts for the
-        // current mpv load, refreshed by the same ticker. "—" on Media3
-        // (no stage reporting) or before any load. How to read a stuck mpv
-        // load: initialized=no → libmpv never started (init failure, see the
-        // banner); surface=no → PlayerScreen never attached a surface, so
-        // the load is still deferred; load=no → loadfile was never issued;
-        // last event=none with load=yes → libmpv swallowed the load without
-        // any event (the infinite-spinner case) — that is when the 20s
-        // watchdog fires and the banner names this stage.
+        // current mpv load, refreshed by the same ticker. "—" before any
+        // load. How to read a stuck mpv load: initialized=no → libmpv never
+        // started (init failure, see the banner); surface=no → PlayerScreen
+        // never attached a surface, so the load is still deferred; load=no
+        // → loadfile was never issued; last event=none with load=yes →
+        // libmpv swallowed the load without any event (the infinite-spinner
+        // case) — that is when the 20s watchdog fires and the banner names
+        // this stage.
         val stage = playbackState.mpvLoadStage
         val yes = stringResource(R.string.dev_val_yes)
         val no = stringResource(R.string.dev_val_no)
@@ -1341,7 +1313,7 @@ private fun DevelopmentSettingsSection(
     DiagnosticSection(title = stringResource(R.string.dev_section_diagnostics_export)) {
         OutlinedButton(
             onClick = {
-                val text = buildDiagnosticsSummary(playbackState, settings, playbackManager.isMpv)
+                val text = buildDiagnosticsSummary(playbackState, settings)
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                 clipboard?.setPrimaryClip(ClipData.newPlainText("MPx diagnostics", text))
                 Toast.makeText(context, context.getString(R.string.dev_val_copied), Toast.LENGTH_SHORT).show()
