@@ -1,8 +1,10 @@
 package com.mpx.player.ui.components
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -34,6 +36,7 @@ fun MpxPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    icon: ImageVector? = null,
 ) {
     Button(
         onClick = onClick,
@@ -48,6 +51,10 @@ fun MpxPrimaryButton(
         ),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null)
+            Spacer(modifier = Modifier.size(8.dp))
+        }
         Text(text)
     }
 }

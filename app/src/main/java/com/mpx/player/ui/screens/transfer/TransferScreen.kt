@@ -1,6 +1,5 @@
 package com.mpx.player.ui.screens.transfer
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -27,8 +25,6 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -65,7 +61,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.HonestStatusBanner
+import com.mpx.player.ui.components.MpxCard
+import com.mpx.player.ui.components.MpxPrimaryButton
 import kotlinx.coroutines.launch
+import com.mpx.player.ui.theme.MpxBlack
+import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSurfaceVariant
+import com.mpx.player.ui.theme.MpxTextPrimary
+import com.mpx.player.ui.theme.MpxTextSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,7 +87,7 @@ fun TransferScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MpxBlack,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -92,11 +98,11 @@ fun TransferScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                         ),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MpxBlack,
                 ),
             )
         },
@@ -108,16 +114,16 @@ fun TransferScreen(
         ) {
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.primary,
+                containerColor = MpxBlack,
+                contentColor = MpxPrimary,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MpxPrimary,
                     )
                 },
                 divider = {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+                    HorizontalDivider(color = MpxBorder, thickness = MpxHairline)
                 },
             ) {
                 Tab(
@@ -127,7 +133,7 @@ fun TransferScreen(
                         Text(
                             text = stringResource(R.string.transfer_tab_downloader),
                             style = MaterialTheme.typography.titleSmall,
-                            color = if (selectedTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (selectedTab == 0) MpxPrimary else MpxTextSecondary,
                         )
                     },
                 )
@@ -138,7 +144,7 @@ fun TransferScreen(
                         Text(
                             text = stringResource(R.string.transfer_tab_file_transfer),
                             style = MaterialTheme.typography.titleSmall,
-                            color = if (selectedTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (selectedTab == 1) MpxPrimary else MpxTextSecondary,
                         )
                     },
                 )
@@ -158,25 +164,22 @@ fun TransferScreen(
 
                     Spacer(Modifier.height(16.dp))
 
-                    Card(
+                    MpxCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                        shape = RoundedCornerShape(16.dp),
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Filled.Download,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MpxPrimary,
                                     modifier = Modifier.size(24.dp),
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Text(
                                     text = stringResource(R.string.transfer_url_downloader),
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = MpxTextPrimary,
                                     fontWeight = FontWeight.Bold,
                                 )
                             }
@@ -186,7 +189,7 @@ fun TransferScreen(
                             Text(
                                 text = stringResource(R.string.transfer_url_desc),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MpxTextSecondary,
                             )
 
                             Spacer(Modifier.height(14.dp))
@@ -198,7 +201,7 @@ fun TransferScreen(
                                 placeholder = {
                                     Text(
                                         stringResource(R.string.transfer_url_placeholder),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MpxTextSecondary,
                                         fontSize = 14.sp,
                                     )
                                 },
@@ -206,7 +209,7 @@ fun TransferScreen(
                                     Icon(
                                         imageVector = Icons.Filled.Link,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = MpxTextSecondary,
                                     )
                                 },
                                 trailingIcon = {
@@ -223,25 +226,27 @@ fun TransferScreen(
                                         Icon(
                                             imageVector = Icons.Filled.ContentPaste,
                                             contentDescription = stringResource(R.string.transfer_cd_paste),
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = MpxPrimary,
                                         )
                                     }
                                 },
                                 singleLine = true,
-                                shape = RoundedCornerShape(12.dp),
+                                shape = MpxShapes.medium,
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    focusedContainerColor = MpxBlack,
+                                    unfocusedContainerColor = MpxBlack,
+                                    focusedBorderColor = MpxPrimary,
+                                    unfocusedBorderColor = MpxBorder,
+                                    focusedTextColor = MpxTextPrimary,
+                                    unfocusedTextColor = MpxTextPrimary,
                                 ),
                             )
 
                             Spacer(Modifier.height(14.dp))
 
-                            Button(
+                            MpxPrimaryButton(
+                                text = stringResource(R.string.transfer_start_download),
+                                icon = Icons.Filled.Download,
                                 onClick = {
                                     scope.launch {
                                         snackbarHostState.showSnackbar(
@@ -250,23 +255,7 @@ fun TransferScreen(
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onSurface,
-                                ),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Download,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    stringResource(R.string.transfer_start_download),
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                            }
+                            )
                         }
                     }
 
@@ -275,7 +264,7 @@ fun TransferScreen(
                     Text(
                         text = stringResource(R.string.transfer_download_tasks),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MpxTextSecondary,
                         fontSize = 12.sp,
                     )
 
@@ -305,15 +294,15 @@ fun TransferScreen(
                     Box(
                         modifier = Modifier
                             .size(80.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp)),
+                            .clip(MpxShapes.extraLarge)
+                            .background(MpxBlack)
+                            .border(MpxHairline, MpxBorder, MpxShapes.extraLarge),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Filled.SwapHoriz,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MpxPrimary,
                             modifier = Modifier.size(48.dp),
                         )
                     }
@@ -326,7 +315,7 @@ fun TransferScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                         ),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                     )
 
                     Spacer(Modifier.height(8.dp))
@@ -334,7 +323,7 @@ fun TransferScreen(
                     Text(
                         text = stringResource(R.string.transfer_direct_desc),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MpxTextSecondary,
                         modifier = Modifier.padding(horizontal = 24.dp),
                     )
 
@@ -353,10 +342,10 @@ fun TransferScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(52.dp),
-                            shape = RoundedCornerShape(14.dp),
+                            shape = MpxShapes.large,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                containerColor = MpxPrimary,
+                                contentColor = MpxTextPrimary,
                             ),
                         ) {
                             Icon(Icons.Filled.ArrowUpward, null, Modifier.size(20.dp))
@@ -373,15 +362,15 @@ fun TransferScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(52.dp),
-                            shape = RoundedCornerShape(14.dp),
+                            shape = MpxShapes.large,
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                contentColor = MpxTextPrimary,
                             ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MpxPrimary),
                         ) {
-                            Icon(Icons.Filled.ArrowDownward, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Filled.ArrowDownward, null, Modifier.size(20.dp), tint = MpxPrimary)
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.transfer_receive), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
+                            Text(stringResource(R.string.transfer_receive), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MpxPrimary)
                         }
                     }
                 }
