@@ -65,6 +65,7 @@ fun MpxSecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    icon: ImageVector? = null,
 ) {
     OutlinedButton(
         onClick = onClick,
@@ -80,6 +81,10 @@ fun MpxSecondaryButton(
         ),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null)
+            Spacer(modifier = Modifier.size(8.dp))
+        }
         Text(text)
     }
 }
