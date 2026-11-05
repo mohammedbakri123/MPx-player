@@ -99,7 +99,10 @@ fun MiniPlayer(
             onDismiss = { showQueue = false },
             onSelect = { index ->
                 showQueue = false
-                playbackManager.playQueue(state.queue, startIndex = index)
+                // Issue #203: this is a pick inside the live queue, not a
+                // new queue — playLiveQueueItem keeps the shuffle state
+                // (pre-shuffle order + flag) instead of destroying it.
+                playbackManager.playLiveQueueItem(index)
             },
         )
     }
@@ -283,7 +286,8 @@ fun MiniPlayer(
 /**
  * Real current-queue list for the mini-player queue button (issue #73).
  * Shows exactly PlaybackState.queue — never invented entries. Tapping an
- * entry plays that queue position via PlaybackManager.playQueue; the
+ * entry plays that queue position via PlaybackManager.playLiveQueueItem
+ * (issue #203: a live-queue pick, so the shuffle state is preserved); the
  * current entry is highlighted and labelled. Screenshot-only evidence
  * per the V1 re-grounding report: the local mini-player has no layout
  * in the decoded MX tree, so this follows the screenshots, not the decode.
