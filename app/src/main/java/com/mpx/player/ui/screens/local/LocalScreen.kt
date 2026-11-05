@@ -73,6 +73,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -775,7 +776,11 @@ fun LocalScreen(
                     }
                 },
                 containerColor = MpxTheme.colors.primary,
-                contentColor = MpxTheme.colors.textPrimary,
+                // #148: the icon sits on the primary background, so it uses
+                // White (the schemes' onPrimary in both Dark and Light),
+                // not textPrimary, which is near-black in Light and showed
+                // a black triangle on the blue FAB.
+                contentColor = Color.White,
                 shape = MpxShapes.large,
             ) {
                 Icon(
