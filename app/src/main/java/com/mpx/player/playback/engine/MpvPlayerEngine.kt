@@ -13,6 +13,7 @@ import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
+import com.mpx.player.playback.ExternalSubtitle
 import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.MpvLogFile
 import com.mpx.player.playback.MpxMediaCodecSelector
@@ -1364,6 +1365,24 @@ class MpvPlayerEngine(
     }
 
     /**
+     * Issue #197: are two ExternalSubtitle entries the same file? The
+     * display name is the stable identity — but only the stable one for
+     * content:// subtitles, whose engine-side URI is a fresh `fd://<n>`
+     * on every resolve (MpvFdOpener opens a new fd per call), so the URI
+     * can never match across calls for them. File-path subtitles keep a
+     * stable URI, so those must match too: two different files that
+     * happen to share a display name (different folders) are NOT the
+     * same sub. Honest limit: two same-named content:// files cannot be
+     * told apart here — the engine never sees their original URI — so
+     * the second one is skipped. The manager still dedupes the item's
+     * list by original URI, so the list itself stays correct.
+     */
+    private fun isSameExternalSubtitle(a: ExternalSubtitle, b: ExternalSubtitle): Boolean {
+        if (a.name != b.name) return false
+        return a.uri == b.uri || a.uri.startsWith("fd://") || b.uri.startsWith("fd://")
+    }
+
+    /**
      * Issue #192: pin mpv's `sid` option to the currently selected
      * EXTERNAL subtitle track. `sub-add` with the "select" flag only
      * changes the current selection — it leaves `sid` at its default
@@ -1389,6 +1408,9 @@ class MpvPlayerEngine(
 
     override fun replaceMediaItem(index: Int, media: PlayableMedia) {
         if (index in currentQueue.indices) {
+            // Issue #197: remember the item mpv already has, so only
+            // genuinely NEW external subtitles are sub-added below.
+            val previous = currentQueue.getOrNull(index)
             val updated = currentQueue.toMutableList()
             updated[index] = media
             currentQueue = updated
@@ -1400,13 +1422,28 @@ class MpvPlayerEngine(
 
             if (index == currentMediaIndex) {
                 if (fileLoadedForCurrentItem) {
-                    media.externalSubtitles.forEach { ext ->
-                        try {
-                            mpv.command("sub-add", ext.uri, "select", ext.name)
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Failed adding external subtitle ${ext.name}", e)
+                    // Issue #197: sub-add ONLY the external subtitles
+                    // that are new since the previous item. The manager
+                    // hands replaceMediaItem the item's FULL external
+                    // list (existing + newly added), and mpv creates a
+                    // brand-new track for every sub-add call with no
+                    // dedupe — so re-adding the whole list duplicated
+                    // the first .srt the moment a second one was added.
+                    // The not-loaded branch below intentionally keeps
+                    // the full list: pendingSubtitles is overwritten,
+                    // not appended, and dispatched exactly once on
+                    // FILE_LOADED, so it cannot duplicate.
+                    media.externalSubtitles
+                        .filter { ext ->
+                            previous?.externalSubtitles?.none { isSameExternalSubtitle(it, ext) } ?: true
                         }
-                    }
+                        .forEach { ext ->
+                            try {
+                                mpv.command("sub-add", ext.uri, "select", ext.name)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed adding external subtitle ${ext.name}", e)
+                            }
+                        }
                     // Issue #192: pin sid to the just-added external
                     // track — sub-add "select" alone does not stick.
                     pinSelectedExternalSubtitleTrack()
