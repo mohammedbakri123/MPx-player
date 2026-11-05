@@ -32,7 +32,6 @@ import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.components.FastScrollbar
 import com.mpx.player.ui.components.GridFastScrollbar
 import java.util.Locale
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
@@ -121,6 +120,8 @@ import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.screens.local.AudioAlbumGridCard
 import com.mpx.player.ui.screens.local.AudioAlbumRow
+import com.mpx.player.ui.screens.local.AudioArtistGridCard
+import com.mpx.player.ui.screens.local.AudioArtistRow
 import com.mpx.player.ui.screens.local.AudioTrackGridCard
 import com.mpx.player.ui.screens.local.AudioTrackRow
 import com.mpx.player.ui.screens.local.LocalSortPopup
@@ -237,6 +238,26 @@ fun MusicScreen(
             else selectedAlbumIds + key
     }
 
+    // #185: long-press multi-select on the Artists tab, mirroring the
+    // Tracks/Albums slices / Local's #144. Keyed like Albums (id,
+    // falling back to name). Long-press toggles an item (entering
+    // selection mode when empty); a tap while selecting toggles too.
+    // Back / the X exits and clears.
+    var selectedArtistIds by remember { mutableStateOf(setOf<String>()) }
+    val isArtistSelectionMode = selectedArtistIds.isNotEmpty()
+    val artistSelectionCount = selectedArtistIds.size
+
+    fun clearArtistSelection() {
+        selectedArtistIds = emptySet()
+    }
+
+    fun toggleArtistSelection(artist: AudioArtist) {
+        val key = artist.id.ifBlank { artist.name }
+        selectedArtistIds =
+            if (selectedArtistIds.contains(key)) selectedArtistIds - key
+            else selectedArtistIds + key
+    }
+
     fun updateViewMode(newMode: ViewMode) {
         viewMode = newMode
         val updated = if (appSettings.separateViewLayout) {
@@ -298,9 +319,10 @@ fun MusicScreen(
     }
 
     // #185: Back exits multi-select (exactly one step), like Local.
-    BackHandler(enabled = isTrackSelectionMode || isAlbumSelectionMode) {
+    BackHandler(enabled = isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode) {
         clearTrackSelection()
         clearAlbumSelection()
+        clearArtistSelection()
     }
 
     // #185: leaving a tab drops its selection — a selection must not
@@ -308,6 +330,7 @@ fun MusicScreen(
     LaunchedEffect(selectedTab) {
         if (selectedTab != MusicTab.TRACKS) clearTrackSelection()
         if (selectedTab != MusicTab.ALBUMS) clearAlbumSelection()
+        if (selectedTab != MusicTab.ARTISTS) clearArtistSelection()
     }
 
     var showManageTabsDialog by remember { mutableStateOf(false) }
@@ -474,6 +497,33 @@ fun MusicScreen(
         )
     }
 
+    // #185: the Artists tab shares the screen search box (contains-filter
+    // on name, like Tracks/Albums) and the shared sort state — one
+    // sortField / sortReverse for the whole Music screen, like Local.
+    // There is no separate artists sort: the popup edits the same field.
+    val filteredArtists = remember(artists, searchQuery) {
+        if (searchQuery.isBlank()) {
+            artists
+        } else {
+            artists.filter {
+                it.name.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    // #185: the shared MediaSortComparator for artists — same field
+    // semantics as the audio album comparator. Artists carry no duration:
+    // SIZE / DURATION sort by track count (most tracks first).
+    val sortedArtists = remember(filteredArtists, sortField, appSettings.sortReverse) {
+        filteredArtists.sortedWith(
+            MediaSortComparator.audioArtistComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
     fun selectedTracksInView(): List<AudioTrack> =
         sortedTracks.filter { selectedTrackIds.contains(it.id.ifBlank { it.path }) }
 
@@ -595,6 +645,71 @@ fun MusicScreen(
         }
     }
 
+    // #185: Artists multi-select actions, mirroring the Albums ones. An
+    // artist's tracks are its library tracks (getAudioArtists groups by
+    // artist name), in library order — no new repository call needed.
+    fun artistTracks(artist: AudioArtist): List<AudioTrack> =
+        tracks.filter { it.artist == artist.name }
+
+    fun selectedArtistsInView(): List<AudioArtist> =
+        sortedArtists.filter { selectedArtistIds.contains(it.id.ifBlank { it.name }) }
+
+    fun selectedArtistTracks(): List<AudioTrack> =
+        selectedArtistsInView().flatMap { artistTracks(it) }
+
+    fun playArtistSelection() {
+        val artistTrackList = selectedArtistTracks()
+        if (artistTrackList.isNotEmpty()) {
+            playbackManager?.playAudioQueue(artistTrackList, startIndex = 0)
+            onOpenPlayer()
+            clearArtistSelection()
+        }
+    }
+
+    fun addArtistSelectionToPlaylist() {
+        val artistTrackList = selectedArtistTracks()
+        if (artistTrackList.isNotEmpty()) {
+            tracksForPlaylistAdd = artistTrackList
+            showAddToPlaylistDialog = true
+        }
+    }
+
+    fun toggleArtistSelectionFavourite() {
+        val selected = selectedArtistTracks()
+        if (selected.isEmpty()) return
+        val favUris = favourites.map { it.mediaUri }.toSet()
+        scope.launch(Dispatchers.IO) {
+            // Toggle as a group: if every selected track is already a
+            // favourite, remove them all; otherwise add the missing ones.
+            val allFav = selected.all { favUris.contains(it.path) }
+            if (allFav) {
+                selected.forEach { persistenceRepository.removeFavourite(it.path) }
+            } else {
+                selected.filter { !favUris.contains(it.path) }.forEach { track ->
+                    persistenceRepository.addFavourite(
+                        FavouriteItem(
+                            mediaId = track.id,
+                            title = track.title,
+                            subtitle = "${track.artist} • ${track.album}",
+                            mediaUri = track.path,
+                            isVideo = false,
+                            durationMs = track.durationMs,
+                        )
+                    )
+                }
+            }
+            withContext(Dispatchers.Main) {
+                clearArtistSelection()
+                snackbarHostState.showSnackbar(
+                    context.getString(
+                        if (allFav) R.string.snackbar_removed_favourites
+                        else R.string.snackbar_added_to_favourites
+                    )
+                )
+            }
+        }
+    }
+
     var isRefreshing by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading) {
         if (!isLoading) isRefreshing = false
@@ -605,13 +720,14 @@ fun MusicScreen(
         containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (isTrackSelectionMode || isAlbumSelectionMode) {
+            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode) {
                 // #185: selection top bar — count + close. Back exits too.
                 TopAppBar(
                     navigationIcon = {
                         IconButton(onClick = {
                             clearTrackSelection()
                             clearAlbumSelection()
+                            clearArtistSelection()
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
@@ -624,7 +740,11 @@ fun MusicScreen(
                         Text(
                             text = stringResource(
                                 R.string.multiselect_selected_count,
-                                if (isAlbumSelectionMode) albumSelectionCount else trackSelectionCount,
+                                when {
+                                    isAlbumSelectionMode -> albumSelectionCount
+                                    isArtistSelectionMode -> artistSelectionCount
+                                    else -> trackSelectionCount
+                                },
                             ),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
@@ -719,11 +839,11 @@ fun MusicScreen(
             }
         },
         bottomBar = {
-            if (isTrackSelectionMode || isAlbumSelectionMode) {
+            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode) {
                 // #185: multi-select action bar — exactly the track-menu
                 // actions: Play, Add to playlist, Favourite. No delete.
-                // On Albums the same three actions run over the selected
-                // albums' tracks.
+                // On Albums / Artists the same three actions run over the
+                // selected albums' / artists' tracks.
                 Column {
                     HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
                     Row(
@@ -735,19 +855,37 @@ fun MusicScreen(
                         MultiSelectAction(
                             icon = Icons.Filled.PlayArrow,
                             label = stringResource(R.string.video_item_play),
-                            onClick = { if (isAlbumSelectionMode) playAlbumSelection() else playTrackSelection() },
+                            onClick = {
+                                when {
+                                    isAlbumSelectionMode -> playAlbumSelection()
+                                    isArtistSelectionMode -> playArtistSelection()
+                                    else -> playTrackSelection()
+                                }
+                            },
                             modifier = Modifier.weight(1f),
                         )
                         MultiSelectAction(
                             icon = Icons.AutoMirrored.Filled.QueueMusic,
                             label = stringResource(R.string.music_menu_add_to_playlist),
-                            onClick = { if (isAlbumSelectionMode) addAlbumSelectionToPlaylist() else addTrackSelectionToPlaylist() },
+                            onClick = {
+                                when {
+                                    isAlbumSelectionMode -> addAlbumSelectionToPlaylist()
+                                    isArtistSelectionMode -> addArtistSelectionToPlaylist()
+                                    else -> addTrackSelectionToPlaylist()
+                                }
+                            },
                             modifier = Modifier.weight(1f),
                         )
                         MultiSelectAction(
                             icon = Icons.Filled.Favorite,
                             label = stringResource(R.string.music_menu_toggle_favourite),
-                            onClick = { if (isAlbumSelectionMode) toggleAlbumSelectionFavourite() else toggleTrackSelectionFavourite() },
+                            onClick = {
+                                when {
+                                    isAlbumSelectionMode -> toggleAlbumSelectionFavourite()
+                                    isArtistSelectionMode -> toggleArtistSelectionFavourite()
+                                    else -> toggleTrackSelectionFavourite()
+                                }
+                            },
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -1009,11 +1147,34 @@ fun MusicScreen(
                                 message = stringResource(R.string.music_empty_artists_desc),
                                 icon = Icons.Filled.Person,
                             )
+                        } else if (filteredArtists.isEmpty()) {
+                            EmptyStateView(
+                                title = stringResource(R.string.music_search_no_matches_title),
+                                message = stringResource(R.string.music_search_no_matches_desc, searchQuery),
+                                icon = Icons.Filled.Search,
+                            )
                         } else {
-                            ArtistsTabContent(artists = artists, onArtistClick = {
-                                playbackManager?.playAudioQueue(tracks, startIndex = 0)
-                                onOpenPlayer()
-                            })
+                            // #185: pull to refresh, like Local's content.
+                            PullToRefreshBox(
+                                isRefreshing = isRefreshing,
+                                onRefresh = {
+                                    isRefreshing = true
+                                    refreshMusic()
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                ArtistsTabContent(
+                                    artists = sortedArtists,
+                                    viewMode = viewMode,
+                                    selectedArtistIds = selectedArtistIds,
+                                    isSelectionMode = isArtistSelectionMode,
+                                    onToggleArtistSelection = { toggleArtistSelection(it) },
+                                    onArtistClick = {
+                                        playbackManager?.playAudioQueue(tracks, startIndex = 0)
+                                        onOpenPlayer()
+                                    },
+                                )
+                            }
                         }
                     }
                     MusicTab.FOLDERS -> {
@@ -1115,6 +1276,7 @@ fun MusicScreen(
                     tracksForPlaylistAdd = emptyList()
                     clearTrackSelection()
                     clearAlbumSelection()
+                    clearArtistSelection()
                     snackbarHostState.showSnackbar(
                         context.getString(R.string.music_added_to_playlist_msg, pl.name)
                     )
@@ -1834,70 +1996,88 @@ private fun AlbumsTabContent(
 @Composable
 private fun ArtistsTabContent(
     artists: List<AudioArtist>,
+    viewMode: ViewMode = ViewMode.LIST,
+    selectedArtistIds: Set<String> = emptySet(),
+    isSelectionMode: Boolean = false,
+    onToggleArtistSelection: (AudioArtist) -> Unit = {},
     onArtistClick: () -> Unit,
 ) {
-    val listState = rememberLazyListState()
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp),
-        ) {
-            items(
-                items = artists,
-                key = { it.id.ifBlank { it.name } },
-                contentType = { "artist_row" },
-            ) { artist ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onArtistClick() }
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(MpxTheme.colors.surfaceVariant),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Person,
-                            contentDescription = null,
-                            tint = MpxTheme.colors.primary,
-                            modifier = Modifier.size(28.dp),
-                        )
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = artist.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MpxTheme.colors.textPrimary,
-                        )
-                        Text(
-                            text = stringResource(R.string.music_artist_details_format, artist.trackCount, artist.albumCount),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MpxTheme.colors.textSecondary,
-                        )
-                    }
+    if (viewMode == ViewMode.LIST) {
+        val listState = rememberLazyListState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp),
+            ) {
+                items(
+                    items = artists,
+                    key = { artist -> artist.id.ifBlank { artist.name } },
+                    contentType = { "artist_row" },
+                ) { artist ->
+                    val isSelected = selectedArtistIds.contains(artist.id.ifBlank { artist.name })
+                    AudioArtistRow(
+                        artist = artist,
+                        isSelected = isSelected,
+                        onLongClick = { onToggleArtistSelection(artist) },
+                        onClick = {
+                            if (isSelectionMode) onToggleArtistSelection(artist)
+                            else onArtistClick()
+                        },
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 78.dp),
+                        color = MpxTheme.colors.border,
+                        thickness = MpxHairline,
+                    )
                 }
-                HorizontalDivider(
-                    modifier = Modifier.padding(start = 78.dp),
-                    color = MpxTheme.colors.border,
-                    thickness = MpxHairline,
-                )
             }
+            FastScrollbar(
+                listState = listState,
+                itemCount = artists.size,
+                getSectionText = { index ->
+                    artists.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
         }
-        FastScrollbar(
-            listState = listState,
-            itemCount = artists.size,
-            getSectionText = { index ->
-                artists.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
-            },
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
+    } else {
+        val gridState = rememberLazyGridState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyVerticalGrid(
+                state = gridState,
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(
+                    items = artists,
+                    key = { artist -> artist.id.ifBlank { artist.name } },
+                    contentType = { "artist_card" },
+                ) { artist ->
+                    val isSelected = selectedArtistIds.contains(artist.id.ifBlank { artist.name })
+                    AudioArtistGridCard(
+                        artist = artist,
+                        isSelected = isSelected,
+                        onLongClick = { onToggleArtistSelection(artist) },
+                        onClick = {
+                            if (isSelectionMode) onToggleArtistSelection(artist)
+                            else onArtistClick()
+                        },
+                    )
+                }
+            }
+            GridFastScrollbar(
+                gridState = gridState,
+                itemCount = artists.size,
+                getSectionText = { index ->
+                    artists.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
+        }
     }
 }
 

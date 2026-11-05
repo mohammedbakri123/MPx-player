@@ -1,6 +1,7 @@
 package com.mpx.player.ui.screens.local
 
 import com.mpx.player.domain.model.AudioAlbum
+import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.VideoFile
@@ -319,6 +320,66 @@ object MediaSortComparator {
         SortField.RESOLUTION_FRAMERATE -> 0
         // No file type / location for albums: artist, then title tie-break.
         SortField.STATUS_TYPE_LOCATION -> a.artist.compareTo(b.artist, ignoreCase = true)
+        SortField.COUNT, SortField.NONE -> 0
+    }
+
+    /**
+     * Constructs a Comparator for AudioArtist with primary sort and secondary tie-break sort.
+     * #185 (Artists tab): same field semantics as [audioAlbumComparator].
+     * Artists carry no duration: SIZE / DURATION sort by track count (most
+     * tracks first) — the artist's "size". DATE is id recency, like tracks.
+     */
+    fun audioArtistComparator(
+        primary: SortField,
+        secondary: SortField = SortField.NAME,
+        reverse: Boolean = false,
+        secondaryReverse: Boolean = false,
+        numeric: Boolean = true,
+        caseSensitive: Boolean = false,
+        ignoreExtension: Boolean = true,
+    ): Comparator<AudioArtist> = Comparator { a, b ->
+        var cmp = compareArtistByField(a, b, primary, numeric, caseSensitive, ignoreExtension)
+        if (reverse) cmp = -cmp
+        if (cmp != 0) return@Comparator cmp
+
+        if (secondary != SortField.NONE && secondary != primary) {
+            var secCmp = compareArtistByField(a, b, secondary, numeric, caseSensitive, ignoreExtension)
+            if (secondaryReverse) secCmp = -secCmp
+            if (secCmp != 0) return@Comparator secCmp
+        }
+
+        val nameCmp = a.name.compareTo(b.name, ignoreCase = true)
+        if (nameCmp != 0) nameCmp else a.id.compareTo(b.id)
+    }
+
+    private fun compareArtistByField(
+        a: AudioArtist,
+        b: AudioArtist,
+        field: SortField,
+        numeric: Boolean,
+        caseSensitive: Boolean,
+        ignoreExtension: Boolean,
+    ): Int = when (field) {
+        SortField.NAME -> {
+            if (numeric) {
+                naturalCompare(a.name, b.name, caseSensitive, ignoreExtension)
+            } else {
+                if (caseSensitive) a.name.compareTo(b.name)
+                else a.name.lowercase(Locale.US).compareTo(b.name.lowercase(Locale.US))
+            }
+        }
+        SortField.DATE -> b.id.compareTo(a.id)
+        // Artists carry no date: id recency first, track count breaks ties.
+        SortField.DATE_DURATION -> {
+            val idCmp = b.id.compareTo(a.id)
+            if (idCmp != 0) idCmp else b.trackCount.compareTo(a.trackCount)
+        }
+        // Artists carry no duration: track count is the artist's size.
+        SortField.SIZE, SortField.DURATION -> b.trackCount.compareTo(a.trackCount)
+        // Artists carry no resolution: falls through to the name tie-break.
+        SortField.RESOLUTION_FRAMERATE -> 0
+        // No file type / location for artists: falls through to the name tie-break.
+        SortField.STATUS_TYPE_LOCATION -> 0
         SortField.COUNT, SortField.NONE -> 0
     }
 
