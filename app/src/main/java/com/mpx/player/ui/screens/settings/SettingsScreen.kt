@@ -362,16 +362,20 @@ fun SettingsScreen(
                                         modifier = Modifier.padding(bottom = 8.dp),
                                     )
                                 }
-                                ToggleRow(stringResource(R.string.pip_enable_toggle), settings.popupPlayEnabled) {
+                                ToggleRow(stringResource(R.string.pip_enable_toggle), settings.popupPlayEnabled, enabled = isSupported) {
                                     update(settings.copy(popupPlayEnabled = it))
                                 }
                                 Spacer(Modifier.height(4.dp))
                                 Text(stringResource(R.string.pip_window_controls_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
-                                ChoiceRow(stringResource(R.string.pip_controls_prev_next), settings.popupPlayControls == "PrevNext") {
+                                val pipControlsEnabled = isSupported && settings.popupPlayEnabled
+                                ChoiceRow(stringResource(R.string.pip_controls_prev_next), settings.popupPlayControls == "PrevNext", enabled = pipControlsEnabled) {
                                     update(settings.copy(popupPlayControls = "PrevNext"))
                                 }
-                                ChoiceRow(stringResource(R.string.pip_controls_seek10), settings.popupPlayControls == "Seek10") {
+                                ChoiceRow(stringResource(R.string.pip_controls_seek10), settings.popupPlayControls == "Seek10", enabled = pipControlsEnabled) {
                                     update(settings.copy(popupPlayControls = "Seek10"))
+                                }
+                                ChoiceRow(stringResource(R.string.pip_controls_play_pause_only), settings.popupPlayControls == "PlayPauseOnly", enabled = pipControlsEnabled) {
+                                    update(settings.copy(popupPlayControls = "PlayPauseOnly"))
                                 }
                             }
                             "tabs" -> {
@@ -757,33 +761,35 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit, enabled: Boolean = true) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onChange(!checked) }.padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, modifier = Modifier.weight(1f), color = MpxTextPrimary, style = MaterialTheme.typography.bodyMedium)
+        Text(label, modifier = Modifier.weight(1f), color = if (enabled) MpxTextPrimary else MpxTextSecondary, style = MaterialTheme.typography.bodyMedium)
         Switch(
             checked = checked,
             onCheckedChange = onChange,
+            enabled = enabled,
             colors = SwitchDefaults.colors(checkedThumbColor = MpxPrimary, checkedTrackColor = MpxPrimary.copy(alpha = 0.4f)),
         )
     }
 }
 
 @Composable
-private fun ChoiceRow(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun ChoiceRow(label: String, selected: Boolean, onClick: () -> Unit, enabled: Boolean = true) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
             selected = selected,
             onClick = onClick,
+            enabled = enabled,
             colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
         )
         Spacer(Modifier.width(8.dp))
-        Text(label, color = MpxTextPrimary, style = MaterialTheme.typography.bodyMedium)
+        Text(label, color = if (enabled) MpxTextPrimary else MpxTextSecondary, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
