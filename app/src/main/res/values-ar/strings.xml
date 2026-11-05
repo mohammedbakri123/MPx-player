@@ -156,6 +156,7 @@
     <string name="subtitle_ass_header">متقدم (أنماط ASS):</string>
     <string name="subtitle_sync_header">مزامنة الترجمة</string>
     <string name="subtitle_speed_header">سرعة الترجمة</string>
+    <string name="subtitle_timing_mpv_note">تنطبق المزامنة والسرعة على محرك MPV فقط.</string>
     <string name="subtitle_timing_reset">إعادة تعيين</string>
     <string name="subtitle_typeface_default">افتراضي</string>
     <string name="subtitle_typeface_sans">Sans-serif</string>

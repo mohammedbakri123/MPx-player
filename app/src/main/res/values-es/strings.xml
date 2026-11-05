@@ -156,6 +156,7 @@
     <string name="subtitle_ass_header">Avanzado (estilos ASS):</string>
     <string name="subtitle_sync_header">Sincronización de subtítulos</string>
     <string name="subtitle_speed_header">Velocidad de subtítulos</string>
+    <string name="subtitle_timing_mpv_note">La sincronización y la velocidad solo se aplican al motor MPV.</string>
     <string name="subtitle_timing_reset">Restablecer</string>
     <string name="subtitle_typeface_default">Predeterminado</string>
     <string name="subtitle_typeface_sans">Sans-serif</string>

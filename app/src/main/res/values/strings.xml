@@ -156,6 +156,7 @@
     <string name="subtitle_ass_header">Advanced (ASS styles):</string>
     <string name="subtitle_sync_header">Subtitle sync</string>
     <string name="subtitle_speed_header">Subtitle speed</string>
+    <string name="subtitle_timing_mpv_note">Sync and speed apply to the MPV engine only.</string>
     <string name="subtitle_timing_reset">Reset</string>
     <string name="subtitle_typeface_default">Default</string>
     <string name="subtitle_typeface_sans">Sans-serif</string>

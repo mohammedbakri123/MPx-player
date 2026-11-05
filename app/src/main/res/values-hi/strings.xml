@@ -156,6 +156,7 @@
     <string name="subtitle_ass_header">उन्नत (ASS स्टाइल):</string>
     <string name="subtitle_sync_header">उपशीर्षक सिंक</string>
     <string name="subtitle_speed_header">उपशीर्षक गति</string>
+    <string name="subtitle_timing_mpv_note">सिंक और गति केवल MPV इंजन पर लागू होते हैं।</string>
     <string name="subtitle_timing_reset">रीसेट</string>
     <string name="subtitle_typeface_default">डिफ़ॉल्ट</string>
     <string name="subtitle_typeface_sans">सैन्स-सेरिफ़</string>
