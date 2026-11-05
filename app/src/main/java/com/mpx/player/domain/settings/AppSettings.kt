@@ -102,6 +102,11 @@ data class AppSettings(
     // Player Menu layout (#158, mpvEx parity): visible menu row ids in
     // display order, comma-separated; see PlayerMenuLayout.kt.
     val playerMenuLayout: String = DEFAULT_PLAYER_MENU_LAYOUT,
+    // Player Menu hidden rows (#201): ids the user explicitly hid, comma-
+    // separated. Kept apart from playerMenuLayout so the parse can tell a
+    // deliberately hidden id from an id that was never stored (a new id
+    // added in a later version stays visible by default). Empty = nothing hidden.
+    val hiddenPlayerMenuIds: String = "",
     // Double-tap seek amount in seconds (#158, mpvEx parity): 5/10/15/30.
     val doubleTapSeekSeconds: Int = 10,
 ) {

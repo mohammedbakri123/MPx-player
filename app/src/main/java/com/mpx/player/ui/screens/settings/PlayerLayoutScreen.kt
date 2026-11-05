@@ -34,8 +34,9 @@ import com.mpx.player.ui.theme.MpxTheme
 /**
  * Player Layout editor (#158, mpvEx parity): a basic, working editor for
  * the Player Menu rows — visibility toggles + up/down reorder, persisted
- * in [AppSettings.playerMenuLayout] and applied by PlayerScreen the next
- * time the menu opens.
+ * in [AppSettings.playerMenuLayout] (visible ids) and
+ * [AppSettings.hiddenPlayerMenuIds] (explicitly hidden ids, #201) and
+ * applied by PlayerScreen the next time the menu opens.
  *
  * Limitation vs mpvEx: mpvEx's editor is a full drag-to-arrange editor
  * covering every player button including the transport row and double-tap
@@ -47,11 +48,19 @@ fun PlayerLayoutScreen(
     settings: AppSettings,
     onSettingsChanged: (AppSettings) -> Unit,
 ) {
-    val visible = parsePlayerMenuLayout(settings.playerMenuLayout)
+    val visible = parsePlayerMenuLayout(settings.playerMenuLayout, settings.hiddenPlayerMenuIds)
     val hidden = PLAYER_MENU_IDS.filter { it !in visible }
 
     fun applyVisible(next: List<String>) {
-        onSettingsChanged(settings.copy(playerMenuLayout = next.joinToString(",")))
+        // #201: keep the hidden set in sync — every known id not in the
+        // visible list is recorded as explicitly hidden, so the parse
+        // never resurrects it as a "missing" id.
+        onSettingsChanged(
+            settings.copy(
+                playerMenuLayout = next.joinToString(","),
+                hiddenPlayerMenuIds = (PLAYER_MENU_IDS - next.toSet()).joinToString(","),
+            ),
+        )
     }
 
     Column(

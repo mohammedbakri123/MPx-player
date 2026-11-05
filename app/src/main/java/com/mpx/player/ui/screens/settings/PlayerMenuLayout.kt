@@ -7,27 +7,62 @@ import com.mpx.player.domain.settings.DEFAULT_PLAYER_MENU_LAYOUT
  * Player Menu layout (#158, mpvEx parity): the basic Player Layout editor
  * controls which rows appear in the Player Menu dialog and in what order.
  * This is MPx's own, simpler take on mpvEx's drag-to-arrange button editor:
- * visibility toggles + up/down reorder, persisted as one comma-separated
- * string. The full drag-to-arrange chrome editor is a follow-up.
+ * visibility toggles + up/down reorder, persisted as two comma-separated
+ * strings. The full drag-to-arrange chrome editor is a follow-up.
  *
- * Stored as visible row ids in display order. Unknown ids are dropped and
- * any known id missing from the stored value is appended at the end, so a
- * stale or partial stored value can never lose a row.
+ * Two strings are stored (#201):
+ * - visible row ids in display order (playerMenuLayout);
+ * - ids the user explicitly hid (hiddenPlayerMenuIds).
+ *
+ * The split exists because a single visible-only list cannot tell a
+ * deliberately hidden id from an id that simply was not stored yet.
+ * Hiding used to be a no-op: parse appended every missing known id back
+ * (migration safety for stale stored values), so a hidden id reappeared
+ * on the next recomposition. Now the append-back runs only for ids in
+ * NEITHER list — a known id missing from both is new since the layout
+ * was saved (e.g. added in a later version) and stays visible by
+ * default, while an id in the hidden set stays hidden.
+ *
+ * One honest edge: hide never worked before this fix, so a stored layout
+ * from the old code can be a subset only because the user tapped hide
+ * and the row instantly reappeared — that tap never took visible
+ * effect, so the missing id is treated as never-hidden and appended
+ * visible on the next parse, exactly as the user always saw it.
  */
 /** All Player Menu row ids, in default display order. */
 val PLAYER_MENU_IDS: List<String> = DEFAULT_PLAYER_MENU_LAYOUT.split(",")
 
 /**
- * Parses a stored layout string into the visible row ids in display order.
- * Blank or garbage input yields the default order.
+ * Parses the stored hidden-ids string into the explicitly hidden row ids.
+ * Unknown ids are dropped; blank input means nothing is hidden.
  */
-fun parsePlayerMenuLayout(raw: String): List<String> {
+fun parseHiddenPlayerMenuIds(hiddenRaw: String): List<String> =
+    hiddenRaw.split(",").map { it.trim() }
+        .filter { it.isNotEmpty() }.distinct()
+        .filter { it in PLAYER_MENU_IDS }
+
+/**
+ * Parses a stored layout string into the visible row ids in display order.
+ * Blank or garbage input yields the default order, minus any hidden ids.
+ * Known ids missing from BOTH the stored visible list and the hidden set
+ * are appended at the end (migration: an id added in a later version
+ * stays visible by default); an id in the hidden set stays hidden.
+ */
+fun parsePlayerMenuLayout(raw: String, hiddenRaw: String = ""): List<String> {
+    val hidden = parseHiddenPlayerMenuIds(hiddenRaw)
     val wanted = raw.split(",").map { it.trim() }.filter { it.isNotEmpty() }.distinct()
-    if (wanted.isEmpty()) return PLAYER_MENU_IDS
-    val visible = wanted.filter { it in PLAYER_MENU_IDS }.toMutableList()
-    // Never lose a row to a stale stored value: append missing known ids.
-    PLAYER_MENU_IDS.forEach { id -> if (id !in visible) visible.add(id) }
-    return visible
+    val visible = if (wanted.isEmpty()) {
+        PLAYER_MENU_IDS.toMutableList()
+    } else {
+        wanted.filter { it in PLAYER_MENU_IDS }.toMutableList()
+    }
+    // Migration append-back, but only for ids never stored at all: an id
+    // in the hidden set was deliberately hidden — never resurrect it.
+    PLAYER_MENU_IDS.forEach { id ->
+        if (id !in visible && id !in hidden) visible.add(id)
+    }
+    // Hidden wins on inconsistent state (an id present in both lists).
+    return visible.filter { it !in hidden }
 }
 
 /** Label string for one Player Menu row id. */

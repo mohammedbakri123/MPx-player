@@ -1988,8 +1988,8 @@ private fun PlayerActionStripe(
     playbackManager: PlaybackManager,
 ) {
     val context = LocalContext.current
-    val layoutIds = remember(currentSettings.playerMenuLayout) {
-        parsePlayerMenuLayout(currentSettings.playerMenuLayout)
+    val layoutIds = remember(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds) {
+        parsePlayerMenuLayout(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds)
     }
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
