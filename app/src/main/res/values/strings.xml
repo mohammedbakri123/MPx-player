@@ -791,7 +791,19 @@
     <string name="player_sleep_timer_cancel">Cancel sleep timer</string>
     <string name="player_sleep_timer_set_toast">Sleep timer set for %1$d minutes</string>
     <string name="player_sleep_timer_canceled_toast">Sleep timer turned off</string>
-    <string name="player_gesture_hint">Double-tap: -10s (L) / Play-Pause / +10s (R) • Swipe H: Seek • Swipe V: Brightness (L) / Volume (R)</string>
+    <string name="player_tutorial_title">Player gestures</string>
+    <string name="player_tutorial_step_double_tap_title">Double-tap</string>
+    <string name="player_tutorial_step_double_tap_desc">Tap the left side to go back 10 seconds, the center to play or pause, and the right side to go forward 10 seconds.</string>
+    <string name="player_tutorial_step_seek_title">Swipe to seek</string>
+    <string name="player_tutorial_step_seek_desc">Drag horizontally across the video to seek forward or backward.</string>
+    <string name="player_tutorial_step_brightness_title">Left side: brightness</string>
+    <string name="player_tutorial_step_brightness_desc">Swipe up or down on the left side of the video to change brightness.</string>
+    <string name="player_tutorial_step_volume_title">Right side: volume</string>
+    <string name="player_tutorial_step_volume_desc">Swipe up or down on the right side of the video to change volume.</string>
+    <string name="player_tutorial_next">Next</string>
+    <string name="player_tutorial_skip">Skip</string>
+    <string name="player_tutorial_got_it">Got it</string>
+    <string name="player_menu_tutorial">Gesture tutorial</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">No video queued</string>
@@ -806,7 +818,6 @@
     <string name="player_resumed_from">Resumed from %1$s</string>
     <string name="player_start_over">Start Over</string>
     <string name="player_cd_dismiss">Dismiss</string>
-    <string name="player_cd_dismiss_hint">Dismiss hint</string>
     <string name="player_cd_unlock">Unlock controls</string>
     <string name="player_cd_lock">Lock controls</string>
     <string name="player_cd_back">Back</string>

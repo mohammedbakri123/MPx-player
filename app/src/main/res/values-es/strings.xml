@@ -791,7 +791,19 @@
     <string name="player_sleep_timer_cancel">Cancelar temporizador de apagado</string>
     <string name="player_sleep_timer_set_toast">Temporizador de apagado fijado en %1$d minutos</string>
     <string name="player_sleep_timer_canceled_toast">Temporizador de apagado desactivado</string>
-    <string name="player_gesture_hint">Doble toque: -10 s (izq.) / Reproducir-Pausar / +10 s (der.) • Deslizar horiz.: buscar • Deslizar vert.: brillo (izq.) / volumen (der.)</string>
+    <string name="player_tutorial_title">Gestos del reproductor</string>
+    <string name="player_tutorial_step_double_tap_title">Doble toque</string>
+    <string name="player_tutorial_step_double_tap_desc">Toca el lado izquierdo para retroceder 10 segundos, el centro para reproducir o pausar, y el lado derecho para avanzar 10 segundos.</string>
+    <string name="player_tutorial_step_seek_title">Deslizar para buscar</string>
+    <string name="player_tutorial_step_seek_desc">Arrastra horizontalmente sobre el vídeo para buscar hacia adelante o hacia atrás.</string>
+    <string name="player_tutorial_step_brightness_title">Lado izquierdo: brillo</string>
+    <string name="player_tutorial_step_brightness_desc">Desliza hacia arriba o hacia abajo en el lado izquierdo del vídeo para cambiar el brillo.</string>
+    <string name="player_tutorial_step_volume_title">Lado derecho: volumen</string>
+    <string name="player_tutorial_step_volume_desc">Desliza hacia arriba o hacia abajo en el lado derecho del vídeo para cambiar el volumen.</string>
+    <string name="player_tutorial_next">Siguiente</string>
+    <string name="player_tutorial_skip">Omitir</string>
+    <string name="player_tutorial_got_it">Entendido</string>
+    <string name="player_menu_tutorial">Tutorial de gestos</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">No hay ningún vídeo en cola</string>
@@ -806,7 +818,6 @@
     <string name="player_resumed_from">Reanudado desde %1$s</string>
     <string name="player_start_over">Empezar de nuevo</string>
     <string name="player_cd_dismiss">Descartar</string>
-    <string name="player_cd_dismiss_hint">Descartar sugerencia</string>
     <string name="player_cd_unlock">Desbloquear controles</string>
     <string name="player_cd_lock">Bloquear controles</string>
     <string name="player_cd_back">Atrás</string>

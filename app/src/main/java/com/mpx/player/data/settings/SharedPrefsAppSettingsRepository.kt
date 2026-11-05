@@ -36,6 +36,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             prefs.getBoolean("backgroundPlay", false)
         },
         gesturesEnabled = prefs.getBoolean("gestures_enabled", true),
+        playerTutorialSeen = prefs.getBoolean("player_tutorial_seen", false),
         decoderMode = prefs.getString("decoder_mode", "HW") ?: "HW",
         playerEngine = prefs.getString("player_engine", "MEDIA3") ?: "MEDIA3",
         subtitleSize = prefs.getString("subtitle_size", "Normal") ?: "Normal",
@@ -106,6 +107,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("backgroundPlay", settings.backgroundPlay)
             .putBoolean("background_play", settings.backgroundPlay)
             .putBoolean("gestures_enabled", settings.gesturesEnabled)
+            .putBoolean("player_tutorial_seen", settings.playerTutorialSeen)
             .putString("decoder_mode", settings.decoderMode)
             .putString("player_engine", settings.playerEngine)
             .putString("subtitle_size", settings.subtitleSize)

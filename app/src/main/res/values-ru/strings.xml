@@ -791,7 +791,19 @@
     <string name="player_sleep_timer_cancel">Отменить таймер сна</string>
     <string name="player_sleep_timer_set_toast">Таймер сна установлен на %1$d минут</string>
     <string name="player_sleep_timer_canceled_toast">Таймер сна отключён</string>
-    <string name="player_gesture_hint">Двойное касание: −10 с (слева) / воспроизведение-пауза / +10 с (справа) • Свайп по горизонтали: перемотка • Свайп по вертикали: яркость (слева) / громкость (справа)</string>
+    <string name="player_tutorial_title">Жесты плеера</string>
+    <string name="player_tutorial_step_double_tap_title">Двойное касание</string>
+    <string name="player_tutorial_step_double_tap_desc">Коснитесь слева, чтобы вернуться на 10 секунд, по центру — чтобы воспроизвести или поставить на паузу, справа — чтобы перейти вперёд на 10 секунд.</string>
+    <string name="player_tutorial_step_seek_title">Свайп для перемотки</string>
+    <string name="player_tutorial_step_seek_desc">Проведите пальцем по горизонтали по видео, чтобы перемотать вперёд или назад.</string>
+    <string name="player_tutorial_step_brightness_title">Слева: яркость</string>
+    <string name="player_tutorial_step_brightness_desc">Проведите вверх или вниз по левой стороне видео, чтобы изменить яркость.</string>
+    <string name="player_tutorial_step_volume_title">Справа: громкость</string>
+    <string name="player_tutorial_step_volume_desc">Проведите вверх или вниз по правой стороне видео, чтобы изменить громкость.</string>
+    <string name="player_tutorial_next">Далее</string>
+    <string name="player_tutorial_skip">Пропустить</string>
+    <string name="player_tutorial_got_it">Понятно</string>
+    <string name="player_menu_tutorial">Обучение жестам</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">Нет видео в очереди</string>
@@ -806,7 +818,6 @@
     <string name="player_resumed_from">Продолжение с %1$s</string>
     <string name="player_start_over">Начать сначала</string>
     <string name="player_cd_dismiss">Закрыть</string>
-    <string name="player_cd_dismiss_hint">Скрыть подсказку</string>
     <string name="player_cd_unlock">Разблокировать элементы управления</string>
     <string name="player_cd_lock">Заблокировать элементы управления</string>
     <string name="player_cd_back">Назад</string>

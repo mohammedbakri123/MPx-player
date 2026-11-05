@@ -791,7 +791,19 @@
     <string name="player_sleep_timer_cancel">إلغاء مؤقت النوم</string>
     <string name="player_sleep_timer_set_toast">تم ضبط مؤقت النوم على %1$d دقيقة</string>
     <string name="player_sleep_timer_canceled_toast">تم إيقاف مؤقت النوم</string>
-    <string name="player_gesture_hint">النقر المزدوج: -10 ث (يسار) / تشغيل-إيقاف / +10 ث (يمين) • السحب أفقيًا: التقديم • السحب عموديًا: السطوع (يسار) / الصوت (يمين)</string>
+    <string name="player_tutorial_title">إيماءات المشغّل</string>
+    <string name="player_tutorial_step_double_tap_title">النقر المزدوج</string>
+    <string name="player_tutorial_step_double_tap_desc">انقر على الجانب الأيسر للرجوع 10 ثوانٍ، وعلى المنتصف للتشغيل أو الإيقاف المؤقت، وعلى الجانب الأيمن للتقدم 10 ثوانٍ.</string>
+    <string name="player_tutorial_step_seek_title">السحب للتقديم</string>
+    <string name="player_tutorial_step_seek_desc">اسحب أفقيًا عبر الفيديو للتقديم إلى الأمام أو الخلف.</string>
+    <string name="player_tutorial_step_brightness_title">الجانب الأيسر: السطوع</string>
+    <string name="player_tutorial_step_brightness_desc">اسحب لأعلى أو لأسفل على الجانب الأيسر من الفيديو لتغيير السطوع.</string>
+    <string name="player_tutorial_step_volume_title">الجانب الأيمن: الصوت</string>
+    <string name="player_tutorial_step_volume_desc">اسحب لأعلى أو لأسفل على الجانب الأيمن من الفيديو لتغيير الصوت.</string>
+    <string name="player_tutorial_next">التالي</string>
+    <string name="player_tutorial_skip">تخطي</string>
+    <string name="player_tutorial_got_it">فهمت</string>
+    <string name="player_menu_tutorial">درس الإيماءات</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">لا يوجد فيديو في قائمة التشغيل</string>
@@ -806,7 +818,6 @@
     <string name="player_resumed_from">الاستئناف من %1$s</string>
     <string name="player_start_over">البدء من جديد</string>
     <string name="player_cd_dismiss">تجاهل</string>
-    <string name="player_cd_dismiss_hint">تجاهل التلميح</string>
     <string name="player_cd_unlock">إلغاء قفل عناصر التحكم</string>
     <string name="player_cd_lock">قفل عناصر التحكم</string>
     <string name="player_cd_back">رجوع</string>

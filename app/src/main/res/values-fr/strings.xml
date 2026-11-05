@@ -791,7 +791,19 @@
     <string name="player_sleep_timer_cancel">Annuler le minuteur de mise en veille</string>
     <string name="player_sleep_timer_set_toast">Minuteur de mise en veille réglé sur %1$d minutes</string>
     <string name="player_sleep_timer_canceled_toast">Minuteur de mise en veille désactivé</string>
-    <string name="player_gesture_hint">Double appui : -10 s (gauche) / Lecture-Pause / +10 s (droite) • Glisser horiz. : naviguer • Glisser vert. : luminosité (gauche) / volume (droite)</string>
+    <string name="player_tutorial_title">Gestes du lecteur</string>
+    <string name="player_tutorial_step_double_tap_title">Double appui</string>
+    <string name="player_tutorial_step_double_tap_desc">Appuyez à gauche pour reculer de 10 secondes, au centre pour lire ou mettre en pause, et à droite pour avancer de 10 secondes.</string>
+    <string name="player_tutorial_step_seek_title">Glisser pour naviguer</string>
+    <string name="player_tutorial_step_seek_desc">Faites glisser horizontalement sur la vidéo pour avancer ou reculer.</string>
+    <string name="player_tutorial_step_brightness_title">Côté gauche : luminosité</string>
+    <string name="player_tutorial_step_brightness_desc">Glissez vers le haut ou le bas du côté gauche de la vidéo pour changer la luminosité.</string>
+    <string name="player_tutorial_step_volume_title">Côté droit : volume</string>
+    <string name="player_tutorial_step_volume_desc">Glissez vers le haut ou le bas du côté droit de la vidéo pour changer le volume.</string>
+    <string name="player_tutorial_next">Suivant</string>
+    <string name="player_tutorial_skip">Passer</string>
+    <string name="player_tutorial_got_it">Compris</string>
+    <string name="player_menu_tutorial">Tutoriel des gestes</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">Aucune vidéo en attente</string>
@@ -806,7 +818,6 @@
     <string name="player_resumed_from">Reprise à %1$s</string>
     <string name="player_start_over">Recommencer</string>
     <string name="player_cd_dismiss">Ignorer</string>
-    <string name="player_cd_dismiss_hint">Ignorer l\'astuce</string>
     <string name="player_cd_unlock">Déverrouiller les commandes</string>
     <string name="player_cd_lock">Verrouiller les commandes</string>
     <string name="player_cd_back">Retour</string>

@@ -791,7 +791,19 @@
     <string name="player_sleep_timer_cancel">Cancelar timer de suspensão</string>
     <string name="player_sleep_timer_set_toast">Timer de suspensão definido para %1$d minutos</string>
     <string name="player_sleep_timer_canceled_toast">Timer de suspensão desativado</string>
-    <string name="player_gesture_hint">Toque duplo: -10s (esq.) / Reproduzir-Pausar / +10s (dir.) • Deslizar horiz.: buscar • Deslizar vert.: brilho (esq.) / volume (dir.)</string>
+    <string name="player_tutorial_title">Gestos do leitor</string>
+    <string name="player_tutorial_step_double_tap_title">Toque duplo</string>
+    <string name="player_tutorial_step_double_tap_desc">Toque no lado esquerdo para voltar 10 segundos, no centro para reproduzir ou pausar, e no lado direito para avançar 10 segundos.</string>
+    <string name="player_tutorial_step_seek_title">Deslizar para buscar</string>
+    <string name="player_tutorial_step_seek_desc">Arraste horizontalmente sobre o vídeo para buscar para a frente ou para trás.</string>
+    <string name="player_tutorial_step_brightness_title">Lado esquerdo: brilho</string>
+    <string name="player_tutorial_step_brightness_desc">Deslize para cima ou para baixo no lado esquerdo do vídeo para alterar o brilho.</string>
+    <string name="player_tutorial_step_volume_title">Lado direito: volume</string>
+    <string name="player_tutorial_step_volume_desc">Deslize para cima ou para baixo no lado direito do vídeo para alterar o volume.</string>
+    <string name="player_tutorial_next">Seguinte</string>
+    <string name="player_tutorial_skip">Ignorar</string>
+    <string name="player_tutorial_got_it">Entendi</string>
+    <string name="player_menu_tutorial">Tutorial de gestos</string>
 
     <!-- Player screen + Transfer strings (issue #67) -->
     <string name="player_empty_no_video">Nenhum vídeo na fila</string>
@@ -806,7 +818,6 @@
     <string name="player_resumed_from">Retomado de %1$s</string>
     <string name="player_start_over">Começar de novo</string>
     <string name="player_cd_dismiss">Dispensar</string>
-    <string name="player_cd_dismiss_hint">Dispensar dica</string>
     <string name="player_cd_unlock">Desbloquear controles</string>
     <string name="player_cd_lock">Bloquear controles</string>
     <string name="player_cd_back">Voltar</string>
