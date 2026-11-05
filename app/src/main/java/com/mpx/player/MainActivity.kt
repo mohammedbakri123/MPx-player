@@ -471,14 +471,22 @@ fun MpxApp(
                 )
             }
             composable(Screen.Player.route) {
-                PlayerScreen(
-                    subtitleLauncher = subtitleLauncher,
-                    subtitleResultHandler = subtitleHandler,
-                    onClose = { navController.popBackStack() },
-                    playbackManager = playbackManager,
-                    settingsRepository = realSettingsRepo,
-                    isInPipMode = isInPipMode,
-                )
+                // #152: the player ignores the Light theme and always renders
+                // dark. MpxTheme provides the palette via CompositionLocal, so
+                // wrapping the route re-themes the whole PlayerScreen subtree
+                // (including its dialogs, which inherit CompositionLocals)
+                // without touching the theme-following mini-player on the
+                // tab pages. PiP renders this same route, so it stays dark.
+                MpxTheme(theme = "Dark") {
+                    PlayerScreen(
+                        subtitleLauncher = subtitleLauncher,
+                        subtitleResultHandler = subtitleHandler,
+                        onClose = { navController.popBackStack() },
+                        playbackManager = playbackManager,
+                        settingsRepository = realSettingsRepo,
+                        isInPipMode = isInPipMode,
+                    )
+                }
             }
         }
     }
