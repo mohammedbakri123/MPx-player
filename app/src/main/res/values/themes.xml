@@ -3,4 +3,22 @@
     <style name="Theme.MPx" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@android:color/black</item>
     </style>
+
+    <!-- #171: launch (splash) theme for MainActivity. The window shows
+         this branding from process start until the first frame is drawn —
+         before that, the app opened straight onto the Home screen with no
+         splash at all. Two paths, same branding:
+         - Pre-Android 12: android:windowBackground is the splash drawable.
+         - Android 12+: the system splash uses windowSplashScreenBackground
+           (night-qualified: true black dark / white light) and the launcher
+           icon; the icon background matches so no circle shows.
+         MainActivity switches back to Theme.MPx before super.onCreate, so
+         the splash never affects the running UI. No artificial delay: the
+         splash goes away as soon as the main screen is ready. -->
+    <style name="Theme.MPx.Splash" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_background</item>
+    </style>
 </resources>
