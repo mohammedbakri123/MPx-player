@@ -974,7 +974,6 @@ fun LocalScreen(
                     )
                 }
             }
-            }
         },
         bottomBar = {
             if (isSelectionMode) {
