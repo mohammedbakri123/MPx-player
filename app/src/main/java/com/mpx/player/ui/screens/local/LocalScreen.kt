@@ -100,7 +100,6 @@ import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.MpxLoadingIndicator
 import com.mpx.player.ui.components.FastScrollbar
 import com.mpx.player.ui.components.GridFastScrollbar
-import com.mpx.player.ui.components.ShortcutChipRow
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.FavouritesDialog
@@ -957,43 +956,6 @@ fun LocalScreen(
                 }
             } else {
                 // ==================== ROOT FOLDERS VIEW ====================
-                // Shortcut Chips Row (Music, Transfer, Private, Playlists, etc.)
-                ShortcutChipRow(
-                    onOpenMusic = onOpenMusic,
-                    onOpenTransfer = onOpenTransfer,
-                    onChipClick = { featureName ->
-                        when (featureName) {
-                            "Favourites" -> showFavouritesDialog = true
-                            "History" -> showHistoryDialog = true
-                            "Video Playlists" -> showPlaylistsDialog = true
-                            "Private Folder" -> featureDialogMessage = context.getString(
-                                R.string.feature_placeholder_msg,
-                                context.getString(R.string.tool_private_title)
-                            )
-                            "Status Saver" -> featureDialogMessage = context.getString(
-                                R.string.feature_placeholder_msg,
-                                context.getString(R.string.tool_status_title)
-                            )
-                            "Network Stream" -> featureDialogMessage = context.getString(
-                                R.string.feature_placeholder_msg,
-                                context.getString(R.string.tool_network_title)
-                            )
-                            "Cleaner" -> featureDialogMessage = context.getString(
-                                R.string.feature_placeholder_msg,
-                                context.getString(R.string.chip_cleaner)
-                            )
-                            "Privacy" -> featureDialogMessage = context.getString(
-                                R.string.feature_placeholder_msg,
-                                context.getString(R.string.chip_privacy)
-                            )
-                            else -> featureDialogMessage = context.getString(
-                                R.string.feature_placeholder_msg,
-                                featureName
-                            )
-                        }
-                    },
-                )
-
                 if (!hasPermission) {
                     EmptyStateView(
                         title = stringResource(R.string.empty_permission_title),
