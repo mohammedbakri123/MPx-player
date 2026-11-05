@@ -11,10 +11,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -375,6 +379,25 @@ fun MpxApp(
     val playbackManager = remember { PlaybackManager.getInstance(context) }
     val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = backStackEntry?.destination
+
+    // Issue #176: swipe on the page switches dock tabs. The dock tap
+    // and the swipe share this one navigate block (persist lastTabRoute,
+    // pop up to the start destination with state saved, single top,
+    // restore state), so a swipe lands exactly where a tap would.
+    fun navigateToTab(route: String) {
+        realSettingsRepo.save(
+            realSettingsRepo.load().copy(lastTabRoute = route),
+        )
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
 
     LaunchedEffect(openPlayerRequested) {
@@ -388,9 +411,6 @@ fun MpxApp(
 
     Scaffold(
         bottomBar = {
-            val backStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = backStackEntry?.destination
-
             // Hide bottom navigation in PiP mode or on full-screen routes
             // (Player, Settings, AboutBeta, History, Playlists). mpvEx-style
             // (#157): the bar slides in/out over 300ms instead of popping.
@@ -430,18 +450,7 @@ fun MpxApp(
                                 label = stringResource(tab.labelRes),
                                 icon = if (selected) tab.selectedIcon else tab.unselectedIcon,
                                 selected = selected,
-                                onClick = {
-                                    realSettingsRepo.save(
-                                        realSettingsRepo.load().copy(lastTabRoute = tab.route),
-                                    )
-                                    navController.navigate(tab.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                },
+                                onClick = { navigateToTab(tab.route) },
                             )
                         }
                     }
@@ -461,10 +470,47 @@ fun MpxApp(
         // newer animation artifact. The transition lambdas below are
         // not composable, so they take the captured value.
         val density = LocalDensity.current
-        NavHost(
-            navController = navController,
-            startDestination = startTabRoute,
-            modifier = Modifier.padding(padding),
+        // Issue #176: swipe left/right on the page switches dock tabs
+        // (this reverses the old tap-only dock rule, per the user). The
+        // detector lives on a Box around the NavHost — the MiniPlayer
+        // and dock sit in the bottomBar, outside it, so swipes there do
+        // nothing. Active only on the four tabs; no wrap at the ends.
+        // A horizontal drag on a horizontally scrolling child (a chips
+        // row) is consumed by that child, not the page. The in-tab
+        // search page is still the Local route, so a swipe there also
+        // switches tabs. Direction follows the tab order, and the
+        // mpxTabEnter/mpxTabExit transitions slide the right way.
+        val swipeThresholdPx = with(density) { 100.dp.toPx() }
+        Box(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .pointerInput(tabOrder, currentDestination?.route) {
+                    var totalDrag = 0f
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { _, dragAmount ->
+                            totalDrag += dragAmount
+                        },
+                        onDragEnd = {
+                            val currentIndex = tabOrder.indexOf(currentDestination?.route)
+                            if (currentIndex >= 0) {
+                                when {
+                                    totalDrag < -swipeThresholdPx && currentIndex < tabOrder.lastIndex ->
+                                        navigateToTab(tabOrder[currentIndex + 1])
+                                    totalDrag > swipeThresholdPx && currentIndex > 0 ->
+                                        navigateToTab(tabOrder[currentIndex - 1])
+                                }
+                            }
+                            totalDrag = 0f
+                        },
+                        onDragCancel = { totalDrag = 0f },
+                    )
+                },
+        ) {
+            NavHost(
+                navController = navController,
+                startDestination = startTabRoute,
+                modifier = Modifier.fillMaxSize(),
             enterTransition = { mpxTabEnter(tabOrder, density) },
             exitTransition = { mpxTabExit(tabOrder, density) },
             popEnterTransition = { mpxTabEnter(tabOrder, density) },
@@ -601,5 +647,6 @@ fun MpxApp(
                 }
             }
         }
+        } // closes the #176 swipe Box around the NavHost
     }
 }
