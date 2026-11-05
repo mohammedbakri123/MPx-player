@@ -524,11 +524,11 @@ fun SettingsScreen(
                                     color = MpxTheme.colors.textPrimary,
                                     modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
                                 )
-                                ChoiceRow(stringResource(R.string.view_mode_list), settings.folderViewMode.equals("LIST", ignoreCase = true)) {
-                                    update(settings.copy(folderViewMode = "LIST"))
+                                ChoiceRow(stringResource(R.string.view_mode_list), settings.localViewMode.equals("LIST", ignoreCase = true)) {
+                                    update(settings.copy(localViewMode = "LIST"))
                                 }
-                                ChoiceRow(stringResource(R.string.view_mode_grid), settings.folderViewMode.equals("GRID", ignoreCase = true)) {
-                                    update(settings.copy(folderViewMode = "GRID"))
+                                ChoiceRow(stringResource(R.string.view_mode_grid), settings.localViewMode.equals("GRID", ignoreCase = true)) {
+                                    update(settings.copy(localViewMode = "GRID"))
                                 }
                                 Spacer(Modifier.height(8.dp))
                                 ToggleRow(stringResource(R.string.settings_separate_view_title), settings.separateViewLayout) {

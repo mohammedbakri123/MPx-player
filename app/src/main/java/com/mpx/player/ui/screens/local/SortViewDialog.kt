@@ -92,12 +92,6 @@ fun SortViewDialog(
     onViewChange: (ViewMode) -> Unit,
     onFileViewChange: ((Boolean) -> Unit)? = null,
     onShowAllFoldersChange: ((Boolean) -> Unit)? = null,
-    isFolderScope: Boolean = false,
-    folderName: String? = null,
-    hasFolderOverride: Boolean = false,
-    isSetAsDefault: Boolean = false,
-    onSetAsDefaultChange: ((Boolean) -> Unit)? = null,
-    onResetToDefault: (() -> Unit)? = null,
     onSeparateViewLayoutChange: ((Boolean) -> Unit)? = null,
 
     // Fields options (persisted metadata columns)
@@ -129,12 +123,7 @@ fun SortViewDialog(
     var fieldsExpanded by remember { mutableStateOf(false) }
     var advancedExpanded by remember { mutableStateOf(false) }
 
-    val dialogTitle = if (isFolderScope) {
-        folderName?.let { "$it - ${stringResource(R.string.folder_view_dialog_title)}" }
-            ?: stringResource(R.string.folder_view_dialog_title)
-    } else {
-        stringResource(R.string.sort_dialog_title)
-    }
+    val dialogTitle = stringResource(R.string.sort_dialog_title)
 
     val primaryFieldsToShow = availableSortFields ?: MX_SORT_FIELDS
 
@@ -220,54 +209,6 @@ fun SortViewDialog(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(mode.labelRes), color = MpxTheme.colors.textPrimary)
-                    }
-                }
-
-                if (isFolderScope && onSetAsDefaultChange != null) {
-                    Spacer(Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSetAsDefaultChange(!isSetAsDefault) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Switch(
-                            checked = isSetAsDefault,
-                            onCheckedChange = onSetAsDefaultChange,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MpxTheme.colors.primary,
-                                checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
-                            ),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.folder_view_set_as_default),
-                                color = MpxTheme.colors.textPrimary,
-                                fontSize = 13.sp,
-                            )
-                            Text(
-                                text = stringResource(R.string.folder_view_set_as_default_desc),
-                                color = MpxTheme.colors.textSecondary,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
-                            )
-                        }
-                    }
-                }
-
-                if (isFolderScope && hasFolderOverride && onResetToDefault != null) {
-                    Spacer(Modifier.height(4.dp))
-                    TextButton(
-                        onClick = onResetToDefault,
-                        modifier = Modifier.padding(top = 2.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.folder_view_reset_default),
-                            color = MpxTheme.colors.primary,
-                            fontSize = 12.sp,
-                        )
                     }
                 }
 

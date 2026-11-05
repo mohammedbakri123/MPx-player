@@ -52,8 +52,7 @@ data class AppSettings(
     val popupPlayCloseOnDone: Boolean = true,
     val appLanguage: String = "system", // system, en, ar, es, fr, hi, zh, ru, de, pt
     val showAllFolders: Boolean = false,
-    val folderViewMode: String = "LIST", // Global default folder contents view mode: LIST, GRID
-    val localViewMode: String = "LIST", // Local root folders list view mode: LIST, GRID
+    val localViewMode: String = "LIST", // Shared Home + folder contents view mode (#186): LIST, GRID
     // Tree view (#164): Local root shows the folder hierarchy inline
     // (Folder / Tree in the Sort & View popup) instead of a flat list.
     // Applies to the folders LIST layout; the GRID layout is unchanged.
@@ -151,8 +150,4 @@ data class AppSettings(
 interface AppSettingsRepository {
     fun load(): AppSettings
     fun save(settings: AppSettings)
-    fun getFolderViewMode(folderId: String): String = "LIST"
-    fun setFolderViewMode(folderId: String, mode: String) {}
-    fun clearFolderViewModeOverride(folderId: String) {}
-    fun hasFolderViewModeOverride(folderId: String): Boolean = false
 }

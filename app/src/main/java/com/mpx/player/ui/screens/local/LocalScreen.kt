@@ -275,7 +275,6 @@ fun LocalScreen(
     }
     var folderVideos by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
     var isFolderLoading by remember { mutableStateOf(false) }
-    var folderViewMode by remember { mutableStateOf(ViewMode.LIST) }
     var folderSortField by remember {
         mutableStateOf(
             try {
@@ -359,13 +358,8 @@ fun LocalScreen(
         currentFolder = folder
         isFolderSearching = false
         folderSearchQuery = ""
-        // Global-with-override: retrieve per-folder override or fall back to global folderViewMode
-        val modeName = realSettingsRepo.getFolderViewMode(folder.id)
-        folderViewMode = try {
-            ViewMode.valueOf(modeName)
-        } catch (_: Exception) {
-            ViewMode.LIST
-        }
+        // Issue #186: one layout for Home and all folders — the folder
+        // contents use the shared viewMode, no per-folder lookup.
         scope.launch(Dispatchers.IO) {
             isFolderLoading = true
             val vids = repository.getVideosInFolder(folder.id)
@@ -1140,7 +1134,6 @@ fun LocalScreen(
                         ),
                         PathSegment(label = folder.name),
                     ),
-                    badgeText = if (realSettingsRepo.hasFolderViewModeOverride(folder.id)) stringResource(folderViewMode.labelRes) else null,
                 )
                 if (isFolderLoading) {
                     Box(
@@ -1168,8 +1161,8 @@ fun LocalScreen(
                         onActionClick = { currentFolder = null },
                     )
                 } else {
-                    // Folder contents: video list or grid based on folderViewMode
-                    if (folderViewMode == ViewMode.LIST) {
+                    // Folder contents: video list or grid based on the shared viewMode (#186)
+                    if (viewMode == ViewMode.LIST) {
                         val videoListState = rememberLazyListState()
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyColumn(
@@ -1686,28 +1679,14 @@ fun LocalScreen(
         )
     }
 
-    // SortViewDialog for Folder Contents View
+    // SortViewDialog for Folder Contents View — issue #186: the folder
+    // contents share Home's layout (viewMode), no per-folder override.
     if (showFolderSortDialog && currentFolder != null) {
-        val folder = currentFolder!!
-        var isSetAsDefault by remember { mutableStateOf(false) }
         SortViewDialog(
             currentSort = folderSortField,
-            currentView = folderViewMode,
-            isFolderScope = true,
-            folderName = folder.name,
-            hasFolderOverride = realSettingsRepo.hasFolderViewModeOverride(folder.id),
-            isSetAsDefault = isSetAsDefault,
-            onSetAsDefaultChange = { isSetAsDefault = it },
+            currentView = viewMode,
             onViewChange = { newMode ->
-                folderViewMode = newMode
-                if (isSetAsDefault) {
-                    val updated = appSettings.copy(folderViewMode = newMode.name)
-                    realSettingsRepo.save(updated)
-                    appSettings = updated
-                    realSettingsRepo.setFolderViewMode(folder.id, newMode.name)
-                } else {
-                    realSettingsRepo.setFolderViewMode(folder.id, newMode.name)
-                }
+                updateViewMode(newMode)
             },
             onSortChange = { newSort ->
                 folderSortField = newSort
@@ -1776,30 +1755,7 @@ fun LocalScreen(
                 realSettingsRepo.save(updated)
                 appSettings = updated
             },
-            onResetToDefault = {
-                realSettingsRepo.clearFolderViewModeOverride(folder.id)
-                val globalMode = try {
-                    ViewMode.valueOf(realSettingsRepo.load().folderViewMode)
-                } catch (_: Exception) {
-                    ViewMode.LIST
-                }
-                folderViewMode = globalMode
-                showFolderSortDialog = false
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        context.getString(
-                            R.string.folder_view_reset_default_snackbar,
-                            context.getString(globalMode.labelRes)
-                        )
-                    )
-                }
-            },
             onDismiss = {
-                if (isSetAsDefault) {
-                    val updated = appSettings.copy(folderViewMode = folderViewMode.name)
-                    realSettingsRepo.save(updated)
-                    appSettings = updated
-                }
                 showFolderSortDialog = false
             },
         )
@@ -1826,10 +1782,11 @@ fun LocalScreen(
                     realSettingsRepo.save(updated)
                     appSettings = updated
                 },
-                currentView = folderViewMode,
+                currentView = viewMode,
                 onViewChange = { newMode ->
-                    folderViewMode = newMode
-                    realSettingsRepo.setFolderViewMode(folder.id, newMode.name)
+                    // Issue #186: the shared layout — a change here applies
+                    // to Home and every folder at once.
+                    updateViewMode(newMode)
                     scope.launch {
                         val msg = if (newMode == ViewMode.GRID) {
                             context.getString(R.string.view_mode_switched_grid)
@@ -1889,25 +1846,6 @@ fun LocalScreen(
                     val updated = appSettings.copy(showFieldDate = show)
                     realSettingsRepo.save(updated)
                     appSettings = updated
-                },
-                hasFolderOverride = realSettingsRepo.hasFolderViewModeOverride(folder.id),
-                onResetToDefault = {
-                    realSettingsRepo.clearFolderViewModeOverride(folder.id)
-                    val globalMode = try {
-                        ViewMode.valueOf(realSettingsRepo.load().folderViewMode)
-                    } catch (_: Exception) {
-                        ViewMode.LIST
-                    }
-                    folderViewMode = globalMode
-                    showSortPopup = false
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            context.getString(
-                                R.string.folder_view_reset_default_snackbar,
-                                context.getString(globalMode.labelRes)
-                            )
-                        )
-                    }
                 },
                 onDismiss = { showSortPopup = false },
             )
@@ -1980,8 +1918,6 @@ fun LocalScreen(
                     realSettingsRepo.save(updated)
                     appSettings = updated
                 },
-                hasFolderOverride = false,
-                onResetToDefault = null,
                 onDismiss = { showSortPopup = false },
             )
         }
