@@ -24,7 +24,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -112,6 +111,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -807,15 +807,58 @@ fun PlayerScreen(
                         return@awaitEachGesture
                     }
 
-                    // Race the three outcomes: touch slop (drag), finger up
+                    // Race the four outcomes: touch slop (drag), second
+                    // pointer (pinch from a standstill, #214), finger up
                     // (tap / double-tap), long-press timeout (hold for 2x).
-                    // awaitTouchSlopOrCancellation returns null both on up
-                    // and on timeout, so tell them apart by whether the
-                    // pointer is still down in the latest event.
-                    val slopChange = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                        awaitTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
+                    // awaitTouchSlopOrCancellation tracked only the first
+                    // finger, so a stationary two-finger spread never
+                    // passed slop and the timeout fired long-press 2x
+                    // instead of zooming. Watch the pointer count in an
+                    // awaitPointerEvent loop instead, and hand a second
+                    // pointer straight to the pinch path below before the
+                    // timeout can fire. The loop ends with slopChange set
+                    // (drag), pinchFromStandstill set (pinch), or neither
+                    // (up or timeout — told apart below by whether the
+                    // pointer is still down in the latest event).
+                    var slopChange: PointerInputChange? = null
+                    var pinchFromStandstill = false
+                    withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val pressed = event.changes.filter { it.pressed }
+                            if (pressed.size >= 2 && realSettingsRepo.load().gesturesEnabled) {
+                                // Second finger down before slop and before
+                                // the long-press timeout: enter pinch mode
+                                // now, using this event's finger distance as
+                                // the baseline. The drag loop below sees
+                                // isPinching and zooms from here instead of
+                                // re-initialising; a two-finger tap (no
+                                // spread) ends in the pinch-over branch with
+                                // the zoom unchanged and no 2x fired.
+                                pinchFromStandstill = true
+                                pinchStartDistance = (pressed[0].position - pressed[1].position).getDistance()
+                                pinchStartZoom = currentSettings.videoZoom
+                                pinchCurrentZoom = pinchStartZoom
+                                isPinching = true
+                                hideZoomJob?.cancel()
+                                showZoomIndicator = true
+                                zoomDisplayText = formatMultiplier(pinchStartZoom)
+                                pressed.forEach { it.consume() }
+                                break
+                            }
+                            val first = event.changes.firstOrNull { it.id == down.id } ?: break
+                            if (!first.pressed && first.previousPressed) {
+                                // Finger lifted: tap / double-tap path below.
+                                break
+                            }
+                            if ((first.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                first.consume()
+                                slopChange = first
+                                break
+                            }
+                        }
                     }
-                    if (slopChange == null) {
+                    if (slopChange == null && !pinchFromStandstill) {
                         val stillDown = currentEvent.changes.any { it.id == down.id && it.pressed }
                         if (stillDown && realSettingsRepo.load().gesturesEnabled) {
                             // Long-press 2x: hold at 2x until release, then
@@ -905,7 +948,11 @@ fun PlayerScreen(
                         // detector and a swipe toggled the chrome.)
                         return@awaitEachGesture
                     }
-                    applyDragDelta(slopChange.position - slopChange.previousPosition, size.width.toFloat(), size.height.toFloat())
+                    // A pinch from a standstill has no slop change to feed
+                    // in — the drag loop below owns the gesture from here.
+                    if (slopChange != null) {
+                        applyDragDelta(slopChange.position - slopChange.previousPosition, size.width.toFloat(), size.height.toFloat())
+                    }
                     // Stream the drag: awaitDragOrCancellation takes no delta
                     // callback, so loop on awaitPointerEvent until the finger
                     // lifts or the gesture is cancelled, feeding every move
