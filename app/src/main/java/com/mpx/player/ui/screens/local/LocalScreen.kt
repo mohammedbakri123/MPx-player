@@ -142,6 +142,33 @@ private val MediaFolderSaver: Saver<MediaFolder?, List<Any>> = Saver(
     },
 )
 
+/**
+ * #202: is this path covered by the folder blacklist (#158)? A blacklisted
+ * path hides the folder itself AND everything under it — exact match, or
+ * the path starts with the blacklisted path plus a separator. The
+ * separator matters: blacklisting `/Movies` must NOT hide the sibling
+ * `/Movies2` (a different folder whose name merely starts with the same
+ * characters). Both sides go through [normalizedTreePath] first, so a
+ * trailing slash on either side is harmless and the storage-prefix aliases
+ * (#196: `/sdcard`, `/mnt/sdcard`, `/storage/emulated/legacy`, …) compare
+ * equal to their canonical `/storage/emulated/0` form. A case-insensitive
+ * fallback mirrors the tree's parent walk (#196): scanned paths can differ
+ * in case from the stored entry for the same directory. A blacklisted
+ * storage root (e.g. `/storage/emulated/0`) hides everything under it —
+ * that is the user's explicit choice, no guard is applied here.
+ */
+internal fun isPathBlacklisted(path: String, blacklist: Set<String>): Boolean {
+    if (blacklist.isEmpty()) return false
+    val normalized = normalizedTreePath(path)
+    return blacklist.any { entry ->
+        val base = normalizedTreePath(entry)
+        normalized == base ||
+            normalized.startsWith("$base/") ||
+            normalized.equals(base, ignoreCase = true) ||
+            normalized.startsWith("$base/", ignoreCase = true)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalScreen(
@@ -430,15 +457,20 @@ fun LocalScreen(
     // #158: folder blacklist (Preferences > Folders). A blacklisted
     // folder and its videos never reach the UI; the filter runs on the
     // scanned result at every load site, so it also applies after
-    // returning from Preferences.
+    // returning from Preferences. #202: the match is a prefix rule
+    // ([isPathBlacklisted]) — a blacklisted folder hides its subfolders
+    // and their videos too, not just its own top level.
     fun applyFolderBlacklist(
         scanned: List<MediaFolder>,
         scannedVideos: List<VideoFile>,
         blacklist: Set<String>,
     ): Pair<List<MediaFolder>, List<VideoFile>> {
         if (blacklist.isEmpty()) return scanned to scannedVideos
-        val visibleFolders = scanned.filter { it.path !in blacklist }
-        val visibleVideos = scannedVideos.filter { File(it.path).parent !in blacklist }
+        val visibleFolders = scanned.filter { !isPathBlacklisted(it.path, blacklist) }
+        val visibleVideos = scannedVideos.filter { video ->
+            val parent = File(video.path).parent
+            parent == null || !isPathBlacklisted(parent, blacklist)
+        }
         return visibleFolders to visibleVideos
     }
 
@@ -496,7 +528,9 @@ fun LocalScreen(
                 val loadedSettings = realSettingsRepo.load()
                 appSettings = loadedSettings
                 // #158: if the open folder was just blacklisted, leave it.
-                if (currentFolder != null && currentFolder!!.path in loadedSettings.blacklistedFolders) {
+                // #202: prefix rule — leaving applies when the open folder
+                // is itself blacklisted OR sits under a blacklisted parent.
+                if (currentFolder != null && isPathBlacklisted(currentFolder!!.path, loadedSettings.blacklistedFolders)) {
                     currentFolder = null
                 }
                 viewMode = if (loadedSettings.localViewMode == "GRID") ViewMode.GRID else ViewMode.LIST

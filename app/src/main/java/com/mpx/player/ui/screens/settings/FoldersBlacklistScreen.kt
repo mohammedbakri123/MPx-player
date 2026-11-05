@@ -44,6 +44,7 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.ui.components.MpxDialog
 import com.mpx.player.ui.components.MpxPrimaryButton
 import com.mpx.player.ui.components.MpxSecondaryButton
+import com.mpx.player.ui.screens.local.isPathBlacklisted
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxTheme
@@ -207,7 +208,7 @@ private fun FoldersBlacklistAddDialog(
         val scanned = withContext(Dispatchers.IO) {
             MediaStoreRepository(context)
                 .getMediaFolders(showAllFolders = true)
-                .filter { it.path !in alreadyBlacklisted }
+                .filter { !isPathBlacklisted(it.path, alreadyBlacklisted) }
                 .sortedBy { it.name.lowercase() }
         }
         folders = scanned
