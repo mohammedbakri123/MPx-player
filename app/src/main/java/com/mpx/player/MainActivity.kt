@@ -73,7 +73,6 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     private var isInPipMode by mutableStateOf(false)
     private lateinit var settingsRepository: SharedPrefsAppSettingsRepository
-    private var currentTheme by mutableStateOf("Midnight")
     private var currentLanguage by mutableStateOf(LocaleHelper.LANGUAGE_SYSTEM)
     private var openPlayerOnStart by mutableStateOf(false)
 
@@ -109,7 +108,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         settingsRepository = SharedPrefsAppSettingsRepository(this)
         val initialSettings = settingsRepository.load()
-        currentTheme = initialSettings.appTheme
         currentLanguage = initialSettings.appLanguage
 
         checkOpenPlayerIntent(intent)
@@ -143,7 +141,7 @@ class MainActivity : ComponentActivity() {
                 LocalConfiguration provides localizedConfig,
                 LocalLayoutDirection provides layoutDirection,
             ) {
-                MpxTheme(appTheme = currentTheme) {
+                MpxTheme() {
                     MpxApp(
                         localPermissionLauncher = localPermissionLauncher,
                         localPermissionHandler = localPermissionHandler,
@@ -161,9 +159,6 @@ class MainActivity : ComponentActivity() {
                             val s = settingsRepository.load()
                             settingsRepository.save(s.copy(appLanguage = newLang))
                             LocaleHelper.applyAppLocale(this@MainActivity, newLang)
-                        },
-                        onThemeChanged = { newTheme ->
-                            currentTheme = newTheme
                         },
                     )
                 }
@@ -307,7 +302,6 @@ fun MpxApp(
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
-    onThemeChanged: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val playbackManager = remember { PlaybackManager.getInstance(context) }
@@ -474,7 +468,6 @@ fun MpxApp(
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
-                    onThemeChanged = onThemeChanged,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                 )
@@ -485,7 +478,6 @@ fun MpxApp(
                     onOpenOverlaySettings = { navController.navigate(Screen.OverlaySettings.route) },
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
                     settingsRepository = realSettingsRepo,
-                    onThemeChanged = onThemeChanged,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                     playbackManager = playbackManager,

@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Equalizer
@@ -86,7 +85,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -140,7 +138,6 @@ fun MeScreen(
     onOpenAboutBeta: (() -> Unit)? = null,
     playbackManager: PlaybackManager? = null,
     settingsRepository: AppSettingsRepository? = null,
-    onThemeChanged: ((String) -> Unit)? = null,
     currentLanguage: String = "system",
     onLanguageChanged: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -170,7 +167,6 @@ fun MeScreen(
     var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
 
     var showNetworkStreamDialog by remember { mutableStateOf(false) }
-    var showThemeDialog by remember { mutableStateOf(false) }
     var showPopupPlayDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
@@ -476,22 +472,6 @@ fun MeScreen(
                             thickness = MpxHairline,
                         )
                         PreferenceRow(
-                            icon = Icons.Filled.ColorLens,
-                            title = stringResource(R.string.pref_app_theme),
-                            subtitle = when (appSettings.appTheme.lowercase(Locale.US)) {
-                                "dark", "dark slate", "slate" -> stringResource(R.string.theme_dark)
-                                "classic", "classic navy", "navy" -> stringResource(R.string.theme_classic)
-                                "light", "light cinema" -> stringResource(R.string.theme_light)
-                                else -> stringResource(R.string.theme_midnight)
-                            },
-                            onClick = { showThemeDialog = true },
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 56.dp),
-                            color = MpxBorder,
-                            thickness = MpxHairline,
-                        )
-                        PreferenceRow(
                             icon = Icons.Filled.Language,
                             title = stringResource(R.string.pref_app_language),
                             subtitle = when (activeLanguage.lowercase()) {
@@ -780,23 +760,6 @@ fun MeScreen(
         )
     }
 
-    // 5. App Theme Dialog (Real Theme Switching)
-    if (showThemeDialog) {
-        AppThemeDialog(
-            currentTheme = appSettings.appTheme,
-            onDismiss = { showThemeDialog = false },
-            onSelectTheme = { selectedTheme ->
-                val updated = appSettings.copy(appTheme = selectedTheme)
-                appSettings = updated
-                realSettingsRepo.save(updated)
-                onThemeChanged?.invoke(selectedTheme)
-                showThemeDialog = false
-                scope.launch {
-                    snackbarHostState.showSnackbar(context.getString(R.string.theme_applied_snackbar, selectedTheme))
-                }
-            },
-        )
-    }
 
     // 5b. App Language Dialog (Real Immediate Language Switching)
     if (showLanguageDialog) {
@@ -1240,121 +1203,6 @@ private fun NetworkStreamDialog(
 }
 
 /**
- * Real App Theme selector with instant switching and preview swatches.
- */
-@Composable
-private fun AppThemeDialog(
-    currentTheme: String,
-    onDismiss: () -> Unit,
-    onSelectTheme: (String) -> Unit,
-) {
-    val themes = listOf(
-        ThemeOption(
-            key = "Midnight",
-            name = stringResource(R.string.theme_midnight),
-            description = stringResource(R.string.theme_midnight_desc),
-            bgColor = Color(0xFF000000),
-            surfaceColor = Color(0xFF000000),
-            primaryColor = Color(0xFF3B82F6),
-        ),
-        ThemeOption(
-            key = "Dark",
-            name = stringResource(R.string.theme_dark),
-            description = stringResource(R.string.theme_dark_desc),
-            bgColor = Color(0xFF0F172A),
-            surfaceColor = Color(0xFF1E293B),
-            primaryColor = Color(0xFF38BDF8),
-        ),
-        ThemeOption(
-            key = "Classic",
-            name = stringResource(R.string.theme_classic),
-            description = stringResource(R.string.theme_classic_desc),
-            bgColor = Color(0xFF0A0F1D),
-            surfaceColor = Color(0xFF131D31),
-            primaryColor = Color(0xFF4895EF),
-        ),
-        ThemeOption(
-            key = "Light",
-            name = stringResource(R.string.theme_light),
-            description = stringResource(R.string.theme_light_desc),
-            bgColor = Color(0xFFF8FAFC),
-            surfaceColor = Color(0xFFFFFFFF),
-            primaryColor = Color(0xFF2563EB),
-        ),
-    )
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = MpxBlack,
-        tonalElevation = 0.dp,
-        modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.ColorLens, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.dialog_theme_title),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MpxTextPrimary,
-                )
-            }
-        },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                themes.forEach { option ->
-                    val isSelected = currentTheme.equals(option.key, ignoreCase = true)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MpxShapes.small)
-                            .clickable { onSelectTheme(option.key) }
-                            .padding(vertical = 10.dp, horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(
-                            selected = isSelected,
-                            onClick = { onSelectTheme(option.key) },
-                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = option.name,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MpxTextPrimary,
-                            )
-                            Spacer(Modifier.height(2.dp))
-                            Text(
-                                text = option.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MpxTextSecondary,
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        // Swatch Preview Pill
-                        Row(
-                            modifier = Modifier
-                                .border(1.dp, MpxBorder, CircleShape)
-                                .padding(3.dp),
-                        ) {
-                            Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(option.bgColor))
-                            Spacer(Modifier.width(2.dp))
-                            Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(option.primaryColor))
-                        }
-                    }
-                    HorizontalDivider(color = MpxBorder, thickness = MpxHairline)
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_close), color = MpxPrimary)
-            }
-        },
-    )
-}
-
-/**
  * Real In-App Language selector with instant switching and RTL preview.
  */
 @Composable
@@ -1446,15 +1294,6 @@ private fun AppLanguageDialog(
         },
     )
 }
-
-private data class ThemeOption(
-    val key: String,
-    val name: String,
-    val description: String,
-    val bgColor: Color,
-    val surfaceColor: Color,
-    val primaryColor: Color,
-)
 
 /**
  * Real Custom Pop-up Play configuration dialog with device PiP detection and testing.

@@ -104,6 +104,15 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.mpx.player.ui.theme.MpxBlack
+import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxDestructive
+import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSurfaceElevated
+import com.mpx.player.ui.theme.MpxTextPrimary
+import com.mpx.player.ui.theme.MpxTextSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,7 +121,6 @@ fun SettingsScreen(
     onOpenOverlaySettings: (() -> Unit)? = null,
     settingsRepository: AppSettingsRepository,
     onOpenAboutBeta: (() -> Unit)? = null,
-    onThemeChanged: ((String) -> Unit)? = null,
     currentLanguage: String = "system",
     onLanguageChanged: ((String) -> Unit)? = null,
     playbackManager: PlaybackManager? = null,
@@ -128,15 +136,11 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
 
     fun update(next: AppSettings) {
-        val oldTheme = settings.appTheme
         val oldLanguage = settings.appLanguage
         val oldEngine = settings.playerEngine
         val oldDecoder = settings.decoderMode
         settings = next
         settingsRepository.save(next)
-        if (next.appTheme != oldTheme) {
-            onThemeChanged?.invoke(next.appTheme)
-        }
         if (next.appLanguage != oldLanguage) {
             onLanguageChanged?.invoke(next.appLanguage)
         }
@@ -176,18 +180,11 @@ fun SettingsScreen(
         else -> stringResource(R.string.lang_system_default)
     }
 
-    val themeSubtitle = when (settings.appTheme.lowercase()) {
-        "dark" -> stringResource(R.string.theme_dark)
-        "classic" -> stringResource(R.string.theme_classic)
-        "light" -> stringResource(R.string.theme_light)
-        else -> stringResource(R.string.theme_midnight)
-    }
-
     // Order follows the decoded MX Settings headers (List, Player, Decoder,
     // Subtitle, General, Development), with MPx extras after them and About
     // last. Audio was removed in #66 and is not re-added. Only Language
-    // (current language) and Theme (current theme) keep a subtitle, since
-    // those carry real state at a glance; all other rows are title-only.
+    // (current language) keeps a subtitle, since it carries real state
+    // at a glance; all other rows are title-only.
     val categories = listOf(
         SettingCategory("list", stringResource(R.string.settings_category_list), null, Icons.AutoMirrored.Filled.FormatListBulleted),
         SettingCategory("player", stringResource(R.string.settings_category_player), null, Icons.Filled.PlayCircleOutline),
@@ -195,7 +192,6 @@ fun SettingsScreen(
         SettingCategory("subtitle", stringResource(R.string.settings_category_subtitle), null, Icons.Filled.Subtitles),
         SettingCategory("general", stringResource(R.string.settings_category_general), null, Icons.Filled.Tune),
         SettingCategory("development", stringResource(R.string.settings_category_development), null, Icons.Filled.DeveloperMode),
-        SettingCategory("theme", stringResource(R.string.settings_category_theme), themeSubtitle, Icons.Filled.ColorLens),
         SettingCategory("pip", stringResource(R.string.settings_category_pip), null, Icons.Filled.PictureInPictureAlt),
         SettingCategory("tabs", stringResource(R.string.settings_category_tabs), null, Icons.Filled.Tab),
         SettingCategory("language", stringResource(R.string.settings_category_language), languageSubtitle, Icons.Filled.Language),
@@ -206,7 +202,7 @@ fun SettingsScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MpxBlack,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -214,15 +210,15 @@ fun SettingsScreen(
                     Text(
                         text = selectedCategory?.title ?: stringResource(R.string.settings_title),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { if (selectedCategory != null) selectedId = null else onNavigateBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back), tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back), tint = MpxTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MpxBlack),
             )
         },
     ) { padding ->
@@ -243,25 +239,25 @@ fun SettingsScreen(
                             Box(
                                 modifier = Modifier
                                     .size(42.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                    .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp)),
+                                    .clip(MpxShapes.small)
+                                    .background(MpxSurfaceElevated)
+                                    .border(0.5.dp, MpxBorder, MpxShapes.small),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(category.icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                                Icon(category.icon, null, tint = MpxPrimary, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(category.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp), color = MaterialTheme.colorScheme.onSurface)
+                                Text(category.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp), color = MpxTextPrimary)
                                 if (category.subtitle != null) {
                                     Spacer(Modifier.height(2.dp))
-                                    Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
+                                    Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary, lineHeight = 16.sp)
                                 }
                             }
                             Spacer(Modifier.width(8.dp))
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MpxTextSecondary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
                         }
-                        HorizontalDivider(modifier = Modifier.padding(start = 74.dp), color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+                        HorizontalDivider(modifier = Modifier.padding(start = 74.dp), color = MpxBorder, thickness = MpxHairline)
                     }
                 }
             }
@@ -340,25 +336,13 @@ fun SettingsScreen(
                                 Text(
                                     stringResource(R.string.lang_settings_note),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MpxTextSecondary,
                                 )
-                            }
-                            "theme" -> {
-                                listOf(
-                                    "Midnight" to stringResource(R.string.theme_midnight),
-                                    "Dark" to stringResource(R.string.theme_dark),
-                                    "Classic" to stringResource(R.string.theme_classic),
-                                    "Light" to stringResource(R.string.theme_light),
-                                ).forEach { (themeKey, themeLabel) ->
-                                    ChoiceRow(themeLabel, settings.appTheme.equals(themeKey, ignoreCase = true)) {
-                                        update(settings.copy(appTheme = themeKey))
-                                    }
-                                }
                             }
                             "pip" -> {
                                 if (onOpenOverlaySettings != null) {
                                     TextButton(onClick = onOpenOverlaySettings) {
-                                        Text(stringResource(R.string.overlay_settings_title), color = MaterialTheme.colorScheme.primary)
+                                        Text(stringResource(R.string.overlay_settings_title), color = MpxPrimary)
                                     }
                                 }
                                 val isSupported = PipUtils.isPipSupported(context)
@@ -366,7 +350,7 @@ fun SettingsScreen(
                                     Text(
                                         text = stringResource(R.string.pip_not_supported),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.error,
+                                        color = MpxDestructive,
                                         modifier = Modifier.padding(bottom = 8.dp),
                                     )
                                 }
@@ -374,7 +358,7 @@ fun SettingsScreen(
                                     update(settings.copy(popupPlayEnabled = it))
                                 }
                                 Spacer(Modifier.height(4.dp))
-                                Text(stringResource(R.string.pip_window_controls_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.pip_window_controls_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 ChoiceRow(stringResource(R.string.pip_controls_prev_next), settings.popupPlayControls == "PrevNext") {
                                     update(settings.copy(popupPlayControls = "PrevNext"))
                                 }
@@ -389,7 +373,7 @@ fun SettingsScreen(
                                 Text(
                                     stringResource(R.string.pref_default_folder_view_mode),
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = MpxTextPrimary,
                                     modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
                                 )
                                 ChoiceRow(stringResource(R.string.view_mode_list), settings.folderViewMode.equals("LIST", ignoreCase = true)) {
@@ -405,26 +389,26 @@ fun SettingsScreen(
                                 Text(
                                     stringResource(R.string.settings_separate_view_desc),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MpxTextSecondary,
                                     modifier = Modifier.padding(bottom = 6.dp),
                                 )
                                 ToggleRow(stringResource(R.string.list_file_view), settings.fileView) { update(settings.copy(fileView = it)) }
                                 Text(
                                     stringResource(R.string.list_file_view_desc),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MpxTextSecondary,
                                     modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
                                 )
                                 ToggleRow(stringResource(R.string.list_show_all_folders), settings.showAllFolders) { update(settings.copy(showAllFolders = it)) }
                                 ToggleRow(stringResource(R.string.list_show_hidden), settings.showHiddenFiles) { update(settings.copy(showHiddenFiles = it)) }
                                 ToggleRow(stringResource(R.string.list_show_thumbnails), settings.showThumbnails) { update(settings.copy(showThumbnails = it)) }
                                 Spacer(Modifier.height(10.dp))
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), thickness = 0.5.dp)
+                                HorizontalDivider(color = MpxBorder.copy(alpha = 0.5f), thickness = MpxHairline)
                                 Spacer(Modifier.height(10.dp))
                                 Text(
                                     text = stringResource(R.string.settings_tabs_header),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = MpxTextPrimary,
                                     modifier = Modifier.padding(bottom = 4.dp),
                                 )
                                 MusicTabsSettingsSection(settings = settings, onToggleTab = ::toggleMusicTab)
@@ -443,7 +427,7 @@ fun SettingsScreen(
                                 Text(
                                     stringResource(R.string.player_background_play_desc),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MpxTextSecondary,
                                     modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
                                 )
                                 // Default playback speed (issue #76): persisted;
@@ -452,7 +436,7 @@ fun SettingsScreen(
                                 Text(
                                     stringResource(R.string.player_default_speed_header),
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = MpxTextPrimary,
                                     modifier = Modifier.padding(bottom = 4.dp),
                                 )
                                 listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { speed ->
@@ -467,14 +451,14 @@ fun SettingsScreen(
                                 Text(
                                     stringResource(R.string.player_auto_rotation_desc),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MpxTextSecondary,
                                     modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
                                 )
                                 if (!settings.autoScreenRotation) {
                                     Text(
                                         stringResource(R.string.player_locked_orientation_header),
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
+                                        color = MpxTextPrimary,
                                         modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
                                     )
                                     ChoiceRow(stringResource(R.string.player_orientation_landscape), settings.screenOrientation.equals("landscape", ignoreCase = true)) {
@@ -491,7 +475,7 @@ fun SettingsScreen(
                                 Text(
                                     "Playback Engine",
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = MpxPrimary,
                                     modifier = Modifier.padding(vertical = 4.dp),
                                 )
                                 listOf(
@@ -506,7 +490,7 @@ fun SettingsScreen(
                                 Text(
                                     "Decoder Mode",
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = MpxPrimary,
                                     modifier = Modifier.padding(vertical = 4.dp),
                                 )
                                 listOf(
@@ -519,11 +503,11 @@ fun SettingsScreen(
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     stringResource(R.string.decoder_explanation),
-                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary,
                                 )
                             }
                             "subtitle" -> {
-                                Text(stringResource(R.string.subtitle_size_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_size_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "Small" to stringResource(R.string.subtitle_size_small),
                                     "Normal" to stringResource(R.string.subtitle_size_normal),
@@ -533,7 +517,7 @@ fun SettingsScreen(
                                 }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_style_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_style_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "White" to stringResource(R.string.subtitle_style_white),
                                     "Yellow" to stringResource(R.string.subtitle_style_yellow),
@@ -544,7 +528,7 @@ fun SettingsScreen(
                                 }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_typeface_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_typeface_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "Default" to stringResource(R.string.subtitle_typeface_default),
                                     "Sans" to stringResource(R.string.subtitle_typeface_sans),
@@ -555,7 +539,7 @@ fun SettingsScreen(
                                 }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_text_color_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_text_color_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "Preset" to stringResource(R.string.subtitle_text_preset),
                                     "White" to stringResource(R.string.player_subtitle_style_white),
@@ -570,7 +554,7 @@ fun SettingsScreen(
                                 }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_bg_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_bg_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "Transparent" to stringResource(R.string.subtitle_bg_transparent),
                                     "Black" to stringResource(R.string.subtitle_bg_black),
@@ -581,7 +565,7 @@ fun SettingsScreen(
                                 }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_border_color_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_border_color_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "Black" to stringResource(R.string.subtitle_border_black),
                                     "White" to stringResource(R.string.subtitle_border_white),
@@ -592,7 +576,7 @@ fun SettingsScreen(
                                 }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_border_thickness_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_border_thickness_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "None" to stringResource(R.string.sort_field_none),
                                     "Thin" to stringResource(R.string.subtitle_thickness_thin),
@@ -607,7 +591,7 @@ fun SettingsScreen(
                                 ToggleRow(stringResource(R.string.subtitle_shadow_label), settings.subtitleShadow) { update(settings.copy(subtitleShadow = it)) }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_alignment_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_alignment_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "Bottom" to stringResource(R.string.subtitle_align_bottom),
                                     "Center" to stringResource(R.string.subtitle_align_center),
@@ -617,7 +601,7 @@ fun SettingsScreen(
                                 }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_padding_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_padding_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "Small" to stringResource(R.string.player_subtitle_size_small),
                                     "Medium" to stringResource(R.string.pip_size_medium),
@@ -627,7 +611,7 @@ fun SettingsScreen(
                                 }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_scale_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_scale_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "75" to stringResource(R.string.subtitle_scale_75),
                                     "100" to stringResource(R.string.subtitle_scale_100),
@@ -638,7 +622,7 @@ fun SettingsScreen(
                                 }
 
                                 Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.subtitle_ass_header), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(R.string.subtitle_ass_header), style = MaterialTheme.typography.labelMedium, color = MpxTextPrimary)
                                 listOf(
                                     "Default" to stringResource(R.string.subtitle_ass_default),
                                     "Scale" to stringResource(R.string.subtitle_ass_scale),
@@ -650,7 +634,7 @@ fun SettingsScreen(
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     stringResource(R.string.subtitle_ass_mpv_note),
-                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary,
                                 )
 
                                 // Subtitle timing (issue #79, MX menu_subtitle sync/speed):
@@ -687,7 +671,7 @@ fun SettingsScreen(
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     stringResource(R.string.subtitle_timing_mpv_note),
-                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary,
                                 )
                             }
                             "general" -> {
@@ -695,12 +679,12 @@ fun SettingsScreen(
                                     val defaultSettings = AppSettings()
                                     update(defaultSettings)
                                 }) {
-                                    Text(stringResource(R.string.general_reset_button), color = MaterialTheme.colorScheme.primary)
+                                    Text(stringResource(R.string.general_reset_button), color = MpxPrimary)
                                 }
                                 Spacer(Modifier.height(6.dp))
                                 Text(
                                     stringResource(R.string.general_language_hint),
-                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall, color = MpxTextSecondary,
                                 )
                             }
                             "development" -> {
@@ -714,25 +698,25 @@ fun SettingsScreen(
                                 Text(
                                     stringResource(R.string.about_app_description),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MpxTextSecondary,
                                 )
                                 Spacer(Modifier.height(10.dp))
                                 if (onOpenAboutBeta != null) {
                                     OutlinedButton(
                                         onClick = onOpenAboutBeta,
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(10.dp),
+                                        shape = MpxShapes.small,
                                     ) {
                                         Icon(
                                             Icons.Filled.Info,
                                             null,
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = MpxPrimary,
                                             modifier = Modifier.size(18.dp),
                                         )
                                         Spacer(Modifier.width(8.dp))
                                         Text(
                                             stringResource(R.string.about_beta_open_page_button),
-                                            color = MaterialTheme.colorScheme.primary,
+                                            color = MpxPrimary,
                                             fontWeight = FontWeight.SemiBold,
                                         )
                                     }
@@ -752,11 +736,11 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+        Text(label, modifier = Modifier.weight(1f), color = MpxTextPrimary, style = MaterialTheme.typography.bodyMedium)
         Switch(
             checked = checked,
             onCheckedChange = onChange,
-            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+            colors = SwitchDefaults.colors(checkedThumbColor = MpxPrimary, checkedTrackColor = MpxPrimary.copy(alpha = 0.4f)),
         )
     }
 }
@@ -770,10 +754,10 @@ private fun ChoiceRow(label: String, selected: Boolean, onClick: () -> Unit) {
         RadioButton(
             selected = selected,
             onClick = onClick,
-            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
         )
         Spacer(Modifier.width(8.dp))
-        Text(label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+        Text(label, color = MpxTextPrimary, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -786,12 +770,12 @@ private fun ChoiceRowWithSubtitle(title: String, subtitle: String, selected: Boo
         RadioButton(
             selected = selected,
             onClick = onClick,
-            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
         )
         Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Text(title, color = MpxTextPrimary, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+            Text(subtitle, color = MpxTextSecondary, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -804,7 +788,7 @@ private fun MusicTabsSettingsSection(
     Text(
         text = stringResource(R.string.settings_tabs_desc),
         style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MpxTextSecondary,
         modifier = Modifier.padding(bottom = 8.dp),
     )
 
@@ -866,14 +850,14 @@ private fun TabToggleRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = label,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MpxTextPrimary,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
             )
             if (isLastVisible && subtitle != null) {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MpxPrimary,
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -882,8 +866,8 @@ private fun TabToggleRow(
             checked = checked,
             onCheckedChange = { onToggle(it) },
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                checkedThumbColor = MpxPrimary,
+                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
             ),
         )
     }
@@ -1191,18 +1175,18 @@ private fun DevelopmentSettingsSection(
                 Toast.makeText(context, context.getString(R.string.dev_val_copied), Toast.LENGTH_SHORT).show()
             },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp),
+            shape = MpxShapes.small,
         ) {
             Icon(
                 imageVector = Icons.Filled.ContentCopy,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MpxPrimary,
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = stringResource(R.string.dev_btn_copy_summary),
-                color = MaterialTheme.colorScheme.primary,
+                color = MpxPrimary,
                 fontWeight = FontWeight.SemiBold,
             )
         }
@@ -1228,18 +1212,18 @@ private fun DevelopmentSettingsSection(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp),
+            shape = MpxShapes.small,
         ) {
             Icon(
                 imageVector = Icons.Filled.Share,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MpxPrimary,
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = stringResource(R.string.dev_btn_share_file),
-                color = MaterialTheme.colorScheme.primary,
+                color = MpxPrimary,
                 fontWeight = FontWeight.SemiBold,
             )
         }
@@ -1258,18 +1242,18 @@ private fun DevelopmentSettingsSection(
         onClick = { refreshStats() },
         enabled = !isRefreshing,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
+        shape = MpxShapes.small,
     ) {
         Icon(
             imageVector = Icons.Filled.Refresh,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MpxPrimary,
         )
         Spacer(Modifier.width(8.dp))
         Text(
             text = if (isRefreshing) stringResource(R.string.dev_val_refreshing) else stringResource(R.string.dev_btn_refresh_diagnostics),
-            color = MaterialTheme.colorScheme.primary,
+            color = MpxPrimary,
             fontWeight = FontWeight.SemiBold,
         )
     }
@@ -1279,7 +1263,7 @@ private fun DevelopmentSettingsSection(
         Text(
             text = stringResource(R.string.dev_label_last_updated, time),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            color = MpxTextSecondary.copy(alpha = 0.7f),
             modifier = Modifier.padding(start = 4.dp),
         )
     }
@@ -1294,15 +1278,15 @@ private fun DiagnosticSection(
         Text(
             text = title,
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.primary,
+            color = MpxPrimary,
             modifier = Modifier.padding(bottom = 4.dp),
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                .clip(MpxShapes.small)
+                .background(MpxSurfaceElevated)
+                .border(0.5.dp, MpxBorder.copy(alpha = 0.5f), MpxShapes.small)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -1327,7 +1311,7 @@ private fun DiagnosticRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MpxTextSecondary,
             modifier = Modifier.weight(0.42f),
         )
         Spacer(Modifier.width(8.dp))
@@ -1338,7 +1322,7 @@ private fun DiagnosticRow(
             } else {
                 MaterialTheme.typography.bodySmall
             },
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MpxTextPrimary,
             modifier = Modifier.weight(0.58f),
         )
     }
