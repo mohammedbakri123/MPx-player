@@ -832,7 +832,7 @@ class MpvPlayerEngine(
                     val reason = try { data.get("reason")?.asString() } catch (_: Exception) { null }
                     val errCode = try { data.get("error")?.asInt() } catch (_: Exception) { null }
                     val isBenignStop = reason in setOf("stop", "quit", "eof", "redirect")
-                    val isRealFailure = !isBenignStop || (errCode != null && errCode != 0)
+                    val isRealFailure = !isBenignStop || (errCode != null && errCode != 0L)
                     if (!isRealFailure) return
                     val lastLog = synchronized(lastErrorLogs) { lastErrorLogs.lastOrNull() }
                     val detail = listOfNotNull(
