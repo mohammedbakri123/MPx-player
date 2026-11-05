@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.DeleteSweep
@@ -38,6 +37,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSurfaceVariant
+import com.mpx.player.ui.theme.MpxTextPrimary
 
 data class ShortcutChipData(
     val id: String,
@@ -134,17 +138,17 @@ fun ShortcutChipRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         chips.forEach { chip ->
-            val bg = if (chip.isPrimary) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant
-            val fg = if (chip.isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-            val border = if (chip.isPrimary) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline
+            val bg = if (chip.isPrimary) MpxPrimary.copy(alpha = 0.2f) else MpxSurfaceVariant
+            val fg = if (chip.isPrimary) MpxPrimary else MpxTextPrimary
+            val border = if (chip.isPrimary) MpxPrimary.copy(alpha = 0.6f) else MpxBorder
 
             Surface(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(MpxShapes.extraLarge)
                     .clickable { chip.onClick() },
                 color = bg,
                 tonalElevation = 0.dp,
-                shape = RoundedCornerShape(20.dp),
+                shape = MpxShapes.extraLarge,
                 border = androidx.compose.foundation.BorderStroke(1.dp, border),
             ) {
                 Row(
@@ -168,7 +172,7 @@ fun ShortcutChipRow(
                         Spacer(Modifier.width(4.dp))
                         Box(
                             modifier = Modifier
-                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                                .background(MpxPrimary, MpxShapes.extraSmall)
                                 .padding(horizontal = 4.dp, vertical = 1.dp),
                         ) {
                             Text(

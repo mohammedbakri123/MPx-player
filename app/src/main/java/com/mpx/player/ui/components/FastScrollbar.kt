@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,6 +46,9 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxTextPrimary
 
 /**
  * Fast draggable scrollbar with real-time section preview bubble for long Compose LazyColumn lists.
@@ -59,7 +61,7 @@ fun FastScrollbar(
     itemCount: Int,
     modifier: Modifier = Modifier,
     getSectionText: ((Int) -> String)? = null,
-    thumbColor: Color = MaterialTheme.colorScheme.primary,
+    thumbColor: Color = MpxPrimary,
     trackColor: Color = Color.Transparent,
 ) {
     if (itemCount <= 3) return
@@ -150,8 +152,8 @@ fun FastScrollbar(
                 },
         ) {
             Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.primary,
+                shape = MpxShapes.small,
+                color = MpxPrimary,
                 shadowElevation = 6.dp,
             ) {
                 Box(
@@ -166,7 +168,7 @@ fun FastScrollbar(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                     )
                 }
             }
@@ -213,7 +215,7 @@ fun FastScrollbar(
                     .fillMaxHeight()
                     .width(4.dp)
                     .padding(end = 2.dp)
-                    .background(trackColor, RoundedCornerShape(2.dp)),
+                    .background(trackColor, MpxShapes.extraSmall),
             )
 
             // Draggable Thumb
@@ -222,7 +224,7 @@ fun FastScrollbar(
                     .offset { IntOffset(x = 0, y = thumbOffsetPx.roundToInt()) }
                     .width(6.dp)
                     .size(width = 6.dp, height = with(density) { thumbHeightPx.toDp() })
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(MpxShapes.extraSmall)
                     .background(if (isDragging) thumbColor else thumbColor.copy(alpha = 0.85f)),
             )
         }
@@ -238,7 +240,7 @@ fun GridFastScrollbar(
     itemCount: Int,
     modifier: Modifier = Modifier,
     getSectionText: ((Int) -> String)? = null,
-    thumbColor: Color = MaterialTheme.colorScheme.primary,
+    thumbColor: Color = MpxPrimary,
     trackColor: Color = Color.Transparent,
 ) {
     if (itemCount <= 4) return
@@ -326,8 +328,8 @@ fun GridFastScrollbar(
                 },
         ) {
             Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.primary,
+                shape = MpxShapes.small,
+                color = MpxPrimary,
                 shadowElevation = 6.dp,
             ) {
                 Box(
@@ -342,7 +344,7 @@ fun GridFastScrollbar(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                     )
                 }
             }
@@ -387,7 +389,7 @@ fun GridFastScrollbar(
                     .fillMaxHeight()
                     .width(4.dp)
                     .padding(end = 2.dp)
-                    .background(trackColor, RoundedCornerShape(2.dp)),
+                    .background(trackColor, MpxShapes.extraSmall),
             )
 
             Box(
@@ -395,7 +397,7 @@ fun GridFastScrollbar(
                     .offset { IntOffset(x = 0, y = thumbOffsetPx.roundToInt()) }
                     .width(6.dp)
                     .size(width = 6.dp, height = with(density) { thumbHeightPx.toDp() })
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(MpxShapes.extraSmall)
                     .background(if (isDragging) thumbColor else thumbColor.copy(alpha = 0.85f)),
             )
         }

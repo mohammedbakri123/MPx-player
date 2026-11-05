@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.ui.theme.MpxTextPrimary
 
 /**
  * A labelled − / value / + stepper row, used by the subtitle timing
@@ -50,7 +51,7 @@ fun StepperRow(
         Text(
             label,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MpxTextPrimary,
             modifier = Modifier.weight(1f),
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -60,7 +61,7 @@ fun StepperRow(
             Text(
                 valueText,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MpxTextPrimary,
                 fontSize = 14.sp,
             )
             IconButton(onClick = onPlus, modifier = Modifier.size(32.dp)) {

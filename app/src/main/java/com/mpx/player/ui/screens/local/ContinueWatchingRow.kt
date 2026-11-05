@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
@@ -40,6 +39,13 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.ui.components.AsyncVideoThumbnail
 import com.mpx.player.ui.components.player.formatTimeMs
+import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSurfaceVariant
+import com.mpx.player.ui.theme.MpxTextPrimary
+import com.mpx.player.ui.theme.MpxTextSecondary
 
 /**
  * Domain model representing an item in the Continue Watching row.
@@ -88,20 +94,20 @@ fun ContinueWatchingRow(
             Text(
                 text = stringResource(R.string.continue_watching_title).uppercase(),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MpxTextSecondary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.width(8.dp))
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .clip(MpxShapes.small)
+                    .background(MpxSurfaceVariant)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             ) {
                 Text(
                     text = "${items.size}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MpxTextSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -141,7 +147,7 @@ fun ContinueWatchingCard(
     Column(
         modifier = modifier
             .width(150.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(MpxShapes.small)
             .clickable(onClick = onClick),
     ) {
         // Video thumbnail container with progress bar, play icon, and dismiss affordance
@@ -149,9 +155,9 @@ fun ContinueWatchingCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(84.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
+                .clip(MpxShapes.small)
+                .background(MpxSurfaceVariant)
+                .border(MpxHairline, MpxBorder, MpxShapes.small),
         ) {
             AsyncVideoThumbnail(
                 mediaUri = item.mediaUri,
@@ -210,7 +216,7 @@ fun ContinueWatchingCard(
                     .fillMaxWidth()
                     .height(3.5.dp)
                     .align(Alignment.BottomCenter),
-                color = MaterialTheme.colorScheme.primary,
+                color = MpxPrimary,
                 trackColor = Color.Black.copy(alpha = 0.5f),
             )
         }
@@ -221,7 +227,7 @@ fun ContinueWatchingCard(
         Text(
             text = item.title,
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MpxTextPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             fontSize = 12.sp,
@@ -235,7 +241,7 @@ fun ContinueWatchingCard(
                 stringResource(R.string.continue_watching_resume_at, formatTimeMs(item.positionMs))
             },
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
+            color = MpxPrimary,
             fontSize = 10.5.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
