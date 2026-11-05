@@ -76,7 +76,7 @@ data class VisibleTreeRow(
 
 private fun treeKey(folder: MediaFolder): String = folder.id.ifBlank { folder.path }
 
-private fun normalizedTreePath(path: String): String {
+internal fun normalizedTreePath(path: String): String {
     val trimmed = path.trimEnd('/')
     // Primary-storage aliases that all denote /storage/emulated/0 (#196).
     // MediaStore DATA has historically reported the same directory under
