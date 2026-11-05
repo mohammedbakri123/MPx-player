@@ -79,7 +79,6 @@ import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -154,6 +153,17 @@ import com.mpx.player.util.SubtitleUtils
 import com.mpx.player.util.SubtitleValidationResult
 import java.util.Locale
 import kotlinx.coroutines.launch
+import com.mpx.player.ui.components.MpxLoadingIndicator
+import com.mpx.player.ui.theme.MpxBlack
+import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxBorderSubtle
+import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxPrimaryVariant
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSurfaceVariant
+import com.mpx.player.ui.theme.MpxTextPrimary
+import com.mpx.player.ui.theme.MpxTextSecondary
 
 private fun Context.findActivity(): Activity? {
     var ctx = this
@@ -217,8 +227,8 @@ private fun VerticalIndicatorBar(
     modifier: Modifier = Modifier,
     height: Dp = 80.dp,
     width: Dp = 6.dp,
-    trackColor: Color = Color.White.copy(alpha = 0.25f),
-    progressColor: Color = MaterialTheme.colorScheme.primary,
+    trackColor: Color = MpxTextPrimary.copy(alpha = 0.25f),
+    progressColor: Color = MpxPrimary,
 ) {
     val clamped = fraction.coerceIn(0f, 1f)
     Box(
@@ -255,12 +265,12 @@ private fun GestureHud(
     Box(
         modifier = modifier
             .width(56.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(MpxShapes.large)
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color.Black.copy(alpha = 0.45f),
-                        Color.Black.copy(alpha = 0.65f),
+                        MpxBlack.copy(alpha = 0.45f),
+                        MpxBlack.copy(alpha = 0.65f),
                     ),
                 ),
             )
@@ -270,7 +280,7 @@ private fun GestureHud(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = percentText,
-                color = Color.White,
+                color = MpxTextPrimary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -279,14 +289,14 @@ private fun GestureHud(
                 fraction = fraction,
                 height = 92.dp,
                 width = 4.dp,
-                trackColor = Color.White.copy(alpha = 0.25f),
-                progressColor = Color.White,
+                trackColor = MpxTextPrimary.copy(alpha = 0.25f),
+                progressColor = MpxTextPrimary,
             )
             Spacer(Modifier.height(8.dp))
             Icon(
                 imageVector = icon,
                 contentDescription = iconDescription,
-                tint = Color.White,
+                tint = MpxTextPrimary,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -521,7 +531,7 @@ fun PlayerScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MpxBlack)
             // Tap gestures: single tap toggles controls, double tap zones (left: -10s, center: play/pause, right: +10s)
             .pointerInput(state.isLocked) {
                 detectTapGestures(
@@ -801,13 +811,13 @@ fun PlayerScreen(
                     modifier = Modifier
                         .size(80.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.08f)),
+                        .background(MpxTextPrimary.copy(alpha = 0.08f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MpxPrimary,
                         modifier = Modifier.size(40.dp),
                     )
                 }
@@ -815,13 +825,13 @@ fun PlayerScreen(
                 Text(
                     text = stringResource(R.string.player_empty_no_video),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White,
+                    color = MpxTextPrimary,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = stringResource(R.string.player_empty_select_video),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MpxTextSecondary,
                 )
             }
         } else if (!currentMedia.isVideo) {
@@ -836,13 +846,13 @@ fun PlayerScreen(
                     modifier = Modifier
                         .size(96.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                        .background(MpxPrimary.copy(alpha = 0.25f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Filled.MusicNote,
                         contentDescription = stringResource(R.string.player_cd_audio_track),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MpxPrimary,
                         modifier = Modifier.size(52.dp),
                     )
                 }
@@ -850,7 +860,7 @@ fun PlayerScreen(
                 Text(
                     text = currentMedia.title,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
+                    color = MpxTextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -858,7 +868,7 @@ fun PlayerScreen(
                 Text(
                     text = currentMedia.subtitle,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MpxTextSecondary,
                 )
             }
         }
@@ -871,14 +881,11 @@ fun PlayerScreen(
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(48.dp),
-                )
+                MpxLoadingIndicator(modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = stringResource(R.string.player_loading),
-                    color = Color.White,
+                    color = MpxTextPrimary,
                     fontSize = 14.sp,
                 )
             }
@@ -889,12 +896,12 @@ fun PlayerScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(MpxShapes.large)
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color.Black.copy(alpha = 0.45f),
-                                Color.Black.copy(alpha = 0.65f),
+                                MpxBlack.copy(alpha = 0.45f),
+                                MpxBlack.copy(alpha = 0.65f),
                             ),
                         ),
                     )
@@ -910,14 +917,14 @@ fun PlayerScreen(
 
                     Text(
                         text = stringResource(R.string.player_hud_scrub, deltaStr),
-                        color = Color.White,
+                        color = MpxTextPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = "${formatTimeMs(seekTargetMs)} / ${formatTimeMs(currentDuration)}",
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = MpxTextPrimary.copy(alpha = 0.8f),
                         fontSize = 13.sp,
                     )
                 }
@@ -971,12 +978,12 @@ fun PlayerScreen(
                 modifier = Modifier
                     .align(if (isBackward) Alignment.CenterStart else Alignment.CenterEnd)
                     .padding(start = if (isBackward) 32.dp else 0.dp, end = if (!isBackward) 32.dp else 0.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(MpxShapes.large)
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color.Black.copy(alpha = 0.45f),
-                                Color.Black.copy(alpha = 0.65f),
+                                MpxBlack.copy(alpha = 0.45f),
+                                MpxBlack.copy(alpha = 0.65f),
                             ),
                         ),
                     )
@@ -989,13 +996,13 @@ fun PlayerScreen(
                     Icon(
                         imageVector = if (isBackward) Icons.Filled.Replay10 else Icons.Filled.Forward10,
                         contentDescription = if (isBackward) stringResource(R.string.player_cd_seek_back) else stringResource(R.string.player_cd_seek_forward),
-                        tint = Color.White,
+                        tint = MpxTextPrimary,
                         modifier = Modifier.size(28.dp),
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = if (isBackward) "-10s" else "+10s",
-                        color = Color.White,
+                        color = MpxTextPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                     )
@@ -1006,7 +1013,7 @@ fun PlayerScreen(
                         } else {
                             formatTimeMs(state.currentPositionMs)
                         },
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = MpxTextPrimary.copy(alpha = 0.8f),
                         fontSize = 12.sp,
                     )
                 }
@@ -1019,8 +1026,8 @@ fun PlayerScreen(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 72.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = RoundedCornerShape(20.dp),
+                color = MpxSurfaceVariant,
+                shape = MpxShapes.extraLarge,
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -1028,14 +1035,14 @@ fun PlayerScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.player_resumed_from, formatTimeMs(resumeMs)),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_start_over),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MpxPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
@@ -1051,7 +1058,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.player_cd_dismiss),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = MpxTextSecondary,
                             modifier = Modifier.size(16.dp),
                         )
                     }
@@ -1065,8 +1072,8 @@ fun PlayerScreen(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = if (state.resumedFromMs != null) 124.dp else 72.dp, start = 16.dp, end = 16.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = RoundedCornerShape(12.dp),
+                color = MpxSurfaceVariant,
+                shape = MpxShapes.medium,
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -1075,13 +1082,13 @@ fun PlayerScreen(
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = MpxTextSecondary,
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = fallbackMsg,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                         modifier = Modifier.weight(1f),
@@ -1094,7 +1101,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.player_cd_dismiss),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = MpxTextSecondary,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -1112,8 +1119,8 @@ fun PlayerScreen(
                         start = 16.dp,
                         end = 16.dp,
                     ),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = RoundedCornerShape(12.dp),
+                color = MpxSurfaceVariant,
+                shape = MpxShapes.medium,
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -1122,13 +1129,13 @@ fun PlayerScreen(
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = MpxTextSecondary,
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = userMsg,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                         modifier = Modifier.weight(1f),
@@ -1139,7 +1146,7 @@ fun PlayerScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.player_try_mpv),
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MpxPrimary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clickable {
@@ -1156,7 +1163,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.player_cd_dismiss),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = MpxTextSecondary,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -1180,12 +1187,12 @@ fun PlayerScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.6f)),
+                        .background(MpxBlack.copy(alpha = 0.6f)),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Lock,
                         contentDescription = stringResource(R.string.player_cd_unlock),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MpxPrimary,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -1210,7 +1217,7 @@ fun PlayerScreen(
                         .align(Alignment.TopCenter)
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Black.copy(alpha = 0.75f), Color.Transparent),
+                                colors = listOf(MpxBlack.copy(alpha = 0.75f), Color.Transparent),
                             ),
                         )
                         .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 24.dp),
@@ -1223,7 +1230,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.player_cd_back),
-                                tint = Color.White,
+                                tint = MpxTextPrimary,
                             )
                         }
 
@@ -1235,7 +1242,7 @@ fun PlayerScreen(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 16.sp,
                             ),
-                            color = Color.White,
+                            color = MpxTextPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
@@ -1261,7 +1268,7 @@ fun PlayerScreen(
                         } ?: state.decoderMode.label
                         Surface(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(MpxShapes.small)
                                 .clickable {
                                     val nextDecoder = when (state.decoderMode) {
                                         DecoderMode.HW -> DecoderMode.HW_PLUS
@@ -1274,11 +1281,11 @@ fun PlayerScreen(
                                     Toast.makeText(context, context.getString(R.string.player_toast_decoder, context.getString(nextDecoder.titleRes)), Toast.LENGTH_SHORT).show()
                                 },
                             color = Color.Transparent,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = MpxShapes.small,
                         ) {
                             Text(
                                 text = decoderPillText,
-                                color = Color.White,
+                                color = MpxTextPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -1293,7 +1300,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
                                 contentDescription = stringResource(R.string.player_cd_more),
-                                tint = Color.White,
+                                tint = MpxTextPrimary,
                             )
                         }
                     }
@@ -1308,7 +1315,7 @@ fun PlayerScreen(
                         .align(Alignment.BottomCenter)
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+                                colors = listOf(Color.Transparent, MpxBlack.copy(alpha = 0.8f)),
                             ),
                         )
                         .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -1320,15 +1327,15 @@ fun PlayerScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.White.copy(alpha = 0.12f))
+                                    .clip(MpxShapes.small)
+                                    .background(MpxTextPrimary.copy(alpha = 0.12f))
                                     .padding(horizontal = 10.dp, vertical = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     text = stringResource(R.string.player_gesture_hint),
-                                    color = Color.White.copy(alpha = 0.85f),
+                                    color = MpxTextPrimary.copy(alpha = 0.85f),
                                     fontSize = 11.sp,
                                 )
                                 IconButton(
@@ -1338,7 +1345,7 @@ fun PlayerScreen(
                                     Icon(
                                         imageVector = Icons.Filled.Close,
                                         contentDescription = stringResource(R.string.player_cd_dismiss_hint),
-                                        tint = Color.White.copy(alpha = 0.7f),
+                                        tint = MpxTextPrimary.copy(alpha = 0.7f),
                                         modifier = Modifier.size(14.dp),
                                     )
                                 }
@@ -1353,7 +1360,7 @@ fun PlayerScreen(
                         ) {
                             Text(
                                 text = formatTimeMs(displayedCurrentTime),
-                                color = Color.White,
+                                color = MpxTextPrimary,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                             )
@@ -1373,15 +1380,15 @@ fun PlayerScreen(
                                     .weight(1f)
                                     .padding(horizontal = 8.dp),
                                 colors = SliderDefaults.colors(
-                                    thumbColor = MaterialTheme.colorScheme.primary,
-                                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                                    inactiveTrackColor = Color.White.copy(alpha = 0.3f),
+                                    thumbColor = MpxPrimary,
+                                    activeTrackColor = MpxPrimary,
+                                    inactiveTrackColor = MpxTextPrimary.copy(alpha = 0.3f),
                                 ),
                             )
 
                             Text(
                                 text = formatTimeMs(currentDuration),
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = MpxTextPrimary.copy(alpha = 0.7f),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                             )
@@ -1409,7 +1416,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.LockOpen,
                                     contentDescription = stringResource(R.string.player_cd_lock),
-                                    tint = Color.White,
+                                    tint = MpxTextPrimary,
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1424,7 +1431,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.SkipPrevious,
                                     contentDescription = stringResource(R.string.player_cd_previous),
-                                    tint = if (state.hasPrevious) Color.White else Color.White.copy(alpha = 0.3f),
+                                    tint = if (state.hasPrevious) MpxTextPrimary else MpxTextPrimary.copy(alpha = 0.3f),
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1438,7 +1445,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Replay10,
                                     contentDescription = stringResource(R.string.player_cd_seek_back),
-                                    tint = Color.White,
+                                    tint = MpxTextPrimary,
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1454,7 +1461,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                     contentDescription = if (state.isPlaying) stringResource(R.string.player_cd_pause) else stringResource(R.string.player_cd_play),
-                                    tint = Color.White,
+                                    tint = MpxTextPrimary,
                                     modifier = Modifier.size(34.dp),
                                 )
                             }
@@ -1468,7 +1475,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Forward10,
                                     contentDescription = stringResource(R.string.player_cd_seek_forward),
-                                    tint = Color.White,
+                                    tint = MpxTextPrimary,
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1483,7 +1490,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.SkipNext,
                                     contentDescription = stringResource(R.string.player_cd_next),
-                                    tint = if (state.hasNext) Color.White else Color.White.copy(alpha = 0.3f),
+                                    tint = if (state.hasNext) MpxTextPrimary else MpxTextPrimary.copy(alpha = 0.3f),
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1509,10 +1516,10 @@ fun PlayerScreen(
                             ) {
                                 Surface(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .clip(MpxShapes.medium)
                                         .clickable { activeDialog = "Sleep Timer" },
-                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
-                                    shape = RoundedCornerShape(12.dp),
+                                    color = MpxPrimaryVariant.copy(alpha = 0.9f),
+                                    shape = MpxShapes.medium,
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -1521,13 +1528,13 @@ fun PlayerScreen(
                                         Icon(
                                             imageVector = Icons.Filled.Timer,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            tint = MpxTextPrimary,
                                             modifier = Modifier.size(14.dp),
                                         )
                                         Spacer(Modifier.width(4.dp))
                                         Text(
                                             text = stringResource(R.string.player_sleep_timer_chip, timeFormatted),
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            color = MpxTextPrimary,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium,
                                         )
@@ -1535,7 +1542,7 @@ fun PlayerScreen(
                                         Icon(
                                             imageVector = Icons.Filled.Close,
                                             contentDescription = stringResource(R.string.player_sleep_timer_cancel),
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            tint = MpxTextPrimary,
                                             modifier = Modifier
                                                 .size(14.dp)
                                                 .clickable {
@@ -1561,14 +1568,14 @@ fun PlayerScreen(
     if (activeDialog == "Audio Tracks") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MpxBlack,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
             title = {
                 PlayerDialogBackdropBlur()
                 Text(
                     text = stringResource(R.string.player_dialog_audio_tracks),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MpxTextPrimary,
                     fontWeight = FontWeight.Bold,
                 )
             },
@@ -1576,7 +1583,7 @@ fun PlayerScreen(
                 if (state.audioTracks.isEmpty()) {
                     Text(
                         text = stringResource(R.string.player_audio_no_tracks),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MpxTextSecondary,
                     )
                 } else {
                     LazyColumn {
@@ -1597,18 +1604,18 @@ fun PlayerScreen(
                                         playbackManager.selectAudioTrack(track.groupIndex, track.trackIndex)
                                         activeDialog = null
                                     },
-                                    colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                                    colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Column {
                                     Text(
                                         text = track.label,
-                                        color = MaterialTheme.colorScheme.onSurface,
+                                        color = MpxTextPrimary,
                                         fontWeight = if (track.isSelected) FontWeight.Bold else FontWeight.Normal,
                                     )
                                     Text(
                                         text = stringResource(R.string.player_track_language, track.language),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MpxTextSecondary,
                                         fontSize = 12.sp,
                                     )
                                 }
@@ -1619,7 +1626,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_close), color = MpxPrimary)
                 }
             },
         )
@@ -1629,20 +1636,20 @@ fun PlayerScreen(
     if (activeDialog == "Subtitles") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MpxBlack,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
             title = {
                 PlayerDialogBackdropBlur()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxPrimary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_dialog_subtitle_selection),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f),
                     )
@@ -1657,30 +1664,30 @@ fun PlayerScreen(
                             subtitleLauncher.launch(arrayOf("*/*"))
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        border = BorderStroke(1.dp, MpxPrimary),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.FileUpload,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MpxPrimary,
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.player_subtitle_open_file),
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MpxPrimary,
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
 
                     Spacer(Modifier.height(10.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                    HorizontalDivider(color = MpxBorderSubtle, thickness = MpxHairline)
                     Spacer(Modifier.height(8.dp))
 
                     Text(
                         text = stringResource(R.string.player_subtitle_available_tracks),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MpxTextSecondary,
                     )
                     Spacer(Modifier.height(4.dp))
 
@@ -1701,12 +1708,12 @@ fun PlayerScreen(
                                 playbackManager.selectSubtitleTrack(null, null)
                                 activeDialog = null
                             },
-                            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.player_subtitle_off),
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MpxTextPrimary,
                             fontWeight = if (state.selectedSubtitleTrackIndex == -1) FontWeight.Bold else FontWeight.Normal,
                         )
                     }
@@ -1714,7 +1721,7 @@ fun PlayerScreen(
                     if (state.subtitleTracks.isEmpty()) {
                         Text(
                             text = stringResource(R.string.player_subtitle_no_tracks),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MpxTextSecondary,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 32.dp, top = 2.dp, bottom = 6.dp),
                         )
@@ -1736,25 +1743,25 @@ fun PlayerScreen(
                                         playbackManager.selectSubtitleTrack(track.groupIndex, track.trackIndex)
                                         activeDialog = null
                                     },
-                                    colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                                    colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
                                             text = track.label,
-                                            color = MaterialTheme.colorScheme.onSurface,
+                                            color = MpxTextPrimary,
                                             fontWeight = if (track.isSelected) FontWeight.Bold else FontWeight.Normal,
                                         )
                                         if (track.isExternal) {
                                             Spacer(Modifier.width(6.dp))
                                             Surface(
-                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                                shape = RoundedCornerShape(4.dp),
+                                                color = MpxPrimary.copy(alpha = 0.2f),
+                                                shape = MpxShapes.extraSmall,
                                             ) {
                                                 Text(
                                                     text = stringResource(R.string.player_subtitle_external),
-                                                    color = MaterialTheme.colorScheme.primary,
+                                                    color = MpxPrimary,
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
@@ -1764,7 +1771,7 @@ fun PlayerScreen(
                                     }
                                     Text(
                                         text = stringResource(R.string.player_track_language, track.language),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MpxTextSecondary,
                                         fontSize = 12.sp,
                                     )
                                 }
@@ -1773,11 +1780,11 @@ fun PlayerScreen(
                     }
 
                     Spacer(Modifier.height(10.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                    HorizontalDivider(color = MpxBorderSubtle, thickness = MpxHairline)
                     Spacer(Modifier.height(8.dp))
 
                     // Subtitle Size Controls (from settings)
-                    Text(stringResource(R.string.player_subtitle_text_size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.player_subtitle_text_size), style = MaterialTheme.typography.labelMedium, color = MpxTextSecondary)
                     Spacer(Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1798,8 +1805,8 @@ fun PlayerScreen(
                                 },
                                 label = { Text(stringResource(sizeRes), fontSize = 12.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = Color.White,
+                                    selectedContainerColor = MpxPrimary,
+                                    selectedLabelColor = MpxTextPrimary,
                                 ),
                             )
                         }
@@ -1863,13 +1870,13 @@ fun PlayerScreen(
                         Text(
                             stringResource(R.string.subtitle_timing_mpv_note),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MpxTextSecondary,
                         )
                     }
 
                     Spacer(Modifier.height(6.dp))
                     // Subtitle Style Controls (from settings)
-                    Text(stringResource(R.string.player_subtitle_style_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.player_subtitle_style_color), style = MaterialTheme.typography.labelMedium, color = MpxTextSecondary)
                     Spacer(Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1891,8 +1898,8 @@ fun PlayerScreen(
                                 },
                                 label = { Text(stringResource(styleRes), fontSize = 11.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = Color.White,
+                                    selectedContainerColor = MpxPrimary,
+                                    selectedLabelColor = MpxTextPrimary,
                                 ),
                             )
                         }
@@ -1901,7 +1908,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_close), color = MpxPrimary)
                 }
             },
         )
@@ -1911,17 +1918,17 @@ fun PlayerScreen(
     if (activeDialog == "Decoder") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MpxBlack,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
             title = {
                 PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxPrimary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_dialog_decoder_selection),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -1951,18 +1958,18 @@ fun PlayerScreen(
                                     currentSettings = updated
                                     activeDialog = null
                                 },
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                                colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                             )
                             Spacer(Modifier.width(8.dp))
                             Column {
                                 Text(
                                     text = stringResource(mode.titleRes),
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = MpxTextPrimary,
                                     fontWeight = if (state.decoderMode == mode) FontWeight.Bold else FontWeight.Normal,
                                 )
                                 Text(
                                     text = stringResource(mode.descriptionRes),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MpxTextSecondary,
                                     fontSize = 12.sp,
                                 )
                             }
@@ -1970,12 +1977,12 @@ fun PlayerScreen(
                     }
 
                     Spacer(Modifier.height(10.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+                    HorizontalDivider(color = MpxBorderSubtle, thickness = MpxHairline)
                     Spacer(Modifier.height(8.dp))
 
                     Text(
                         text = stringResource(R.string.player_active_codec, state.activeDecoderName ?: stringResource(R.string.player_codec_initializing)),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MpxPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -1984,7 +1991,7 @@ fun PlayerScreen(
                         Spacer(Modifier.height(8.dp))
                         Surface(
                             color = Color(0x33FFB74D),
-                            shape = RoundedCornerShape(8.dp),
+                            shape = MpxShapes.small,
                             border = BorderStroke(1.dp, Color(0xFFFFB74D)),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
@@ -2009,7 +2016,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_close), color = MpxPrimary)
                 }
             },
         )
@@ -2019,9 +2026,9 @@ fun PlayerScreen(
     if (subtitleErrorDialogText != null) {
         AlertDialog(
             onDismissRequest = { subtitleErrorDialogText = null },
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MpxBlack,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
             title = {
                 Text(
                     text = stringResource(R.string.player_dialog_unsupported_subtitle),
@@ -2032,14 +2039,14 @@ fun PlayerScreen(
             text = {
                 Text(
                     text = subtitleErrorDialogText!!,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MpxTextPrimary,
                     fontSize = 14.sp,
                     lineHeight = 20.sp,
                 )
             },
             confirmButton = {
                 TextButton(onClick = { subtitleErrorDialogText = null }) {
-                    Text(stringResource(R.string.action_ok), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
                 }
             },
         )
@@ -2049,14 +2056,14 @@ fun PlayerScreen(
     if (activeDialog == "Player Menu") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MpxBlack,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outline, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
             title = {
                 PlayerDialogBackdropBlur()
                 Text(
                     text = stringResource(R.string.player_menu_title),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MpxTextPrimary,
                     fontWeight = FontWeight.Bold,
                 )
             },
@@ -2069,9 +2076,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Memory, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_decoder_mode, state.decoderMode.label), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_decoder_mode, state.decoderMode.label), color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2080,9 +2087,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Audiotrack, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.Audiotrack, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_audio_tracks, state.audioTracks.size), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_audio_tracks, state.audioTracks.size), color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2091,9 +2098,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_subtitles, if (state.selectedSubtitleTrackIndex == -1) stringResource(R.string.player_state_off) else stringResource(R.string.player_state_on)), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_subtitles, if (state.selectedSubtitleTrackIndex == -1) stringResource(R.string.player_state_off) else stringResource(R.string.player_state_on)), color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2120,12 +2127,12 @@ fun PlayerScreen(
                         Icon(
                             if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = null,
-                            tint = if (isFavourite) Color(0xFFFF5252) else MaterialTheme.colorScheme.primary,
+                            tint = if (isFavourite) Color(0xFFFF5252) else MpxPrimary,
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
                             if (isFavourite) stringResource(R.string.player_cd_favourite_remove) else stringResource(R.string.player_cd_favourite_add),
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MpxTextPrimary,
                         )
                     }
                     Row(
@@ -2138,12 +2145,12 @@ fun PlayerScreen(
                         Icon(
                             Icons.Filled.Shuffle,
                             contentDescription = null,
-                            tint = if (state.shuffleEnabled) MaterialTheme.colorScheme.primary else Color.Gray,
+                            tint = if (state.shuffleEnabled) MpxPrimary else Color.Gray,
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
                             "${stringResource(R.string.player_cd_shuffle)} (${if (state.shuffleEnabled) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)})",
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MpxTextPrimary,
                         )
                     }
                     Row(
@@ -2156,7 +2163,7 @@ fun PlayerScreen(
                         Icon(
                             if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
                             contentDescription = null,
-                            tint = if (state.repeatMode == RepeatMode.OFF) Color.Gray else MaterialTheme.colorScheme.primary,
+                            tint = if (state.repeatMode == RepeatMode.OFF) Color.Gray else MpxPrimary,
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
@@ -2165,7 +2172,7 @@ fun PlayerScreen(
                                 RepeatMode.ALL -> stringResource(R.string.player_cd_repeat_all)
                                 else -> stringResource(R.string.player_cd_repeat_off)
                             },
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MpxTextPrimary,
                         )
                     }
                     Row(
@@ -2186,9 +2193,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_popup_play), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_popup_play), color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2220,13 +2227,13 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Filled.PlayArrow,
                             contentDescription = null,
-                            tint = if (currentSettings.backgroundPlay) MaterialTheme.colorScheme.primary else Color.Gray,
+                            tint = if (currentSettings.backgroundPlay) MpxPrimary else Color.Gray,
                         )
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.player_menu_background_play_row, if (currentSettings.backgroundPlay) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)),
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = MpxTextPrimary,
                             )
                             Text(
                                 if (state.currentItem?.isVideo == true) {
@@ -2234,7 +2241,7 @@ fun PlayerScreen(
                                 } else {
                                     stringResource(R.string.player_bg_desc_audio)
                                 },
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MpxTextSecondary,
                                 fontSize = 11.sp,
                             )
                         }
@@ -2255,9 +2262,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Speed, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.Speed, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_speed, "${state.speed}x"), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_speed, "${state.speed}x"), color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2276,9 +2283,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.AspectRatio, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.AspectRatio, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_aspect, stringResource(state.aspectRatio.labelRes)), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_aspect, stringResource(state.aspectRatio.labelRes)), color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2287,7 +2294,7 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
                         val rotationLabel = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto") {
                             stringResource(R.string.player_rotation_auto)
@@ -2296,7 +2303,7 @@ fun PlayerScreen(
                         } else {
                             stringResource(R.string.player_orientation_landscape)
                         }
-                        Text(stringResource(R.string.player_menu_rotation, rotationLabel), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_rotation, rotationLabel), color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2305,7 +2312,7 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.Timer, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
                         val sleepTimerSubtext = if (state.sleepTimerRemainingSeconds != null) {
                             val remaining = state.sleepTimerRemainingSeconds ?: 0L
@@ -2320,7 +2327,7 @@ fun PlayerScreen(
                         } else {
                             stringResource(R.string.player_sleep_timer_off)
                         }
-                        Text("${stringResource(R.string.player_sleep_timer)} ($sleepTimerSubtext)", color = MaterialTheme.colorScheme.onSurface)
+                        Text("${stringResource(R.string.player_sleep_timer)} ($sleepTimerSubtext)", color = MpxTextPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2332,15 +2339,15 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxPrimary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_add_playlist), color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.player_menu_add_playlist), color = MpxTextPrimary)
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_ok), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
                 }
             },
         )
@@ -2349,15 +2356,15 @@ fun PlayerScreen(
     if (activeDialog == "Screen Rotation") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            containerColor = MpxSurfaceVariant,
             title = {
                 PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxPrimary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_rotation_dialog_title),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -2393,12 +2400,12 @@ fun PlayerScreen(
                                 activeDialog = null
                                 Toast.makeText(context, context.getString(R.string.toast_rotation_auto), Toast.LENGTH_SHORT).show()
                             },
-                            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(stringResource(R.string.player_rotation_auto), color = MaterialTheme.colorScheme.onSurface, fontWeight = if (isAuto) FontWeight.Bold else FontWeight.Normal)
-                            Text(stringResource(R.string.player_rotation_auto_desc), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text(stringResource(R.string.player_rotation_auto), color = MpxTextPrimary, fontWeight = if (isAuto) FontWeight.Bold else FontWeight.Normal)
+                            Text(stringResource(R.string.player_rotation_auto_desc), color = MpxTextSecondary, fontSize = 12.sp)
                         }
                     }
 
@@ -2431,12 +2438,12 @@ fun PlayerScreen(
                                 activeDialog = null
                                 Toast.makeText(context, context.getString(R.string.toast_rotation_landscape), Toast.LENGTH_SHORT).show()
                             },
-                            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(stringResource(R.string.player_orientation_landscape), color = MaterialTheme.colorScheme.onSurface, fontWeight = if (isLandscape) FontWeight.Bold else FontWeight.Normal)
-                            Text(stringResource(R.string.player_orientation_landscape_desc), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text(stringResource(R.string.player_orientation_landscape), color = MpxTextPrimary, fontWeight = if (isLandscape) FontWeight.Bold else FontWeight.Normal)
+                            Text(stringResource(R.string.player_orientation_landscape_desc), color = MpxTextSecondary, fontSize = 12.sp)
                         }
                     }
 
@@ -2469,19 +2476,19 @@ fun PlayerScreen(
                                 activeDialog = null
                                 Toast.makeText(context, context.getString(R.string.toast_rotation_portrait), Toast.LENGTH_SHORT).show()
                             },
-                            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(stringResource(R.string.player_orientation_portrait), color = MaterialTheme.colorScheme.onSurface, fontWeight = if (isPortrait) FontWeight.Bold else FontWeight.Normal)
-                            Text(stringResource(R.string.player_orientation_portrait_desc), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text(stringResource(R.string.player_orientation_portrait), color = MpxTextPrimary, fontWeight = if (isPortrait) FontWeight.Bold else FontWeight.Normal)
+                            Text(stringResource(R.string.player_orientation_portrait_desc), color = MpxTextSecondary, fontSize = 12.sp)
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_close), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_close), color = MpxPrimary)
                 }
             },
         )
@@ -2490,15 +2497,15 @@ fun PlayerScreen(
     if (activeDialog == "Sleep Timer") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            containerColor = MpxSurfaceVariant,
             title = {
                 PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Filled.Timer, contentDescription = null, tint = MpxPrimary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_sleep_timer_dialog_title),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MpxTextPrimary,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -2547,12 +2554,12 @@ fun PlayerScreen(
                                     }
                                     activeDialog = null
                                 },
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary),
+                                colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = label,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = MpxTextPrimary,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             )
                         }
@@ -2561,7 +2568,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.action_cancel), color = MpxPrimary)
                 }
             },
         )

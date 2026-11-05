@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -60,6 +59,16 @@ import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.AsyncThumbnail
 import com.mpx.player.ui.components.AsyncVideoThumbnail
 import com.mpx.player.util.ThumbnailLoader
+import com.mpx.player.ui.theme.MpxBlack
+import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxBorderSubtle
+import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxPrimaryVariant
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSurfaceVariant
+import com.mpx.player.ui.theme.MpxTextPrimary
+import com.mpx.player.ui.theme.MpxTextSecondary
 
 fun formatTimeMs(millis: Long): String {
     if (millis <= 0) return "00:00"
@@ -120,7 +129,7 @@ fun MiniPlayer(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onOpenPlayer() },
-            color = MaterialTheme.colorScheme.surface,
+            color = MpxBlack,
             tonalElevation = 0.dp,
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -130,8 +139,8 @@ fun MiniPlayer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(2.5.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.outline,
+                    color = MpxPrimary,
+                    trackColor = MpxBorder,
                 )
 
                 Row(
@@ -148,8 +157,8 @@ fun MiniPlayer(
                     Box(
                         modifier = Modifier
                             .size(42.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                            .clip(MpxShapes.small)
+                            .background(MpxPrimary.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (item.isVideo) {
@@ -190,7 +199,7 @@ fun MiniPlayer(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.5.sp,
                             ),
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = MpxTextPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -199,7 +208,7 @@ fun MiniPlayer(
                         Text(
                             text = if (item.subtitle.isNotBlank()) "${item.subtitle} • $timeFormatted" else timeFormatted,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MpxTextSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -216,7 +225,7 @@ fun MiniPlayer(
                             Icon(
                                 imageVector = Icons.Filled.SkipPrevious,
                                 contentDescription = stringResource(R.string.mini_player_prev),
-                                tint = MaterialTheme.colorScheme.onSurface,
+                                tint = MpxTextPrimary,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -229,7 +238,7 @@ fun MiniPlayer(
                         Icon(
                             imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                             contentDescription = if (state.isPlaying) stringResource(R.string.mini_player_pause) else stringResource(R.string.mini_player_play),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MpxPrimary,
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -242,7 +251,7 @@ fun MiniPlayer(
                             Icon(
                                 imageVector = Icons.Filled.SkipNext,
                                 contentDescription = stringResource(R.string.mini_player_next),
-                                tint = MaterialTheme.colorScheme.onSurface,
+                                tint = MpxTextPrimary,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -256,7 +265,7 @@ fun MiniPlayer(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                             contentDescription = stringResource(R.string.mini_player_queue),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            tint = MpxTextSecondary.copy(alpha = 0.7f),
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -268,7 +277,7 @@ fun MiniPlayer(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.mini_player_close),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            tint = MpxTextSecondary.copy(alpha = 0.7f),
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -319,8 +328,8 @@ private fun QueueDialog(
                                 else if (entry.isVideo) Icons.Filled.Movie
                                 else Icons.Filled.MusicNote,
                                 contentDescription = null,
-                                tint = if (isCurrent) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = if (isCurrent) MpxPrimary
+                                else MpxTextSecondary,
                                 modifier = Modifier.size(20.dp),
                             )
                             Spacer(Modifier.width(12.dp))
@@ -328,8 +337,8 @@ private fun QueueDialog(
                                 Text(
                                     text = entry.title,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = if (isCurrent) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurface,
+                                    color = if (isCurrent) MpxPrimary
+                                    else MpxTextPrimary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -337,7 +346,7 @@ private fun QueueDialog(
                                     Text(
                                         text = entry.subtitle,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MpxTextSecondary,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -348,7 +357,7 @@ private fun QueueDialog(
                                 Text(
                                     text = stringResource(R.string.mini_player_queue_now_playing),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = MpxPrimary,
                                 )
                             }
                         }
