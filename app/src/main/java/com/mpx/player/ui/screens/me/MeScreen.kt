@@ -724,42 +724,35 @@ fun MeScreen(
         )
     }
 
-    // 12. Local Network Honest Entry Screen (SMB browsing not yet built — no fake share list)
+    // 12. Local Network SMB browser (issue #78): real share/folder browsing
+    // via smbj; tapping a media file plays it through PlaybackManager.
     if (showLocalNetworkDialog) {
-        AlertDialog(
-            onDismissRequest = { showLocalNetworkDialog = false },
-            containerColor = MpxTheme.colors.black,
-            tonalElevation = 0.dp,
-            modifier = Modifier.border(MpxHairline, MpxTheme.colors.border, AlertDialogDefaults.shape),
-            icon = { Icon(Icons.Filled.Wifi, null, tint = MpxTheme.colors.primary) },
-            title = {
-                Text(
-                    text = stringResource(R.string.tool_local_network_title),
-                    color = MpxTheme.colors.textPrimary,
-                    fontWeight = FontWeight.Bold,
+        SmbBrowserDialog(
+            initialHost = appSettings.lastSmbHost,
+            onHostRemembered = { host ->
+                val updated = appSettings.copy(lastSmbHost = host)
+                appSettings = updated
+                realSettingsRepo.save(updated)
+            },
+            onPlayMedia = { title, proxyUrl, isVideo, smbId ->
+                showLocalNetworkDialog = false
+                realPlaybackManager.playQueue(
+                    listOf(
+                        PlayableMedia(
+                            id = smbId,
+                            title = title,
+                            subtitle = proxyUrl,
+                            uri = proxyUrl,
+                            isVideo = isVideo,
+                            durationMs = 0L,
+                        ),
+                    ),
+                    startIndex = 0,
+                    autoPlay = true,
                 )
+                onOpenPlayer()
             },
-            text = {
-                Column {
-                    Text(
-                        text = stringResource(R.string.local_network_dialog_body),
-                        color = MpxTheme.colors.textSecondary,
-                        fontSize = 13.sp,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.issue32_status_honest),
-                        color = MpxTheme.colors.primary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showLocalNetworkDialog = false }) {
-                    Text(stringResource(R.string.action_understood), color = MpxTheme.colors.primary)
-                }
-            },
+            onDismiss = { showLocalNetworkDialog = false },
         )
     }
 

@@ -105,6 +105,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             blacklistedFolders = prefs.getStringSet("blacklisted_folders", emptySet())?.toSet() ?: emptySet(),
             playerMenuLayout = prefs.getString("player_menu_layout", DEFAULT_PLAYER_MENU_LAYOUT) ?: DEFAULT_PLAYER_MENU_LAYOUT,
             doubleTapSeekSeconds = prefs.getInt("double_tap_seek_seconds", 10),
+            lastSmbHost = prefs.getString("last_smb_host", "") ?: "",
         )
     }
 
@@ -144,6 +145,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("popup_play_position", settings.popupPlayPosition)
             .putBoolean("popup_play_snap_to_edge", settings.popupPlaySnapToEdge)
             .putBoolean("popup_play_close_on_done", settings.popupPlayCloseOnDone)
+            .putString("last_smb_host", settings.lastSmbHost)
             .putString("app_language", settings.appLanguage)
             .putBoolean("show_all_folders", settings.showAllFolders)
             .putString("folder_view_mode", settings.folderViewMode)
