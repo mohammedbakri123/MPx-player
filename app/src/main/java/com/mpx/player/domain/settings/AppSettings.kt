@@ -41,7 +41,7 @@ data class AppSettings(
     // pattern as subtitle timing — persisted, applied live on mpv via
     // applyPlaybackTweaks; other engines ignore them (the sheet shows a note).
     val audioDelayMs: Int = 0, // -10000..10000, 100 ms steps; positive = audio later
-    val videoZoom: Float = 1.0f, // 0.5..2.0; mpv video-zoom multiplier
+    val videoZoom: Float = 1.0f, // 0.5..2.0 plain multiplier (1.0 = no zoom); the engine converts it to mpv's log2 video-zoom (#172)
     val appTheme: String = "System", // System, Dark, Light (legacy Midnight/Dark/Classic read as Dark)
     val colorPalette: String = "Blue", // Accent palette (#147): Blue, Emerald, Violet, Amber, Rose, Teal — accent only, surfaces stay per-theme
     val popupPlayEnabled: Boolean = true,

@@ -359,6 +359,15 @@ class PlaybackManager private constructor(context: Context) {
         (engine as? MpvPlayerEngine)?.applyPlaybackTweaks(settings)
     }
 
+    /**
+     * Live video-zoom for the pinch gesture (#172): applies immediately
+     * without persisting; the caller saves the final zoom to settings
+     * when the gesture ends.
+     */
+    fun setVideoZoom(zoom: Float) {
+        (engine as? MpvPlayerEngine)?.setVideoZoom(zoom)
+    }
+
 
     /**
      * Loads a single media item with optional resume position and begins playback.
