@@ -3,7 +3,6 @@ import com.mpx.player.ui.theme.MpxTheme
 
 import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Typeface
@@ -155,15 +154,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 import com.mpx.player.ui.components.MpxLoadingIndicator
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
-
-private fun Context.findActivity(): Activity? {
-    var ctx = this
-    while (ctx is ContextWrapper) {
-        if (ctx is Activity) return ctx
-        ctx = ctx.baseContext
-    }
-    return null
-}
 
 private enum class DragGestureMode {
     NONE,
@@ -341,7 +331,18 @@ fun PlayerScreen(
     isInPipMode: Boolean = false,
 ) {
     val context = LocalContext.current
-    val activity = remember(context) { context.findActivity() }
+    // Issue #179: do NOT resolve the activity from LocalContext. MainActivity
+    // provides a localized configuration context as LocalContext
+    // (LocaleHelper.createLocalizedContext = createConfigurationContext),
+    // a detached ContextImpl whose base chain never reaches the Activity —
+    // so context.findActivity() returned null and every
+    // activity?.requestedOrientation set below was a silent no-op (the
+    // toast still showed and the setting still saved, which is why the
+    // chain "read correct"). The host view's context IS the real Activity
+    // (LocalActivity does not exist in activity-compose 1.9.2, verified
+    // against the AAR). This also fixes #194 for free: the brightness
+    // get/set below uses this same activity reference.
+    val activity = LocalView.current.context as? Activity
     val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     var currentSettings by remember { mutableStateOf(realSettingsRepo.load()) }
     // Last subtitle settings pushed to the mpv engine. Plain holder (not state)
