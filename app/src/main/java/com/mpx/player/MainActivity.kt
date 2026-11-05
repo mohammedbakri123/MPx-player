@@ -208,6 +208,7 @@ class MainActivity : ComponentActivity() {
                         isInPipMode = isInPipMode,
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
+                        currentPalette = currentPalette,
                         openPlayerRequested = openPlayerOnStart,
                         onResetOpenPlayer = { openPlayerOnStart = false },
                         onLanguageChanged = { newLang ->
@@ -357,6 +358,7 @@ fun MpxApp(
     isInPipMode: Boolean = false,
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
+    currentPalette: String = "Blue",
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
@@ -577,7 +579,10 @@ fun MpxApp(
                 // (including its dialogs, which inherit CompositionLocals)
                 // without touching the theme-following mini-player on the
                 // tab pages. PiP renders this same route, so it stays dark.
-                MpxTheme(theme = "Dark") {
+                // #168: pass the current palette too — without it the
+                // player (slider, accents) always stayed default Blue
+                // whatever palette the user picked on Appearance.
+                MpxTheme(theme = "Dark", palette = currentPalette) {
                     PlayerScreen(
                         subtitleLauncher = subtitleLauncher,
                         subtitleResultHandler = subtitleHandler,
