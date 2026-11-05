@@ -445,6 +445,12 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Close search</string>
     <string name="cd_toggle_view">Toggle view</string>
+    <string name="layout_sheet_title">View</string>
+    <string name="layout_section_tile_size">Tile size</string>
+    <string name="tile_size_small">Small</string>
+    <string name="tile_size_medium">Medium</string>
+    <string name="tile_size_large">Large</string>
+    <string name="cd_layout_options">Layout options</string>
     <string name="cd_search">Search</string>
     <string name="cd_more_options">More options</string>
     <string name="cd_quick_play">Quick play</string>

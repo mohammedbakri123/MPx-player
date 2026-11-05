@@ -445,6 +445,12 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Закрыть поиск</string>
     <string name="cd_toggle_view">Переключить вид</string>
+    <string name="layout_sheet_title">Вид</string>
+    <string name="layout_section_tile_size">Размер плиток</string>
+    <string name="tile_size_small">Маленький</string>
+    <string name="tile_size_medium">Средний</string>
+    <string name="tile_size_large">Большой</string>
+    <string name="cd_layout_options">Параметры вида</string>
     <string name="cd_search">Поиск</string>
     <string name="cd_more_options">Дополнительные параметры</string>
     <string name="cd_quick_play">Быстрое воспроизведение</string>

@@ -445,6 +445,12 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Suche schließen</string>
     <string name="cd_toggle_view">Ansicht umschalten</string>
+    <string name="layout_sheet_title">Ansicht</string>
+    <string name="layout_section_tile_size">Kachelgröße</string>
+    <string name="tile_size_small">Klein</string>
+    <string name="tile_size_medium">Mittel</string>
+    <string name="tile_size_large">Groß</string>
+    <string name="cd_layout_options">Layout-Optionen</string>
     <string name="cd_search">Suchen</string>
     <string name="cd_more_options">Weitere Optionen</string>
     <string name="cd_quick_play">Schnellwiedergabe</string>

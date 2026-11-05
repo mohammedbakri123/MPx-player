@@ -445,6 +445,12 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Fechar busca</string>
     <string name="cd_toggle_view">Alternar visualização</string>
+    <string name="layout_sheet_title">Visualização</string>
+    <string name="layout_section_tile_size">Tamanho do mosaico</string>
+    <string name="tile_size_small">Pequeno</string>
+    <string name="tile_size_medium">Médio</string>
+    <string name="tile_size_large">Grande</string>
+    <string name="cd_layout_options">Opções de layout</string>
     <string name="cd_search">Buscar</string>
     <string name="cd_more_options">Mais opções</string>
     <string name="cd_quick_play">Reprodução rápida</string>

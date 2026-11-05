@@ -445,6 +445,12 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">खोज बंद करें</string>
     <string name="cd_toggle_view">दृश्य टॉगल करें</string>
+    <string name="layout_sheet_title">दृश्य</string>
+    <string name="layout_section_tile_size">टाइल आकार</string>
+    <string name="tile_size_small">छोटा</string>
+    <string name="tile_size_medium">मध्यम</string>
+    <string name="tile_size_large">बड़ा</string>
+    <string name="cd_layout_options">लेआउट विकल्प</string>
     <string name="cd_search">खोजें</string>
     <string name="cd_more_options">अधिक विकल्प</string>
     <string name="cd_quick_play">त्वरित प्ले</string>

@@ -31,15 +31,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -52,6 +51,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -206,6 +206,9 @@ fun LocalScreen(
         appSettings = updated
     }
     var showSortDialog by remember { mutableStateOf(false) }
+    var showLayoutSheet by remember { mutableStateOf(false) }
+    var layoutSheetFolderScope by remember { mutableStateOf(false) }
+    val layoutSheetState = rememberModalBottomSheetState()
     var featureDialogMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
@@ -582,23 +585,14 @@ fun LocalScreen(
                             }
                         }
 
-                        // Toggle folder view mode (LIST <-> GRID)
+                        // #141: layout button opens the View sheet (layout, tile size, sort).
                         IconButton(onClick = {
-                            val nextMode = if (folderViewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
-                            folderViewMode = nextMode
-                            realSettingsRepo.setFolderViewMode(folder.id, nextMode.name)
-                            scope.launch {
-                                val msg = if (nextMode == ViewMode.GRID) {
-                                    context.getString(R.string.view_mode_switched_grid)
-                                } else {
-                                    context.getString(R.string.view_mode_switched_list)
-                                }
-                                snackbarHostState.showSnackbar(msg)
-                            }
+                            layoutSheetFolderScope = true
+                            showLayoutSheet = true
                         }) {
                             Icon(
-                                imageVector = if (folderViewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
-                                contentDescription = stringResource(R.string.cd_toggle_view),
+                                imageVector = Icons.Filled.Tune,
+                                contentDescription = stringResource(R.string.cd_layout_options),
                                 tint = MpxTheme.colors.textPrimary,
                             )
                         }
@@ -724,14 +718,14 @@ fun LocalScreen(
                                 )
                             }
                         }
-                        // #140: header keeps only Search and the view toggle (layout popup lands in #141);
-                        // Play lives on the FAB, Sort lives in the layout popup.
+                        // #141: layout button opens the View sheet (layout, tile size, sort).
                         IconButton(onClick = {
-                            updateViewMode(if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST)
+                            layoutSheetFolderScope = false
+                            showLayoutSheet = true
                         }) {
                             Icon(
-                                imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
-                                contentDescription = stringResource(R.string.cd_toggle_view),
+                                imageVector = Icons.Filled.Tune,
+                                contentDescription = stringResource(R.string.cd_layout_options),
                                 tint = MpxTheme.colors.textPrimary,
                             )
                         }
@@ -916,7 +910,7 @@ fun LocalScreen(
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = videoGridState,
-                                columns = GridCells.Fixed(2),
+                                columns = GridCells.Fixed(TileSize.fromName(appSettings.tileSize).columns),
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1138,7 +1132,7 @@ fun LocalScreen(
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = gridState,
-                                columns = GridCells.Fixed(2),
+                                columns = GridCells.Fixed(TileSize.fromName(appSettings.tileSize).columns),
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1263,7 +1257,7 @@ fun LocalScreen(
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = gridState,
-                                columns = GridCells.Fixed(2),
+                                columns = GridCells.Fixed(TileSize.fromName(appSettings.tileSize).columns),
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1543,6 +1537,101 @@ fun LocalScreen(
                 showFolderSortDialog = false
             },
         )
+    }
+
+    // Local "View" sheet (#141): layout, tile size, sort. Folder scope edits
+    // that folder's override; root scope edits the global mode.
+    if (showLayoutSheet) {
+        if (layoutSheetFolderScope && currentFolder != null) {
+            val folder = currentFolder!!
+            LocalLayoutSheet(
+                isFolderScope = true,
+                currentView = folderViewMode,
+                onViewChange = { newMode ->
+                    folderViewMode = newMode
+                    realSettingsRepo.setFolderViewMode(folder.id, newMode.name)
+                    scope.launch {
+                        val msg = if (newMode == ViewMode.GRID) {
+                            context.getString(R.string.view_mode_switched_grid)
+                        } else {
+                            context.getString(R.string.view_mode_switched_list)
+                        }
+                        snackbarHostState.showSnackbar(msg)
+                    }
+                },
+                tileSize = TileSize.fromName(appSettings.tileSize),
+                onTileSizeChange = { newSize ->
+                    val updated = appSettings.copy(tileSize = newSize.name)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                currentSort = folderSortField,
+                onSortChange = { newSort ->
+                    folderSortField = newSort
+                    val updated = appSettings.copy(folderPrimarySortField = newSort.name)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                currentSecondarySort = folderSecondarySortField,
+                onSecondarySortChange = { newSecSort ->
+                    folderSecondarySortField = newSecSort
+                    val updated = appSettings.copy(folderSecondarySortField = newSecSort.name)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                hasFolderOverride = realSettingsRepo.hasFolderViewModeOverride(folder.id),
+                onResetToDefault = {
+                    realSettingsRepo.clearFolderViewModeOverride(folder.id)
+                    val globalMode = try {
+                        ViewMode.valueOf(realSettingsRepo.load().folderViewMode)
+                    } catch (_: Exception) {
+                        ViewMode.LIST
+                    }
+                    folderViewMode = globalMode
+                    showLayoutSheet = false
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            context.getString(
+                                R.string.folder_view_reset_default_snackbar,
+                                context.getString(globalMode.labelRes)
+                            )
+                        )
+                    }
+                },
+                sheetState = layoutSheetState,
+                onDismiss = { showLayoutSheet = false },
+            )
+        } else {
+            LocalLayoutSheet(
+                isFolderScope = false,
+                currentView = viewMode,
+                onViewChange = { updateViewMode(it) },
+                tileSize = TileSize.fromName(appSettings.tileSize),
+                onTileSizeChange = { newSize ->
+                    val updated = appSettings.copy(tileSize = newSize.name)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                currentSort = sortField,
+                onSortChange = { newSort ->
+                    sortField = newSort
+                    val updated = appSettings.copy(primarySortField = newSort.name)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                currentSecondarySort = secondarySortField,
+                onSecondarySortChange = { newSecSort ->
+                    secondarySortField = newSecSort
+                    val updated = appSettings.copy(secondarySortField = newSecSort.name)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                hasFolderOverride = false,
+                onResetToDefault = null,
+                sheetState = layoutSheetState,
+                onDismiss = { showLayoutSheet = false },
+            )
+        }
     }
 
     // Context menu for a folder in the folder list
