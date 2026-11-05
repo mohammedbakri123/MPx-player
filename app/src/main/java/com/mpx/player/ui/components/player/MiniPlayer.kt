@@ -78,7 +78,7 @@ fun formatTimeMs(millis: Long): String {
 
 /**
  * MX Player inspired persistent mini-player bar.
- * Directly wired to the real Media3 ExoPlayer instance via PlaybackManager.
+ * Directly wired to the real mpv engine via PlaybackManager.
  * Displays the real playing media item, real live progress tick, real duration,
  * and responsive play/pause/prev/next controls.
  */

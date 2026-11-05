@@ -305,8 +305,10 @@ fun MeScreen(
             "network" -> showNetworkStreamDialog = true
             "transfer" -> onOpenTransfer()
             "equalizer" -> {
-                val audioSessionId = realPlaybackManager.exoPlayer?.audioSessionId ?: 0
-                val launched = PipUtils.launchSystemEqualizer(context, audioSessionId)
+                // mpv-only (issue #150): there is no ExoPlayer audio session
+                // any more, so the system equalizer opens against the global
+                // output mix (session 0) instead of the player's session.
+                val launched = PipUtils.launchSystemEqualizer(context, 0)
                 if (!launched) {
                     equalizerMessage = context.getString(R.string.equalizer_dialog_msg)
                 }
@@ -729,7 +731,7 @@ fun MeScreen(
         )
     }
 
-    // 4. Network Stream Dialog (Real Media3 URL Streaming)
+    // 4. Network Stream Dialog (real mpv URL streaming)
     if (showNetworkStreamDialog) {
         NetworkStreamDialog(
             onDismiss = { showNetworkStreamDialog = false },
@@ -810,7 +812,7 @@ fun MeScreen(
 
     // 8. Help & Feedback In-App Info Page (Gesture guide & diagnostics)
     if (showHelpDialog) {
-        HelpFeedbackDialog(onDismiss = { showHelpDialog = false }, isMpv = realPlaybackManager.isMpv)
+        HelpFeedbackDialog(onDismiss = { showHelpDialog = false })
     }
 
     // 9. Legal & Open Source In-App Info Page
@@ -1514,7 +1516,7 @@ private fun PrivacySecurityDialog(onDismiss: () -> Unit) {
  * Real Help & Feedback In-App Info Page with gesture guides and device diagnostics.
  */
 @Composable
-private fun HelpFeedbackDialog(onDismiss: () -> Unit, isMpv: Boolean = false) {
+private fun HelpFeedbackDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MpxTheme.colors.black,
@@ -1563,7 +1565,7 @@ private fun HelpFeedbackDialog(onDismiss: () -> Unit, isMpv: Boolean = false) {
                             Text(
                                 stringResource(
                                     R.string.help_diag_engine,
-                                    if (isMpv) "libmpv (mpv-android-lib 0.1.12)" else "AndroidX Media3 ExoPlayer 1.3.1",
+                                    "libmpv (mpv-android-lib 0.1.12)",
                                 ),
                                 fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MpxTheme.colors.textPrimary,
                             )

@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Real MediaSession foreground service for background audio playback.
- * Keeps ExoPlayer playback alive when the app is backgrounded or screen is turned off,
+ * Keeps mpv playback alive when the app is backgrounded or screen is turned off,
  * provides rich lockscreen & notification media controls with play/pause/next/previous,
  * and maintains honest reporting for video audio-only continuation.
  */

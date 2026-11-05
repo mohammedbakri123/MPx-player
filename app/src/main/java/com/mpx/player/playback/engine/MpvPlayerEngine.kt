@@ -7,7 +7,6 @@ import android.os.SystemClock
 import android.system.Os
 import android.util.Log
 import android.view.Surface
-import androidx.media3.common.Player
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.AspectRatioMode
@@ -40,7 +39,7 @@ class MpvPlaybackException(
  * - Synchronous surface detach barrier (vo=null and detachSurface before surfaceDestroyed returns)
  * - Background audio continuation when vo=null
  * - Progressive decoder fallback chain:
- *   mediacodec (HW) -> mediacodec-copy (HW+) -> hwdec=no (SW) -> hard failure fallback to Media3
+ *   mediacodec (HW) -> mediacodec-copy (HW+) -> hwdec=no (SW) -> hard failure reported as a real error
  * - Active decoder reporting via hwdec-current and video-codec properties
  * - Arabic-first subtitles pointing fontconfig at Android system fonts (/system/fonts) without bundled subfont.ttf
  */
@@ -76,7 +75,7 @@ class MpvPlayerEngine(
     private var cachedDurationMs: Long = 0L
     private var cachedBufferedMs: Long = 0L
     private var cachedIsPlaying: Boolean = false
-    private var cachedPlaybackState: Int = Player.STATE_IDLE
+    private var cachedPlaybackState: Int = PlayerEngine.STATE_IDLE
     private var cachedSpeed: Float = 1.0f
 
     private var activeHwdec: String = ""
@@ -235,7 +234,7 @@ class MpvPlayerEngine(
 
     init {
         // Init failure must NOT throw out of the constructor: previously a
-        // throw here made the manager silently fall back to Media3 while the
+        // throw here made the manager report a confusing error while the
         // setting still said MPV. Capture it and report it via the listener.
         try {
             initializeMpv(initialDecoderMode)
@@ -522,7 +521,7 @@ class MpvPlayerEngine(
 
     /**
      * Decoder chain fallback:
-     * hwdec mediacodec (HW) -> mediacodec-copy (HW+) -> hwdec=no (SW) -> fall back to Media3PlayerEngine
+     * hwdec mediacodec (HW) -> mediacodec-copy (HW+) -> hwdec=no (SW) -> hard failure reported as a real error
      * on hard failure, surfacing a real error naming the codec (never a silent stall).
      */
     private fun attemptDecoderFallback(reason: String) {
@@ -625,9 +624,9 @@ class MpvPlayerEngine(
             "eof-reached" -> {
                 val eof = mpv.getPropertyBoolean("eof-reached") ?: false
                 if (eof) {
-                    cachedPlaybackState = Player.STATE_ENDED
+                    cachedPlaybackState = PlayerEngine.STATE_ENDED
                     mainHandler.post {
-                        engineListener?.onPlaybackStateChanged(Player.STATE_ENDED)
+                        engineListener?.onPlaybackStateChanged(PlayerEngine.STATE_ENDED)
                     }
                 }
             }
@@ -670,8 +669,8 @@ class MpvPlayerEngine(
                 // Previously IGNORED: a core shutdown produced no event the
                 // app acted on, so a dead core looked exactly like infinite
                 // loading. Surface it as a real error so the manager clears
-                // the splash and falls back (release() sets isReleased first,
-                // so normal teardown never reaches here).
+                // the splash (release() sets isReleased first, so normal
+                // teardown never reaches here).
                 lastMpvEvent = "SHUTDOWN"
                 synchronized(metricsLock) { hardErrorCount++ }
                 mainHandler.post {
@@ -695,7 +694,7 @@ class MpvPlayerEngine(
 
                 fileLoadedForCurrentItem = true
                 lastMpvEvent = "FILE_LOADED"
-                cachedPlaybackState = Player.STATE_READY
+                cachedPlaybackState = PlayerEngine.STATE_READY
                 synchronized(metricsLock) {
                     if (loadStartMs != 0L && lastTimeToReadyMs == null) {
                         lastTimeToReadyMs = SystemClock.elapsedRealtime() - loadStartMs
@@ -737,7 +736,7 @@ class MpvPlayerEngine(
                     }
                 }
                 mainHandler.post {
-                    engineListener?.onPlaybackStateChanged(Player.STATE_READY)
+                    engineListener?.onPlaybackStateChanged(PlayerEngine.STATE_READY)
                     engineListener?.onTracksChanged()
                     notifyDecoderChanged()
                 }
@@ -910,7 +909,7 @@ class MpvPlayerEngine(
         // SurfaceView) exists. The old code fired loadfile immediately, and
         // with force-window=yes libmpv attempted VO init with no ANativeWindow
         // attached: the video chain failed, the file aborted with END_FILE,
-        // and PlaybackManager fell back to Media3 before surfaceCreated ever
+        // and PlaybackManager reported a failure before surfaceCreated ever
         // ran — so mpv never got a fair load. Now a VIDEO load with no surface
         // is deferred, not fired: attachSurface() flushes it the moment a
         // real surface exists. Audio loads are never deferred (no video
@@ -974,7 +973,7 @@ class MpvPlayerEngine(
         } catch (e: Exception) {
             // A loadfile command failure is NOT a decoder-stage failure: stepping
             // HW->HW+->SW here only delayed the error. Report it directly so the
-            // manager falls back to Media3 with a real message.
+            // manager reports a real error message.
             Log.e(TAG, "Error loading media items in MPV", e)
             lastMpvEvent = "loadfile-failed"
             synchronized(metricsLock) { hardErrorCount++ }
@@ -1229,7 +1228,7 @@ class MpvPlayerEngine(
         try {
             mpv.command("stop")
             cachedIsPlaying = false
-            cachedPlaybackState = Player.STATE_IDLE
+            cachedPlaybackState = PlayerEngine.STATE_IDLE
         } catch (e: Exception) {
             Log.w(TAG, "Error stopping MPV", e)
         }
@@ -1342,7 +1341,6 @@ class MpvPlayerEngine(
                         language = lang,
                         isSelected = selected,
                         mimeType = mpv.getPropertyString("track-list/$i/codec"),
-                        isSupported = true,
                     )
                 )
                 audioGroup++

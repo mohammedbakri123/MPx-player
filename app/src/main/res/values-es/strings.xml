@@ -154,10 +154,8 @@
     <string name="subtitle_padding_header">Margen inferior:</string>
     <string name="subtitle_scale_header">Escala:</string>
     <string name="subtitle_ass_header">Avanzado (estilos ASS):</string>
-    <string name="subtitle_ass_mpv_note">Solo motor MPV; Media3 siempre aplica los estilos incrustados.</string>
     <string name="subtitle_sync_header">Sincronización de subtítulos</string>
     <string name="subtitle_speed_header">Velocidad de subtítulos</string>
-    <string name="subtitle_timing_mpv_note">La sincronización y la velocidad solo se aplican al motor MPV.</string>
     <string name="subtitle_timing_reset">Restablecer</string>
     <string name="subtitle_typeface_default">Predeterminado</string>
     <string name="subtitle_typeface_sans">Sans-serif</string>
@@ -280,7 +278,7 @@
     <string name="pip_test_fail_playing">No se puede entrar en modo PiP ahora mismo. Primero reproduce un vídeo en el reproductor.</string>
 
     <string name="dialog_network_title">Transmisión en red</string>
-    <string name="dialog_network_desc">Escribe cualquier URL de transmisión HTTP, HTTPS o HLS para reproducirla directamente en Media3 ExoPlayer:</string>
+    <string name="dialog_network_desc">Escribe cualquier URL de transmisión HTTP, HTTPS o HLS para reproducirla directamente:</string>
     <string name="dialog_network_samples">Transmisiones públicas de ejemplo:</string>
     <string name="dialog_network_play">Reproducir transmisión</string>
 
@@ -308,13 +306,13 @@
 
     <string name="dialog_legal_title">Legal y código abierto</string>
     <string name="legal_sec1_title">Licencias de código abierto</string>
-    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: licencia Apache 2.0\n• Jetpack Compose y Material 3: licencia Apache 2.0\n• AndroidX Room Persistence Library: licencia Apache 2.0\n• Kotlin Coroutines: licencia Apache 2.0</string>
+    <string name="legal_sec1_body">• Jetpack Compose y Material 3: licencia Apache 2.0\n• AndroidX Room Persistence Library: licencia Apache 2.0\n• Kotlin Coroutines: licencia Apache 2.0</string>
     <string name="legal_sec2_title">Aviso de atribución de inspiración</string>
     <string name="legal_sec2_body">MPx Player es un reproductor multimedia nativo independiente para Android, creado con técnica de sala limpia. Su organización y flujo de experiencia se inspiran en MX Player (según especificaciones de diseño obtenidas por ingeniería inversa). Todo el código, las vistas y el estilo están reescritos al 100 % desde cero en Kotlin nativo y Jetpack Compose. No incorpora recursos, código ni marcas propietarios.</string>
     <string name="legal_sec3_title">Términos de uso</string>
     <string name="legal_sec3_body">MPx Player se proporciona \'tal cual\' sin garantía bajo la licencia Apache 2.0. Los usuarios son responsables de sus propios archivos multimedia.</string>
 
-    <string name="dialog_about_body1">Reescritura nativa pura en Kotlin con Jetpack Compose, AndroidX Media3 ExoPlayer y persistencia Room SQLite.</string>
+    <string name="dialog_about_body1">Reescritura nativa pura en Kotlin con Jetpack Compose, libmpv y persistencia Room SQLite.</string>
     <string name="dialog_about_body2">Gestión multimedia densa y utilitaria sin dependencia de la nube, seguimiento ni anuncios.</string>
 
     <string name="equalizer_dialog_msg">Ecualizador del sistema: no se encontró ningún panel de control de efectos de audio (por ejemplo, MusicFX o la app de ecualizador del sistema) en este dispositivo. El audio usa una salida plana estándar.</string>
@@ -586,14 +584,14 @@
     <!-- Beta & About Screen -->
     <string name="about_beta_screen_title">Acerca de y estado beta</string>
     <string name="about_beta_badge">VERSIÓN BETA</string>
-    <string name="about_beta_tagline">Reproductor multimedia nativo en Kotlin para Android con Media3 ExoPlayer y persistencia Room.</string>
+    <string name="about_beta_tagline">Reproductor multimedia nativo en Kotlin para Android con libmpv y persistencia Room.</string>
     <string name="about_beta_build_info">Compilación %1$d (VersionCode %1$d) • Rama: %2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">QUÉ ESTÁ LISTO EN LA BETA</string>
     <string name="about_beta_ready_subtitle">Las funciones principales de reproducción sin conexión y biblioteca son implementaciones nativas totalmente funcionales:</string>
-    <string name="about_beta_feat_player_title">Motor de reproducción de vídeo Media3</string>
-    <string name="about_beta_feat_player_desc">Decodificación por hardware (HW/HW+) y software (SW) mediante AndroidX Media3 ExoPlayer. Gestos de vídeo (doble toque para buscar 10 s, arrastre horizontal para desplazarse), controles de relación de aspecto (Ajustar/Estirar/16:9/Original), subtítulos incrustados y externos (.srt, .vtt) y cambio de pista de audio múltiple.</string>
+    <string name="about_beta_feat_player_title">Motor de reproducción de vídeo mpv</string>
+    <string name="about_beta_feat_player_desc">Decodificación por hardware (HW/HW+) y software (SW) mediante libmpv. Gestos de vídeo (doble toque para buscar 10 s, arrastre horizontal para desplazarse), controles de relación de aspecto (Ajustar/Estirar/16:9/Original), subtítulos incrustados y externos (.srt, .vtt) y cambio de pista de audio múltiple.</string>
     <string name="about_beta_feat_bg_pip_title">Reproducción en segundo plano y ventana flotante (PiP)</string>
     <string name="about_beta_feat_bg_pip_desc">Modo flotante imagen en imagen con controles de ventana personalizados en Android 8.0+. Reproducción real de audio en segundo plano para vídeos y música mediante servicio en primer plano.</string>
     <string name="about_beta_feat_music_title">Reproductor de música y biblioteca de audio</string>
@@ -864,11 +862,6 @@
     <string name="player_active_codec">Códec de vídeo activo: %1$s</string>
     <string name="player_codec_initializing">Inicializando / esperando fotograma de vídeo...</string>
     <string name="player_codec_error">Error de reproducción: el códec %1$s no es compatible</string>
-    <string name="player_no_audio_codec">Sin sonido: las pistas de audio de este archivo (%1$s) no se pueden decodificar en este dispositivo. Prueba el motor MPV.</string>
-    <string name="player_media3_failed_mpv">Media3 falló con el códec %1$s. Se cambió al motor MPV.</string>
-    <string name="player_try_mpv">Probar MPV</string>
-    <string name="player_mpv_start_failed">No se pudo iniciar el motor MPV: %1$s. Se usará Media3 en su lugar.</string>
-    <string name="player_mpv_failed_media3">El motor MPV falló (%1$s). Se cambió al motor Media3.</string>
     <string name="player_dialog_unsupported_subtitle">Formato de subtítulos no compatible</string>
     <string name="player_menu_title">Ajustes de reproducción</string>
     <string name="player_menu_decoder_mode">Modo de decodificador (%1$s)</string>
@@ -943,9 +936,6 @@
     <string name="subtitle_sync_increase">Aumentar la sincronización de subtítulos</string>
     <string name="subtitle_speed_decrease">Reducir la velocidad de los subtítulos</string>
     <string name="subtitle_speed_increase">Aumentar la velocidad de los subtítulos</string>
-    <string name="playback_engine_title">Motor de reproducción</string>
-    <string name="playback_engine_media3">Media3 ExoPlayer (Predeterminado)</string>
-    <string name="playback_engine_mpv">libmpv (Motor nativo experimental)</string>
     <string name="decoder_mode_title">Modo de decodificador</string>
     <string name="dev_count_videos">%1$d vídeos</string>
     <string name="dev_count_tracks">%1$d pistas</string>

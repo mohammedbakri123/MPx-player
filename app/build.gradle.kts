@@ -106,9 +106,6 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    // Playback engine dependency (Media3 ExoPlayer)
-    implementation("androidx.media3:media3-exoplayer:1.3.1")
-    implementation("androidx.media3:media3-ui:1.3.1")
     implementation("androidx.media:media:1.7.0")
     // MPV engine dependency (Issue #52)
     implementation("io.github.abdallahmehiz:mpv-android-lib:0.1.12") {

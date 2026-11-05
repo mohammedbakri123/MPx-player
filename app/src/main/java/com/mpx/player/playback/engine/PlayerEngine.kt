@@ -22,9 +22,24 @@ enum class TrackType {
  * Defines the contract for core playback operations: surface attachment, media loading,
  * playback control, seeking, speed adjustments, track selection, and engine lifecycle.
  *
- * Implementations wrap specific underlying playback engines (e.g., Media3/ExoPlayer, mpv).
+ * The only implementation is the native mpv engine ([MpvPlayerEngine], issue #150:
+ * Media3 was removed entirely — the engine setting, both auto-fallbacks, the
+ * "Try MPV" banner and the Media3 dependency are gone).
  */
 interface PlayerEngine {
+
+    companion object {
+        /**
+         * Playback states reported through [Listener.onPlaybackStateChanged] and
+         * [playbackState] (issue #150: these used to be
+         * androidx.media3.common.Player.STATE_*; the values are kept identical
+         * so stored/compared ints keep their meaning, now defined here).
+         */
+        const val STATE_IDLE = 1
+        const val STATE_BUFFERING = 2
+        const val STATE_READY = 3
+        const val STATE_ENDED = 4
+    }
 
     /**
      * Listener interface to notify the orchestrator (PlaybackManager) of engine events.
@@ -40,9 +55,8 @@ interface PlayerEngine {
     }
 
     /**
-     * Measured playback metrics for the comparison use (MPV engine only).
-     * Default null: engines that do not measure (Media3) report nothing
-     * rather than invented numbers.
+     * Measured playback metrics for the mpv engine. Default null: engines
+     * that do not measure report nothing rather than invented numbers.
      */
     fun getPlaybackMetrics(): EnginePlaybackMetrics? = null
 
@@ -117,7 +131,7 @@ interface PlayerEngine {
     fun selectTrack(type: TrackType, id: String?)
 
     /**
-     * Selects an audio track by ExoPlayer-compatible group index and track index within that group.
+     * Selects an audio track by group index and track index within that group.
      */
     fun selectAudioTrack(groupIndex: Int, trackIndex: Int)
 

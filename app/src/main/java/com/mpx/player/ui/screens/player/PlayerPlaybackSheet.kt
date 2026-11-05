@@ -237,20 +237,17 @@ fun PlayerPlaybackSheet(
                 PlaybackSheetPage.Zoom -> PlaybackSheetZoomPage(
                     currentSettings = currentSettings,
                     onSettingsChanged = onSettingsChanged,
-                    isMpv = playbackManager.isMpv,
                 )
                 PlaybackSheetPage.AudioTracks -> PlaybackSheetAudioTracksPage(
                     state = state,
                     playbackManager = playbackManager,
                     currentSettings = currentSettings,
                     onSettingsChanged = onSettingsChanged,
-                    isMpv = playbackManager.isMpv,
                     onDismiss = dismiss,
                 )
                 PlaybackSheetPage.AudioDelay -> PlaybackSheetAudioDelayPage(
                     currentSettings = currentSettings,
                     onSettingsChanged = onSettingsChanged,
-                    isMpv = playbackManager.isMpv,
                 )
                 PlaybackSheetPage.SubtitleTracks -> PlaybackSheetSubtitleTracksPage(
                     state = state,
@@ -913,7 +910,6 @@ private fun PlaybackSheetRotationPage(
 private fun PlaybackSheetZoomPage(
     currentSettings: AppSettings,
     onSettingsChanged: (AppSettings) -> Unit,
-    isMpv: Boolean,
 ) {
     Column {
         Text(
@@ -937,14 +933,6 @@ private fun PlaybackSheetZoomPage(
         ) {
             Text("0.5×", color = MpxTheme.colors.textSecondary, fontSize = 12.sp)
             Text("2×", color = MpxTheme.colors.textSecondary, fontSize = 12.sp)
-        }
-        if (!isMpv) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.playback_sheet_mpv_only_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MpxTheme.colors.textSecondary,
-            )
         }
     }
 }
@@ -985,7 +973,6 @@ private fun PlaybackSheetAudioTracksPage(
     playbackManager: PlaybackManager,
     currentSettings: AppSettings,
     onSettingsChanged: (AppSettings) -> Unit,
-    isMpv: Boolean,
     onDismiss: () -> Unit,
 ) {
     Column {
@@ -1014,14 +1001,6 @@ private fun PlaybackSheetAudioTracksPage(
             currentSettings = currentSettings,
             onSettingsChanged = onSettingsChanged,
         )
-        if (!isMpv) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.playback_sheet_mpv_only_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MpxTheme.colors.textSecondary,
-            )
-        }
     }
 }
 
@@ -1029,21 +1008,12 @@ private fun PlaybackSheetAudioTracksPage(
 private fun PlaybackSheetAudioDelayPage(
     currentSettings: AppSettings,
     onSettingsChanged: (AppSettings) -> Unit,
-    isMpv: Boolean,
 ) {
     Column {
         AudioDelayStepper(
             currentSettings = currentSettings,
             onSettingsChanged = onSettingsChanged,
         )
-        if (!isMpv) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.playback_sheet_mpv_only_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MpxTheme.colors.textSecondary,
-            )
-        }
     }
 }
 
