@@ -6,7 +6,7 @@
     <string name="app_version_full">MPx Player 0.1.0-beta</string>
 
     <!-- Navigation Tabs -->
-    <string name="nav_local">लोकल</string>
+    <string name="nav_local">होम</string>
     <string name="nav_music">संगीत</string>
     <string name="nav_transfer">ट्रांसफ़र</string>
     <string name="nav_me">मैं</string>
