@@ -23,9 +23,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -130,6 +132,7 @@ import com.mpx.player.util.SubtitleUtils
 import com.mpx.player.util.SubtitleValidationResult
 import java.util.Locale
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import com.mpx.player.ui.components.MpxLoadingIndicator
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
@@ -502,6 +505,10 @@ fun PlayerScreen(
     }
     var hideVolumeJob by remember { mutableStateOf<Job?>(null) }
 
+    // Long-press 2x state (issue #166): while the user holds the video
+    // area, playback runs at 2x; releasing restores the previous speed.
+    var isLongPress2x by remember { mutableStateOf(false) }
+
     // Double-tap side seek gesture state
     var sideSeekDirection by remember { mutableStateOf<SideSeekDirection?>(null) }
     var hideSideSeekJob by remember { mutableStateOf<Job?>(null) }
@@ -512,8 +519,8 @@ fun PlayerScreen(
     // appears, so the video is not permanently covered. Stay visible while
     // paused, while scrubbing/dragging, or while a dialog is open, so no
     // interaction is ever cut off mid-use. Tap the video to bring it back.
-    LaunchedEffect(controlsVisible, state.isPlaying, playbackSheetPage, isScrubbingSlider, isDraggingSeek) {
-        if (controlsVisible && state.isPlaying && playbackSheetPage == null && !isScrubbingSlider && !isDraggingSeek) {
+    LaunchedEffect(controlsVisible, state.isPlaying, playbackSheetPage, isScrubbingSlider, isDraggingSeek, showBrightnessIndicator, showVolumeIndicator) {
+        if (controlsVisible && state.isPlaying && playbackSheetPage == null && !isScrubbingSlider && !isDraggingSeek && !showBrightnessIndicator && !showVolumeIndicator) {
             delay(3000)
             controlsVisible = false
         }
@@ -534,89 +541,246 @@ fun PlayerScreen(
         0f
     }
 
+    // Shared drag-delta handling for the single gesture detector below
+    // (issue #166): mode detection (horizontal seek vs left-vertical
+    // brightness vs right-vertical volume) plus the per-mode delta math.
+    // Kept in one place so the touch-slop change and every later drag
+    // change go through exactly the same path. scopeWidth/scopeHeight are
+    // the PointerInputScope size, passed in because this runs outside it.
+    fun applyDragDelta(dragAmount: Offset, scopeWidth: Float, scopeHeight: Float) {
+        totalDragX += dragAmount.x
+        totalDragY += dragAmount.y
+
+        if (currentDragMode == DragGestureMode.NONE) {
+            val absX = kotlin.math.abs(totalDragX)
+            val absY = kotlin.math.abs(totalDragY)
+            if (absX > 0f || absY > 0f) {
+                if (absX >= absY) {
+                    if (currentDuration > 0) {
+                        currentDragMode = DragGestureMode.HORIZONTAL_SEEK
+                        isDraggingSeek = true
+                    }
+                } else {
+                    val isLeftHalf = dragStartOffset.x < scopeWidth / 2f
+                    if (isLeftHalf) {
+                        currentDragMode = DragGestureMode.VERTICAL_BRIGHTNESS
+                        hideBrightnessJob?.cancel()
+                        showBrightnessIndicator = true
+                    } else {
+                        currentDragMode = DragGestureMode.VERTICAL_VOLUME
+                        hideVolumeJob?.cancel()
+                        showVolumeIndicator = true
+                    }
+                }
+            }
+        }
+
+        when (currentDragMode) {
+            DragGestureMode.HORIZONTAL_SEEK -> {
+                val minTotalX = -(seekStartMs.toFloat() / 120f)
+                val maxTotalX = ((currentDuration - seekStartMs).toFloat() / 120f)
+                totalDragX = totalDragX.coerceIn(minTotalX, maxTotalX)
+                val delta = (totalDragX * 120f).toLong()
+                val target = (seekStartMs + delta).coerceIn(0L, currentDuration)
+                seekTargetMs = target
+                seekDeltaMs = target - seekStartMs
+            }
+            DragGestureMode.VERTICAL_BRIGHTNESS -> {
+                val sensitivity = (scopeHeight * 0.75f).coerceAtLeast(200f)
+                totalDragY = totalDragY.coerceIn(
+                    -sensitivity * (1.0f - dragStartBrightness),
+                    sensitivity * dragStartBrightness,
+                )
+                val deltaFraction = -totalDragY / sensitivity
+                val target = (dragStartBrightness + deltaFraction).coerceIn(0f, 1f)
+                appliedBrightness = setScreenBrightness(activity, target)
+                hideBrightnessJob?.cancel()
+                showBrightnessIndicator = true
+            }
+            DragGestureMode.VERTICAL_VOLUME -> {
+                val sensitivity = (scopeHeight * 0.75f).coerceAtLeast(200f)
+                val volumeRange = (volumeMax - volumeMin).coerceAtLeast(1)
+                val minTotalY = -sensitivity * ((volumeMax - dragStartVolume).toFloat() / volumeRange.toFloat())
+                val maxTotalY = sensitivity * ((dragStartVolume - volumeMin).toFloat() / volumeRange.toFloat())
+                totalDragY = totalDragY.coerceIn(minTotalY, maxTotalY)
+                val deltaSteps = (-totalDragY / sensitivity * volumeRange).toInt()
+                val target = (dragStartVolume + deltaSteps).coerceIn(volumeMin, volumeMax)
+                appliedVolume = setMediaVolume(audioManager, target, volumeMin, volumeMax)
+                hideVolumeJob?.cancel()
+                showVolumeIndicator = true
+            }
+            DragGestureMode.NONE -> {}
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MpxTheme.colors.black)
-            // Tap gestures: single tap toggles controls, double tap zones (left: -10s, center: play/pause, right: +10s)
-            .pointerInput(state.isLocked) {
-                detectTapGestures(
-                    onTap = {
-                        controlsVisible = !controlsVisible
-                        if (sideSeekDirection != null) {
-                            hideSideSeekJob?.cancel()
-                            sideSeekDirection = null
+            // One gesture detector for the whole video area (issue #166):
+            // tap, double-tap, long-press 2x and drags share a single
+            // pointerInput block. Two separate blocks (detectTapGestures +
+            // detectDragGestures) cannot coexist on the same Box:
+            // detectTapGestures consumes the initial down (down.consume()),
+            // while detectDragGestures only accepts an UNCONSUMED down
+            // (awaitFirstDown(requireUnconsumed = true)), so the two
+            // detectors race for the same down — and on this screen the tap
+            // detector wins, which is why no drag ever started and the
+            // brightness/volume/seek previews never showed even though the
+            // HUD code itself was correct. A single awaitEachGesture loop
+            // removes the race: one down, one decision (tap / double-tap /
+            // long-press 2x / drag).
+            .pointerInput(state.isLocked, currentDuration) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = true)
+                    dragStartOffset = down.position
+                    // Per-gesture reset (was detectDragGestures' onDragStart).
+                    hideSideSeekJob?.cancel()
+                    sideSeekDirection = null
+                    currentDragMode = DragGestureMode.NONE
+                    totalDragX = 0f
+                    totalDragY = 0f
+                    accumulatedDragX = 0f
+                    seekStartMs = state.currentPositionMs
+                    seekTargetMs = seekStartMs
+                    seekDeltaMs = 0L
+
+                    if (state.isLocked) {
+                        // Locked: only a tap may toggle the chrome.
+                        val up = waitForUpOrCancellation()
+                        if (up != null) {
+                            controlsVisible = !controlsVisible
+                            if (sideSeekDirection != null) {
+                                hideSideSeekJob?.cancel()
+                                sideSeekDirection = null
+                            }
                         }
-                    },
-                    onDoubleTap = { offset ->
-                        if (!state.isLocked && realSettingsRepo.load().gesturesEnabled) {
-                            val oneThird = size.width / 3f
-                            val twoThirds = size.width * (2f / 3f)
-                            when {
-                                offset.x < oneThird -> {
-                                    playbackManager.skipBackward(realSettingsRepo.load().doubleTapSeekSeconds * 1000L)
-                                    sideSeekDirection = SideSeekDirection.BACKWARD
-                                    hideBrightnessJob?.cancel()
-                                    showBrightnessIndicator = false
-                                    hideVolumeJob?.cancel()
-                                    showVolumeIndicator = false
+                        return@awaitEachGesture
+                    }
+
+                    // Race the three outcomes: touch slop (drag), finger up
+                    // (tap / double-tap), long-press timeout (hold for 2x).
+                    // awaitTouchSlopOrCancellation returns null both on up
+                    // and on timeout, so tell them apart by whether the
+                    // pointer is still down in the latest event.
+                    val slopChange = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                        awaitTouchSlopOrCancellation(down.id) { change, _ -> change.consume() }
+                    }
+                    if (slopChange == null) {
+                        val stillDown = currentEvent.changes.any { it.id == down.id && it.pressed }
+                        if (stillDown && realSettingsRepo.load().gesturesEnabled) {
+                            // Long-press 2x: hold at 2x until release, then
+                            // restore the speed that was playing before.
+                            // The finally also covers the detector restarting
+                            // mid-hold, so 2x can never get stuck on.
+                            val previousSpeed = state.speed
+                            playbackManager.setSpeed(2f)
+                            isLongPress2x = true
+                            try {
+                                waitForUpOrCancellation()
+                            } finally {
+                                playbackManager.setSpeed(previousSpeed)
+                                isLongPress2x = false
+                            }
+                        } else {
+                            // Tap candidate: wait briefly for a second tap.
+                            val secondDown = withTimeoutOrNull(viewConfiguration.doubleTapTimeoutMillis) {
+                                awaitFirstDown(requireUnconsumed = true)
+                            }
+                            if (secondDown == null) {
+                                controlsVisible = !controlsVisible
+                                if (sideSeekDirection != null) {
                                     hideSideSeekJob?.cancel()
-                                    hideSideSeekJob = scope.launch {
-                                        delay(1000)
-                                        sideSeekDirection = null
-                                    }
+                                    sideSeekDirection = null
                                 }
-                                offset.x > twoThirds -> {
-                                    playbackManager.skipForward(realSettingsRepo.load().doubleTapSeekSeconds * 1000L)
-                                    sideSeekDirection = SideSeekDirection.FORWARD
-                                    hideBrightnessJob?.cancel()
-                                    showBrightnessIndicator = false
-                                    hideVolumeJob?.cancel()
-                                    showVolumeIndicator = false
-                                    hideSideSeekJob?.cancel()
-                                    hideSideSeekJob = scope.launch {
-                                        delay(1000)
-                                        sideSeekDirection = null
-                                    }
-                                }
-                                else -> {
-                                    playbackManager.togglePlayPause()
-                                    if (sideSeekDirection != null) {
-                                        hideSideSeekJob?.cancel()
-                                        sideSeekDirection = null
+                            } else {
+                                waitForUpOrCancellation()
+                                if (realSettingsRepo.load().gesturesEnabled) {
+                                    val oneThird = size.width / 3f
+                                    val twoThirds = size.width * (2f / 3f)
+                                    when {
+                                        secondDown.position.x < oneThird -> {
+                                            playbackManager.skipBackward(realSettingsRepo.load().doubleTapSeekSeconds * 1000L)
+                                            sideSeekDirection = SideSeekDirection.BACKWARD
+                                            hideBrightnessJob?.cancel()
+                                            showBrightnessIndicator = false
+                                            hideVolumeJob?.cancel()
+                                            showVolumeIndicator = false
+                                            hideSideSeekJob?.cancel()
+                                            hideSideSeekJob = scope.launch {
+                                                delay(1000)
+                                                sideSeekDirection = null
+                                            }
+                                        }
+                                        secondDown.position.x > twoThirds -> {
+                                            playbackManager.skipForward(realSettingsRepo.load().doubleTapSeekSeconds * 1000L)
+                                            sideSeekDirection = SideSeekDirection.FORWARD
+                                            hideBrightnessJob?.cancel()
+                                            showBrightnessIndicator = false
+                                            hideVolumeJob?.cancel()
+                                            showVolumeIndicator = false
+                                            hideSideSeekJob?.cancel()
+                                            hideSideSeekJob = scope.launch {
+                                                delay(1000)
+                                                sideSeekDirection = null
+                                            }
+                                        }
+                                        else -> {
+                                            playbackManager.togglePlayPause()
+                                            if (sideSeekDirection != null) {
+                                                hideSideSeekJob?.cancel()
+                                                sideSeekDirection = null
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                    },
-                )
-            }
-            // Drag gestures: horizontal seek, left-vertical brightness, right-vertical volume
-            .pointerInput(state.isLocked, currentDuration) {
-                if (state.isLocked) return@pointerInput
+                        return@awaitEachGesture
+                    }
 
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        hideSideSeekJob?.cancel()
-                        sideSeekDirection = null
-                        currentDragMode = DragGestureMode.NONE
-                        dragStartOffset = offset
-                        totalDragX = 0f
-                        totalDragY = 0f
-                        accumulatedDragX = 0f
-                        seekStartMs = state.currentPositionMs
-                        seekTargetMs = seekStartMs
-                        seekDeltaMs = 0L
-                        dragStartBrightness = getScreenBrightness(context, activity)
-                        dragStartVolume = audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
-                        volumeMin = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && audioManager != null) {
-                            audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+                    // Drag: capture the drag-start values (was onDragStart),
+                    // then feed the slop change and every later move through
+                    // the shared delta path.
+                    dragStartBrightness = getScreenBrightness(context, activity)
+                    dragStartVolume = audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
+                    volumeMin = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && audioManager != null) {
+                        audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+                    } else {
+                        0
+                    }
+                    volumeMax = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
+                    if (!realSettingsRepo.load().gesturesEnabled) {
+                        // Gestures off: ignore the drag entirely. (Before,
+                        // the unconsumed moves fell through to the tap
+                        // detector and a swipe toggled the chrome.)
+                        return@awaitEachGesture
+                    }
+                    applyDragDelta(slopChange.position - slopChange.previousPosition, size.width.toFloat(), size.height.toFloat())
+                    // Stream the drag: awaitDragOrCancellation takes no delta
+                    // callback, so loop on awaitPointerEvent until the finger
+                    // lifts or the gesture is cancelled, feeding every move
+                    // through the shared delta path.
+                    var endedCleanly = false
+                    var dragLoopDone = false
+                    while (!dragLoopDone) {
+                        val event = awaitPointerEvent()
+                        val dragChange = event.changes.firstOrNull { it.id == down.id }
+                        if (dragChange == null) {
+                            dragLoopDone = true
+                        } else if (!dragChange.pressed && dragChange.previousPressed) {
+                            // Finger lifted: the drag ended cleanly.
+                            endedCleanly = true
+                            dragLoopDone = true
                         } else {
-                            0
+                            val delta = dragChange.position - dragChange.previousPosition
+                            if (delta != Offset.Zero) {
+                                dragChange.consume()
+                                applyDragDelta(delta, size.width.toFloat(), size.height.toFloat())
+                            }
                         }
-                        volumeMax = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
-                    },
-                    onDragEnd = {
+                    }
+                    if (endedCleanly) {
                         when (currentDragMode) {
                             DragGestureMode.HORIZONTAL_SEEK -> {
                                 if (isDraggingSeek) {
@@ -640,9 +804,7 @@ fun PlayerScreen(
                             }
                             DragGestureMode.NONE -> {}
                         }
-                        currentDragMode = DragGestureMode.NONE
-                    },
-                    onDragCancel = {
+                    } else {
                         if (isDraggingSeek) {
                             isDraggingSeek = false
                         }
@@ -660,79 +822,10 @@ fun PlayerScreen(
                                 showVolumeIndicator = false
                             }
                         }
-                        currentDragMode = DragGestureMode.NONE
-                    },
-                    onDrag = drag@{ change, dragAmount ->
-                        // Gestures toggle off: ignore drags entirely (do not even
-                        // consume the change, so taps still reach the tap handler).
-                        if (!realSettingsRepo.load().gesturesEnabled) return@drag
-                        change.consume()
-                        totalDragX += dragAmount.x
-                        totalDragY += dragAmount.y
-
-                        if (currentDragMode == DragGestureMode.NONE) {
-                            val absX = kotlin.math.abs(totalDragX)
-                            val absY = kotlin.math.abs(totalDragY)
-                            if (absX > 0f || absY > 0f) {
-                                if (absX >= absY) {
-                                    if (currentDuration > 0) {
-                                        currentDragMode = DragGestureMode.HORIZONTAL_SEEK
-                                        isDraggingSeek = true
-                                    }
-                                } else {
-                                    val isLeftHalf = dragStartOffset.x < size.width / 2f
-                                    if (isLeftHalf) {
-                                        currentDragMode = DragGestureMode.VERTICAL_BRIGHTNESS
-                                        hideBrightnessJob?.cancel()
-                                        showBrightnessIndicator = true
-                                    } else {
-                                        currentDragMode = DragGestureMode.VERTICAL_VOLUME
-                                        hideVolumeJob?.cancel()
-                                        showVolumeIndicator = true
-                                    }
-                                }
-                            }
-                        }
-
-                        when (currentDragMode) {
-                            DragGestureMode.HORIZONTAL_SEEK -> {
-                                val minTotalX = -(seekStartMs.toFloat() / 120f)
-                                val maxTotalX = ((currentDuration - seekStartMs).toFloat() / 120f)
-                                totalDragX = totalDragX.coerceIn(minTotalX, maxTotalX)
-                                val delta = (totalDragX * 120f).toLong()
-                                val target = (seekStartMs + delta).coerceIn(0L, currentDuration)
-                                seekTargetMs = target
-                                seekDeltaMs = target - seekStartMs
-                            }
-                            DragGestureMode.VERTICAL_BRIGHTNESS -> {
-                                val sensitivity = (size.height.toFloat() * 0.75f).coerceAtLeast(200f)
-                                totalDragY = totalDragY.coerceIn(
-                                    -sensitivity * (1.0f - dragStartBrightness),
-                                    sensitivity * dragStartBrightness,
-                                )
-                                val deltaFraction = -totalDragY / sensitivity
-                                val target = (dragStartBrightness + deltaFraction).coerceIn(0f, 1f)
-                                appliedBrightness = setScreenBrightness(activity, target)
-                                hideBrightnessJob?.cancel()
-                                showBrightnessIndicator = true
-                            }
-                            DragGestureMode.VERTICAL_VOLUME -> {
-                                val sensitivity = (size.height.toFloat() * 0.75f).coerceAtLeast(200f)
-                                val volumeRange = (volumeMax - volumeMin).coerceAtLeast(1)
-                                val minTotalY = -sensitivity * ((volumeMax - dragStartVolume).toFloat() / volumeRange.toFloat())
-                                val maxTotalY = sensitivity * ((dragStartVolume - volumeMin).toFloat() / volumeRange.toFloat())
-                                totalDragY = totalDragY.coerceIn(minTotalY, maxTotalY)
-                                val deltaSteps = (-totalDragY / sensitivity * volumeRange).toInt()
-                                val target = (dragStartVolume + deltaSteps).coerceIn(volumeMin, volumeMax)
-                                appliedVolume = setMediaVolume(audioManager, target, volumeMin, volumeMax)
-                                hideVolumeJob?.cancel()
-                                showVolumeIndicator = true
-                            }
-                            DragGestureMode.NONE -> {}
-                        }
-                    },
-                )
-            },
+                    }
+                    currentDragMode = DragGestureMode.NONE
+                }
+            }
     ) {
         // Video Surface: mpv renders into a plain SurfaceView (issue #150:
         // Media3 PlayerView is gone with Media3).
@@ -901,7 +994,9 @@ fun PlayerScreen(
             }
         }
 
-        // Brightness HUD (Left half vertical drag) — slim MX-brightbar strip
+        // Brightness HUD (Left half vertical drag) — slim MX-brightbar strip.
+        // Shown on the RIGHT, opposite the dragging hand, so the finger never
+        // covers the preview (issue #166). The gesture side itself is unchanged.
         if (!isInPipMode && showBrightnessIndicator) {
             val brightnessPercent = (appliedBrightness * 100).roundToInt().coerceIn(0, 100)
             val icon = when {
@@ -915,12 +1010,13 @@ fun PlayerScreen(
                 icon = icon,
                 iconDescription = stringResource(R.string.player_cd_brightness),
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 32.dp),
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 32.dp),
             )
         }
 
-        // Volume HUD (Right half vertical drag) — slim MX-brightbar strip
+        // Volume HUD (Right half vertical drag) — slim MX-brightbar strip.
+        // Shown on the LEFT, opposite the dragging hand (issue #166).
         if (!isInPipMode && showVolumeIndicator) {
             val volumeRange = (volumeMax - volumeMin).coerceAtLeast(1)
             val volumePercent = (((appliedVolume - volumeMin).toFloat() / volumeRange.toFloat()) * 100).roundToInt().coerceIn(0, 100)
@@ -935,9 +1031,36 @@ fun PlayerScreen(
                 icon = icon,
                 iconDescription = stringResource(R.string.player_cd_volume),
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 32.dp),
+                    .align(Alignment.CenterStart)
+                    .padding(start = 32.dp),
             )
+        }
+
+        // Long-press 2x indicator — small centered pill while the hold
+        // lasts (issue #166). Same gradient-pill language as the scrub HUD.
+        if (!isInPipMode && isLongPress2x) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .clip(MpxShapes.large)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MpxTheme.colors.black.copy(alpha = 0.45f),
+                                MpxTheme.colors.black.copy(alpha = 0.65f),
+                            ),
+                        ),
+                    )
+                    .padding(horizontal = 24.dp, vertical = 14.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "2×",
+                    color = MpxTheme.colors.textPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                )
+            }
         }
 
         // Side Seek HUD (Double-tap left -10s / right +10s feedback) —
