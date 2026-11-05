@@ -1831,6 +1831,12 @@ private fun PlaylistsTabContent(
     onPlaylistClick: (Playlist) -> Unit,
 ) {
     val listState = rememberLazyListState()
+    // Issue #209: the scrollbar count must match what the LazyColumn below
+    // actually emits — 3 header rows (new playlist, favourites, history) +
+    // one row per playlist + the empty-state row when there are no playlists.
+    // The old `playlists.size + 3` was right with playlists but one short
+    // when empty (3 counted, 4 emitted).
+    val playlistItemCount = 3 + playlists.size + if (playlists.isEmpty()) 1 else 0
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
@@ -1926,7 +1932,7 @@ private fun PlaylistsTabContent(
         }
         FastScrollbar(
             listState = listState,
-            itemCount = playlists.size + 3,
+            itemCount = playlistItemCount,
             getSectionText = { index ->
                 if (index < 3) "" else playlists.getOrNull(index - 3)?.title?.take(1)?.uppercase(Locale.US) ?: ""
             },
