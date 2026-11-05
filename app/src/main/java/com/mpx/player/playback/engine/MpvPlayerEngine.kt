@@ -137,6 +137,22 @@ class MpvPlayerEngine(
      * Written on Main, read/cleared on the event thread: volatile. */
     @Volatile
     private var pendingSubtitles: PendingSubtitles? = null
+    /** Issue #199: an external subtitle was sub-added with "select" but the
+     * one-shot #192 pin ran before mpv's async sub-add put the new track in
+     * track-list, so it silently no-op'd — and if the file was already
+     * loaded, FILE_LOADED never fired again to give it a second chance.
+     * Kept set until a track-list refresh shows the just-added track
+     * selected and sid is pinned to it (see attemptExternalPin). Only
+     * ever pins a track that is currently selected AND external, so a
+     * failed add (track never appears) can never freeze a wrong
+     * selection, and a stale flag is harmless: it no-ops whenever no
+     * external track is selected (e.g. the user picked an embedded
+     * track instead). Armed on Main (replaceMediaItem) and on the event
+     * thread (FILE_LOADED dispatch); read/cleared on the event thread:
+     * volatile. Cleared on load/stop/release so a pick for one item can
+     * never pin a track on another item. */
+    @Volatile
+    private var pendingExternalPin: Boolean = false
 
     private fun isPathMatch(path1: String?, path2: String?): Boolean {
         if (path1 == null || path2 == null) return false
@@ -685,6 +701,12 @@ class MpvPlayerEngine(
                 notifyDecoderChanged()
             }
             "track-list" -> {
+                // Issue #199: durable retry for the #192 pin — sub-add is
+                // async, so the pin right after sub-add usually runs
+                // before the new track is in track-list. Re-attempt on
+                // every track-list refresh until the just-added external
+                // track is visible and sid is pinned to it.
+                attemptExternalPin()
                 mainHandler.post {
                     engineListener?.onTracksChanged()
                 }
@@ -796,6 +818,7 @@ class MpvPlayerEngine(
                 if (pending != null) {
                     val matches = activeMediaUri == null || isPathMatch(pending.mediaUri, activeMediaUri)
                     if (matches) {
+                        var addedAny = false
                         pending.subtitles.forEach { sub ->
                             try {
                                 if (sub.title != null) {
@@ -803,13 +826,23 @@ class MpvPlayerEngine(
                                 } else {
                                     mpv.command("sub-add", sub.uri, sub.flag)
                                 }
+                                addedAny = true
                             } catch (e: Exception) {
                                 Log.w(TAG, "Failed adding pending subtitle ${sub.uri}", e)
                             }
                         }
-                        // Issue #192: pin sid to the just-added external
-                        // track — sub-add "select" alone does not stick.
-                        pinSelectedExternalSubtitleTrack()
+                        // Issue #192/#199: pin sid to the just-added
+                        // external track — sub-add "select" alone does not
+                        // stick. Arm the durable pin first: sub-add is
+                        // async, so the immediate attempt usually runs
+                        // before the new track is in track-list, and the
+                        // track-list handler re-attempts it until it is
+                        // pinned. A failed add (addedAny false) never
+                        // arms the pin.
+                        if (addedAny) {
+                            pendingExternalPin = true
+                            attemptExternalPin()
+                        }
                     } else {
                         Log.w(TAG, "Dropping stale pending subtitles for ${pending.mediaUri} (active: $activeMediaUri)")
                     }
@@ -1060,6 +1093,9 @@ class MpvPlayerEngine(
         currentQueue = items
         if (items.isEmpty()) return
         fileLoadedForCurrentItem = false
+        // Issue #199: a pending pin belongs to the item it was picked
+        // for — a new load must never let it pin a track on this item.
+        pendingExternalPin = false
         pendingSeekMs = null
         loadIssued = false
         lastMpvEvent = "none"
@@ -1391,19 +1427,44 @@ class MpvPlayerEngine(
      * external subtitle the user just picked silently disappears (user's
      * v0.3.1 log: sid=2 selected at 19:25:31, sid=1 back at 19:25:33).
      * Setting `sid` to the track id explicitly makes the pick sticky, so
-     * it survives track-list refreshes and seeks. No-op when no external
-     * track is selected (e.g. the sub-add failed or the track is not in
-     * track-list yet) — a failed add never freezes a wrong selection, and
-     * the manager's pending fallback gets the second chance.
+     * it survives track-list refreshes and seeks.
+     *
+     * Returns true when sid was pinned, false when no external track is
+     * selected (e.g. the sub-add failed or the track is not in track-list
+     * yet) — a failed add never freezes a wrong selection. Issue #199:
+     * the pin is one-shot and sub-add is async, so callers arm
+     * [pendingExternalPin] and go through [attemptExternalPin] instead of
+     * calling this directly; the track-list handler retries it until it
+     * succeeds.
      */
-    private fun pinSelectedExternalSubtitleTrack() {
+    private fun pinSelectedExternalSubtitleTrack(): Boolean {
         try {
             val selected = getSubtitleTracks().firstOrNull { it.isSelected && it.isExternal }
-                ?: return
+                ?: return false
             mpv.setPropertyString("sid", selected.trackIndex.toString())
+            return true
         } catch (e: Exception) {
             Log.w(TAG, "Failed pinning external subtitle selection", e)
+            return false
         }
+    }
+
+    /**
+     * Issue #199: one attempt at the #192 pin. Clears [pendingExternalPin]
+     * only once sid is actually pinned; a miss leaves it set so the next
+     * track-list refresh retries. No-op when nothing is pending. Safe to
+     * call from the track-list property-change handler: it only ever pins
+     * a track that is currently selected AND external, so it can never
+     * override a manual pick (embedded or a different external track)
+     * the user made after the sub-add.
+     */
+    private fun attemptExternalPin(): Boolean {
+        if (!pendingExternalPin) return true
+        if (pinSelectedExternalSubtitleTrack()) {
+            pendingExternalPin = false
+            return true
+        }
+        return false
     }
 
     override fun replaceMediaItem(index: Int, media: PlayableMedia) {
@@ -1433,6 +1494,7 @@ class MpvPlayerEngine(
                     // the full list: pendingSubtitles is overwritten,
                     // not appended, and dispatched exactly once on
                     // FILE_LOADED, so it cannot duplicate.
+                    var addedAny = false
                     media.externalSubtitles
                         .filter { ext ->
                             previous?.externalSubtitles?.none { isSameExternalSubtitle(it, ext) } ?: true
@@ -1440,13 +1502,22 @@ class MpvPlayerEngine(
                         .forEach { ext ->
                             try {
                                 mpv.command("sub-add", ext.uri, "select", ext.name)
+                                addedAny = true
                             } catch (e: Exception) {
                                 Log.w(TAG, "Failed adding external subtitle ${ext.name}", e)
                             }
                         }
-                    // Issue #192: pin sid to the just-added external
-                    // track — sub-add "select" alone does not stick.
-                    pinSelectedExternalSubtitleTrack()
+                    // Issue #192/#199: pin sid to the just-added external
+                    // track — sub-add "select" alone does not stick. Arm
+                    // the durable pin first: sub-add is async, so the
+                    // immediate attempt usually runs before the new track
+                    // is in track-list, and the track-list handler
+                    // re-attempts it until it is pinned. A failed add
+                    // (addedAny false) never arms the pin.
+                    if (addedAny) {
+                        pendingExternalPin = true
+                        attemptExternalPin()
+                    }
                 } else {
                     // Queue for dispatch when FILE_LOADED arrives
                     val subs = mutableListOf<PendingSubtitle>()
@@ -1474,6 +1545,7 @@ class MpvPlayerEngine(
         pendingLoad = null
         pendingSeekMs = null
         pendingSubtitles = null
+        pendingExternalPin = false
         activeMediaId = null
         activeMediaUri = null
         loadIssued = false
@@ -1491,6 +1563,7 @@ class MpvPlayerEngine(
         pendingLoad = null
         pendingSeekMs = null
         pendingSubtitles = null
+        pendingExternalPin = false
         activeMediaId = null
         activeMediaUri = null
         isReleased = true
