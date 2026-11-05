@@ -133,6 +133,11 @@ class MainActivity : ComponentActivity() {
     private var currentPalette by mutableStateOf("Blue")
     private var currentDarkSurface by mutableStateOf("TrueBlack")
     private var openPlayerOnStart by mutableStateOf(false)
+    // Issue #206: the NavHost's current route, mirrored from MpxApp via
+    // onDestinationChanged. onUserLeaveHint gates Home-press PiP on it —
+    // without this the activity cannot tell whether the Player is visible.
+    // Null until the first composition reports; null means "not Player".
+    private var currentRoute by mutableStateOf<String?>(null)
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -230,6 +235,7 @@ class MainActivity : ComponentActivity() {
                         onThemeChanged = { currentTheme = it },
                         onPaletteChanged = { currentPalette = it },
                         onDarkSurfaceChanged = { currentDarkSurface = it },
+                        onDestinationChanged = { currentRoute = it },
                     )
                 }
             }
@@ -362,7 +368,15 @@ class MainActivity : ComponentActivity() {
         // the old backgroundPlay requirement, the default backgroundPlay=false
         // meant pressing Home just stopped playback and never entered PiP.
         // PiP keeps the video visible, so it is not "background play".
-        if (settings.popupPlayEnabled) {
+        // Issue #206: only when the Player route is the visible
+        // destination. With background play on, a video keeps playing
+        // while the user browses Local/Music/Me — pressing Home then
+        // must NOT pop a PiP window over the launcher; playback just
+        // keeps going in the background (issue #205). The Playback
+        // sheet is a bottom sheet inside the Player route, not a
+        // separate destination, so Home over an open sheet still PiPs.
+        // Already-in-PiP is a no-op re-entry, guarded for clarity.
+        if (settings.popupPlayEnabled && !isInPipMode && currentRoute == Screen.Player.route) {
             val playbackManager = PlaybackManager.getInstance(this)
             val state = playbackManager.playbackState.value
             if (state.isPlaying && state.currentItem?.isVideo == true) {
@@ -391,6 +405,9 @@ fun MpxApp(
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
     onDarkSurfaceChanged: ((String) -> Unit)? = null,
+    // Issue #206: reports the NavHost's current route to the activity,
+    // which gates Home-press PiP on the Player being visible.
+    onDestinationChanged: ((String?) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val playbackManager = remember { PlaybackManager.getInstance(context) }
@@ -398,6 +415,10 @@ fun MpxApp(
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
+    // Issue #206: mirror the route to the activity on every change.
+    LaunchedEffect(currentDestination?.route) {
+        onDestinationChanged?.invoke(currentDestination?.route)
+    }
 
     // Issue #176: swipe on the page switches dock tabs. The dock tap
     // and the swipe share this one navigate block (persist lastTabRoute,
