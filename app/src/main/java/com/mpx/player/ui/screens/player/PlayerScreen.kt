@@ -756,7 +756,7 @@ fun PlayerScreen(
                         // detector and a swipe toggled the chrome.)
                         return@awaitEachGesture
                     }
-                    applyDragDelta(slopChange.positionChange(), size.width.toFloat(), size.height.toFloat())
+                    applyDragDelta(slopChange.position - slopChange.previousPosition, size.width.toFloat(), size.height.toFloat())
                     // Stream the drag: awaitDragOrCancellation takes no delta
                     // callback, so loop on awaitPointerEvent until the finger
                     // lifts or the gesture is cancelled, feeding every move
@@ -768,11 +768,12 @@ fun PlayerScreen(
                         val dragChange = event.changes.firstOrNull { it.id == down.id }
                         if (dragChange == null) {
                             dragLoopDone = true
-                        } else if (dragChange.changedToUpOrCancelled()) {
-                            if (dragChange.changedToUp()) endedCleanly = true
+                        } else if (!dragChange.pressed && dragChange.previousPressed) {
+                            // Finger lifted: the drag ended cleanly.
+                            endedCleanly = true
                             dragLoopDone = true
                         } else {
-                            val delta = dragChange.positionChange()
+                            val delta = dragChange.position - dragChange.previousPosition
                             if (delta != Offset.Zero) {
                                 dragChange.consume()
                                 applyDragDelta(delta, size.width.toFloat(), size.height.toFloat())
