@@ -76,16 +76,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import kotlinx.coroutines.launch
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxSuccess
-import com.mpx.player.ui.theme.MpxSurfaceVariant
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.success
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,7 +129,7 @@ fun AboutBetaScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MpxBlack,
+        containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -140,7 +140,7 @@ fun AboutBetaScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                     )
                 },
                 navigationIcon = {
@@ -148,12 +148,12 @@ fun AboutBetaScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
-                            tint = MpxTextPrimary,
+                            tint = MpxTheme.colors.textPrimary,
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MpxBlack,
+                    containerColor = MpxTheme.colors.black,
                 ),
             )
         },
@@ -170,7 +170,7 @@ fun AboutBetaScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MpxShapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
+                    colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
                 ) {
                     Column(
                         modifier = Modifier
@@ -182,7 +182,7 @@ fun AboutBetaScreen(
                             modifier = Modifier
                                 .size(64.dp)
                                 .clip(CircleShape)
-                                .background(MpxPrimary),
+                                .background(MpxTheme.colors.primary),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
@@ -200,7 +200,7 @@ fun AboutBetaScreen(
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.ExtraBold,
                             ),
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                         )
 
                         Spacer(Modifier.height(4.dp))
@@ -208,12 +208,12 @@ fun AboutBetaScreen(
                         // Beta Badge
                         Surface(
                             shape = MpxShapes.extraLarge,
-                            color = MpxTextMuted.copy(alpha = 0.2f),
-                            border = androidx.compose.foundation.BorderStroke(MpxHairline, MpxTextMuted),
+                            color = MpxTheme.colors.textMuted.copy(alpha = 0.2f),
+                            border = androidx.compose.foundation.BorderStroke(MpxHairline, MpxTheme.colors.textMuted),
                         ) {
                             Text(
                                 text = stringResource(R.string.about_beta_badge),
-                                color = MpxTextMuted,
+                                color = MpxTheme.colors.textMuted,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp,
@@ -229,7 +229,7 @@ fun AboutBetaScreen(
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                             ),
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                         )
 
                         Spacer(Modifier.height(4.dp))
@@ -237,7 +237,7 @@ fun AboutBetaScreen(
                         Text(
                             text = stringResource(R.string.about_beta_tagline),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
+                            color = MpxTheme.colors.textSecondary,
                             lineHeight = 18.sp,
                         )
 
@@ -251,7 +251,7 @@ fun AboutBetaScreen(
                             ),
                             fontFamily = FontFamily.Monospace,
                             fontSize = 11.sp,
-                            color = MpxTextSecondary.copy(alpha = 0.8f),
+                            color = MpxTheme.colors.textSecondary.copy(alpha = 0.8f),
                         )
                     }
                 }
@@ -262,22 +262,22 @@ fun AboutBetaScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MpxShapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MpxPrimary.copy(alpha = 0.5f)),
+                    colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MpxTheme.colors.primary.copy(alpha = 0.5f)),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                                 contentDescription = null,
-                                tint = MpxPrimary,
+                                tint = MpxTheme.colors.primary,
                                 modifier = Modifier.size(22.dp),
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = stringResource(R.string.about_beta_section_feedback),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MpxTextPrimary,
+                                color = MpxTheme.colors.textPrimary,
                             )
                         }
 
@@ -286,7 +286,7 @@ fun AboutBetaScreen(
                         Text(
                             text = stringResource(R.string.about_beta_feedback_body),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MpxTextSecondary,
+                            color = MpxTheme.colors.textSecondary,
                             lineHeight = 20.sp,
                         )
 
@@ -301,7 +301,7 @@ fun AboutBetaScreen(
                                 modifier = Modifier.weight(1f),
                                 shape = MpxShapes.small,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MpxPrimary,
+                                    containerColor = MpxTheme.colors.primary,
                                     contentColor = Color.White,
                                 ),
                             ) {
@@ -320,12 +320,12 @@ fun AboutBetaScreen(
                             OutlinedButton(
                                 onClick = { copyIssuesUrl() },
                                 shape = MpxShapes.small,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MpxBorder),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MpxTheme.colors.border),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.ContentCopy,
                                     contentDescription = stringResource(R.string.about_beta_copy_github_url),
-                                    tint = MpxTextPrimary,
+                                    tint = MpxTheme.colors.textPrimary,
                                     modifier = Modifier.size(18.dp),
                                 )
                             }
@@ -339,7 +339,7 @@ fun AboutBetaScreen(
                 Text(
                     text = stringResource(R.string.about_beta_section_ready),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                     fontSize = 12.sp,
                 )
             }
@@ -348,19 +348,19 @@ fun AboutBetaScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MpxShapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
+                    colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = stringResource(R.string.about_beta_ready_subtitle),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
+                            color = MpxTheme.colors.textSecondary,
                             modifier = Modifier.padding(bottom = 12.dp),
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.PlayCircleOutline,
-                            iconTint = MpxPrimary,
+                            iconTint = MpxTheme.colors.primary,
                             title = stringResource(R.string.about_beta_feat_player_title),
                             description = stringResource(R.string.about_beta_feat_player_desc),
                             isReady = true,
@@ -368,13 +368,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.PictureInPictureAlt,
-                            iconTint = MpxPrimary,
+                            iconTint = MpxTheme.colors.primary,
                             title = stringResource(R.string.about_beta_feat_bg_pip_title),
                             description = stringResource(R.string.about_beta_feat_bg_pip_desc),
                             isReady = true,
@@ -382,13 +382,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.MusicNote,
-                            iconTint = MpxPrimary,
+                            iconTint = MpxTheme.colors.primary,
                             title = stringResource(R.string.about_beta_feat_music_title),
                             description = stringResource(R.string.about_beta_feat_music_desc),
                             isReady = true,
@@ -396,13 +396,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.Storage,
-                            iconTint = MpxPrimary,
+                            iconTint = MpxTheme.colors.primary,
                             title = stringResource(R.string.about_beta_feat_persistence_title),
                             description = stringResource(R.string.about_beta_feat_persistence_desc),
                             isReady = true,
@@ -410,13 +410,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.ColorLens,
-                            iconTint = MpxPrimary,
+                            iconTint = MpxTheme.colors.primary,
                             title = stringResource(R.string.about_beta_feat_themes_title),
                             description = stringResource(R.string.about_beta_feat_themes_desc),
                             isReady = true,
@@ -424,13 +424,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.Language,
-                            iconTint = MpxPrimary,
+                            iconTint = MpxTheme.colors.primary,
                             title = stringResource(R.string.about_beta_feat_i18n_title),
                             description = stringResource(R.string.about_beta_feat_i18n_desc),
                             isReady = true,
@@ -444,7 +444,7 @@ fun AboutBetaScreen(
                 Text(
                     text = stringResource(R.string.about_beta_section_placeholders),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                     fontSize = 12.sp,
                 )
             }
@@ -453,19 +453,19 @@ fun AboutBetaScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MpxShapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
+                    colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = stringResource(R.string.about_beta_placeholders_subtitle),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
+                            color = MpxTheme.colors.textSecondary,
                             modifier = Modifier.padding(bottom = 12.dp),
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.Download,
-                            iconTint = MpxTextMuted,
+                            iconTint = MpxTheme.colors.textMuted,
                             title = stringResource(R.string.about_beta_holder_downloader_title),
                             description = stringResource(R.string.about_beta_holder_downloader_desc),
                             isReady = false,
@@ -473,13 +473,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.SwapHoriz,
-                            iconTint = MpxTextMuted,
+                            iconTint = MpxTheme.colors.textMuted,
                             title = stringResource(R.string.about_beta_holder_transfer_title),
                             description = stringResource(R.string.about_beta_holder_transfer_desc),
                             isReady = false,
@@ -487,13 +487,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.SaveAlt,
-                            iconTint = MpxTextMuted,
+                            iconTint = MpxTheme.colors.textMuted,
                             title = stringResource(R.string.about_beta_holder_status_title),
                             description = stringResource(R.string.about_beta_holder_status_desc),
                             isReady = false,
@@ -501,13 +501,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.Lock,
-                            iconTint = MpxTextMuted,
+                            iconTint = MpxTheme.colors.textMuted,
                             title = stringResource(R.string.about_beta_holder_private_title),
                             description = stringResource(R.string.about_beta_holder_private_desc),
                             isReady = false,
@@ -515,13 +515,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.FolderSpecial,
-                            iconTint = MpxTextMuted,
+                            iconTint = MpxTheme.colors.textMuted,
                             title = stringResource(R.string.about_beta_holder_manager_title),
                             description = stringResource(R.string.about_beta_holder_manager_desc),
                             isReady = false,
@@ -529,13 +529,13 @@ fun AboutBetaScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxBorder.copy(alpha = 0.5f),
+                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
                             thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(
                             icon = Icons.Filled.Delete,
-                            iconTint = MpxTextMuted,
+                            iconTint = MpxTheme.colors.textMuted,
                             title = stringResource(R.string.about_beta_holder_bin_title),
                             description = stringResource(R.string.about_beta_holder_bin_desc),
                             isReady = false,
@@ -549,7 +549,7 @@ fun AboutBetaScreen(
                 Text(
                     text = stringResource(R.string.about_beta_section_privacy),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                     fontSize = 12.sp,
                 )
             }
@@ -558,21 +558,21 @@ fun AboutBetaScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MpxShapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
+                    colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.Security,
                                 contentDescription = null,
-                                tint = MpxPrimary,
+                                tint = MpxTheme.colors.primary,
                                 modifier = Modifier.size(24.dp),
                             )
                             Spacer(Modifier.width(10.dp))
                             Text(
                                 text = stringResource(R.string.dialog_privacy_title),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MpxTextPrimary,
+                                color = MpxTheme.colors.textPrimary,
                             )
                         }
 
@@ -581,7 +581,7 @@ fun AboutBetaScreen(
                         Text(
                             text = stringResource(R.string.about_beta_privacy_body),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
+                            color = MpxTheme.colors.textSecondary,
                             lineHeight = 18.sp,
                         )
                     }
@@ -631,7 +631,7 @@ private fun FeatureStatusRow(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MpxTextPrimary,
+                    color = MpxTheme.colors.textPrimary,
                     modifier = Modifier.weight(1f, fill = false),
                 )
 
@@ -642,14 +642,14 @@ private fun FeatureStatusRow(
                         Icon(
                             imageVector = Icons.Filled.CheckCircle,
                             contentDescription = null,
-                            tint = MpxSuccess,
+                            tint = MpxTheme.colors.success,
                             modifier = Modifier.size(14.dp),
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
                             text = stringResource(R.string.about_status_ready),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = MpxSuccess,
+                            color = MpxTheme.colors.success,
                             fontSize = 11.sp,
                         )
                     }
@@ -658,14 +658,14 @@ private fun FeatureStatusRow(
                         Icon(
                             imageVector = Icons.Filled.HourglassTop,
                             contentDescription = null,
-                            tint = MpxTextMuted,
+                            tint = MpxTheme.colors.textMuted,
                             modifier = Modifier.size(14.dp),
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
                             text = stringResource(R.string.about_status_placeholder),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = MpxTextMuted,
+                            color = MpxTheme.colors.textMuted,
                             fontSize = 11.sp,
                         )
                     }
@@ -677,7 +677,7 @@ private fun FeatureStatusRow(
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MpxTextSecondary,
+                color = MpxTheme.colors.textSecondary,
                 lineHeight = 16.sp,
             )
         }

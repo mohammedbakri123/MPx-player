@@ -39,13 +39,13 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.ui.components.AsyncVideoThumbnail
 import com.mpx.player.ui.components.player.formatTimeMs
-import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxSurfaceVariant
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 /**
  * Domain model representing an item in the Continue Watching row.
@@ -94,7 +94,7 @@ fun ContinueWatchingRow(
             Text(
                 text = stringResource(R.string.continue_watching_title).uppercase(),
                 style = MaterialTheme.typography.labelSmall,
-                color = MpxTextSecondary,
+                color = MpxTheme.colors.textSecondary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -102,12 +102,12 @@ fun ContinueWatchingRow(
             Box(
                 modifier = Modifier
                     .clip(MpxShapes.small)
-                    .background(MpxSurfaceVariant)
+                    .background(MpxTheme.colors.surfaceVariant)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             ) {
                 Text(
                     text = "${items.size}",
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -156,8 +156,8 @@ fun ContinueWatchingCard(
                 .fillMaxWidth()
                 .height(84.dp)
                 .clip(MpxShapes.small)
-                .background(MpxSurfaceVariant)
-                .border(MpxHairline, MpxBorder, MpxShapes.small),
+                .background(MpxTheme.colors.surfaceVariant)
+                .border(MpxHairline, MpxTheme.colors.border, MpxShapes.small),
         ) {
             AsyncVideoThumbnail(
                 mediaUri = item.mediaUri,
@@ -216,7 +216,7 @@ fun ContinueWatchingCard(
                     .fillMaxWidth()
                     .height(3.5.dp)
                     .align(Alignment.BottomCenter),
-                color = MpxPrimary,
+                color = MpxTheme.colors.primary,
                 trackColor = Color.Black.copy(alpha = 0.5f),
             )
         }
@@ -227,7 +227,7 @@ fun ContinueWatchingCard(
         Text(
             text = item.title,
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-            color = MpxTextPrimary,
+            color = MpxTheme.colors.textPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             fontSize = 12.sp,
@@ -241,7 +241,7 @@ fun ContinueWatchingCard(
                 stringResource(R.string.continue_watching_resume_at, formatTimeMs(item.positionMs))
             },
             style = MaterialTheme.typography.labelSmall,
-            color = MpxPrimary,
+            color = MpxTheme.colors.primary,
             fontSize = 10.5.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

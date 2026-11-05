@@ -65,7 +65,7 @@
     <string name="settings_category_language">应用语言</string>
     <string name="settings_category_language_sub">English, العربية, Español, Français, हिन्दी, 系统默认</string>
     <string name="settings_category_theme">应用主题</string>
-    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
+    <string name="settings_category_theme_sub">系统、深色、浅色</string>
     <string name="settings_category_pip">自定义画中画播放</string>
     <string name="settings_category_pip_sub">画中画控制和后台播放</string>
     <string name="settings_category_tabs">音乐标签页</string>
@@ -92,6 +92,9 @@
     <string name="theme_dark">Dark Slate（炭灰）</string>
     <string name="theme_classic">Classic MX Navy</string>
     <string name="theme_light">Light Cinema（纯白）</string>
+    <string name="theme_option_system">系统</string>
+    <string name="theme_option_dark">深色</string>
+    <string name="theme_option_light">浅色</string>
     <string name="theme_applied_snackbar">主题已应用：%s</string>
 
     <string name="pip_not_supported">注意：此设备/环境不支持画中画模式（需要 Android 8.0+ 并支持 FEATURE_PICTURE_IN_PICTURE）。</string>

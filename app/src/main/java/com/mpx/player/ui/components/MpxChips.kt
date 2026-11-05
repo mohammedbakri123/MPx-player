@@ -8,14 +8,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxPrimaryVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
+import com.mpx.player.ui.theme.MpxTheme.colors.primaryVariant
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceS
-import com.mpx.player.ui.theme.MpxSurfaceVariant
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 /**
  * M2.5 chip + badge atoms (#106). Selection is blue, sparingly;
@@ -36,16 +36,16 @@ fun MpxFilterChip(
         modifier = modifier,
         shape = MpxShapes.small,
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = MpxSurfaceVariant,
-            labelColor = MpxTextSecondary,
-            selectedContainerColor = MpxPrimaryVariant,
-            selectedLabelColor = MpxTextPrimary,
+            containerColor = MpxTheme.colors.surfaceVariant,
+            labelColor = MpxTheme.colors.textSecondary,
+            selectedContainerColor = MpxTheme.colors.primaryVariant,
+            selectedLabelColor = MpxTheme.colors.textPrimary,
         ),
         border = FilterChipDefaults.filterChipBorder(
             enabled = true,
             selected = selected,
-            borderColor = MpxSurfaceVariant,
-            selectedBorderColor = MpxPrimary,
+            borderColor = MpxTheme.colors.surfaceVariant,
+            selectedBorderColor = MpxTheme.colors.primary,
         ),
     )
 }
@@ -60,8 +60,8 @@ fun MpxBadge(
     Surface(
         modifier = modifier,
         shape = MpxShapes.small,
-        color = if (highlighted) MpxPrimary else MpxSurfaceVariant,
-        contentColor = if (highlighted) MpxTextPrimary else MpxTextMuted,
+        color = if (highlighted) MpxTheme.colors.primary else MpxTheme.colors.surfaceVariant,
+        contentColor = if (highlighted) MpxTheme.colors.textPrimary else MpxTheme.colors.textMuted,
     ) {
         Text(
             text = text,

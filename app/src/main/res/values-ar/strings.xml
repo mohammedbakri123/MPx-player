@@ -65,7 +65,7 @@
     <string name="settings_category_language">لغة التطبيق</string>
     <string name="settings_category_language_sub">الإنجليزية، العربية، الإسبانية، الافتراضي للنظام</string>
     <string name="settings_category_theme">مظهر التطبيق</string>
-    <string name="settings_category_theme_sub">شاشات أوليد الليلية، حجر داكن، كحلي كلاسيكي، فاتح</string>
+    <string name="settings_category_theme_sub">النظام، داكن، فاتح</string>
     <string name="settings_category_pip">التشغيل في نافذة منبثقة</string>
     <string name="settings_category_pip_sub">عناصر التحكم بالصورة في الصورة والتشغيل في الخلفية</string>
     <string name="settings_category_tabs">علامات تبويب الموسيقى</string>
@@ -92,6 +92,9 @@
     <string name="theme_dark">حجر داكن (فحمي)</string>
     <string name="theme_classic">كحلي كلاسيكي</string>
     <string name="theme_light">سينما فاتح (أبيض ناصع)</string>
+    <string name="theme_option_system">النظام</string>
+    <string name="theme_option_dark">داكن</string>
+    <string name="theme_option_light">فاتح</string>
     <string name="theme_applied_snackbar">تم تطبيق المظهر: %s</string>
 
     <string name="pip_not_supported">ملاحظة: وضع صورة في صورة غير مدعوم على هذا الجهاز أو البيئة (يتطلب أندرويد 8.0 أو أحدث مع ميزة FEATURE_PICTURE_IN_PICTURE).</string>

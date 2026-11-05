@@ -23,10 +23,10 @@ import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
-import com.mpx.player.ui.theme.MpxSurfaceRaised
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceRaised
+import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 /**
  * M2.5 card + row atoms (#106). Tonal black surfaces, no decorative
@@ -44,13 +44,13 @@ fun MpxCard(
             onClick = onClick,
             modifier = modifier,
             shape = MpxShapes.medium,
-            colors = CardDefaults.cardColors(containerColor = MpxSurfaceRaised),
+            colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceRaised),
         ) { content() }
     } else {
         Card(
             modifier = modifier,
             shape = MpxShapes.medium,
-            colors = CardDefaults.cardColors(containerColor = MpxSurfaceRaised),
+            colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceRaised),
         ) { content() }
     }
 }
@@ -65,7 +65,7 @@ fun MpxSectionHeader(
         text = text.uppercase(),
         modifier = modifier.padding(horizontal = MpxSpaceL, vertical = MpxSpaceS),
         style = MaterialTheme.typography.labelSmall,
-        color = MpxTextMuted,
+        color = MpxTheme.colors.textMuted,
     )
 }
 
@@ -93,7 +93,7 @@ fun MpxListRow(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = MpxTextSecondary,
+                tint = MpxTheme.colors.textSecondary,
                 modifier = Modifier.size(24.dp),
             )
             Spacer(modifier = Modifier.size(MpxSpaceM))
@@ -102,7 +102,7 @@ fun MpxListRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -111,7 +111,7 @@ fun MpxListRow(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextMuted,
+                    color = MpxTheme.colors.textMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

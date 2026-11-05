@@ -39,14 +39,14 @@ import com.mpx.player.ui.components.AsyncFolderThumbnail
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxSurfaceVariant
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 private fun formatFolderDate(epochMillis: Long): String {
     if (epochMillis <= 0L) return ""
@@ -88,8 +88,8 @@ fun FolderItemRow(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(MpxShapes.small)
-                    .background(MpxBlack)
-                    .border(MpxHairline, MpxBorder, MpxShapes.small),
+                    .background(MpxTheme.colors.black)
+                    .border(MpxHairline, MpxTheme.colors.border, MpxShapes.small),
                 contentAlignment = Alignment.Center,
             ) {
                 AsyncFolderThumbnail(
@@ -105,13 +105,13 @@ fun FolderItemRow(
                         .align(Alignment.TopEnd)
                         .offset(x = 4.dp, y = (-4).dp)
                         .height(20.dp)
-                        .background(MpxPrimary, MpxShapes.small)
+                        .background(MpxTheme.colors.primary, MpxShapes.small)
                         .padding(horizontal = 5.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = badgeText,
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp,
                         maxLines = 1,
@@ -136,7 +136,7 @@ fun FolderItemRow(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                     ),
-                    color = MpxTextPrimary,
+                    color = MpxTheme.colors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -146,12 +146,12 @@ fun FolderItemRow(
                     Spacer(Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
-                            .background(MpxPrimary.copy(alpha = 0.18f), MpxShapes.extraSmall)
+                            .background(MpxTheme.colors.primary.copy(alpha = 0.18f), MpxShapes.extraSmall)
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.badge_sd_card),
-                            color = MpxPrimary,
+                            color = MpxTheme.colors.primary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
                         )
@@ -180,12 +180,12 @@ fun FolderItemRow(
                         Box(
                             modifier = Modifier
                                 .background(
-                                    MpxSurfaceVariant,
+                                    MpxTheme.colors.surfaceVariant,
                                     MpxShapes.extraSmall,
                                 )
                                 .border(
                                     0.5.dp,
-                                    MpxBorder,
+                                    MpxTheme.colors.border,
                                     MpxShapes.extraSmall,
                                 )
                                 .padding(horizontal = 5.dp, vertical = 1.dp),
@@ -193,7 +193,7 @@ fun FolderItemRow(
                             Text(
                                 text = folder.totalSizeFormatted,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MpxTextSecondary,
+                                color = MpxTheme.colors.textSecondary,
                                 maxLines = 1,
                             )
                         }
@@ -204,7 +204,7 @@ fun FolderItemRow(
                     Text(
                         text = folderDateStr,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -219,7 +219,7 @@ fun FolderItemRow(
             Icon(
                 imageVector = Icons.Filled.MoreVert,
                 contentDescription = stringResource(R.string.folder_item_options_cd, folder.name),
-                tint = MpxTextSecondary.copy(alpha = 0.7f),
+                tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -241,7 +241,7 @@ fun FolderItemGridCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = MpxShapes.large,
-        colors = CardDefaults.cardColors(containerColor = MpxSurfaceVariant),
+        colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -251,8 +251,8 @@ fun FolderItemGridCard(
                     .fillMaxWidth()
                     .height(96.dp)
                     .clip(MpxShapes.small)
-                    .background(MpxBlack)
-                    .border(MpxHairline, MpxBorder, MpxShapes.small),
+                    .background(MpxTheme.colors.black)
+                    .border(MpxHairline, MpxTheme.colors.border, MpxShapes.small),
                 contentAlignment = Alignment.Center,
             ) {
                 AsyncFolderThumbnail(
@@ -266,12 +266,12 @@ fun FolderItemGridCard(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(6.dp)
-                            .background(MpxPrimary.copy(alpha = 0.85f), MpxShapes.extraSmall)
+                            .background(MpxTheme.colors.primary.copy(alpha = 0.85f), MpxShapes.extraSmall)
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.badge_sd_card),
-                            color = MpxBlack,
+                            color = MpxTheme.colors.black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
                         )
@@ -290,13 +290,13 @@ fun FolderItemGridCard(
                             .align(Alignment.BottomEnd)
                             .padding(6.dp)
                             .height(20.dp)
-                            .background(MpxPrimary, MpxShapes.small)
+                            .background(MpxTheme.colors.primary, MpxShapes.small)
                             .padding(horizontal = 5.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = gridBadgeText,
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 10.sp,
                             maxLines = 1,
@@ -310,7 +310,7 @@ fun FolderItemGridCard(
             Text(
                 text = folder.name,
                 style = MaterialTheme.typography.titleSmall,
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -331,12 +331,12 @@ fun FolderItemGridCard(
                         Box(
                             modifier = Modifier
                                 .background(
-                                    MpxSurfaceVariant,
+                                    MpxTheme.colors.surfaceVariant,
                                     MpxShapes.extraSmall,
                                 )
                                 .border(
                                     0.5.dp,
-                                    MpxBorder,
+                                    MpxTheme.colors.border,
                                     MpxShapes.extraSmall,
                                 )
                                 .padding(horizontal = 5.dp, vertical = 1.dp),
@@ -344,7 +344,7 @@ fun FolderItemGridCard(
                             Text(
                                 text = folder.totalSizeFormatted,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MpxTextSecondary,
+                                color = MpxTheme.colors.textSecondary,
                                 maxLines = 1,
                             )
                         }
@@ -355,7 +355,7 @@ fun FolderItemGridCard(
                     Text(
                         text = gridDateStr,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

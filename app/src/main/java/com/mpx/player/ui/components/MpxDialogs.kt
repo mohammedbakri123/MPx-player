@@ -9,9 +9,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
 
 /**
  * M2.5 dialog + sheet atoms (#106). Black containers, blue confirm
@@ -31,7 +31,7 @@ fun MpxDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier,
-        title = { Text(title, color = MpxTextPrimary) },
+        title = { Text(title, color = MpxTheme.colors.textPrimary) },
         text = body,
         confirmButton = {
             MpxTextButton(text = confirmText, onClick = onConfirm)
@@ -41,9 +41,9 @@ fun MpxDialog(
         } else {
             null
         },
-        containerColor = MpxBlack,
-        titleContentColor = MpxTextPrimary,
-        textContentColor = MpxTextMuted,
+        containerColor = MpxTheme.colors.black,
+        titleContentColor = MpxTheme.colors.textPrimary,
+        textContentColor = MpxTheme.colors.textMuted,
     )
 }
 
@@ -59,7 +59,7 @@ fun MpxBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         modifier = modifier,
-        containerColor = MpxBlack,
+        containerColor = MpxTheme.colors.black,
         scrimColor = Color.Black.copy(alpha = 0.6f),
         content = content,
     )

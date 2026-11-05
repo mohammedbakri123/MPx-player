@@ -25,14 +25,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxDockHeight
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
+import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
@@ -65,13 +65,13 @@ fun RowScope.MpxDockTab(
         Icon(
             icon,
             contentDescription = label,
-            tint = if (selected) MpxPrimary else MpxTextMuted,
+            tint = if (selected) MpxTheme.colors.primary else MpxTheme.colors.textMuted,
             modifier = Modifier.size(24.dp),
         )
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = if (selected) MpxPrimary else MpxTextMuted,
+            color = if (selected) MpxTheme.colors.primary else MpxTheme.colors.textMuted,
             maxLines = 1,
         )
     }
@@ -87,8 +87,8 @@ fun MpxBottomBar(
         modifier = modifier
             .fillMaxWidth()
             .height(MpxDockHeight)
-            .background(MpxBlack)
-            .border(MpxHairline, MpxBorder),
+            .background(MpxTheme.colors.black)
+            .border(MpxHairline, MpxTheme.colors.border),
         verticalAlignment = Alignment.CenterVertically,
         content = content,
     )
@@ -113,7 +113,7 @@ fun MpxMiniPlayerStrip(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MpxBlack)
+            .background(MpxTheme.colors.black)
             .clickable(onClick = onClick),
     ) {
         Row(
@@ -129,7 +129,7 @@ fun MpxMiniPlayerStrip(
                 text = title,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -137,7 +137,7 @@ fun MpxMiniPlayerStrip(
                 Icon(
                     if (isPlaying) pauseIcon else playIcon,
                     contentDescription = stringResource(if (isPlaying) R.string.cd_pause else R.string.cd_play),
-                    tint = MpxTextSecondary,
+                    tint = MpxTheme.colors.textSecondary,
                 )
             }
         }
@@ -145,13 +145,13 @@ fun MpxMiniPlayerStrip(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(2.dp)
-                .background(MpxPrimary.copy(alpha = 0.25f)),
+                .background(MpxTheme.colors.primary.copy(alpha = 0.25f)),
         ) {
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth(progress.coerceIn(0f, 1f))
                     .height(2.dp)
-                    .background(MpxPrimary),
+                    .background(MpxTheme.colors.primary),
             )
         }
     }
@@ -174,7 +174,7 @@ fun MpxBlurSurface(
             state = state,
             style = HazeDefaults.style(
                 blurRadius = 20.dp,
-                backgroundColor = MpxBlack,
+                backgroundColor = MpxTheme.colors.black,
                 tint = HazeDefaults.tint(Color.Black.copy(alpha = 0.6f)),
             ),
         ),

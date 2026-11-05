@@ -64,14 +64,14 @@ import com.mpx.player.ui.components.HonestStatusBanner
 import com.mpx.player.ui.components.MpxCard
 import com.mpx.player.ui.components.MpxPrimaryButton
 import kotlinx.coroutines.launch
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxSurfaceVariant
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +87,7 @@ fun TransferScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MpxBlack,
+        containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -98,11 +98,11 @@ fun TransferScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MpxBlack,
+                    containerColor = MpxTheme.colors.black,
                 ),
             )
         },
@@ -114,16 +114,16 @@ fun TransferScreen(
         ) {
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = MpxBlack,
-                contentColor = MpxPrimary,
+                containerColor = MpxTheme.colors.black,
+                contentColor = MpxTheme.colors.primary,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = MpxPrimary,
+                        color = MpxTheme.colors.primary,
                     )
                 },
                 divider = {
-                    HorizontalDivider(color = MpxBorder, thickness = MpxHairline)
+                    HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
                 },
             ) {
                 Tab(
@@ -133,7 +133,7 @@ fun TransferScreen(
                         Text(
                             text = stringResource(R.string.transfer_tab_downloader),
                             style = MaterialTheme.typography.titleSmall,
-                            color = if (selectedTab == 0) MpxPrimary else MpxTextSecondary,
+                            color = if (selectedTab == 0) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
                         )
                     },
                 )
@@ -144,7 +144,7 @@ fun TransferScreen(
                         Text(
                             text = stringResource(R.string.transfer_tab_file_transfer),
                             style = MaterialTheme.typography.titleSmall,
-                            color = if (selectedTab == 1) MpxPrimary else MpxTextSecondary,
+                            color = if (selectedTab == 1) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
                         )
                     },
                 )
@@ -172,14 +172,14 @@ fun TransferScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Download,
                                     contentDescription = null,
-                                    tint = MpxPrimary,
+                                    tint = MpxTheme.colors.primary,
                                     modifier = Modifier.size(24.dp),
                                 )
                                 Spacer(Modifier.width(10.dp))
                                 Text(
                                     text = stringResource(R.string.transfer_url_downloader),
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = MpxTextPrimary,
+                                    color = MpxTheme.colors.textPrimary,
                                     fontWeight = FontWeight.Bold,
                                 )
                             }
@@ -189,7 +189,7 @@ fun TransferScreen(
                             Text(
                                 text = stringResource(R.string.transfer_url_desc),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MpxTextSecondary,
+                                color = MpxTheme.colors.textSecondary,
                             )
 
                             Spacer(Modifier.height(14.dp))
@@ -201,7 +201,7 @@ fun TransferScreen(
                                 placeholder = {
                                     Text(
                                         stringResource(R.string.transfer_url_placeholder),
-                                        color = MpxTextSecondary,
+                                        color = MpxTheme.colors.textSecondary,
                                         fontSize = 14.sp,
                                     )
                                 },
@@ -209,7 +209,7 @@ fun TransferScreen(
                                     Icon(
                                         imageVector = Icons.Filled.Link,
                                         contentDescription = null,
-                                        tint = MpxTextSecondary,
+                                        tint = MpxTheme.colors.textSecondary,
                                     )
                                 },
                                 trailingIcon = {
@@ -226,19 +226,19 @@ fun TransferScreen(
                                         Icon(
                                             imageVector = Icons.Filled.ContentPaste,
                                             contentDescription = stringResource(R.string.transfer_cd_paste),
-                                            tint = MpxPrimary,
+                                            tint = MpxTheme.colors.primary,
                                         )
                                     }
                                 },
                                 singleLine = true,
                                 shape = MpxShapes.medium,
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MpxBlack,
-                                    unfocusedContainerColor = MpxBlack,
-                                    focusedBorderColor = MpxPrimary,
-                                    unfocusedBorderColor = MpxBorder,
-                                    focusedTextColor = MpxTextPrimary,
-                                    unfocusedTextColor = MpxTextPrimary,
+                                    focusedContainerColor = MpxTheme.colors.black,
+                                    unfocusedContainerColor = MpxTheme.colors.black,
+                                    focusedBorderColor = MpxTheme.colors.primary,
+                                    unfocusedBorderColor = MpxTheme.colors.border,
+                                    focusedTextColor = MpxTheme.colors.textPrimary,
+                                    unfocusedTextColor = MpxTheme.colors.textPrimary,
                                 ),
                             )
 
@@ -264,7 +264,7 @@ fun TransferScreen(
                     Text(
                         text = stringResource(R.string.transfer_download_tasks),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                         fontSize = 12.sp,
                     )
 
@@ -295,14 +295,14 @@ fun TransferScreen(
                         modifier = Modifier
                             .size(80.dp)
                             .clip(MpxShapes.extraLarge)
-                            .background(MpxBlack)
-                            .border(MpxHairline, MpxBorder, MpxShapes.extraLarge),
+                            .background(MpxTheme.colors.black)
+                            .border(MpxHairline, MpxTheme.colors.border, MpxShapes.extraLarge),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Filled.SwapHoriz,
                             contentDescription = null,
-                            tint = MpxPrimary,
+                            tint = MpxTheme.colors.primary,
                             modifier = Modifier.size(48.dp),
                         )
                     }
@@ -315,7 +315,7 @@ fun TransferScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                     )
 
                     Spacer(Modifier.height(8.dp))
@@ -323,7 +323,7 @@ fun TransferScreen(
                     Text(
                         text = stringResource(R.string.transfer_direct_desc),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                         modifier = Modifier.padding(horizontal = 24.dp),
                     )
 
@@ -344,8 +344,8 @@ fun TransferScreen(
                                 .height(52.dp),
                             shape = MpxShapes.large,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MpxPrimary,
-                                contentColor = MpxTextPrimary,
+                                containerColor = MpxTheme.colors.primary,
+                                contentColor = MpxTheme.colors.textPrimary,
                             ),
                         ) {
                             Icon(Icons.Filled.ArrowUpward, null, Modifier.size(20.dp))
@@ -364,13 +364,13 @@ fun TransferScreen(
                                 .height(52.dp),
                             shape = MpxShapes.large,
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MpxTextPrimary,
+                                contentColor = MpxTheme.colors.textPrimary,
                             ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MpxPrimary),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MpxTheme.colors.primary),
                         ) {
-                            Icon(Icons.Filled.ArrowDownward, null, Modifier.size(20.dp), tint = MpxPrimary)
+                            Icon(Icons.Filled.ArrowDownward, null, Modifier.size(20.dp), tint = MpxTheme.colors.primary)
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.transfer_receive), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MpxPrimary)
+                            Text(stringResource(R.string.transfer_receive), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MpxTheme.colors.primary)
                         }
                     }
                 }

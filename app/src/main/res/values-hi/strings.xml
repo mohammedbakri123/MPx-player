@@ -65,7 +65,7 @@
     <string name="settings_category_language">ऐप भाषा</string>
     <string name="settings_category_language_sub">English, العربية, Español, Français, हिन्दी, सिस्टम डिफ़ॉल्ट</string>
     <string name="settings_category_theme">ऐप थीम</string>
-    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
+    <string name="settings_category_theme_sub">सिस्टम, डार्क, लाइट</string>
     <string name="settings_category_pip">कस्टम पॉप-अप प्ले</string>
     <string name="settings_category_pip_sub">पिक्चर-इन-पिक्चर नियंत्रण और बैकग्राउंड प्ले</string>
     <string name="settings_category_tabs">संगीत टैब</string>
@@ -92,6 +92,9 @@
     <string name="theme_dark">Dark Slate (चारकोल)</string>
     <string name="theme_classic">Classic MX Navy</string>
     <string name="theme_light">Light Cinema (साफ़ सफ़ेद)</string>
+    <string name="theme_option_system">सिस्टम</string>
+    <string name="theme_option_dark">डार्क</string>
+    <string name="theme_option_light">लाइट</string>
     <string name="theme_applied_snackbar">थीम लागू हुई: %s</string>
 
     <string name="pip_not_supported">नोट: इस डिवाइस/वातावरण पर पिक्चर-इन-पिक्चर मोड समर्थित नहीं है (Android 8.0+ और FEATURE_PICTURE_IN_PICTURE आवश्यक है)।</string>

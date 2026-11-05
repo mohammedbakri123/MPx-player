@@ -65,7 +65,7 @@
     <string name="settings_category_language">Язык приложения</string>
     <string name="settings_category_language_sub">English, العربية, Español, Français, हिन्दी, Русский, System Default</string>
     <string name="settings_category_theme">Тема приложения</string>
-    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
+    <string name="settings_category_theme_sub">Системная, Тёмная, Светлая</string>
     <string name="settings_category_pip">Пользовательский режим «картинка в картинке»</string>
     <string name="settings_category_pip_sub">Элементы управления «картинка в картинке» и фоновое воспроизведение</string>
     <string name="settings_category_tabs">Музыкальные вкладки</string>
@@ -92,6 +92,9 @@
     <string name="theme_dark">Dark Slate (графитовый)</string>
     <string name="theme_classic">Classic MX Navy</string>
     <string name="theme_light">Light Cinema (чисто белый)</string>
+    <string name="theme_option_system">Системная</string>
+    <string name="theme_option_dark">Тёмная</string>
+    <string name="theme_option_light">Светлая</string>
     <string name="theme_applied_snackbar">Тема применена: %s</string>
 
     <string name="pip_not_supported">Примечание: режим «картинка в картинке» не поддерживается на этом устройстве/в этой среде (требуется Android 8.0+ с FEATURE_PICTURE_IN_PICTURE).</string>

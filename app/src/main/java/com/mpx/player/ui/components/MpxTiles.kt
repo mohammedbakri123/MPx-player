@@ -21,13 +21,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
-import com.mpx.player.ui.theme.MpxSurfaceRaised
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceRaised
+import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
 
 /**
  * M2.5 tile atoms (#106). Data-free: callers pass strings and a
@@ -52,11 +52,11 @@ fun MpxFolderTile(
     ) {
         Surface(
             shape = MpxShapes.small,
-            color = MpxSurfaceRaised,
+            color = MpxTheme.colors.surfaceRaised,
             modifier = Modifier.size(48.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = MpxPrimary)
+                Icon(icon, contentDescription = null, tint = MpxTheme.colors.primary)
             }
         }
         Spacer(modifier = Modifier.size(MpxSpaceM))
@@ -64,7 +64,7 @@ fun MpxFolderTile(
             Text(
                 text = name,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -72,7 +72,7 @@ fun MpxFolderTile(
             Text(
                 text = countText,
                 style = MaterialTheme.typography.bodySmall,
-                color = MpxTextMuted,
+                color = MpxTheme.colors.textMuted,
                 maxLines = 1,
             )
         }
@@ -106,14 +106,14 @@ fun MpxVideoTile(
         Text(
             text = title,
             style = MaterialTheme.typography.bodyMedium,
-            color = MpxTextPrimary,
+            color = MpxTheme.colors.textPrimary,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = meta,
             style = MaterialTheme.typography.bodySmall,
-            color = MpxTextMuted,
+            color = MpxTheme.colors.textMuted,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

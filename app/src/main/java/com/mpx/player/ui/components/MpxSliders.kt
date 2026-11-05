@@ -8,9 +8,9 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxSurfaceVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceElevated
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
 
 /**
  * M2.5 slider + progress atoms (#106). Progress is blue, sparingly;
@@ -32,9 +32,9 @@ fun MpxSlider(
         valueRange = valueRange,
         enabled = enabled,
         colors = SliderDefaults.colors(
-            thumbColor = MpxPrimary,
-            activeTrackColor = MpxPrimary,
-            inactiveTrackColor = MpxSurfaceElevated,
+            thumbColor = MpxTheme.colors.primary,
+            activeTrackColor = MpxTheme.colors.primary,
+            inactiveTrackColor = MpxTheme.colors.surfaceElevated,
         ),
     )
 }
@@ -47,8 +47,8 @@ fun MpxLinearProgress(
     LinearProgressIndicator(
         progress = { progress },
         modifier = modifier.fillMaxWidth(),
-        color = MpxPrimary,
-        trackColor = MpxSurfaceVariant,
+        color = MpxTheme.colors.primary,
+        trackColor = MpxTheme.colors.surfaceVariant,
     )
 }
 
@@ -58,7 +58,7 @@ fun MpxLoadingIndicator(
 ) {
     CircularProgressIndicator(
         modifier = modifier,
-        color = MpxPrimary,
+        color = MpxTheme.colors.primary,
         strokeWidth = 3.dp,
     )
 }

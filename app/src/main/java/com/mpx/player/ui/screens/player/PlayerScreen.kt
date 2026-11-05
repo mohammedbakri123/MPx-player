@@ -154,16 +154,16 @@ import com.mpx.player.util.SubtitleValidationResult
 import java.util.Locale
 import kotlinx.coroutines.launch
 import com.mpx.player.ui.components.MpxLoadingIndicator
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
-import com.mpx.player.ui.theme.MpxBorderSubtle
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.border
+import com.mpx.player.ui.theme.MpxTheme.colors.borderSubtle
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxPrimaryVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
+import com.mpx.player.ui.theme.MpxTheme.colors.primaryVariant
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxSurfaceVariant
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 private fun Context.findActivity(): Activity? {
     var ctx = this
@@ -227,8 +227,8 @@ private fun VerticalIndicatorBar(
     modifier: Modifier = Modifier,
     height: Dp = 80.dp,
     width: Dp = 6.dp,
-    trackColor: Color = MpxTextPrimary.copy(alpha = 0.25f),
-    progressColor: Color = MpxPrimary,
+    trackColor: Color = MpxTheme.colors.textPrimary.copy(alpha = 0.25f),
+    progressColor: Color = MpxTheme.colors.primary,
 ) {
     val clamped = fraction.coerceIn(0f, 1f)
     Box(
@@ -269,8 +269,8 @@ private fun GestureHud(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        MpxBlack.copy(alpha = 0.45f),
-                        MpxBlack.copy(alpha = 0.65f),
+                        MpxTheme.colors.black.copy(alpha = 0.45f),
+                        MpxTheme.colors.black.copy(alpha = 0.65f),
                     ),
                 ),
             )
@@ -280,7 +280,7 @@ private fun GestureHud(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = percentText,
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -289,14 +289,14 @@ private fun GestureHud(
                 fraction = fraction,
                 height = 92.dp,
                 width = 4.dp,
-                trackColor = MpxTextPrimary.copy(alpha = 0.25f),
-                progressColor = MpxTextPrimary,
+                trackColor = MpxTheme.colors.textPrimary.copy(alpha = 0.25f),
+                progressColor = MpxTheme.colors.textPrimary,
             )
             Spacer(Modifier.height(8.dp))
             Icon(
                 imageVector = icon,
                 contentDescription = iconDescription,
-                tint = MpxTextPrimary,
+                tint = MpxTheme.colors.textPrimary,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -531,7 +531,7 @@ fun PlayerScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MpxBlack)
+            .background(MpxTheme.colors.black)
             // Tap gestures: single tap toggles controls, double tap zones (left: -10s, center: play/pause, right: +10s)
             .pointerInput(state.isLocked) {
                 detectTapGestures(
@@ -811,13 +811,13 @@ fun PlayerScreen(
                     modifier = Modifier
                         .size(80.dp)
                         .clip(CircleShape)
-                        .background(MpxTextPrimary.copy(alpha = 0.08f)),
+                        .background(MpxTheme.colors.textPrimary.copy(alpha = 0.08f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = MpxPrimary,
+                        tint = MpxTheme.colors.primary,
                         modifier = Modifier.size(40.dp),
                     )
                 }
@@ -825,13 +825,13 @@ fun PlayerScreen(
                 Text(
                     text = stringResource(R.string.player_empty_no_video),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MpxTextPrimary,
+                    color = MpxTheme.colors.textPrimary,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = stringResource(R.string.player_empty_select_video),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                 )
             }
         } else if (!currentMedia.isVideo) {
@@ -846,13 +846,13 @@ fun PlayerScreen(
                     modifier = Modifier
                         .size(96.dp)
                         .clip(CircleShape)
-                        .background(MpxPrimary.copy(alpha = 0.25f)),
+                        .background(MpxTheme.colors.primary.copy(alpha = 0.25f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Filled.MusicNote,
                         contentDescription = stringResource(R.string.player_cd_audio_track),
-                        tint = MpxPrimary,
+                        tint = MpxTheme.colors.primary,
                         modifier = Modifier.size(52.dp),
                     )
                 }
@@ -860,7 +860,7 @@ fun PlayerScreen(
                 Text(
                     text = currentMedia.title,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MpxTextPrimary,
+                    color = MpxTheme.colors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -868,7 +868,7 @@ fun PlayerScreen(
                 Text(
                     text = currentMedia.subtitle,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                 )
             }
         }
@@ -885,7 +885,7 @@ fun PlayerScreen(
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = stringResource(R.string.player_loading),
-                    color = MpxTextPrimary,
+                    color = MpxTheme.colors.textPrimary,
                     fontSize = 14.sp,
                 )
             }
@@ -900,8 +900,8 @@ fun PlayerScreen(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                MpxBlack.copy(alpha = 0.45f),
-                                MpxBlack.copy(alpha = 0.65f),
+                                MpxTheme.colors.black.copy(alpha = 0.45f),
+                                MpxTheme.colors.black.copy(alpha = 0.65f),
                             ),
                         ),
                     )
@@ -917,14 +917,14 @@ fun PlayerScreen(
 
                     Text(
                         text = stringResource(R.string.player_hud_scrub, deltaStr),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = "${formatTimeMs(seekTargetMs)} / ${formatTimeMs(currentDuration)}",
-                        color = MpxTextPrimary.copy(alpha = 0.8f),
+                        color = MpxTheme.colors.textPrimary.copy(alpha = 0.8f),
                         fontSize = 13.sp,
                     )
                 }
@@ -982,8 +982,8 @@ fun PlayerScreen(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                MpxBlack.copy(alpha = 0.45f),
-                                MpxBlack.copy(alpha = 0.65f),
+                                MpxTheme.colors.black.copy(alpha = 0.45f),
+                                MpxTheme.colors.black.copy(alpha = 0.65f),
                             ),
                         ),
                     )
@@ -996,13 +996,13 @@ fun PlayerScreen(
                     Icon(
                         imageVector = if (isBackward) Icons.Filled.Replay10 else Icons.Filled.Forward10,
                         contentDescription = if (isBackward) stringResource(R.string.player_cd_seek_back) else stringResource(R.string.player_cd_seek_forward),
-                        tint = MpxTextPrimary,
+                        tint = MpxTheme.colors.textPrimary,
                         modifier = Modifier.size(28.dp),
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = if (isBackward) "-10s" else "+10s",
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                     )
@@ -1013,7 +1013,7 @@ fun PlayerScreen(
                         } else {
                             formatTimeMs(state.currentPositionMs)
                         },
-                        color = MpxTextPrimary.copy(alpha = 0.8f),
+                        color = MpxTheme.colors.textPrimary.copy(alpha = 0.8f),
                         fontSize = 12.sp,
                     )
                 }
@@ -1026,7 +1026,7 @@ fun PlayerScreen(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 72.dp),
-                color = MpxSurfaceVariant,
+                color = MpxTheme.colors.surfaceVariant,
                 shape = MpxShapes.extraLarge,
             ) {
                 Row(
@@ -1035,14 +1035,14 @@ fun PlayerScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.player_resumed_from, formatTimeMs(resumeMs)),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_start_over),
-                        color = MpxPrimary,
+                        color = MpxTheme.colors.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
@@ -1058,7 +1058,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.player_cd_dismiss),
-                            tint = MpxTextSecondary,
+                            tint = MpxTheme.colors.textSecondary,
                             modifier = Modifier.size(16.dp),
                         )
                     }
@@ -1072,7 +1072,7 @@ fun PlayerScreen(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = if (state.resumedFromMs != null) 124.dp else 72.dp, start = 16.dp, end = 16.dp),
-                color = MpxSurfaceVariant,
+                color = MpxTheme.colors.surfaceVariant,
                 shape = MpxShapes.medium,
             ) {
                 Row(
@@ -1082,13 +1082,13 @@ fun PlayerScreen(
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = MpxTextSecondary,
+                        tint = MpxTheme.colors.textSecondary,
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = fallbackMsg,
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                         modifier = Modifier.weight(1f),
@@ -1101,7 +1101,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.player_cd_dismiss),
-                            tint = MpxTextSecondary,
+                            tint = MpxTheme.colors.textSecondary,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -1119,7 +1119,7 @@ fun PlayerScreen(
                         start = 16.dp,
                         end = 16.dp,
                     ),
-                color = MpxSurfaceVariant,
+                color = MpxTheme.colors.surfaceVariant,
                 shape = MpxShapes.medium,
             ) {
                 Row(
@@ -1129,13 +1129,13 @@ fun PlayerScreen(
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = MpxTextSecondary,
+                        tint = MpxTheme.colors.textSecondary,
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = userMsg,
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                         modifier = Modifier.weight(1f),
@@ -1146,7 +1146,7 @@ fun PlayerScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.player_try_mpv),
-                            color = MpxPrimary,
+                            color = MpxTheme.colors.primary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clickable {
@@ -1163,7 +1163,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.player_cd_dismiss),
-                            tint = MpxTextSecondary,
+                            tint = MpxTheme.colors.textSecondary,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -1187,12 +1187,12 @@ fun PlayerScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(MpxBlack.copy(alpha = 0.6f)),
+                        .background(MpxTheme.colors.black.copy(alpha = 0.6f)),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Lock,
                         contentDescription = stringResource(R.string.player_cd_unlock),
-                        tint = MpxPrimary,
+                        tint = MpxTheme.colors.primary,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -1217,7 +1217,7 @@ fun PlayerScreen(
                         .align(Alignment.TopCenter)
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(MpxBlack.copy(alpha = 0.75f), Color.Transparent),
+                                colors = listOf(MpxTheme.colors.black.copy(alpha = 0.75f), Color.Transparent),
                             ),
                         )
                         .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 24.dp),
@@ -1230,7 +1230,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = stringResource(R.string.player_cd_back),
-                                tint = MpxTextPrimary,
+                                tint = MpxTheme.colors.textPrimary,
                             )
                         }
 
@@ -1242,7 +1242,7 @@ fun PlayerScreen(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 16.sp,
                             ),
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
@@ -1285,7 +1285,7 @@ fun PlayerScreen(
                         ) {
                             Text(
                                 text = decoderPillText,
-                                color = MpxTextPrimary,
+                                color = MpxTheme.colors.textPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -1300,7 +1300,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
                                 contentDescription = stringResource(R.string.player_cd_more),
-                                tint = MpxTextPrimary,
+                                tint = MpxTheme.colors.textPrimary,
                             )
                         }
                     }
@@ -1315,7 +1315,7 @@ fun PlayerScreen(
                         .align(Alignment.BottomCenter)
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, MpxBlack.copy(alpha = 0.8f)),
+                                colors = listOf(Color.Transparent, MpxTheme.colors.black.copy(alpha = 0.8f)),
                             ),
                         )
                         .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -1328,14 +1328,14 @@ fun PlayerScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(MpxShapes.small)
-                                    .background(MpxTextPrimary.copy(alpha = 0.12f))
+                                    .background(MpxTheme.colors.textPrimary.copy(alpha = 0.12f))
                                     .padding(horizontal = 10.dp, vertical = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     text = stringResource(R.string.player_gesture_hint),
-                                    color = MpxTextPrimary.copy(alpha = 0.85f),
+                                    color = MpxTheme.colors.textPrimary.copy(alpha = 0.85f),
                                     fontSize = 11.sp,
                                 )
                                 IconButton(
@@ -1345,7 +1345,7 @@ fun PlayerScreen(
                                     Icon(
                                         imageVector = Icons.Filled.Close,
                                         contentDescription = stringResource(R.string.player_cd_dismiss_hint),
-                                        tint = MpxTextPrimary.copy(alpha = 0.7f),
+                                        tint = MpxTheme.colors.textPrimary.copy(alpha = 0.7f),
                                         modifier = Modifier.size(14.dp),
                                     )
                                 }
@@ -1360,7 +1360,7 @@ fun PlayerScreen(
                         ) {
                             Text(
                                 text = formatTimeMs(displayedCurrentTime),
-                                color = MpxTextPrimary,
+                                color = MpxTheme.colors.textPrimary,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                             )
@@ -1380,15 +1380,15 @@ fun PlayerScreen(
                                     .weight(1f)
                                     .padding(horizontal = 8.dp),
                                 colors = SliderDefaults.colors(
-                                    thumbColor = MpxPrimary,
-                                    activeTrackColor = MpxPrimary,
-                                    inactiveTrackColor = MpxTextPrimary.copy(alpha = 0.3f),
+                                    thumbColor = MpxTheme.colors.primary,
+                                    activeTrackColor = MpxTheme.colors.primary,
+                                    inactiveTrackColor = MpxTheme.colors.textPrimary.copy(alpha = 0.3f),
                                 ),
                             )
 
                             Text(
                                 text = formatTimeMs(currentDuration),
-                                color = MpxTextPrimary.copy(alpha = 0.7f),
+                                color = MpxTheme.colors.textPrimary.copy(alpha = 0.7f),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                             )
@@ -1416,7 +1416,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.LockOpen,
                                     contentDescription = stringResource(R.string.player_cd_lock),
-                                    tint = MpxTextPrimary,
+                                    tint = MpxTheme.colors.textPrimary,
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1431,7 +1431,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.SkipPrevious,
                                     contentDescription = stringResource(R.string.player_cd_previous),
-                                    tint = if (state.hasPrevious) MpxTextPrimary else MpxTextPrimary.copy(alpha = 0.3f),
+                                    tint = if (state.hasPrevious) MpxTheme.colors.textPrimary else MpxTheme.colors.textPrimary.copy(alpha = 0.3f),
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1445,7 +1445,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Replay10,
                                     contentDescription = stringResource(R.string.player_cd_seek_back),
-                                    tint = MpxTextPrimary,
+                                    tint = MpxTheme.colors.textPrimary,
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1461,7 +1461,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                     contentDescription = if (state.isPlaying) stringResource(R.string.player_cd_pause) else stringResource(R.string.player_cd_play),
-                                    tint = MpxTextPrimary,
+                                    tint = MpxTheme.colors.textPrimary,
                                     modifier = Modifier.size(34.dp),
                                 )
                             }
@@ -1475,7 +1475,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Forward10,
                                     contentDescription = stringResource(R.string.player_cd_seek_forward),
-                                    tint = MpxTextPrimary,
+                                    tint = MpxTheme.colors.textPrimary,
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1490,7 +1490,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = Icons.Filled.SkipNext,
                                     contentDescription = stringResource(R.string.player_cd_next),
-                                    tint = if (state.hasNext) MpxTextPrimary else MpxTextPrimary.copy(alpha = 0.3f),
+                                    tint = if (state.hasNext) MpxTheme.colors.textPrimary else MpxTheme.colors.textPrimary.copy(alpha = 0.3f),
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -1518,7 +1518,7 @@ fun PlayerScreen(
                                     modifier = Modifier
                                         .clip(MpxShapes.medium)
                                         .clickable { activeDialog = "Sleep Timer" },
-                                    color = MpxPrimaryVariant.copy(alpha = 0.9f),
+                                    color = MpxTheme.colors.primaryVariant.copy(alpha = 0.9f),
                                     shape = MpxShapes.medium,
                                 ) {
                                     Row(
@@ -1528,13 +1528,13 @@ fun PlayerScreen(
                                         Icon(
                                             imageVector = Icons.Filled.Timer,
                                             contentDescription = null,
-                                            tint = MpxTextPrimary,
+                                            tint = MpxTheme.colors.textPrimary,
                                             modifier = Modifier.size(14.dp),
                                         )
                                         Spacer(Modifier.width(4.dp))
                                         Text(
                                             text = stringResource(R.string.player_sleep_timer_chip, timeFormatted),
-                                            color = MpxTextPrimary,
+                                            color = MpxTheme.colors.textPrimary,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium,
                                         )
@@ -1542,7 +1542,7 @@ fun PlayerScreen(
                                         Icon(
                                             imageVector = Icons.Filled.Close,
                                             contentDescription = stringResource(R.string.player_sleep_timer_cancel),
-                                            tint = MpxTextPrimary,
+                                            tint = MpxTheme.colors.textPrimary,
                                             modifier = Modifier
                                                 .size(14.dp)
                                                 .clickable {
@@ -1568,14 +1568,14 @@ fun PlayerScreen(
     if (activeDialog == "Audio Tracks") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxBlack,
+            containerColor = MpxTheme.colors.black,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxTheme.colors.border, AlertDialogDefaults.shape),
             title = {
                 PlayerDialogBackdropBlur()
                 Text(
                     text = stringResource(R.string.player_dialog_audio_tracks),
-                    color = MpxTextPrimary,
+                    color = MpxTheme.colors.textPrimary,
                     fontWeight = FontWeight.Bold,
                 )
             },
@@ -1583,7 +1583,7 @@ fun PlayerScreen(
                 if (state.audioTracks.isEmpty()) {
                     Text(
                         text = stringResource(R.string.player_audio_no_tracks),
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                     )
                 } else {
                     LazyColumn {
@@ -1604,18 +1604,18 @@ fun PlayerScreen(
                                         playbackManager.selectAudioTrack(track.groupIndex, track.trackIndex)
                                         activeDialog = null
                                     },
-                                    colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                                    colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Column {
                                     Text(
                                         text = track.label,
-                                        color = MpxTextPrimary,
+                                        color = MpxTheme.colors.textPrimary,
                                         fontWeight = if (track.isSelected) FontWeight.Bold else FontWeight.Normal,
                                     )
                                     Text(
                                         text = stringResource(R.string.player_track_language, track.language),
-                                        color = MpxTextSecondary,
+                                        color = MpxTheme.colors.textSecondary,
                                         fontSize = 12.sp,
                                     )
                                 }
@@ -1626,7 +1626,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_close), color = MpxPrimary)
+                    Text(stringResource(R.string.action_close), color = MpxTheme.colors.primary)
                 }
             },
         )
@@ -1636,20 +1636,20 @@ fun PlayerScreen(
     if (activeDialog == "Subtitles") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxBlack,
+            containerColor = MpxTheme.colors.black,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxTheme.colors.border, AlertDialogDefaults.shape),
             title = {
                 PlayerDialogBackdropBlur()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxPrimary)
+                    Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxTheme.colors.primary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_dialog_subtitle_selection),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f),
                     )
@@ -1664,30 +1664,30 @@ fun PlayerScreen(
                             subtitleLauncher.launch(arrayOf("*/*"))
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, MpxPrimary),
+                        border = BorderStroke(1.dp, MpxTheme.colors.primary),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.FileUpload,
                             contentDescription = null,
-                            tint = MpxPrimary,
+                            tint = MpxTheme.colors.primary,
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.player_subtitle_open_file),
-                            color = MpxPrimary,
+                            color = MpxTheme.colors.primary,
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
 
                     Spacer(Modifier.height(10.dp))
-                    HorizontalDivider(color = MpxBorderSubtle, thickness = MpxHairline)
+                    HorizontalDivider(color = MpxTheme.colors.borderSubtle, thickness = MpxHairline)
                     Spacer(Modifier.height(8.dp))
 
                     Text(
                         text = stringResource(R.string.player_subtitle_available_tracks),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                     )
                     Spacer(Modifier.height(4.dp))
 
@@ -1708,12 +1708,12 @@ fun PlayerScreen(
                                 playbackManager.selectSubtitleTrack(null, null)
                                 activeDialog = null
                             },
-                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.player_subtitle_off),
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                             fontWeight = if (state.selectedSubtitleTrackIndex == -1) FontWeight.Bold else FontWeight.Normal,
                         )
                     }
@@ -1721,7 +1721,7 @@ fun PlayerScreen(
                     if (state.subtitleTracks.isEmpty()) {
                         Text(
                             text = stringResource(R.string.player_subtitle_no_tracks),
-                            color = MpxTextSecondary,
+                            color = MpxTheme.colors.textSecondary,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 32.dp, top = 2.dp, bottom = 6.dp),
                         )
@@ -1743,25 +1743,25 @@ fun PlayerScreen(
                                         playbackManager.selectSubtitleTrack(track.groupIndex, track.trackIndex)
                                         activeDialog = null
                                     },
-                                    colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                                    colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
                                             text = track.label,
-                                            color = MpxTextPrimary,
+                                            color = MpxTheme.colors.textPrimary,
                                             fontWeight = if (track.isSelected) FontWeight.Bold else FontWeight.Normal,
                                         )
                                         if (track.isExternal) {
                                             Spacer(Modifier.width(6.dp))
                                             Surface(
-                                                color = MpxPrimary.copy(alpha = 0.2f),
+                                                color = MpxTheme.colors.primary.copy(alpha = 0.2f),
                                                 shape = MpxShapes.extraSmall,
                                             ) {
                                                 Text(
                                                     text = stringResource(R.string.player_subtitle_external),
-                                                    color = MpxPrimary,
+                                                    color = MpxTheme.colors.primary,
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
@@ -1771,7 +1771,7 @@ fun PlayerScreen(
                                     }
                                     Text(
                                         text = stringResource(R.string.player_track_language, track.language),
-                                        color = MpxTextSecondary,
+                                        color = MpxTheme.colors.textSecondary,
                                         fontSize = 12.sp,
                                     )
                                 }
@@ -1780,11 +1780,11 @@ fun PlayerScreen(
                     }
 
                     Spacer(Modifier.height(10.dp))
-                    HorizontalDivider(color = MpxBorderSubtle, thickness = MpxHairline)
+                    HorizontalDivider(color = MpxTheme.colors.borderSubtle, thickness = MpxHairline)
                     Spacer(Modifier.height(8.dp))
 
                     // Subtitle Size Controls (from settings)
-                    Text(stringResource(R.string.player_subtitle_text_size), style = MaterialTheme.typography.labelMedium, color = MpxTextSecondary)
+                    Text(stringResource(R.string.player_subtitle_text_size), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textSecondary)
                     Spacer(Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1805,8 +1805,8 @@ fun PlayerScreen(
                                 },
                                 label = { Text(stringResource(sizeRes), fontSize = 12.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MpxPrimary,
-                                    selectedLabelColor = MpxTextPrimary,
+                                    selectedContainerColor = MpxTheme.colors.primary,
+                                    selectedLabelColor = MpxTheme.colors.textPrimary,
                                 ),
                             )
                         }
@@ -1870,13 +1870,13 @@ fun PlayerScreen(
                         Text(
                             stringResource(R.string.subtitle_timing_mpv_note),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
+                            color = MpxTheme.colors.textSecondary,
                         )
                     }
 
                     Spacer(Modifier.height(6.dp))
                     // Subtitle Style Controls (from settings)
-                    Text(stringResource(R.string.player_subtitle_style_color), style = MaterialTheme.typography.labelMedium, color = MpxTextSecondary)
+                    Text(stringResource(R.string.player_subtitle_style_color), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textSecondary)
                     Spacer(Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1898,8 +1898,8 @@ fun PlayerScreen(
                                 },
                                 label = { Text(stringResource(styleRes), fontSize = 11.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MpxPrimary,
-                                    selectedLabelColor = MpxTextPrimary,
+                                    selectedContainerColor = MpxTheme.colors.primary,
+                                    selectedLabelColor = MpxTheme.colors.textPrimary,
                                 ),
                             )
                         }
@@ -1908,7 +1908,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_close), color = MpxPrimary)
+                    Text(stringResource(R.string.action_close), color = MpxTheme.colors.primary)
                 }
             },
         )
@@ -1918,17 +1918,17 @@ fun PlayerScreen(
     if (activeDialog == "Decoder") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxBlack,
+            containerColor = MpxTheme.colors.black,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxTheme.colors.border, AlertDialogDefaults.shape),
             title = {
                 PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxPrimary)
+                    Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxTheme.colors.primary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_dialog_decoder_selection),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -1958,18 +1958,18 @@ fun PlayerScreen(
                                     currentSettings = updated
                                     activeDialog = null
                                 },
-                                colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                                colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
                             )
                             Spacer(Modifier.width(8.dp))
                             Column {
                                 Text(
                                     text = stringResource(mode.titleRes),
-                                    color = MpxTextPrimary,
+                                    color = MpxTheme.colors.textPrimary,
                                     fontWeight = if (state.decoderMode == mode) FontWeight.Bold else FontWeight.Normal,
                                 )
                                 Text(
                                     text = stringResource(mode.descriptionRes),
-                                    color = MpxTextSecondary,
+                                    color = MpxTheme.colors.textSecondary,
                                     fontSize = 12.sp,
                                 )
                             }
@@ -1977,12 +1977,12 @@ fun PlayerScreen(
                     }
 
                     Spacer(Modifier.height(10.dp))
-                    HorizontalDivider(color = MpxBorderSubtle, thickness = MpxHairline)
+                    HorizontalDivider(color = MpxTheme.colors.borderSubtle, thickness = MpxHairline)
                     Spacer(Modifier.height(8.dp))
 
                     Text(
                         text = stringResource(R.string.player_active_codec, state.activeDecoderName ?: stringResource(R.string.player_codec_initializing)),
-                        color = MpxPrimary,
+                        color = MpxTheme.colors.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -2016,7 +2016,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_close), color = MpxPrimary)
+                    Text(stringResource(R.string.action_close), color = MpxTheme.colors.primary)
                 }
             },
         )
@@ -2026,9 +2026,9 @@ fun PlayerScreen(
     if (subtitleErrorDialogText != null) {
         AlertDialog(
             onDismissRequest = { subtitleErrorDialogText = null },
-            containerColor = MpxBlack,
+            containerColor = MpxTheme.colors.black,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxTheme.colors.border, AlertDialogDefaults.shape),
             title = {
                 Text(
                     text = stringResource(R.string.player_dialog_unsupported_subtitle),
@@ -2039,14 +2039,14 @@ fun PlayerScreen(
             text = {
                 Text(
                     text = subtitleErrorDialogText!!,
-                    color = MpxTextPrimary,
+                    color = MpxTheme.colors.textPrimary,
                     fontSize = 14.sp,
                     lineHeight = 20.sp,
                 )
             },
             confirmButton = {
                 TextButton(onClick = { subtitleErrorDialogText = null }) {
-                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
+                    Text(stringResource(R.string.action_ok), color = MpxTheme.colors.primary)
                 }
             },
         )
@@ -2056,14 +2056,14 @@ fun PlayerScreen(
     if (activeDialog == "Player Menu") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxBlack,
+            containerColor = MpxTheme.colors.black,
             tonalElevation = 0.dp,
-            modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
+            modifier = Modifier.border(MpxHairline, MpxTheme.colors.border, AlertDialogDefaults.shape),
             title = {
                 PlayerDialogBackdropBlur()
                 Text(
                     text = stringResource(R.string.player_menu_title),
-                    color = MpxTextPrimary,
+                    color = MpxTheme.colors.textPrimary,
                     fontWeight = FontWeight.Bold,
                 )
             },
@@ -2076,9 +2076,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.Memory, contentDescription = null, tint = MpxTheme.colors.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_decoder_mode, state.decoderMode.label), color = MpxTextPrimary)
+                        Text(stringResource(R.string.player_menu_decoder_mode, state.decoderMode.label), color = MpxTheme.colors.textPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2087,9 +2087,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Audiotrack, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.Audiotrack, contentDescription = null, tint = MpxTheme.colors.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_audio_tracks, state.audioTracks.size), color = MpxTextPrimary)
+                        Text(stringResource(R.string.player_menu_audio_tracks, state.audioTracks.size), color = MpxTheme.colors.textPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2098,9 +2098,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.Subtitles, contentDescription = null, tint = MpxTheme.colors.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_subtitles, if (state.selectedSubtitleTrackIndex == -1) stringResource(R.string.player_state_off) else stringResource(R.string.player_state_on)), color = MpxTextPrimary)
+                        Text(stringResource(R.string.player_menu_subtitles, if (state.selectedSubtitleTrackIndex == -1) stringResource(R.string.player_state_off) else stringResource(R.string.player_state_on)), color = MpxTheme.colors.textPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2127,12 +2127,12 @@ fun PlayerScreen(
                         Icon(
                             if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = null,
-                            tint = if (isFavourite) Color(0xFFFF5252) else MpxPrimary,
+                            tint = if (isFavourite) Color(0xFFFF5252) else MpxTheme.colors.primary,
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
                             if (isFavourite) stringResource(R.string.player_cd_favourite_remove) else stringResource(R.string.player_cd_favourite_add),
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                         )
                     }
                     Row(
@@ -2145,12 +2145,12 @@ fun PlayerScreen(
                         Icon(
                             Icons.Filled.Shuffle,
                             contentDescription = null,
-                            tint = if (state.shuffleEnabled) MpxPrimary else Color.Gray,
+                            tint = if (state.shuffleEnabled) MpxTheme.colors.primary else Color.Gray,
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
                             "${stringResource(R.string.player_cd_shuffle)} (${if (state.shuffleEnabled) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)})",
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                         )
                     }
                     Row(
@@ -2163,7 +2163,7 @@ fun PlayerScreen(
                         Icon(
                             if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
                             contentDescription = null,
-                            tint = if (state.repeatMode == RepeatMode.OFF) Color.Gray else MpxPrimary,
+                            tint = if (state.repeatMode == RepeatMode.OFF) Color.Gray else MpxTheme.colors.primary,
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
@@ -2172,7 +2172,7 @@ fun PlayerScreen(
                                 RepeatMode.ALL -> stringResource(R.string.player_cd_repeat_all)
                                 else -> stringResource(R.string.player_cd_repeat_off)
                             },
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                         )
                     }
                     Row(
@@ -2193,9 +2193,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.PictureInPictureAlt, contentDescription = null, tint = MpxTheme.colors.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_popup_play), color = MpxTextPrimary)
+                        Text(stringResource(R.string.player_menu_popup_play), color = MpxTheme.colors.textPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2227,13 +2227,13 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Filled.PlayArrow,
                             contentDescription = null,
-                            tint = if (currentSettings.backgroundPlay) MpxPrimary else Color.Gray,
+                            tint = if (currentSettings.backgroundPlay) MpxTheme.colors.primary else Color.Gray,
                         )
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.player_menu_background_play_row, if (currentSettings.backgroundPlay) stringResource(R.string.player_state_on) else stringResource(R.string.player_state_off)),
-                                color = MpxTextPrimary,
+                                color = MpxTheme.colors.textPrimary,
                             )
                             Text(
                                 if (state.currentItem?.isVideo == true) {
@@ -2241,7 +2241,7 @@ fun PlayerScreen(
                                 } else {
                                     stringResource(R.string.player_bg_desc_audio)
                                 },
-                                color = MpxTextSecondary,
+                                color = MpxTheme.colors.textSecondary,
                                 fontSize = 11.sp,
                             )
                         }
@@ -2262,9 +2262,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Speed, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.Speed, contentDescription = null, tint = MpxTheme.colors.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_speed, "${state.speed}x"), color = MpxTextPrimary)
+                        Text(stringResource(R.string.player_menu_speed, "${state.speed}x"), color = MpxTheme.colors.textPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2283,9 +2283,9 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.AspectRatio, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.AspectRatio, contentDescription = null, tint = MpxTheme.colors.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_aspect, stringResource(state.aspectRatio.labelRes)), color = MpxTextPrimary)
+                        Text(stringResource(R.string.player_menu_aspect, stringResource(state.aspectRatio.labelRes)), color = MpxTheme.colors.textPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2294,7 +2294,7 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxTheme.colors.primary)
                         Spacer(Modifier.width(12.dp))
                         val rotationLabel = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto") {
                             stringResource(R.string.player_rotation_auto)
@@ -2303,7 +2303,7 @@ fun PlayerScreen(
                         } else {
                             stringResource(R.string.player_orientation_landscape)
                         }
-                        Text(stringResource(R.string.player_menu_rotation, rotationLabel), color = MpxTextPrimary)
+                        Text(stringResource(R.string.player_menu_rotation, rotationLabel), color = MpxTheme.colors.textPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2312,7 +2312,7 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Filled.Timer, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.Filled.Timer, contentDescription = null, tint = MpxTheme.colors.primary)
                         Spacer(Modifier.width(12.dp))
                         val sleepTimerSubtext = if (state.sleepTimerRemainingSeconds != null) {
                             val remaining = state.sleepTimerRemainingSeconds ?: 0L
@@ -2327,7 +2327,7 @@ fun PlayerScreen(
                         } else {
                             stringResource(R.string.player_sleep_timer_off)
                         }
-                        Text("${stringResource(R.string.player_sleep_timer)} ($sleepTimerSubtext)", color = MpxTextPrimary)
+                        Text("${stringResource(R.string.player_sleep_timer)} ($sleepTimerSubtext)", color = MpxTheme.colors.textPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -2339,15 +2339,15 @@ fun PlayerScreen(
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxPrimary)
+                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, tint = MpxTheme.colors.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.player_menu_add_playlist), color = MpxTextPrimary)
+                        Text(stringResource(R.string.player_menu_add_playlist), color = MpxTheme.colors.textPrimary)
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_ok), color = MpxPrimary)
+                    Text(stringResource(R.string.action_ok), color = MpxTheme.colors.primary)
                 }
             },
         )
@@ -2356,15 +2356,15 @@ fun PlayerScreen(
     if (activeDialog == "Screen Rotation") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxBlack,
+            containerColor = MpxTheme.colors.black,
             title = {
                 PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxPrimary)
+                    Icon(Icons.Filled.ScreenRotation, contentDescription = null, tint = MpxTheme.colors.primary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_rotation_dialog_title),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -2400,12 +2400,12 @@ fun PlayerScreen(
                                 activeDialog = null
                                 Toast.makeText(context, context.getString(R.string.toast_rotation_auto), Toast.LENGTH_SHORT).show()
                             },
-                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(stringResource(R.string.player_rotation_auto), color = MpxTextPrimary, fontWeight = if (isAuto) FontWeight.Bold else FontWeight.Normal)
-                            Text(stringResource(R.string.player_rotation_auto_desc), color = MpxTextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.player_rotation_auto), color = MpxTheme.colors.textPrimary, fontWeight = if (isAuto) FontWeight.Bold else FontWeight.Normal)
+                            Text(stringResource(R.string.player_rotation_auto_desc), color = MpxTheme.colors.textSecondary, fontSize = 12.sp)
                         }
                     }
 
@@ -2438,12 +2438,12 @@ fun PlayerScreen(
                                 activeDialog = null
                                 Toast.makeText(context, context.getString(R.string.toast_rotation_landscape), Toast.LENGTH_SHORT).show()
                             },
-                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(stringResource(R.string.player_orientation_landscape), color = MpxTextPrimary, fontWeight = if (isLandscape) FontWeight.Bold else FontWeight.Normal)
-                            Text(stringResource(R.string.player_orientation_landscape_desc), color = MpxTextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.player_orientation_landscape), color = MpxTheme.colors.textPrimary, fontWeight = if (isLandscape) FontWeight.Bold else FontWeight.Normal)
+                            Text(stringResource(R.string.player_orientation_landscape_desc), color = MpxTheme.colors.textSecondary, fontSize = 12.sp)
                         }
                     }
 
@@ -2476,19 +2476,19 @@ fun PlayerScreen(
                                 activeDialog = null
                                 Toast.makeText(context, context.getString(R.string.toast_rotation_portrait), Toast.LENGTH_SHORT).show()
                             },
-                            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                            colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
                         )
                         Spacer(Modifier.width(8.dp))
                         Column {
-                            Text(stringResource(R.string.player_orientation_portrait), color = MpxTextPrimary, fontWeight = if (isPortrait) FontWeight.Bold else FontWeight.Normal)
-                            Text(stringResource(R.string.player_orientation_portrait_desc), color = MpxTextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.player_orientation_portrait), color = MpxTheme.colors.textPrimary, fontWeight = if (isPortrait) FontWeight.Bold else FontWeight.Normal)
+                            Text(stringResource(R.string.player_orientation_portrait_desc), color = MpxTheme.colors.textSecondary, fontSize = 12.sp)
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_close), color = MpxPrimary)
+                    Text(stringResource(R.string.action_close), color = MpxTheme.colors.primary)
                 }
             },
         )
@@ -2497,15 +2497,15 @@ fun PlayerScreen(
     if (activeDialog == "Sleep Timer") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxBlack,
+            containerColor = MpxTheme.colors.black,
             title = {
                 PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Timer, contentDescription = null, tint = MpxPrimary)
+                    Icon(Icons.Filled.Timer, contentDescription = null, tint = MpxTheme.colors.primary)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.player_sleep_timer_dialog_title),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -2554,12 +2554,12 @@ fun PlayerScreen(
                                     }
                                     activeDialog = null
                                 },
-                                colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+                                colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = label,
-                                color = MpxTextPrimary,
+                                color = MpxTheme.colors.textPrimary,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             )
                         }
@@ -2568,7 +2568,7 @@ fun PlayerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(stringResource(R.string.action_cancel), color = MpxPrimary)
+                    Text(stringResource(R.string.action_cancel), color = MpxTheme.colors.primary)
                 }
             },
         )

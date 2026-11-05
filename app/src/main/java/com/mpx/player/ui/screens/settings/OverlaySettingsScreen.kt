@@ -57,14 +57,14 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.util.PipUtils
 import com.mpx.player.ui.components.MpxSecondaryButton
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxSurfaceElevated
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.surfaceElevated
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 import android.content.Context
 import android.content.ContextWrapper
 
@@ -94,7 +94,7 @@ fun OverlaySettingsScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MpxBlack,
+        containerColor = MpxTheme.colors.black,
         topBar = {
             TopAppBar(
                 title = {
@@ -104,7 +104,7 @@ fun OverlaySettingsScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                     )
                 },
                 navigationIcon = {
@@ -112,12 +112,12 @@ fun OverlaySettingsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
-                            tint = MpxTextPrimary,
+                            tint = MpxTheme.colors.textPrimary,
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MpxBlack,
+                    containerColor = MpxTheme.colors.black,
                 ),
             )
         },
@@ -135,15 +135,15 @@ fun OverlaySettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(MpxShapes.medium)
-                            .background(MpxPrimary.copy(alpha = 0.12f))
-                            .border(MpxHairline, MpxPrimary.copy(alpha = 0.35f), MpxShapes.medium)
+                            .background(MpxTheme.colors.primary.copy(alpha = 0.12f))
+                            .border(MpxHairline, MpxTheme.colors.primary.copy(alpha = 0.35f), MpxShapes.medium)
                             .padding(14.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.CheckCircle,
                                 contentDescription = null,
-                                tint = MpxPrimary,
+                                tint = MpxTheme.colors.primary,
                                 modifier = Modifier.size(24.dp),
                             )
                             Spacer(Modifier.width(12.dp))
@@ -151,7 +151,7 @@ fun OverlaySettingsScreen(
                                 Text(
                                     text = stringResource(R.string.pip_banner_supported),
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MpxTextPrimary,
+                                    color = MpxTheme.colors.textPrimary,
                                 )
                                 Spacer(Modifier.height(2.dp))
                                 Text(
@@ -161,7 +161,7 @@ fun OverlaySettingsScreen(
                                         Build.VERSION.SDK_INT,
                                     ),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MpxTextSecondary,
+                                    color = MpxTheme.colors.textSecondary,
                                 )
                             }
                         }
@@ -171,15 +171,15 @@ fun OverlaySettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(MpxShapes.medium)
-                            .background(MpxPrimary.copy(alpha = 0.12f))
-                            .border(MpxHairline, MpxPrimary.copy(alpha = 0.35f), MpxShapes.medium)
+                            .background(MpxTheme.colors.primary.copy(alpha = 0.12f))
+                            .border(MpxHairline, MpxTheme.colors.primary.copy(alpha = 0.35f), MpxShapes.medium)
                             .padding(14.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.Warning,
                                 contentDescription = null,
-                                tint = MpxPrimary,
+                                tint = MpxTheme.colors.primary,
                                 modifier = Modifier.size(24.dp),
                             )
                             Spacer(Modifier.width(12.dp))
@@ -187,13 +187,13 @@ fun OverlaySettingsScreen(
                                 Text(
                                     text = stringResource(R.string.pip_banner_unsupported),
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MpxTextPrimary,
+                                    color = MpxTheme.colors.textPrimary,
                                 )
                                 Spacer(Modifier.height(2.dp))
                                 Text(
                                     text = stringResource(R.string.pip_banner_unsupported_reason),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MpxTextSecondary,
+                                    color = MpxTheme.colors.textSecondary,
                                 )
                             }
                         }
@@ -240,7 +240,7 @@ fun OverlaySettingsScreen(
 
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
-                    color = MpxBorder,
+                    color = MpxTheme.colors.border,
                     thickness = MpxHairline,
                 )
             }
@@ -251,7 +251,7 @@ fun OverlaySettingsScreen(
                 Text(
                     text = stringResource(R.string.pip_window_controls_desc),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
 
@@ -284,7 +284,7 @@ fun OverlaySettingsScreen(
 
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
-                    color = MpxBorder,
+                    color = MpxTheme.colors.border,
                     thickness = MpxHairline,
                 )
             }
@@ -295,7 +295,7 @@ fun OverlaySettingsScreen(
                 Text(
                     text = stringResource(R.string.pip_size_desc),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
 
@@ -333,7 +333,7 @@ fun OverlaySettingsScreen(
 
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
-                    color = MpxBorder,
+                    color = MpxTheme.colors.border,
                     thickness = MpxHairline,
                 )
             }
@@ -344,7 +344,7 @@ fun OverlaySettingsScreen(
                 Text(
                     text = stringResource(R.string.pip_position_desc),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
 
@@ -392,7 +392,7 @@ fun OverlaySettingsScreen(
 
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
-                    color = MpxBorder,
+                    color = MpxTheme.colors.border,
                     thickness = MpxHairline,
                 )
             }
@@ -406,7 +406,7 @@ fun OverlaySettingsScreen(
             item {
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
-                    color = MpxBorder,
+                    color = MpxTheme.colors.border,
                     thickness = MpxHairline,
                 )
             }
@@ -417,8 +417,8 @@ fun OverlaySettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(MpxShapes.medium)
-                        .background(MpxSurfaceElevated.copy(alpha = 0.6f))
-                        .border(1.dp, MpxBorder.copy(alpha = 0.4f), MpxShapes.medium)
+                        .background(MpxTheme.colors.surfaceElevated.copy(alpha = 0.6f))
+                        .border(1.dp, MpxTheme.colors.border.copy(alpha = 0.4f), MpxShapes.medium)
                         .padding(16.dp),
                 ) {
                     Column {
@@ -426,14 +426,14 @@ fun OverlaySettingsScreen(
                             Icon(
                                 imageVector = Icons.Filled.Info,
                                 contentDescription = null,
-                                tint = MpxPrimary,
+                                tint = MpxTheme.colors.primary,
                                 modifier = Modifier.size(20.dp),
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = stringResource(R.string.pip_limits_title),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MpxTextPrimary,
+                                color = MpxTheme.colors.textPrimary,
                             )
                         }
 
@@ -485,7 +485,7 @@ private fun SectionHeader(title: String) {
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
         ),
-        color = MpxPrimary,
+        color = MpxTheme.colors.primary,
         modifier = Modifier.padding(bottom = 6.dp),
     )
 }
@@ -508,13 +508,13 @@ private fun SettingsToggleRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MpxTextSecondary,
+                color = MpxTheme.colors.textSecondary,
                 lineHeight = 16.sp,
             )
         }
@@ -523,8 +523,8 @@ private fun SettingsToggleRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MpxPrimary,
-                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                checkedThumbColor = MpxTheme.colors.primary,
+                checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
             ),
         )
     }
@@ -547,20 +547,20 @@ private fun SettingsRadioRow(
         RadioButton(
             selected = selected,
             onClick = onClick,
-            colors = RadioButtonDefaults.colors(selectedColor = MpxPrimary),
+            colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
         )
         Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MpxTextSecondary,
+                color = MpxTheme.colors.textSecondary,
                 lineHeight = 16.sp,
             )
         }
@@ -580,19 +580,19 @@ private fun PlatformLimitItem(
         Text(
             text = "$number.",
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-            color = MpxPrimary,
+            color = MpxTheme.colors.primary,
             modifier = Modifier.width(18.dp),
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
             )
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MpxTextSecondary,
+                color = MpxTheme.colors.textSecondary,
                 lineHeight = 16.sp,
             )
         }

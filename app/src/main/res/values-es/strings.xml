@@ -65,7 +65,7 @@
     <string name="settings_category_language">Idioma de la app</string>
     <string name="settings_category_language_sub">English, العربية, Español, Predeterminado del sistema</string>
     <string name="settings_category_theme">Tema de la app</string>
-    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Claro</string>
+    <string name="settings_category_theme_sub">Sistema, Oscuro, Claro</string>
     <string name="settings_category_pip">Ventana flotante personalizada</string>
     <string name="settings_category_pip_sub">Controles de imagen en imagen y reproducción en segundo plano</string>
     <string name="settings_category_tabs">Pestañas de música</string>
@@ -92,6 +92,9 @@
     <string name="theme_dark">Dark Slate (gris oscuro)</string>
     <string name="theme_classic">Classic MX Navy</string>
     <string name="theme_light">Light Cinema (blanco limpio)</string>
+    <string name="theme_option_system">Sistema</string>
+    <string name="theme_option_dark">Oscuro</string>
+    <string name="theme_option_light">Claro</string>
     <string name="theme_applied_snackbar">Tema aplicado: %s</string>
 
     <string name="pip_not_supported">Nota: el modo imagen en imagen no es compatible con este dispositivo o entorno (requiere Android 8.0+ con FEATURE_PICTURE_IN_PICTURE).</string>

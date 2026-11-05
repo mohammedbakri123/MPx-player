@@ -53,7 +53,13 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         subtitleAssOverride = prefs.getString("subtitle_ass_override", "Default") ?: "Default",
         subtitleDelayMs = prefs.getInt("subtitle_delay_ms", 0),
         subtitleSpeed = prefs.getFloat("subtitle_speed", 1.0f),
-        appTheme = prefs.getString("app_theme", "Midnight") ?: "Midnight",
+        // #139: legacy stored values Midnight/Dark/Classic all mean the
+        // true-black theme, now called Dark; unknown values follow System.
+        appTheme = when (prefs.getString("app_theme", "System")) {
+            "Light" -> "Light"
+            "Dark", "Midnight", "Classic" -> "Dark"
+            else -> "System"
+        },
         popupPlayEnabled = prefs.getBoolean("popup_play_enabled", true),
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
         popupPlaySize = prefs.getString("popup_play_size", "Medium") ?: "Medium",

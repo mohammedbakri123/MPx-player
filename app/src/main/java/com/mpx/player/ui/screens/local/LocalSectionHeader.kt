@@ -13,11 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.components.MpxBadge
-import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
-import com.mpx.player.ui.theme.MpxTextMuted
+import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
 
 /**
  * Local's shared section header (#107): uppercase muted label, count
@@ -46,7 +46,7 @@ fun LocalSectionHeader(
             Text(
                 text = title.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
-                color = MpxTextMuted,
+                color = MpxTheme.colors.textMuted,
             )
             Spacer(modifier = Modifier.size(MpxSpaceS))
             MpxBadge(text = count.toString())
@@ -64,7 +64,7 @@ fun LocalSectionHeader(
             Text(
                 text = sortLabel,
                 style = MaterialTheme.typography.bodySmall,
-                color = MpxPrimary,
+                color = MpxTheme.colors.primary,
             )
         }
     }

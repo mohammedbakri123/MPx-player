@@ -65,7 +65,7 @@
     <string name="settings_category_language">Langue de l’application</string>
     <string name="settings_category_language_sub">English, العربية, Español, Français, Par défaut du système</string>
     <string name="settings_category_theme">Thème de l’application</string>
-    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Clair</string>
+    <string name="settings_category_theme_sub">Système, Sombre, Clair</string>
     <string name="settings_category_pip">Fenêtre flottante personnalisée</string>
     <string name="settings_category_pip_sub">Contrôles d’image dans l’image et lecture en arrière-plan</string>
     <string name="settings_category_tabs">Onglets de musique</string>
@@ -92,6 +92,9 @@
     <string name="theme_dark">Dark Slate (charbon)</string>
     <string name="theme_classic">Classic MX Navy</string>
     <string name="theme_light">Light Cinema (blanc épuré)</string>
+    <string name="theme_option_system">Système</string>
+    <string name="theme_option_dark">Sombre</string>
+    <string name="theme_option_light">Clair</string>
     <string name="theme_applied_snackbar">Thème appliqué : %s</string>
 
     <string name="pip_not_supported">Remarque : le mode image dans l’image n’est pas pris en charge sur cet appareil ou cet environnement (nécessite Android 8.0+ avec FEATURE_PICTURE_IN_PICTURE).</string>

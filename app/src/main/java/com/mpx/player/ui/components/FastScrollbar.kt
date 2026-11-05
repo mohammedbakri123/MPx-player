@@ -46,9 +46,9 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTextPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
 
 /**
  * Fast draggable scrollbar with real-time section preview bubble for long Compose LazyColumn lists.
@@ -61,7 +61,7 @@ fun FastScrollbar(
     itemCount: Int,
     modifier: Modifier = Modifier,
     getSectionText: ((Int) -> String)? = null,
-    thumbColor: Color = MpxPrimary,
+    thumbColor: Color = MpxTheme.colors.primary,
     trackColor: Color = Color.Transparent,
 ) {
     if (itemCount <= 3) return
@@ -153,7 +153,7 @@ fun FastScrollbar(
         ) {
             Surface(
                 shape = MpxShapes.small,
-                color = MpxPrimary,
+                color = MpxTheme.colors.primary,
                 shadowElevation = 6.dp,
             ) {
                 Box(
@@ -168,7 +168,7 @@ fun FastScrollbar(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                     )
                 }
             }
@@ -240,7 +240,7 @@ fun GridFastScrollbar(
     itemCount: Int,
     modifier: Modifier = Modifier,
     getSectionText: ((Int) -> String)? = null,
-    thumbColor: Color = MpxPrimary,
+    thumbColor: Color = MpxTheme.colors.primary,
     trackColor: Color = Color.Transparent,
 ) {
     if (itemCount <= 4) return
@@ -329,7 +329,7 @@ fun GridFastScrollbar(
         ) {
             Surface(
                 shape = MpxShapes.small,
-                color = MpxPrimary,
+                color = MpxTheme.colors.primary,
                 shadowElevation = 6.dp,
             ) {
                 Box(
@@ -344,7 +344,7 @@ fun GridFastScrollbar(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                         ),
-                        color = MpxTextPrimary,
+                        color = MpxTheme.colors.textPrimary,
                     )
                 }
             }

@@ -65,7 +65,7 @@
     <string name="settings_category_language">App-Sprache</string>
     <string name="settings_category_language_sub">English, العربية, Español, Français, हिन्दी, Deutsch, Systemstandard</string>
     <string name="settings_category_theme">App-Theme</string>
-    <string name="settings_category_theme_sub">Midnight OLED, Dark Slate, Classic Navy, Light</string>
+    <string name="settings_category_theme_sub">System, Dunkel, Hell</string>
     <string name="settings_category_pip">Benutzerdefinierte Pop-up-Wiedergabe</string>
     <string name="settings_category_pip_sub">Bild-in-Bild-Steuerung und Hintergrundwiedergabe</string>
     <string name="settings_category_tabs">Musik-Tabs</string>
@@ -92,6 +92,9 @@
     <string name="theme_dark">Dark Slate (Anthrazit)</string>
     <string name="theme_classic">Classic MX Navy</string>
     <string name="theme_light">Light Cinema (sauberes Weiß)</string>
+    <string name="theme_option_system">System</string>
+    <string name="theme_option_dark">Dunkel</string>
+    <string name="theme_option_light">Hell</string>
     <string name="theme_applied_snackbar">Theme angewendet: %s</string>
 
     <string name="pip_not_supported">Hinweis: Der Bild-in-Bild-Modus wird auf diesem Gerät / in dieser Umgebung nicht unterstützt (erfordert Android 8.0+ mit FEATURE_PICTURE_IN_PICTURE).</string>

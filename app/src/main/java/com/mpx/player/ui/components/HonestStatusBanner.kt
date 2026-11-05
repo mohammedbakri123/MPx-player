@@ -20,12 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 @Composable
 fun HonestStatusBanner(
@@ -37,8 +37,8 @@ fun HonestStatusBanner(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
             .clip(MpxShapes.small)
-            .background(MpxBlack)
-            .border(MpxHairline, MpxBorder, MpxShapes.small),
+            .background(MpxTheme.colors.black)
+            .border(MpxHairline, MpxTheme.colors.border, MpxShapes.small),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -48,13 +48,13 @@ fun HonestStatusBanner(
                 imageVector = Icons.Outlined.Info,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = MpxPrimary,
+                tint = MpxTheme.colors.primary,
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodySmall,
-                color = MpxTextSecondary,
+                color = MpxTheme.colors.textSecondary,
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
             )

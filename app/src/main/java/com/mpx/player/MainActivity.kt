@@ -70,6 +70,7 @@ class MainActivity : ComponentActivity() {
     private var isInPipMode by mutableStateOf(false)
     private lateinit var settingsRepository: SharedPrefsAppSettingsRepository
     private var currentLanguage by mutableStateOf(LocaleHelper.LANGUAGE_SYSTEM)
+    private var currentTheme by mutableStateOf("System")
     private var openPlayerOnStart by mutableStateOf(false)
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -105,6 +106,7 @@ class MainActivity : ComponentActivity() {
         settingsRepository = SharedPrefsAppSettingsRepository(this)
         val initialSettings = settingsRepository.load()
         currentLanguage = initialSettings.appLanguage
+        currentTheme = initialSettings.appTheme
 
         checkOpenPlayerIntent(intent)
 
@@ -137,7 +139,7 @@ class MainActivity : ComponentActivity() {
                 LocalConfiguration provides localizedConfig,
                 LocalLayoutDirection provides layoutDirection,
             ) {
-                MpxTheme() {
+                MpxTheme(theme = currentTheme) {
                     MpxApp(
                         localPermissionLauncher = localPermissionLauncher,
                         localPermissionHandler = localPermissionHandler,
@@ -156,6 +158,7 @@ class MainActivity : ComponentActivity() {
                             settingsRepository.save(s.copy(appLanguage = newLang))
                             LocaleHelper.applyAppLocale(this@MainActivity, newLang)
                         },
+                        onThemeChanged = { currentTheme = it },
                     )
                 }
             }
@@ -298,6 +301,7 @@ fun MpxApp(
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
+    onThemeChanged: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val playbackManager = remember { PlaybackManager.getInstance(context) }
@@ -451,6 +455,7 @@ fun MpxApp(
                     settingsRepository = realSettingsRepo,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
+                    onThemeChanged = onThemeChanged,
                     playbackManager = playbackManager,
                 )
             }

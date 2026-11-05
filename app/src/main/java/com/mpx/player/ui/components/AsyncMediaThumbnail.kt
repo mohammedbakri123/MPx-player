@@ -35,9 +35,9 @@ import androidx.compose.material3.MaterialTheme
 import com.mpx.player.util.ThumbnailLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -56,7 +56,7 @@ fun AsyncThumbnail(
     showThumbnails: Boolean = true,
     // Folder tiles pass the theme primary here so the folder placeholder reads
     // as app-identity blue; other placeholders keep the neutral default.
-    placeholderTint: Color = MpxTextSecondary,
+    placeholderTint: Color = MpxTheme.colors.textSecondary,
 ) {
     val cachedBitmap = remember(cacheKey) { ThumbnailLoader.getCached(cacheKey) }
     var bitmap by remember(cacheKey) { mutableStateOf(cachedBitmap) }
@@ -92,7 +92,7 @@ fun AsyncThumbnail(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MpxBlack),
+                    .background(MpxTheme.colors.black),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -128,7 +128,7 @@ fun AsyncFolderThumbnail(
             )
         },
         placeholderIcon = Icons.Filled.Folder,
-        placeholderTint = MpxPrimary,
+        placeholderTint = MpxTheme.colors.primary,
         modifier = modifier,
         iconSize = iconSize,
         contentDescription = "Folder ${folder.name}",

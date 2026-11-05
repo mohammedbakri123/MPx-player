@@ -19,8 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 @Composable
 fun EmptyStateView(
@@ -45,7 +45,7 @@ fun EmptyStateView(
                     imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(56.dp),
-                    tint = MpxTextSecondary.copy(alpha = 0.7f),
+                    tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
                 )
                 Spacer(Modifier.height(16.dp))
             }
@@ -55,14 +55,14 @@ fun EmptyStateView(
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                 ),
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MpxTextSecondary,
+                color = MpxTheme.colors.textSecondary,
                 textAlign = TextAlign.Center,
             )
             if (actionLabel != null && onActionClick != null) {

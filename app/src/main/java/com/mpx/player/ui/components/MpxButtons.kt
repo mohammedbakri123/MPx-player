@@ -16,13 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.mpx.player.ui.theme.MpxBorder
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxPrimaryVariant
+import com.mpx.player.ui.theme.MpxTheme.colors.border
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
+import com.mpx.player.ui.theme.MpxTheme.colors.primaryVariant
 import com.mpx.player.ui.theme.MpxShapes
-import com.mpx.player.ui.theme.MpxTextMuted
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.textMuted
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 /**
  * M2.5 button atoms (#106). Tokens only, no screen logic.
@@ -44,10 +44,10 @@ fun MpxPrimaryButton(
         modifier = modifier.defaultMinSize(minHeight = 48.dp),
         shape = MpxShapes.large,
         colors = ButtonDefaults.buttonColors(
-            containerColor = MpxPrimary,
-            contentColor = MpxTextPrimary,
-            disabledContainerColor = MpxPrimaryVariant,
-            disabledContentColor = MpxTextMuted,
+            containerColor = MpxTheme.colors.primary,
+            contentColor = MpxTheme.colors.textPrimary,
+            disabledContainerColor = MpxTheme.colors.primaryVariant,
+            disabledContentColor = MpxTheme.colors.textMuted,
         ),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
     ) {
@@ -73,11 +73,11 @@ fun MpxSecondaryButton(
         modifier = modifier.defaultMinSize(minHeight = 48.dp),
         shape = MpxShapes.large,
         border = ButtonDefaults.outlinedButtonBorder.copy(
-            brush = androidx.compose.ui.graphics.SolidColor(MpxBorder),
+            brush = androidx.compose.ui.graphics.SolidColor(MpxTheme.colors.border),
         ),
         colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = MpxTextSecondary,
-            disabledContentColor = MpxTextMuted,
+            contentColor = MpxTheme.colors.textSecondary,
+            disabledContentColor = MpxTheme.colors.textMuted,
         ),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
     ) {
@@ -101,8 +101,8 @@ fun MpxTextButton(
         enabled = enabled,
         modifier = modifier.defaultMinSize(minHeight = 48.dp),
         colors = ButtonDefaults.textButtonColors(
-            contentColor = MpxPrimary,
-            disabledContentColor = MpxTextMuted,
+            contentColor = MpxTheme.colors.primary,
+            disabledContentColor = MpxTheme.colors.textMuted,
         ),
     ) {
         Text(text)
@@ -121,8 +121,8 @@ fun MpxPillFab(
         onClick = onClick,
         modifier = modifier.height(48.dp),
         shape = MpxShapes.extraLarge,
-        containerColor = MpxPrimary,
-        contentColor = MpxTextPrimary,
+        containerColor = MpxTheme.colors.primary,
+        contentColor = MpxTheme.colors.textPrimary,
         icon = { Icon(icon, contentDescription = null) },
         text = { Text(text) },
     )

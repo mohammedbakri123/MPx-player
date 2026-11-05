@@ -36,12 +36,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
-import com.mpx.player.ui.theme.MpxBlack
-import com.mpx.player.ui.theme.MpxBorder
+import com.mpx.player.ui.theme.MpxTheme.colors.black
+import com.mpx.player.ui.theme.MpxTheme.colors.border
 import com.mpx.player.ui.theme.MpxHairline
-import com.mpx.player.ui.theme.MpxPrimary
-import com.mpx.player.ui.theme.MpxTextPrimary
-import com.mpx.player.ui.theme.MpxTextSecondary
+import com.mpx.player.ui.theme.MpxTheme.colors.primary
+import com.mpx.player.ui.theme.MpxTheme.colors.textPrimary
+import com.mpx.player.ui.theme.MpxTheme.colors.textSecondary
 
 enum class SortField(val labelRes: Int, val label: String) {
     NONE(R.string.sort_field_none, "None"),
@@ -148,14 +148,14 @@ fun SortViewDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MpxBlack,
+        containerColor = MpxTheme.colors.black,
         tonalElevation = 0.dp,
-        modifier = Modifier.border(MpxHairline, MpxBorder, AlertDialogDefaults.shape),
+        modifier = Modifier.border(MpxHairline, MpxTheme.colors.border, AlertDialogDefaults.shape),
         title = {
             Text(
                 text = dialogTitle,
                 style = MaterialTheme.typography.titleLarge,
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
             )
         },
         text = {
@@ -166,7 +166,7 @@ fun SortViewDialog(
                     Text(
                         text = stringResource(R.string.sort_section_view_type),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                         fontSize = 11.sp,
                     )
                     Spacer(Modifier.height(6.dp))
@@ -182,7 +182,7 @@ fun SortViewDialog(
                             onClick = { onFileViewChange(false) },
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.view_type_folders), color = MpxTextPrimary)
+                        Text(stringResource(R.string.view_type_folders), color = MpxTheme.colors.textPrimary)
                     }
                     Row(
                         modifier = Modifier
@@ -196,19 +196,19 @@ fun SortViewDialog(
                             onClick = { onFileViewChange(true) },
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.view_type_files), color = MpxTextPrimary)
+                        Text(stringResource(R.string.view_type_files), color = MpxTheme.colors.textPrimary)
                     }
 
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 12.dp),
-                        color = MpxBorder,
+                        color = MpxTheme.colors.border,
                     )
                 }
 
                 Text(
                     text = stringResource(R.string.sort_section_view_mode),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                     fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(6.dp))
@@ -225,7 +225,7 @@ fun SortViewDialog(
                             onClick = { onViewChange(mode) },
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(mode.labelRes), color = MpxTextPrimary)
+                        Text(stringResource(mode.labelRes), color = MpxTheme.colors.textPrimary)
                     }
                 }
 
@@ -242,20 +242,20 @@ fun SortViewDialog(
                             checked = isSetAsDefault,
                             onCheckedChange = onSetAsDefaultChange,
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = MpxPrimary,
-                                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                                checkedThumbColor = MpxTheme.colors.primary,
+                                checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
                             ),
                         )
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = stringResource(R.string.folder_view_set_as_default),
-                                color = MpxTextPrimary,
+                                color = MpxTheme.colors.textPrimary,
                                 fontSize = 13.sp,
                             )
                             Text(
                                 text = stringResource(R.string.folder_view_set_as_default_desc),
-                                color = MpxTextSecondary,
+                                color = MpxTheme.colors.textSecondary,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,
                             )
@@ -271,7 +271,7 @@ fun SortViewDialog(
                     ) {
                         Text(
                             text = stringResource(R.string.folder_view_reset_default),
-                            color = MpxPrimary,
+                            color = MpxTheme.colors.primary,
                             fontSize = 12.sp,
                         )
                     }
@@ -280,13 +280,13 @@ fun SortViewDialog(
                 if (onSeparateViewLayoutChange != null) {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 12.dp),
-                        color = MpxBorder,
+                        color = MpxTheme.colors.border,
                     )
 
                     Text(
                         text = stringResource(R.string.sort_section_layout_settings),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                         fontSize = 11.sp,
                     )
                     Spacer(Modifier.height(6.dp))
@@ -301,16 +301,16 @@ fun SortViewDialog(
                             checked = separateViewLayout,
                             onCheckedChange = onSeparateViewLayoutChange,
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = MpxPrimary,
-                                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                                checkedThumbColor = MpxTheme.colors.primary,
+                                checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
                             ),
                         )
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text(stringResource(R.string.sort_separate_view_title), color = MpxTextPrimary)
+                            Text(stringResource(R.string.sort_separate_view_title), color = MpxTheme.colors.textPrimary)
                             Text(
                                 stringResource(R.string.sort_separate_view_desc),
-                                color = MpxTextSecondary,
+                                color = MpxTheme.colors.textSecondary,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,
                             )
@@ -322,7 +322,7 @@ fun SortViewDialog(
                 // show). Issue #70: collapsible inside this dialog, not a sub-dialog.
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
-                    color = MpxBorder,
+                    color = MpxTheme.colors.border,
                 )
 
                 Row(
@@ -336,7 +336,7 @@ fun SortViewDialog(
                         Text(
                             text = stringResource(R.string.sort_section_fields),
                             style = MaterialTheme.typography.titleMedium,
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                             fontSize = 14.sp,
                         )
                         val activeLabels = mutableListOf<String>()
@@ -353,7 +353,7 @@ fun SortViewDialog(
                         Text(
                             text = fieldsSummary,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
+                            color = MpxTheme.colors.textSecondary,
                             fontSize = 11.sp,
                             maxLines = 1,
                         )
@@ -361,7 +361,7 @@ fun SortViewDialog(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
-                        tint = MpxTextSecondary,
+                        tint = MpxTheme.colors.textSecondary,
                         modifier = Modifier.rotate(if (fieldsExpanded) 90f else 0f),
                     )
                 }
@@ -378,7 +378,7 @@ fun SortViewDialog(
                         ) {
                             Checkbox(checked = showFieldSize, onCheckedChange = onShowFieldSizeChange)
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_field_show_size), color = MpxTextPrimary)
+                            Text(stringResource(R.string.sort_field_show_size), color = MpxTheme.colors.textPrimary)
                         }
                     }
                     if (onShowFieldDateChange != null) {
@@ -391,7 +391,7 @@ fun SortViewDialog(
                         ) {
                             Checkbox(checked = showFieldDate, onCheckedChange = onShowFieldDateChange)
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_field_show_date), color = MpxTextPrimary)
+                            Text(stringResource(R.string.sort_field_show_date), color = MpxTheme.colors.textPrimary)
                         }
                     }
                     if ((isFileView || isFolderScope) && onShowFieldDurationChange != null) {
@@ -404,7 +404,7 @@ fun SortViewDialog(
                         ) {
                             Checkbox(checked = showFieldDuration, onCheckedChange = onShowFieldDurationChange)
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_field_show_duration), color = MpxTextPrimary)
+                            Text(stringResource(R.string.sort_field_show_duration), color = MpxTheme.colors.textPrimary)
                         }
                     }
                     if ((isFileView || isFolderScope) && onShowFieldLocationChange != null) {
@@ -417,7 +417,7 @@ fun SortViewDialog(
                         ) {
                             Checkbox(checked = showFieldLocation, onCheckedChange = onShowFieldLocationChange)
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_field_show_location), color = MpxTextPrimary)
+                            Text(stringResource(R.string.sort_field_show_location), color = MpxTheme.colors.textPrimary)
                         }
                     }
                     if (!isFileView && !isFolderScope && onShowFieldCountChange != null) {
@@ -430,7 +430,7 @@ fun SortViewDialog(
                         ) {
                             Checkbox(checked = showFieldCount, onCheckedChange = onShowFieldCountChange)
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_field_show_count), color = MpxTextPrimary)
+                            Text(stringResource(R.string.sort_field_show_count), color = MpxTheme.colors.textPrimary)
                         }
                     }
                 }
@@ -438,13 +438,13 @@ fun SortViewDialog(
                 // Primary Sort Section
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
-                    color = MpxBorder,
+                    color = MpxTheme.colors.border,
                 )
 
                 Text(
                     text = stringResource(R.string.sort_section_sort_by),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MpxTextSecondary,
+                    color = MpxTheme.colors.textSecondary,
                     fontSize = 11.sp,
                 )
                 Spacer(Modifier.height(6.dp))
@@ -462,7 +462,7 @@ fun SortViewDialog(
                             onClick = { onSortChange(field) },
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(field.labelRes), color = MpxTextPrimary)
+                        Text(stringResource(field.labelRes), color = MpxTheme.colors.textPrimary)
                     }
                 }
 
@@ -483,7 +483,7 @@ fun SortViewDialog(
                         ) {
                             RadioButton(selected = !sortReverse, onClick = { onSortReverseChange(false) })
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_direction_ascending), color = MpxTextPrimary)
+                            Text(stringResource(R.string.sort_direction_ascending), color = MpxTheme.colors.textPrimary)
                         }
                         Row(
                             modifier = Modifier
@@ -494,7 +494,7 @@ fun SortViewDialog(
                         ) {
                             RadioButton(selected = sortReverse, onClick = { onSortReverseChange(true) })
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_direction_descending), color = MpxTextPrimary)
+                            Text(stringResource(R.string.sort_direction_descending), color = MpxTheme.colors.textPrimary)
                         }
                     }
                 }
@@ -503,19 +503,19 @@ fun SortViewDialog(
                 if (onSecondarySortChange != null) {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 12.dp),
-                        color = MpxBorder,
+                        color = MpxTheme.colors.border,
                     )
 
                     Text(
                         text = stringResource(R.string.sort_section_secondary_sort),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                         fontSize = 11.sp,
                     )
                     Text(
                         text = stringResource(R.string.sort_secondary_sort_desc),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MpxTextSecondary.copy(alpha = 0.8f),
+                        color = MpxTheme.colors.textSecondary.copy(alpha = 0.8f),
                         fontSize = 10.sp,
                     )
                     Spacer(Modifier.height(6.dp))
@@ -533,7 +533,7 @@ fun SortViewDialog(
                                 onClick = { onSecondarySortChange(field) },
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(field.labelRes), color = MpxTextPrimary)
+                            Text(stringResource(field.labelRes), color = MpxTheme.colors.textPrimary)
                         }
                     }
                 }
@@ -542,7 +542,7 @@ fun SortViewDialog(
                 // Issue #70: collapsible inside this dialog, not a sub-dialog.
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 12.dp),
-                    color = MpxBorder,
+                    color = MpxTheme.colors.border,
                 )
 
                 Row(
@@ -556,7 +556,7 @@ fun SortViewDialog(
                         Text(
                             text = stringResource(R.string.sort_section_advanced),
                             style = MaterialTheme.typography.titleMedium,
-                            color = MpxTextPrimary,
+                            color = MpxTheme.colors.textPrimary,
                             fontSize = 14.sp,
                         )
                         val advParts = mutableListOf<String>()
@@ -573,7 +573,7 @@ fun SortViewDialog(
                         Text(
                             text = advSummary,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MpxTextSecondary,
+                            color = MpxTheme.colors.textSecondary,
                             fontSize = 11.sp,
                             maxLines = 1,
                         )
@@ -581,7 +581,7 @@ fun SortViewDialog(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
-                        tint = MpxTextSecondary,
+                        tint = MpxTheme.colors.textSecondary,
                         modifier = Modifier.rotate(if (advancedExpanded) 90f else 0f),
                     )
                 }
@@ -633,13 +633,13 @@ fun SortViewDialog(
                 if (!isFolderScope && onShowAllFoldersChange != null) {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 12.dp),
-                        color = MpxBorder,
+                        color = MpxTheme.colors.border,
                     )
 
                     Text(
                         text = if (isFileView) stringResource(R.string.section_files_header) else "FOLDERS",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MpxTextSecondary,
+                        color = MpxTheme.colors.textSecondary,
                         fontSize = 11.sp,
                     )
                     Spacer(Modifier.height(6.dp))
@@ -654,8 +654,8 @@ fun SortViewDialog(
                             checked = showAllFolders,
                             onCheckedChange = onShowAllFoldersChange,
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = MpxPrimary,
-                                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                                checkedThumbColor = MpxTheme.colors.primary,
+                                checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
                             ),
                         )
                         Spacer(Modifier.width(12.dp))
@@ -663,12 +663,12 @@ fun SortViewDialog(
                             Text(
                                 text = if (isFileView) stringResource(R.string.list_show_all_files)
                                     else stringResource(R.string.list_show_all_folders),
-                                color = MpxTextPrimary,
+                                color = MpxTheme.colors.textPrimary,
                             )
                             Text(
                                 text = if (isFileView) stringResource(R.string.list_show_all_files_desc)
                                     else stringResource(R.string.list_show_all_folders_desc),
-                                color = MpxTextSecondary,
+                                color = MpxTheme.colors.textSecondary,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,
                             )
@@ -708,20 +708,20 @@ private fun AdvancedSwitchRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MpxPrimary,
-                checkedTrackColor = MpxPrimary.copy(alpha = 0.4f),
+                checkedThumbColor = MpxTheme.colors.primary,
+                checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
             ),
         )
         Spacer(Modifier.width(12.dp))
         Column {
             Text(
                 text = stringResource(titleRes),
-                color = MpxTextPrimary,
+                color = MpxTheme.colors.textPrimary,
                 fontSize = 13.sp,
             )
             Text(
                 text = stringResource(descRes),
-                color = MpxTextSecondary,
+                color = MpxTheme.colors.textSecondary,
                 style = MaterialTheme.typography.bodySmall,
                 fontSize = 11.sp,
             )
