@@ -33,13 +33,10 @@ import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -300,7 +297,6 @@ fun LocalScreen(
     var folderSearchQuery by remember { mutableStateOf("") }
     var isFolderSearching by remember { mutableStateOf(false) }
     var showFolderSortDialog by remember { mutableStateOf(false) }
-    var folderMenuExpanded by remember { mutableStateOf(false) }
     // #144: videos queued for "Add to playlist" — the whole
     // multi-select action-bar selection.
     var videosForPlaylistAdd by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
@@ -905,71 +901,24 @@ fun LocalScreen(
                             )
                         }
 
-                        Box {
-                            IconButton(onClick = { folderMenuExpanded = true }) {
-                                Icon(
-                                    imageVector = Icons.Filled.MoreVert,
-                                    contentDescription = stringResource(R.string.cd_more_options),
-                                    tint = MpxTheme.colors.textPrimary,
-                                )
+                        // Issue #184: the old three-dot menu is gone. Its
+                        // actions already live elsewhere — Sort & View and
+                        // Reset view in the Sort & View popup, Refresh in
+                        // pull-to-refresh — except Play all, which now has
+                        // this header play button (same action: play the
+                        // folder's videos from the start). The FAB plays a
+                        // RANDOM video (#169); this button plays them in order.
+                        IconButton(onClick = {
+                            if (filteredFolderVideos.isNotEmpty()) {
+                                playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
+                                onOpenPlayer()
                             }
-                            DropdownMenu(
-                                expanded = folderMenuExpanded,
-                                onDismissRequest = { folderMenuExpanded = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.folder_view_dialog_title)) },
-                                    onClick = {
-                                        folderMenuExpanded = false
-                                        showFolderSortDialog = true
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.folder_menu_play_all)) },
-                                    onClick = {
-                                        folderMenuExpanded = false
-                                        if (filteredFolderVideos.isNotEmpty()) {
-                                            playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
-                                            onOpenPlayer()
-                                        }
-                                    },
-                                )
-                                if (realSettingsRepo.hasFolderViewModeOverride(folder.id)) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.folder_view_reset_default)) },
-                                        onClick = {
-                                            folderMenuExpanded = false
-                                            realSettingsRepo.clearFolderViewModeOverride(folder.id)
-                                            val globalMode = try {
-                                                ViewMode.valueOf(realSettingsRepo.load().folderViewMode)
-                                            } catch (_: Exception) {
-                                                ViewMode.LIST
-                                            }
-                                            folderViewMode = globalMode
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar(
-                                                    context.getString(
-                                                        R.string.folder_view_reset_default_snackbar,
-                                                        context.getString(globalMode.labelRes)
-                                                    )
-                                                )
-                                            }
-                                        },
-                                    )
-                                }
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.local_menu_refresh)) },
-                                    onClick = {
-                                        folderMenuExpanded = false
-                                        refreshFolderVideos(folder.id)
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                context.getString(R.string.snackbar_library_refreshed)
-                                            )
-                                        }
-                                    },
-                                )
-                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = stringResource(R.string.folder_menu_play_all),
+                                tint = MpxTheme.colors.textPrimary,
+                            )
                         }
                     },
                 )
