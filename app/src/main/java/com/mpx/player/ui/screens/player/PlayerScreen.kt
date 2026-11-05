@@ -123,6 +123,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.mpx.player.R
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
@@ -620,6 +622,37 @@ fun PlayerScreen(
         if (controlsVisible && state.isPlaying && playbackSheetPage == null && !isScrubbingSlider && !isDraggingSeek && !showBrightnessIndicator && !showVolumeIndicator && !showZoomIndicator) {
             delay(3000)
             controlsVisible = false
+        }
+    }
+
+    // Issue #195: hide the system bars with the player chrome. The status
+    // bar never disappeared during playback — the player hid its own chrome
+    // but never told the window to hide the bars. Tied to controlsVisible,
+    // so the bars hide when the chrome auto-hides (or the user taps it
+    // away) and come back with the chrome. Scoped to the Player route
+    // only: edge-to-edge stays off for the rest of the app (M2.5
+    // decision). WindowInsetsControllerCompat needs no
+    // decorFitsSystemWindows change — hiding the bars lets the window
+    // expand to full screen, which resizes the SurfaceView (1080x2356
+    // <-> 1080x1934). That resize runs through surfaceChanged, where the
+    // #193 restore covers the vo side, so it cannot re-trigger the
+    // black-video bug. Not hidden in PiP: the PiP window has no system
+    // bars to hide. BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE lets the user
+    // swipe the bars back temporarily; onDispose restores them, so
+    // leaving the player always brings them back.
+    DisposableEffect(controlsVisible, isInPipMode, activity) {
+        val window = activity?.window
+        if (window != null && !controlsVisible && !isInPipMode) {
+            val controller = WindowInsetsControllerCompat(window, window.decorView)
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+        }
+        onDispose {
+            activity?.window?.let { w ->
+                WindowInsetsControllerCompat(w, w.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+            }
         }
     }
 
