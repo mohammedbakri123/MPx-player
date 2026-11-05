@@ -128,6 +128,7 @@ class MainActivity : ComponentActivity() {
     private var currentLanguage by mutableStateOf(LocaleHelper.LANGUAGE_SYSTEM)
     private var currentTheme by mutableStateOf("System")
     private var currentPalette by mutableStateOf("Blue")
+    private var currentDarkSurface by mutableStateOf("TrueBlack")
     private var openPlayerOnStart by mutableStateOf(false)
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -165,6 +166,7 @@ class MainActivity : ComponentActivity() {
         currentLanguage = initialSettings.appLanguage
         currentTheme = initialSettings.appTheme
         currentPalette = initialSettings.colorPalette
+        currentDarkSurface = initialSettings.darkSurface
 
         checkOpenPlayerIntent(intent)
 
@@ -197,7 +199,7 @@ class MainActivity : ComponentActivity() {
                 LocalConfiguration provides localizedConfig,
                 LocalLayoutDirection provides layoutDirection,
             ) {
-                MpxTheme(theme = currentTheme, palette = currentPalette) {
+                MpxTheme(theme = currentTheme, palette = currentPalette, darkSurface = currentDarkSurface) {
                     MpxApp(
                         localPermissionLauncher = localPermissionLauncher,
                         localPermissionHandler = localPermissionHandler,
@@ -209,6 +211,7 @@ class MainActivity : ComponentActivity() {
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
                         currentPalette = currentPalette,
+                        currentDarkSurface = currentDarkSurface,
                         openPlayerRequested = openPlayerOnStart,
                         onResetOpenPlayer = { openPlayerOnStart = false },
                         onLanguageChanged = { newLang ->
@@ -219,6 +222,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onThemeChanged = { currentTheme = it },
                         onPaletteChanged = { currentPalette = it },
+                        onDarkSurfaceChanged = { currentDarkSurface = it },
                     )
                 }
             }
@@ -359,11 +363,13 @@ fun MpxApp(
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
     currentPalette: String = "Blue",
+    currentDarkSurface: String = "TrueBlack",
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
+    onDarkSurfaceChanged: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val playbackManager = remember { PlaybackManager.getInstance(context) }
@@ -558,6 +564,7 @@ fun MpxApp(
                     onLanguageChanged = onLanguageChanged,
                     onThemeChanged = onThemeChanged,
                     onPaletteChanged = onPaletteChanged,
+                    onDarkSurfaceChanged = onDarkSurfaceChanged,
                     playbackManager = playbackManager,
                 )
             }
@@ -582,7 +589,7 @@ fun MpxApp(
                 // #168: pass the current palette too — without it the
                 // player (slider, accents) always stayed default Blue
                 // whatever palette the user picked on Appearance.
-                MpxTheme(theme = "Dark", palette = currentPalette) {
+                MpxTheme(theme = "Dark", palette = currentPalette, darkSurface = currentDarkSurface) {
                     PlayerScreen(
                         subtitleLauncher = subtitleLauncher,
                         subtitleResultHandler = subtitleHandler,

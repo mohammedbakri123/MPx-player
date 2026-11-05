@@ -64,6 +64,54 @@ val MpxDarkColors = MpxColors(
     borderSubtle = Color(0x3394A3B8),
 )
 
+// Charcoal (#182): #121212 surface scale — softer than true black,
+// still dark enough for AMOLED. Background, surfaces and borders all
+// shift together; text, accent and error/success stay the dark values.
+val MpxCharcoalColors = MpxColors(
+    black = Color(0xFF121212),
+    surface = Color(0xFF121212),
+    surfaceRaised = Color(0xFF1A1A1A),
+    surfaceVariant = Color(0xFF1F1F1F),
+    surfaceElevated = Color(0xFF2A2A2A),
+    primary = Color(0xFF3B82F6),
+    primaryHover = Color(0xFF2563EB),
+    primaryVariant = Color(0xFF1D4ED8),
+    textPrimary = Color(0xFFFFFFFF),
+    textSecondary = Color(0xFFCBD5E1),
+    textMuted = Color(0xFF94A3B8),
+    destructive = Color(0xFFEF4444),
+    success = Color(0xFF10B981),
+    border = Color(0xFF2C2C2C),
+    borderSubtle = Color(0x3394A3B8),
+)
+
+// Graphite (#182): #1E1E1E surface scale — the lightest dark option.
+val MpxGraphiteColors = MpxColors(
+    black = Color(0xFF1E1E1E),
+    surface = Color(0xFF1E1E1E),
+    surfaceRaised = Color(0xFF262626),
+    surfaceVariant = Color(0xFF2C2C2C),
+    surfaceElevated = Color(0xFF383838),
+    primary = Color(0xFF3B82F6),
+    primaryHover = Color(0xFF2563EB),
+    primaryVariant = Color(0xFF1D4ED8),
+    textPrimary = Color(0xFFFFFFFF),
+    textSecondary = Color(0xFFCBD5E1),
+    textMuted = Color(0xFF94A3B8),
+    destructive = Color(0xFFEF4444),
+    success = Color(0xFF10B981),
+    border = Color(0xFF3A3A3A),
+    borderSubtle = Color(0x3394A3B8),
+)
+
+// Dark-surface preset resolver (#182). Unknown ids fall back to
+// True Black, so a stale stored value can never strand the theme.
+fun mpxDarkColorsFor(surface: String): MpxColors = when (surface) {
+    "Charcoal" -> MpxCharcoalColors
+    "Graphite" -> MpxGraphiteColors
+    else -> MpxDarkColors
+}
+
 // Light: white-based mirror of the dark scale, same blue accent.
 // Text contrast vs #FFFFFF: primary ~16:1, secondary ~7.5:1, muted ~4.6:1.
 val MpxLightColors = MpxColors(

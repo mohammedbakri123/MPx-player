@@ -95,6 +95,10 @@
     <string name="theme_option_system">सिस्टम</string>
     <string name="theme_option_dark">डार्क</string>
     <string name="theme_option_light">लाइट</string>
+    <string name="theme_color_section_title">थीम का रंग</string>
+    <string name="theme_surface_true_black">शुद्ध काला</string>
+    <string name="theme_surface_charcoal">चारकोल</string>
+    <string name="theme_surface_graphite">ग्रेफाइट</string>
     <string name="theme_applied_snackbar">थीम लागू हुई: %s</string>
     <string name="palette_section_title">एक्सेंट रंग</string>
     <string name="palette_name_blue">नीला</string>

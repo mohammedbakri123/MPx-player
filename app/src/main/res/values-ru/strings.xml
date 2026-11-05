@@ -95,6 +95,10 @@
     <string name="theme_option_system">Системная</string>
     <string name="theme_option_dark">Тёмная</string>
     <string name="theme_option_light">Светлая</string>
+    <string name="theme_color_section_title">Цвет темы</string>
+    <string name="theme_surface_true_black">Чисто чёрный</string>
+    <string name="theme_surface_charcoal">Угольный</string>
+    <string name="theme_surface_graphite">Графитовый</string>
     <string name="theme_applied_snackbar">Тема применена: %s</string>
     <string name="palette_section_title">Акцентный цвет</string>
     <string name="palette_name_blue">Синий</string>

@@ -95,6 +95,10 @@
     <string name="theme_option_system">系统</string>
     <string name="theme_option_dark">深色</string>
     <string name="theme_option_light">浅色</string>
+    <string name="theme_color_section_title">主题颜色</string>
+    <string name="theme_surface_true_black">纯黑</string>
+    <string name="theme_surface_charcoal">炭黑</string>
+    <string name="theme_surface_graphite">石墨灰</string>
     <string name="theme_applied_snackbar">主题已应用：%s</string>
     <string name="palette_section_title">强调色</string>
     <string name="palette_name_blue">蓝色</string>

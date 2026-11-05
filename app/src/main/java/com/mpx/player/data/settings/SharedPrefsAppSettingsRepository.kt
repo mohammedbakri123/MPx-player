@@ -64,6 +64,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             else -> "System"
         },
         colorPalette = prefs.getString("color_palette", "Blue") ?: "Blue",
+        darkSurface = prefs.getString("dark_surface", "TrueBlack") ?: "TrueBlack",
         popupPlayEnabled = prefs.getBoolean("popup_play_enabled", true),
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
         popupPlaySize = prefs.getString("popup_play_size", "Medium") ?: "Medium",
@@ -139,6 +140,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putFloat("video_zoom", settings.videoZoom)
             .putString("app_theme", settings.appTheme)
             .putString("color_palette", settings.colorPalette)
+            .putString("dark_surface", settings.darkSurface)
             .putBoolean("popup_play_enabled", settings.popupPlayEnabled)
             .putString("popup_play_controls", settings.popupPlayControls)
             .putString("popup_play_size", settings.popupPlaySize)
