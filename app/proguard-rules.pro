@@ -9,3 +9,13 @@
 # library-specific keep in this project: Room uses generated code (no rules
 # needed).
 -keep class is.xyz.mpv.** { *; }
+
+# smbj (issue #78) pulls three transitive deps Android never uses at runtime:
+# javax.el (mbassy's EL filter), org.ietf.jgss (Kerberos GSS-API — smbj uses
+# NTLM on Android) and slf4j's StaticLoggerBinder (no binding shipped).
+# R8 fails the minified build on the missing classes, so silence them with
+# the exact rules R8 itself generated (missing_rules.txt). No keep needed:
+# none of this code is reachable from the app.
+-dontwarn javax.el.**
+-dontwarn org.ietf.jgss.**
+-dontwarn org.slf4j.impl.StaticLoggerBinder
