@@ -1587,7 +1587,7 @@ fun PlayerScreen(
                     )
                 } else {
                     LazyColumn {
-                        items(state.audioTracks) { track ->
+                        items(state.audioTracks, key = { "${it.groupIndex}_${it.trackIndex}" }) { track -> }
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -2356,7 +2356,7 @@ fun PlayerScreen(
     if (activeDialog == "Screen Rotation") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxSurfaceVariant,
+            containerColor = MpxBlack,
             title = {
                 PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2497,7 +2497,7 @@ fun PlayerScreen(
     if (activeDialog == "Sleep Timer") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            containerColor = MpxSurfaceVariant,
+            containerColor = MpxBlack,
             title = {
                 PlayerDialogBackdropBlur()
                 Row(verticalAlignment = Alignment.CenterVertically) {
