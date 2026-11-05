@@ -40,7 +40,6 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -725,25 +724,8 @@ fun LocalScreen(
                                 )
                             }
                         }
-                        IconButton(onClick = {
-                            // Header Play action (confirmed in MX's decoded Local
-                            // menu as the always-visible Play action): plays the
-                            // first visible folder, or the first video's folder
-                            // in file view — the same path as the quick-play FAB.
-                            if (appSettings.fileView) {
-                                val first = filteredVideos.firstOrNull()
-                                if (first != null) playVideoWithFolder(first)
-                            } else {
-                                val first = filteredFolders.firstOrNull()
-                                if (first != null) playFolder(first)
-                            }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.PlayArrow,
-                                contentDescription = stringResource(R.string.cd_quick_play),
-                                tint = MpxTheme.colors.textPrimary,
-                            )
-                        }
+                        // #140: header keeps only Search and the view toggle (layout popup lands in #141);
+                        // Play lives on the FAB, Sort lives in the layout popup.
                         IconButton(onClick = {
                             updateViewMode(if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST)
                         }) {
@@ -757,22 +739,6 @@ fun LocalScreen(
                             Icon(
                                 imageVector = Icons.Filled.Search,
                                 contentDescription = stringResource(R.string.cd_search),
-                                tint = MpxTheme.colors.textPrimary,
-                            )
-                        }
-                        // MX parity (#80): MX's Local header shows no overflow
-                        // button in its default state (screenshot + decoded
-                        // menu_list_local_only.xml, where the options_menu
-                        // entry is visible=false by default). Sort/View is
-                        // promoted to a visible action like MX's always-visible
-                        // View Mode action; the removed overflow items all
-                        // have other paths (file view / show-all in
-                        // Settings > List, refresh via pull-to-refresh,
-                        // Settings via the Me page), so nothing is stranded.
-                        IconButton(onClick = { showSortDialog = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.Sort,
-                                contentDescription = stringResource(R.string.local_menu_view_sort),
                                 tint = MpxTheme.colors.textPrimary,
                             )
                         }

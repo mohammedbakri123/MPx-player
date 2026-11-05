@@ -434,7 +434,7 @@
     <string name="sort_artist">الفنان</string>
     <string name="sort_album">الألبوم</string>
     <!-- Local Screen -->
-    <string name="local_title">الوسائط</string>
+    <string name="local_title">MPx</string>
     <string name="local_search_placeholder">البحث في المجلدات…</string>
     <string name="local_section_folders">المجلدات</string>
     <string name="local_sort_label">الترتيب: %1$s</string>

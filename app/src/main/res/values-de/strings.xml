@@ -434,7 +434,7 @@
     <string name="sort_artist">Künstler</string>
     <string name="sort_album">Album</string>
     <!-- Local Screen -->
-    <string name="local_title">Medien</string>
+    <string name="local_title">MPx</string>
     <string name="local_search_placeholder">Ordner suchen…</string>
     <string name="local_section_folders">ORDNER</string>
     <string name="local_sort_label">Sortierung: %1$s</string>

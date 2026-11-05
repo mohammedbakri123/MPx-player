@@ -434,7 +434,7 @@
     <string name="sort_artist">艺术家</string>
     <string name="sort_album">专辑</string>
     <!-- Local Screen -->
-    <string name="local_title">媒体</string>
+    <string name="local_title">MPx</string>
     <string name="local_search_placeholder">搜索文件夹…</string>
     <string name="local_section_folders">文件夹</string>
     <string name="local_sort_label">排序：%1$s</string>
