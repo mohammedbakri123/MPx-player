@@ -338,7 +338,10 @@ fun LocalScreen(
         }
     }
 
-    fun playFolder(folder: MediaFolder) {
+    // #169: randomStart plays a random video from the folder instead of
+    // its first one (quick-play FAB). Defaults to false — every other
+    // caller (tile taps, Play all) keeps the old from-the-start behaviour.
+    fun playFolder(folder: MediaFolder, randomStart: Boolean = false) {
         scope.launch(Dispatchers.IO) {
             val videos = repository.getVideosInFolder(folder.id)
             withContext(Dispatchers.Main) {
@@ -349,7 +352,8 @@ fun LocalScreen(
                         )
                     }
                 } else {
-                    playbackManager?.playVideoFiles(videos)
+                    val startIndex = if (randomStart) videos.indices.random() else 0
+                    playbackManager?.playVideoFiles(videos, startIndex)
                     onOpenPlayer()
                 }
             }
@@ -963,22 +967,28 @@ fun LocalScreen(
             if (!isSelectionMode && !showSearchPage) {
                 FloatingActionButton(
                     onClick = {
+                        // #169: quick-play opens a RANDOM video from the
+                        // current scope, not the first one. The queue stays
+                        // the full list, starting at the random video.
                         val played = if (currentFolder != null) {
                             if (filteredFolderVideos.isNotEmpty()) {
-                                playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
+                                playbackManager?.playVideoFiles(
+                                    filteredFolderVideos,
+                                    startIndex = filteredFolderVideos.indices.random(),
+                                )
                                 onOpenPlayer()
                                 true
                             } else false
                         } else if (appSettings.fileView) {
-                            val first = filteredVideos.firstOrNull()
-                            if (first != null) {
-                                playVideoWithFolder(first)
+                            val random = filteredVideos.randomOrNull()
+                            if (random != null) {
+                                playVideoWithFolder(random)
                                 true
                             } else false
                         } else {
-                            val first = filteredFolders.firstOrNull()
-                            if (first != null) {
-                                playFolder(first)
+                            val random = filteredFolders.randomOrNull()
+                            if (random != null) {
+                                playFolder(random, randomStart = true)
                                 true
                             } else false
                         }
