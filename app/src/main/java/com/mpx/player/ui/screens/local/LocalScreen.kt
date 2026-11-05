@@ -247,11 +247,17 @@ fun LocalScreen(
     var videoForPlaylistAdd by remember { mutableStateOf<VideoFile?>(null) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
 
-    // Intercept back button when viewing a folder to navigate back to folder list
-    BackHandler(enabled = currentFolder != null) {
+    // #146: shared "back to root" — the back button and the breadcrumb's
+    // Local segment both run this (clears the folder and its search state).
+    fun goToRoot() {
         currentFolder = null
         isFolderSearching = false
         folderSearchQuery = ""
+    }
+
+    // Intercept back button when viewing a folder to navigate back to folder list
+    BackHandler(enabled = currentFolder != null) {
+        goToRoot()
     }
 
     fun openFolder(folder: MediaFolder) {
@@ -824,6 +830,22 @@ fun LocalScreen(
             ) {
             if (currentFolder != null) {
                 // ==================== FOLDER VIEW (Drilled-Down Contents) ====================
+                // Path visualizer (#146): replaces the old "VIDEOS n + Sort:"
+                // header. Sort lives in the layout sheet (#141); the count
+                // lives in the top bar subtitle. It sits above the
+                // loading/empty states so the way back to Local is always
+                // visible inside a folder.
+                val folder = currentFolder!!
+                LocalPathBreadcrumb(
+                    segments = listOf(
+                        PathSegment(
+                            label = stringResource(R.string.nav_local),
+                            onClick = { goToRoot() },
+                        ),
+                        PathSegment(label = folder.name),
+                    ),
+                    badgeText = if (realSettingsRepo.hasFolderViewModeOverride(folder.id)) stringResource(folderViewMode.labelRes) else null,
+                )
                 if (isFolderLoading) {
                     Box(
                         modifier = Modifier
@@ -850,21 +872,7 @@ fun LocalScreen(
                         onActionClick = { currentFolder = null },
                     )
                 } else {
-                    // Folder contents section header (shared header, #107)
-                    val folderSortLabelText = if (folderSecondarySortField != SortField.NONE && folderSecondarySortField != folderSortField) {
-                        "${stringResource(folderSortField.labelRes)} / ${stringResource(folderSecondarySortField.labelRes)}"
-                    } else {
-                        stringResource(folderSortField.labelRes)
-                    }
-                    LocalSectionHeader(
-                        title = stringResource(R.string.mini_player_video),
-                        count = filteredFolderVideos.size,
-                        sortLabel = stringResource(R.string.local_sort_label, folderSortLabelText),
-                        onSortClick = { showFolderSortDialog = true },
-                        badgeText = if (realSettingsRepo.hasFolderViewModeOverride(currentFolder!!.id)) stringResource(folderViewMode.labelRes) else null,
-                    )
-
-                    // Video list or grid based on folderViewMode
+                    // Folder contents: video list or grid based on folderViewMode
                     if (folderViewMode == ViewMode.LIST) {
                         val videoListState = rememberLazyListState()
                         Box(modifier = Modifier.fillMaxSize()) {
@@ -1163,18 +1171,13 @@ fun LocalScreen(
                         }
                     }
                 } else {
-                    // Section Header: FOLDERS (shared header, #107)
-                    val sortLabelText = if (secondarySortField != SortField.NONE && secondarySortField != sortField) {
-                        "${stringResource(sortField.labelRes)} / ${stringResource(secondarySortField.labelRes)}"
-                    } else {
-                        stringResource(sortField.labelRes)
-                    }
-                    LocalSectionHeader(
-                        title = if (appSettings.showAllFolders) stringResource(R.string.local_section_all_folders)
-                        else stringResource(R.string.local_section_folders),
-                        count = filteredFolders.size,
-                        sortLabel = stringResource(R.string.local_sort_label, sortLabelText),
-                        onSortClick = { showSortDialog = true },
+                    // Path visualizer (#146): replaces the "FOLDERS n + Sort:"
+                    // row. Sort lives in the layout sheet (#141); the
+                    // folder/video counts live in the bottom status strip.
+                    LocalPathBreadcrumb(
+                        segments = listOf(
+                            PathSegment(label = stringResource(R.string.nav_local)),
+                        ),
                         badgeText = if (appSettings.showAllFolders) stringResource(R.string.local_badge_show_all) else null,
                     )
 
