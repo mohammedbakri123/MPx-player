@@ -160,6 +160,18 @@ class MediaStoreRepository(
         title.startsWith(".") ||
             path.split(File.separatorChar).any { it.startsWith(".") }
 
+    /**
+     * Issue #218: a path inside another app's private storage. These
+     * directories are excluded from the library ALWAYS — regardless of
+     * "Show all folders" and regardless of "Show hidden files". They used
+     * to be excluded only on the non-show-all path, so turning show-all on
+     * let other apps' private videos into the library and made them
+     * playable. Keep the same substring match the old filters used, so
+     * exactly the same paths are excluded as before on the normal path.
+     */
+    private fun isSystemCachePath(path: String): Boolean =
+        path.contains("/Android/data") || path.contains("/Android/obb")
+
     fun isRemovablePath(path: String): Boolean {
         if (path.isBlank()) return false
         // Primary emulated internal storage is /storage/emulated/0
@@ -393,22 +405,16 @@ class MediaStoreRepository(
         }
 
         val showHidden = showHiddenFiles()
-        val foldersToDisplay = if (showAllFolders) {
-            // "Show all" still honours the hidden-files toggle: hidden folders
-            // only appear when the user asked to see hidden files.
-            folderMap.values.filter { acc ->
-                showHidden || !isHiddenPath(acc.path, acc.name)
-            }
-        } else {
-            // Keep current filtered view: only folders containing videos, excluding
-            // hidden folders (unless the toggle is on) and internal system cache
-            // directories (always excluded).
-            folderMap.values.filter { acc ->
-                acc.count > 0 &&
-                (showHidden || !isHiddenPath(acc.path, acc.name)) &&
-                !acc.path.contains("/Android/data") &&
-                !acc.path.contains("/Android/obb")
-            }
+        // Issue #218: ONE filter for both modes. "Show all folders" only
+        // adds empty folders (count == 0); it must not defeat the other
+        // exclusions. Hidden folders need the hidden toggle, and system
+        // cache directories (/Android/data, /Android/obb) are always
+        // excluded — the old show-all branch filtered on hidden only, so
+        // those folders (and their videos) leaked into the library.
+        val foldersToDisplay = folderMap.values.filter { acc ->
+            (showAllFolders || acc.count > 0) &&
+            (showHidden || !isHiddenPath(acc.path, acc.name)) &&
+            !isSystemCachePath(acc.path)
         }
 
         val result = foldersToDisplay.map { acc ->
@@ -573,16 +579,17 @@ class MediaStoreRepository(
                             ?: file?.name?.ifBlank { "Video" }
                             ?: "Video"
 
-                        // Filter hidden files if showAll is false and the
-                        // user has not enabled "Show hidden files". System
-                        // cache directories stay excluded regardless.
-                        if (!showAll) {
-                            if ((isHiddenPath(path, title) && !showHidden) ||
-                                path.contains("/Android/data") ||
-                                path.contains("/Android/obb")
-                            ) {
-                                continue
-                            }
+                        // Issue #218: these exclusions are independent of
+                        // showAll. Hidden files need the "Show hidden files"
+                        // toggle; system cache directories (/Android/data,
+                        // /Android/obb) stay excluded regardless — the old
+                        // `if (!showAll)` gate disabled all three at once.
+                        // showAll only adds empty folders to the folder
+                        // list; it never changes which videos are listed.
+                        if ((isHiddenPath(path, title) && !showHidden) ||
+                            isSystemCachePath(path)
+                        ) {
+                            continue
                         }
 
                         val rawId = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
