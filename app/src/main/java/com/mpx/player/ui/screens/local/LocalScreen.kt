@@ -532,6 +532,12 @@ fun LocalScreen(
     // NO delete action: it never existed in the tile menus.
     fun selectedVideosInView(): List<VideoFile> {
         return when {
+            // #165: on the search page the selection resolves against
+            // the full video list — matches are a subset of it, and the
+            // folder/file views below cannot see them.
+            showSearchPage -> allVideos.filter {
+                selectedVideoIds.contains(it.id.ifBlank { it.path })
+            }
             currentFolder != null -> filteredFolderVideos.filter {
                 selectedVideoIds.contains(it.id.ifBlank { it.path })
             }
@@ -543,12 +549,18 @@ fun LocalScreen(
     }
 
     fun selectedFoldersInView(): List<MediaFolder> {
-        return if (currentFolder == null && !appSettings.fileView) {
-            filteredFolders.filter {
+        return when {
+            // #165: same as videos — search matches live in the full
+            // folder list.
+            showSearchPage -> folders.filter {
                 selectedFolderIds.contains(it.id.ifBlank { it.path })
             }
-        } else {
-            emptyList()
+            currentFolder == null && !appSettings.fileView -> {
+                filteredFolders.filter {
+                    selectedFolderIds.contains(it.id.ifBlank { it.path })
+                }
+            }
+            else -> emptyList()
         }
     }
 
@@ -1069,6 +1081,17 @@ fun LocalScreen(
                     showThumbnails = appSettings.showThumbnails,
                     showFieldSize = appSettings.showFieldSize,
                     showFieldDuration = appSettings.showFieldDuration,
+                    showFieldCount = appSettings.showFieldCount,
+                    showFieldDate = appSettings.showFieldDate,
+                    showFieldLocation = appSettings.showFieldLocation,
+                    showFullName = appSettings.showFullName,
+                    // #165: search results are Local's own tiles, so they
+                    // share the #144 multi-select state and toggles.
+                    selectedFolderIds = selectedFolderIds,
+                    selectedVideoIds = selectedVideoIds,
+                    isSelectionMode = isSelectionMode,
+                    onToggleFolderSelection = { toggleFolderSelection(it) },
+                    onToggleVideoSelection = { toggleVideoSelection(it) },
                     onFolderClick = { folder ->
                         showSearchPage = false
                         openFolder(folder)
