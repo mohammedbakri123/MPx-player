@@ -31,6 +31,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -40,11 +41,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.automirrored.filled.VolumeMute
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -66,6 +70,16 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.PictureInPictureAlt
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -102,8 +116,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -124,9 +136,13 @@ import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
+import com.mpx.player.playback.PlaybackState
+import com.mpx.player.playback.RepeatMode
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.player.formatTimeMs
+import com.mpx.player.ui.screens.settings.parsePlayerMenuLayout
+import com.mpx.player.ui.screens.settings.playerMenuRowLabelRes
 import com.mpx.player.util.PipUtils
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
@@ -235,7 +251,7 @@ private fun VerticalIndicatorBar(
 
 // "1×" / "1.5×" / "0.75×" — rounds to 2 decimals (pinch produces
 // long floats) and trims the trailing ".0" off whole values (#172).
-private fun formatZoomMultiplier(value: Float): String {
+private fun formatMultiplier(value: Float): String {
     val rounded = (value * 100).roundToInt() / 100f
     return rounded.toString().removeSuffix(".0") + "×"
 }
@@ -456,6 +472,61 @@ fun PlayerScreen(
     }
 
     val scope = rememberCoroutineScope()
+
+    // Shared player actions (issue #177): the Action Stripe and the
+    // Playback sheet trigger the same favourite / PiP / background-play
+    // actions, so they are defined once here and passed to both. The
+    // lambdas read state/currentSettings when invoked, never when created,
+    // so they always see the latest values.
+    val toggleFavourite = {
+        state.currentItem?.let { item ->
+            scope.launch {
+                playbackManager.persistenceRepository.toggleFavourite(
+                    FavouriteItem(
+                        mediaUri = item.uri,
+                        mediaId = item.id,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        isVideo = item.isVideo,
+                        durationMs = item.durationMs,
+                    ),
+                )
+            }
+        }
+    }
+    val enterPip = {
+        val entered = PipUtils.enterPip(context)
+        if (!entered) {
+            val msg = if (!PipUtils.isPipSupported(context)) {
+                context.getString(R.string.player_pip_unsupported)
+            } else {
+                context.getString(R.string.player_pip_unable)
+            }
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
+    val toggleBackgroundPlay = {
+        val nextBackgroundPlay = !currentSettings.backgroundPlay
+        val updated = currentSettings.copy(backgroundPlay = nextBackgroundPlay)
+        currentSettings = updated
+        realSettingsRepo.save(updated)
+        if (!nextBackgroundPlay) {
+            PlaybackService.stop(context)
+            playbackManager.setVideoBackgroundActive(false)
+            playbackManager.setBackgroundPlaying(false)
+        }
+        val note = if (nextBackgroundPlay) {
+            if (state.currentItem?.isVideo == true) {
+                context.getString(R.string.player_bg_enabled_video)
+            } else {
+                context.getString(R.string.player_bg_enabled_audio)
+            }
+        } else {
+            context.getString(R.string.player_bg_disabled)
+        }
+        Toast.makeText(context, note, Toast.LENGTH_SHORT).show()
+    }
+
     val customPlaylists by playbackManager.persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
@@ -805,7 +876,7 @@ fun PlayerScreen(
                                 isPinching = true
                                 hideZoomJob?.cancel()
                                 showZoomIndicator = true
-                                zoomDisplayText = formatZoomMultiplier(pinchStartZoom)
+                                zoomDisplayText = formatMultiplier(pinchStartZoom)
                             } else {
                                 val distance = (pressed[0].position - pressed[1].position).getDistance()
                                 if (pinchStartDistance > 0f && distance > 0f) {
@@ -813,7 +884,7 @@ fun PlayerScreen(
                                     if (newZoom != pinchCurrentZoom) {
                                         pinchCurrentZoom = newZoom
                                         playbackManager.setVideoZoom(newZoom)
-                                        zoomDisplayText = formatZoomMultiplier(newZoom)
+                                        zoomDisplayText = formatMultiplier(newZoom)
                                     }
                                 }
                             }
@@ -1466,43 +1537,13 @@ fun PlayerScreen(
                             )
                         }
 
-                        // Aspect Ratio Pill (issue #167): the aspect control
-                        // lives on the player page itself — tapping cycles
-                        // FIT -> FILL -> ZOOM -> 16:9 -> 4:3 -> 100% -> FIT
-                        // and applies it live, so the user never has to open
-                        // the Playback sheet just to change it. Same pill
-                        // language as the decoder pill beside it; the full
-                        // radio list stays in the sheet's Aspect page.
-                        Surface(
-                            modifier = Modifier
-                                .clip(MpxShapes.small)
-                                .semantics { contentDescription = context.getString(R.string.playback_sheet_aspect) }
-                                .clickable {
-                                    val modes = AspectRatioMode.values()
-                                    val next = modes[(modes.indexOf(state.aspectRatio) + 1) % modes.size]
-                                    playbackManager.setAspectRatio(next)
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.player_menu_aspect, context.getString(next.labelRes)),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                },
-                            color = Color.Transparent,
-                            shape = MpxShapes.small,
-                        ) {
-                            Text(
-                                text = stringResource(state.aspectRatio.labelRes),
-                                color = MpxTheme.colors.textPrimary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            )
-                        }
-
-                        // (Favourite, audio tracks, subtitles, PiP and rotation
-                        // all live in the Playback sheet now, MX-overflow
-                        // style, so the top bar is back + title + decoder
-                        // pill + aspect pill + menu. See PlayerPlaybackSheet.)
+                        // (The aspect control moved to the Player Action Stripe
+                        // (#177) above the seek bar — tap cycles, same as this
+                        // pill did; the full radio list stays in the sheet's
+                        // Aspect page. Favourite, audio tracks, subtitles, PiP
+                        // and rotation all live in the Playback sheet now,
+                        // MX-overflow style, so the top bar is back + title +
+                        // decoder pill + menu. See PlayerPlaybackSheet.)
                         IconButton(onClick = { playbackSheetPage = PlaybackSheetPage.Main }) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
@@ -1528,6 +1569,24 @@ fun PlayerScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
+                        // Player Action Stripe (issue #177): the user's
+                        // chosen actions from the Player Layout editor, in
+                        // their order, as a horizontally scrollable strip
+                        // above the seek bar. Hides with the chrome.
+                        PlayerActionStripe(
+                            state = state,
+                            currentSettings = currentSettings,
+                            isFavourite = isFavourite,
+                            onOpenSheet = { playbackSheetPage = it },
+                            onToggleFavourite = toggleFavourite,
+                            onEnterPip = enterPip,
+                            onToggleBackgroundPlay = toggleBackgroundPlay,
+                            onAddToPlaylist = { showAddToPlaylistDialog = true },
+                            playbackManager = playbackManager,
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+
                         // Time & Slider Row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1573,8 +1632,9 @@ fun PlayerScreen(
 
                         // Controls Row: Lock, Prev, 10s Replay, Play/Pause Hero,
                         // 10s Forward, Next — MX's subnavibar transport set.
-                        // Aspect and speed live in the Playback sheet now;
-                        // shuffle/repeat moved there too (rows below).
+                        // Speed lives in the Playback sheet now (aspect is in
+                        // the action stripe above the seek bar); shuffle and
+                        // repeat moved to the stripe too.
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1784,54 +1844,9 @@ fun PlayerScreen(
             playbackManager = playbackManager,
             subtitleLauncher = subtitleLauncher,
             isFavourite = isFavourite,
-            onToggleFavourite = {
-                state.currentItem?.let { item ->
-                    scope.launch {
-                        playbackManager.persistenceRepository.toggleFavourite(
-                            FavouriteItem(
-                                mediaUri = item.uri,
-                                mediaId = item.id,
-                                title = item.title,
-                                subtitle = item.subtitle,
-                                isVideo = item.isVideo,
-                                durationMs = item.durationMs,
-                            ),
-                        )
-                    }
-                }
-            },
-            onEnterPip = {
-                val entered = PipUtils.enterPip(context)
-                if (!entered) {
-                    val msg = if (!PipUtils.isPipSupported(context)) {
-                        context.getString(R.string.player_pip_unsupported)
-                    } else {
-                        context.getString(R.string.player_pip_unable)
-                    }
-                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                }
-            },
-            onToggleBackgroundPlay = {
-                val nextBackgroundPlay = !currentSettings.backgroundPlay
-                val updated = currentSettings.copy(backgroundPlay = nextBackgroundPlay)
-                currentSettings = updated
-                realSettingsRepo.save(updated)
-                if (!nextBackgroundPlay) {
-                    PlaybackService.stop(context)
-                    playbackManager.setVideoBackgroundActive(false)
-                    playbackManager.setBackgroundPlaying(false)
-                }
-                val note = if (nextBackgroundPlay) {
-                    if (state.currentItem?.isVideo == true) {
-                        context.getString(R.string.player_bg_enabled_video)
-                    } else {
-                        context.getString(R.string.player_bg_enabled_audio)
-                    }
-                } else {
-                    context.getString(R.string.player_bg_disabled)
-                }
-                Toast.makeText(context, note, Toast.LENGTH_SHORT).show()
-            },
+            onToggleFavourite = toggleFavourite,
+            onEnterPip = enterPip,
+            onToggleBackgroundPlay = toggleBackgroundPlay,
             onReplayTutorial = {
                 tutorialStep = 0
                 showTutorial = true
@@ -1906,6 +1921,210 @@ fun PlayerScreen(
             step = tutorialStep,
             onStepChange = { tutorialStep = it },
             onDismiss = dismissTutorial,
+        )
+    }
+}
+
+/**
+ * Player Action Stripe (issue #177): the user's chosen actions from the
+ * Player Layout editor (#158), in their order, as a horizontally
+ * scrollable strip of compact buttons above the seek bar. Each button
+ * shows its icon and its short current value where it has one (speed,
+ * decoder, aspect, ...); actions without a value show their short label.
+ * Tapping opens the matching sheet page or toggles directly, exactly as
+ * the Playback sheet's Main page does — except the aspect button, which
+ * cycles FIT -> FILL -> ZOOM -> 16:9 -> 4:3 -> 100% like the #167 pill
+ * it replaces, instead of opening the sheet. Toggles tint with the
+ * identity-blue accent while on. The sheet's own order is untouched
+ * (issue #160 stays separate).
+ *
+ * No new strings: every caption reuses an existing one. The rotation
+ * "Auto" caption reuses pip_size_auto ("Auto") — same displayed word.
+ */
+@Composable
+private fun PlayerActionStripe(
+    state: PlaybackState,
+    currentSettings: AppSettings,
+    isFavourite: Boolean,
+    onOpenSheet: (PlaybackSheetPage) -> Unit,
+    onToggleFavourite: () -> Unit,
+    onEnterPip: () -> Unit,
+    onToggleBackgroundPlay: () -> Unit,
+    onAddToPlaylist: () -> Unit,
+    playbackManager: PlaybackManager,
+) {
+    val context = LocalContext.current
+    val layoutIds = remember(currentSettings.playerMenuLayout) {
+        parsePlayerMenuLayout(currentSettings.playerMenuLayout)
+    }
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp),
+    ) {
+        items(layoutIds, key = { it }) { id ->
+            when (id) {
+                "decoder" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.Memory,
+                    caption = state.decoderMode.label,
+                    contentDescription = stringResource(R.string.playback_sheet_decoder),
+                    active = false,
+                    onClick = { onOpenSheet(PlaybackSheetPage.Decoder) },
+                )
+                "audio" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.Audiotrack,
+                    caption = state.audioTracks.firstOrNull { it.isSelected }?.label
+                        ?: stringResource(R.string.player_state_off),
+                    contentDescription = stringResource(R.string.playback_sheet_audio_track),
+                    active = false,
+                    onClick = { onOpenSheet(PlaybackSheetPage.AudioTracks) },
+                )
+                "subtitles" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.Subtitles,
+                    caption = state.subtitleTracks.firstOrNull { it.isSelected }?.label
+                        ?: stringResource(R.string.player_state_off),
+                    contentDescription = stringResource(R.string.playback_sheet_subtitle_track),
+                    active = false,
+                    onClick = { onOpenSheet(PlaybackSheetPage.SubtitleTracks) },
+                )
+                "favourite" -> PlayerActionStripeButton(
+                    icon = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    caption = stringResource(playerMenuRowLabelRes("favourite")),
+                    contentDescription = stringResource(
+                        if (isFavourite) R.string.player_cd_favourite_remove else R.string.player_cd_favourite_add,
+                    ),
+                    active = isFavourite,
+                    onClick = onToggleFavourite,
+                )
+                "shuffle" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.Shuffle,
+                    caption = stringResource(
+                        if (state.shuffleEnabled) R.string.player_state_on else R.string.player_state_off,
+                    ),
+                    contentDescription = stringResource(R.string.player_cd_shuffle),
+                    active = state.shuffleEnabled,
+                    onClick = { playbackManager.setShuffleEnabled(!state.shuffleEnabled) },
+                )
+                "repeat" -> PlayerActionStripeButton(
+                    icon = if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
+                    caption = stringResource(
+                        when (state.repeatMode) {
+                            RepeatMode.ONE -> R.string.player_cd_repeat_one
+                            RepeatMode.ALL -> R.string.player_cd_repeat_all
+                            else -> R.string.player_cd_repeat_off
+                        },
+                    ),
+                    contentDescription = stringResource(R.string.playback_sheet_repeat),
+                    active = state.repeatMode != RepeatMode.OFF,
+                    onClick = { playbackManager.cycleRepeatMode() },
+                )
+                "pip" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.PictureInPictureAlt,
+                    caption = stringResource(playerMenuRowLabelRes("pip")),
+                    contentDescription = stringResource(R.string.player_menu_popup_play),
+                    active = false,
+                    onClick = onEnterPip,
+                )
+                "background" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.PlayArrow,
+                    caption = stringResource(
+                        if (currentSettings.backgroundPlay) R.string.player_state_on else R.string.player_state_off,
+                    ),
+                    contentDescription = stringResource(R.string.playback_sheet_background_play),
+                    active = currentSettings.backgroundPlay,
+                    onClick = onToggleBackgroundPlay,
+                )
+                "speed" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.Speed,
+                    caption = formatMultiplier(state.speed),
+                    contentDescription = stringResource(R.string.playback_sheet_speed_title),
+                    active = false,
+                    onClick = { onOpenSheet(PlaybackSheetPage.Speed) },
+                )
+                "aspect" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.AspectRatio,
+                    caption = stringResource(state.aspectRatio.labelRes),
+                    contentDescription = stringResource(R.string.playback_sheet_aspect),
+                    active = false,
+                    onClick = {
+                        // Same cycle the #167 top-bar pill did.
+                        val modes = AspectRatioMode.values()
+                        val next = modes[(modes.indexOf(state.aspectRatio) + 1) % modes.size]
+                        playbackManager.setAspectRatio(next)
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.player_menu_aspect, context.getString(next.labelRes)),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    },
+                )
+                "rotation" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.ScreenRotation,
+                    caption = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto") {
+                        stringResource(R.string.pip_size_auto)
+                    } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
+                        stringResource(R.string.player_orientation_portrait)
+                    } else {
+                        stringResource(R.string.player_orientation_landscape)
+                    },
+                    contentDescription = stringResource(R.string.playback_sheet_rotation),
+                    active = false,
+                    onClick = { onOpenSheet(PlaybackSheetPage.Rotation) },
+                )
+                "sleep" -> PlayerActionStripeButton(
+                    icon = Icons.Filled.Timer,
+                    caption = state.sleepTimerRemainingSeconds?.let { formatTimeMs(it * 1000L) }
+                        ?: stringResource(R.string.player_sleep_timer_off),
+                    contentDescription = stringResource(R.string.player_sleep_timer),
+                    active = state.sleepTimerRemainingSeconds != null,
+                    onClick = { onOpenSheet(PlaybackSheetPage.SleepTimer) },
+                )
+                "playlist" -> PlayerActionStripeButton(
+                    icon = Icons.AutoMirrored.Filled.PlaylistAdd,
+                    caption = stringResource(playerMenuRowLabelRes("playlist")),
+                    contentDescription = stringResource(R.string.player_menu_add_playlist),
+                    active = false,
+                    onClick = onAddToPlaylist,
+                )
+                else -> {
+                    // parsePlayerMenuLayout already drops unknown ids.
+                }
+            }
+        }
+    }
+}
+
+/** One compact stripe button: a 20dp icon over a 10sp caption. */
+@Composable
+private fun PlayerActionStripeButton(
+    icon: ImageVector,
+    caption: String,
+    contentDescription: String,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .clip(MpxShapes.small)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = if (active) MpxTheme.colors.primary else MpxTheme.colors.textPrimary,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = caption,
+            color = if (active) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 76.dp),
         )
     }
 }
