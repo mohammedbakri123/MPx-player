@@ -2,11 +2,11 @@ package com.mpx.player.ui.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -37,8 +37,11 @@ val navigationTabs = listOf(
     BottomNavItem(
         route = Screen.Local.route,
         labelRes = R.string.nav_local,
-        unselectedIcon = Icons.Outlined.Folder,
-        selectedIcon = Icons.Filled.Folder,
+        // Issue #174: the Home tab showed a folder icon — it must show
+        // a home icon. (Folder icons elsewhere — folder tiles and rows —
+        // are correct and untouched.)
+        unselectedIcon = Icons.Outlined.Home,
+        selectedIcon = Icons.Filled.Home,
     ),
     BottomNavItem(
         route = Screen.Music.route,
