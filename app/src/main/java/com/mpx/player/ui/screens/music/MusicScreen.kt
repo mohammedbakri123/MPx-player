@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.components.FastScrollbar
 import com.mpx.player.ui.components.GridFastScrollbar
+import java.io.File
 import java.util.Locale
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -710,6 +711,20 @@ fun MusicScreen(
         }
     }
 
+    // #200: a folder's tracks are its library tracks, grouped exactly the
+    // way MediaStoreRepository.getAudioFolders() groups them (parent dir of
+    // the file path, blank paths fall back to /storage/emulated/0/Music) —
+    // no new repository call needed.
+    fun folderTracks(folder: AudioFolder): List<AudioTrack> =
+        tracks.filter { track ->
+            val folderPath = if (track.path.isNotBlank()) {
+                File(track.path).parent ?: "/storage/emulated/0/Music"
+            } else {
+                "/storage/emulated/0/Music"
+            }
+            folderPath == folder.path
+        }
+
     var isRefreshing by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading) {
         if (!isLoading) isRefreshing = false
@@ -1132,9 +1147,15 @@ fun MusicScreen(
                                     selectedAlbumIds = selectedAlbumIds,
                                     isSelectionMode = isAlbumSelectionMode,
                                     onToggleAlbumSelection = { toggleAlbumSelection(it) },
-                                    onAlbumClick = {
-                                        playbackManager?.playAudioQueue(tracks, startIndex = 0)
-                                        onOpenPlayer()
+                                    onAlbumClick = { album ->
+                                        // #200: play only this album's
+                                        // tracks, from its first track —
+                                        // never the whole library.
+                                        val albumTrackList = albumTracks(album)
+                                        if (albumTrackList.isNotEmpty()) {
+                                            playbackManager?.playAudioQueue(albumTrackList, startIndex = 0)
+                                            onOpenPlayer()
+                                        }
                                     },
                                 )
                             }
@@ -1169,9 +1190,15 @@ fun MusicScreen(
                                     selectedArtistIds = selectedArtistIds,
                                     isSelectionMode = isArtistSelectionMode,
                                     onToggleArtistSelection = { toggleArtistSelection(it) },
-                                    onArtistClick = {
-                                        playbackManager?.playAudioQueue(tracks, startIndex = 0)
-                                        onOpenPlayer()
+                                    onArtistClick = { artist ->
+                                        // #200: play only this artist's
+                                        // tracks, from its first track —
+                                        // never the whole library.
+                                        val artistTrackList = artistTracks(artist)
+                                        if (artistTrackList.isNotEmpty()) {
+                                            playbackManager?.playAudioQueue(artistTrackList, startIndex = 0)
+                                            onOpenPlayer()
+                                        }
                                     },
                                 )
                             }
@@ -1188,9 +1215,15 @@ fun MusicScreen(
                             FoldersTabContent(
                                 folders = folders,
                                 viewMode = viewMode,
-                                onFolderClick = {
-                                    playbackManager?.playAudioQueue(tracks, startIndex = 0)
-                                    onOpenPlayer()
+                                onFolderClick = { folder ->
+                                    // #200: play only this folder's tracks,
+                                    // from its first track — never the
+                                    // whole library.
+                                    val folderTrackList = folderTracks(folder)
+                                    if (folderTrackList.isNotEmpty()) {
+                                        playbackManager?.playAudioQueue(folderTrackList, startIndex = 0)
+                                        onOpenPlayer()
+                                    }
                                 },
                             )
                         }
@@ -1910,7 +1943,7 @@ private fun AlbumsTabContent(
     selectedAlbumIds: Set<String> = emptySet(),
     isSelectionMode: Boolean = false,
     onToggleAlbumSelection: (AudioAlbum) -> Unit = {},
-    onAlbumClick: () -> Unit,
+    onAlbumClick: (AudioAlbum) -> Unit,
 ) {
     if (viewMode == ViewMode.LIST) {
         val listState = rememberLazyListState()
@@ -1933,7 +1966,7 @@ private fun AlbumsTabContent(
                         onLongClick = { onToggleAlbumSelection(album) },
                         onClick = {
                             if (isSelectionMode) onToggleAlbumSelection(album)
-                            else onAlbumClick()
+                            else onAlbumClick(album)
                         },
                     )
                     HorizontalDivider(
@@ -1976,7 +2009,7 @@ private fun AlbumsTabContent(
                         onLongClick = { onToggleAlbumSelection(album) },
                         onClick = {
                             if (isSelectionMode) onToggleAlbumSelection(album)
-                            else onAlbumClick()
+                            else onAlbumClick(album)
                         },
                     )
                 }
@@ -2000,7 +2033,7 @@ private fun ArtistsTabContent(
     selectedArtistIds: Set<String> = emptySet(),
     isSelectionMode: Boolean = false,
     onToggleArtistSelection: (AudioArtist) -> Unit = {},
-    onArtistClick: () -> Unit,
+    onArtistClick: (AudioArtist) -> Unit,
 ) {
     if (viewMode == ViewMode.LIST) {
         val listState = rememberLazyListState()
@@ -2022,7 +2055,7 @@ private fun ArtistsTabContent(
                         onLongClick = { onToggleArtistSelection(artist) },
                         onClick = {
                             if (isSelectionMode) onToggleArtistSelection(artist)
-                            else onArtistClick()
+                            else onArtistClick(artist)
                         },
                     )
                     HorizontalDivider(
@@ -2064,7 +2097,7 @@ private fun ArtistsTabContent(
                         onLongClick = { onToggleArtistSelection(artist) },
                         onClick = {
                             if (isSelectionMode) onToggleArtistSelection(artist)
-                            else onArtistClick()
+                            else onArtistClick(artist)
                         },
                     )
                 }
@@ -2085,7 +2118,7 @@ private fun ArtistsTabContent(
 private fun FoldersTabContent(
     folders: List<AudioFolder>,
     viewMode: ViewMode = ViewMode.LIST,
-    onFolderClick: () -> Unit,
+    onFolderClick: (AudioFolder) -> Unit,
 ) {
     if (viewMode == ViewMode.LIST) {
         val listState = rememberLazyListState()
@@ -2103,7 +2136,7 @@ private fun FoldersTabContent(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onFolderClick() }
+                            .clickable { onFolderClick(folder) }
                             .padding(horizontal = 16.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -2188,7 +2221,7 @@ private fun FoldersTabContent(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onFolderClick() },
+                            .clickable { onFolderClick(folder) },
                         shape = MpxShapes.large,
                         colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
                     ) {
