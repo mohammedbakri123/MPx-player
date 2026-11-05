@@ -61,6 +61,15 @@ class MpvPlayerEngine(
     private var currentMediaIndex: Int = 0
 
     private var currentSurface: Surface? = null
+    /**
+     * Whether libmpv's "vo" is currently "null" (issue #161). The ONLY place
+     * vo becomes null is detachSurface(); init sets vo=gpu pre-init and the
+     * only other vo set is attachSurface()'s vo=gpu. Tracked here instead of
+     * read back via mpv.getPropertyString("vo") so the attach/load paths
+     * never pay a property round-trip or depend on a null return.
+     * All readers/writers run under surfaceLock (see attach/detach/load).
+     */
+    private var voIsNull: Boolean = false
     private var isReleased: Boolean = false
     private var mpvInitialized: Boolean = false
 
@@ -815,7 +824,20 @@ class MpvPlayerEngine(
             try {
                 mpv.attachSurface(surface)
                 setRuntimeProperty("force-window", "yes")
-                if (willLoad) {
+                if (voIsNull) {
+                    // Issue #161: a detach mid-session left vo=null, and
+                    // mpv.attachSurface() binds to the CURRENT vo — with
+                    // vo=null there is no VO, so the next loadfile decodes
+                    // but renders to the null VO (sound, no video, no error:
+                    // the phone log shows "VO: [null]" on every load after
+                    // the first detach). Restore vo=gpu even when a load is
+                    // about to run. The Nov 4 race fix only forbids a
+                    // GRATUITOUS vo set when vo is already gpu; restoring a
+                    // nulled vo cannot tear down a live VO, because there
+                    // is none.
+                    mpv.setPropertyString("vo", "gpu")
+                    voIsNull = false
+                } else if (willLoad) {
                     // A load is about to run: loadfile itself initialises
                     // VO against the attached surface; do not touch "vo".
                 } else {
@@ -866,6 +888,18 @@ class MpvPlayerEngine(
      * Set vo=null and detach the surface before returning so that libmpv terminates its
      * native rendering window handle before surfaceDestroyed returns.
      * Background audio continues playing with vo=null.
+     *
+     * What destroys the surface (issue #161): the ONLY caller of this barrier
+     * besides release() is PlayerScreen's SurfaceHolder.Callback.surfaceDestroyed
+     * (via PlaybackManager.detachSurface()); the AndroidView has no key() and no
+     * conditional, so the SurfaceView stays in composition while the player is
+     * open. surfaceDestroyed is a framework callback — the surface is torn down
+     * when the view leaves the window / the window is hidden — and the phone log
+     * shows it firing between loads mid-session (vo=null, then an immediate
+     * re-attach + reload with VO still null). The exact framework trigger on
+     * this device at EOF/seek/replay is not visible in code; what matters is
+     * that a detach can happen at any point mid-session, so attachSurface()
+     * must restore vo=gpu whenever vo is null instead of assuming vo survived.
      */
     override fun detachSurface() {
         synchronized(surfaceLock) {
@@ -874,6 +908,7 @@ class MpvPlayerEngine(
                 mpv.setPropertyString("vo", "null")
                 mpv.setPropertyString("force-window", "no")
                 mpv.detachSurface()
+                voIsNull = true
             } catch (e: Exception) {
                 Log.w(TAG, "Error in detachSurface barrier", e)
             }
@@ -940,6 +975,24 @@ class MpvPlayerEngine(
             PendingSubtitles(mediaUri = targetItem.uri, mediaId = targetItem.id, subtitles = subs)
         } else {
             null
+        }
+
+        // Issue #161 belt and braces: attachSurface() restores vo=gpu when
+        // vo is null, but if a load ever runs while vo is still null (a
+        // detach/attach path that skipped the restore), loadfile would decode
+        // into the null VO — sound, no video, no error. A surface is attached
+        // here (video loads without one were deferred above), so restoring
+        // vo=gpu before loadfile is safe. Audio-only loads take this branch
+        // too; the set is a no-op for them when vo is already gpu.
+        synchronized(surfaceLock) {
+            if (currentSurface != null && voIsNull) {
+                try {
+                    mpv.setPropertyString("vo", "gpu")
+                    voIsNull = false
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed restoring vo=gpu before loadfile", e)
+                }
+            }
         }
 
         try {
