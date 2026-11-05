@@ -453,11 +453,6 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Fermer la recherche</string>
     <string name="cd_toggle_view">Basculer l’affichage</string>
-    <string name="layout_sheet_title">Affichage</string>
-    <string name="layout_section_tile_size">Taille des tuiles</string>
-    <string name="tile_size_small">Petit</string>
-    <string name="tile_size_medium">Moyen</string>
-    <string name="tile_size_large">Grand</string>
     <string name="cd_layout_options">Options d’affichage</string>
     <string name="cd_search">Rechercher</string>
     <string name="cd_more_options">Plus d’options</string>
@@ -945,4 +940,32 @@
     <string name="dev_decoder_sw">Logiciel (Codecs CPU)</string>
     <string name="playlist_videos_count">%1$d vidéos</string>
     <string name="dev_db_records_summary">%1$d favoris • %2$d historique • %3$d listes de lecture • %4$d reprise</string>
+    <string name="sort_popup_title">Options de tri et d’affichage</string>
+    <string name="sort_popup_sort_by">Trier par</string>
+    <string name="sort_popup_sort_title">Titre</string>
+    <string name="sort_popup_sort_date">Date</string>
+    <string name="sort_popup_sort_size">Taille</string>
+    <string name="sort_order_az">A-Z</string>
+    <string name="sort_order_za">Z-A</string>
+    <string name="sort_order_oldest">Plus anciens</string>
+    <string name="sort_order_newest">Plus récents</string>
+    <string name="sort_order_smallest">Plus petits</string>
+    <string name="sort_order_largest">Plus grands</string>
+    <string name="sort_popup_view_mode">Mode d’affichage</string>
+    <string name="sort_popup_view_folder">Dossier</string>
+    <string name="view_mode_tree">Arborescence</string>
+    <string name="sort_popup_tree_soon">Bientôt disponible</string>
+    <string name="sort_popup_layout">Disposition</string>
+    <string name="sort_popup_layout_list">Liste</string>
+    <string name="sort_popup_layout_grid">Grille</string>
+    <string name="sort_popup_grid_columns">Colonnes de la grille</string>
+    <string name="sort_popup_folder_grid">Grille des dossiers</string>
+    <string name="sort_popup_video_grid">Grille des vidéos</string>
+    <string name="sort_popup_columns_count">%1$d colonnes</string>
+    <string name="sort_popup_fields">Champs</string>
+    <string name="sort_popup_field_full_name">Nom complet</string>
+    <string name="sort_popup_field_path">Chemin</string>
+    <string name="sort_popup_field_total_videos">Vidéos au total</string>
+    <string name="sort_popup_field_total_duration">Durée totale</string>
+    <string name="sort_popup_field_folder_size">Taille du dossier</string>
 </resources>

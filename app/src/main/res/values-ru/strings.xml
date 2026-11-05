@@ -453,11 +453,6 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Закрыть поиск</string>
     <string name="cd_toggle_view">Переключить вид</string>
-    <string name="layout_sheet_title">Вид</string>
-    <string name="layout_section_tile_size">Размер плиток</string>
-    <string name="tile_size_small">Маленький</string>
-    <string name="tile_size_medium">Средний</string>
-    <string name="tile_size_large">Большой</string>
     <string name="cd_layout_options">Параметры вида</string>
     <string name="cd_search">Поиск</string>
     <string name="cd_more_options">Дополнительные параметры</string>
@@ -945,4 +940,32 @@
     <string name="dev_decoder_sw">Программный (Кодек CPU)</string>
     <string name="playlist_videos_count">%1$d видео</string>
     <string name="dev_db_records_summary">%1$d избранных • %2$d история • %3$d плейлистов • %4$d возобновление</string>
+    <string name="sort_popup_title">Параметры сортировки и вида</string>
+    <string name="sort_popup_sort_by">Сортировать по</string>
+    <string name="sort_popup_sort_title">Название</string>
+    <string name="sort_popup_sort_date">Дата</string>
+    <string name="sort_popup_sort_size">Размер</string>
+    <string name="sort_order_az">А–Я</string>
+    <string name="sort_order_za">Я–А</string>
+    <string name="sort_order_oldest">Сначала старые</string>
+    <string name="sort_order_newest">Сначала новые</string>
+    <string name="sort_order_smallest">Сначала маленькие</string>
+    <string name="sort_order_largest">Сначала большие</string>
+    <string name="sort_popup_view_mode">Режим просмотра</string>
+    <string name="sort_popup_view_folder">Папка</string>
+    <string name="view_mode_tree">Дерево</string>
+    <string name="sort_popup_tree_soon">Скоро</string>
+    <string name="sort_popup_layout">Раскладка</string>
+    <string name="sort_popup_layout_list">Список</string>
+    <string name="sort_popup_layout_grid">Сетка</string>
+    <string name="sort_popup_grid_columns">Столбцы сетки</string>
+    <string name="sort_popup_folder_grid">Сетка папок</string>
+    <string name="sort_popup_video_grid">Сетка видео</string>
+    <string name="sort_popup_columns_count">%1$d столбца</string>
+    <string name="sort_popup_fields">Поля</string>
+    <string name="sort_popup_field_full_name">Полное имя</string>
+    <string name="sort_popup_field_path">Путь</string>
+    <string name="sort_popup_field_total_videos">Всего видео</string>
+    <string name="sort_popup_field_total_duration">Общая длительность</string>
+    <string name="sort_popup_field_folder_size">Размер папки</string>
 </resources>

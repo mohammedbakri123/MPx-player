@@ -53,6 +53,8 @@ fun FolderItemRow(
     folder: MediaFolder,
     showSize: Boolean = true,
     showDate: Boolean = false,
+    showCount: Boolean = true,
+    showFullName: Boolean = false,
     showThumbnails: Boolean = true,
     onClick: () -> Unit,
     onMenuClick: () -> Unit,
@@ -104,7 +106,7 @@ fun FolderItemRow(
                         fontSize = 15.sp,
                     ),
                     color = MpxTheme.colors.textPrimary,
-                    maxLines = 1,
+                    maxLines = if (showFullName) Int.MAX_VALUE else 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
@@ -129,19 +131,34 @@ fun FolderItemRow(
 
             // Subtitle is a single line: the real folder size in a small
             // rounded box, matching MX's one-subtitle-slot row shape
-            // (list_grid_media: one title, one subtitle). The count is not
-            // shown on the tile (#143); the exact count stays one tap away
-            // in the folder menu dialog.
+            // (list_grid_media: one title, one subtitle). #143 removed the
+            // count BADGE from the thumbnail; the count TEXT here is gated
+            // by the Sort & View popup's "Total Videos" field (#156).
             // No subfolder counts: MediaFolder has no such field and a
             // recursive scan is out of scope.
             val folderDateStr = formatFolderDate(folder.lastModified)
-            val hasSubtitle = (showSize && folder.totalSizeFormatted.isNotBlank()) ||
+            val hasSubtitle = (showCount && folder.videoCount > 0) ||
+                (showSize && folder.totalSizeFormatted.isNotBlank()) ||
                 (showDate && folderDateStr.isNotBlank())
             if (hasSubtitle) {
                 Spacer(Modifier.height(3.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (showCount && folder.videoCount > 0) {
+                        Text(
+                            text = stringResource(
+                                R.string.folder_item_videos_count,
+                                folder.videoCount,
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MpxTheme.colors.textSecondary,
+                            maxLines = 1,
+                        )
+                        if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                            Spacer(Modifier.width(8.dp))
+                        }
+                    }
                     if (showSize && folder.totalSizeFormatted.isNotBlank()) {
                         Box(
                             modifier = Modifier
@@ -192,6 +209,8 @@ fun FolderItemGridCard(
     folder: MediaFolder,
     showSize: Boolean = true,
     showDate: Boolean = false,
+    showCount: Boolean = true,
+    showFullName: Boolean = false,
     showThumbnails: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -247,21 +266,39 @@ fun FolderItemGridCard(
                 text = folder.name,
                 style = MaterialTheme.typography.titleSmall,
                 color = MpxTheme.colors.textPrimary,
-                maxLines = 1,
+                maxLines = if (showFullName) Int.MAX_VALUE else 1,
                 overflow = TextOverflow.Ellipsis,
             )
 
             // Subtitle is a single line: the real size in a small rounded
-            // box, as in the list row. The count is not shown on the tile
-            // (#143). No subfolder counts (no such field exists).
+            // box, as in the list row. #143 removed the count BADGE from
+            // the thumbnail; the count TEXT here is gated by the Sort &
+            // View popup's "Total Videos" field (#156). No subfolder
+            // counts (no such field exists).
             val gridDateStr = formatFolderDate(folder.lastModified)
-            val gridHasSubtitle = (showSize && folder.totalSizeFormatted.isNotBlank()) ||
+            val gridHasSubtitle = (showCount && folder.videoCount > 0) ||
+                (showSize && folder.totalSizeFormatted.isNotBlank()) ||
                 (showDate && gridDateStr.isNotBlank())
             if (gridHasSubtitle) {
                 Spacer(Modifier.height(2.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (showCount && folder.videoCount > 0) {
+                        Text(
+                            text = stringResource(
+                                R.string.folder_item_videos_count,
+                                folder.videoCount,
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MpxTheme.colors.textSecondary,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                        )
+                        if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                            Spacer(Modifier.width(8.dp))
+                        }
+                    }
                     if (showSize && folder.totalSizeFormatted.isNotBlank()) {
                         Box(
                             modifier = Modifier

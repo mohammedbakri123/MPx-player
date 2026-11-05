@@ -453,11 +453,6 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">关闭搜索</string>
     <string name="cd_toggle_view">切换视图</string>
-    <string name="layout_sheet_title">视图</string>
-    <string name="layout_section_tile_size">图块大小</string>
-    <string name="tile_size_small">小</string>
-    <string name="tile_size_medium">中</string>
-    <string name="tile_size_large">大</string>
     <string name="cd_layout_options">布局选项</string>
     <string name="cd_search">搜索</string>
     <string name="cd_more_options">更多选项</string>
@@ -945,4 +940,32 @@
     <string name="dev_decoder_sw">软件 (CPU 编解码器)</string>
     <string name="playlist_videos_count">%1$d 个视频</string>
     <string name="dev_db_records_summary">%1$d 个收藏 • %2$d 条历史 • %3$d 个播放列表 • %4$d 个续播</string>
+    <string name="sort_popup_title">排序和查看选项</string>
+    <string name="sort_popup_sort_by">排序方式</string>
+    <string name="sort_popup_sort_title">标题</string>
+    <string name="sort_popup_sort_date">日期</string>
+    <string name="sort_popup_sort_size">大小</string>
+    <string name="sort_order_az">A-Z</string>
+    <string name="sort_order_za">Z-A</string>
+    <string name="sort_order_oldest">最早</string>
+    <string name="sort_order_newest">最新</string>
+    <string name="sort_order_smallest">最小</string>
+    <string name="sort_order_largest">最大</string>
+    <string name="sort_popup_view_mode">视图模式</string>
+    <string name="sort_popup_view_folder">文件夹</string>
+    <string name="view_mode_tree">树形</string>
+    <string name="sort_popup_tree_soon">即将推出</string>
+    <string name="sort_popup_layout">布局</string>
+    <string name="sort_popup_layout_list">列表</string>
+    <string name="sort_popup_layout_grid">网格</string>
+    <string name="sort_popup_grid_columns">网格列数</string>
+    <string name="sort_popup_folder_grid">文件夹网格</string>
+    <string name="sort_popup_video_grid">视频网格</string>
+    <string name="sort_popup_columns_count">%1$d 列</string>
+    <string name="sort_popup_fields">字段</string>
+    <string name="sort_popup_field_full_name">全名</string>
+    <string name="sort_popup_field_path">路径</string>
+    <string name="sort_popup_field_total_videos">视频总数</string>
+    <string name="sort_popup_field_total_duration">总时长</string>
+    <string name="sort_popup_field_folder_size">文件夹大小</string>
 </resources>

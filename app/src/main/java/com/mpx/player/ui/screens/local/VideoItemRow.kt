@@ -66,6 +66,7 @@ fun VideoItemRow(
     showDuration: Boolean = true,
     showLocation: Boolean = true,
     showThumbnails: Boolean = true,
+    showFullName: Boolean = false,
     onClick: () -> Unit,
     onPlayFolder: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
@@ -130,7 +131,7 @@ fun VideoItemRow(
                         fontSize = 15.sp,
                     ),
                     color = MpxTheme.colors.textPrimary,
-                    maxLines = 1,
+                    maxLines = if (showFullName) Int.MAX_VALUE else 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
@@ -255,6 +256,7 @@ fun VideoItemGridCard(
     showDuration: Boolean = true,
     showLocation: Boolean = true,
     showThumbnails: Boolean = true,
+    showFullName: Boolean = false,
     onClick: () -> Unit,
     onPlayFolder: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
@@ -330,7 +332,7 @@ fun VideoItemGridCard(
                 text = video.title,
                 style = MaterialTheme.typography.titleSmall,
                 color = MpxTheme.colors.textPrimary,
-                maxLines = 1,
+                maxLines = if (showFullName) Int.MAX_VALUE else 1,
                 overflow = TextOverflow.Ellipsis,
             )
 

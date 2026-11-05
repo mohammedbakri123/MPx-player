@@ -453,11 +453,6 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">खोज बंद करें</string>
     <string name="cd_toggle_view">दृश्य टॉगल करें</string>
-    <string name="layout_sheet_title">दृश्य</string>
-    <string name="layout_section_tile_size">टाइल आकार</string>
-    <string name="tile_size_small">छोटा</string>
-    <string name="tile_size_medium">मध्यम</string>
-    <string name="tile_size_large">बड़ा</string>
     <string name="cd_layout_options">लेआउट विकल्प</string>
     <string name="cd_search">खोजें</string>
     <string name="cd_more_options">अधिक विकल्प</string>
@@ -945,4 +940,32 @@
     <string name="dev_decoder_sw">सॉफ़्टवेयर (CPU कोडेक)</string>
     <string name="playlist_videos_count">%1$d वीडियो</string>
     <string name="dev_db_records_summary">%1$d पसंदीदा • %2$d इतिहास • %3$d प्लेलिस्ट • %4$d रिज़्यूम</string>
+    <string name="sort_popup_title">क्रमबद्ध करें और देखें विकल्प</string>
+    <string name="sort_popup_sort_by">इसके अनुसार क्रमबद्ध करें</string>
+    <string name="sort_popup_sort_title">शीर्षक</string>
+    <string name="sort_popup_sort_date">तारीख</string>
+    <string name="sort_popup_sort_size">आकार</string>
+    <string name="sort_order_az">अ-ज्ञ</string>
+    <string name="sort_order_za">ज्ञ-अ</string>
+    <string name="sort_order_oldest">सबसे पुराना</string>
+    <string name="sort_order_newest">सबसे नया</string>
+    <string name="sort_order_smallest">सबसे छोटा</string>
+    <string name="sort_order_largest">सबसे बड़ा</string>
+    <string name="sort_popup_view_mode">दृश्य मोड</string>
+    <string name="sort_popup_view_folder">फ़ोल्डर</string>
+    <string name="view_mode_tree">वृक्ष</string>
+    <string name="sort_popup_tree_soon">जल्द आ रहा है</string>
+    <string name="sort_popup_layout">लेआउट</string>
+    <string name="sort_popup_layout_list">सूची</string>
+    <string name="sort_popup_layout_grid">ग्रिड</string>
+    <string name="sort_popup_grid_columns">ग्रिड कॉलम</string>
+    <string name="sort_popup_folder_grid">फ़ोल्डर ग्रिड</string>
+    <string name="sort_popup_video_grid">वीडियो ग्रिड</string>
+    <string name="sort_popup_columns_count">%1$d कॉलम</string>
+    <string name="sort_popup_fields">फ़ील्ड</string>
+    <string name="sort_popup_field_full_name">पूरा नाम</string>
+    <string name="sort_popup_field_path">पथ</string>
+    <string name="sort_popup_field_total_videos">कुल वीडियो</string>
+    <string name="sort_popup_field_total_duration">कुल अवधि</string>
+    <string name="sort_popup_field_folder_size">फ़ोल्डर आकार</string>
 </resources>

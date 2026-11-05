@@ -49,7 +49,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -198,9 +197,10 @@ fun LocalScreen(
         appSettings = updated
     }
     var showSortDialog by remember { mutableStateOf(false) }
-    var showLayoutSheet by remember { mutableStateOf(false) }
-    var layoutSheetFolderScope by remember { mutableStateOf(false) }
-    val layoutSheetState = rememberModalBottomSheetState()
+    // #156: the header layout button opens the Sort & View popup
+    // (LocalSortPopup), which replaced #141's LocalLayoutSheet.
+    var showSortPopup by remember { mutableStateOf(false) }
+    var popupFolderScope by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -576,10 +576,10 @@ fun LocalScreen(
                             }
                         }
 
-                        // #141: layout button opens the View sheet (layout, tile size, sort).
+                        // #156: layout button opens the Sort & View popup.
                         IconButton(onClick = {
-                            layoutSheetFolderScope = true
-                            showLayoutSheet = true
+                            popupFolderScope = true
+                            showSortPopup = true
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Tune,
@@ -709,10 +709,10 @@ fun LocalScreen(
                                 )
                             }
                         }
-                        // #141: layout button opens the View sheet (layout, tile size, sort).
+                        // #156: layout button opens the Sort & View popup.
                         IconButton(onClick = {
-                            layoutSheetFolderScope = false
-                            showLayoutSheet = true
+                            popupFolderScope = false
+                            showSortPopup = true
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Tune,
@@ -878,6 +878,7 @@ fun LocalScreen(
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
                                         showLocation = appSettings.showFieldLocation,
+                                        showFullName = appSettings.showFullName,
                                         onClick = {
                                             playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
                                             onOpenPlayer()
@@ -907,7 +908,7 @@ fun LocalScreen(
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = videoGridState,
-                                columns = GridCells.Fixed(TileSize.fromName(appSettings.tileSize).columns),
+                                columns = GridCells.Fixed(appSettings.videoGridColumns.coerceIn(1, 4)),
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -925,6 +926,7 @@ fun LocalScreen(
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
                                         showLocation = appSettings.showFieldLocation,
+                                        showFullName = appSettings.showFullName,
                                         onClick = {
                                             playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
                                             onOpenPlayer()
@@ -1040,6 +1042,7 @@ fun LocalScreen(
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
                                         showLocation = appSettings.showFieldLocation,
+                                        showFullName = appSettings.showFullName,
                                         onClick = { playVideoWithFolder(video) },
                                         onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
                                         onAddToPlaylist = {
@@ -1092,7 +1095,7 @@ fun LocalScreen(
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = gridState,
-                                columns = GridCells.Fixed(TileSize.fromName(appSettings.tileSize).columns),
+                                columns = GridCells.Fixed(appSettings.videoGridColumns.coerceIn(1, 4)),
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1112,6 +1115,7 @@ fun LocalScreen(
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
                                         showLocation = appSettings.showFieldLocation,
+                                        showFullName = appSettings.showFullName,
                                         onClick = { playVideoWithFolder(video) },
                                         onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
                                         onAddToPlaylist = {
@@ -1185,6 +1189,8 @@ fun LocalScreen(
                                         showThumbnails = appSettings.showThumbnails,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
+                                        showCount = appSettings.showFieldCount,
+                                        showFullName = appSettings.showFullName,
                                         onClick = { openFolder(folder) },
                                         onMenuClick = {
                                             folderForMenu = folder
@@ -1211,7 +1217,7 @@ fun LocalScreen(
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = gridState,
-                                columns = GridCells.Fixed(TileSize.fromName(appSettings.tileSize).columns),
+                                columns = GridCells.Fixed(appSettings.folderGridColumns.coerceIn(1, 4)),
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1227,6 +1233,8 @@ fun LocalScreen(
                                         showThumbnails = appSettings.showThumbnails,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
+                                        showCount = appSettings.showFieldCount,
+                                        showFullName = appSettings.showFullName,
                                         onClick = { openFolder(folder) },
                                     )
                                 }
@@ -1482,11 +1490,25 @@ fun LocalScreen(
 
     // Local "View" sheet (#141): layout, tile size, sort. Folder scope edits
     // that folder's override; root scope edits the global mode.
-    if (showLayoutSheet) {
-        if (layoutSheetFolderScope && currentFolder != null) {
+    // #156: Sort & View popup (mpvEx-style), replacing #141's layout sheet.
+    if (showSortPopup) {
+        if (popupFolderScope && currentFolder != null) {
             val folder = currentFolder!!
-            LocalLayoutSheet(
+            LocalSortPopup(
                 isFolderScope = true,
+                currentSort = folderSortField,
+                onSortChange = { newSort ->
+                    folderSortField = newSort
+                    val updated = appSettings.copy(folderPrimarySortField = newSort.name)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                sortReverse = appSettings.sortReverse,
+                onSortReverseChange = { reversed ->
+                    val updated = appSettings.copy(sortReverse = reversed)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
                 currentView = folderViewMode,
                 onViewChange = { newMode ->
                     folderViewMode = newMode
@@ -1500,23 +1522,51 @@ fun LocalScreen(
                         snackbarHostState.showSnackbar(msg)
                     }
                 },
-                tileSize = TileSize.fromName(appSettings.tileSize),
-                onTileSizeChange = { newSize ->
-                    val updated = appSettings.copy(tileSize = newSize.name)
+                folderGridColumns = appSettings.folderGridColumns,
+                onFolderGridColumnsChange = { columns ->
+                    val updated = appSettings.copy(folderGridColumns = columns)
                     realSettingsRepo.save(updated)
                     appSettings = updated
                 },
-                currentSort = folderSortField,
-                onSortChange = { newSort ->
-                    folderSortField = newSort
-                    val updated = appSettings.copy(folderPrimarySortField = newSort.name)
+                videoGridColumns = appSettings.videoGridColumns,
+                onVideoGridColumnsChange = { columns ->
+                    val updated = appSettings.copy(videoGridColumns = columns)
                     realSettingsRepo.save(updated)
                     appSettings = updated
                 },
-                currentSecondarySort = folderSecondarySortField,
-                onSecondarySortChange = { newSecSort ->
-                    folderSecondarySortField = newSecSort
-                    val updated = appSettings.copy(folderSecondarySortField = newSecSort.name)
+                showFullName = appSettings.showFullName,
+                onShowFullNameChange = { show ->
+                    val updated = appSettings.copy(showFullName = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldLocation = appSettings.showFieldLocation,
+                onShowFieldLocationChange = { show ->
+                    val updated = appSettings.copy(showFieldLocation = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldCount = appSettings.showFieldCount,
+                onShowFieldCountChange = { show ->
+                    val updated = appSettings.copy(showFieldCount = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldDuration = appSettings.showFieldDuration,
+                onShowFieldDurationChange = { show ->
+                    val updated = appSettings.copy(showFieldDuration = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldSize = appSettings.showFieldSize,
+                onShowFieldSizeChange = { show ->
+                    val updated = appSettings.copy(showFieldSize = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldDate = appSettings.showFieldDate,
+                onShowFieldDateChange = { show ->
+                    val updated = appSettings.copy(showFieldDate = show)
                     realSettingsRepo.save(updated)
                     appSettings = updated
                 },
@@ -1529,7 +1579,7 @@ fun LocalScreen(
                         ViewMode.LIST
                     }
                     folderViewMode = globalMode
-                    showLayoutSheet = false
+                    showSortPopup = false
                     scope.launch {
                         snackbarHostState.showSnackbar(
                             context.getString(
@@ -1539,20 +1589,11 @@ fun LocalScreen(
                         )
                     }
                 },
-                sheetState = layoutSheetState,
-                onDismiss = { showLayoutSheet = false },
+                onDismiss = { showSortPopup = false },
             )
         } else {
-            LocalLayoutSheet(
+            LocalSortPopup(
                 isFolderScope = false,
-                currentView = viewMode,
-                onViewChange = { updateViewMode(it) },
-                tileSize = TileSize.fromName(appSettings.tileSize),
-                onTileSizeChange = { newSize ->
-                    val updated = appSettings.copy(tileSize = newSize.name)
-                    realSettingsRepo.save(updated)
-                    appSettings = updated
-                },
                 currentSort = sortField,
                 onSortChange = { newSort ->
                     sortField = newSort
@@ -1560,17 +1601,65 @@ fun LocalScreen(
                     realSettingsRepo.save(updated)
                     appSettings = updated
                 },
-                currentSecondarySort = secondarySortField,
-                onSecondarySortChange = { newSecSort ->
-                    secondarySortField = newSecSort
-                    val updated = appSettings.copy(secondarySortField = newSecSort.name)
+                sortReverse = appSettings.sortReverse,
+                onSortReverseChange = { reversed ->
+                    val updated = appSettings.copy(sortReverse = reversed)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                currentView = viewMode,
+                onViewChange = { updateViewMode(it) },
+                folderGridColumns = appSettings.folderGridColumns,
+                onFolderGridColumnsChange = { columns ->
+                    val updated = appSettings.copy(folderGridColumns = columns)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                videoGridColumns = appSettings.videoGridColumns,
+                onVideoGridColumnsChange = { columns ->
+                    val updated = appSettings.copy(videoGridColumns = columns)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFullName = appSettings.showFullName,
+                onShowFullNameChange = { show ->
+                    val updated = appSettings.copy(showFullName = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldLocation = appSettings.showFieldLocation,
+                onShowFieldLocationChange = { show ->
+                    val updated = appSettings.copy(showFieldLocation = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldCount = appSettings.showFieldCount,
+                onShowFieldCountChange = { show ->
+                    val updated = appSettings.copy(showFieldCount = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldDuration = appSettings.showFieldDuration,
+                onShowFieldDurationChange = { show ->
+                    val updated = appSettings.copy(showFieldDuration = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldSize = appSettings.showFieldSize,
+                onShowFieldSizeChange = { show ->
+                    val updated = appSettings.copy(showFieldSize = show)
+                    realSettingsRepo.save(updated)
+                    appSettings = updated
+                },
+                showFieldDate = appSettings.showFieldDate,
+                onShowFieldDateChange = { show ->
+                    val updated = appSettings.copy(showFieldDate = show)
                     realSettingsRepo.save(updated)
                     appSettings = updated
                 },
                 hasFolderOverride = false,
                 onResetToDefault = null,
-                sheetState = layoutSheetState,
-                onDismiss = { showLayoutSheet = false },
+                onDismiss = { showSortPopup = false },
             )
         }
     }

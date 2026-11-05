@@ -453,11 +453,6 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Suche schließen</string>
     <string name="cd_toggle_view">Ansicht umschalten</string>
-    <string name="layout_sheet_title">Ansicht</string>
-    <string name="layout_section_tile_size">Kachelgröße</string>
-    <string name="tile_size_small">Klein</string>
-    <string name="tile_size_medium">Mittel</string>
-    <string name="tile_size_large">Groß</string>
     <string name="cd_layout_options">Layout-Optionen</string>
     <string name="cd_search">Suchen</string>
     <string name="cd_more_options">Weitere Optionen</string>
@@ -945,4 +940,32 @@
     <string name="dev_decoder_sw">Software (CPU-Codecs)</string>
     <string name="playlist_videos_count">%1$d Videos</string>
     <string name="dev_db_records_summary">%1$d Favoriten • %2$d Verlauf • %3$d Wiedergabelisten • %4$d Fortsetzung</string>
+    <string name="sort_popup_title">Sortier- und Ansichtsoptionen</string>
+    <string name="sort_popup_sort_by">Sortieren nach</string>
+    <string name="sort_popup_sort_title">Titel</string>
+    <string name="sort_popup_sort_date">Datum</string>
+    <string name="sort_popup_sort_size">Größe</string>
+    <string name="sort_order_az">A–Z</string>
+    <string name="sort_order_za">Z–A</string>
+    <string name="sort_order_oldest">Älteste</string>
+    <string name="sort_order_newest">Neueste</string>
+    <string name="sort_order_smallest">Kleinste</string>
+    <string name="sort_order_largest">Größte</string>
+    <string name="sort_popup_view_mode">Ansichtsmodus</string>
+    <string name="sort_popup_view_folder">Ordner</string>
+    <string name="view_mode_tree">Baum</string>
+    <string name="sort_popup_tree_soon">Demnächst</string>
+    <string name="sort_popup_layout">Layout</string>
+    <string name="sort_popup_layout_list">Liste</string>
+    <string name="sort_popup_layout_grid">Raster</string>
+    <string name="sort_popup_grid_columns">Rasterspalten</string>
+    <string name="sort_popup_folder_grid">Ordnerraster</string>
+    <string name="sort_popup_video_grid">Videoraster</string>
+    <string name="sort_popup_columns_count">%1$d Spalten</string>
+    <string name="sort_popup_fields">Felder</string>
+    <string name="sort_popup_field_full_name">Vollständiger Name</string>
+    <string name="sort_popup_field_path">Pfad</string>
+    <string name="sort_popup_field_total_videos">Videos gesamt</string>
+    <string name="sort_popup_field_total_duration">Gesamtdauer</string>
+    <string name="sort_popup_field_folder_size">Ordnergröße</string>
 </resources>
