@@ -442,6 +442,7 @@
     <string name="playlist_play_all">सभी चलाएँ</string>
     <string name="playlist_empty_title">प्लेलिस्ट खाली है</string>
     <string name="playlist_empty_desc">किसी भी ट्रैक के विकल्प मेनू से ट्रैक जोड़ें।</string>
+    <string name="music_nothing_to_play_msg">यहाँ चलाने के लिए कुछ नहीं है</string>
     <string name="playlist_cd_remove_item">आइटम हटाएँ</string>
     <string name="playlists_dialog_title">प्लेलिस्ट (%d)</string>
     <string name="playlists_btn_new">+ नई</string>

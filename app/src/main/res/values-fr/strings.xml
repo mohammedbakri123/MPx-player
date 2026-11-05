@@ -442,6 +442,7 @@
     <string name="playlist_play_all">Tout lire</string>
     <string name="playlist_empty_title">La liste est vide</string>
     <string name="playlist_empty_desc">Ajoutez des pistes depuis le menu d’options de n’importe quelle piste.</string>
+    <string name="music_nothing_to_play_msg">Rien à lire ici</string>
     <string name="playlist_cd_remove_item">Retirer l’élément</string>
     <string name="playlists_dialog_title">Listes (%d)</string>
     <string name="playlists_btn_new">+ Nouvelle</string>
