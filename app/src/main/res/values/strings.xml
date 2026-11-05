@@ -96,6 +96,14 @@
     <string name="theme_option_dark">Dark</string>
     <string name="theme_option_light">Light</string>
     <string name="theme_applied_snackbar">Theme applied: %s</string>
+    <string name="palette_section_title">Accent color</string>
+    <string name="palette_name_blue">Blue</string>
+    <string name="palette_name_emerald">Emerald</string>
+    <string name="palette_name_violet">Violet</string>
+    <string name="palette_name_amber">Amber</string>
+    <string name="palette_name_rose">Rose</string>
+    <string name="palette_name_teal">Teal</string>
+    <string name="palette_applied_snackbar">Accent color applied: %s</string>
 
     <string name="pip_not_supported">Note: Picture-in-Picture mode is not supported on this device/environment (requires Android 8.0+ with FEATURE_PICTURE_IN_PICTURE).</string>
     <string name="pip_enable_toggle">Enable Pop-up Play (PiP)</string>

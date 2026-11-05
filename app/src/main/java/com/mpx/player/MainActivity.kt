@@ -71,6 +71,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var settingsRepository: SharedPrefsAppSettingsRepository
     private var currentLanguage by mutableStateOf(LocaleHelper.LANGUAGE_SYSTEM)
     private var currentTheme by mutableStateOf("System")
+    private var currentPalette by mutableStateOf("Blue")
     private var openPlayerOnStart by mutableStateOf(false)
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -107,6 +108,7 @@ class MainActivity : ComponentActivity() {
         val initialSettings = settingsRepository.load()
         currentLanguage = initialSettings.appLanguage
         currentTheme = initialSettings.appTheme
+        currentPalette = initialSettings.colorPalette
 
         checkOpenPlayerIntent(intent)
 
@@ -139,7 +141,7 @@ class MainActivity : ComponentActivity() {
                 LocalConfiguration provides localizedConfig,
                 LocalLayoutDirection provides layoutDirection,
             ) {
-                MpxTheme(theme = currentTheme) {
+                MpxTheme(theme = currentTheme, palette = currentPalette) {
                     MpxApp(
                         localPermissionLauncher = localPermissionLauncher,
                         localPermissionHandler = localPermissionHandler,
@@ -159,6 +161,7 @@ class MainActivity : ComponentActivity() {
                             LocaleHelper.applyAppLocale(this@MainActivity, newLang)
                         },
                         onThemeChanged = { currentTheme = it },
+                        onPaletteChanged = { currentPalette = it },
                     )
                 }
             }
@@ -302,6 +305,7 @@ fun MpxApp(
     onResetOpenPlayer: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
+    onPaletteChanged: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val playbackManager = remember { PlaybackManager.getInstance(context) }
@@ -456,6 +460,7 @@ fun MpxApp(
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                     onThemeChanged = onThemeChanged,
+                    onPaletteChanged = onPaletteChanged,
                     playbackManager = playbackManager,
                 )
             }

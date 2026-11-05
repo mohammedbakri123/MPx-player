@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
-// MPx Theme (#105 tokens, #139 System / Dark / Light).
+// MPx Theme (#105 tokens, #139 System / Dark / Light, #147 accent palette).
 //
 // Stored values: "System" (default — follows the OS, like
 // Instagram/Facebook), "Dark" (true AMOLED black), "Light" (white).
@@ -17,76 +17,87 @@ import androidx.compose.ui.graphics.Color
 // so a stale value can never strand the app on an unknown theme.
 // The old 4-theme picker was removed in #112; #139 restores the choice
 // as System / Dark / Light instead of the four legacy schemes.
+// #147 adds an accent palette (Blue default, Emerald, Violet, Amber,
+// Rose, Teal) that recolours only the accent over those surfaces.
 object MpxTheme {
     val colors: MpxColors
         @Composable get() = LocalMpxColors.current
 }
 
-private val MpxDarkScheme = darkColorScheme(
-    primary = MpxDarkColors.primary,
+// The Material schemes are built from the resolved palette colours
+// (base theme + chosen accent), so they are functions, not static
+// vals — the accent comes from the palette (#147) while the surfaces
+// stay the base theme's (true black in Dark, white in Light).
+private fun mpxDarkScheme(colors: MpxColors) = darkColorScheme(
+    primary = colors.primary,
     onPrimary = Color.White,
-    primaryContainer = MpxDarkColors.primaryVariant,
+    primaryContainer = colors.primaryVariant,
     onPrimaryContainer = Color.White,
-    secondary = MpxDarkColors.primary,
+    secondary = colors.primary,
     onSecondary = Color.White,
-    secondaryContainer = MpxDarkColors.primaryVariant,
+    secondaryContainer = colors.primaryVariant,
     onSecondaryContainer = Color.White,
-    tertiary = MpxDarkColors.primary,
+    tertiary = colors.primary,
     onTertiary = Color.White,
-    background = MpxDarkColors.black,
-    onBackground = MpxDarkColors.textPrimary,
-    surface = MpxDarkColors.surface,
-    onSurface = MpxDarkColors.textPrimary,
-    surfaceVariant = MpxDarkColors.surfaceVariant,
-    onSurfaceVariant = MpxDarkColors.textSecondary,
-    surfaceContainerHighest = MpxDarkColors.surfaceElevated,
-    surfaceContainerHigh = MpxDarkColors.surfaceVariant,
-    surfaceContainer = MpxDarkColors.surfaceRaised,
-    surfaceContainerLow = MpxDarkColors.surface,
-    surfaceContainerLowest = MpxDarkColors.black,
-    surfaceBright = MpxDarkColors.surfaceElevated,
-    surfaceDim = MpxDarkColors.black,
+    background = colors.black,
+    onBackground = colors.textPrimary,
+    surface = colors.surface,
+    onSurface = colors.textPrimary,
+    surfaceVariant = colors.surfaceVariant,
+    onSurfaceVariant = colors.textSecondary,
+    surfaceContainerHighest = colors.surfaceElevated,
+    surfaceContainerHigh = colors.surfaceVariant,
+    surfaceContainer = colors.surfaceRaised,
+    surfaceContainerLow = colors.surface,
+    surfaceContainerLowest = colors.black,
+    surfaceBright = colors.surfaceElevated,
+    surfaceDim = colors.black,
     surfaceTint = Color.Transparent,
-    outline = MpxDarkColors.border,
-    outlineVariant = MpxDarkColors.borderSubtle,
-    error = MpxDarkColors.destructive,
+    outline = colors.border,
+    outlineVariant = colors.borderSubtle,
+    error = colors.destructive,
     onError = Color.White,
 )
 
-private val MpxLightScheme = lightColorScheme(
-    primary = MpxLightColors.primary,
+private fun mpxLightScheme(colors: MpxColors) = lightColorScheme(
+    primary = colors.primary,
     onPrimary = Color.White,
-    primaryContainer = MpxLightColors.primaryVariant,
+    primaryContainer = colors.primaryVariant,
     onPrimaryContainer = Color.White,
-    secondary = MpxLightColors.primary,
+    secondary = colors.primary,
     onSecondary = Color.White,
-    secondaryContainer = MpxLightColors.primaryVariant,
+    secondaryContainer = colors.primaryVariant,
     onSecondaryContainer = Color.White,
-    tertiary = MpxLightColors.primary,
+    tertiary = colors.primary,
     onTertiary = Color.White,
-    background = MpxLightColors.black,
-    onBackground = MpxLightColors.textPrimary,
-    surface = MpxLightColors.surface,
-    onSurface = MpxLightColors.textPrimary,
-    surfaceVariant = MpxLightColors.surfaceVariant,
-    onSurfaceVariant = MpxLightColors.textSecondary,
-    surfaceContainerHighest = MpxLightColors.surfaceElevated,
-    surfaceContainerHigh = MpxLightColors.surfaceVariant,
-    surfaceContainer = MpxLightColors.surfaceRaised,
-    surfaceContainerLow = MpxLightColors.surface,
-    surfaceContainerLowest = MpxLightColors.black,
-    surfaceBright = MpxLightColors.black,
-    surfaceDim = MpxLightColors.surfaceElevated,
+    background = colors.black,
+    onBackground = colors.textPrimary,
+    surface = colors.surface,
+    onSurface = colors.textPrimary,
+    surfaceVariant = colors.surfaceVariant,
+    onSurfaceVariant = colors.textSecondary,
+    surfaceContainerHighest = colors.surfaceElevated,
+    surfaceContainerHigh = colors.surfaceVariant,
+    surfaceContainer = colors.surfaceRaised,
+    surfaceContainerLow = colors.surface,
+    surfaceContainerLowest = colors.black,
+    surfaceBright = colors.black,
+    surfaceDim = colors.surfaceElevated,
     surfaceTint = Color.Transparent,
-    outline = MpxLightColors.border,
-    outlineVariant = MpxLightColors.borderSubtle,
-    error = MpxLightColors.destructive,
+    outline = colors.border,
+    outlineVariant = colors.borderSubtle,
+    error = colors.destructive,
     onError = Color.White,
 )
 
 @Composable
 fun MpxTheme(
     theme: String = "System",
+    // Accent palette id (#147): "Blue" (default, identity blue),
+    // "Emerald", "Violet", "Amber", "Rose", "Teal". Unknown ids fall
+    // back to Blue. Only primary / primaryHover / primaryVariant
+    // change; the base theme's surfaces and text are untouched.
+    palette: String = "Blue",
     content: @Composable () -> Unit,
 ) {
     val useDark = when (theme) {
@@ -94,10 +105,16 @@ fun MpxTheme(
         "Dark", "Midnight", "Classic" -> true
         else -> isSystemInDarkTheme()
     }
-    val palette = if (useDark) MpxDarkColors else MpxLightColors
-    CompositionLocalProvider(LocalMpxColors provides palette) {
+    val base = if (useDark) MpxDarkColors else MpxLightColors
+    val accent = mpxPaletteFor(palette)
+    val colors = base.copy(
+        primary = accent.primary,
+        primaryHover = accent.primaryHover,
+        primaryVariant = accent.primaryVariant,
+    )
+    CompositionLocalProvider(LocalMpxColors provides colors) {
         MaterialTheme(
-            colorScheme = if (useDark) MpxDarkScheme else MpxLightScheme,
+            colorScheme = if (useDark) mpxDarkScheme(colors) else mpxLightScheme(colors),
             typography = MpxTypography,
             shapes = MpxShapes,
             content = content,

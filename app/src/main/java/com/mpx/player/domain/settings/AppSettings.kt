@@ -36,6 +36,7 @@ data class AppSettings(
     val subtitleDelayMs: Int = 0, // -10000..10000, 100 ms steps; positive = subtitles later
     val subtitleSpeed: Float = 1.0f, // 0.5..2.0, 0.1 steps; multiplies subtitle timing rate
     val appTheme: String = "System", // System, Dark, Light (legacy Midnight/Dark/Classic read as Dark)
+    val colorPalette: String = "Blue", // Accent palette (#147): Blue, Emerald, Violet, Amber, Rose, Teal — accent only, surfaces stay per-theme
     val popupPlayEnabled: Boolean = true,
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10, PlayPauseOnly
     val popupPlaySize: String = "Medium", // Small, Medium, Large, Auto

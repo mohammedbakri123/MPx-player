@@ -96,6 +96,14 @@
     <string name="theme_option_dark">Oscuro</string>
     <string name="theme_option_light">Claro</string>
     <string name="theme_applied_snackbar">Tema aplicado: %s</string>
+    <string name="palette_section_title">Color de acento</string>
+    <string name="palette_name_blue">Azul</string>
+    <string name="palette_name_emerald">Esmeralda</string>
+    <string name="palette_name_violet">Violeta</string>
+    <string name="palette_name_amber">Ámbar</string>
+    <string name="palette_name_rose">Rosa</string>
+    <string name="palette_name_teal">Verde azulado</string>
+    <string name="palette_applied_snackbar">Color de acento aplicado: %s</string>
 
     <string name="pip_not_supported">Nota: el modo imagen en imagen no es compatible con este dispositivo o entorno (requiere Android 8.0+ con FEATURE_PICTURE_IN_PICTURE).</string>
     <string name="pip_enable_toggle">Activar ventana flotante (PiP)</string>

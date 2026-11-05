@@ -96,6 +96,14 @@
     <string name="theme_option_dark">Escuro</string>
     <string name="theme_option_light">Claro</string>
     <string name="theme_applied_snackbar">Tema aplicado: %s</string>
+    <string name="palette_section_title">Cor de destaque</string>
+    <string name="palette_name_blue">Azul</string>
+    <string name="palette_name_emerald">Esmeralda</string>
+    <string name="palette_name_violet">Violeta</string>
+    <string name="palette_name_amber">Âmbar</string>
+    <string name="palette_name_rose">Rosa</string>
+    <string name="palette_name_teal">Verde-água</string>
+    <string name="palette_applied_snackbar">Cor de destaque aplicada: %s</string>
 
     <string name="pip_not_supported">Nota: o modo picture-in-picture não é suportado neste dispositivo/ambiente (requer Android 8.0+ com FEATURE_PICTURE_IN_PICTURE).</string>
     <string name="pip_enable_toggle">Ativar reprodução em janela (PiP)</string>

@@ -96,6 +96,14 @@
     <string name="theme_option_dark">داكن</string>
     <string name="theme_option_light">فاتح</string>
     <string name="theme_applied_snackbar">تم تطبيق المظهر: %s</string>
+    <string name="palette_section_title">لون التمييز</string>
+    <string name="palette_name_blue">أزرق</string>
+    <string name="palette_name_emerald">زمردي</string>
+    <string name="palette_name_violet">بنفسجي</string>
+    <string name="palette_name_amber">كهرماني</string>
+    <string name="palette_name_rose">وردي</string>
+    <string name="palette_name_teal">تركوازي</string>
+    <string name="palette_applied_snackbar">تم تطبيق لون التمييز: %s</string>
 
     <string name="pip_not_supported">ملاحظة: وضع صورة في صورة غير مدعوم على هذا الجهاز أو البيئة (يتطلب أندرويد 8.0 أو أحدث مع ميزة FEATURE_PICTURE_IN_PICTURE).</string>
     <string name="pip_enable_toggle">تفعيل التشغيل في نافذة منبثقة (صورة في صورة)</string>

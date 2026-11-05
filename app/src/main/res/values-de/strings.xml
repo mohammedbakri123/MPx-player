@@ -96,6 +96,14 @@
     <string name="theme_option_dark">Dunkel</string>
     <string name="theme_option_light">Hell</string>
     <string name="theme_applied_snackbar">Theme angewendet: %s</string>
+    <string name="palette_section_title">Akzentfarbe</string>
+    <string name="palette_name_blue">Blau</string>
+    <string name="palette_name_emerald">Smaragd</string>
+    <string name="palette_name_violet">Violett</string>
+    <string name="palette_name_amber">Bernstein</string>
+    <string name="palette_name_rose">Rosa</string>
+    <string name="palette_name_teal">Türkis</string>
+    <string name="palette_applied_snackbar">Akzentfarbe angewendet: %s</string>
 
     <string name="pip_not_supported">Hinweis: Der Bild-in-Bild-Modus wird auf diesem Gerät / in dieser Umgebung nicht unterstützt (erfordert Android 8.0+ mit FEATURE_PICTURE_IN_PICTURE).</string>
     <string name="pip_enable_toggle">Pop-up-Wiedergabe (PiP) aktivieren</string>

@@ -81,6 +81,7 @@ fun buildDiagnosticsReport(
         add("Decoder mode: ${settings.decoderMode} ($decoderDesc)")
         add("Language: ${settings.appLanguage}")
         add("Theme: ${settings.appTheme}")
+        add("Accent palette: ${settings.colorPalette}")
         add("Background play: ${if (settings.backgroundPlay) "yes" else "no"}")
         add("Popup play: ${if (settings.popupPlayEnabled) "yes" else "no"}")
         add("Resume playback: ${if (settings.resumePlayback) "yes" else "no"}")

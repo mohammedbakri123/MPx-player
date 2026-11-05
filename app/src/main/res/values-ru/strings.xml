@@ -96,6 +96,14 @@
     <string name="theme_option_dark">Тёмная</string>
     <string name="theme_option_light">Светлая</string>
     <string name="theme_applied_snackbar">Тема применена: %s</string>
+    <string name="palette_section_title">Акцентный цвет</string>
+    <string name="palette_name_blue">Синий</string>
+    <string name="palette_name_emerald">Изумрудный</string>
+    <string name="palette_name_violet">Фиолетовый</string>
+    <string name="palette_name_amber">Янтарный</string>
+    <string name="palette_name_rose">Розовый</string>
+    <string name="palette_name_teal">Бирюзовый</string>
+    <string name="palette_applied_snackbar">Акцентный цвет применён: %s</string>
 
     <string name="pip_not_supported">Примечание: режим «картинка в картинке» не поддерживается на этом устройстве/в этой среде (требуется Android 8.0+ с FEATURE_PICTURE_IN_PICTURE).</string>
     <string name="pip_enable_toggle">Включить режим «картинка в картинке» (PiP)</string>

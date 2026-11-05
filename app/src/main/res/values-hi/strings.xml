@@ -96,6 +96,14 @@
     <string name="theme_option_dark">डार्क</string>
     <string name="theme_option_light">लाइट</string>
     <string name="theme_applied_snackbar">थीम लागू हुई: %s</string>
+    <string name="palette_section_title">एक्सेंट रंग</string>
+    <string name="palette_name_blue">नीला</string>
+    <string name="palette_name_emerald">पन्ना</string>
+    <string name="palette_name_violet">बैंगनी</string>
+    <string name="palette_name_amber">अंबर</string>
+    <string name="palette_name_rose">गुलाबी</string>
+    <string name="palette_name_teal">फिरोज़ी</string>
+    <string name="palette_applied_snackbar">एक्सेंट रंग लागू हुआ: %s</string>
 
     <string name="pip_not_supported">नोट: इस डिवाइस/वातावरण पर पिक्चर-इन-पिक्चर मोड समर्थित नहीं है (Android 8.0+ और FEATURE_PICTURE_IN_PICTURE आवश्यक है)।</string>
     <string name="pip_enable_toggle">पॉप-अप प्ले (PiP) सक्षम करें</string>
