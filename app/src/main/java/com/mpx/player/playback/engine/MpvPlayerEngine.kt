@@ -1808,6 +1808,34 @@ class MpvPlayerEngine(
     override val currentPosition: Long
         get() = cachedPositionMs
 
+    /**
+     * Issue #225: display size of the current video, read live from mpv's
+     * `dwidth`/`dheight` (aspect-corrected display size, not raw coded
+     * size) — the PiP aspect-ratio source of truth. 0 when mpv is not
+     * initialized or no video is loaded; never a guessed size.
+     */
+    override val videoWidth: Int
+        get() = if (!mpvInitialized || isReleased) {
+            0
+        } else {
+            try {
+                mpv.getPropertyInt("dwidth")?.coerceAtLeast(0) ?: 0
+            } catch (_: Exception) {
+                0
+            }
+        }
+
+    override val videoHeight: Int
+        get() = if (!mpvInitialized || isReleased) {
+            0
+        } else {
+            try {
+                mpv.getPropertyInt("dheight")?.coerceAtLeast(0) ?: 0
+            } catch (_: Exception) {
+                0
+            }
+        }
+
     override val duration: Long
         get() = cachedDurationMs
 

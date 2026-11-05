@@ -208,7 +208,19 @@ fun OverlaySettingsScreen(
                     onClick = {
                         val playbackManager = PlaybackManager.getInstance(context)
                         val isPlaying = playbackManager.playbackState.value.isPlaying
-                        val entered = PipUtils.enterPip(activity, settings, isPlaying)
+                        val currentItem = playbackManager.playbackState.value.currentItem
+                        // Issue #225: pass the real playback state and video
+                        // size — the old call defaulted to playing with 0x0
+                        // dims (wrong action label, 16:9 window) and armed
+                        // auto-enter for whatever session followed.
+                        val entered = PipUtils.enterPip(
+                            activity,
+                            settings,
+                            isPlaying,
+                            playbackManager.videoWidth,
+                            playbackManager.videoHeight,
+                            currentItem?.isVideo == true,
+                        )
                         if (!entered) {
                             val msg = if (!isSupported) {
                                 context.getString(R.string.pip_not_supported)

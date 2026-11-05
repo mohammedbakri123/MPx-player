@@ -516,16 +516,54 @@ fun PlayerScreen(
             }
         }
     }
+    // Issue #225: PiP is video-only, and entry must carry the REAL playback
+    // state — the old bare enterPip(activity) defaulted to playing with 0x0
+    // dims, so a paused entry showed a "Pause" action, a portrait video got
+    // a 16:9 window, and an audio item opened a black PiP window.
     val enterPip = {
-        val entered = PipUtils.enterPip(activity)
-        if (!entered) {
-            val msg = if (!PipUtils.isPipSupported(context)) {
-                context.getString(R.string.player_pip_unsupported)
-            } else {
-                context.getString(R.string.player_pip_unable)
+        val item = state.currentItem
+        if (item?.isVideo != true) {
+            Toast.makeText(context, context.getString(R.string.player_pip_unable), Toast.LENGTH_SHORT).show()
+        } else {
+            val entered = PipUtils.enterPip(
+                activity,
+                currentSettings,
+                state.isPlaying,
+                playbackManager.videoWidth,
+                playbackManager.videoHeight,
+                true,
+            )
+            if (!entered) {
+                val msg = if (!PipUtils.isPipSupported(context)) {
+                    context.getString(R.string.player_pip_unsupported)
+                } else {
+                    context.getString(R.string.player_pip_unable)
+                }
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // Issue #225: keep the activity's PiP params in sync with reality.
+    // The Play/Pause RemoteAction label and the armed auto-enter flag are
+    // baked into the params at entry time and never refresh themselves —
+    // without this, entering PiP paused showed "Pause" forever, and params
+    // armed while playing stayed armed after a pause, so Home auto-entered
+    // PiP past the #206 gate. This runs on every play/pause toggle and
+    // item change (and on first composition), in PiP and out of it: in PiP
+    // it refreshes the action label; out of PiP it re-arms/disarms
+    // auto-enter to match the current session.
+    LaunchedEffect(state.isPlaying, state.currentItem?.id, isInPipMode) {
+        val act = activity ?: return@LaunchedEffect
+        val item = state.currentItem
+        PipUtils.updatePipParams(
+            act,
+            currentSettings,
+            state.isPlaying,
+            playbackManager.videoWidth,
+            playbackManager.videoHeight,
+            item?.isVideo == true,
+        )
     }
     val toggleBackgroundPlay = {
         val nextBackgroundPlay = !currentSettings.backgroundPlay
@@ -2118,7 +2156,10 @@ private fun PlayerActionStripe(
                     active = state.repeatMode != RepeatMode.OFF,
                     onClick = { playbackManager.cycleRepeatMode() },
                 )
-                "pip" -> PlayerActionStripeButton(
+                // Issue #225: PiP is video-only — hide the entry for audio
+                // items (the enterPip lambda also refuses them, so an audio
+                // item can never reach PiP from here or from the sheet).
+                "pip" -> if (state.currentItem?.isVideo == true) PlayerActionStripeButton(
                     icon = Icons.Filled.PictureInPictureAlt,
                     caption = stringResource(playerMenuRowLabelRes("pip")),
                     contentDescription = stringResource(R.string.player_menu_popup_play),

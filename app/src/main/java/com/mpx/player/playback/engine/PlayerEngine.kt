@@ -67,6 +67,18 @@ interface PlayerEngine {
     fun getLoadStage(): MpvLoadStage? = null
 
     /**
+     * Display size of the current video (issue #225: the PiP aspect ratio
+     * source of truth). 0 when no video is loaded — audio items and the
+     * not-yet-loaded state report 0, never a guessed size.
+     */
+    val videoWidth: Int
+        get() = 0
+
+    /** Display height of the current video; 0 when no video is loaded. */
+    val videoHeight: Int
+        get() = 0
+
+    /**
      * Attaches a native video rendering surface to the engine.
      */
     fun attachSurface(surface: Surface)

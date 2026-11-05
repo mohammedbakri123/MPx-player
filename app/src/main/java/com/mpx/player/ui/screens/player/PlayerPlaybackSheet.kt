@@ -486,7 +486,9 @@ private fun PlaybackSheetMainPage(
                     value = null,
                     onClick = onToggleFavourite,
                 )
-                "pip" -> PlaybackSheetRow(
+                // Issue #225: PiP is video-only — hide the row for audio
+                // items (the enterPip lambda also refuses them).
+                "pip" -> if (state.currentItem?.isVideo == true) PlaybackSheetRow(
                     icon = Icons.Filled.PictureInPictureAlt,
                     title = stringResource(R.string.player_menu_popup_play),
                     value = null,

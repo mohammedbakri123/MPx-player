@@ -34,10 +34,16 @@ object PipUtils {
 
     /**
      * Builds [PictureInPictureParams] honoring user preferences:
-     * - [AppSettings.popupPlaySize] mapped to sanctioned aspect ratios (within Android's 1:2.39 to 2.39:1 boundary)
-     * - [AppSettings.popupPlayPosition] mapped to initial source rect hints
+     * - Aspect ratio follows the VIDEO's real display size whenever it is
+     *   known (issue #225) — a portrait video must not get a 16:9 window
+     *   just because the size setting is Medium (the default). The size
+     *   setting only controls the source-rect hint width below, not the
+     *   aspect. Unknown dims (audio, or no video loaded yet) fall back
+     *   to 16:9.
+     * - [AppSettings.popupPlaySize] mapped to initial source rect hints
      * - [AppSettings.popupPlayControls] mapped to [RemoteAction] sets (Prev/Next, Seek10, or Play/Pause only)
-     * - Auto-enter enabled on Android 12+ (API 31+)
+     * - Auto-enter on Android 12+ (API 31+) only for a video that is
+     *   actually playing (issue #225)
      */
     fun buildPipParams(
         context: Context,
@@ -45,24 +51,18 @@ object PipUtils {
         isPlaying: Boolean = true,
         videoWidth: Int = 0,
         videoHeight: Int = 0,
+        isVideo: Boolean = false,
     ): PictureInPictureParams? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null
         val builder = PictureInPictureParams.Builder()
 
-        // 1. Aspect Ratio based on popupPlaySize
+        // 1. Aspect Ratio: the video's real display size whenever known.
         // Android enforces PiP aspect ratio between 1:2.39 (0.418) and 2.39:1 (2.39)
-        val rational = when (settings.popupPlaySize) {
-            "Small" -> Rational(16, 9)
-            "Large" -> Rational(16, 9)
-            "Auto" -> {
-                if (videoWidth > 0 && videoHeight > 0) {
-                    val ratio = (videoWidth.toFloat() / videoHeight.toFloat()).coerceIn(1f / 2.39f, 2.39f)
-                    Rational((ratio * 1000).toInt(), 1000)
-                } else {
-                    Rational(16, 9)
-                }
-            }
-            else -> Rational(16, 9) // "Medium" (Default)
+        val rational = if (videoWidth > 0 && videoHeight > 0) {
+            val ratio = (videoWidth.toFloat() / videoHeight.toFloat()).coerceIn(1f / 2.39f, 2.39f)
+            Rational((ratio * 1000).toInt(), 1000)
+        } else {
+            Rational(16, 9)
         }
         try {
             builder.setAspectRatio(rational)
@@ -163,11 +163,19 @@ object PipUtils {
         builder.setActions(actions)
 
         // 4. Android 12+ (API 31+) platform integration.
-        // Auto-enter follows the PiP setting alone (issue #98): tying it to
-        // backgroundPlay meant Home never entered PiP with the default
-        // backgroundPlay=false, even though PiP itself keeps video visible.
+        // Issue #225: arm system auto-enter ONLY for a video that is
+        // actually playing. The old unconditional `popupPlayEnabled`
+        // armed it for paused/audio sessions too, so pressing Home
+        // auto-entered PiP past MainActivity's onUserLeaveHint gate
+        // (#206: playing + video + Player route) — the gate alone was
+        // not enough, because the armed params outlived the session
+        // that set them. The Player route refreshes these params on
+        // every play/pause/item change, so the armed flag never goes
+        // stale; callers that cannot know the playback state (settings
+        // saves, test entries) default to disarmed, and the explicit
+        // onUserLeaveHint entry still handles Home-press PiP (#98).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            builder.setAutoEnterEnabled(settings.popupPlayEnabled)
+            builder.setAutoEnterEnabled(settings.popupPlayEnabled && isPlaying && isVideo)
             builder.setSeamlessResizeEnabled(true)
         }
 
@@ -186,6 +194,13 @@ object PipUtils {
      * the Activity the way #179 does (LocalView.current.context as?
      * Activity) and pass it in; null means genuinely no Activity and
      * entry fails the same way it did before.
+     *
+     * Issue #225: pass the REAL playback state — [isPlaying], the video
+     * display size, and [isVideo]. The old defaults (playing, 0x0) lied:
+     * a paused entry showed a "Pause" action and a portrait video got a
+     * 16:9 window. [isVideo] also gates system auto-enter (see
+     * [buildPipParams]); it defaults to false so callers that cannot know
+     * the playback state never arm auto-enter for a paused/audio session.
      */
     fun enterPip(
         activity: Activity?,
@@ -193,13 +208,14 @@ object PipUtils {
         isPlaying: Boolean = true,
         videoWidth: Int = 0,
         videoHeight: Int = 0,
+        isVideo: Boolean = false,
     ): Boolean {
         if (activity == null) return false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
                 return try {
                     val realSettings = settings ?: SharedPrefsAppSettingsRepository(activity).load()
-                    val params = buildPipParams(activity, realSettings, isPlaying, videoWidth, videoHeight)
+                    val params = buildPipParams(activity, realSettings, isPlaying, videoWidth, videoHeight, isVideo)
                     if (params != null) {
                         activity.enterPictureInPictureMode(params)
                     } else {
@@ -219,6 +235,9 @@ object PipUtils {
 
     /**
      * Updates ongoing Picture-in-Picture parameters on the given [Activity].
+     * Issue #225: pass the real playback state (see [enterPip]) — this is
+     * how the Play/Pause action label follows play/pause changes while in
+     * PiP, and how the armed auto-enter flag is kept in sync with reality.
      */
     fun updatePipParams(
         activity: Activity,
@@ -226,11 +245,12 @@ object PipUtils {
         isPlaying: Boolean = true,
         videoWidth: Int = 0,
         videoHeight: Int = 0,
+        isVideo: Boolean = false,
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 val realSettings = settings ?: SharedPrefsAppSettingsRepository(activity).load()
-                val params = buildPipParams(activity, realSettings, isPlaying, videoWidth, videoHeight)
+                val params = buildPipParams(activity, realSettings, isPlaying, videoWidth, videoHeight, isVideo)
                 if (params != null) {
                     activity.setPictureInPictureParams(params)
                 }
