@@ -97,17 +97,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
-import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.MeTool
-import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
-import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.FavouritesDialog
-import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
-import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
-import com.mpx.player.ui.components.persistence.PlaylistsDialog
 import com.mpx.player.ui.components.MpxCard
 import com.mpx.player.ui.components.MpxPrimaryButton
 import com.mpx.player.ui.components.MpxSecondaryButton
@@ -129,6 +123,8 @@ fun MeScreen(
     onOpenSettings: () -> Unit,
     onOpenPlayer: () -> Unit,
     onOpenAboutBeta: (() -> Unit)? = null,
+    onOpenHistory: () -> Unit,
+    onOpenPlaylists: () -> Unit,
     playbackManager: PlaybackManager? = null,
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = "system",
@@ -153,11 +149,6 @@ fun MeScreen(
 
     // Dialog navigation states
     var showFavouritesDialog by remember { mutableStateOf(false) }
-    var showHistoryDialog by remember { mutableStateOf(false) }
-    var showPlaylistsDialog by remember { mutableStateOf(false) }
-    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
-    var selectedPlaylist by remember { mutableStateOf<CustomPlaylist?>(null) }
-    var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
 
     var showNetworkStreamDialog by remember { mutableStateOf(false) }
     var showPopupPlayDialog by remember { mutableStateOf(false) }
@@ -299,9 +290,11 @@ fun MeScreen(
         when (tool.id) {
             "local" -> onOpenLocal()
             "music" -> onOpenMusic()
-            "playlists" -> showPlaylistsDialog = true
+            // #157: History and Playlists are full pages now, opened from
+            // these Me tiles (they used to open dialogs).
+            "playlists" -> onOpenPlaylists()
             "favourites" -> showFavouritesDialog = true
-            "history" -> showHistoryDialog = true
+            "history" -> onOpenHistory()
             "network" -> showNetworkStreamDialog = true
             "transfer" -> onOpenTransfer()
             "equalizer" -> {
@@ -609,121 +602,6 @@ fun MeScreen(
                 scope.launch {
                     persistenceRepository.clearFavourites()
                     snackbarHostState.showSnackbar("Cleared Favourites")
-                }
-            },
-        )
-    }
-
-    // 2. Playback History Dialog (Room SQLite backed with resume timestamps)
-    if (showHistoryDialog) {
-        PlaybackHistoryDialog(
-            history = history,
-            onDismiss = { showHistoryDialog = false },
-            onItemClick = { item ->
-                showHistoryDialog = false
-                realPlaybackManager.playQueue(
-                    listOf(
-                        PlayableMedia(
-                            id = item.mediaId,
-                            title = item.title,
-                            subtitle = item.subtitle,
-                            uri = item.mediaUri,
-                            isVideo = item.isVideo,
-                            durationMs = item.durationMs,
-                        ),
-                    ),
-                )
-                onOpenPlayer()
-            },
-            onClearHistory = {
-                scope.launch {
-                    persistenceRepository.clearHistory()
-                    snackbarHostState.showSnackbar("Cleared History")
-                }
-            },
-        )
-    }
-
-    // 3. Playlists Dialog (Room SQLite backed)
-    if (showPlaylistsDialog) {
-        PlaylistsDialog(
-            playlists = customPlaylists,
-            onDismiss = { showPlaylistsDialog = false },
-            onPlaylistClick = { pl ->
-                selectedPlaylist = pl
-                scope.launch {
-                    playlistItemsForDialog = persistenceRepository.getPlaylistItems(pl.id)
-                }
-            },
-            onCreateNewPlaylist = {
-                showCreatePlaylistDialog = true
-            },
-        )
-    }
-
-    // Create Playlist Dialog
-    if (showCreatePlaylistDialog) {
-        CreatePlaylistDialog(
-            onDismiss = { showCreatePlaylistDialog = false },
-            onConfirm = { name ->
-                scope.launch {
-                    persistenceRepository.createPlaylist(name, isVideoPlaylist = true)
-                    showCreatePlaylistDialog = false
-                    snackbarHostState.showSnackbar("Playlist \"$name\" created")
-                }
-            },
-        )
-    }
-
-    // Playlist Details Dialog
-    if (selectedPlaylist != null) {
-        val pl = selectedPlaylist!!
-        PlaylistDetailsDialog(
-            playlist = pl,
-            items = playlistItemsForDialog,
-            onDismiss = { selectedPlaylist = null },
-            onPlayAll = {
-                val playable = playlistItemsForDialog.map { item ->
-                    PlayableMedia(
-                        id = item.mediaId,
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        uri = item.mediaUri,
-                        isVideo = item.isVideo,
-                        durationMs = item.durationMs,
-                    )
-                }
-                selectedPlaylist = null
-                realPlaybackManager.playQueue(playable)
-                onOpenPlayer()
-            },
-            onPlayItem = { item ->
-                selectedPlaylist = null
-                realPlaybackManager.playQueue(
-                    listOf(
-                        PlayableMedia(
-                            id = item.mediaId,
-                            title = item.title,
-                            subtitle = item.subtitle,
-                            uri = item.mediaUri,
-                            isVideo = item.isVideo,
-                            durationMs = item.durationMs,
-                        ),
-                    ),
-                )
-                onOpenPlayer()
-            },
-            onRemoveItem = { itemId ->
-                scope.launch {
-                    persistenceRepository.removeItemFromPlaylist(itemId)
-                    playlistItemsForDialog = persistenceRepository.getPlaylistItems(pl.id)
-                }
-            },
-            onDeletePlaylist = {
-                scope.launch {
-                    persistenceRepository.deletePlaylist(pl.id)
-                    selectedPlaylist = null
-                    snackbarHostState.showSnackbar("Playlist deleted")
                 }
             },
         )

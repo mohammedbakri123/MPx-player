@@ -18,6 +18,8 @@ sealed class Screen(val route: String) {
     data object Music : Screen("music")
     data object Transfer : Screen("transfer")
     data object Me : Screen("me")
+    data object History : Screen("history")
+    data object Playlists : Screen("playlists")
     data object Player : Screen("player")
     data object Settings : Screen("settings")
     data object OverlaySettings : Screen("overlay_settings")
