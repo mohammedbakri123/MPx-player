@@ -2,6 +2,7 @@ package com.mpx.player.ui.screens.local
 
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
+import com.mpx.player.domain.model.AudioFolder
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.VideoFile
@@ -381,6 +382,67 @@ object MediaSortComparator {
         // No file type / location for artists: falls through to the name tie-break.
         SortField.STATUS_TYPE_LOCATION -> 0
         SortField.COUNT, SortField.NONE -> 0
+    }
+
+    /**
+     * Constructs a Comparator for AudioFolder with primary sort and secondary tie-break sort.
+     * #185 (Folders tab): same field semantics as [audioArtistComparator],
+     * except DATE has nothing to sort by — folders carry no date, and
+     * AudioFolder.id is a path hash, not recency, so DATE / DATE_DURATION
+     * fall through to the name tie-break. Folders carry no size or
+     * duration either: SIZE / DURATION / COUNT sort by track count (most
+     * tracks first) — the folder's "size". STATUS_TYPE_LOCATION has no
+     * status or file type for folders, so it sorts by location (path).
+     */
+    fun audioFolderComparator(
+        primary: SortField,
+        secondary: SortField = SortField.NAME,
+        reverse: Boolean = false,
+        secondaryReverse: Boolean = false,
+        numeric: Boolean = true,
+        caseSensitive: Boolean = false,
+        ignoreExtension: Boolean = true,
+    ): Comparator<AudioFolder> = Comparator { a, b ->
+        var cmp = compareAudioFolderByField(a, b, primary, numeric, caseSensitive, ignoreExtension)
+        if (reverse) cmp = -cmp
+        if (cmp != 0) return@Comparator cmp
+
+        if (secondary != SortField.NONE && secondary != primary) {
+            var secCmp = compareAudioFolderByField(a, b, secondary, numeric, caseSensitive, ignoreExtension)
+            if (secondaryReverse) secCmp = -secCmp
+            if (secCmp != 0) return@Comparator secCmp
+        }
+
+        val nameCmp = a.name.compareTo(b.name, ignoreCase = true)
+        if (nameCmp != 0) nameCmp else a.id.compareTo(b.id)
+    }
+
+    private fun compareAudioFolderByField(
+        a: AudioFolder,
+        b: AudioFolder,
+        field: SortField,
+        numeric: Boolean,
+        caseSensitive: Boolean,
+        ignoreExtension: Boolean,
+    ): Int = when (field) {
+        SortField.NAME -> {
+            if (numeric) {
+                naturalCompare(a.name, b.name, caseSensitive, ignoreExtension)
+            } else {
+                if (caseSensitive) a.name.compareTo(b.name)
+                else a.name.lowercase(Locale.US).compareTo(b.name.lowercase(Locale.US))
+            }
+        }
+        // Folders carry no date (and id is a path hash, not recency):
+        // falls through to the name tie-break.
+        SortField.DATE, SortField.DATE_DURATION -> 0
+        // Folders carry no size or duration: track count is the folder's size.
+        SortField.SIZE, SortField.DURATION, SortField.COUNT -> b.trackCount.compareTo(a.trackCount)
+        // Folders carry no resolution: falls through to the name tie-break.
+        SortField.RESOLUTION_FRAMERATE -> 0
+        // No status or file type for folders: location (full path) only.
+        SortField.STATUS_TYPE_LOCATION -> a.path.compareTo(b.path)
+        SortField.NONE -> 0
     }
 
     private fun compareAudioByField(

@@ -123,6 +123,8 @@ import com.mpx.player.ui.screens.local.AudioAlbumGridCard
 import com.mpx.player.ui.screens.local.AudioAlbumRow
 import com.mpx.player.ui.screens.local.AudioArtistGridCard
 import com.mpx.player.ui.screens.local.AudioArtistRow
+import com.mpx.player.ui.screens.local.AudioFolderGridCard
+import com.mpx.player.ui.screens.local.AudioFolderRow
 import com.mpx.player.ui.screens.local.AudioTrackGridCard
 import com.mpx.player.ui.screens.local.AudioTrackRow
 import com.mpx.player.ui.screens.local.LocalSortPopup
@@ -259,6 +261,26 @@ fun MusicScreen(
             else selectedArtistIds + key
     }
 
+    // #185: long-press multi-select on the Folders tab, mirroring the
+    // Artists slice / Local's #144. Keyed like Artists (id, falling back
+    // to path). Long-press toggles an item (entering selection mode when
+    // empty); a tap while selecting toggles too. Back / the X exits and
+    // clears.
+    var selectedFolderIds by remember { mutableStateOf(setOf<String>()) }
+    val isFolderSelectionMode = selectedFolderIds.isNotEmpty()
+    val folderSelectionCount = selectedFolderIds.size
+
+    fun clearFolderSelection() {
+        selectedFolderIds = emptySet()
+    }
+
+    fun toggleFolderSelection(folder: AudioFolder) {
+        val key = folder.id.ifBlank { folder.path }
+        selectedFolderIds =
+            if (selectedFolderIds.contains(key)) selectedFolderIds - key
+            else selectedFolderIds + key
+    }
+
     fun updateViewMode(newMode: ViewMode) {
         viewMode = newMode
         val updated = if (appSettings.separateViewLayout) {
@@ -320,10 +342,11 @@ fun MusicScreen(
     }
 
     // #185: Back exits multi-select (exactly one step), like Local.
-    BackHandler(enabled = isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode) {
+    BackHandler(enabled = isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode || isFolderSelectionMode) {
         clearTrackSelection()
         clearAlbumSelection()
         clearArtistSelection()
+        clearFolderSelection()
     }
 
     // #185: leaving a tab drops its selection — a selection must not
@@ -332,6 +355,7 @@ fun MusicScreen(
         if (selectedTab != MusicTab.TRACKS) clearTrackSelection()
         if (selectedTab != MusicTab.ALBUMS) clearAlbumSelection()
         if (selectedTab != MusicTab.ARTISTS) clearArtistSelection()
+        if (selectedTab != MusicTab.FOLDERS) clearFolderSelection()
     }
 
     var showManageTabsDialog by remember { mutableStateOf(false) }
@@ -525,6 +549,37 @@ fun MusicScreen(
         )
     }
 
+    // #185: the Folders tab shares the screen search box (contains-filter
+    // on name or path — the path distinguishes same-named folders on
+    // different volumes) and the shared sort state — one sortField /
+    // sortReverse for the whole Music screen, like Local. There is no
+    // separate folders sort: the popup edits the same field.
+    val filteredFolders = remember(folders, searchQuery) {
+        if (searchQuery.isBlank()) {
+            folders
+        } else {
+            folders.filter {
+                it.name.contains(searchQuery, ignoreCase = true) ||
+                    it.path.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    // #185: the shared MediaSortComparator for folders — same field
+    // semantics as the audio artist comparator. Folders carry no date,
+    // size or duration: SIZE / DURATION / COUNT sort by track count
+    // (most tracks first); DATE has nothing to sort by (folder ids are
+    // path hashes, not recency) and falls through to the name tie-break.
+    val sortedFolders = remember(filteredFolders, sortField, appSettings.sortReverse) {
+        filteredFolders.sortedWith(
+            MediaSortComparator.audioFolderComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
     fun selectedTracksInView(): List<AudioTrack> =
         sortedTracks.filter { selectedTrackIds.contains(it.id.ifBlank { it.path }) }
 
@@ -711,6 +766,69 @@ fun MusicScreen(
         }
     }
 
+    // #185: Folders multi-select actions, mirroring the Artists ones. A
+    // folder's tracks are its library tracks (folderTracks groups by
+    // parent dir, the same way getAudioFolders does), in library order —
+    // no new repository call needed.
+    fun selectedFoldersInView(): List<AudioFolder> =
+        sortedFolders.filter { selectedFolderIds.contains(it.id.ifBlank { it.path }) }
+
+    fun selectedFolderTracks(): List<AudioTrack> =
+        selectedFoldersInView().flatMap { folderTracks(it) }
+
+    fun playFolderSelection() {
+        val folderTrackList = selectedFolderTracks()
+        if (folderTrackList.isNotEmpty()) {
+            playbackManager?.playAudioQueue(folderTrackList, startIndex = 0)
+            onOpenPlayer()
+            clearFolderSelection()
+        }
+    }
+
+    fun addFolderSelectionToPlaylist() {
+        val folderTrackList = selectedFolderTracks()
+        if (folderTrackList.isNotEmpty()) {
+            tracksForPlaylistAdd = folderTrackList
+            showAddToPlaylistDialog = true
+        }
+    }
+
+    fun toggleFolderSelectionFavourite() {
+        val selected = selectedFolderTracks()
+        if (selected.isEmpty()) return
+        val favUris = favourites.map { it.mediaUri }.toSet()
+        scope.launch(Dispatchers.IO) {
+            // Toggle as a group: if every selected track is already a
+            // favourite, remove them all; otherwise add the missing ones.
+            val allFav = selected.all { favUris.contains(it.path) }
+            if (allFav) {
+                selected.forEach { persistenceRepository.removeFavourite(it.path) }
+            } else {
+                selected.filter { !favUris.contains(it.path) }.forEach { track ->
+                    persistenceRepository.addFavourite(
+                        FavouriteItem(
+                            mediaId = track.id,
+                            title = track.title,
+                            subtitle = "${track.artist} • ${track.album}",
+                            mediaUri = track.path,
+                            isVideo = false,
+                            durationMs = track.durationMs,
+                        )
+                    )
+                }
+            }
+            withContext(Dispatchers.Main) {
+                clearFolderSelection()
+                snackbarHostState.showSnackbar(
+                    context.getString(
+                        if (allFav) R.string.snackbar_removed_favourites
+                        else R.string.snackbar_added_to_favourites
+                    )
+                )
+            }
+        }
+    }
+
     // #200: a folder's tracks are its library tracks, grouped exactly the
     // way MediaStoreRepository.getAudioFolders() groups them (parent dir of
     // the file path, blank paths fall back to /storage/emulated/0/Music) —
@@ -735,7 +853,7 @@ fun MusicScreen(
         containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode) {
+            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode || isFolderSelectionMode) {
                 // #185: selection top bar — count + close. Back exits too.
                 TopAppBar(
                     navigationIcon = {
@@ -743,6 +861,7 @@ fun MusicScreen(
                             clearTrackSelection()
                             clearAlbumSelection()
                             clearArtistSelection()
+                            clearFolderSelection()
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
@@ -758,6 +877,7 @@ fun MusicScreen(
                                 when {
                                     isAlbumSelectionMode -> albumSelectionCount
                                     isArtistSelectionMode -> artistSelectionCount
+                                    isFolderSelectionMode -> folderSelectionCount
                                     else -> trackSelectionCount
                                 },
                             ),
@@ -854,11 +974,11 @@ fun MusicScreen(
             }
         },
         bottomBar = {
-            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode) {
+            if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode || isFolderSelectionMode) {
                 // #185: multi-select action bar — exactly the track-menu
                 // actions: Play, Add to playlist, Favourite. No delete.
-                // On Albums / Artists the same three actions run over the
-                // selected albums' / artists' tracks.
+                // On Albums / Artists / Folders the same three actions run
+                // over the selected albums' / artists' / folders' tracks.
                 Column {
                     HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
                     Row(
@@ -874,6 +994,7 @@ fun MusicScreen(
                                 when {
                                     isAlbumSelectionMode -> playAlbumSelection()
                                     isArtistSelectionMode -> playArtistSelection()
+                                    isFolderSelectionMode -> playFolderSelection()
                                     else -> playTrackSelection()
                                 }
                             },
@@ -886,6 +1007,7 @@ fun MusicScreen(
                                 when {
                                     isAlbumSelectionMode -> addAlbumSelectionToPlaylist()
                                     isArtistSelectionMode -> addArtistSelectionToPlaylist()
+                                    isFolderSelectionMode -> addFolderSelectionToPlaylist()
                                     else -> addTrackSelectionToPlaylist()
                                 }
                             },
@@ -898,6 +1020,7 @@ fun MusicScreen(
                                 when {
                                     isAlbumSelectionMode -> toggleAlbumSelectionFavourite()
                                     isArtistSelectionMode -> toggleArtistSelectionFavourite()
+                                    isFolderSelectionMode -> toggleFolderSelectionFavourite()
                                     else -> toggleTrackSelectionFavourite()
                                 }
                             },
@@ -1230,28 +1353,47 @@ fun MusicScreen(
                                 message = stringResource(R.string.music_empty_folders_desc),
                                 icon = Icons.Filled.Folder,
                             )
-                        } else {
-                            FoldersTabContent(
-                                folders = folders,
-                                viewMode = viewMode,
-                                onFolderClick = { folder ->
-                                    // #200: play only this folder's tracks,
-                                    // from its first track — never the
-                                    // whole library.
-                                    val folderTrackList = folderTracks(folder)
-                                    if (folderTrackList.isNotEmpty()) {
-                                        playbackManager?.playAudioQueue(folderTrackList, startIndex = 0)
-                                        onOpenPlayer()
-                                    } else {
-                                        // #207: same silent-tap problem as
-                                        // playlists — say so instead of
-                                        // doing nothing.
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(context.getString(R.string.music_nothing_to_play_msg))
-                                        }
-                                    }
-                                },
+                        } else if (filteredFolders.isEmpty()) {
+                            EmptyStateView(
+                                title = stringResource(R.string.music_search_no_matches_title),
+                                message = stringResource(R.string.music_search_no_matches_desc, searchQuery),
+                                icon = Icons.Filled.Search,
                             )
+                        } else {
+                            // #185: pull to refresh, like Local's content.
+                            PullToRefreshBox(
+                                isRefreshing = isRefreshing,
+                                onRefresh = {
+                                    isRefreshing = true
+                                    refreshMusic()
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                FoldersTabContent(
+                                    folders = sortedFolders,
+                                    viewMode = viewMode,
+                                    selectedFolderIds = selectedFolderIds,
+                                    isSelectionMode = isFolderSelectionMode,
+                                    onToggleFolderSelection = { toggleFolderSelection(it) },
+                                    onFolderClick = { folder ->
+                                        // #200: play only this folder's tracks,
+                                        // from its first track — never the
+                                        // whole library.
+                                        val folderTrackList = folderTracks(folder)
+                                        if (folderTrackList.isNotEmpty()) {
+                                            playbackManager?.playAudioQueue(folderTrackList, startIndex = 0)
+                                            onOpenPlayer()
+                                        } else {
+                                            // #207: same silent-tap problem as
+                                            // playlists — say so instead of
+                                            // doing nothing.
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(context.getString(R.string.music_nothing_to_play_msg))
+                                            }
+                                        }
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -1336,6 +1478,7 @@ fun MusicScreen(
                     clearTrackSelection()
                     clearAlbumSelection()
                     clearArtistSelection()
+                    clearFolderSelection()
                     snackbarHostState.showSnackbar(
                         context.getString(R.string.music_added_to_playlist_msg, pl.name)
                     )
@@ -2144,8 +2287,19 @@ private fun ArtistsTabContent(
 private fun FoldersTabContent(
     folders: List<AudioFolder>,
     viewMode: ViewMode = ViewMode.LIST,
+    selectedFolderIds: Set<String> = emptySet(),
+    isSelectionMode: Boolean = false,
+    onToggleFolderSelection: (AudioFolder) -> Unit = {},
     onFolderClick: (AudioFolder) -> Unit,
 ) {
+    // #185: the view toggle was already honoured (the old tab had both
+    // branches); both now use the shared AudioFolderRow / GridCard.
+    // Scrollbar counts: each branch emits exactly one lazy item per
+    // folder (the list divider lives inside the item lambda, not as its
+    // own item), so itemCount = folders.size in both branches. The tab
+    // branch never composes this content with an empty list — the empty
+    // and no-search-matches states are EmptyStateViews outside it — so
+    // there is no empty-state item to count, unlike Playlists (#209).
     if (viewMode == ViewMode.LIST) {
         val listState = rememberLazyListState()
         Box(modifier = Modifier.fillMaxSize()) {
@@ -2156,64 +2310,21 @@ private fun FoldersTabContent(
             ) {
                 items(
                     items = folders,
-                    key = { it.id.ifBlank { it.path } },
+                    key = { folder -> folder.id.ifBlank { folder.path } },
                     contentType = { "audio_folder_row" },
                 ) { folder ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onFolderClick(folder) }
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(46.dp)
-                                .clip(MpxShapes.small)
-                                .background(MpxTheme.colors.surfaceVariant),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Folder,
-                                contentDescription = null,
-                                tint = MpxTheme.colors.primary,
-                            )
-                        }
-                        Spacer(Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = folder.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MpxTheme.colors.textPrimary,
-                                )
-                                if (folder.isStorageRemovable) {
-                                    Spacer(Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .background(MpxTheme.colors.primary.copy(alpha = 0.18f), MpxShapes.extraSmall)
-                                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.music_sd_card_badge),
-                                            color = MpxTheme.colors.primary,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 9.sp,
-                                        )
-                                    }
-                                }
-                            }
-                            Text(
-                                text = stringResource(R.string.music_folder_tracks_format, folder.trackCount, folder.path),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MpxTheme.colors.textSecondary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
+                    val isSelected = selectedFolderIds.contains(folder.id.ifBlank { folder.path })
+                    AudioFolderRow(
+                        folder = folder,
+                        isSelected = isSelected,
+                        onLongClick = { onToggleFolderSelection(folder) },
+                        onClick = {
+                            if (isSelectionMode) onToggleFolderSelection(folder)
+                            else onFolderClick(folder)
+                        },
+                    )
                     HorizontalDivider(
-                        modifier = Modifier.padding(start = 76.dp),
+                        modifier = Modifier.padding(start = 78.dp),
                         color = MpxTheme.colors.border,
                         thickness = MpxHairline,
                     )
@@ -2241,64 +2352,19 @@ private fun FoldersTabContent(
             ) {
                 items(
                     items = folders,
-                    key = { it.id.ifBlank { it.path } },
-                    contentType = { "audio_folder_grid" },
+                    key = { folder -> folder.id.ifBlank { folder.path } },
+                    contentType = { "audio_folder_card" },
                 ) { folder ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onFolderClick(folder) },
-                        shape = MpxShapes.large,
-                        colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(96.dp)
-                                    .clip(MpxShapes.small)
-                                    .background(MpxTheme.colors.surfaceVariant),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Folder,
-                                    contentDescription = null,
-                                    tint = MpxTheme.colors.primary,
-                                    modifier = Modifier.size(40.dp),
-                                )
-                                if (folder.isStorageRemovable) {
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopStart)
-                                            .padding(6.dp)
-                                            .background(MpxTheme.colors.primary.copy(alpha = 0.85f), MpxShapes.extraSmall)
-                                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.music_sd_card_badge),
-                                            color = MpxTheme.colors.black,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 9.sp,
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = folder.name,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MpxTheme.colors.textPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Spacer(Modifier.height(2.dp))
-                            Text(
-                                text = stringResource(R.string.music_songs_count, folder.trackCount),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MpxTheme.colors.textSecondary,
-                            )
-                        }
-                    }
+                    val isSelected = selectedFolderIds.contains(folder.id.ifBlank { folder.path })
+                    AudioFolderGridCard(
+                        folder = folder,
+                        isSelected = isSelected,
+                        onLongClick = { onToggleFolderSelection(folder) },
+                        onClick = {
+                            if (isSelectionMode) onToggleFolderSelection(folder)
+                            else onFolderClick(folder)
+                        },
+                    )
                 }
             }
             GridFastScrollbar(
