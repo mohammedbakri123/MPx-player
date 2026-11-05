@@ -117,6 +117,7 @@ import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.Playlist
 import com.mpx.player.domain.model.PlaylistItem
+import com.mpx.player.domain.model.customPlaylistId
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
@@ -841,7 +842,9 @@ fun MusicScreen(
     // video items and its own order instead of being forced through the
     // audio-only path).
     suspend fun playlistAudioTracks(playlist: Playlist): List<AudioTrack> {
-        val custom = customPlaylists.find { it.id.toString() == playlist.id }
+        // Issue #217: compare against the namespaced custom id — a bare
+        // room id would also match a device playlist with the same number.
+        val custom = customPlaylists.find { customPlaylistId(it.id) == playlist.id }
         if (custom != null) {
             val items = persistenceRepository.getPlaylistItems(custom.id)
             // Library resolution only: a video item has no AudioTrack,
@@ -855,7 +858,9 @@ fun MusicScreen(
     }
 
     suspend fun playlistPlayableMedia(playlist: Playlist): List<PlayableMedia> {
-        val custom = customPlaylists.find { it.id.toString() == playlist.id }
+        // Issue #217: compare against the namespaced custom id — a bare
+        // room id would also match a device playlist with the same number.
+        val custom = customPlaylists.find { customPlaylistId(it.id) == playlist.id }
         if (custom != null) {
             return persistenceRepository.getPlaylistItems(custom.id).map { item ->
                 PlayableMedia(
@@ -1437,7 +1442,10 @@ fun MusicScreen(
                                     onFavouritesClick = { showFavouritesDialog = true },
                                     onHistoryClick = { showHistoryDialog = true },
                                     onPlaylistClick = { playlist ->
-                                        val custom = customPlaylists.find { it.id.toString() == playlist.id }
+                                        // Issue #217: compare against the namespaced custom id —
+                                        // a bare room id would also match a device playlist
+                                        // with the same number, opening the wrong one.
+                                        val custom = customPlaylists.find { customPlaylistId(it.id) == playlist.id }
                                         if (custom != null) {
                                             selectedCustomPlaylist = custom
                                             scope.launch {
