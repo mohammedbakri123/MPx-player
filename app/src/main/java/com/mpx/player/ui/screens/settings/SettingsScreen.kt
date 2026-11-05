@@ -1401,16 +1401,21 @@ private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = w
         "0 B (no active WAL log)"
     }
 
-    val recordStats = try {
+    // Counts are read in try/catch (non-composable); the localized
+    // format call must stay OUTSIDE it — composable invocations are
+    // not allowed inside try/catch.
+    val recordCounts = try {
         val db = MpxDatabase.getInstance(context)
-        val favCount = db.favouriteDao().getCount()
-        val histCount = db.playbackHistoryDao().getCount()
-        val playCount = db.playlistDao().getPlaylistsWithCount().size
-        val resCount = db.playbackResumeDao().getAllResumePositions().size
-        stringResource(R.string.dev_db_records_summary, favCount, histCount, playCount, resCount)
+        listOf(
+            db.favouriteDao().getCount(),
+            db.playbackHistoryDao().getCount(),
+            db.playlistDao().getPlaylistsWithCount().size,
+            db.playbackResumeDao().getAllResumePositions().size,
+        )
     } catch (_: Exception) {
-        "0 favs • 0 history • 0 playlists • 0 resume"
+        listOf(0, 0, 0, 0)
     }
+    val recordStats = stringResource(R.string.dev_db_records_summary, recordCounts[0], recordCounts[1], recordCounts[2], recordCounts[3])
 
     val hasVideoPerm = MediaPermissions.hasVideoPermission(context)
     val hasAudioPerm = MediaPermissions.hasAudioPermission(context)
