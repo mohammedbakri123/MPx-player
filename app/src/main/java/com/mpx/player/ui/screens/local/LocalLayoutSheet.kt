@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -56,6 +57,7 @@ enum class TileSize(val labelRes: Int, val columns: Int) {
  * distinction). [onResetToDefault] is only shown in folder scope when the
  * folder actually has an override.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalLayoutSheet(
     isFolderScope: Boolean,
