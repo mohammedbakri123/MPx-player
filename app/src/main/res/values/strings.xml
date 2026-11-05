@@ -443,7 +443,9 @@
     <string name="sort_album">Album</string>
     <!-- Local Screen -->
     <string name="local_title">MPx</string>
-    <string name="local_search_placeholder">Search folders…</string>
+    <string name="search_page_placeholder">Search files and folders…</string>
+    <string name="search_page_hint_title">Search your media</string>
+    <string name="search_page_hint_desc">Type a name to search across all folders and files.</string>
     <string name="local_section_folders">FOLDERS</string>
     <string name="local_sort_label">Sort: %1$s</string>
     <string name="local_status_banner">Real MediaStore scanning active. Folders and video counts reflect device media.</string>
@@ -493,7 +495,7 @@
     <string name="empty_permission_desc">MPx needs permission to access your videos to display your media library.</string>
     <string name="empty_permission_action">Grant Permission</string>
     <string name="empty_search_title">No Matches Found</string>
-    <string name="empty_search_desc">No folders match \"%1$s\".</string>
+    <string name="empty_search_desc">No files or folders match \"%1$s\".</string>
     <string name="empty_search_action">Clear search</string>
     <string name="empty_videos_title">No Videos Found</string>
     <string name="empty_videos_desc">No video folders found on this device. Videos you record or download will appear here.</string>

@@ -443,7 +443,9 @@
     <string name="sort_album">专辑</string>
     <!-- Local Screen -->
     <string name="local_title">MPx</string>
-    <string name="local_search_placeholder">搜索文件夹…</string>
+    <string name="search_page_placeholder">搜索文件和文件夹…</string>
+    <string name="search_page_hint_title">搜索您的媒体</string>
+    <string name="search_page_hint_desc">输入名称以搜索所有文件夹和文件。</string>
     <string name="local_section_folders">文件夹</string>
     <string name="local_sort_label">排序：%1$s</string>
     <string name="local_status_banner">真实 MediaStore 扫描进行中。文件夹和视频数量均反映设备媒体。</string>
@@ -493,7 +495,7 @@
     <string name="empty_permission_desc">MPx 需要访问您的视频的权限，才能显示您的媒体库。</string>
     <string name="empty_permission_action">授予权限</string>
     <string name="empty_search_title">未找到匹配项</string>
-    <string name="empty_search_desc">没有与“%1$s”匹配的文件夹。</string>
+    <string name="empty_search_desc">没有与“%1$s”匹配的文件或文件夹。</string>
     <string name="empty_search_action">清除搜索</string>
     <string name="empty_videos_title">未找到视频</string>
     <string name="empty_videos_desc">在此设备上未找到视频文件夹。您录制或下载的视频将显示在此处。</string>

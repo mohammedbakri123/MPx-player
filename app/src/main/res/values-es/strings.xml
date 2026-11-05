@@ -443,7 +443,9 @@
     <string name="sort_album">Álbum</string>
     <!-- Local Screen -->
     <string name="local_title">MPx</string>
-    <string name="local_search_placeholder">Buscar carpetas…</string>
+    <string name="search_page_placeholder">Buscar archivos y carpetas…</string>
+    <string name="search_page_hint_title">Busca en tus medios</string>
+    <string name="search_page_hint_desc">Escribe un nombre para buscar en todas las carpetas y archivos.</string>
     <string name="local_section_folders">CARPETAS</string>
     <string name="local_sort_label">Orden: %1$s</string>
     <string name="local_status_banner">Escaneo real de MediaStore activo. Las carpetas y los recuentos de vídeo reflejan el contenido del dispositivo.</string>
@@ -493,7 +495,7 @@
     <string name="empty_permission_desc">MPx necesita permiso para acceder a tus vídeos y mostrar tu biblioteca multimedia.</string>
     <string name="empty_permission_action">Conceder permiso</string>
     <string name="empty_search_title">Sin coincidencias</string>
-    <string name="empty_search_desc">Ninguna carpeta coincide con \"%1$s\".</string>
+    <string name="empty_search_desc">Ningún archivo ni carpeta coincide con \"%1$s\".</string>
     <string name="empty_search_action">Borrar búsqueda</string>
     <string name="empty_videos_title">No se encontraron vídeos</string>
     <string name="empty_videos_desc">No se encontraron carpetas de vídeo en este dispositivo. Los vídeos que grabes o descargues aparecerán aquí.</string>

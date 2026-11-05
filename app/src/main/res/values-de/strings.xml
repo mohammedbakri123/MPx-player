@@ -443,7 +443,9 @@
     <string name="sort_album">Album</string>
     <!-- Local Screen -->
     <string name="local_title">MPx</string>
-    <string name="local_search_placeholder">Ordner suchen…</string>
+    <string name="search_page_placeholder">Dateien und Ordner suchen…</string>
+    <string name="search_page_hint_title">Medien durchsuchen</string>
+    <string name="search_page_hint_desc">Tippe einen Namen, um in allen Ordnern und Dateien zu suchen.</string>
     <string name="local_section_folders">ORDNER</string>
     <string name="local_sort_label">Sortierung: %1$s</string>
     <string name="local_status_banner">Echtes MediaStore-Scannen aktiv. Ordner und Videoanzahl spiegeln die Medien des Geräts wider.</string>
@@ -493,7 +495,7 @@
     <string name="empty_permission_desc">MPx benötigt die Berechtigung für den Zugriff auf Ihre Videos, um Ihre Medienbibliothek anzuzeigen.</string>
     <string name="empty_permission_action">Berechtigung erteilen</string>
     <string name="empty_search_title">Keine Treffer gefunden</string>
-    <string name="empty_search_desc">Kein Ordner passt zu „%1$s“.</string>
+    <string name="empty_search_desc">Keine Dateien oder Ordner passen zu „%1$s“.</string>
     <string name="empty_search_action">Suche löschen</string>
     <string name="empty_videos_title">Keine Videos gefunden</string>
     <string name="empty_videos_desc">Auf diesem Gerät wurden keine Videoordner gefunden. Videos, die Sie aufnehmen oder herunterladen, erscheinen hier.</string>

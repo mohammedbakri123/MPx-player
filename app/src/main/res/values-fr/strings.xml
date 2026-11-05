@@ -443,7 +443,9 @@
     <string name="sort_album">Album</string>
     <!-- Local Screen -->
     <string name="local_title">MPx</string>
-    <string name="local_search_placeholder">Rechercher des dossiers…</string>
+    <string name="search_page_placeholder">Rechercher des fichiers et des dossiers…</string>
+    <string name="search_page_hint_title">Rechercher dans vos médias</string>
+    <string name="search_page_hint_desc">Saisissez un nom pour rechercher dans tous les dossiers et fichiers.</string>
     <string name="local_section_folders">DOSSIERS</string>
     <string name="local_sort_label">Tri : %1$s</string>
     <string name="local_status_banner">Analyse MediaStore réelle active. Les dossiers et les nombres de vidéos reflètent le contenu de l’appareil.</string>
@@ -493,7 +495,7 @@
     <string name="empty_permission_desc">MPx a besoin de l’autorisation d’accéder à vos vidéos pour afficher votre bibliothèque multimédia.</string>
     <string name="empty_permission_action">Accorder l’autorisation</string>
     <string name="empty_search_title">Aucun résultat</string>
-    <string name="empty_search_desc">Aucun dossier ne correspond à « %1$s ».</string>
+    <string name="empty_search_desc">Aucun fichier ni dossier ne correspond à « %1$s ».</string>
     <string name="empty_search_action">Effacer la recherche</string>
     <string name="empty_videos_title">Aucune vidéo trouvée</string>
     <string name="empty_videos_desc">Aucun dossier vidéo trouvé sur cet appareil. Les vidéos que vous enregistrez ou téléchargez apparaîtront ici.</string>

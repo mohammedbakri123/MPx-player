@@ -443,7 +443,9 @@
     <string name="sort_album">الألبوم</string>
     <!-- Local Screen -->
     <string name="local_title">MPx</string>
-    <string name="local_search_placeholder">البحث في المجلدات…</string>
+    <string name="search_page_placeholder">ابحث في الملفات والمجلدات…</string>
+    <string name="search_page_hint_title">ابحث في وسائطك</string>
+    <string name="search_page_hint_desc">اكتب اسمًا للبحث في جميع المجلدات والملفات.</string>
     <string name="local_section_folders">المجلدات</string>
     <string name="local_sort_label">الترتيب: %1$s</string>
     <string name="local_status_banner">فحص MediaStore الحقيقي نشط. تعكس المجلدات وعدد مقاطع الفيديو وسائط الجهاز.</string>
@@ -493,7 +495,7 @@
     <string name="empty_permission_desc">يحتاج MPx إلى إذن للوصول إلى مقاطع الفيديو الخاصة بك لعرض مكتبة الوسائط.</string>
     <string name="empty_permission_action">منح الإذن</string>
     <string name="empty_search_title">لم يتم العثور على نتائج</string>
-    <string name="empty_search_desc">لا توجد مجلدات تطابق \"%1$s\".</string>
+    <string name="empty_search_desc">لا توجد ملفات أو مجلدات تطابق \"%1$s\".</string>
     <string name="empty_search_action">مسح البحث</string>
     <string name="empty_videos_title">لم يتم العثور على مقاطع فيديو</string>
     <string name="empty_videos_desc">لم يتم العثور على مجلدات فيديو على هذا الجهاز. ستظهر هنا مقاطع الفيديو التي تسجلها أو تنزلها.</string>

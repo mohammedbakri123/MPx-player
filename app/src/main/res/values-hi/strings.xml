@@ -443,7 +443,9 @@
     <string name="sort_album">एल्बम</string>
     <!-- Local Screen -->
     <string name="local_title">MPx</string>
-    <string name="local_search_placeholder">फ़ोल्डर खोजें…</string>
+    <string name="search_page_placeholder">फ़ाइलें और फ़ोल्डर खोजें…</string>
+    <string name="search_page_hint_title">अपना मीडिया खोजें</string>
+    <string name="search_page_hint_desc">सभी फ़ोल्डरों और फ़ाइलों में खोजने के लिए कोई नाम लिखें।</string>
     <string name="local_section_folders">फ़ोल्डर</string>
     <string name="local_sort_label">क्रम: %1$s</string>
     <string name="local_status_banner">वास्तविक MediaStore स्कैनिंग सक्रिय है। फ़ोल्डर और वीडियो संख्या डिवाइस मीडिया को दर्शाती है।</string>
@@ -493,7 +495,7 @@
     <string name="empty_permission_desc">MPx को आपकी मीडिया लाइब्रेरी दिखाने के लिए आपके वीडियो तक पहुँच की अनुमति चाहिए।</string>
     <string name="empty_permission_action">अनुमति दें</string>
     <string name="empty_search_title">कोई मिलान नहीं मिला</string>
-    <string name="empty_search_desc">« %1$s » से मेल खाता कोई फ़ोल्डर नहीं है।</string>
+    <string name="empty_search_desc">« %1$s » से मेल खाती कोई फ़ाइल या फ़ोल्डर नहीं है।</string>
     <string name="empty_search_action">खोज साफ़ करें</string>
     <string name="empty_videos_title">कोई वीडियो नहीं मिला</string>
     <string name="empty_videos_desc">इस डिवाइस पर कोई वीडियो फ़ोल्डर नहीं मिला। आपके रिकॉर्ड या डाउनलोड किए गए वीडियो यहाँ दिखाई देंगे।</string>

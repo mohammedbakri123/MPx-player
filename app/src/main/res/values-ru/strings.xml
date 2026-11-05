@@ -443,7 +443,9 @@
     <string name="sort_album">Альбом</string>
     <!-- Local Screen -->
     <string name="local_title">MPx</string>
-    <string name="local_search_placeholder">Поиск папок…</string>
+    <string name="search_page_placeholder">Поиск файлов и папок…</string>
+    <string name="search_page_hint_title">Поиск по медиатеке</string>
+    <string name="search_page_hint_desc">Введите название, чтобы найти его во всех папках и файлах.</string>
     <string name="local_section_folders">ПАПКИ</string>
     <string name="local_sort_label">Сортировка: %1$s</string>
     <string name="local_status_banner">Активно реальное сканирование MediaStore. Папки и количество видео отражают медиа устройства.</string>
@@ -493,7 +495,7 @@
     <string name="empty_permission_desc">MPx нужно разрешение на доступ к вашим видео, чтобы показать вашу медиатеку.</string>
     <string name="empty_permission_action">Предоставить разрешение</string>
     <string name="empty_search_title">Совпадений не найдено</string>
-    <string name="empty_search_desc">Папок, соответствующих «%1$s», нет.</string>
+    <string name="empty_search_desc">Файлов или папок, соответствующих «%1$s», нет.</string>
     <string name="empty_search_action">Очистить поиск</string>
     <string name="empty_videos_title">Видео не найдены</string>
     <string name="empty_videos_desc">На этом устройстве не найдено папок с видео. Видео, которые вы записываете или скачиваете, появятся здесь.</string>
