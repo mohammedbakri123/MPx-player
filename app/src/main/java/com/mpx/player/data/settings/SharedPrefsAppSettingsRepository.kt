@@ -96,6 +96,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             showMusicAlbumsTab = albums,
             showMusicArtistsTab = artists,
             showMusicFoldersTab = folders,
+        lastTabRoute = prefs.getString("last_tab_route", "local") ?: "local",
         )
     }
 
@@ -162,6 +163,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("show_music_albums_tab", settings.showMusicAlbumsTab)
             .putBoolean("show_music_artists_tab", settings.showMusicArtistsTab)
             .putBoolean("show_music_folders_tab", settings.showMusicFoldersTab)
+            .putString("last_tab_route", settings.lastTabRoute)
             .apply()
     }
 

@@ -75,6 +75,7 @@ data class AppSettings(
     val showMusicAlbumsTab: Boolean = true,
     val showMusicArtistsTab: Boolean = true,
     val showMusicFoldersTab: Boolean = true,
+    val lastTabRoute: String = "local", // Last dock tab (#157): the app reopens on it
 ) {
     /**
      * Total number of currently visible music tabs.

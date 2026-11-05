@@ -27,17 +27,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import com.mpx.player.ui.theme.MpxTheme
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -52,7 +63,9 @@ import com.mpx.player.ui.navigation.navigationTabs
 import com.mpx.player.ui.screens.about.AboutBetaScreen
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.screens.local.LocalScreen
+import com.mpx.player.ui.screens.me.HistoryScreen
 import com.mpx.player.ui.screens.me.MeScreen
+import com.mpx.player.ui.screens.me.PlaylistsScreen
 import com.mpx.player.ui.screens.music.MusicScreen
 import com.mpx.player.ui.screens.player.PlayerScreen
 import com.mpx.player.ui.screens.settings.SettingsScreen
@@ -65,6 +78,49 @@ import com.mpx.player.ui.components.MpxBottomBar
 import com.mpx.player.ui.components.MpxDockTab
 import com.mpx.player.ui.theme.MpxEasingStandard
 import com.mpx.player.ui.theme.MpxMotionStandard
+
+/**
+ * mpvEx-style tab transitions (#157): between dock tabs the new page slides
+ * in 48dp from the direction of travel and fades (250ms, standard easing),
+ * the old page slides out the other way and fades faster; any other
+ * navigation is a plain 250ms fade. mpvEx's MainScreen does the same with
+ * AnimatedContent (250ms slide + fade, 48dp).
+ */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.mpxTabEnter(
+    tabOrder: List<String>,
+    density: Density,
+): EnterTransition {
+    val from = tabOrder.indexOf(initialState.destination.route)
+    val to = tabOrder.indexOf(targetState.destination.route)
+    return if (from >= 0 && to >= 0 && from != to) {
+        val direction = if (to > from) 1 else -1
+        val slidePx = with(density) { 48.dp.roundToPx() } * direction
+        slideInHorizontally(
+            animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard),
+        ) { slidePx } +
+            fadeIn(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard))
+    } else {
+        fadeIn(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard))
+    }
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.mpxTabExit(
+    tabOrder: List<String>,
+    density: Density,
+): ExitTransition {
+    val from = tabOrder.indexOf(initialState.destination.route)
+    val to = tabOrder.indexOf(targetState.destination.route)
+    return if (from >= 0 && to >= 0 && from != to) {
+        val direction = if (to > from) 1 else -1
+        val slidePx = with(density) { 48.dp.roundToPx() } * direction
+        slideOutHorizontally(
+            animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard),
+        ) { -slidePx } +
+            fadeOut(animationSpec = tween(MpxMotionStandard / 2, easing = MpxEasingStandard))
+    } else {
+        fadeOut(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard))
+    }
+}
 
 class MainActivity : ComponentActivity() {
     private var isInPipMode by mutableStateOf(false)
@@ -327,61 +383,84 @@ fun MpxApp(
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = backStackEntry?.destination
 
-            // Hide bottom navigation in PiP mode or on full-screen routes (Player, Settings, AboutBeta)
-            if (isInPipMode || currentDestination?.route in listOf(Screen.Player.route, Screen.Settings.route, Screen.OverlaySettings.route, Screen.AboutBeta.route)) {
-                return@Scaffold
-            }
-
-            // MX-style bottom bar: full-width navigation bar in the theme's
-            // surface colour (defined in every theme, unlike the old
-            // surfaceContainerHigh dock, which fell back to a foreign grey
-            // in Dark Slate / Classic Navy). The mini-player sits above it
-            // as its own full-width strip, separated by a hairline — the
-            // same two-bar shape MX uses — instead of one floating
-            // rounded container.
-            Column {
-                // Real Media3 persistent MiniPlayer bar
-                MiniPlayer(
-                    playbackManager = playbackManager,
-                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
-                )
-                // #106 dock atoms: full-width 64dp bar, hairline top edge
-                // (replaces the old divider), tap-only tabs, colour-only
-                // selection. Deliberately NOT the old M3 NavigationBar
-                // (80dp, pill indicator, container grey) and NOT the #84
-                // floating rounded dock. No swipe between tabs (UX law).
-                MpxBottomBar {
-                    navigationTabs.forEach { tab ->
-                        val selected = currentDestination?.hierarchy?.any {
-                            it.route == tab.route
-                        } == true
-                        MpxDockTab(
-                            label = stringResource(tab.labelRes),
-                            icon = if (selected) tab.selectedIcon else tab.unselectedIcon,
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+            // Hide bottom navigation in PiP mode or on full-screen routes
+            // (Player, Settings, AboutBeta, History, Playlists). mpvEx-style
+            // (#157): the bar slides in/out over 300ms instead of popping.
+            val showDock = !isInPipMode && currentDestination?.route !in listOf(
+                Screen.Player.route,
+                Screen.Settings.route,
+                Screen.OverlaySettings.route,
+                Screen.AboutBeta.route,
+                Screen.History.route,
+                Screen.Playlists.route,
+            )
+            AnimatedVisibility(
+                visible = showDock,
+                enter = slideInVertically(
+                    animationSpec = tween(300, easing = MpxEasingStandard),
+                ) { it },
+                exit = slideOutVertically(
+                    animationSpec = tween(300, easing = MpxEasingStandard),
+                ) { it },
+            ) {
+                Column {
+                    // Real Media3 persistent MiniPlayer bar
+                    MiniPlayer(
+                        playbackManager = playbackManager,
+                        onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                    )
+                    // #157 dock: mpvEx-style NavigationBar (28dp rounded top
+                    // corners, accent pill on the selected tab), same four
+                    // tabs, tap-only. The selected tab is persisted
+                    // (AppSettings.lastTabRoute) so the app reopens on it.
+                    MpxBottomBar {
+                        navigationTabs.forEach { tab ->
+                            val selected = currentDestination?.hierarchy?.any {
+                                it.route == tab.route
+                            } == true
+                            MpxDockTab(
+                                label = stringResource(tab.labelRes),
+                                icon = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                                selected = selected,
+                                onClick = {
+                                    realSettingsRepo.save(
+                                        realSettingsRepo.load().copy(lastTabRoute = tab.route),
+                                    )
+                                    navController.navigate(tab.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                        )
+                                },
+                            )
+                        }
                     }
                 }
             }
         },
     ) { padding ->
+        // #157: reopen on the last dock tab (persisted on every tab tap).
+        val tabOrder = navigationTabs.map { it.route }
+        val startTabRoute = remember {
+            realSettingsRepo.load().lastTabRoute
+        }.takeIf { it in tabOrder } ?: Screen.Local.route
+
+        // #157: density is captured here (composable scope) because
+        // AnimatedContentTransitionScope has no density in this Compose
+        // version — mpvEx's identical with(density) usage relies on a
+        // newer animation artifact. The transition lambdas below are
+        // not composable, so they take the captured value.
+        val density = LocalDensity.current
         NavHost(
             navController = navController,
-            startDestination = Screen.Local.route,
+            startDestination = startTabRoute,
             modifier = Modifier.padding(padding),
-            enterTransition = { fadeIn(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard)) },
-            exitTransition = { fadeOut(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard)) },
-            popEnterTransition = { fadeIn(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard)) },
-            popExitTransition = { fadeOut(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard)) },
+            enterTransition = { mpxTabEnter(tabOrder, density) },
+            exitTransition = { mpxTabExit(tabOrder, density) },
+            popEnterTransition = { mpxTabEnter(tabOrder, density) },
+            popExitTransition = { mpxTabExit(tabOrder, density) },
         ) {
             composable(Screen.Local.route) {
                 LocalScreen(
@@ -445,10 +524,26 @@ fun MpxApp(
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
+                    onOpenHistory = { navController.navigate(Screen.History.route) },
+                    onOpenPlaylists = { navController.navigate(Screen.Playlists.route) },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
+                )
+            }
+            composable(Screen.History.route) {
+                HistoryScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                    playbackManager = playbackManager,
+                )
+            }
+            composable(Screen.Playlists.route) {
+                PlaylistsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                    playbackManager = playbackManager,
                 )
             }
             composable(Screen.Settings.route) {

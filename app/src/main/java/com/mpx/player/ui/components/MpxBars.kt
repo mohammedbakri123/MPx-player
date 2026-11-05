@@ -2,46 +2,50 @@ package com.mpx.player.ui.components
 import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.mpx.player.ui.theme.MpxDockHeight
-import com.mpx.player.ui.theme.MpxHairline
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import com.mpx.player.R
 
 /**
- * M2.5 bar atoms (#106). The dock is full-width, 64dp, tap-only —
- * tabs NEVER switch by swipe (UX law). The mini-player is a full-width
+ * M2.5 bar atoms (#106), dock restyled mpvEx-style (#157). The dock is a
+ * Material3 NavigationBar: 28dp rounded top corners, labels always shown,
+ * tap-only tabs — tabs NEVER switch by swipe (UX law). The selected tab
+ * gets an identity-blue pill (primary at 15% alpha) instead of a grey
+ * container, and the bar stays true black. The mini-player is a full-width
  * strip above the dock. The blur surface uses Haze 1.6.0: callers own
  * the [HazeState] and apply `Modifier.haze(state)` to the content
  * behind the bar.
  */
 
-/** One dock tab: icon + 11sp label, colour-only selection. */
+/** One dock tab: icon + label in the NavigationBar, accent-only selection. */
 @Composable
 fun RowScope.MpxDockTab(
     label: String,
@@ -49,42 +53,53 @@ fun RowScope.MpxDockTab(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight()
-            .clickable(onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            icon,
-            contentDescription = label,
-            tint = if (selected) MpxTheme.colors.primary else MpxTheme.colors.textMuted,
-            modifier = Modifier.size(24.dp),
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (selected) MpxTheme.colors.primary else MpxTheme.colors.textMuted,
-            maxLines = 1,
-        )
-    }
+    NavigationBarItem(
+        selected = selected,
+        onClick = onClick,
+        icon = {
+            Icon(
+                icon,
+                contentDescription = label,
+                modifier = Modifier.size(24.dp),
+            )
+        },
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+            )
+        },
+        alwaysShowLabel = true,
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = MpxTheme.colors.primary,
+            unselectedIconColor = MpxTheme.colors.textMuted,
+            selectedTextColor = MpxTheme.colors.primary,
+            unselectedTextColor = MpxTheme.colors.textMuted,
+            indicatorColor = MpxTheme.colors.primary.copy(alpha = 0.15f),
+        ),
+    )
 }
 
-/** Full-width dock bar: black, hairline top edge, tap-only tabs. */
+/**
+ * Dock bar, mpvEx-style (#157): Material3 NavigationBar with 28dp rounded
+ * top corners on a true-black container. Height is the standard NavigationBar
+ * height (the bar's own 80dp, not the old custom 64dp dock) — the tab switch
+ * animation (slide + fade) lives on the NavHost in MainActivity, and the
+ * show/hide slide lives on the Scaffold bottomBar slot there.
+ */
 @Composable
 fun MpxBottomBar(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
-    Row(
+    NavigationBar(
         modifier = modifier
             .fillMaxWidth()
-            .height(MpxDockHeight)
-            .background(MpxTheme.colors.black)
-            .border(MpxHairline, MpxTheme.colors.border),
-        verticalAlignment = Alignment.CenterVertically,
+            .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)),
+        containerColor = MpxTheme.colors.black,
+        tonalElevation = 0.dp,
+        windowInsets = WindowInsets(0, 0, 0, 0),
         content = content,
     )
 }
