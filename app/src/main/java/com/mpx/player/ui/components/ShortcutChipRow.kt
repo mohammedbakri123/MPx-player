@@ -168,7 +168,7 @@ fun ShortcutChipRow(
                         Spacer(Modifier.width(4.dp))
                         Box(
                             modifier = Modifier
-                                .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
                                 .padding(horizontal = 4.dp, vertical = 1.dp),
                         ) {
                             Text(
