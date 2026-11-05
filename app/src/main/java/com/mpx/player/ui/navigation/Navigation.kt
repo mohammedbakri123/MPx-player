@@ -5,18 +5,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.mpx.player.R
 
 sealed class Screen(val route: String) {
     data object Local : Screen("local")
     data object Music : Screen("music")
-    data object Transfer : Screen("transfer")
     data object Me : Screen("me")
     data object History : Screen("history")
     data object Playlists : Screen("playlists")
@@ -48,12 +45,6 @@ val navigationTabs = listOf(
         labelRes = R.string.nav_music,
         unselectedIcon = Icons.Outlined.MusicNote,
         selectedIcon = Icons.Filled.MusicNote,
-    ),
-    BottomNavItem(
-        route = Screen.Transfer.route,
-        labelRes = R.string.nav_transfer,
-        unselectedIcon = Icons.Outlined.SwapHoriz,
-        selectedIcon = Icons.Filled.SwapHoriz,
     ),
     BottomNavItem(
         route = Screen.Me.route,

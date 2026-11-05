@@ -8,7 +8,6 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">होम</string>
     <string name="nav_music">संगीत</string>
-    <string name="nav_transfer">ट्रांसफ़र</string>
     <string name="nav_me">मैं</string>
 
     <!-- Mini Player -->
@@ -230,8 +229,6 @@
     <string name="tool_history_desc">हाल ही में चलाया गया</string>
     <string name="tool_network_title">नेटवर्क स्ट्रीम</string>
     <string name="tool_network_desc">स्ट्रीम URL चलाएँ</string>
-    <string name="tool_transfer_title">फ़ाइल ट्रांसफ़र</string>
-    <string name="tool_transfer_desc">P2P ट्रांसफ़र</string>
     <string name="tool_equalizer_title">इक्वलाइज़र</string>
     <string name="tool_equalizer_desc">सिस्टम साउंड ट्यूनर</string>
     <string name="tool_local_network_title">स्थानीय नेटवर्क</string>
@@ -636,10 +633,8 @@
     <!-- What is Placeholder -->
     <string name="about_beta_section_placeholders">अभी भी क्या प्लेसहोल्डर है</string>
     <string name="about_beta_placeholders_subtitle">हमारे ईमानदार विकास सिद्धांतों के अनुसार, निम्नलिखित सुविधाएँ बिना किसी नकली या जाली संचालन के गैर-कार्यात्मक UI प्लेसहोल्डर हैं:</string>
-    <string name="about_beta_holder_downloader_title">URL डाउनलोडर (ट्रांसफ़र टैब)</string>
+    <string name="about_beta_holder_downloader_title">URL डाउनलोडर</string>
     <string name="about_beta_holder_downloader_desc">स्थिति: केवल UI शेल। कोई नकली डाउनलोड या कृत्रिम प्रगति बार नहीं। वास्तविक बैकग्राउंड डाउनलोड इंजन चरण 5 में एकीकृत किया जाएगा।</string>
-    <string name="about_beta_holder_transfer_title">डायरेक्ट फ़ाइल ट्रांसफ़र (ट्रांसफ़र टैब)</string>
-    <string name="about_beta_holder_transfer_desc">स्थिति: UI प्लेसहोल्डर। ऑफ़लाइन पीयर-टू-पीयर (P2P / Wi-Fi Direct) फ़ाइल शेयरिंग प्रोटोकॉल चरण 5 में जुड़ेगा।</string>
     <string name="about_beta_holder_status_title">स्टेटस सेवर (Me टूल्स ग्रिड)</string>
     <string name="about_beta_holder_status_desc">स्थिति: ईमानदार प्लेसहोल्डर (Issue 32)। स्कोप्ड स्टोरेज डायरेक्टरी अनुमति फ़्लो लागू होने पर WhatsApp स्टेटस डायरेक्टरी स्कैनिंग और सहेजना जुड़ेगा।</string>
     <string name="about_beta_holder_private_title">प्राइवेट फ़ोल्डर (Me टूल्स ग्रिड)</string>
@@ -836,7 +831,7 @@
     <string name="player_tutorial_got_it">समझ गया</string>
     <string name="player_menu_tutorial">जेस्चर ट्यूटोरियल</string>
 
-    <!-- Player screen + Transfer strings (issue #67) -->
+    <!-- Player screen strings (issue #67) -->
     <string name="player_empty_no_video">कोई वीडियो कतार में नहीं है</string>
     <string name="player_loading">लोड हो रहा है…</string>
     <string name="player_empty_select_video">प्लेबैक शुरू करने के लिए स्थानीय से एक वीडियो चुनें</string>
@@ -935,26 +930,6 @@
     <string name="playback_sheet_about_duration">अवधि</string>
     <string name="playback_sheet_about_codec">सक्रिय कोडेक</string>
     <string name="playback_sheet_mpv_only_note">केवल MPV इंजन पर लागू होता है।</string>
-    <string name="transfer_title">स्थानांतरण और डाउनलोडर</string>
-    <string name="transfer_tab_downloader">डाउनलोडर</string>
-    <string name="transfer_tab_file_transfer">फ़ाइल स्थानांतरण</string>
-    <string name="transfer_downloader_banner">ईमानदार डाउनलोडर प्लेसहोल्डर: कोई नकली डाउनलोड सिम्युलेट नहीं किए जाते। असली इंजन चरण 5 में जुड़ेगा।</string>
-    <string name="transfer_url_downloader">URL डाउनलोडर</string>
-    <string name="transfer_url_desc">डिवाइस स्टोरेज में डाउनलोड करने के लिए नीचे एक सीधा वीडियो लिंक पेस्ट करें।</string>
-    <string name="transfer_url_placeholder">वीडियो URL पेस्ट करें (https://...)</string>
-    <string name="transfer_cd_paste">क्लिपबोर्ड से पेस्ट करें</string>
-    <string name="transfer_clipboard_no_url">क्लिपबोर्ड में कोई URL नहीं है।</string>
-    <string name="transfer_downloader_placeholder_toast">डाउनलोडर इंजन एक प्लेसहोल्डर है — असली डाउनलोड चरण 5 में जुड़ेंगे।</string>
-    <string name="transfer_start_download">डाउनलोड शुरू करें</string>
-    <string name="transfer_download_tasks">डाउनलोड कार्य</string>
-    <string name="transfer_no_downloads_title">कोई सक्रिय डाउनलोड नहीं</string>
-    <string name="transfer_no_downloads_msg">डाउनलोडर इंजन के चरण 5 में एकीकृत होने के बाद डाउनलोड की गई फ़ाइलें यहां दिखाई देंगी।</string>
-    <string name="transfer_p2p_banner">ऑफ़लाइन P2P स्थानांतरण प्लेसहोल्डर: प्रोटोकॉल चरण 5 में जोड़ा जाएगा।</string>
-    <string name="transfer_direct_title">सीधा फ़ाइल स्थानांतरण</string>
-    <string name="transfer_direct_desc">इंटरनेट डेटा का उपयोग किए बिना तेज गति से आस-पास के डिवाइसों के साथ वीडियो और ऑडियो फ़ाइलें भेजें और प्राप्त करें।</string>
-    <string name="transfer_p2p_spec">चरण 5 में P2P फ़ाइल स्थानांतरण प्रोटोकॉल विनिर्देश।</string>
-    <string name="transfer_send">भेजें</string>
-    <string name="transfer_receive">प्राप्त करें</string>
 
     <string name="notification_subtext_bg_video">बैकग्राउंड ऑडियो • वीडियो रुका हुआ</string>
     <string name="notification_subtext_music">MPx संगीत</string>

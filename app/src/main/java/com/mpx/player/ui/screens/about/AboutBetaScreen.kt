@@ -41,7 +41,6 @@ import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -461,20 +460,6 @@ fun AboutBetaScreen(
                             iconTint = MpxTheme.colors.textMuted,
                             title = stringResource(R.string.about_beta_holder_downloader_title),
                             description = stringResource(R.string.about_beta_holder_downloader_desc),
-                            isReady = false,
-                        )
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
-                            thickness = MpxHairline,
-                        )
-
-                        FeatureStatusRow(
-                            icon = Icons.Filled.SwapHoriz,
-                            iconTint = MpxTheme.colors.textMuted,
-                            title = stringResource(R.string.about_beta_holder_transfer_title),
-                            description = stringResource(R.string.about_beta_holder_transfer_desc),
                             isReady = false,
                         )
 

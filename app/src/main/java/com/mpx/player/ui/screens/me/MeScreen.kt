@@ -53,7 +53,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
@@ -121,7 +120,6 @@ import com.mpx.player.ui.theme.MpxShapes
 fun MeScreen(
     onOpenLocal: () -> Unit,
     onOpenMusic: () -> Unit,
-    onOpenTransfer: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPlayer: () -> Unit,
     onOpenAboutBeta: (() -> Unit)? = null,
@@ -225,14 +223,6 @@ fun MeScreen(
             isAvailable = true,
         ),
         MeTool(
-            id = "transfer",
-            title = stringResource(R.string.tool_transfer_title),
-            description = stringResource(R.string.tool_transfer_desc),
-            icon = Icons.Filled.SwapHoriz,
-            badge = null,
-            isAvailable = true,
-        ),
-        MeTool(
             id = "equalizer",
             title = stringResource(R.string.tool_equalizer_title),
             description = stringResource(R.string.tool_equalizer_desc),
@@ -304,7 +294,6 @@ fun MeScreen(
             "favourites" -> showFavouritesDialog = true
             "history" -> onOpenHistory()
             "network" -> showNetworkStreamDialog = true
-            "transfer" -> onOpenTransfer()
             "equalizer" -> {
                 // mpv-only (issue #150): there is no ExoPlayer audio session
                 // any more, so the system equalizer opens against the global

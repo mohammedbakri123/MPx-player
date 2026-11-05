@@ -8,7 +8,6 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">الرئيسية</string>
     <string name="nav_music">موسيقى</string>
-    <string name="nav_transfer">نقل</string>
     <string name="nav_me">أنا</string>
 
     <!-- Mini Player -->
@@ -230,8 +229,6 @@
     <string name="tool_history_desc">تم تشغيلها مؤخراً</string>
     <string name="tool_network_title">بث شبكي</string>
     <string name="tool_network_desc">تشغيل رابط بث</string>
-    <string name="tool_transfer_title">نقل الملفات</string>
-    <string name="tool_transfer_desc">نقل مباشر P2P</string>
     <string name="tool_equalizer_title">معادل الصوت</string>
     <string name="tool_equalizer_desc">معدل صوت النظام</string>
     <string name="tool_local_network_title">الشبكة المحلية</string>
@@ -636,10 +633,8 @@
     <!-- What is Placeholder -->
     <string name="about_beta_section_placeholders">العناصر التي ما زالت قيد التطوير (عناصر نائبة)</string>
     <string name="about_beta_placeholders_subtitle">التزاماً بمبادئ الشفافية والصدق البرمجي، الميزات التالية هي واجهات تمهيدية غير فعالة ولا تتم محاكاتها بشكل وهمي أو زائف:</string>
-    <string name="about_beta_holder_downloader_title">منزل الروابط (تبويب النقل)</string>
+    <string name="about_beta_holder_downloader_title">منزل الروابط</string>
     <string name="about_beta_holder_downloader_desc">الحالة: واجهة مستخدم فقط. لا توجد عمليات تنزيل وهمية أو أشرطة تقدم زائفة. سيتم دمج محرك التنزيل الفعلي في المرحلة الخامسة.</string>
-    <string name="about_beta_holder_transfer_title">النقل المباشر للملفات (تبويب النقل)</string>
-    <string name="about_beta_holder_transfer_desc">الحالة: واجهة تمهيدية. بروتوكول نقل الملفات المباشر بين الأجهزة (P2P / Wi-Fi Direct) دون إنترنت سيتصل في المرحلة الخامسة.</string>
     <string name="about_beta_holder_status_title">حفظ الحالة (شبكة أدوات أنا)</string>
     <string name="about_beta_holder_status_desc">الحالة: عنصر نائب صادق (المسألة 32). سيتصل فحص وحفظ مجلد حالات واتساب عند اكتمال مسار أذونات التخزين المخصص.</string>
     <string name="about_beta_holder_private_title">المجلد الخاص (شبكة أدوات أنا)</string>
@@ -836,7 +831,7 @@
     <string name="player_tutorial_got_it">فهمت</string>
     <string name="player_menu_tutorial">درس الإيماءات</string>
 
-    <!-- Player screen + Transfer strings (issue #67) -->
+    <!-- Player screen strings (issue #67) -->
     <string name="player_empty_no_video">لا يوجد فيديو في قائمة التشغيل</string>
     <string name="player_loading">جارٍ التحميل…</string>
     <string name="player_empty_select_video">اختر فيديو من المحلي لبدء التشغيل</string>
@@ -935,26 +930,6 @@
     <string name="playback_sheet_about_duration">المدة</string>
     <string name="playback_sheet_about_codec">الترميز النشط</string>
     <string name="playback_sheet_mpv_only_note">ينطبق على محرك MPV فقط.</string>
-    <string name="transfer_title">النقل والتنزيل</string>
-    <string name="transfer_tab_downloader">أداة التنزيل</string>
-    <string name="transfer_tab_file_transfer">نقل الملفات</string>
-    <string name="transfer_downloader_banner">عنصر نائب صادق لأداة التنزيل: لا تتم محاكاة أي تنزيلات وهمية. سيتم توصيل المحرك الحقيقي في المرحلة 5.</string>
-    <string name="transfer_url_downloader">تنزيل عبر الرابط</string>
-    <string name="transfer_url_desc">الصق رابط فيديو مباشر أدناه لتنزيله إلى ذاكرة الجهاز.</string>
-    <string name="transfer_url_placeholder">الصق رابط الفيديو (https://...)</string>
-    <string name="transfer_cd_paste">اللصق من الحافظة</string>
-    <string name="transfer_clipboard_no_url">الحافظة لا تحتوي على رابط.</string>
-    <string name="transfer_downloader_placeholder_toast">محرك التنزيل عنصر نائب — سيتم توصيل التنزيلات الحقيقية في المرحلة 5.</string>
-    <string name="transfer_start_download">بدء التنزيل</string>
-    <string name="transfer_download_tasks">مهام التنزيل</string>
-    <string name="transfer_no_downloads_title">لا توجد تنزيلات نشطة</string>
-    <string name="transfer_no_downloads_msg">ستظهر الملفات المنزلة هنا بمجرد دمج محرك التنزيل في المرحلة 5.</string>
-    <string name="transfer_p2p_banner">عنصر نائب للنقل المباشر دون اتصال (P2P): سيتم توصيل البروتوكول في المرحلة 5.</string>
-    <string name="transfer_direct_title">النقل المباشر للملفات</string>
-    <string name="transfer_direct_desc">أرسل واستقبل ملفات الفيديو والصوت مع الأجهزة القريبة بسرعة عالية دون استخدام بيانات الإنترنت.</string>
-    <string name="transfer_p2p_spec">مواصفات بروتوكول نقل الملفات المباشر (P2P) في المرحلة 5.</string>
-    <string name="transfer_send">إرسال</string>
-    <string name="transfer_receive">استلام</string>
 
     <string name="notification_subtext_bg_video">صوت في الخلفية • إيقاف عرض الفيديو مؤقتًا</string>
     <string name="notification_subtext_music">موسيقى MPx</string>

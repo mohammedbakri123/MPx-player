@@ -149,7 +149,6 @@ fun LocalScreen(
     permissionResultHandler: ActivityResultHandler<Boolean>,
     onOpenPlayer: () -> Unit,
     onOpenMusic: () -> Unit,
-    onOpenTransfer: () -> Unit,
     onOpenSettings: () -> Unit,
     playbackManager: PlaybackManager? = null,
     settingsRepository: AppSettingsRepository? = null,

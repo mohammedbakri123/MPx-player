@@ -8,7 +8,6 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">首页</string>
     <string name="nav_music">音乐</string>
-    <string name="nav_transfer">传输</string>
     <string name="nav_me">我的</string>
 
     <!-- Mini Player -->
@@ -230,8 +229,6 @@
     <string name="tool_history_desc">最近播放</string>
     <string name="tool_network_title">网络串流</string>
     <string name="tool_network_desc">播放串流 URL</string>
-    <string name="tool_transfer_title">文件传输</string>
-    <string name="tool_transfer_desc">P2P 传输</string>
     <string name="tool_equalizer_title">均衡器</string>
     <string name="tool_equalizer_desc">系统音效调节</string>
     <string name="tool_local_network_title">本地网络</string>
@@ -636,10 +633,8 @@
     <!-- What is Placeholder -->
     <string name="about_beta_section_placeholders">仍为占位的内容</string>
     <string name="about_beta_placeholders_subtitle">根据我们诚实的开发原则，以下功能为非功能性界面占位，不含任何模拟或伪造的操作：</string>
-    <string name="about_beta_holder_downloader_title">URL 下载器（传输标签页）</string>
+    <string name="about_beta_holder_downloader_title">URL 下载器</string>
     <string name="about_beta_holder_downloader_desc">状态：仅界面外壳。无虚假下载或人工进度条。真正的后台下载引擎将于第 5 阶段集成。</string>
-    <string name="about_beta_holder_transfer_title">直接文件传输（传输标签页）</string>
-    <string name="about_beta_holder_transfer_desc">状态：界面占位。离线点对点（P2P / Wi-Fi Direct）文件共享协议将于第 5 阶段接入。</string>
     <string name="about_beta_holder_status_title">状态保存（“我的”工具网格）</string>
     <string name="about_beta_holder_status_desc">状态：如实占位（Issue 32）。实现分区存储目录权限流程后，将接入 WhatsApp 状态目录扫描与保存。</string>
     <string name="about_beta_holder_private_title">私密文件夹（“我的”工具网格）</string>
@@ -836,7 +831,7 @@
     <string name="player_tutorial_got_it">知道了</string>
     <string name="player_menu_tutorial">手势教程</string>
 
-    <!-- Player screen + Transfer strings (issue #67) -->
+    <!-- Player screen strings (issue #67) -->
     <string name="player_empty_no_video">没有排队的视频</string>
     <string name="player_loading">正在加载…</string>
     <string name="player_empty_select_video">从本地选择一个视频开始播放</string>
@@ -935,26 +930,6 @@
     <string name="playback_sheet_about_duration">时长</string>
     <string name="playback_sheet_about_codec">当前编解码器</string>
     <string name="playback_sheet_mpv_only_note">仅适用于 MPV 引擎。</string>
-    <string name="transfer_title">传输与下载</string>
-    <string name="transfer_tab_downloader">下载器</string>
-    <string name="transfer_tab_file_transfer">文件传输</string>
-    <string name="transfer_downloader_banner">诚实的下载器占位符：不会模拟虚假下载。真实引擎将在第 5 阶段接入。</string>
-    <string name="transfer_url_downloader">链接下载器</string>
-    <string name="transfer_url_desc">在下方粘贴直接视频链接以下载到设备存储。</string>
-    <string name="transfer_url_placeholder">粘贴视频链接 (https://...)</string>
-    <string name="transfer_cd_paste">从剪贴板粘贴</string>
-    <string name="transfer_clipboard_no_url">剪贴板中没有链接。</string>
-    <string name="transfer_downloader_placeholder_toast">下载器引擎是占位符——真实下载将在第 5 阶段接入。</string>
-    <string name="transfer_start_download">开始下载</string>
-    <string name="transfer_download_tasks">下载任务</string>
-    <string name="transfer_no_downloads_title">没有正在进行的下载</string>
-    <string name="transfer_no_downloads_msg">下载器引擎在第 5 阶段集成后，下载的文件将显示在这里。</string>
-    <string name="transfer_p2p_banner">离线 P2P 传输占位符：协议将在第 5 阶段接入。</string>
-    <string name="transfer_direct_title">直接文件传输</string>
-    <string name="transfer_direct_desc">无需使用互联网流量，即可高速与附近设备收发视频和音频文件。</string>
-    <string name="transfer_p2p_spec">第 5 阶段的 P2P 文件传输协议规范。</string>
-    <string name="transfer_send">发送</string>
-    <string name="transfer_receive">接收</string>
 
     <string name="notification_subtext_bg_video">后台音频 • 视频已暂停</string>
     <string name="notification_subtext_music">MPx 音乐</string>

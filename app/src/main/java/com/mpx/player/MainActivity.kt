@@ -74,7 +74,6 @@ import com.mpx.player.ui.screens.music.MusicScreen
 import com.mpx.player.ui.screens.player.PlayerScreen
 import com.mpx.player.ui.screens.settings.SettingsScreen
 import com.mpx.player.ui.screens.settings.OverlaySettingsScreen
-import com.mpx.player.ui.screens.transfer.TransferScreen
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import java.util.Locale
@@ -532,13 +531,6 @@ fun MpxApp(
                             restoreState = true
                         }
                     },
-                    onOpenTransfer = {
-                        navController.navigate(Screen.Transfer.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
@@ -553,9 +545,6 @@ fun MpxApp(
                     settingsRepository = realSettingsRepo,
                 )
             }
-            composable(Screen.Transfer.route) {
-                TransferScreen()
-            }
             composable(Screen.Me.route) {
                 MeScreen(
                     onOpenLocal = {
@@ -567,13 +556,6 @@ fun MpxApp(
                     },
                     onOpenMusic = {
                         navController.navigate(Screen.Music.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onOpenTransfer = {
-                        navController.navigate(Screen.Transfer.route) {
                             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                             launchSingleTop = true
                             restoreState = true

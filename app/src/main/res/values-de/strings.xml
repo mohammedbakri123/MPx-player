@@ -8,7 +8,6 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Startseite</string>
     <string name="nav_music">Musik</string>
-    <string name="nav_transfer">Übertragen</string>
     <string name="nav_me">Ich</string>
 
     <!-- Mini Player -->
@@ -230,8 +229,6 @@
     <string name="tool_history_desc">Zuletzt abgespielt</string>
     <string name="tool_network_title">Netzwerk-Stream</string>
     <string name="tool_network_desc">Stream-URL abspielen</string>
-    <string name="tool_transfer_title">Dateiübertragung</string>
-    <string name="tool_transfer_desc">P2P-Übertragung</string>
     <string name="tool_equalizer_title">Equalizer</string>
     <string name="tool_equalizer_desc">System-Klangregler</string>
     <string name="tool_local_network_title">Lokales Netzwerk</string>
@@ -636,10 +633,8 @@
     <!-- What is Placeholder -->
     <string name="about_beta_section_placeholders">WAS NOCH PLATZHALTER IST</string>
     <string name="about_beta_placeholders_subtitle">Gemäß unseren ehrlichen Entwicklungsprinzipien sind die folgenden Funktionen nicht funktionsfähige UI-Platzhalter ohne simulierte oder vorgetäuschte Vorgänge:</string>
-    <string name="about_beta_holder_downloader_title">URL-Downloader (Übertragen-Tab)</string>
+    <string name="about_beta_holder_downloader_title">URL-Downloader</string>
     <string name="about_beta_holder_downloader_desc">Status: Nur UI-Hülle. Keine vorgetäuschten Downloads oder künstlichen Fortschrittsbalken. Die echte Hintergrund-Download-Engine wird in Phase 5 integriert.</string>
-    <string name="about_beta_holder_transfer_title">Direkte Dateiübertragung (Übertragen-Tab)</string>
-    <string name="about_beta_holder_transfer_desc">Status: UI-Platzhalter. Das Offline-Peer-to-Peer-Protokoll (P2P / Wi-Fi Direct) zur Dateifreigabe wird in Phase 5 verbunden.</string>
     <string name="about_beta_holder_status_title">Status-Saver (Ich-Werkzeugraster)</string>
     <string name="about_beta_holder_status_desc">Status: Ehrlicher Platzhalter (Issue 32). Das Scannen und Speichern des WhatsApp-Status-Verzeichnisses wird verbunden, sobald der Ablauf für die Verzeichnisberechtigung mit bereichsbezogenem Speicher implementiert ist.</string>
     <string name="about_beta_holder_private_title">Privater Ordner (Ich-Werkzeugraster)</string>
@@ -836,7 +831,7 @@
     <string name="player_tutorial_got_it">Verstanden</string>
     <string name="player_menu_tutorial">Gesten-Tutorial</string>
 
-    <!-- Player screen + Transfer strings (issue #67) -->
+    <!-- Player screen strings (issue #67) -->
     <string name="player_empty_no_video">Kein Video in der Warteschlange</string>
     <string name="player_loading">Wird geladen…</string>
     <string name="player_empty_select_video">Wähle ein Video aus „Lokal“, um die Wiedergabe zu starten</string>
@@ -935,26 +930,6 @@
     <string name="playback_sheet_about_duration">Dauer</string>
     <string name="playback_sheet_about_codec">Aktiver Codec</string>
     <string name="playback_sheet_mpv_only_note">Gilt nur für die MPV-Engine.</string>
-    <string name="transfer_title">Übertragung &amp; Downloads</string>
-    <string name="transfer_tab_downloader">Downloader</string>
-    <string name="transfer_tab_file_transfer">Dateiübertragung</string>
-    <string name="transfer_downloader_banner">Ehrlicher Downloader-Platzhalter: Es werden keine falschen Downloads simuliert. Die echte Engine wird in Phase 5 angebunden.</string>
-    <string name="transfer_url_downloader">URL-Downloader</string>
-    <string name="transfer_url_desc">Füge unten einen direkten Videolink ein, um ihn auf den Gerätespeicher herunterzuladen.</string>
-    <string name="transfer_url_placeholder">Video-URL einfügen (https://...)</string>
-    <string name="transfer_cd_paste">Aus Zwischenablage einfügen</string>
-    <string name="transfer_clipboard_no_url">Die Zwischenablage enthält keine URL.</string>
-    <string name="transfer_downloader_placeholder_toast">Die Downloader-Engine ist ein Platzhalter — echte Downloads werden in Phase 5 angebunden.</string>
-    <string name="transfer_start_download">Download starten</string>
-    <string name="transfer_download_tasks">DOWNLOAD-AUFGABEN</string>
-    <string name="transfer_no_downloads_title">Keine aktiven Downloads</string>
-    <string name="transfer_no_downloads_msg">Heruntergeladene Dateien erscheinen hier, sobald die Downloader-Engine in Phase 5 integriert ist.</string>
-    <string name="transfer_p2p_banner">Offline-P2P-Übertragungs-Platzhalter: Das Protokoll wird in Phase 5 angebunden.</string>
-    <string name="transfer_direct_title">Direkte Dateiübertragung</string>
-    <string name="transfer_direct_desc">Sende und empfange Videos und Audiodateien mit Geräten in der Nähe mit hoher Geschwindigkeit, ohne Internetdaten zu verbrauchen.</string>
-    <string name="transfer_p2p_spec">P2P-Dateiübertragungsprotokoll-Spezifikation in Phase 5.</string>
-    <string name="transfer_send">Senden</string>
-    <string name="transfer_receive">Empfangen</string>
 
     <string name="notification_subtext_bg_video">Audio im Hintergrund • Video pausiert</string>
     <string name="notification_subtext_music">MPx Musik</string>
