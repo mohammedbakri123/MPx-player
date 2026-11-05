@@ -781,17 +781,29 @@ fun LocalScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    if (currentFolder != null) {
+                    val played = if (currentFolder != null) {
                         if (filteredFolderVideos.isNotEmpty()) {
                             playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
                             onOpenPlayer()
-                        }
+                            true
+                        } else false
                     } else if (appSettings.fileView) {
                         val first = filteredVideos.firstOrNull()
-                        if (first != null) playVideoWithFolder(first)
+                        if (first != null) {
+                            playVideoWithFolder(first)
+                            true
+                        } else false
                     } else {
                         val first = filteredFolders.firstOrNull()
-                        if (first != null) playFolder(first)
+                        if (first != null) {
+                            playFolder(first)
+                            true
+                        } else false
+                    }
+                    if (!played) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(context.getString(R.string.empty_videos_title))
+                        }
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
