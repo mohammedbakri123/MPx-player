@@ -65,11 +65,15 @@ class MpvPlayerEngine(
 
     private var currentSurface: Surface? = null
     /**
-     * Whether libmpv's "vo" is currently "null" (issue #161). The ONLY place
-     * vo becomes null is detachSurface(); init sets vo=gpu pre-init and the
-     * only other vo set is attachSurface()'s vo=gpu. Tracked here instead of
-     * read back via mpv.getPropertyString("vo") so the attach/load paths
-     * never pay a property round-trip or depend on a null return.
+     * Whether libmpv's "vo" is currently "null" (issue #161). MPx's own
+     * writes null it in exactly one place — detachSurface() — but mpv can
+     * also null the VO itself when a reconfigure fails (issue #210: a
+     * resize while paused), so the flag is a hint, not the truth. The
+     * "vo" property observation (see handlePropertyUpdate) keeps it in
+     * sync with mpv's actual state: it is set when mpv reports "null"
+     * and cleared when mpv reports a live VO again. The flag-gated
+     * restores (attach/load/time-pos/surfaceChanged) stay as fast paths;
+     * the observation is the backstop that fires when none of them can.
      * All readers/writers run under surfaceLock (see attach/detach/load).
      */
     private var voIsNull: Boolean = false
@@ -436,6 +440,15 @@ class MpvPlayerEngine(
         mpv.observeProperty("speed", MPV.mpvFormat.MPV_FORMAT_DOUBLE)
         mpv.observeProperty("hwdec-current", MPV.mpvFormat.MPV_FORMAT_STRING)
         mpv.observeProperty("video-codec", MPV.mpvFormat.MPV_FORMAT_STRING)
+        // Issue #210: observe "vo" so mpv nulling the VO itself (a
+        // reconfigure failure after the android-surface-size set, while
+        // paused) is seen at all — no other restore site can fire then,
+        // because time-pos does not advance while paused and a pure
+        // resize is a surfaceChanged, not a surfaceDestroyed, so the
+        // voIsNull flag is never set on that path. "vo" changes rarely
+        // (gpu -> null -> gpu), so this adds no event spam; the branch
+        // reads the value back and only acts when it is actually "null".
+        mpv.observeProperty("vo", MPV.mpvFormat.MPV_FORMAT_STRING)
         mpv.observeProperty("track-list", MPV.mpvFormat.MPV_FORMAT_NONE)
 
         mpv.addObserver(eventObserver)
@@ -666,6 +679,48 @@ class MpvPlayerEngine(
                         logMetrics("seek", "seek_ms=$lastSeekLatencyMs target_ms=$target")
                         seekStartMs = null
                         seekTargetMs = null
+                    }
+                }
+            }
+            "vo" -> {
+                // Issue #210: mpv itself can null the VO — a reconfigure
+                // failure after the android-surface-size set, while paused
+                // — and nothing saw it: the #193 restore is gated on the
+                // voIsNull flag, which only detachSurface() sets, and a
+                // pure resize is a surfaceChanged, not a surfaceDestroyed,
+                // so the flag stayed false and the restore never fired.
+                // Observing "vo" makes mpv's own nulling visible the
+                // moment it happens, in any state (time-pos does not
+                // advance while paused, so the #181 restore is blind
+                // there too). The value is read back under surfaceLock —
+                // not trusted from the event — so a stale "null" event
+                // processed after an attach already restored "gpu" does
+                // nothing, and the read-decide-set is atomic against the
+                // attach/detach/load restores. "vo" changes rarely
+                // (gpu -> null -> gpu), so this adds no event spam.
+                // When mpv reports a live VO again, the flag is cleared
+                // so the flag-gated restores don't fire a gratuitous
+                // vo set later; when it reports null with no surface
+                // attached, the flag is set so the next attach/load
+                // restore fires (black is correct there until then).
+                synchronized(surfaceLock) {
+                    val vo = try {
+                        mpv.getPropertyString("vo")
+                    } catch (_: Exception) {
+                        null
+                    }
+                    if (vo == "null") {
+                        voIsNull = true
+                        if (currentSurface != null) {
+                            try {
+                                mpv.setPropertyString("vo", "gpu")
+                                voIsNull = false
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed restoring vo=gpu on vo change", e)
+                            }
+                        }
+                    } else if (vo != null) {
+                        voIsNull = false
                     }
                 }
             }
