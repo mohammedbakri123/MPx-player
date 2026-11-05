@@ -87,7 +87,14 @@ class PlaybackManager private constructor(context: Context) {
         }
     }
     private var currentQueue: List<PlayableMedia> = emptyList()
-    private var pendingSubtitleTrackLabel: String? = null
+    // Issue #192: a manual external-subtitle pick the engine could not
+    // pin yet (track not visible in track-list when sub-add returned).
+    // Re-applied on the next track-list change by picking the newest
+    // external track — NOT by display-name label: mpv reports the added
+    // track's title as "srt" for fd:// subs, so label matching could
+    // never fire (user's v0.3.1 log). Scoped to the item it was picked
+    // for, so it can never select a track in a different video.
+    private var pendingExternalSubtitleMediaId: String? = null
     /** Pre-shuffle queue order, restored when shuffle is turned off (issue #76). */
     private var unshuffledQueue: List<PlayableMedia>? = null
 
@@ -230,12 +237,21 @@ class PlaybackManager private constructor(context: Context) {
 
         override fun onTracksChanged() {
             updateTracksState()
-            pendingSubtitleTrackLabel?.let { targetLabel ->
-                val subtitleTracks = _playbackState.value.subtitleTracks
-                val match = subtitleTracks.find { it.label == targetLabel }
-                if (match != null) {
-                    selectSubtitleTrack(match.groupIndex, match.trackIndex)
-                    pendingSubtitleTrackLabel = null
+            // Issue #192: second chance for a manual external pick the
+            // engine could not pin synchronously — select the newest
+            // external track (mpv appends added tracks, so the last one
+            // is the one just picked). Only for the item it was picked
+            // for; a manual pick in the sheet clears it first, and a
+            // different video clears it here instead of mis-selecting.
+            pendingExternalSubtitleMediaId?.let { mediaId ->
+                if (_playbackState.value.currentItem?.id == mediaId) {
+                    val newestExternal = _playbackState.value.subtitleTracks.lastOrNull { it.isExternal }
+                    if (newestExternal != null) {
+                        selectSubtitleTrack(newestExternal.groupIndex, newestExternal.trackIndex)
+                        pendingExternalSubtitleMediaId = null
+                    }
+                } else {
+                    pendingExternalSubtitleMediaId = null
                 }
             }
         }
@@ -658,6 +674,10 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {
+        // Issue #192: a manual pick (sheet tap / Off) supersedes any
+        // pending external pick — never let a stale pending re-select
+        // over the user's explicit choice.
+        pendingExternalSubtitleMediaId = null
         engine.selectSubtitleTrack(groupIndex, trackIndex)
         updateTracksState()
     }
@@ -709,8 +729,10 @@ class PlaybackManager private constructor(context: Context) {
             engine.play()
         }
 
-        // Set pending label to auto-select this track once onTracksChanged fires
-        pendingSubtitleTrackLabel = displayName
+        // Issue #192: the engine pins sid to the new track synchronously
+        // in replaceMediaItem; keep this as the second chance in case the
+        // track was not in track-list yet when sub-add returned.
+        pendingExternalSubtitleMediaId = currentItem.id
 
         _playbackState.update {
             it.copy(

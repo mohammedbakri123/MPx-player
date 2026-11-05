@@ -806,6 +806,9 @@ class MpvPlayerEngine(
                                 Log.w(TAG, "Failed adding pending subtitle ${sub.uri}", e)
                             }
                         }
+                        // Issue #192: pin sid to the just-added external
+                        // track — sub-add "select" alone does not stick.
+                        pinSelectedExternalSubtitleTrack()
                     } else {
                         Log.w(TAG, "Dropping stale pending subtitles for ${pending.mediaUri} (active: $activeMediaUri)")
                     }
@@ -1334,6 +1337,30 @@ class MpvPlayerEngine(
         }
     }
 
+    /**
+     * Issue #192: pin mpv's `sid` option to the currently selected
+     * EXTERNAL subtitle track. `sub-add` with the "select" flag only
+     * changes the current selection — it leaves `sid` at its default
+     * "auto", so mpv's next track-selection re-evaluation (seek, decoder
+     * reinit) falls back to the default-flagged embedded track and the
+     * external subtitle the user just picked silently disappears (user's
+     * v0.3.1 log: sid=2 selected at 19:25:31, sid=1 back at 19:25:33).
+     * Setting `sid` to the track id explicitly makes the pick sticky, so
+     * it survives track-list refreshes and seeks. No-op when no external
+     * track is selected (e.g. the sub-add failed or the track is not in
+     * track-list yet) — a failed add never freezes a wrong selection, and
+     * the manager's pending fallback gets the second chance.
+     */
+    private fun pinSelectedExternalSubtitleTrack() {
+        try {
+            val selected = getSubtitleTracks().firstOrNull { it.isSelected && it.isExternal }
+                ?: return
+            mpv.setPropertyString("sid", selected.trackIndex.toString())
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed pinning external subtitle selection", e)
+        }
+    }
+
     override fun replaceMediaItem(index: Int, media: PlayableMedia) {
         if (index in currentQueue.indices) {
             val updated = currentQueue.toMutableList()
@@ -1354,6 +1381,9 @@ class MpvPlayerEngine(
                             Log.w(TAG, "Failed adding external subtitle ${ext.name}", e)
                         }
                     }
+                    // Issue #192: pin sid to the just-added external
+                    // track — sub-add "select" alone does not stick.
+                    pinSelectedExternalSubtitleTrack()
                 } else {
                     // Queue for dispatch when FILE_LOADED arrives
                     val subs = mutableListOf<PendingSubtitle>()
