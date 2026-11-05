@@ -14,6 +14,7 @@ import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.ExternalSubtitle
+import com.mpx.player.playback.MpvFdOpener
 import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.MpvLogFile
 import com.mpx.player.playback.MpxMediaCodecSelector
@@ -58,6 +59,11 @@ class MpvPlayerEngine(
     private val appContext: Context = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
     private val surfaceLock = Any()
+    // Issue #213/#219: the engine resolves content:// URIs itself, lazily,
+    // only for the item it is about to loadfile (see load()). The stored
+    // queue always keeps the original URIs — an fd is single-use, so a
+    // stored fd:// URI would be dead the second time it is loaded.
+    private val fdOpener = MpvFdOpener(appContext)
 
     private var engineListener: PlayerEngine.Listener? = null
     private var currentQueue: List<PlayableMedia> = emptyList()
@@ -871,7 +877,15 @@ class MpvPlayerEngine(
                 val pending = pendingSubtitles
                 pendingSubtitles = null
                 if (pending != null) {
-                    val matches = activeMediaUri == null || isPathMatch(pending.mediaUri, activeMediaUri)
+                    // Issue #213/#219: the match also accepts the raw URI
+                    // of the current queue item. Subtitles queued while the
+                    // load was still deferred for lack of surface carry the
+                    // raw URI, and the fresh fd opened when the load flushed
+                    // can never equal it — without this the subtitles queued
+                    // in replaceMediaItem would be dropped as stale.
+                    val matches = activeMediaUri == null ||
+                        isPathMatch(pending.mediaUri, activeMediaUri) ||
+                        pending.mediaUri == currentQueue.getOrNull(currentMediaIndex)?.uri
                     if (matches) {
                         var addedAny = false
                         pending.subtitles.forEach { sub ->
@@ -1188,19 +1202,31 @@ class MpvPlayerEngine(
 
         applyHwdecForMode(decoderMode)
 
-        activeMediaId = targetItem.id
-        activeMediaUri = targetItem.uri
+        // Issue #213/#219: resolve ONLY the target item here, from its
+        // original URI, at load time — never the whole queue. The stored
+        // queue (currentQueue) keeps the original content:// URIs, so
+        // every re-load of this item (Next/Previous, seekTo(index),
+        // decoder-mode reload, attach reload, auto-advance) opens a fresh
+        // fd instead of reusing the dead one mpv closed when the stream
+        // ended. Resolving here, after the surface check above, also means
+        // a deferred load opens no fd at all until the surface exists.
+        // activeMediaUri is the RESOLVED uri — the one loadfile is handed
+        // — so the FILE_LOADED staleness checks keep matching.
+        val resolvedTarget = fdOpener.resolveForEngine(targetItem)
+
+        activeMediaId = resolvedTarget.id
+        activeMediaUri = resolvedTarget.uri
 
         // Issue #102: Queue pending external subtitles to dispatch only on MPV_EVENT_FILE_LOADED
         val subs = mutableListOf<PendingSubtitle>()
-        targetItem.subtitleUri?.let { subUri ->
+        resolvedTarget.subtitleUri?.let { subUri ->
             subs.add(PendingSubtitle(uri = subUri, flag = "select"))
         }
-        targetItem.externalSubtitles.forEach { ext ->
+        resolvedTarget.externalSubtitles.forEach { ext ->
             subs.add(PendingSubtitle(uri = ext.uri, flag = "auto", title = ext.name))
         }
         pendingSubtitles = if (subs.isNotEmpty()) {
-            PendingSubtitles(mediaUri = targetItem.uri, mediaId = targetItem.id, subtitles = subs)
+            PendingSubtitles(mediaUri = resolvedTarget.uri, mediaId = resolvedTarget.id, subtitles = subs)
         } else {
             null
         }
@@ -1236,9 +1262,9 @@ class MpvPlayerEngine(
             if (resumeMs > 0L) {
                 val startSec = (resumeMs / 1000.0).toString()
                 cachedPositionMs = resumeMs
-                mpv.command("loadfile", targetItem.uri, "replace", "-1", "start=$startSec")
+                mpv.command("loadfile", resolvedTarget.uri, "replace", "-1", "start=$startSec")
             } else {
-                mpv.command("loadfile", targetItem.uri, "replace")
+                mpv.command("loadfile", resolvedTarget.uri, "replace")
             }
 
             // Issue #103: PlaybackManager alone owns queue transitions. mpv holds
@@ -1537,6 +1563,14 @@ class MpvPlayerEngine(
             }
 
             if (index == currentMediaIndex) {
+                // Issue #213/#219: the stored queue keeps the RAW item
+                // (original URIs) so a later load() re-resolves it fresh.
+                // Only subtitle URIs are resolved here — replaceMediaItem
+                // never reloads the media (sub-add only), so resolving the
+                // media URI would open an fd nobody uses. The dedupe below
+                // still compares RAW lists on both sides, so name+URI
+                // identity keeps working (and, unlike before, two different
+                // same-named content:// files can now be told apart by URI).
                 if (fileLoadedForCurrentItem) {
                     // Issue #197: sub-add ONLY the external subtitles
                     // that are new since the previous item. The manager
@@ -1548,18 +1582,21 @@ class MpvPlayerEngine(
                     // The not-loaded branch below intentionally keeps
                     // the full list: pendingSubtitles is overwritten,
                     // not appended, and dispatched exactly once on
-                    // FILE_LOADED, so it cannot duplicate.
+                    // FILE_LOADED, so it cannot duplicate. Only the new
+                    // subtitles' URIs are resolved — the legacy single
+                    // subtitleUri is never sub-added on this branch, so
+                    // opening an fd for it would leak it.
                     var addedAny = false
-                    media.externalSubtitles
-                        .filter { ext ->
-                            previous?.externalSubtitles?.none { isSameExternalSubtitle(it, ext) } ?: true
-                        }
-                        .forEach { ext ->
+                    val newExts = media.externalSubtitles.filter { rawExt ->
+                        previous?.externalSubtitles?.none { isSameExternalSubtitle(it, rawExt) } ?: true
+                    }
+                    newExts.zip(fdOpener.resolveExternalSubtitles(newExts))
+                        .forEach { (rawExt, resolvedExt) ->
                             try {
-                                mpv.command("sub-add", ext.uri, "select", ext.name)
+                                mpv.command("sub-add", resolvedExt.uri, "select", rawExt.name)
                                 addedAny = true
                             } catch (e: Exception) {
-                                Log.w(TAG, "Failed adding external subtitle ${ext.name}", e)
+                                Log.w(TAG, "Failed adding external subtitle ${rawExt.name}", e)
                             }
                         }
                     // Issue #192/#199: pin sid to the just-added external
@@ -1574,17 +1611,24 @@ class MpvPlayerEngine(
                         attemptExternalPin()
                     }
                 } else {
-                    // Queue for dispatch when FILE_LOADED arrives
+                    // Queue for dispatch when FILE_LOADED arrives. The
+                    // subtitle URIs are the resolved ones (mpv cannot open
+                    // content://); mediaUri is the currently-loading item's
+                    // resolved URI so the FILE_LOADED match succeeds, falling
+                    // back to the raw URI — the FILE_LOADED match also
+                    // accepts the raw URI of the current item, which covers
+                    // a load still deferred for lack of surface.
+                    val resolved = fdOpener.resolveSubtitlesOnly(media)
                     val subs = mutableListOf<PendingSubtitle>()
-                    media.subtitleUri?.let { subUri ->
+                    resolved.subtitleUri?.let { subUri ->
                         subs.add(PendingSubtitle(uri = subUri, flag = "select"))
                     }
-                    media.externalSubtitles.forEach { ext ->
+                    resolved.externalSubtitles.forEach { ext ->
                         subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name))
                     }
                     pendingSubtitles = if (subs.isNotEmpty()) {
                         PendingSubtitles(
-                            mediaUri = media.uri,
+                            mediaUri = activeMediaUri ?: media.uri,
                             mediaId = media.id,
                             subtitles = subs,
                         )

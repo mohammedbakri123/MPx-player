@@ -29,6 +29,14 @@ import android.util.Log
  *   file is seekable (true for local MediaStore files).
  * - A loadfile that mpv rejects before opening the stream leaks one fd
  *   until the process dies; the normal load/failure paths close it.
+ *
+ * Lazy resolution (issues #213/#219): an fd is single-use — libmpv
+ * closes it when its stream ends — so NOTHING here resolves a whole
+ * queue up front. The engine resolves only the item it is about to
+ * loadfile, from the queue's original URIs, at load time; the stored
+ * queue always keeps the original `content://` URIs. There is
+ * deliberately no resolve-all helper any more: resolving N items to
+ * load one leaked N-1 descriptors every queue load.
  */
 class MpvFdOpener(context: Context) {
 
@@ -52,9 +60,31 @@ class MpvFdOpener(context: Context) {
         }
     }
 
-    /** Resolves a list of items for the engine (queue loads). */
-    fun resolveAllForEngine(items: List<PlayableMedia>): List<PlayableMedia> =
-        items.map { resolveForEngine(it) }
+    /** Resolves ONLY the subtitle URIs of one media item for the engine:
+     * its legacy single subtitle URI and every external subtitle URI.
+     * The media URI is left untouched — used by replaceMediaItem, which
+     * only sub-adds subtitles and never reloads the media, so opening an
+     * fd for the media there would leak one descriptor per subtitle pick
+     * (issue #219). Non-content URIs pass through untouched. */
+    fun resolveSubtitlesOnly(item: PlayableMedia): PlayableMedia {
+        val subtitleUri = item.subtitleUri?.let { resolveUri(it) }
+        val external = resolveExternalSubtitles(item.externalSubtitles)
+        return if (subtitleUri == item.subtitleUri && external == item.externalSubtitles) {
+            item
+        } else {
+            item.copy(subtitleUri = subtitleUri, externalSubtitles = external)
+        }
+    }
+
+    /** Resolves just a list of external subtitles (URIs only). Used where
+     * only the newly added subtitles are sub-added, so no fd is opened
+     * for a subtitle that is never handed to mpv. */
+    fun resolveExternalSubtitles(external: List<ExternalSubtitle>): List<ExternalSubtitle> =
+        if (external.isEmpty()) {
+            external
+        } else {
+            external.map { it.copy(uri = resolveUri(it.uri)) }
+        }
 
     private fun resolveUri(uri: String): String {
         if (!uri.startsWith("content://")) return uri
