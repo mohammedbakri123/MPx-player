@@ -4,6 +4,7 @@ import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.MediaFolder
+import com.mpx.player.domain.model.Playlist
 import com.mpx.player.domain.model.VideoFile
 import java.util.Locale
 
@@ -381,6 +382,72 @@ object MediaSortComparator {
         // No file type / location for artists: falls through to the name tie-break.
         SortField.STATUS_TYPE_LOCATION -> 0
         SortField.COUNT, SortField.NONE -> 0
+    }
+
+    /**
+     * Constructs a Comparator for Playlist with primary sort and secondary tie-break sort.
+     * #185 (Playlists tab): same field semantics as [audioAlbumComparator].
+     * Playlists carry no duration: SIZE / DURATION sort by item count (most
+     * items first) — the playlist's "size". COUNT is the playlist's own
+     * item count, so it sorts the same way. DATE is id recency, like
+     * albums/artists: ids are MediaStore numeric strings for device
+     * playlists and Long-as-string for custom ones, compared as strings
+     * (the same approximation the album/artist comparators use).
+     */
+    fun audioPlaylistComparator(
+        primary: SortField,
+        secondary: SortField = SortField.NAME,
+        reverse: Boolean = false,
+        secondaryReverse: Boolean = false,
+        numeric: Boolean = true,
+        caseSensitive: Boolean = false,
+        ignoreExtension: Boolean = true,
+    ): Comparator<Playlist> = Comparator { a, b ->
+        var cmp = comparePlaylistByField(a, b, primary, numeric, caseSensitive, ignoreExtension)
+        if (reverse) cmp = -cmp
+        if (cmp != 0) return@Comparator cmp
+
+        if (secondary != SortField.NONE && secondary != primary) {
+            var secCmp = comparePlaylistByField(a, b, secondary, numeric, caseSensitive, ignoreExtension)
+            if (secondaryReverse) secCmp = -secCmp
+            if (secCmp != 0) return@Comparator secCmp
+        }
+
+        val titleCmp = a.title.compareTo(b.title, ignoreCase = true)
+        if (titleCmp != 0) titleCmp else a.id.compareTo(b.id)
+    }
+
+    private fun comparePlaylistByField(
+        a: Playlist,
+        b: Playlist,
+        field: SortField,
+        numeric: Boolean,
+        caseSensitive: Boolean,
+        ignoreExtension: Boolean,
+    ): Int = when (field) {
+        SortField.NAME -> {
+            if (numeric) {
+                naturalCompare(a.title, b.title, caseSensitive, ignoreExtension)
+            } else {
+                if (caseSensitive) a.title.compareTo(b.title)
+                else a.title.lowercase(Locale.US).compareTo(b.title.lowercase(Locale.US))
+            }
+        }
+        SortField.DATE -> b.id.compareTo(a.id)
+        // Playlists carry no date: id recency first, item count breaks ties.
+        SortField.DATE_DURATION -> {
+            val idCmp = b.id.compareTo(a.id)
+            if (idCmp != 0) idCmp else b.itemCount.compareTo(a.itemCount)
+        }
+        // Playlists carry no duration: item count is the playlist's size.
+        SortField.SIZE, SortField.DURATION, SortField.COUNT -> b.itemCount.compareTo(a.itemCount)
+        // Playlists carry no resolution: falls through to the title tie-break.
+        SortField.RESOLUTION_FRAMERATE -> 0
+        // No file type / location for playlists: the subtitle groups the
+        // kinds ("Custom Playlist" / "Video Playlist" / "" for a device
+        // list), then the title tie-break orders inside each group.
+        SortField.STATUS_TYPE_LOCATION -> a.subtitle.compareTo(b.subtitle, ignoreCase = true)
+        SortField.NONE -> 0
     }
 
     private fun compareAudioByField(
