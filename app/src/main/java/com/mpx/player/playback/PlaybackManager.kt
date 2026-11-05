@@ -163,12 +163,32 @@ class PlaybackManager private constructor(context: Context) {
             updatePosition()
             updateTracksState()
             if (playbackState == PlayerEngine.STATE_ENDED) {
-                // Repeat handling (issue #76): mpv reports STATE_ENDED at the
-                // end of the playlist (on eof-reached). Repeat ONE restarts
-                // the current item; repeat ALL wraps to the first item; OFF
-                // keeps the old behaviour.
+                // Issue #211: mpv reports STATE_ENDED at the end of EVERY
+                // item — the engine holds only the current item
+                // (playlist-clear + one loadfile in load()), not a
+                // playlist. The old code assumed ENDED meant the end of
+                // the playlist (issue #76): OFF stopped after the first
+                // item and ALL reloaded index 0 forever.
                 val state = _playbackState.value
                 val current = state.currentItem
+                // Index of the item that just ended, from the manager's
+                // own state: the tracked index when it still points at
+                // the current item, otherwise resolved against the live
+                // queue by id.
+                val endedIndex = if (currentQueue.isEmpty()) {
+                    0
+                } else if (current != null &&
+                    state.currentIndex in currentQueue.indices &&
+                    currentQueue[state.currentIndex].id == current.id
+                ) {
+                    state.currentIndex
+                } else {
+                    current?.let { item -> currentQueue.indexOfFirst { it.id == item.id } }
+                        ?.takeIf { it >= 0 }
+                        ?: state.currentIndex.coerceIn(0, currentQueue.lastIndex)
+                }
+                val hasNext = current != null && currentQueue.isNotEmpty() &&
+                    endedIndex < currentQueue.lastIndex
                 when {
                     state.repeatMode == RepeatMode.ONE && current != null -> {
                         engine.seekTo(0L)
@@ -176,10 +196,22 @@ class PlaybackManager private constructor(context: Context) {
                     }
                     state.repeatMode == RepeatMode.ALL && current != null &&
                         currentQueue.isNotEmpty() -> {
-                        // Fresh-fd load, NOT seekTo(0, 0): an indexed seek
-                        // re-issues loadfile with the first item's old fd://
-                        // URI, and mpv closes the fd when its stream ends.
-                        engineLoad(currentQueue, 0, 0L)
+                        // Advance, wrapping to 0 only from the last item.
+                        // A finished item keeps no resume position.
+                        resumeManager.clearResumePosition(current.id)
+                        val next = if (endedIndex >= currentQueue.lastIndex) 0 else endedIndex + 1
+                        // Fresh-fd load, NOT an indexed seek: an indexed
+                        // seek re-issues loadfile with the item's old
+                        // fd:// URI, and mpv closes the fd when its
+                        // stream ends.
+                        engineLoad(currentQueue, next, 0L)
+                        engine.play()
+                    }
+                    hasNext -> {
+                        // Repeat OFF: keep going through the queue; only
+                        // the last item stops at EOF.
+                        current?.let { resumeManager.clearResumePosition(it.id) }
+                        engineLoad(currentQueue, endedIndex + 1, 0L)
                         engine.play()
                     }
                     else -> {
@@ -550,6 +582,13 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     fun play() {
+        // Issue #211: at EOF mpv stays eof-reached, so un-pausing alone
+        // cannot restart — only a seek to 0 can. This is the MediaSession
+        // onPlay() / notification Play path; togglePlayPause() below has
+        // the same guard for the on-screen Play buttons.
+        if (_playbackState.value.playbackState == PlayerEngine.STATE_ENDED) {
+            engine.seekTo(0L)
+        }
         engine.play()
     }
 
@@ -560,6 +599,10 @@ class PlaybackManager private constructor(context: Context) {
     fun togglePlayPause() {
         if (engine.isPlaying) {
             engine.pause()
+        } else if (_playbackState.value.playbackState == PlayerEngine.STATE_ENDED) {
+            // Issue #211: Play after EOF — see play() above.
+            engine.seekTo(0L)
+            engine.play()
         } else {
             engine.play()
         }
