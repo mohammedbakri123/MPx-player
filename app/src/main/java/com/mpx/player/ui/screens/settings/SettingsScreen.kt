@@ -485,14 +485,14 @@ fun SettingsScreen(
                             }
                             "decoder" -> {
                                 Text(
-                                    "Playback Engine",
+                                    stringResource(R.string.playback_engine_title),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MpxPrimary,
                                     modifier = Modifier.padding(vertical = 4.dp),
                                 )
                                 listOf(
-                                    "MEDIA3" to "Media3 ExoPlayer (Default)",
-                                    "MPV" to "libmpv (Experimental Native Engine)",
+                                    "MEDIA3" to stringResource(R.string.playback_engine_media3),
+                                    "MPV" to stringResource(R.string.playback_engine_mpv),
                                 ).forEach { (engine, label) ->
                                     ChoiceRow(label, settings.playerEngine.equals(engine, ignoreCase = true)) {
                                         update(settings.copy(playerEngine = engine))
@@ -500,7 +500,7 @@ fun SettingsScreen(
                                 }
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Decoder Mode",
+                                    stringResource(R.string.decoder_mode_title),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MpxPrimary,
                                     modifier = Modifier.padding(vertical = 4.dp),
@@ -655,8 +655,8 @@ fun SettingsScreen(
                                 StepperRow(
                                     label = stringResource(R.string.subtitle_sync_header),
                                     valueText = if (settings.subtitleDelayMs == 0) "0.00s" else "%+.2fs".format(settings.subtitleDelayMs / 1000.0),
-                                    minusContentDescription = stringResource(R.string.subtitle_sync_header),
-                                    plusContentDescription = stringResource(R.string.subtitle_sync_header),
+                                    minusContentDescription = stringResource(R.string.subtitle_sync_decrease),
+                                    plusContentDescription = stringResource(R.string.subtitle_sync_increase),
                                     onMinus = { update(settings.copy(subtitleDelayMs = (settings.subtitleDelayMs - 100).coerceIn(-10000, 10000))) },
                                     onPlus = { update(settings.copy(subtitleDelayMs = (settings.subtitleDelayMs + 100).coerceIn(-10000, 10000))) },
                                     onReset = if (settings.subtitleDelayMs != 0) {
@@ -666,8 +666,8 @@ fun SettingsScreen(
                                 StepperRow(
                                     label = stringResource(R.string.subtitle_speed_header),
                                     valueText = "%.1f×".format(settings.subtitleSpeed),
-                                    minusContentDescription = stringResource(R.string.subtitle_speed_header),
-                                    plusContentDescription = stringResource(R.string.subtitle_speed_header),
+                                    minusContentDescription = stringResource(R.string.subtitle_speed_decrease),
+                                    plusContentDescription = stringResource(R.string.subtitle_speed_increase),
                                     onMinus = {
                                         val stepped = ((settings.subtitleSpeed * 10).roundToInt() - 1) / 10f
                                         update(settings.copy(subtitleSpeed = stepped.coerceIn(0.5f, 2.0f)))
@@ -1046,31 +1046,31 @@ private fun DevelopmentSettingsSection(
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_video_folders),
-            value = "${stats?.videoFoldersCount ?: 0} folders",
+            value = stringResource(R.string.dev_count_folders, stats?.videoFoldersCount ?: 0),
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_scanned_videos),
-            value = "${stats?.videosCount ?: 0} videos",
+            value = stringResource(R.string.dev_count_videos, stats?.videosCount ?: 0),
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_audio_tracks),
-            value = "${stats?.audioTracksCount ?: 0} tracks",
+            value = stringResource(R.string.dev_count_tracks, stats?.audioTracksCount ?: 0),
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_audio_folders),
-            value = "${stats?.audioFoldersCount ?: 0} folders",
+            value = stringResource(R.string.dev_count_folders, stats?.audioFoldersCount ?: 0),
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_audio_albums),
-            value = "${stats?.audioAlbumsCount ?: 0} albums",
+            value = stringResource(R.string.dev_count_albums, stats?.audioAlbumsCount ?: 0),
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_audio_artists),
-            value = "${stats?.audioArtistsCount ?: 0} artists",
+            value = stringResource(R.string.dev_count_artists, stats?.audioArtistsCount ?: 0),
         )
         DiagnosticRow(
             label = stringResource(R.string.dev_label_playlists),
-            value = "${stats?.playlistsCount ?: 0} playlists",
+            value = stringResource(R.string.dev_count_playlists, stats?.playlistsCount ?: 0),
         )
     }
 
@@ -1079,26 +1079,26 @@ private fun DevelopmentSettingsSection(
     // Section 4: Decoder & Playback Engine
     DiagnosticSection(title = stringResource(R.string.dev_section_playback_engine)) {
         val configuredDecoderDesc = when (settings.decoderMode) {
-            "HW" -> "Hardware (MediaCodec)"
-            "HW+" -> "Hardware Plus (Async Queue)"
-            "SW" -> "Software (CPU Codecs)"
+            "HW" -> stringResource(R.string.dev_decoder_hw)
+            "HW+" -> stringResource(R.string.dev_decoder_hwplus)
+            "SW" -> stringResource(R.string.dev_decoder_sw)
             else -> settings.decoderMode
         }
         val playerStateText = when (playbackState.playbackState) {
-            androidx.media3.common.Player.STATE_READY -> if (playbackState.isPlaying) "Playing" else "Paused"
-            androidx.media3.common.Player.STATE_BUFFERING -> "Buffering"
-            androidx.media3.common.Player.STATE_ENDED -> "Ended"
-            androidx.media3.common.Player.STATE_IDLE -> "Idle"
-            else -> "Idle"
+            androidx.media3.common.Player.STATE_READY -> if (playbackState.isPlaying) stringResource(R.string.dev_state_playing) else stringResource(R.string.dev_state_paused)
+            androidx.media3.common.Player.STATE_BUFFERING -> stringResource(R.string.dev_state_buffering)
+            androidx.media3.common.Player.STATE_ENDED -> stringResource(R.string.dev_state_ended)
+            androidx.media3.common.Player.STATE_IDLE -> stringResource(R.string.dev_state_idle)
+            else -> stringResource(R.string.dev_state_idle)
         }
         val activeMediaText = playbackState.currentItem?.let {
-            "${it.title} (${if (it.isVideo) "Video" else "Audio"})"
+            "${it.title} (${if (it.isVideo) stringResource(R.string.media_type_video) else stringResource(R.string.media_type_audio)})"
         } ?: stringResource(R.string.dev_val_none_idle)
 
         val activeCodec = playbackState.activeDecoderName ?: stringResource(R.string.dev_val_none_idle)
         val isSwCodec = playbackState.activeDecoderName?.let { MpxMediaCodecSelector.isSoftwareCodecName(it) }
         val codecType = when {
-            playbackState.activeDecoderName == null -> "Configured for ${settings.decoderMode}"
+            playbackState.activeDecoderName == null -> stringResource(R.string.dev_configured_for, settings.decoderMode)
             isSwCodec == true -> stringResource(R.string.dev_val_codec_sw)
             else -> stringResource(R.string.dev_val_codec_hw)
         }
@@ -1407,7 +1407,7 @@ private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = w
         val histCount = db.playbackHistoryDao().getCount()
         val playCount = db.playlistDao().getPlaylistsWithCount().size
         val resCount = db.playbackResumeDao().getAllResumePositions().size
-        "$favCount favs • $histCount history • $playCount playlists • $resCount resume"
+        stringResource(R.string.dev_db_records_summary, favCount, histCount, playCount, resCount)
     } catch (_: Exception) {
         "0 favs • 0 history • 0 playlists • 0 resume"
     }

@@ -927,4 +927,5 @@
     <string name="dev_decoder_hwplus">Hardware Plus (File asynchrone)</string>
     <string name="dev_decoder_sw">Logiciel (Codecs CPU)</string>
     <string name="playlist_videos_count">%1$d vidéos</string>
+    <string name="dev_db_records_summary">%1$d favoris • %2$d historique • %3$d listes de lecture • %4$d reprise</string>
 </resources>

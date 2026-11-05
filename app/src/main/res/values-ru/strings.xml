@@ -927,4 +927,5 @@
     <string name="dev_decoder_hwplus">Hardware Plus (Асинхронная очередь)</string>
     <string name="dev_decoder_sw">Программный (Кодек CPU)</string>
     <string name="playlist_videos_count">%1$d видео</string>
+    <string name="dev_db_records_summary">%1$d избранных • %2$d история • %3$d плейлистов • %4$d возобновление</string>
 </resources>

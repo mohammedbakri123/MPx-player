@@ -927,4 +927,5 @@
     <string name="dev_decoder_hwplus">عتاد بلس (طابور غير متزامن)</string>
     <string name="dev_decoder_sw">برمجي (برامج ترميز المعالج)</string>
     <string name="playlist_videos_count">%1$d مقطع فيديو</string>
+    <string name="dev_db_records_summary">%1$d مفضلة • %2$d سجل • %3$d قوائم تشغيل • %4$d استئناف</string>
 </resources>

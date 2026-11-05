@@ -927,4 +927,5 @@
     <string name="dev_decoder_hwplus">हार्डवेयर प्लस (एसिंक क्यू)</string>
     <string name="dev_decoder_sw">सॉफ़्टवेयर (CPU कोडेक)</string>
     <string name="playlist_videos_count">%1$d वीडियो</string>
+    <string name="dev_db_records_summary">%1$d पसंदीदा • %2$d इतिहास • %3$d प्लेलिस्ट • %4$d रिज़्यूम</string>
 </resources>

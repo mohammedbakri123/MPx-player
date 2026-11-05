@@ -927,4 +927,5 @@
     <string name="dev_decoder_hwplus">Hardware Plus (Asynchrone Warteschlange)</string>
     <string name="dev_decoder_sw">Software (CPU-Codecs)</string>
     <string name="playlist_videos_count">%1$d Videos</string>
+    <string name="dev_db_records_summary">%1$d Favoriten • %2$d Verlauf • %3$d Wiedergabelisten • %4$d Fortsetzung</string>
 </resources>
