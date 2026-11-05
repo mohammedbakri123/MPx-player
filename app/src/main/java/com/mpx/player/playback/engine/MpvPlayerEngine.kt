@@ -991,6 +991,26 @@ class MpvPlayerEngine(
         } catch (e: Exception) {
             Log.w(TAG, "Failed reporting android-surface-size", e)
         }
+        // Issue #193: restore vo=gpu here too, not only on attach/time-pos.
+        // A surface destroy around a resize (chrome appearing while paused:
+        // 1080x2356 -> 1080x1934, then vo=null a second later) can leave vo
+        // null with no later attach and no time-pos updates — time-pos does
+        // not advance while paused, so the #181 restore never fires. The
+        // framework always calls surfaceChanged after surfaceCreated, so
+        // this is the last restore chance on the re-attach path, and it
+        // fires in the paused state. Same guard as the #181 restore: only
+        // when a surface is attached and vo is known null; restoring a
+        // nulled vo cannot tear down a live VO, because there is none.
+        synchronized(surfaceLock) {
+            if (currentSurface != null && voIsNull) {
+                try {
+                    mpv.setPropertyString("vo", "gpu")
+                    voIsNull = false
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed restoring vo=gpu on surfaceChanged", e)
+                }
+            }
+        }
     }
 
     /**
@@ -1014,11 +1034,17 @@ class MpvPlayerEngine(
     override fun detachSurface() {
         synchronized(surfaceLock) {
             currentSurface = null
+            // Issue #193: record vo as null BEFORE the native calls. The
+            // flag was set last, so if mpv.detachSurface() threw, vo was
+            // already null while voIsNull stayed false — and the attach
+            // (willLoad branch) and load() restores both trust the flag and
+            // skip, leaving a later load to decode into the null VO.
+            // Setting the flag first makes every restore site see the truth.
+            voIsNull = true
             try {
                 mpv.setPropertyString("vo", "null")
                 mpv.setPropertyString("force-window", "no")
                 mpv.detachSurface()
-                voIsNull = true
             } catch (e: Exception) {
                 Log.w(TAG, "Error in detachSurface barrier", e)
             }
