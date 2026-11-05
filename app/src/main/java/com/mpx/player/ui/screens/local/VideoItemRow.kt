@@ -383,7 +383,6 @@ fun VideoItemGridCard(
                         )
                     }
                 }
-                }
             }
         }
     }
