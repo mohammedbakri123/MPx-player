@@ -151,7 +151,9 @@ fun SettingsScreen(
 
     // Issue #191: commit = true writes synchronously — the layout rows
     // below pass it so a swipe-away right after the tap cannot lose the
-    // choice. Every other row keeps the queued apply() write.
+    // choice. Issue #228: the two hosted sub-screens (Player Layout,
+    // folder blacklist) and Reset commit too, via their own wiring below.
+    // Every other row keeps the queued apply() write.
     fun update(next: AppSettings, commit: Boolean = false) {
         val oldLanguage = settings.appLanguage
         val oldTheme = settings.appTheme
@@ -334,12 +336,12 @@ fun SettingsScreen(
             // #158: hosted at Scaffold level, not inside the drill-down
             // LazyColumn — the screen scrolls itself.
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                FoldersBlacklistScreen(settings = settings, onSettingsChanged = ::update)
+                FoldersBlacklistScreen(settings = settings, onSettingsChanged = { update(it, commit = true) })
             }
         } else if (selectedId == "layout") {
             // #158: same as above — the editor scrolls itself.
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                PlayerLayoutScreen(settings = settings, onSettingsChanged = ::update)
+                PlayerLayoutScreen(settings = settings, onSettingsChanged = { update(it, commit = true) })
             }
         } else {
             // Dedicated sub-screen for one category: only its own options.
@@ -847,7 +849,7 @@ fun SettingsScreen(
                                         onDismiss = { showResetDialog = false },
                                         confirmText = stringResource(R.string.general_reset_button),
                                         onConfirm = {
-                                            update(AppSettings())
+                                            update(AppSettings(), commit = true)
                                             showResetDialog = false
                                             scope.launch {
                                                 snackbarHostState.showSnackbar(context.getString(R.string.general_reset_done))

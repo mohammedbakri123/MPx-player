@@ -425,8 +425,11 @@ fun MpxApp(
     // pop up to the start destination with state saved, single top,
     // restore state), so a swipe lands exactly where a tap would.
     fun navigateToTab(route: String) {
+        // Issue #228: commit the last-tab save synchronously — a swipe-away
+        // right after a tab switch must not lose which tab was open.
         realSettingsRepo.save(
             realSettingsRepo.load().copy(lastTabRoute = route),
+            commit = true,
         )
         navController.navigate(route) {
             popUpTo(navController.graph.findStartDestination().id) {
