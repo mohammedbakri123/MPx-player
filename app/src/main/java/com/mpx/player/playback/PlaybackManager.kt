@@ -405,15 +405,32 @@ class PlaybackManager private constructor(context: Context) {
         playQueue(listOf(media), startIndex = 0, autoPlay = true, forceResume = resumeMs > 0L)
     }
 
+    /**
+     * Starts [items] as a new playback session from [startIndex].
+     *
+     * [preserveShuffleState] is for playing a position in the LIVE queue
+     * (issue #203): the mini-player queue dialog passes the live queue
+     * back with a new start index, which is not a new session — so the
+     * pre-shuffle order and the shuffle flag are kept. It only takes
+     * effect when [items] IS the live queue (same list instance); any
+     * other list is a genuinely new queue and resets shuffle as before.
+     * Every other caller passes a fresh list and gets the default.
+     */
     fun playQueue(
         items: List<PlayableMedia>,
         startIndex: Int = 0,
         autoPlay: Boolean = true,
         forceResume: Boolean = false,
+        preserveShuffleState: Boolean = false,
     ) {
         if (items.isEmpty()) return
+        // Issue #203: keep the shuffle state only when the queue being
+        // played is the live one (same items, different start index).
         // A new queue is a new session: shuffle order does not carry over.
-        unshuffledQueue = null
+        val keepShuffle = preserveShuffleState && items === currentQueue
+        if (!keepShuffle) {
+            unshuffledQueue = null
+        }
         currentQueue = items
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
@@ -463,7 +480,10 @@ class PlaybackManager private constructor(context: Context) {
                 hasNext = engine.hasNextMediaItem,
                 resumedFromMs = if (shouldResume) savedPos else null,
                 speed = settings.defaultPlaybackSpeed,
-                shuffleEnabled = false,
+                // Issue #203: a live-queue pick keeps the shuffle flag as
+                // it is (on stays on, off stays off); a new queue resets
+                // it, as before.
+                shuffleEnabled = if (keepShuffle) it.shuffleEnabled else false,
                 // A fresh video load is preparing until the engine reports READY.
                 isPreparing = targetItem.isVideo,
             )
@@ -472,6 +492,25 @@ class PlaybackManager private constructor(context: Context) {
         updateTracksState()
         startTicker()
         armPreparingWatchdog()
+    }
+
+    /**
+     * Plays the item at [index] in the LIVE queue (issue #203) — the
+     * mini-player queue dialog's pick. The queue itself does not change,
+     * only the start index, so the shuffle state is preserved: while
+     * shuffled, the pre-shuffle order stays saved in [unshuffledQueue]
+     * and the shuffle flag stays on, so turning shuffle off still
+     * restores the original order. While unshuffled this is a plain
+     * jump to the picked item. No-op on an empty queue.
+     */
+    fun playLiveQueueItem(index: Int) {
+        if (currentQueue.isEmpty()) return
+        playQueue(
+            currentQueue,
+            startIndex = index.coerceIn(0, currentQueue.lastIndex),
+            autoPlay = true,
+            preserveShuffleState = true,
+        )
     }
 
     fun playAudioQueue(tracks: List<AudioTrack>, startIndex: Int = 0) {
