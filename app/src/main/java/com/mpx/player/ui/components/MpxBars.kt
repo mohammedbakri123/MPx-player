@@ -3,11 +3,13 @@ package com.mpx.player.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -32,7 +34,7 @@ import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.hazeEffect
 
 /**
  * M2.5 bar atoms (#106). The dock is full-width, 64dp, tap-only —
@@ -53,8 +55,10 @@ fun RowScope.MpxDockTab(
     Column(
         modifier = Modifier
             .weight(1f)
+            .fillMaxHeight()
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             icon,
@@ -164,7 +168,7 @@ fun MpxBlurSurface(
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = modifier.hazeChild(
+        modifier = modifier.hazeEffect(
             state = state,
             style = HazeDefaults.style(
                 blurRadius = 20.dp,

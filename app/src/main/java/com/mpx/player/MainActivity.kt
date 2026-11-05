@@ -11,22 +11,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -42,10 +32,12 @@ import androidx.compose.ui.res.stringResource
 import com.mpx.player.ui.theme.MpxTheme
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -69,6 +61,10 @@ import com.mpx.player.ui.screens.transfer.TransferScreen
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import java.util.Locale
+import com.mpx.player.ui.components.MpxBottomBar
+import com.mpx.player.ui.components.MpxDockTab
+import com.mpx.player.ui.theme.MpxEasingStandard
+import com.mpx.player.ui.theme.MpxMotionStandard
 
 class MainActivity : ComponentActivity() {
     private var isInPipMode by mutableStateOf(false)
@@ -324,7 +320,7 @@ fun MpxApp(
             val currentDestination = backStackEntry?.destination
 
             // Hide bottom navigation in PiP mode or on full-screen routes (Player, Settings, AboutBeta)
-            if (isInPipMode || currentDestination?.route in listOf(Screen.Player.route, Screen.Settings.route, Screen.AboutBeta.route)) {
+            if (isInPipMode || currentDestination?.route in listOf(Screen.Player.route, Screen.Settings.route, Screen.OverlaySettings.route, Screen.AboutBeta.route)) {
                 return@Scaffold
             }
 
@@ -341,59 +337,30 @@ fun MpxApp(
                     playbackManager = playbackManager,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                 )
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    thickness = 0.5.dp,
-                )
-                // MX-style tab strip (structure from MX's bottom tab bar in
-                // the decoded layouts: full-width horizontal strip on a
-                // near-black tab background, 0.5dp divider above, icon above
-                // a small label, selection by colour only). This is a
-                // custom Row, deliberately NOT the old M3 NavigationBar
+                // #106 dock atoms: full-width 64dp bar, hairline top edge
+                // (replaces the old divider), tap-only tabs, colour-only
+                // selection. Deliberately NOT the old M3 NavigationBar
                 // (80dp, pill indicator, container grey) and NOT the #84
-                // floating rounded dock.
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp)
-                        .background(MaterialTheme.colorScheme.surface),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
+                // floating rounded dock. No swipe between tabs (UX law).
+                MpxBottomBar {
                     navigationTabs.forEach { tab ->
                         val selected = currentDestination?.hierarchy?.any {
                             it.route == tab.route
                         } == true
-
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable {
-                                    navController.navigate(tab.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
+                        MpxDockTab(
+                            label = stringResource(tab.labelRes),
+                            icon = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(tab.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
                                     }
-                                },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Icon(
-                                imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
-                                contentDescription = stringResource(tab.labelRes),
-                                tint = if (selected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp),
-                            )
-                            Text(
-                                text = stringResource(tab.labelRes),
-                                color = if (selected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 11.sp,
-                            )
-                        }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                        )
                     }
                 }
             }
@@ -403,6 +370,10 @@ fun MpxApp(
             navController = navController,
             startDestination = Screen.Local.route,
             modifier = Modifier.padding(padding),
+            enterTransition = { fadeIn(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard)) },
+            exitTransition = { fadeOut(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard)) },
+            popExitTransition = { fadeOut(animationSpec = tween(MpxMotionStandard, easing = MpxEasingStandard)) },
         ) {
             composable(Screen.Local.route) {
                 LocalScreen(
