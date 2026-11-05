@@ -69,6 +69,7 @@ import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSurfaceElevated
 import com.mpx.player.ui.theme.MpxTextPrimary
 import com.mpx.player.ui.theme.MpxTextSecondary
+import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
  * Dialog displaying user favourites persisted in Room SQLite database.
@@ -193,7 +194,6 @@ fun FavouritesDialog(
                             }
                             IconButton(
                                 onClick = { onRemoveFavourite(item.mediaUri) },
-                                modifier = Modifier.size(32.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Delete,
@@ -392,7 +392,7 @@ fun CreatePlaylistDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
-    var name by remember { mutableStateOf(initialName) }
+    var name by rememberSaveable { mutableStateOf(initialName) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -489,6 +489,7 @@ fun AddToPlaylistDialog(
                         .fillMaxWidth()
                         .clip(MpxShapes.small)
                         .clickable { onCreateNewPlaylist() }
+                        .heightIn(min = 48.dp)
                         .padding(vertical = 10.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -550,7 +551,7 @@ fun AddToPlaylistDialog(
                                         color = MpxTextPrimary,
                                     )
                                     Text(
-                                        text = stringResource(R.string.music_songs_count, pl.itemCount),
+                                        text = if (pl.isVideoPlaylist) stringResource(R.string.playlist_videos_count, pl.itemCount) else stringResource(R.string.music_songs_count, pl.itemCount),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MpxTextSecondary.copy(alpha = 0.7f),
                                         fontSize = 11.sp,
@@ -562,11 +563,12 @@ fun AddToPlaylistDialog(
                 }
             }
         },
-        confirmButton = {
+        dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.action_cancel), color = MpxTextSecondary)
             }
         },
+        confirmButton = {},
     )
 }
 
@@ -710,7 +712,6 @@ fun PlaylistDetailsDialog(
                                 }
                                 IconButton(
                                     onClick = { onRemoveItem(item.id) },
-                                    modifier = Modifier.size(32.dp),
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Delete,
