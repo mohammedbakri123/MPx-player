@@ -199,6 +199,18 @@ fun LocalScreen(
         realSettingsRepo.save(updated)
         appSettings = updated
     }
+    // #164: Tree view (Sort & View popup): the root folders list shows
+    // the folder hierarchy inline. Persisted in AppSettings.localTreeMode;
+    // expanded folders are session-only (not persisted).
+    var isTreeMode by remember { mutableStateOf(appSettings.localTreeMode) }
+    var expandedTreeFolders by remember { mutableStateOf(setOf<String>()) }
+
+    fun updateTreeMode(tree: Boolean) {
+        isTreeMode = tree
+        val updated = appSettings.copy(localTreeMode = tree)
+        realSettingsRepo.save(updated)
+        appSettings = updated
+    }
     var showSortDialog by remember { mutableStateOf(false) }
     // #156: the header layout button opens the Sort & View popup
     // (LocalSortPopup), which replaced #141's LocalLayoutSheet.
@@ -443,6 +455,7 @@ fun LocalScreen(
                     currentFolder = null
                 }
                 viewMode = if (loadedSettings.localViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
+                isTreeMode = loadedSettings.localTreeMode
                 if (currentPerm) {
                     scope.launch(Dispatchers.IO) {
                         isLoading = true
@@ -1398,7 +1411,34 @@ fun LocalScreen(
                     )
 
                     // Folder list / grid with smooth LazyColumn/LazyGrid, stable keys and fast scrollbar
-                    if (viewMode == ViewMode.LIST) {
+                    // #164: Tree view — the folder hierarchy inline. It
+                    // applies to the folders LIST layout; GRID renders
+                    // the flat grid below, exactly as in Folder mode.
+                    if (viewMode == ViewMode.LIST && isTreeMode) {
+                        LocalFolderTree(
+                            folders = filteredFolders,
+                            expandedKeys = expandedTreeFolders,
+                            onToggleExpand = { folder ->
+                                val key = folder.id.ifBlank { folder.path }
+                                expandedTreeFolders =
+                                    if (expandedTreeFolders.contains(key)) expandedTreeFolders - key
+                                    else expandedTreeFolders + key
+                            },
+                            showThumbnails = appSettings.showThumbnails,
+                            showSize = appSettings.showFieldSize,
+                            showDate = appSettings.showFieldDate,
+                            showCount = appSettings.showFieldCount,
+                            showFullName = appSettings.showFullName,
+                            isSelected = { folder ->
+                                selectedFolderIds.contains(folder.id.ifBlank { folder.path })
+                            },
+                            onLongClick = { folder -> toggleFolderSelection(folder) },
+                            onClick = { folder ->
+                                if (isSelectionMode) toggleFolderSelection(folder)
+                                else openFolder(folder)
+                            },
+                        )
+                    } else if (viewMode == ViewMode.LIST) {
                         val listState = rememberLazyListState()
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyColumn(
@@ -1764,6 +1804,9 @@ fun LocalScreen(
                         snackbarHostState.showSnackbar(msg)
                     }
                 },
+                // #164: Folder / Tree mode for the root folders list.
+                isTreeMode = isTreeMode,
+                onTreeModeChange = { updateTreeMode(it) },
                 folderGridColumns = appSettings.folderGridColumns,
                 onFolderGridColumnsChange = { columns ->
                     val updated = appSettings.copy(folderGridColumns = columns)
@@ -1851,6 +1894,9 @@ fun LocalScreen(
                 },
                 currentView = viewMode,
                 onViewChange = { updateViewMode(it) },
+                // #164: Folder / Tree mode for the root folders list.
+                isTreeMode = isTreeMode,
+                onTreeModeChange = { updateTreeMode(it) },
                 folderGridColumns = appSettings.folderGridColumns,
                 onFolderGridColumnsChange = { columns ->
                     val updated = appSettings.copy(folderGridColumns = columns)

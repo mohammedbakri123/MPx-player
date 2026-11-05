@@ -997,6 +997,8 @@
     <string name="sort_popup_view_mode">Режим просмотра</string>
     <string name="sort_popup_view_folder">Папка</string>
     <string name="view_mode_tree">Дерево</string>
+    <string name="tree_expand">Развернуть</string>
+    <string name="tree_collapse">Свернуть</string>
     <string name="sort_popup_tree_soon">Скоро</string>
     <string name="sort_popup_layout">Раскладка</string>
     <string name="sort_popup_layout_list">Список</string>

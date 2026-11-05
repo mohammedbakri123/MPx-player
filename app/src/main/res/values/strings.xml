@@ -997,6 +997,8 @@
     <string name="sort_popup_view_mode">View Mode</string>
     <string name="sort_popup_view_folder">Folder</string>
     <string name="view_mode_tree">Tree</string>
+    <string name="tree_expand">Expand</string>
+    <string name="tree_collapse">Collapse</string>
     <string name="sort_popup_tree_soon">Coming soon</string>
     <string name="sort_popup_layout">Layout</string>
     <string name="sort_popup_layout_list">List</string>

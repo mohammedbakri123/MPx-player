@@ -997,6 +997,8 @@
     <string name="sort_popup_view_mode">视图模式</string>
     <string name="sort_popup_view_folder">文件夹</string>
     <string name="view_mode_tree">树形</string>
+    <string name="tree_expand">展开</string>
+    <string name="tree_collapse">折叠</string>
     <string name="sort_popup_tree_soon">即将推出</string>
     <string name="sort_popup_layout">布局</string>
     <string name="sort_popup_layout_list">列表</string>

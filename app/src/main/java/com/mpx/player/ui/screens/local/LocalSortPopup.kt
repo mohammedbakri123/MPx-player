@@ -83,8 +83,8 @@ import com.mpx.player.ui.theme.MpxTheme
  * tile is selected; tapping a tile switches to it. The full field set stays
  * available in SortViewDialog.
  *
- * Tree view does not exist in MPx yet: the Tree tile is disabled and
- * honestly marked "Coming soon". It never shows a flat list as a tree.
+ * Tree view (#164) shows the folder hierarchy inline (LocalFolderTree);
+ * the Tree tile is live and persists via AppSettings.localTreeMode.
  */
 
 // Sort direction, mpvEx-style: the ascending label depends on the field,
@@ -113,6 +113,9 @@ fun LocalSortPopup(
     onSortReverseChange: (Boolean) -> Unit,
     currentView: ViewMode,
     onViewChange: (ViewMode) -> Unit,
+    // #164: Folder / Tree mode for the Local root folders list.
+    isTreeMode: Boolean,
+    onTreeModeChange: (Boolean) -> Unit,
     folderGridColumns: Int,
     onFolderGridColumnsChange: (Int) -> Unit,
     videoGridColumns: Int,
@@ -253,18 +256,18 @@ fun LocalSortPopup(
                             ModeTile(
                                 icon = Icons.Filled.ViewModule,
                                 label = stringResource(R.string.sort_popup_view_folder),
-                                selected = true,
+                                selected = !isTreeMode,
                                 enabled = true,
                                 comingSoon = false,
-                                onClick = {},
+                                onClick = { onTreeModeChange(false) },
                             )
                             ModeTile(
                                 icon = Icons.Filled.AccountTree,
                                 label = stringResource(R.string.view_mode_tree),
-                                selected = false,
-                                enabled = false,
-                                comingSoon = true,
-                                onClick = {},
+                                selected = isTreeMode,
+                                enabled = true,
+                                comingSoon = false,
+                                onClick = { onTreeModeChange(true) },
                             )
                         }
                     }

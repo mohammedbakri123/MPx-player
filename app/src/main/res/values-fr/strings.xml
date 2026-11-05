@@ -997,6 +997,8 @@
     <string name="sort_popup_view_mode">Mode d’affichage</string>
     <string name="sort_popup_view_folder">Dossier</string>
     <string name="view_mode_tree">Arborescence</string>
+    <string name="tree_expand">Développer</string>
+    <string name="tree_collapse">Réduire</string>
     <string name="sort_popup_tree_soon">Bientôt disponible</string>
     <string name="sort_popup_layout">Disposition</string>
     <string name="sort_popup_layout_list">Liste</string>

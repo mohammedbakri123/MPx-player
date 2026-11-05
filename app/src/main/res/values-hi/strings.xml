@@ -997,6 +997,8 @@
     <string name="sort_popup_view_mode">दृश्य मोड</string>
     <string name="sort_popup_view_folder">फ़ोल्डर</string>
     <string name="view_mode_tree">वृक्ष</string>
+    <string name="tree_expand">विस्तार करें</string>
+    <string name="tree_collapse">समेटें</string>
     <string name="sort_popup_tree_soon">जल्द आ रहा है</string>
     <string name="sort_popup_layout">लेआउट</string>
     <string name="sort_popup_layout_list">सूची</string>

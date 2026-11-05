@@ -997,6 +997,8 @@
     <string name="sort_popup_view_mode">Modo de visualização</string>
     <string name="sort_popup_view_folder">Pasta</string>
     <string name="view_mode_tree">Árvore</string>
+    <string name="tree_expand">Expandir</string>
+    <string name="tree_collapse">Recolher</string>
     <string name="sort_popup_tree_soon">Em breve</string>
     <string name="sort_popup_layout">Layout</string>
     <string name="sort_popup_layout_list">Lista</string>
