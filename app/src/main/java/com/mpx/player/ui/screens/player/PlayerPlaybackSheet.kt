@@ -721,14 +721,22 @@ private fun PlaybackSheetSleepPage(
     }
     // Custom time: same ±5 minute stepper idea as the old presets, but any
     // 5..180 minute value.
-    val baseMinutes = state.sleepTimerMinutes ?: 30
+    // Issue #208: the stepper used to read the set value through a
+    // `?: 30` fallback, so with no timer running it showed "30 min" while
+    // the Off chip was selected — and the first + tap set a 35-minute timer
+    // from that phantom base. With no timer the stepper now shows Off (the
+    // same string the Off chip and the stripe caption use); the first tap
+    // in either direction starts a timer at the 30-minute default, and
+    // only then does the value step ±5 from the running timer.
+    val timerMinutes = state.sleepTimerMinutes
     StepperRow(
         label = stringResource(R.string.playback_sheet_sleep_custom),
-        valueText = "$baseMinutes min",
+        valueText = timerMinutes?.let { "$it min" }
+            ?: stringResource(R.string.player_sleep_timer_off),
         minusContentDescription = stringResource(R.string.playback_sheet_sleep_custom),
         plusContentDescription = stringResource(R.string.playback_sheet_sleep_custom),
         onMinus = {
-            val mins = (baseMinutes - 5).coerceIn(5, 180)
+            val mins = timerMinutes?.let { (it - 5).coerceIn(5, 180) } ?: 30
             playbackManager.setSleepTimer(mins)
             Toast.makeText(
                 context,
@@ -737,7 +745,7 @@ private fun PlaybackSheetSleepPage(
             ).show()
         },
         onPlus = {
-            val mins = (baseMinutes + 5).coerceIn(5, 180)
+            val mins = timerMinutes?.let { (it + 5).coerceIn(5, 180) } ?: 30
             playbackManager.setSleepTimer(mins)
             Toast.makeText(
                 context,
