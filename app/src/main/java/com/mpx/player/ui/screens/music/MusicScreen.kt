@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import com.mpx.player.ui.components.AsyncAlbumThumbnail
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.components.FastScrollbar
 import com.mpx.player.ui.components.GridFastScrollbar
@@ -120,6 +119,8 @@ import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.ui.screens.local.AudioAlbumGridCard
+import com.mpx.player.ui.screens.local.AudioAlbumRow
 import com.mpx.player.ui.screens.local.AudioTrackGridCard
 import com.mpx.player.ui.screens.local.AudioTrackRow
 import com.mpx.player.ui.screens.local.LocalSortPopup
@@ -216,6 +217,26 @@ fun MusicScreen(
             else selectedTrackIds + key
     }
 
+    // #185: long-press multi-select on the Albums tab, mirroring the
+    // Tracks slice / Local's #144. Keyed like Tracks (id, falling back
+    // to title). Long-press toggles an item (entering selection mode
+    // when empty); a tap while selecting toggles too. Back / the X exits
+    // and clears.
+    var selectedAlbumIds by remember { mutableStateOf(setOf<String>()) }
+    val isAlbumSelectionMode = selectedAlbumIds.isNotEmpty()
+    val albumSelectionCount = selectedAlbumIds.size
+
+    fun clearAlbumSelection() {
+        selectedAlbumIds = emptySet()
+    }
+
+    fun toggleAlbumSelection(album: AudioAlbum) {
+        val key = album.id.ifBlank { album.title }
+        selectedAlbumIds =
+            if (selectedAlbumIds.contains(key)) selectedAlbumIds - key
+            else selectedAlbumIds + key
+    }
+
     fun updateViewMode(newMode: ViewMode) {
         viewMode = newMode
         val updated = if (appSettings.separateViewLayout) {
@@ -276,16 +297,17 @@ fun MusicScreen(
         }
     }
 
-    // #185: Back exits Tracks multi-select (exactly one step), like Local.
-    BackHandler(enabled = isTrackSelectionMode) {
+    // #185: Back exits multi-select (exactly one step), like Local.
+    BackHandler(enabled = isTrackSelectionMode || isAlbumSelectionMode) {
         clearTrackSelection()
+        clearAlbumSelection()
     }
 
-    // #185: leaving the Tracks tab drops its selection — the other tabs
-    // have no multi-select yet, so a selection must not linger (and its
-    // action bar must not show) on them.
+    // #185: leaving a tab drops its selection — a selection must not
+    // linger (and its action bar must not show) on the other tabs.
     LaunchedEffect(selectedTab) {
         if (selectedTab != MusicTab.TRACKS) clearTrackSelection()
+        if (selectedTab != MusicTab.ALBUMS) clearAlbumSelection()
     }
 
     var showManageTabsDialog by remember { mutableStateOf(false) }
@@ -424,6 +446,34 @@ fun MusicScreen(
         )
     }
 
+    // #185: the Albums tab shares the screen search box (contains-filter
+    // on title/artist, like Tracks) and the shared sort state — one
+    // sortField / sortReverse for the whole Music screen, like Local.
+    // There is no separate albums sort: the popup edits the same field.
+    val filteredAlbums = remember(albums, searchQuery) {
+        if (searchQuery.isBlank()) {
+            albums
+        } else {
+            albums.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                    it.artist.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    // #185: the shared MediaSortComparator for albums — same field
+    // semantics as the audio track comparator. Albums carry no duration:
+    // SIZE / DURATION sort by track count (most tracks first).
+    val sortedAlbums = remember(filteredAlbums, sortField, appSettings.sortReverse) {
+        filteredAlbums.sortedWith(
+            MediaSortComparator.audioAlbumComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
     fun selectedTracksInView(): List<AudioTrack> =
         sortedTracks.filter { selectedTrackIds.contains(it.id.ifBlank { it.path }) }
 
@@ -480,6 +530,71 @@ fun MusicScreen(
         }
     }
 
+    // #185: Albums multi-select actions, mirroring the Tracks ones. An
+    // album's tracks are its library tracks (getAudioAlbums groups by
+    // album name), in library order — no new repository call needed.
+    fun albumTracks(album: AudioAlbum): List<AudioTrack> =
+        tracks.filter { it.album == album.title }
+
+    fun selectedAlbumsInView(): List<AudioAlbum> =
+        sortedAlbums.filter { selectedAlbumIds.contains(it.id.ifBlank { it.title }) }
+
+    fun selectedAlbumTracks(): List<AudioTrack> =
+        selectedAlbumsInView().flatMap { albumTracks(it) }
+
+    fun playAlbumSelection() {
+        val albumTrackList = selectedAlbumTracks()
+        if (albumTrackList.isNotEmpty()) {
+            playbackManager?.playAudioQueue(albumTrackList, startIndex = 0)
+            onOpenPlayer()
+            clearAlbumSelection()
+        }
+    }
+
+    fun addAlbumSelectionToPlaylist() {
+        val albumTrackList = selectedAlbumTracks()
+        if (albumTrackList.isNotEmpty()) {
+            tracksForPlaylistAdd = albumTrackList
+            showAddToPlaylistDialog = true
+        }
+    }
+
+    fun toggleAlbumSelectionFavourite() {
+        val selected = selectedAlbumTracks()
+        if (selected.isEmpty()) return
+        val favUris = favourites.map { it.mediaUri }.toSet()
+        scope.launch(Dispatchers.IO) {
+            // Toggle as a group: if every selected track is already a
+            // favourite, remove them all; otherwise add the missing ones.
+            val allFav = selected.all { favUris.contains(it.path) }
+            if (allFav) {
+                selected.forEach { persistenceRepository.removeFavourite(it.path) }
+            } else {
+                selected.filter { !favUris.contains(it.path) }.forEach { track ->
+                    persistenceRepository.addFavourite(
+                        FavouriteItem(
+                            mediaId = track.id,
+                            title = track.title,
+                            subtitle = "${track.artist} • ${track.album}",
+                            mediaUri = track.path,
+                            isVideo = false,
+                            durationMs = track.durationMs,
+                        )
+                    )
+                }
+            }
+            withContext(Dispatchers.Main) {
+                clearAlbumSelection()
+                snackbarHostState.showSnackbar(
+                    context.getString(
+                        if (allFav) R.string.snackbar_removed_favourites
+                        else R.string.snackbar_added_to_favourites
+                    )
+                )
+            }
+        }
+    }
+
     var isRefreshing by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading) {
         if (!isLoading) isRefreshing = false
@@ -490,11 +605,14 @@ fun MusicScreen(
         containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (isTrackSelectionMode) {
+            if (isTrackSelectionMode || isAlbumSelectionMode) {
                 // #185: selection top bar — count + close. Back exits too.
                 TopAppBar(
                     navigationIcon = {
-                        IconButton(onClick = { clearTrackSelection() }) {
+                        IconButton(onClick = {
+                            clearTrackSelection()
+                            clearAlbumSelection()
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = stringResource(R.string.cd_exit_selection),
@@ -504,7 +622,10 @@ fun MusicScreen(
                     },
                     title = {
                         Text(
-                            text = stringResource(R.string.multiselect_selected_count, trackSelectionCount),
+                            text = stringResource(
+                                R.string.multiselect_selected_count,
+                                if (isAlbumSelectionMode) albumSelectionCount else trackSelectionCount,
+                            ),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
@@ -598,9 +719,11 @@ fun MusicScreen(
             }
         },
         bottomBar = {
-            if (isTrackSelectionMode) {
+            if (isTrackSelectionMode || isAlbumSelectionMode) {
                 // #185: multi-select action bar — exactly the track-menu
                 // actions: Play, Add to playlist, Favourite. No delete.
+                // On Albums the same three actions run over the selected
+                // albums' tracks.
                 Column {
                     HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
                     Row(
@@ -612,19 +735,19 @@ fun MusicScreen(
                         MultiSelectAction(
                             icon = Icons.Filled.PlayArrow,
                             label = stringResource(R.string.video_item_play),
-                            onClick = { playTrackSelection() },
+                            onClick = { if (isAlbumSelectionMode) playAlbumSelection() else playTrackSelection() },
                             modifier = Modifier.weight(1f),
                         )
                         MultiSelectAction(
                             icon = Icons.AutoMirrored.Filled.QueueMusic,
                             label = stringResource(R.string.music_menu_add_to_playlist),
-                            onClick = { addTrackSelectionToPlaylist() },
+                            onClick = { if (isAlbumSelectionMode) addAlbumSelectionToPlaylist() else addTrackSelectionToPlaylist() },
                             modifier = Modifier.weight(1f),
                         )
                         MultiSelectAction(
                             icon = Icons.Filled.Favorite,
                             label = stringResource(R.string.music_menu_toggle_favourite),
-                            onClick = { toggleTrackSelectionFavourite() },
+                            onClick = { if (isAlbumSelectionMode) toggleAlbumSelectionFavourite() else toggleTrackSelectionFavourite() },
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -848,11 +971,35 @@ fun MusicScreen(
                                 message = stringResource(R.string.music_empty_albums_desc),
                                 icon = Icons.Filled.MusicNote,
                             )
+                        } else if (filteredAlbums.isEmpty()) {
+                            EmptyStateView(
+                                title = stringResource(R.string.music_search_no_matches_title),
+                                message = stringResource(R.string.music_search_no_matches_desc, searchQuery),
+                                icon = Icons.Filled.Search,
+                            )
                         } else {
-                            AlbumsTabContent(albums = albums, showThumbnails = appSettings.showThumbnails, onAlbumClick = {
-                                playbackManager?.playAudioQueue(tracks, startIndex = 0)
-                                onOpenPlayer()
-                            })
+                            // #185: pull to refresh, like Local's content.
+                            PullToRefreshBox(
+                                isRefreshing = isRefreshing,
+                                onRefresh = {
+                                    isRefreshing = true
+                                    refreshMusic()
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                AlbumsTabContent(
+                                    albums = sortedAlbums,
+                                    viewMode = viewMode,
+                                    showThumbnails = appSettings.showThumbnails,
+                                    selectedAlbumIds = selectedAlbumIds,
+                                    isSelectionMode = isAlbumSelectionMode,
+                                    onToggleAlbumSelection = { toggleAlbumSelection(it) },
+                                    onAlbumClick = {
+                                        playbackManager?.playAudioQueue(tracks, startIndex = 0)
+                                        onOpenPlayer()
+                                    },
+                                )
+                            }
                         }
                     }
                     MusicTab.ARTISTS -> {
@@ -967,6 +1114,7 @@ fun MusicScreen(
                     showAddToPlaylistDialog = false
                     tracksForPlaylistAdd = emptyList()
                     clearTrackSelection()
+                    clearAlbumSelection()
                     snackbarHostState.showSnackbar(
                         context.getString(R.string.music_added_to_playlist_msg, pl.name)
                     )
@@ -1595,72 +1743,91 @@ private fun PlaylistsTabContent(
 @Composable
 private fun AlbumsTabContent(
     albums: List<AudioAlbum>,
+    viewMode: ViewMode = ViewMode.GRID,
     showThumbnails: Boolean = true,
+    selectedAlbumIds: Set<String> = emptySet(),
+    isSelectionMode: Boolean = false,
+    onToggleAlbumSelection: (AudioAlbum) -> Unit = {},
     onAlbumClick: () -> Unit,
 ) {
-    val gridState = rememberLazyGridState()
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyVerticalGrid(
-            state = gridState,
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            items(
-                items = albums,
-                key = { it.id.ifBlank { it.title } },
-                contentType = { "album_card" },
-            ) { album ->
-                Column(
-                    modifier = Modifier
-                        .clip(MpxShapes.small)
-                        .background(MpxTheme.colors.surfaceVariant)
-                        .clickable { onAlbumClick() }
-                        .padding(10.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(110.dp)
-                            .clip(MpxShapes.small)
-                            .background(MpxTheme.colors.surfaceVariant),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        AsyncAlbumThumbnail(
-                            album = album,
-                            modifier = Modifier.fillMaxSize(),
-                            iconSize = 48.dp,
-                            showThumbnails = showThumbnails,
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = album.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MpxTheme.colors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+    if (viewMode == ViewMode.LIST) {
+        val listState = rememberLazyListState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp),
+            ) {
+                items(
+                    items = albums,
+                    key = { album -> album.id.ifBlank { album.title } },
+                    contentType = { "album_row" },
+                ) { album ->
+                    val isSelected = selectedAlbumIds.contains(album.id.ifBlank { album.title })
+                    AudioAlbumRow(
+                        album = album,
+                        showThumbnails = showThumbnails,
+                        isSelected = isSelected,
+                        onLongClick = { onToggleAlbumSelection(album) },
+                        onClick = {
+                            if (isSelectionMode) onToggleAlbumSelection(album)
+                            else onAlbumClick()
+                        },
                     )
-                    Text(
-                        text = stringResource(R.string.music_album_tracks_format, album.artist, album.trackCount),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MpxTheme.colors.textSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 78.dp),
+                        color = MpxTheme.colors.border,
+                        thickness = MpxHairline,
                     )
                 }
             }
+            FastScrollbar(
+                listState = listState,
+                itemCount = albums.size,
+                getSectionText = { index ->
+                    albums.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
         }
-        GridFastScrollbar(
-            gridState = gridState,
-            itemCount = albums.size,
-            getSectionText = { index ->
-                albums.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
-            },
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
+    } else {
+        val gridState = rememberLazyGridState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyVerticalGrid(
+                state = gridState,
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(
+                    items = albums,
+                    key = { album -> album.id.ifBlank { album.title } },
+                    contentType = { "album_card" },
+                ) { album ->
+                    val isSelected = selectedAlbumIds.contains(album.id.ifBlank { album.title })
+                    AudioAlbumGridCard(
+                        album = album,
+                        showThumbnails = showThumbnails,
+                        isSelected = isSelected,
+                        onLongClick = { onToggleAlbumSelection(album) },
+                        onClick = {
+                            if (isSelectionMode) onToggleAlbumSelection(album)
+                            else onAlbumClick()
+                        },
+                    )
+                }
+            }
+            GridFastScrollbar(
+                gridState = gridState,
+                itemCount = albums.size,
+                getSectionText = { index ->
+                    albums.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
+        }
     }
 }
 
