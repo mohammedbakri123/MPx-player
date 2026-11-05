@@ -282,6 +282,8 @@ fun MusicScreen(
         selectedPlaylistIds =
             if (selectedPlaylistIds.contains(key)) selectedPlaylistIds - key
             else selectedPlaylistIds + key
+    }
+
     // #185: long-press multi-select on the Folders tab, mirroring the
     // Artists slice / Local's #144. Keyed like Artists (id, falling back
     // to path). Long-press toggles an item (entering selection mode when
@@ -585,6 +587,10 @@ fun MusicScreen(
         } else {
             allPlaylists.filter {
                 it.title.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
     // #185: the Folders tab shares the screen search box (contains-filter
     // on name or path — the path distinguishes same-named folders on
     // different volumes) and the shared sort state — one sortField /
@@ -608,6 +614,13 @@ fun MusicScreen(
     val sortedPlaylists = remember(filteredPlaylists, sortField, appSettings.sortReverse) {
         filteredPlaylists.sortedWith(
             MediaSortComparator.audioPlaylistComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
     // #185: the shared MediaSortComparator for folders — same field
     // semantics as the audio artist comparator. Folders carry no date,
     // size or duration: SIZE / DURATION / COUNT sort by track count
