@@ -17,11 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,7 +62,6 @@ fun FolderItemRow(
     isSelected: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
-    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -217,22 +213,6 @@ fun FolderItemRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-            }
-        }
-
-        // #144: the 3-dot menu is hidden on a selected tile — the
-        // multi-select action bar owns the actions while selecting.
-        if (!isSelected) {
-            IconButton(
-                onClick = onMenuClick,
-                modifier = Modifier.size(48.dp), // 48dp Android touch target standard
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = stringResource(R.string.folder_item_options_cd, folder.name),
-                    tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                    modifier = Modifier.size(20.dp),
-                )
             }
         }
     }

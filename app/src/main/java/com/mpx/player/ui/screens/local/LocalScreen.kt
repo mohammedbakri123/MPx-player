@@ -31,7 +31,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
@@ -86,6 +85,7 @@ import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.PlaylistItem
@@ -235,10 +235,8 @@ fun LocalScreen(
     var isFolderSearching by remember { mutableStateOf(false) }
     var showFolderSortDialog by remember { mutableStateOf(false) }
     var folderMenuExpanded by remember { mutableStateOf(false) }
-    var folderForMenu by remember { mutableStateOf<MediaFolder?>(null) }
-    var videoForMenu by remember { mutableStateOf<VideoFile?>(null) }
-    // #144: videos queued for "Add to playlist" — one video from a tile
-    // menu, or the whole multi-select action-bar selection.
+    // #144: videos queued for "Add to playlist" — the whole
+    // multi-select action-bar selection.
     var videosForPlaylistAdd by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
 
@@ -339,24 +337,6 @@ fun LocalScreen(
                     }
                 } else {
                     playbackManager?.playVideoFiles(videos)
-                    onOpenPlayer()
-                }
-            }
-        }
-    }
-
-    fun playFolderById(bucketId: String, folderName: String) {
-        scope.launch(Dispatchers.IO) {
-            val vids = repository.getVideosInFolder(bucketId)
-            withContext(Dispatchers.Main) {
-                if (vids.isEmpty()) {
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            context.getString(R.string.snackbar_no_playable_videos, folderName)
-                        )
-                    }
-                } else {
-                    playbackManager?.playVideoFiles(vids)
                     onOpenPlayer()
                 }
             }
@@ -1175,9 +1155,6 @@ fun LocalScreen(
                                                 onOpenPlayer()
                                             }
                                         },
-                                        onMenuClick = {
-                                            videoForMenu = video
-                                        },
                                     )
                                     HorizontalDivider(
                                         modifier = Modifier.padding(start = 130.dp),
@@ -1232,9 +1209,6 @@ fun LocalScreen(
                                                 playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
                                                 onOpenPlayer()
                                             }
-                                        },
-                                        onMenuClick = {
-                                            videoForMenu = video
                                         },
                                     )
                                 }
@@ -1327,11 +1301,9 @@ fun LocalScreen(
                                     key = { it.id.ifBlank { it.path } },
                                     contentType = { "video_item_row" },
                                 ) { video ->
-                                    val isFav = favourites.any { it.mediaUri == video.path }
                                     VideoItemRow(
                                         video = video,
                                         showThumbnails = appSettings.showThumbnails,
-                                        isFavourite = isFav,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
@@ -1346,35 +1318,6 @@ fun LocalScreen(
                                         onClick = {
                                             if (isSelectionMode) toggleVideoSelection(video)
                                             else playVideoWithFolder(video)
-                                        },
-                                        onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
-                                        onAddToPlaylist = {
-                                            videosForPlaylistAdd = listOf(video)
-                                            showAddToPlaylistDialog = true
-                                        },
-                                        onToggleFavourite = {
-                                            scope.launch {
-                                                if (isFav) {
-                                                    persistenceRepository.removeFavourite(video.path)
-                                                    snackbarHostState.showSnackbar(
-                                                        context.getString(R.string.snackbar_removed_favourites)
-                                                    )
-                                                } else {
-                                                    persistenceRepository.addFavourite(
-                                                        FavouriteItem(
-                                                            mediaId = video.id,
-                                                            title = video.title,
-                                                            subtitle = video.folderName,
-                                                            mediaUri = video.path,
-                                                            isVideo = true,
-                                                            durationMs = video.durationMs,
-                                                        )
-                                                    )
-                                                    snackbarHostState.showSnackbar(
-                                                        context.getString(R.string.snackbar_added_to_favourites)
-                                                    )
-                                                }
-                                            }
                                         },
                                     )
                                     HorizontalDivider(
@@ -1428,35 +1371,6 @@ fun LocalScreen(
                                         onClick = {
                                             if (isSelectionMode) toggleVideoSelection(video)
                                             else playVideoWithFolder(video)
-                                        },
-                                        onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
-                                        onAddToPlaylist = {
-                                            videosForPlaylistAdd = listOf(video)
-                                            showAddToPlaylistDialog = true
-                                        },
-                                        onToggleFavourite = {
-                                            scope.launch {
-                                                if (isFav) {
-                                                    persistenceRepository.removeFavourite(video.path)
-                                                    snackbarHostState.showSnackbar(
-                                                        context.getString(R.string.snackbar_removed_favourites)
-                                                    )
-                                                } else {
-                                                    persistenceRepository.addFavourite(
-                                                        FavouriteItem(
-                                                            mediaId = video.id,
-                                                            title = video.title,
-                                                            subtitle = video.folderName,
-                                                            mediaUri = video.path,
-                                                            isVideo = true,
-                                                            durationMs = video.durationMs,
-                                                        )
-                                                    )
-                                                    snackbarHostState.showSnackbar(
-                                                        context.getString(R.string.snackbar_added_to_favourites)
-                                                    )
-                                                }
-                                            }
                                         },
                                     )
                                 }
@@ -1512,9 +1426,6 @@ fun LocalScreen(
                                         onClick = {
                                             if (isSelectionMode) toggleFolderSelection(folder)
                                             else openFolder(folder)
-                                        },
-                                        onMenuClick = {
-                                            folderForMenu = folder
                                         },
                                     )
                                     HorizontalDivider(
@@ -1992,155 +1903,6 @@ fun LocalScreen(
                 onDismiss = { showSortPopup = false },
             )
         }
-    }
-
-    // Context menu for a folder in the folder list
-    if (folderForMenu != null) {
-        val f = folderForMenu!!
-        AlertDialog(
-            onDismissRequest = { folderForMenu = null },
-            containerColor = MpxTheme.colors.black,
-            title = {
-                Text(text = f.name, color = MpxTheme.colors.textPrimary, fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Column {
-                    Text(
-                        text = stringResource(R.string.folder_item_videos_and_size, f.videoCount, f.totalSizeFormatted),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MpxTheme.colors.textSecondary,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                folderForMenu = null
-                                openFolder(f)
-                            }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Folder, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.folder_menu_open), color = MpxTheme.colors.textPrimary)
-                    }
-                    HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                folderForMenu = null
-                                playFolder(f)
-                            }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.folder_menu_play_all), color = MpxTheme.colors.textPrimary)
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { folderForMenu = null }) {
-                    Text(stringResource(R.string.action_close), color = MpxTheme.colors.primary)
-                }
-            },
-        )
-    }
-
-    // Context menu for a video in the folder view
-    if (videoForMenu != null) {
-        val vid = videoForMenu!!
-        val isFav = favourites.any { it.mediaUri == vid.path || it.mediaId == vid.id }
-        AlertDialog(
-            onDismissRequest = { videoForMenu = null },
-            containerColor = MpxTheme.colors.black,
-            title = {
-                Text(
-                    text = vid.title,
-                    color = MpxTheme.colors.textPrimary,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            },
-            text = {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                videoForMenu = null
-                                playbackManager?.playVideoFiles(listOf(vid))
-                                onOpenPlayer()
-                            }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.video_item_play), color = MpxTheme.colors.textPrimary)
-                    }
-                    HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                videosForPlaylistAdd = listOf(vid)
-                                videoForMenu = null
-                                showAddToPlaylistDialog = true
-                            }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = null, tint = MpxTheme.colors.primary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.video_item_add_to_playlist), color = MpxTheme.colors.textPrimary)
-                    }
-                    HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                videoForMenu = null
-                                scope.launch {
-                                    val favItem = FavouriteItem(
-                                        mediaUri = vid.path,
-                                        mediaId = vid.id,
-                                        title = vid.title,
-                                        subtitle = currentFolder?.name ?: "",
-                                        isVideo = true,
-                                        durationMs = vid.durationMs,
-                                    )
-                                    val favResult = persistenceRepository.toggleFavourite(favItem)
-                                    val msg = if (favResult) {
-                                        context.getString(R.string.music_added_to_favourites)
-                                    } else {
-                                        context.getString(R.string.snackbar_removed_favourites)
-                                    }
-                                    snackbarHostState.showSnackbar(msg)
-                                }
-                            }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Favorite, contentDescription = null, tint = if (isFav) MpxTheme.colors.primary else MpxTheme.colors.textSecondary.copy(alpha = 0.7f))
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            text = if (isFav) stringResource(R.string.video_item_unfavourite) else stringResource(R.string.video_item_favourite),
-                            color = MpxTheme.colors.textPrimary,
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { videoForMenu = null }) {
-                    Text(stringResource(R.string.action_close), color = MpxTheme.colors.primary)
-                }
-            },
-        )
     }
 
     // Add Videos to Playlist Dialog — one video from a tile menu, or the
