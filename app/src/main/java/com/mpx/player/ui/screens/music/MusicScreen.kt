@@ -770,6 +770,22 @@ fun MusicScreen(
     // folder's tracks are its library tracks (folderTracks groups by
     // parent dir, the same way getAudioFolders does), in library order —
     // no new repository call needed.
+    // #200: a folder's tracks are its library tracks, grouped exactly the
+    // way MediaStoreRepository.getAudioFolders() groups them (parent dir of
+    // the file path, blank paths fall back to /storage/emulated/0/Music) —
+    // no new repository call needed. Declared here, before the selection
+    // helpers below, because local functions are only visible after their
+    // declaration point — selectedFolderTracks() calls it.
+    fun folderTracks(folder: AudioFolder): List<AudioTrack> =
+        tracks.filter { track ->
+            val folderPath = if (track.path.isNotBlank()) {
+                File(track.path).parent ?: "/storage/emulated/0/Music"
+            } else {
+                "/storage/emulated/0/Music"
+            }
+            folderPath == folder.path
+        }
+
     fun selectedFoldersInView(): List<AudioFolder> =
         sortedFolders.filter { selectedFolderIds.contains(it.id.ifBlank { it.path }) }
 
@@ -828,20 +844,6 @@ fun MusicScreen(
             }
         }
     }
-
-    // #200: a folder's tracks are its library tracks, grouped exactly the
-    // way MediaStoreRepository.getAudioFolders() groups them (parent dir of
-    // the file path, blank paths fall back to /storage/emulated/0/Music) —
-    // no new repository call needed.
-    fun folderTracks(folder: AudioFolder): List<AudioTrack> =
-        tracks.filter { track ->
-            val folderPath = if (track.path.isNotBlank()) {
-                File(track.path).parent ?: "/storage/emulated/0/Music"
-            } else {
-                "/storage/emulated/0/Music"
-            }
-            folderPath == folder.path
-        }
 
     var isRefreshing by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading) {
