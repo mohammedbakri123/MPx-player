@@ -743,6 +743,29 @@ class MpvPlayerEngine(
                     } else {
                         Log.w(TAG, "Dropping stale pending subtitles for ${pending.mediaUri} (active: $activeMediaUri)")
                     }
+                } else {
+                    // Issue #189: auto-select an embedded subtitle track
+                    // when none is selected. MPx never sets mpv's 'slang'
+                    // and never sets 'sid' at load, so mpv's default
+                    // sid=auto had no language to match against and
+                    // embedded subtitles never appeared unless the user
+                    // picked one by hand every time. Prefer the
+                    // default-flagged track, else the first embedded track.
+                    // Skipped when external subtitles were just added with
+                    // 'select' above (they become the selected track), and
+                    // when mpv already selected a track itself.
+                    try {
+                        val tracks = getSubtitleTracks()
+                        if (tracks.none { it.isSelected }) {
+                            val candidate = tracks.firstOrNull { it.isDefault && !it.isExternal }
+                                ?: tracks.firstOrNull { !it.isExternal }
+                            if (candidate != null) {
+                                selectSubtitleTrack(candidate.groupIndex, candidate.trackIndex)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed auto-selecting a subtitle track", e)
+                    }
                 }
                 mainHandler.post {
                     engineListener?.onPlaybackStateChanged(PlayerEngine.STATE_READY)
@@ -1414,6 +1437,7 @@ class MpvPlayerEngine(
                 val lang = mpv.getPropertyString("track-list/$i/lang") ?: "und"
                 val selected = mpv.getPropertyBoolean("track-list/$i/selected") ?: false
                 val external = mpv.getPropertyBoolean("track-list/$i/external") ?: false
+                val isDefault = mpv.getPropertyBoolean("track-list/$i/default") ?: false
                 val label = title?.ifBlank { null } ?: "Subtitle $id ($lang)"
                 subtitleList.add(
                     SubtitleTrackInfo(
@@ -1423,6 +1447,7 @@ class MpvPlayerEngine(
                         language = lang,
                         isSelected = selected,
                         isExternal = external,
+                        isDefault = isDefault,
                     )
                 )
                 subGroup++

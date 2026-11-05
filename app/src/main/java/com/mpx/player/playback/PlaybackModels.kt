@@ -81,6 +81,7 @@ data class SubtitleTrackInfo(
     val language: String,
     val isSelected: Boolean,
     val isExternal: Boolean = false,
+    val isDefault: Boolean = false,
 )
 
 /** Lightweight playback metrics for the MPV engine.
