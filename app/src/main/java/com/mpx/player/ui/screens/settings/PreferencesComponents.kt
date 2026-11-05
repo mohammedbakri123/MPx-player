@@ -1,8 +1,6 @@
 package com.mpx.player.ui.screens.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -70,8 +67,10 @@ fun PreferenceCard(
 }
 
 /**
- * One drill-down row inside a [PreferenceCard]: 42dp icon tile, title +
- * subtitle, chevron. 48dp minimum touch height.
+ * One drill-down row inside a [PreferenceCard]: bare 24dp icon, title +
+ * subtitle, chevron. No tile background or border behind the icon — the
+ * quiet treatment shared with the Me page rows (issue #162). 48dp minimum
+ * touch height (12dp vertical padding + 24dp icon).
  */
 @Composable
 fun PreferenceRow(
@@ -89,20 +88,12 @@ fun PreferenceRow(
             .padding(horizontal = MpxSpaceL, vertical = MpxSpaceM),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MpxTheme.colors.primary.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = MpxTheme.colors.primary,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MpxTheme.colors.primary,
+            modifier = Modifier.size(24.dp),
+        )
         Spacer(modifier = Modifier.size(MpxSpaceM))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -138,11 +129,11 @@ fun PreferenceRow(
     }
 }
 
-/** Divider between rows inside a [PreferenceCard]. */
+/** Divider between rows inside a [PreferenceCard]: starts under the text, past the bare icon + gap (16 + 24 + 12). */
 @Composable
 fun PreferenceDivider() {
     HorizontalDivider(
-        modifier = Modifier.padding(start = 74.dp),
+        modifier = Modifier.padding(start = 52.dp),
         color = MpxTheme.colors.border,
         thickness = MpxHairline,
     )

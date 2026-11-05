@@ -444,7 +444,7 @@ fun MeScreen(
                             onClick = onOpenMusic,
                         )
                         HorizontalDivider(
-                            modifier = Modifier.padding(start = 56.dp),
+                            modifier = Modifier.padding(start = 52.dp),
                             color = MpxTheme.colors.border,
                             thickness = MpxHairline,
                         )
@@ -455,7 +455,7 @@ fun MeScreen(
                             onClick = onOpenLocal,
                         )
                         HorizontalDivider(
-                            modifier = Modifier.padding(start = 56.dp),
+                            modifier = Modifier.padding(start = 52.dp),
                             color = MpxTheme.colors.border,
                             thickness = MpxHairline,
                         )
@@ -470,7 +470,7 @@ fun MeScreen(
                             onClick = { showLanguageDialog = true },
                         )
                         HorizontalDivider(
-                            modifier = Modifier.padding(start = 56.dp),
+                            modifier = Modifier.padding(start = 52.dp),
                             color = MpxTheme.colors.border,
                             thickness = MpxHairline,
                         )
@@ -492,7 +492,7 @@ fun MeScreen(
                             onClick = { showPopupPlayDialog = true },
                         )
                         HorizontalDivider(
-                            modifier = Modifier.padding(start = 56.dp),
+                            modifier = Modifier.padding(start = 52.dp),
                             color = MpxTheme.colors.border,
                             thickness = MpxHairline,
                         )
@@ -527,7 +527,7 @@ fun MeScreen(
                             onClick = { showPrivacyDialog = true },
                         )
                         HorizontalDivider(
-                            modifier = Modifier.padding(start = 56.dp),
+                            modifier = Modifier.padding(start = 52.dp),
                             color = MpxTheme.colors.border,
                             thickness = MpxHairline,
                         )
@@ -538,7 +538,7 @@ fun MeScreen(
                             onClick = { showHelpDialog = true },
                         )
                         HorizontalDivider(
-                            modifier = Modifier.padding(start = 56.dp),
+                            modifier = Modifier.padding(start = 52.dp),
                             color = MpxTheme.colors.border,
                             thickness = MpxHairline,
                         )
@@ -549,7 +549,7 @@ fun MeScreen(
                             onClick = { showLegalDialog = true },
                         )
                         HorizontalDivider(
-                            modifier = Modifier.padding(start = 56.dp),
+                            modifier = Modifier.padding(start = 52.dp),
                             color = MpxTheme.colors.border,
                             thickness = MpxHairline,
                         )
@@ -864,29 +864,20 @@ private fun ToolGridItem(
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Icon + badge: the badge must NOT live inside the clipped circle —
-        // that clipped "Soon"/"Plugin"/"Planned"/"Issue 32" text at the circle
-        // edge and overlapped the glyph. The badge sits on an unclipped outer
-        // box instead, overlapping the circle's top-end corner cleanly.
+        // Icon + badge: no tile background or border behind the glyph (issue
+        // #162) — the icon sits bare in the 52dp zone, matching the quiet
+        // treatment of the preference rows. The badge sits on the unclipped
+        // outer box, overlapping the icon zone's top-end corner cleanly.
         Box(
             modifier = Modifier.size(52.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(MpxTheme.colors.surfaceElevated)
-                    .border(MpxHairline, MpxTheme.colors.border, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = tool.icon,
-                    contentDescription = tool.title,
-                    tint = if (tool.isAvailable) MpxTheme.colors.primary else MpxTheme.colors.textMuted,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
+            Icon(
+                imageVector = tool.icon,
+                contentDescription = tool.title,
+                tint = if (tool.isAvailable) MpxTheme.colors.primary else MpxTheme.colors.textMuted,
+                modifier = Modifier.size(24.dp),
+            )
             if (tool.badge != null) {
                 Box(
                     modifier = Modifier
@@ -943,23 +934,17 @@ private fun PreferenceRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(MpxShapes.small)
-                .background(MpxTheme.colors.surfaceElevated)
-                .border(MpxHairline, MpxTheme.colors.border, MpxShapes.small),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MpxTheme.colors.primary,
-                modifier = Modifier.size(20.dp),
-            )
-        }
+        // Bare 24dp icon, no tile background or border (issue #162) — the
+        // same quiet treatment as the Preferences rows. 12dp gap matches
+        // the shared PreferenceRow; dividers start at 52dp (16 + 24 + 12).
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MpxTheme.colors.primary,
+            modifier = Modifier.size(24.dp),
+        )
 
-        Spacer(Modifier.width(14.dp))
+        Spacer(Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
