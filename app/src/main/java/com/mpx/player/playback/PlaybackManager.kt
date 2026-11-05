@@ -245,10 +245,12 @@ class PlaybackManager private constructor(context: Context) {
 
             val fallbackNote = when {
                 (currentMode == DecoderMode.HW || currentMode == DecoderMode.HW_PLUS) && isSoftware -> {
-                    "Platform override: Hardware decoder unavailable for this format on this device. Fallback to software decoder ($decoderName)."
+                    // Issue #188: do not wrap the decoder name in parens
+                    // again — it already carries its own ("software (H.265)").
+                    "Platform override: Hardware decoder unavailable for this format on this device. Fallback to $decoderName."
                 }
                 currentMode == DecoderMode.SW && !isSoftware -> {
-                    "Platform override: Software decoder unavailable for this format. Fallback to hardware decoder ($decoderName)."
+                    "Platform override: Software decoder unavailable for this format. Fallback to $decoderName."
                 }
                 else -> null
             }

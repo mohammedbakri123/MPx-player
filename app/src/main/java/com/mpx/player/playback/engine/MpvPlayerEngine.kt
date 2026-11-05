@@ -15,6 +15,7 @@ import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.MpvLogFile
+import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
 import com.mpx.player.playback.subtitleMpvOptions
@@ -684,13 +685,21 @@ class MpvPlayerEngine(
     }
 
     private fun buildActiveDecoderName(hwdec: String = activeHwdec, codec: String = activeVideoCodec): String {
-        val codecLabel = if (codec.isNotBlank()) codec else "unknown"
-        return when {
-            hwdec == "mediacodec" -> "mediacodec ($codecLabel)"
-            hwdec == "mediacodec-copy" -> "mediacodec-copy ($codecLabel)"
-            hwdec == "no" || hwdec.isBlank() -> "software ($codecLabel)"
-            else -> "$hwdec ($codecLabel)"
+        // Issue #188: use the SHORT codec label, not mpv's video-codec
+        // long name ("H.265 / HEVC (High Efficiency Video Coding)" has
+        // parens of its own, which nested inside the fallback note's
+        // parens). When the codec is not known yet (video-codec blank at
+        // notify time), omit the label instead of printing "(unknown)" —
+        // a later notifyDecoderChanged re-reads it once the track info
+        // arrives.
+        val label = MpxMediaCodecSelector.shortCodecLabel(codec)
+        val decoder = when {
+            hwdec == "mediacodec" -> "mediacodec"
+            hwdec == "mediacodec-copy" -> "mediacodec-copy"
+            hwdec == "no" || hwdec.isBlank() -> "software"
+            else -> hwdec
         }
+        return if (label != null) "$decoder ($label)" else decoder
     }
 
     private fun handleMpvEvent(eventId: Int, data: MPVNode) {
