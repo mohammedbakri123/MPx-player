@@ -1234,7 +1234,6 @@ fun LocalScreen(
                                     FolderItemRow(
                                         folder = folder,
                                         showThumbnails = appSettings.showThumbnails,
-                                        showCount = appSettings.showFieldCount,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
                                         onClick = { openFolder(folder) },
@@ -1277,7 +1276,6 @@ fun LocalScreen(
                                     FolderItemGridCard(
                                         folder = folder,
                                         showThumbnails = appSettings.showThumbnails,
-                                        showCount = appSettings.showFieldCount,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
                                         onClick = { openFolder(folder) },
@@ -1380,12 +1378,6 @@ fun LocalScreen(
                 realSettingsRepo.save(updated)
                 appSettings = updated
             },
-            showFieldCount = appSettings.showFieldCount,
-            onShowFieldCountChange = { isChecked ->
-                val updated = appSettings.copy(showFieldCount = isChecked)
-                realSettingsRepo.save(updated)
-                appSettings = updated
-            },
             sortReverse = appSettings.sortReverse,
             onSortReverseChange = { isChecked ->
                 val updated = appSettings.copy(sortReverse = isChecked)
@@ -1477,12 +1469,6 @@ fun LocalScreen(
             showFieldLocation = appSettings.showFieldLocation,
             onShowFieldLocationChange = { isChecked ->
                 val updated = appSettings.copy(showFieldLocation = isChecked)
-                realSettingsRepo.save(updated)
-                appSettings = updated
-            },
-            showFieldCount = appSettings.showFieldCount,
-            onShowFieldCountChange = { isChecked ->
-                val updated = appSettings.copy(showFieldCount = isChecked)
                 realSettingsRepo.save(updated)
                 appSettings = updated
             },

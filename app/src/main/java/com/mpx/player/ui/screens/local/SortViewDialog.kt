@@ -109,8 +109,6 @@ fun SortViewDialog(
     onShowFieldDurationChange: ((Boolean) -> Unit)? = null,
     showFieldLocation: Boolean = true,
     onShowFieldLocationChange: ((Boolean) -> Unit)? = null,
-    showFieldCount: Boolean = true,
-    onShowFieldCountChange: ((Boolean) -> Unit)? = null,
 
     // Advanced sort options
     sortReverse: Boolean = false,
@@ -340,7 +338,6 @@ fun SortViewDialog(
                         if (showFieldDate) activeLabels.add(stringResource(R.string.sort_field_show_date))
                         if (showFieldDuration && (isFileView || isFolderScope)) activeLabels.add(stringResource(R.string.sort_field_show_duration))
                         if (showFieldLocation && (isFileView || isFolderScope)) activeLabels.add(stringResource(R.string.sort_field_show_location))
-                        if (showFieldCount && !isFileView && !isFolderScope) activeLabels.add(stringResource(R.string.sort_field_show_count))
                         val fieldsSummary = if (activeLabels.isEmpty()) {
                             stringResource(R.string.sort_field_none)
                         } else {
@@ -414,19 +411,6 @@ fun SortViewDialog(
                             Checkbox(checked = showFieldLocation, onCheckedChange = onShowFieldLocationChange)
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.sort_field_show_location), color = MpxTheme.colors.textPrimary)
-                        }
-                    }
-                    if (!isFileView && !isFolderScope && onShowFieldCountChange != null) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onShowFieldCountChange(!showFieldCount) }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Checkbox(checked = showFieldCount, onCheckedChange = onShowFieldCountChange)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_field_show_count), color = MpxTheme.colors.textPrimary)
                         }
                     }
                 }
