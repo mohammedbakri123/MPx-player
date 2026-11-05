@@ -898,4 +898,9 @@
     <string name="notification_subtext_music">Música MPx</string>
     <string name="notification_content_video_bg">Vídeo (apenas áudio em segundo plano)</string>
     <string name="notification_content_track">Faixa MPx</string>
+    <string name="cd_play">Reproduzir</string>
+    <string name="cd_pause">Pausar</string>
+    <string name="reset_confirm_message">Isto irá repor todas as definições para os valores predefinidos. Esta ação não pode ser anulada.</string>
+    <string name="about_status_ready">Pronto</string>
+    <string name="about_status_placeholder">Espaço reservado</string>
 </resources>

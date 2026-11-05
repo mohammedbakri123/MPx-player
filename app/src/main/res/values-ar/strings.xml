@@ -898,4 +898,9 @@
     <string name="notification_subtext_music">موسيقى MPx</string>
     <string name="notification_content_video_bg">فيديو (صوت فقط في الخلفية)</string>
     <string name="notification_content_track">مقطع MPx</string>
+    <string name="cd_play">تشغيل</string>
+    <string name="cd_pause">إيقاف مؤقت</string>
+    <string name="reset_confirm_message">سيؤدي هذا إلى إعادة تعيين جميع الإعدادات إلى قيمها الافتراضية. لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="about_status_ready">جاهز</string>
+    <string name="about_status_placeholder">عنصر نائب</string>
 </resources>

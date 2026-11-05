@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,6 +36,7 @@ import com.mpx.player.ui.theme.MpxTextSecondary
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
+import com.mpx.player.R
 
 /**
  * M2.5 bar atoms (#106). The dock is full-width, 64dp, tap-only —
@@ -134,7 +136,7 @@ fun MpxMiniPlayerStrip(
             IconButton(onClick = onPlayPause) {
                 Icon(
                     if (isPlaying) pauseIcon else playIcon,
-                    contentDescription = null,
+                    contentDescription = stringResource(if (isPlaying) R.string.cd_pause else R.string.cd_play),
                     tint = MpxTextSecondary,
                 )
             }

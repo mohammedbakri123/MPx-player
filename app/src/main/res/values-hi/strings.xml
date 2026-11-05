@@ -898,4 +898,9 @@
     <string name="notification_subtext_music">MPx संगीत</string>
     <string name="notification_content_video_bg">वीडियो (बैकग्राउंड में केवल ऑडियो)</string>
     <string name="notification_content_track">MPx ट्रैक</string>
+    <string name="cd_play">चलाएँ</string>
+    <string name="cd_pause">रोकें</string>
+    <string name="reset_confirm_message">यह सभी सेटिंग्स को उनके डिफ़ॉल्ट मानों पर रीसेट कर देगा। इसे पूर्ववत नहीं किया जा सकता।</string>
+    <string name="about_status_ready">तैयार</string>
+    <string name="about_status_placeholder">प्लेसहोल्डर</string>
 </resources>

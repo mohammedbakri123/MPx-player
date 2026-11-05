@@ -898,4 +898,9 @@
     <string name="notification_subtext_music">MPx Music</string>
     <string name="notification_content_video_bg">Video (Audio only in background)</string>
     <string name="notification_content_track">MPx Track</string>
+    <string name="cd_play">Play</string>
+    <string name="cd_pause">Pause</string>
+    <string name="reset_confirm_message">This will reset all settings to their default values. This cannot be undone.</string>
+    <string name="about_status_ready">Ready</string>
+    <string name="about_status_placeholder">Placeholder</string>
 </resources>

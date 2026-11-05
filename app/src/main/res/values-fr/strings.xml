@@ -898,4 +898,9 @@
     <string name="notification_subtext_music">Musique MPx</string>
     <string name="notification_content_video_bg">Vidéo (audio seul en arrière-plan)</string>
     <string name="notification_content_track">Piste MPx</string>
+    <string name="cd_play">Lire</string>
+    <string name="cd_pause">Pause</string>
+    <string name="reset_confirm_message">Cela réinitialisera tous les paramètres à leurs valeurs par défaut. Cette action est irréversible.</string>
+    <string name="about_status_ready">Prêt</string>
+    <string name="about_status_placeholder">Espace réservé</string>
 </resources>

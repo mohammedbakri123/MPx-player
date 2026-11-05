@@ -898,4 +898,9 @@
     <string name="notification_subtext_music">MPx 音乐</string>
     <string name="notification_content_video_bg">视频（后台仅音频）</string>
     <string name="notification_content_track">MPx 曲目</string>
+    <string name="cd_play">播放</string>
+    <string name="cd_pause">暂停</string>
+    <string name="reset_confirm_message">这会将所有设置重置为默认值。此操作无法撤销。</string>
+    <string name="about_status_ready">就绪</string>
+    <string name="about_status_placeholder">占位符</string>
 </resources>

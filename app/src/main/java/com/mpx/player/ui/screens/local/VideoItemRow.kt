@@ -386,7 +386,7 @@ fun VideoItemGridCard(
                     IconButton(onClick = onMenuClick, modifier = Modifier.size(40.dp)) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.cd_more_options),
                             tint = MpxTextSecondary,
                             modifier = Modifier.size(20.dp),
                         )
@@ -395,7 +395,7 @@ fun VideoItemGridCard(
                 IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.music_menu_toggle_favourite),
                         tint = if (isFavourite) MpxPrimary else MpxTextSecondary,
                         modifier = Modifier.size(20.dp),
                     )

@@ -898,4 +898,9 @@
     <string name="notification_subtext_music">Музыка MPx</string>
     <string name="notification_content_video_bg">Видео (только звук в фоне)</string>
     <string name="notification_content_track">Трек MPx</string>
+    <string name="cd_play">Воспроизвести</string>
+    <string name="cd_pause">Пауза</string>
+    <string name="reset_confirm_message">Это сбросит все настройки к значениям по умолчанию. Это действие нельзя отменить.</string>
+    <string name="about_status_ready">Готово</string>
+    <string name="about_status_placeholder">Заглушка</string>
 </resources>
