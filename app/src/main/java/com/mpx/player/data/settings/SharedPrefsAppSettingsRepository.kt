@@ -106,6 +106,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         lastTabRoute = prefs.getString("last_tab_route", "local") ?: "local",
             blacklistedFolders = prefs.getStringSet("blacklisted_folders", emptySet())?.toSet() ?: emptySet(),
             playerMenuLayout = prefs.getString("player_menu_layout", DEFAULT_PLAYER_MENU_LAYOUT) ?: DEFAULT_PLAYER_MENU_LAYOUT,
+            hiddenPlayerMenuIds = prefs.getString("player_menu_layout_hidden", "") ?: "",
             doubleTapSeekSeconds = prefs.getInt("double_tap_seek_seconds", 10),
             lastSmbHost = prefs.getString("last_smb_host", "") ?: "",
         )
@@ -184,6 +185,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("last_tab_route", settings.lastTabRoute)
             .putStringSet("blacklisted_folders", settings.blacklistedFolders)
             .putString("player_menu_layout", settings.playerMenuLayout)
+            .putString("player_menu_layout_hidden", settings.hiddenPlayerMenuIds)
             .putInt("double_tap_seek_seconds", settings.doubleTapSeekSeconds)
             .apply()
     }
