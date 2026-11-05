@@ -410,6 +410,16 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     /**
+     * Applies audio delay + video zoom to the active engine (issue #153).
+     * mpv-only, mirroring [applySubtitleSettings].
+     */
+    fun applyPlaybackTweaks(settings: AppSettings) {
+        if (isMpv) {
+            (engine as? MpvPlayerEngine)?.applyPlaybackTweaks(settings)
+        }
+    }
+
+    /**
      * Switches playback engine with a seamless live handover preserving active queue,
      * timeline position, speed, and video surface.
      */

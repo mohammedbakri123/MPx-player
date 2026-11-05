@@ -36,6 +36,11 @@ data class AppSettings(
     // carry an honest mpv-only note; nothing is faked on Media3.
     val subtitleDelayMs: Int = 0, // -10000..10000, 100 ms steps; positive = subtitles later
     val subtitleSpeed: Float = 1.0f, // 0.5..2.0, 0.1 steps; multiplies subtitle timing rate
+    // Audio delay + video zoom (issue #153, Playback sheet): mpv-only, same
+    // pattern as subtitle timing — persisted, applied live on mpv via
+    // applyPlaybackTweaks; other engines ignore them (the sheet shows a note).
+    val audioDelayMs: Int = 0, // -10000..10000, 100 ms steps; positive = audio later
+    val videoZoom: Float = 1.0f, // 0.5..2.0; mpv video-zoom multiplier
     val appTheme: String = "System", // System, Dark, Light (legacy Midnight/Dark/Classic read as Dark)
     val popupPlayEnabled: Boolean = true,
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10, PlayPauseOnly

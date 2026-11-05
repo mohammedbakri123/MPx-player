@@ -54,6 +54,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         subtitleAssOverride = prefs.getString("subtitle_ass_override", "Default") ?: "Default",
         subtitleDelayMs = prefs.getInt("subtitle_delay_ms", 0),
         subtitleSpeed = prefs.getFloat("subtitle_speed", 1.0f),
+        audioDelayMs = prefs.getInt("audio_delay_ms", 0),
+        videoZoom = prefs.getFloat("video_zoom", 1.0f),
         // #139: legacy stored values Midnight/Dark/Classic all mean the
         // true-black theme, now called Dark; unknown values follow System.
         appTheme = when (prefs.getString("app_theme", "System")) {
@@ -125,6 +127,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("subtitle_ass_override", settings.subtitleAssOverride)
             .putInt("subtitle_delay_ms", settings.subtitleDelayMs)
             .putFloat("subtitle_speed", settings.subtitleSpeed)
+            .putInt("audio_delay_ms", settings.audioDelayMs)
+            .putFloat("video_zoom", settings.videoZoom)
             .putString("app_theme", settings.appTheme)
             .putBoolean("popup_play_enabled", settings.popupPlayEnabled)
             .putString("popup_play_controls", settings.popupPlayControls)

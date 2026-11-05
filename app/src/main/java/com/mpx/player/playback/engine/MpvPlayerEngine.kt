@@ -380,6 +380,8 @@ class MpvPlayerEngine(
 
         // Apply the full saved subtitle style (issue #75) now that mpv accepts live options.
         applySubtitleSettings(loadSavedSubtitleSettings())
+        // Apply the saved audio delay + video zoom (issue #153) the same way.
+        applyPlaybackTweaks(loadSavedSubtitleSettings())
 
         // Observe critical playback and decoder properties
         mpv.observeProperty("time-pos", MPV.mpvFormat.MPV_FORMAT_DOUBLE)
@@ -421,6 +423,24 @@ class MpvPlayerEngine(
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed applying subtitle settings to mpv", e)
+        }
+    }
+
+    /**
+     * Applies audio delay + video zoom (issue #153, Playback sheet) to a
+     * running mpv instance. Both are runtime-changeable mpv properties, so
+     * this is safe to call whenever settings change mid-playback — same
+     * pattern as [applySubtitleSettings]. No-op before init or after release.
+     * audio-delay is in seconds (positive = audio later); video-zoom is a
+     * multiplier (1.0 = no zoom).
+     */
+    fun applyPlaybackTweaks(settings: AppSettings) {
+        if (!mpvInitialized || isReleased) return
+        try {
+            setRuntimeProperty("audio-delay", (settings.audioDelayMs / 1000.0).toString())
+            setRuntimeProperty("video-zoom", settings.videoZoom.toString())
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed applying playback tweaks to mpv", e)
         }
     }
 
