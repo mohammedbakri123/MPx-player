@@ -38,7 +38,6 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         gesturesEnabled = prefs.getBoolean("gestures_enabled", true),
         playerTutorialSeen = prefs.getBoolean("player_tutorial_seen", false),
         decoderMode = prefs.getString("decoder_mode", "HW") ?: "HW",
-        playerEngine = prefs.getString("player_engine", "MEDIA3") ?: "MEDIA3",
         subtitleSize = prefs.getString("subtitle_size", "Normal") ?: "Normal",
         subtitleStyle = prefs.getString("subtitle_style", "White") ?: "White",
         subtitleTypeface = prefs.getString("subtitle_typeface", "Default") ?: "Default",
@@ -109,7 +108,6 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("gestures_enabled", settings.gesturesEnabled)
             .putBoolean("player_tutorial_seen", settings.playerTutorialSeen)
             .putString("decoder_mode", settings.decoderMode)
-            .putString("player_engine", settings.playerEngine)
             .putString("subtitle_size", settings.subtitleSize)
             .putString("subtitle_style", settings.subtitleStyle)
             .putString("subtitle_typeface", settings.subtitleTypeface)

@@ -14,7 +14,6 @@ data class AppSettings(
     val gesturesEnabled: Boolean = true,
     val playerTutorialSeen: Boolean = false, // First-run gesture tutorial (#151) already shown
     val decoderMode: String = "HW", // HW, HW+, SW
-    val playerEngine: String = "MEDIA3", // MEDIA3, MPV
     val subtitleSize: String = "Normal", // Small, Normal, Large
     val subtitleStyle: String = "White", // White, Yellow, Cyan, Default (legacy preset; kept working)
     // Subtitle depth (issue #75): each option is applied to rendered subtitles.
@@ -22,18 +21,15 @@ data class AppSettings(
     val subtitleTextColor: String = "Preset", // Preset (follow subtitleStyle), White, Yellow, Cyan, Green, Magenta, Red, Black
     val subtitleBackgroundColor: String = "Transparent", // Transparent, Black, SemiBlack, White
     val subtitleBorderColor: String = "Black", // Black, White, Yellow, Transparent (no border)
-    val subtitleBorderThickness: String = "Medium", // None, Thin, Medium, Thick (thickness granularity is mpv-only; Media3 renders an outline)
+    val subtitleBorderThickness: String = "Medium", // None, Thin, Medium, Thick (thickness granularity is mpv-only)
     val subtitleBold: Boolean = true,
-    val subtitleShadow: Boolean = false, // Media3: single edge type, so shadow wins over outline when both are set
-    val subtitleAlignment: String = "Bottom", // Bottom, Center, Top (Media3 approximates via bottom padding fraction)
+    val subtitleShadow: Boolean = false,
+    val subtitleAlignment: String = "Bottom", // Bottom, Center, Top
     val subtitleBottomPadding: String = "Medium", // Small, Medium, Large (used when alignment is Bottom)
     val subtitleScale: String = "100", // Percent: 75, 100, 125, 150
-    val subtitleAssOverride: String = "Default", // Default, Scale, Force, Strip (mpv-only; Media3 always applies embedded styles)
-    // Subtitle timing (issue #79, MX menu_subtitle sync/speed rows): mpv-only.
-    // Media3 (1.3.1) exposes no subtitle timing API — cue timestamps come
-    // straight from the decoder — so these values are persisted and shown
-    // in both UIs but only applied on mpv (sub-delay/sub-speed). The UIs
-    // carry an honest mpv-only note; nothing is faked on Media3.
+    val subtitleAssOverride: String = "Default", // Default, Scale, Force, Strip
+    // Subtitle timing (issue #79, MX menu_subtitle sync/speed rows): applied
+    // on mpv (sub-delay/sub-speed).
     val subtitleDelayMs: Int = 0, // -10000..10000, 100 ms steps; positive = subtitles later
     val subtitleSpeed: Float = 1.0f, // 0.5..2.0, 0.1 steps; multiplies subtitle timing rate
     val appTheme: String = "System", // System, Dark, Light (legacy Midnight/Dark/Classic read as Dark)

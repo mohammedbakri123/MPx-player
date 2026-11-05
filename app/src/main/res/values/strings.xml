@@ -154,10 +154,8 @@
     <string name="subtitle_padding_header">Bottom padding:</string>
     <string name="subtitle_scale_header">Scale:</string>
     <string name="subtitle_ass_header">Advanced (ASS styles):</string>
-    <string name="subtitle_ass_mpv_note">MPV engine only; Media3 always applies embedded styles.</string>
     <string name="subtitle_sync_header">Subtitle sync</string>
     <string name="subtitle_speed_header">Subtitle speed</string>
-    <string name="subtitle_timing_mpv_note">Sync and speed apply to the MPV engine only.</string>
     <string name="subtitle_timing_reset">Reset</string>
     <string name="subtitle_typeface_default">Default</string>
     <string name="subtitle_typeface_sans">Sans-serif</string>
@@ -280,7 +278,7 @@
     <string name="pip_test_fail_playing">Unable to enter PiP mode right now. Try playing a video in the player first.</string>
 
     <string name="dialog_network_title">Network Stream</string>
-    <string name="dialog_network_desc">Enter any HTTP, HTTPS, or HLS stream URL to play directly in Media3 ExoPlayer:</string>
+    <string name="dialog_network_desc">Enter any HTTP, HTTPS, or HLS stream URL to play directly:</string>
     <string name="dialog_network_samples">Sample Public Streams:</string>
     <string name="dialog_network_play">Play Stream</string>
 
@@ -308,13 +306,13 @@
 
     <string name="dialog_legal_title">Legal &amp; Open Source</string>
     <string name="legal_sec1_title">Open Source Licenses</string>
-    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: Apache License 2.0\n• Jetpack Compose &amp; Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0</string>
+    <string name="legal_sec1_body">• Jetpack Compose &amp; Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0</string>
     <string name="legal_sec2_title">Inspiration Attribution Notice</string>
     <string name="legal_sec2_body">MPx Player is an independent, clean-room native Android media player. Its organization and UX workflow are inspired by MX Player (per reverse-engineered layout specifications). All code, views, and styling are rewritten 100% from scratch in native Kotlin and Jetpack Compose. No proprietary assets, code, or trademarks are incorporated.</string>
     <string name="legal_sec3_title">Terms of Use</string>
     <string name="legal_sec3_body">MPx Player is provided \'as is\' without warranty under the Apache 2.0 License. Users are responsible for their own media files.</string>
 
-    <string name="dialog_about_body1">Pure native Kotlin rewrite with Jetpack Compose, AndroidX Media3 ExoPlayer, and Room SQLite persistence.</string>
+    <string name="dialog_about_body1">Pure native Kotlin rewrite with Jetpack Compose, libmpv, and Room SQLite persistence.</string>
     <string name="dialog_about_body2">High-density, utility-first media management without cloud dependence, tracking, or ads.</string>
 
     <string name="equalizer_dialog_msg">System Equalizer: No audio effect control panel (e.g. MusicFX or system equalizer app) was found on this device. Audio uses standard flat output.</string>
@@ -586,14 +584,14 @@
     <!-- Beta & About Screen -->
     <string name="about_beta_screen_title">About &amp; Beta Status</string>
     <string name="about_beta_badge">BETA RELEASE</string>
-    <string name="about_beta_tagline">Native Kotlin media player for Android with Media3 ExoPlayer and Room persistence.</string>
+    <string name="about_beta_tagline">Native Kotlin media player for Android with libmpv and Room persistence.</string>
     <string name="about_beta_build_info">Build %1$d (VersionCode %1$d) • Branch: %2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">WHAT IS READY IN BETA</string>
     <string name="about_beta_ready_subtitle">Core offline playback and library features are fully functional native implementations:</string>
-    <string name="about_beta_feat_player_title">Media3 Video Playback Engine</string>
-    <string name="about_beta_feat_player_desc">Hardware (HW/HW+) and Software (SW) decoding via AndroidX Media3 ExoPlayer. Video gestures (double-tap 10s seek, horizontal drag scrub), aspect ratio controls (Fit/Stretch/16:9/Original), embedded and external subtitles (.srt, .vtt), and multi-audio track switching.</string>
+    <string name="about_beta_feat_player_title">mpv Video Playback Engine</string>
+    <string name="about_beta_feat_player_desc">Hardware (HW/HW+) and Software (SW) decoding via libmpv. Video gestures (double-tap 10s seek, horizontal drag scrub), aspect ratio controls (Fit/Stretch/16:9/Original), embedded and external subtitles (.srt, .vtt), and multi-audio track switching.</string>
     <string name="about_beta_feat_bg_pip_title">Background Play &amp; Pop-up Play (PiP)</string>
     <string name="about_beta_feat_bg_pip_desc">Picture-in-Picture floating mode with custom window controls on Android 8.0+. Real background audio playback for videos and music via foreground service.</string>
     <string name="about_beta_feat_music_title">Music Player &amp; Audio Library</string>
@@ -864,11 +862,6 @@
     <string name="player_active_codec">Active Video Codec: %1$s</string>
     <string name="player_codec_initializing">Initializing / waiting for video frame...</string>
     <string name="player_codec_error">Playback failed: unsupported codec %1$s</string>
-    <string name="player_no_audio_codec">No sound: the audio tracks of this file (%1$s) cannot be decoded on this device. Try the MPV engine.</string>
-    <string name="player_media3_failed_mpv">Media3 failed for codec %1$s. Switched to MPV engine.</string>
-    <string name="player_try_mpv">Try MPV</string>
-    <string name="player_mpv_start_failed">MPV engine failed to start: %1$s. Using Media3 instead.</string>
-    <string name="player_mpv_failed_media3">MPV engine failed (%1$s). Switched to Media3 engine.</string>
     <string name="player_dialog_unsupported_subtitle">Unsupported Subtitle Format</string>
     <string name="player_menu_title">Playback Settings</string>
     <string name="player_menu_decoder_mode">Decoder Mode (%1$s)</string>
@@ -921,9 +914,6 @@
     <string name="subtitle_sync_increase">Increase subtitle sync</string>
     <string name="subtitle_speed_decrease">Decrease subtitle speed</string>
     <string name="subtitle_speed_increase">Increase subtitle speed</string>
-    <string name="playback_engine_title">Playback Engine</string>
-    <string name="playback_engine_media3">Media3 ExoPlayer (Default)</string>
-    <string name="playback_engine_mpv">libmpv (Experimental Native Engine)</string>
     <string name="decoder_mode_title">Decoder Mode</string>
     <string name="dev_count_videos">%1$d videos</string>
     <string name="dev_count_tracks">%1$d tracks</string>

@@ -154,10 +154,8 @@
     <string name="subtitle_padding_header">निचला पैडिंग:</string>
     <string name="subtitle_scale_header">स्केल:</string>
     <string name="subtitle_ass_header">उन्नत (ASS स्टाइल):</string>
-    <string name="subtitle_ass_mpv_note">केवल MPV इंजन; Media3 हमेशा एंबेडेड स्टाइल लागू करता है।</string>
     <string name="subtitle_sync_header">उपशीर्षक सिंक</string>
     <string name="subtitle_speed_header">उपशीर्षक गति</string>
-    <string name="subtitle_timing_mpv_note">सिंक और गति केवल MPV इंजन पर लागू होते हैं।</string>
     <string name="subtitle_timing_reset">रीसेट</string>
     <string name="subtitle_typeface_default">डिफ़ॉल्ट</string>
     <string name="subtitle_typeface_sans">सैन्स-सेरिफ़</string>
@@ -280,7 +278,7 @@
     <string name="pip_test_fail_playing">अभी PiP मोड में प्रवेश नहीं हो सकता। पहले प्लेयर में कोई वीडियो चलाकर देखें।</string>
 
     <string name="dialog_network_title">नेटवर्क स्ट्रीम</string>
-    <string name="dialog_network_desc">Media3 ExoPlayer में सीधे चलाने के लिए कोई भी HTTP, HTTPS या HLS स्ट्रीम URL दर्ज करें:</string>
+    <string name="dialog_network_desc">सीधे चलाने के लिए कोई भी HTTP, HTTPS या HLS स्ट्रीम URL दर्ज करें:</string>
     <string name="dialog_network_samples">नमूना सार्वजनिक स्ट्रीम:</string>
     <string name="dialog_network_play">स्ट्रीम चलाएँ</string>
 
@@ -308,13 +306,13 @@
 
     <string name="dialog_legal_title">कानूनी और ओपन सोर्स</string>
     <string name="legal_sec1_title">ओपन सोर्स लाइसेंस</string>
-    <string name="legal_sec1_body">• AndroidX Media3 ExoPlayer: Apache License 2.0\n• Jetpack Compose और Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0</string>
+    <string name="legal_sec1_body">• Jetpack Compose और Material 3: Apache License 2.0\n• AndroidX Room Persistence Library: Apache License 2.0\n• Kotlin Coroutines: Apache License 2.0</string>
     <string name="legal_sec2_title">प्रेरणा श्रेय सूचना</string>
     <string name="legal_sec2_body">MPx Player एक स्वतंत्र, क्लीन-रूम नेटिव Android मीडिया प्लेयर है। इसका संगठन और UX वर्कफ़्लो MX Player से प्रेरित है (रिवर्स-इंजीनियर्ड लेआउट विनिर्देशों के अनुसार)। सभी कोड, व्यू और स्टाइलिंग नेटिव Kotlin और Jetpack Compose में 100% नए सिरे से लिखी गई है। कोई मालिकाना एसेट, कोड या ट्रेडमार्क शामिल नहीं है।</string>
     <string name="legal_sec3_title">उपयोग की शर्तें</string>
     <string name="legal_sec3_body">MPx Player Apache 2.0 लाइसेंस के तहत बिना वारंटी के जैसा है वैसा प्रदान किया जाता है। उपयोगकर्ता अपनी मीडिया फ़ाइलों के लिए स्वयं ज़िम्मेदार हैं।</string>
 
-    <string name="dialog_about_body1">Jetpack Compose, AndroidX Media3 ExoPlayer और Room SQLite पर्सिस्टेंस के साथ शुद्ध नेटिव Kotlin रीराइट।</string>
+    <string name="dialog_about_body1">Jetpack Compose, libmpv और Room SQLite पर्सिस्टेंस के साथ शुद्ध नेटिव Kotlin रीराइट।</string>
     <string name="dialog_about_body2">क्लाउड निर्भरता, ट्रैकिंग या विज्ञापन के बिना उच्च-घनत्व, यूटिलिटी-फ़र्स्ट मीडिया प्रबंधन।</string>
 
     <string name="equalizer_dialog_msg">सिस्टम इक्वलाइज़र: इस डिवाइस पर कोई ऑडियो इफ़ेक्ट नियंत्रण पैनल (जैसे MusicFX या सिस्टम इक्वलाइज़र ऐप) नहीं मिला। ऑडियो मानक फ़्लैट आउटपुट का उपयोग करता है।</string>
@@ -586,14 +584,14 @@
     <!-- Beta & About Screen -->
     <string name="about_beta_screen_title">के बारे में और बीटा स्थिति</string>
     <string name="about_beta_badge">बीटा रिलीज़</string>
-    <string name="about_beta_tagline">Media3 ExoPlayer और Room पर्सिस्टेंस के साथ Android के लिए नेटिव Kotlin मीडिया प्लेयर।</string>
+    <string name="about_beta_tagline">libmpv और Room पर्सिस्टेंस के साथ Android के लिए नेटिव Kotlin मीडिया प्लेयर।</string>
     <string name="about_beta_build_info">बिल्ड %1$d (VersionCode %1$d) • ब्रांच: %2$s</string>
 
     <!-- What is Ready in Beta -->
     <string name="about_beta_section_ready">बीटा में क्या तैयार है</string>
     <string name="about_beta_ready_subtitle">मुख्य ऑफ़लाइन प्लेबैक और लाइब्रेरी सुविधाएँ पूरी तरह कार्यात्मक नेटिव कार्यान्वयन हैं:</string>
-    <string name="about_beta_feat_player_title">Media3 वीडियो प्लेबैक इंजन</string>
-    <string name="about_beta_feat_player_desc">AndroidX Media3 ExoPlayer के माध्यम से हार्डवेयर (HW/HW+) और सॉफ़्टवेयर (SW) डीकोडिंग। वीडियो जेस्चर (10 सेकंड सीक के लिए डबल-टैप, क्षैतिज ड्रैग स्क्रब), आस्पेक्ट रेशियो नियंत्रण (Fit/Stretch/16:9/Original), एम्बेडेड और बाहरी सबटाइटल (.srt, .vtt) और मल्टी-ऑडियो ट्रैक स्विचिंग।</string>
+    <string name="about_beta_feat_player_title">mpv वीडियो प्लेबैक इंजन</string>
+    <string name="about_beta_feat_player_desc">libmpv के माध्यम से हार्डवेयर (HW/HW+) और सॉफ़्टवेयर (SW) डीकोडिंग। वीडियो जेस्चर (10 सेकंड सीक के लिए डबल-टैप, क्षैतिज ड्रैग स्क्रब), आस्पेक्ट रेशियो नियंत्रण (Fit/Stretch/16:9/Original), एम्बेडेड और बाहरी सबटाइटल (.srt, .vtt) और मल्टी-ऑडियो ट्रैक स्विचिंग।</string>
     <string name="about_beta_feat_bg_pip_title">बैकग्राउंड प्ले और पॉप-अप प्ले (PiP)</string>
     <string name="about_beta_feat_bg_pip_desc">Android 8.0+ पर कस्टम विंडो नियंत्रण के साथ पिक्चर-इन-पिक्चर फ़्लोटिंग मोड। फ़ोरग्राउंड सर्विस के माध्यम से वीडियो और संगीत के लिए वास्तविक बैकग्राउंड ऑडियो प्लेबैक।</string>
     <string name="about_beta_feat_music_title">संगीत प्लेयर और ऑडियो लाइब्रेरी</string>
@@ -864,11 +862,6 @@
     <string name="player_active_codec">सक्रिय वीडियो कोडेक: %1$s</string>
     <string name="player_codec_initializing">प्रारंभ हो रहा है / वीडियो फ़्रेम की प्रतीक्षा हो रही है...</string>
     <string name="player_codec_error">प्लेबैक विफल: कोडेक %1$s समर्थित नहीं है</string>
-    <string name="player_no_audio_codec">कोई ध्वनि नहीं: इस फ़ाइल के ऑडियो ट्रैक (%1$s) इस डिवाइस पर डिकोड नहीं किए जा सकते। MPV इंजन आज़माएँ।</string>
-    <string name="player_media3_failed_mpv">कोडेक %1$s के लिए Media3 विफल हुआ। MPV इंजन पर स्विच किया गया।</string>
-    <string name="player_try_mpv">MPV आज़माएँ</string>
-    <string name="player_mpv_start_failed">MPV इंजन प्रारंभ करने में विफल: %1$s। इसके बजाय Media3 का उपयोग किया जा रहा है।</string>
-    <string name="player_mpv_failed_media3">MPV इंजन विफल हुआ (%1$s)। Media3 इंजन पर स्विच किया गया।</string>
     <string name="player_dialog_unsupported_subtitle">असमर्थित उपशीर्षक प्रारूप</string>
     <string name="player_menu_title">प्लेबैक सेटिंग</string>
     <string name="player_menu_decoder_mode">डिकोडर मोड (%1$s)</string>
@@ -921,9 +914,6 @@
     <string name="subtitle_sync_increase">उपशीर्षक सिंक बढ़ाएँ</string>
     <string name="subtitle_speed_decrease">उपशीर्षक गति घटाएँ</string>
     <string name="subtitle_speed_increase">उपशीर्षक गति बढ़ाएँ</string>
-    <string name="playback_engine_title">प्लेबैक इंजन</string>
-    <string name="playback_engine_media3">Media3 ExoPlayer (डिफ़ॉल्ट)</string>
-    <string name="playback_engine_mpv">libmpv (प्रायोगिक नेटिव इंजन)</string>
     <string name="decoder_mode_title">डीकोडर मोड</string>
     <string name="dev_count_videos">%1$d वीडियो</string>
     <string name="dev_count_tracks">%1$d ट्रैक</string>

@@ -336,7 +336,7 @@ fun MpxApp(
             // same two-bar shape MX uses — instead of one floating
             // rounded container.
             Column {
-                // Real Media3 persistent MiniPlayer bar
+                // Persistent MiniPlayer bar
                 MiniPlayer(
                     playbackManager = playbackManager,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },

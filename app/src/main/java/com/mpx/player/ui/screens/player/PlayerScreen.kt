@@ -11,7 +11,6 @@ import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import android.util.TypedValue
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.WindowManager
@@ -127,9 +126,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.CaptionStyleCompat
-import androidx.media3.ui.PlayerView
 import com.mpx.player.R
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
@@ -142,7 +138,6 @@ import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.RepeatMode
 import com.mpx.player.playback.PlaybackService
-import com.mpx.player.playback.resolveMedia3SubtitleStyle
 import com.mpx.player.ui.components.StepperRow
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
@@ -754,75 +749,37 @@ fun PlayerScreen(
                 )
             },
     ) {
-        // Video Surface via Media3 PlayerView or MPV SurfaceView
-        if (playbackManager.isMedia3) {
-            val exoPlayer = playbackManager.exoPlayer
-            if (exoPlayer != null) {
-                AndroidView(
-                    factory = { ctx ->
-                        PlayerView(ctx).apply {
-                            this.player = exoPlayer
-                            useController = false
-                            resizeMode = when (state.aspectRatio) {
-                                AspectRatioMode.FIT -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                                AspectRatioMode.FILL -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-                                AspectRatioMode.ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                                AspectRatioMode.SIXTEEN_NINE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                                AspectRatioMode.FOUR_THREE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                                AspectRatioMode.ORIGINAL -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                            }
-                            applySubtitleSettings(this, currentSettings)
+        // Video Surface: mpv renders into a plain SurfaceView (issue #150:
+        // Media3 PlayerView is gone with Media3).
+        AndroidView(
+            factory = { ctx ->
+                SurfaceView(ctx).apply {
+                    holder.addCallback(object : SurfaceHolder.Callback {
+                        override fun surfaceCreated(holder: SurfaceHolder) {
+                            playbackManager.attachSurface(holder.surface)
                         }
-                    },
-                    update = { playerView ->
-                        if (playerView.player !== exoPlayer) {
-                            playerView.player = exoPlayer
-                        }
-                        playerView.resizeMode = when (state.aspectRatio) {
-                            AspectRatioMode.FIT -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                            AspectRatioMode.FILL -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-                            AspectRatioMode.ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                            AspectRatioMode.SIXTEEN_NINE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                            AspectRatioMode.FOUR_THREE -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                            AspectRatioMode.ORIGINAL -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-                        }
-                        applySubtitleSettings(playerView, currentSettings)
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-        } else {
-            AndroidView(
-                factory = { ctx ->
-                    SurfaceView(ctx).apply {
-                        holder.addCallback(object : SurfaceHolder.Callback {
-                            override fun surfaceCreated(holder: SurfaceHolder) {
-                                playbackManager.attachSurface(holder.surface)
-                            }
 
-                            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-                                playbackManager.surfaceChanged(width, height)
-                            }
+                        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+                            playbackManager.surfaceChanged(width, height)
+                        }
 
-                            override fun surfaceDestroyed(holder: SurfaceHolder) {
-                                // SYNCHRONOUS barrier:
-                                // Set vo=null and detach before surfaceDestroyed returns.
-                                playbackManager.detachSurface()
-                            }
-                        })
-                    }
-                },
-                update = {
-                    // Push subtitle style changes to a running mpv engine (issue #75).
-                    // Media3 subtitles are styled by the PlayerView update above instead.
-                    if (!playbackManager.isMedia3 && lastMpvSubtitleSettings[0] != currentSettings) {
-                        playbackManager.applySubtitleSettings(currentSettings)
-                        lastMpvSubtitleSettings[0] = currentSettings
-                    }
-                },
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+                        override fun surfaceDestroyed(holder: SurfaceHolder) {
+                            // SYNCHRONOUS barrier:
+                            // Set vo=null and detach before surfaceDestroyed returns.
+                            playbackManager.detachSurface()
+                        }
+                    })
+                }
+            },
+            update = {
+                // Push subtitle style changes to a running mpv engine (issue #75).
+                if (lastMpvSubtitleSettings[0] != currentSettings) {
+                    playbackManager.applySubtitleSettings(currentSettings)
+                    lastMpvSubtitleSettings[0] = currentSettings
+                }
+            },
+            modifier = Modifier.fillMaxSize(),
+        )
 
         // Empty-player state when opened without a queued video (issue #57)
         val currentMedia = state.currentItem
@@ -1166,21 +1123,6 @@ fun PlayerScreen(
                         lineHeight = 16.sp,
                         modifier = Modifier.weight(1f),
                     )
-                    // One-tap engine switch for codec failures on Media3 (issue #82/#83).
-                    // Deliberately inside the existing banner, not a popup on playback.
-                    if (state.showMpvSwitchOffer) {
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(R.string.player_try_mpv),
-                            color = MpxTheme.colors.primary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.clickable {
-                                playbackManager.setPlayerEngine("MPV")
-                                playbackManager.clearUserNotification()
-                            },
-                        )
-                    }
                     Spacer(Modifier.width(8.dp))
                     IconButton(
                         onClick = { playbackManager.clearUserNotification() },
@@ -1558,7 +1500,7 @@ fun PlayerScreen(
         }
     }
 
-    // Audio Tracks Selection Dialog (Real Media3 Tracks)
+    // Audio Tracks Selection Dialog (real mpv track-list)
     if (activeDialog == "Audio Tracks") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
@@ -1626,7 +1568,7 @@ fun PlayerScreen(
         )
     }
 
-    // Subtitles Selection Dialog (Real Media3 Subtitle Tracks & SAF External Loading)
+    // Subtitles Selection Dialog (real mpv subtitle tracks & SAF external loading)
     if (activeDialog == "Subtitles") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
@@ -1808,7 +1750,7 @@ fun PlayerScreen(
 
                     Spacer(Modifier.height(6.dp))
                     // Subtitle timing (issue #79, MX menu_subtitle sync/speed):
-                    // persisted; applied live on mpv only (see mpv note below).
+                    // persisted; applied live on mpv.
                     run {
                         val delayMs = currentSettings.subtitleDelayMs
                         val delayText = if (delayMs == 0) "0.00s" else "%+.2fs".format(delayMs / 1000.0)
@@ -1860,11 +1802,6 @@ fun PlayerScreen(
                                     realSettingsRepo.save(updated)
                                 }
                             } else null,
-                        )
-                        Text(
-                            stringResource(R.string.subtitle_timing_mpv_note),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MpxTheme.colors.textSecondary,
                         )
                     }
 
@@ -2835,26 +2772,4 @@ private fun PlayerTutorialOverlay(
             }
         }
     }
-}
-
-private fun applySubtitleSettings(playerView: PlayerView, settings: AppSettings) {
-    val subtitleView = playerView.subtitleView ?: return
-    val resolved = resolveMedia3SubtitleStyle(settings)
-    subtitleView.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, resolved.textSizeSp)
-    if (resolved.useSystemDefaultStyle) {
-        subtitleView.setUserDefaultStyle()
-    } else {
-        subtitleView.setStyle(
-            CaptionStyleCompat(
-                resolved.foregroundColor,
-                resolved.backgroundColor,
-                android.graphics.Color.TRANSPARENT,
-                resolved.edgeType,
-                resolved.edgeColor,
-                resolved.typeface,
-            )
-        )
-    }
-    subtitleView.setBottomPaddingFraction(resolved.bottomPaddingFraction)
-    subtitleView.setApplyEmbeddedStyles(true)
 }

@@ -33,7 +33,7 @@ class PlaybackResumeManager(
     }
 
     /**
-     * Synchronously returns cached resume position for instantaneous seek setup in ExoPlayer.
+     * Synchronously returns cached resume position for instantaneous seek setup.
      */
     fun getResumePosition(id: String): Long? = resumeMap[id]
 
