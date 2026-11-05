@@ -455,11 +455,6 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Fechar busca</string>
     <string name="cd_toggle_view">Alternar visualização</string>
-    <string name="layout_sheet_title">Visualização</string>
-    <string name="layout_section_tile_size">Tamanho do mosaico</string>
-    <string name="tile_size_small">Pequeno</string>
-    <string name="tile_size_medium">Médio</string>
-    <string name="tile_size_large">Grande</string>
     <string name="cd_layout_options">Opções de layout</string>
     <string name="cd_search">Buscar</string>
     <string name="cd_more_options">Mais opções</string>
@@ -950,4 +945,32 @@
     <string name="dev_decoder_sw">Software (Codecs de CPU)</string>
     <string name="playlist_videos_count">%1$d vídeos</string>
     <string name="dev_db_records_summary">%1$d favoritos • %2$d histórico • %3$d listas de reprodução • %4$d retomar</string>
+    <string name="sort_popup_title">Opções de ordenação e visualização</string>
+    <string name="sort_popup_sort_by">Ordenar por</string>
+    <string name="sort_popup_sort_title">Título</string>
+    <string name="sort_popup_sort_date">Data</string>
+    <string name="sort_popup_sort_size">Tamanho</string>
+    <string name="sort_order_az">A-Z</string>
+    <string name="sort_order_za">Z-A</string>
+    <string name="sort_order_oldest">Mais antigos</string>
+    <string name="sort_order_newest">Mais recentes</string>
+    <string name="sort_order_smallest">Menores</string>
+    <string name="sort_order_largest">Maiores</string>
+    <string name="sort_popup_view_mode">Modo de visualização</string>
+    <string name="sort_popup_view_folder">Pasta</string>
+    <string name="view_mode_tree">Árvore</string>
+    <string name="sort_popup_tree_soon">Em breve</string>
+    <string name="sort_popup_layout">Layout</string>
+    <string name="sort_popup_layout_list">Lista</string>
+    <string name="sort_popup_layout_grid">Grade</string>
+    <string name="sort_popup_grid_columns">Colunas da grade</string>
+    <string name="sort_popup_folder_grid">Grade de pastas</string>
+    <string name="sort_popup_video_grid">Grade de vídeos</string>
+    <string name="sort_popup_columns_count">%1$d colunas</string>
+    <string name="sort_popup_fields">Campos</string>
+    <string name="sort_popup_field_full_name">Nome completo</string>
+    <string name="sort_popup_field_path">Caminho</string>
+    <string name="sort_popup_field_total_videos">Total de vídeos</string>
+    <string name="sort_popup_field_total_duration">Duração total</string>
+    <string name="sort_popup_field_folder_size">Tamanho da pasta</string>
 </resources>

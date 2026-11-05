@@ -455,11 +455,6 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Close search</string>
     <string name="cd_toggle_view">Toggle view</string>
-    <string name="layout_sheet_title">View</string>
-    <string name="layout_section_tile_size">Tile size</string>
-    <string name="tile_size_small">Small</string>
-    <string name="tile_size_medium">Medium</string>
-    <string name="tile_size_large">Large</string>
     <string name="cd_layout_options">Layout options</string>
     <string name="cd_search">Search</string>
     <string name="cd_more_options">More options</string>
@@ -950,4 +945,32 @@
     <string name="dev_decoder_sw">Software (CPU Codecs)</string>
     <string name="playlist_videos_count">%1$d videos</string>
     <string name="dev_db_records_summary">%1$d favs • %2$d history • %3$d playlists • %4$d resume</string>
+    <string name="sort_popup_title">Sort &amp; View Options</string>
+    <string name="sort_popup_sort_by">Sort by</string>
+    <string name="sort_popup_sort_title">Title</string>
+    <string name="sort_popup_sort_date">Date</string>
+    <string name="sort_popup_sort_size">Size</string>
+    <string name="sort_order_az">A-Z</string>
+    <string name="sort_order_za">Z-A</string>
+    <string name="sort_order_oldest">Oldest</string>
+    <string name="sort_order_newest">Newest</string>
+    <string name="sort_order_smallest">Smallest</string>
+    <string name="sort_order_largest">Largest</string>
+    <string name="sort_popup_view_mode">View Mode</string>
+    <string name="sort_popup_view_folder">Folder</string>
+    <string name="view_mode_tree">Tree</string>
+    <string name="sort_popup_tree_soon">Coming soon</string>
+    <string name="sort_popup_layout">Layout</string>
+    <string name="sort_popup_layout_list">List</string>
+    <string name="sort_popup_layout_grid">Grid</string>
+    <string name="sort_popup_grid_columns">Grid Columns</string>
+    <string name="sort_popup_folder_grid">Folder Grid</string>
+    <string name="sort_popup_video_grid">Video Grid</string>
+    <string name="sort_popup_columns_count">%1$d columns</string>
+    <string name="sort_popup_fields">Fields</string>
+    <string name="sort_popup_field_full_name">Full Name</string>
+    <string name="sort_popup_field_path">Path</string>
+    <string name="sort_popup_field_total_videos">Total Videos</string>
+    <string name="sort_popup_field_total_duration">Total Duration</string>
+    <string name="sort_popup_field_folder_size">Folder Size</string>
 </resources>

@@ -47,7 +47,12 @@ data class AppSettings(
     val showAllFolders: Boolean = false,
     val folderViewMode: String = "LIST", // Global default folder contents view mode: LIST, GRID
     val localViewMode: String = "LIST", // Local root folders list view mode: LIST, GRID
-    val tileSize: String = "Medium", // Grid tile size (#141): Small, Medium, Large
+    // Tile size (#141) was removed by #156: the mpvEx-style Sort & View
+    // popup uses grid-column counts instead (folderGridColumns /
+    // videoGridColumns, 1-4). List rows are unaffected.
+    val folderGridColumns: Int = 2,
+    val videoGridColumns: Int = 2,
+    val showFullName: Boolean = false,
     val separateViewLayout: Boolean = true,
     val musicViewMode: String = "LIST", // LIST, GRID
     val fileView: Boolean = false, // false = folder view, true = individual files view

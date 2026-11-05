@@ -455,11 +455,6 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">إغلاق البحث</string>
     <string name="cd_toggle_view">تبديل طريقة العرض</string>
-    <string name="layout_sheet_title">العرض</string>
-    <string name="layout_section_tile_size">حجم البلاطات</string>
-    <string name="tile_size_small">صغير</string>
-    <string name="tile_size_medium">متوسط</string>
-    <string name="tile_size_large">كبير</string>
     <string name="cd_layout_options">خيارات العرض</string>
     <string name="cd_search">بحث</string>
     <string name="cd_more_options">مزيد من الخيارات</string>
@@ -950,4 +945,32 @@
     <string name="dev_decoder_sw">برمجي (برامج ترميز المعالج)</string>
     <string name="playlist_videos_count">%1$d مقطع فيديو</string>
     <string name="dev_db_records_summary">%1$d مفضلة • %2$d سجل • %3$d قوائم تشغيل • %4$d استئناف</string>
+    <string name="sort_popup_title">خيارات الفرز والعرض</string>
+    <string name="sort_popup_sort_by">فرز حسب</string>
+    <string name="sort_popup_sort_title">العنوان</string>
+    <string name="sort_popup_sort_date">التاريخ</string>
+    <string name="sort_popup_sort_size">الحجم</string>
+    <string name="sort_order_az">أ-ي</string>
+    <string name="sort_order_za">ي-أ</string>
+    <string name="sort_order_oldest">الأقدم</string>
+    <string name="sort_order_newest">الأحدث</string>
+    <string name="sort_order_smallest">الأصغر</string>
+    <string name="sort_order_largest">الأكبر</string>
+    <string name="sort_popup_view_mode">وضع العرض</string>
+    <string name="sort_popup_view_folder">مجلد</string>
+    <string name="view_mode_tree">شجرة</string>
+    <string name="sort_popup_tree_soon">قريبًا</string>
+    <string name="sort_popup_layout">التخطيط</string>
+    <string name="sort_popup_layout_list">قائمة</string>
+    <string name="sort_popup_layout_grid">شبكة</string>
+    <string name="sort_popup_grid_columns">أعمدة الشبكة</string>
+    <string name="sort_popup_folder_grid">شبكة المجلدات</string>
+    <string name="sort_popup_video_grid">شبكة الفيديو</string>
+    <string name="sort_popup_columns_count">%1$d أعمدة</string>
+    <string name="sort_popup_fields">الحقول</string>
+    <string name="sort_popup_field_full_name">الاسم الكامل</string>
+    <string name="sort_popup_field_path">المسار</string>
+    <string name="sort_popup_field_total_videos">إجمالي الفيديوهات</string>
+    <string name="sort_popup_field_total_duration">إجمالي المدة</string>
+    <string name="sort_popup_field_folder_size">حجم المجلد</string>
 </resources>

@@ -21,6 +21,7 @@ fun MpxSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    steps: Int = 0,
     enabled: Boolean = true,
 ) {
     Slider(
@@ -28,6 +29,7 @@ fun MpxSlider(
         onValueChange = onValueChange,
         modifier = modifier,
         valueRange = valueRange,
+        steps = steps,
         enabled = enabled,
         colors = SliderDefaults.colors(
             thumbColor = MpxTheme.colors.primary,
