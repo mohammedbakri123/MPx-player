@@ -52,6 +52,17 @@ class PlaybackManager private constructor(context: Context) {
     private var tickerJob: Job? = null
     private var sleepTimerJob: Job? = null
 
+    /**
+     * Issue #220: counts playQueue sessions. playQueue runs on Main, and
+     * when the resume preload has not finished yet it defers the engine
+     * load to a coroutine that awaits the preload first — a second tap
+     * (or a restore) in that window must supersede the pending load, not
+     * race it: the deferred load only runs while its generation is still
+     * the latest. stop() does not clear the currentQueue field, so a
+     * queue-identity check cannot serve as this guard.
+     */
+    private var playQueueGeneration = 0
+
     /** Preparing watchdog: a video load that produces neither READY nor an
      * error within 20s is a stuck load, not a slow one (local files). Firing
      * routes a real timeout error through onError, which clears the splash
@@ -224,6 +235,12 @@ class PlaybackManager private constructor(context: Context) {
         override fun onMediaItemTransition(index: Int, isAuto: Boolean) {
             val current = currentQueue.getOrNull(index)
 
+            // The resume seek below needs isAuto, which the engine never
+            // passes (both MpvPlayerEngine call sites pass false), so it
+            // cannot fire today — the live read here is the history
+            // position, which must still wait for the preload (issue
+            // #220) instead of recording 0 when the transition fires in
+            // the first moments after construction.
             val savedPos = current?.let { resumeManager.getResumePosition(it.id) }
             val shouldResume = settingsRepository.load().resumePlayback &&
                 isAuto && savedPos != null && savedPos > 2_000L
@@ -235,6 +252,9 @@ class PlaybackManager private constructor(context: Context) {
             current?.let { item ->
                 scope.launch(Dispatchers.IO) {
                     try {
+                        // Issue #220: wait for the Room preload so the
+                        // recorded position is the saved one, not 0.
+                        val recordedPos = resumeManager.getResumePositionAfterPreload(item.id) ?: 0L
                         persistenceRepository.recordHistory(
                             PlaybackHistoryItem(
                                 mediaUri = item.uri,
@@ -243,7 +263,7 @@ class PlaybackManager private constructor(context: Context) {
                                 subtitle = item.subtitle,
                                 isVideo = item.isVideo,
                                 lastPlayedAt = System.currentTimeMillis(),
-                                playbackPositionMs = savedPos ?: 0L,
+                                playbackPositionMs = recordedPos,
                                 durationMs = item.durationMs,
                             )
                         )
@@ -469,6 +489,41 @@ class PlaybackManager private constructor(context: Context) {
         // Issue #149: persist the new session immediately, before the engine
         // load, so even a crash mid-load leaves a restorable queue behind.
         persistQueue(targetIndex)
+        // Issue #220: the engine load needs the saved resume position, and
+        // the Room preload may not have landed yet (a tap right after a
+        // cold start, or the process-death restore) — reading the cache
+        // now would return null and start the video from 0. Fast path:
+        // preload already done, load synchronously exactly as before.
+        // Slow path: wait for the preload first, on Main (no thread is
+        // blocked — the preload is one Room query). A newer playQueue in
+        // that window supersedes this one via playQueueGeneration.
+        if (resumeManager.isPreloadComplete) {
+            startPlayback(items, targetIndex, targetItem, autoPlay, forceResume, keepShuffle)
+        } else {
+            val generation = ++playQueueGeneration
+            scope.launch {
+                resumeManager.awaitPreload()
+                if (generation != playQueueGeneration) return@launch
+                startPlayback(items, targetIndex, targetItem, autoPlay, forceResume, keepShuffle)
+            }
+        }
+    }
+
+    /**
+     * The resume-dependent tail of [playQueue]: reads the saved position
+     * (only correct once the Room preload has finished — see #220),
+     * loads the target item at it, and publishes the new session state.
+     * Runs synchronously from playQueue on the fast path, or from a
+     * Main-scope coroutine that awaited the preload on the slow path.
+     */
+    private fun startPlayback(
+        items: List<PlayableMedia>,
+        targetIndex: Int,
+        targetItem: PlayableMedia,
+        autoPlay: Boolean,
+        forceResume: Boolean,
+        keepShuffle: Boolean,
+    ) {
         val savedPos = resumeManager.getResumePosition(targetItem.id) ?: 0L
         val settings = settingsRepository.load()
         val shouldResume = (forceResume || settings.resumePlayback) &&
