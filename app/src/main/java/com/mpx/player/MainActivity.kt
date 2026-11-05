@@ -211,6 +211,7 @@ class MainActivity : ComponentActivity() {
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
                         currentPalette = currentPalette,
+                        currentDarkSurface = currentDarkSurface,
                         openPlayerRequested = openPlayerOnStart,
                         onResetOpenPlayer = { openPlayerOnStart = false },
                         onLanguageChanged = { newLang ->
@@ -362,6 +363,7 @@ fun MpxApp(
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
     currentPalette: String = "Blue",
+    currentDarkSurface: String = "TrueBlack",
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
