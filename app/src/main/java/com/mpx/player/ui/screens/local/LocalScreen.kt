@@ -256,7 +256,7 @@ fun LocalScreen(
         } else {
             appSettings.copy(localViewMode = newMode.name, musicViewMode = newMode.name)
         }
-        realSettingsRepo.save(updated)
+        realSettingsRepo.save(updated, commit = true)
         appSettings = updated
     }
     // #164: Tree view (Sort & View popup): the root folders list shows
@@ -268,7 +268,7 @@ fun LocalScreen(
     fun updateTreeMode(tree: Boolean) {
         isTreeMode = tree
         val updated = appSettings.copy(localTreeMode = tree)
-        realSettingsRepo.save(updated)
+        realSettingsRepo.save(updated, commit = true)
         appSettings = updated
     }
     var showSortDialog by remember { mutableStateOf(false) }
@@ -1608,19 +1608,19 @@ fun LocalScreen(
             isFileView = appSettings.fileView,
             onFileViewChange = { isChecked ->
                 val updated = appSettings.copy(fileView = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             onSortChange = { newSort ->
                 sortField = newSort
                 val updated = appSettings.copy(primarySortField = newSort.name)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             onSecondarySortChange = { newSecSort ->
                 secondarySortField = newSecSort
                 val updated = appSettings.copy(secondarySortField = newSecSort.name)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             onViewChange = {
@@ -1628,7 +1628,7 @@ fun LocalScreen(
             },
             onSeparateViewLayoutChange = { isChecked ->
                 val updated = appSettings.copy(separateViewLayout = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
                 scope.launch {
                     val msg = if (isChecked) {
@@ -1656,55 +1656,55 @@ fun LocalScreen(
             showFieldSize = appSettings.showFieldSize,
             onShowFieldSizeChange = { isChecked ->
                 val updated = appSettings.copy(showFieldSize = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             showFieldDate = appSettings.showFieldDate,
             onShowFieldDateChange = { isChecked ->
                 val updated = appSettings.copy(showFieldDate = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             showFieldDuration = appSettings.showFieldDuration,
             onShowFieldDurationChange = { isChecked ->
                 val updated = appSettings.copy(showFieldDuration = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             showFieldLocation = appSettings.showFieldLocation,
             onShowFieldLocationChange = { isChecked ->
                 val updated = appSettings.copy(showFieldLocation = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortReverse = appSettings.sortReverse,
             onSortReverseChange = { isChecked ->
                 val updated = appSettings.copy(sortReverse = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortSecondaryReverse = appSettings.sortSecondaryReverse,
             onSortSecondaryReverseChange = { isChecked ->
                 val updated = appSettings.copy(sortSecondaryReverse = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortNumeric = appSettings.sortNumeric,
             onSortNumericChange = { isChecked ->
                 val updated = appSettings.copy(sortNumeric = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortCaseSensitive = appSettings.sortCaseSensitive,
             onSortCaseSensitiveChange = { isChecked ->
                 val updated = appSettings.copy(sortCaseSensitive = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortIgnoreExtension = appSettings.sortIgnoreExtension,
             onSortIgnoreExtensionChange = { isChecked ->
                 val updated = appSettings.copy(sortIgnoreExtension = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             onDismiss = { showSortDialog = false },
@@ -1726,68 +1726,68 @@ fun LocalScreen(
             onSortChange = { newSort ->
                 folderSortField = newSort
                 val updated = appSettings.copy(folderPrimarySortField = newSort.name)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             currentSecondarySort = folderSecondarySortField,
             onSecondarySortChange = { newSecSort ->
                 folderSecondarySortField = newSecSort
                 val updated = appSettings.copy(folderSecondarySortField = newSecSort.name)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             showFieldSize = appSettings.showFieldSize,
             onShowFieldSizeChange = { isChecked ->
                 val updated = appSettings.copy(showFieldSize = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             showFieldDate = appSettings.showFieldDate,
             onShowFieldDateChange = { isChecked ->
                 val updated = appSettings.copy(showFieldDate = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             showFieldDuration = appSettings.showFieldDuration,
             onShowFieldDurationChange = { isChecked ->
                 val updated = appSettings.copy(showFieldDuration = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             showFieldLocation = appSettings.showFieldLocation,
             onShowFieldLocationChange = { isChecked ->
                 val updated = appSettings.copy(showFieldLocation = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortReverse = appSettings.sortReverse,
             onSortReverseChange = { isChecked ->
                 val updated = appSettings.copy(sortReverse = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortSecondaryReverse = appSettings.sortSecondaryReverse,
             onSortSecondaryReverseChange = { isChecked ->
                 val updated = appSettings.copy(sortSecondaryReverse = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortNumeric = appSettings.sortNumeric,
             onSortNumericChange = { isChecked ->
                 val updated = appSettings.copy(sortNumeric = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortCaseSensitive = appSettings.sortCaseSensitive,
             onSortCaseSensitiveChange = { isChecked ->
                 val updated = appSettings.copy(sortCaseSensitive = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             sortIgnoreExtension = appSettings.sortIgnoreExtension,
             onSortIgnoreExtensionChange = { isChecked ->
                 val updated = appSettings.copy(sortIgnoreExtension = isChecked)
-                realSettingsRepo.save(updated)
+                realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
             },
             onDismiss = {
@@ -1808,13 +1808,13 @@ fun LocalScreen(
                 onSortChange = { newSort ->
                     folderSortField = newSort
                     val updated = appSettings.copy(folderPrimarySortField = newSort.name)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 sortReverse = appSettings.sortReverse,
                 onSortReverseChange = { reversed ->
                     val updated = appSettings.copy(sortReverse = reversed)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 currentView = viewMode,
@@ -1836,50 +1836,60 @@ fun LocalScreen(
                 onTreeModeChange = { updateTreeMode(it) },
                 folderGridColumns = appSettings.folderGridColumns,
                 onFolderGridColumnsChange = { columns ->
-                    val updated = appSettings.copy(folderGridColumns = columns)
-                    realSettingsRepo.save(updated)
-                    appSettings = updated
+                    // Issue #191: the slider fires on every drag tick, and
+                    // a commit() is a synchronous disk write — only write
+                    // when the value actually changed.
+                    if (columns != appSettings.folderGridColumns) {
+                        val updated = appSettings.copy(folderGridColumns = columns)
+                        realSettingsRepo.save(updated, commit = true)
+                        appSettings = updated
+                    }
                 },
                 videoGridColumns = appSettings.videoGridColumns,
                 onVideoGridColumnsChange = { columns ->
-                    val updated = appSettings.copy(videoGridColumns = columns)
-                    realSettingsRepo.save(updated)
-                    appSettings = updated
+                    // Issue #191: the slider fires on every drag tick, and
+                    // a commit() is a synchronous disk write — only write
+                    // when the value actually changed.
+                    if (columns != appSettings.videoGridColumns) {
+                        val updated = appSettings.copy(videoGridColumns = columns)
+                        realSettingsRepo.save(updated, commit = true)
+                        appSettings = updated
+                    }
                 },
                 showFullName = appSettings.showFullName,
                 onShowFullNameChange = { show ->
                     val updated = appSettings.copy(showFullName = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldLocation = appSettings.showFieldLocation,
                 onShowFieldLocationChange = { show ->
                     val updated = appSettings.copy(showFieldLocation = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldCount = appSettings.showFieldCount,
                 onShowFieldCountChange = { show ->
                     val updated = appSettings.copy(showFieldCount = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldDuration = appSettings.showFieldDuration,
                 onShowFieldDurationChange = { show ->
                     val updated = appSettings.copy(showFieldDuration = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldSize = appSettings.showFieldSize,
                 onShowFieldSizeChange = { show ->
                     val updated = appSettings.copy(showFieldSize = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldDate = appSettings.showFieldDate,
                 onShowFieldDateChange = { show ->
                     val updated = appSettings.copy(showFieldDate = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 onDismiss = { showSortPopup = false },
@@ -1891,13 +1901,13 @@ fun LocalScreen(
                 onSortChange = { newSort ->
                     sortField = newSort
                     val updated = appSettings.copy(primarySortField = newSort.name)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 sortReverse = appSettings.sortReverse,
                 onSortReverseChange = { reversed ->
                     val updated = appSettings.copy(sortReverse = reversed)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 currentView = viewMode,
@@ -1907,50 +1917,60 @@ fun LocalScreen(
                 onTreeModeChange = { updateTreeMode(it) },
                 folderGridColumns = appSettings.folderGridColumns,
                 onFolderGridColumnsChange = { columns ->
-                    val updated = appSettings.copy(folderGridColumns = columns)
-                    realSettingsRepo.save(updated)
-                    appSettings = updated
+                    // Issue #191: the slider fires on every drag tick, and
+                    // a commit() is a synchronous disk write — only write
+                    // when the value actually changed.
+                    if (columns != appSettings.folderGridColumns) {
+                        val updated = appSettings.copy(folderGridColumns = columns)
+                        realSettingsRepo.save(updated, commit = true)
+                        appSettings = updated
+                    }
                 },
                 videoGridColumns = appSettings.videoGridColumns,
                 onVideoGridColumnsChange = { columns ->
-                    val updated = appSettings.copy(videoGridColumns = columns)
-                    realSettingsRepo.save(updated)
-                    appSettings = updated
+                    // Issue #191: the slider fires on every drag tick, and
+                    // a commit() is a synchronous disk write — only write
+                    // when the value actually changed.
+                    if (columns != appSettings.videoGridColumns) {
+                        val updated = appSettings.copy(videoGridColumns = columns)
+                        realSettingsRepo.save(updated, commit = true)
+                        appSettings = updated
+                    }
                 },
                 showFullName = appSettings.showFullName,
                 onShowFullNameChange = { show ->
                     val updated = appSettings.copy(showFullName = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldLocation = appSettings.showFieldLocation,
                 onShowFieldLocationChange = { show ->
                     val updated = appSettings.copy(showFieldLocation = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldCount = appSettings.showFieldCount,
                 onShowFieldCountChange = { show ->
                     val updated = appSettings.copy(showFieldCount = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldDuration = appSettings.showFieldDuration,
                 onShowFieldDurationChange = { show ->
                     val updated = appSettings.copy(showFieldDuration = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldSize = appSettings.showFieldSize,
                 onShowFieldSizeChange = { show ->
                     val updated = appSettings.copy(showFieldSize = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 showFieldDate = appSettings.showFieldDate,
                 onShowFieldDateChange = { show ->
                     val updated = appSettings.copy(showFieldDate = show)
-                    realSettingsRepo.save(updated)
+                    realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
                 onDismiss = { showSortPopup = false },

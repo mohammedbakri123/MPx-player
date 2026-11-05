@@ -112,8 +112,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         )
     }
 
-    override fun save(settings: AppSettings) {
-        prefs.edit()
+    override fun save(settings: AppSettings, commit: Boolean = false) {
+        val editor = prefs.edit()
             .putBoolean("show_hidden_files", settings.showHiddenFiles)
             .putBoolean("show_thumbnails", settings.showThumbnails)
             .putBoolean("resume_playback", settings.resumePlayback)
@@ -187,6 +187,10 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("player_menu_layout", settings.playerMenuLayout)
             .putString("player_menu_layout_hidden", settings.hiddenPlayerMenuIds)
             .putInt("double_tap_seek_seconds", settings.doubleTapSeekSeconds)
-            .apply()
+        // Issue #191: commit = true writes synchronously (layout saves
+        // only — see the interface KDoc). apply() only queues the disk
+        // write, and a swipe-away right after a layout change could kill
+        // the process before it flushed, losing the choice.
+        if (commit) editor.commit() else editor.apply()
     }
 }

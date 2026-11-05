@@ -149,14 +149,17 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    fun update(next: AppSettings) {
+    // Issue #191: commit = true writes synchronously — the layout rows
+    // below pass it so a swipe-away right after the tap cannot lose the
+    // choice. Every other row keeps the queued apply() write.
+    fun update(next: AppSettings, commit: Boolean = false) {
         val oldLanguage = settings.appLanguage
         val oldTheme = settings.appTheme
         val oldPalette = settings.colorPalette
         val oldDarkSurface = settings.darkSurface
         val oldDecoder = settings.decoderMode
         settings = next
-        settingsRepository.save(next)
+        settingsRepository.save(next, commit = commit)
         if (next.appLanguage != oldLanguage) {
             onLanguageChanged?.invoke(next.appLanguage)
         }
@@ -560,14 +563,14 @@ fun SettingsScreen(
                                     modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
                                 )
                                 ChoiceRow(stringResource(R.string.view_mode_list), settings.localViewMode.equals("LIST", ignoreCase = true)) {
-                                    update(settings.copy(localViewMode = "LIST"))
+                                    update(settings.copy(localViewMode = "LIST"), commit = true)
                                 }
                                 ChoiceRow(stringResource(R.string.view_mode_grid), settings.localViewMode.equals("GRID", ignoreCase = true)) {
-                                    update(settings.copy(localViewMode = "GRID"))
+                                    update(settings.copy(localViewMode = "GRID"), commit = true)
                                 }
                                 Spacer(Modifier.height(8.dp))
                                 ToggleRow(stringResource(R.string.settings_separate_view_title), settings.separateViewLayout) {
-                                    update(settings.copy(separateViewLayout = it))
+                                    update(settings.copy(separateViewLayout = it), commit = true)
                                 }
                                 Text(
                                     stringResource(R.string.settings_separate_view_desc),
@@ -575,7 +578,7 @@ fun SettingsScreen(
                                     color = MpxTheme.colors.textSecondary,
                                     modifier = Modifier.padding(bottom = 6.dp),
                                 )
-                                ToggleRow(stringResource(R.string.list_file_view), settings.fileView) { update(settings.copy(fileView = it)) }
+                                ToggleRow(stringResource(R.string.list_file_view), settings.fileView) { update(settings.copy(fileView = it), commit = true) }
                                 Text(
                                     stringResource(R.string.list_file_view_desc),
                                     style = MaterialTheme.typography.bodySmall,
