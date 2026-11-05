@@ -65,6 +65,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -107,6 +108,43 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
+
+/**
+ * Saver for the open folder (#175): MediaFolder is a plain data class,
+ * not Parcelable, so it is saved as its Bundle-safe fields and rebuilt
+ * on restore. Back-stack restore then keeps the folder the video was
+ * played from, instead of dropping back to Home.
+ */
+private val MediaFolderSaver: Saver<MediaFolder?, List<Any>> = Saver(
+    save = { folder ->
+        folder?.let {
+            listOf(
+                it.id,
+                it.name,
+                it.path,
+                it.videoCount,
+                it.totalSizeFormatted,
+                it.isNew,
+                it.lastModified,
+                it.isStorageRemovable,
+                it.totalDurationMs,
+            )
+        }
+    },
+    restore = { saved ->
+        MediaFolder(
+            id = saved[0] as String,
+            name = saved[1] as String,
+            path = saved[2] as String,
+            videoCount = saved[3] as Int,
+            totalSizeFormatted = saved[4] as String,
+            isNew = saved[5] as Boolean,
+            lastModified = saved[6] as Long,
+            isStorageRemovable = saved[7] as Boolean,
+            totalDurationMs = saved[8] as Long,
+        )
+    },
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -221,8 +259,23 @@ fun LocalScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Folder view mode state (drilled-down folder contents view)
-    var currentFolder by remember { mutableStateOf<MediaFolder?>(null) }
+    // Folder view mode state (drilled-down folder contents view).
+    // Issue #175: rememberSaveable, not remember — Compose Navigation
+    // disposes this screen's composition when the Player destination is
+    // pushed, so plain remember re-initialised the folder to null (Home)
+    // on the way back. The Saver above round-trips the folder through
+    // the back-stack entry's saved state.
+    var currentFolder by rememberSaveable(stateSaver = MediaFolderSaver) {
+        mutableStateOf<MediaFolder?>(null)
+    }
+    // Re-resolve the restored folder against the freshly scanned list, so
+    // the header counts are never a stale snapshot from before navigation.
+    LaunchedEffect(folders) {
+        val path = currentFolder?.path
+        if (path != null) {
+            folders.find { it.path == path }?.let { currentFolder = it }
+        }
+    }
     var folderVideos by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
     var isFolderLoading by remember { mutableStateOf(false) }
     var folderViewMode by remember { mutableStateOf(ViewMode.LIST) }
