@@ -46,6 +46,12 @@ class PlaybackManager private constructor(context: Context) {
     val resumeManager = PlaybackResumeManager(persistenceRepository)
     val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
 
+    /** Last playback queue, persisted so a process death in the background
+     * does not leave the restored Player screen empty (issue #149).
+     * Positions are NOT stored here: they already live in Room via
+     * PlaybackResumeManager and playQueue() re-applies them. */
+    private val queueStore = PlaybackQueueStore(appContext)
+
     private val scope = CoroutineScope(Dispatchers.Main)
     private var tickerJob: Job? = null
     private var sleepTimerJob: Job? = null
@@ -220,6 +226,8 @@ class PlaybackManager private constructor(context: Context) {
             }
             updateTracksState()
             updatePosition()
+            // Issue #149: the current index moved; the queue itself did not.
+            persistQueue(index)
         }
 
         override fun onTracksChanged() {
@@ -617,6 +625,9 @@ class PlaybackManager private constructor(context: Context) {
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
         val targetItem = items[targetIndex]
+        // Issue #149: persist the new session immediately, before the engine
+        // load, so even a crash mid-load leaves a restorable queue behind.
+        persistQueue(targetIndex)
         val savedPos = resumeManager.getResumePosition(targetItem.id) ?: 0L
         val settings = settingsRepository.load()
         val shouldResume = (forceResume || settings.resumePlayback) &&
@@ -796,6 +807,8 @@ class PlaybackManager private constructor(context: Context) {
                     shuffleEnabled = true,
                 )
             }
+            // Issue #149: the shuffled order is the live order now.
+            persistQueue(0)
         } else {
             val original = unshuffledQueue
             unshuffledQueue = null
@@ -814,6 +827,8 @@ class PlaybackManager private constructor(context: Context) {
                         shuffleEnabled = false,
                     )
                 }
+                // Issue #149: the restored pre-shuffle order is live again.
+                persistQueue(index)
             } else {
                 _playbackState.update { it.copy(shuffleEnabled = false) }
             }
@@ -918,6 +933,8 @@ class PlaybackManager private constructor(context: Context) {
                 userNotification = "External subtitle loaded: $displayName",
             )
         }
+        // Issue #149: the queue item itself changed (new subtitle list).
+        persistQueue(index)
         return true
     }
 
@@ -977,6 +994,35 @@ class PlaybackManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * Writes the live queue + current index to the queue store (issue #149).
+     * Called on every queue mutation and on track transitions, never from
+     * the position ticker, so a write costs one small JSON encode per track
+     * change, not per tick. A write failure is swallowed inside the store:
+     * persistence must never break playback.
+     */
+    private fun persistQueue(currentIndex: Int = _playbackState.value.currentIndex) {
+        queueStore.save(currentQueue, currentIndex)
+    }
+
+    /**
+     * Restores the last persisted queue when the live queue is empty
+     * (issue #149): the process died in the background and Android restored
+     * the Player destination with a fresh, empty PlaybackManager. Loads the
+     * queue paused at the Room-saved position (playQueue's normal resume
+     * rules apply, so with resume playback off it starts at 0 instead).
+     * Returns false when there is nothing to restore, so the caller keeps
+     * the empty state. Deliberate stops clear the persisted queue in
+     * stop(), so this never resurrects a session the user ended. Shuffle
+     * order is not persisted: a restored queue always starts unshuffled.
+     */
+    fun restorePersistedQueueIfEmpty(): Boolean {
+        if (_playbackState.value.queue.isNotEmpty()) return false
+        val persisted = queueStore.load() ?: return false
+        playQueue(persisted.items, persisted.currentIndex, autoPlay = false)
+        return true
+    }
+
     fun stop() {
         cancelSleepTimer()
         cancelPreparingWatchdog()
@@ -984,6 +1030,14 @@ class PlaybackManager private constructor(context: Context) {
         stopTicker()
         PlaybackService.stop(appContext)
         unshuffledQueue = null
+        queueStore.clear()
+        // Issue #149: a deliberate stop ends the session, so the persisted
+        // queue must not resurrect it later. This is also what makes the
+        // stop-on-leave effect (PlayerScreen) safe: leaving via back clears
+        // both the live and the persisted queue. release() deliberately does
+        // NOT clear: it can run while the Player destination is still on the
+        // stack (activity destroyed, process alive), and clearing there would
+        // destroy the queue a later process-death restore needs.
         _playbackState.update {
             it.copy(
                 currentItem = null,

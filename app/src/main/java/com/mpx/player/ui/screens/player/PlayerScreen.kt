@@ -339,6 +339,19 @@ fun PlayerScreen(
     val lastMpvSubtitleSettings = remember { arrayOfNulls<AppSettings>(1) }
     val state by playbackManager.playbackState.collectAsState()
 
+    // Issue #149: after a process death in the background, Android restores
+    // this destination but the PlaybackManager singleton is fresh with an
+    // empty queue, which used to render the "No video queued" empty state.
+    // Restore the last persisted queue instead (paused, at the saved
+    // position). Deliberate stops clear the persisted queue, so this only
+    // fires for sessions the user never ended; with nothing persisted it is
+    // a no-op and the empty state stays.
+    LaunchedEffect(Unit) {
+        if (playbackManager.playbackState.value.queue.isEmpty()) {
+            playbackManager.restorePersistedQueueIfEmpty()
+        }
+    }
+
     val targetOrientation = remember(currentSettings.autoScreenRotation, currentSettings.screenOrientation) {
         if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" || currentSettings.screenOrientation == "sensor") {
             ActivityInfo.SCREEN_ORIENTATION_SENSOR
