@@ -286,7 +286,16 @@ class MainActivity : ComponentActivity() {
         val playbackManager = PlaybackManager.getInstance(this)
         val state = playbackManager.playbackState.value
 
-        if (!settings.backgroundPlay || isFinishing) {
+        // Issue #205: the stop decision is backgroundPlay alone.
+        // isFinishing must NOT stop playback: swiping the app from
+        // recents finishes the activity, and so does back-press from
+        // Home — both are exactly the situations background play
+        // exists for. The service (not the activity) owns playback
+        // when background play is on, and its own onTaskRemoved
+        // already keeps it alive on swipe-away. When background
+        // play is off, stop unconditionally — the same rule the
+        // #92 stop-on-leave path applies when leaving the player.
+        if (!settings.backgroundPlay) {
             // off = playback MUST stop when leaving the foreground
             if (state.isPlaying) {
                 playbackManager.pause()
@@ -310,7 +319,12 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         val settings = settingsRepository.load()
-        if (!settings.backgroundPlay || isFinishing) {
+        // Issue #205: see onStop — isFinishing must not stop the
+        // service. When background play is on, the foreground
+        // service keeps playback alive after the activity is gone.
+        // (Rotation never reaches here: orientation is in
+        // configChanges, so it only recomposes.)
+        if (!settings.backgroundPlay) {
             val playbackManager = PlaybackManager.getInstance(this)
             if (playbackManager.playbackState.value.isPlaying) {
                 playbackManager.pause()
