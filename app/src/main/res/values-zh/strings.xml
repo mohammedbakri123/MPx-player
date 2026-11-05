@@ -445,6 +445,12 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">关闭搜索</string>
     <string name="cd_toggle_view">切换视图</string>
+    <string name="layout_sheet_title">视图</string>
+    <string name="layout_section_tile_size">图块大小</string>
+    <string name="tile_size_small">小</string>
+    <string name="tile_size_medium">中</string>
+    <string name="tile_size_large">大</string>
+    <string name="cd_layout_options">布局选项</string>
     <string name="cd_search">搜索</string>
     <string name="cd_more_options">更多选项</string>
     <string name="cd_quick_play">快速播放</string>

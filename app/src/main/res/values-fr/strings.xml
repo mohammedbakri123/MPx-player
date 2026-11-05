@@ -445,6 +445,12 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">Fermer la recherche</string>
     <string name="cd_toggle_view">Basculer l’affichage</string>
+    <string name="layout_sheet_title">Affichage</string>
+    <string name="layout_section_tile_size">Taille des tuiles</string>
+    <string name="tile_size_small">Petit</string>
+    <string name="tile_size_medium">Moyen</string>
+    <string name="tile_size_large">Grand</string>
+    <string name="cd_layout_options">Options d’affichage</string>
     <string name="cd_search">Rechercher</string>
     <string name="cd_more_options">Plus d’options</string>
     <string name="cd_quick_play">Lecture rapide</string>

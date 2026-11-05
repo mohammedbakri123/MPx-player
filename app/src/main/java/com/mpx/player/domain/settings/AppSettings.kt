@@ -46,6 +46,7 @@ data class AppSettings(
     val showAllFolders: Boolean = false,
     val folderViewMode: String = "LIST", // Global default folder contents view mode: LIST, GRID
     val localViewMode: String = "LIST", // Local root folders list view mode: LIST, GRID
+    val tileSize: String = "Medium", // Grid tile size (#141): Small, Medium, Large
     val separateViewLayout: Boolean = true,
     val musicViewMode: String = "LIST", // LIST, GRID
     val fileView: Boolean = false, // false = folder view, true = individual files view

@@ -445,6 +445,12 @@
     <!-- Local Screen Content Descriptions -->
     <string name="cd_close_search">إغلاق البحث</string>
     <string name="cd_toggle_view">تبديل طريقة العرض</string>
+    <string name="layout_sheet_title">العرض</string>
+    <string name="layout_section_tile_size">حجم البلاطات</string>
+    <string name="tile_size_small">صغير</string>
+    <string name="tile_size_medium">متوسط</string>
+    <string name="tile_size_large">كبير</string>
+    <string name="cd_layout_options">خيارات العرض</string>
     <string name="cd_search">بحث</string>
     <string name="cd_more_options">مزيد من الخيارات</string>
     <string name="cd_quick_play">تشغيل سريع</string>
