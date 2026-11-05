@@ -74,16 +74,42 @@ private fun treeKey(folder: MediaFolder): String = folder.id.ifBlank { folder.pa
 private fun normalizedTreePath(path: String): String = path.trimEnd('/')
 
 /**
+ * Any storage volume root (/storage/emulated/0, /storage/<uuid>): the
+ * tree's implicit root, never a parent node (#173). A folder entry for
+ * the storage root itself swallows the whole tree — every folder's
+ * prefix walk reaches it, so the top level becomes a single "0" node.
+ */
+fun isStorageRootPath(path: String): Boolean {
+    val segments = normalizedTreePath(path).split('/').filter { it.isNotEmpty() }
+    return (segments.size == 3 && segments[0] == "storage" && segments[1] == "emulated") ||
+        (segments.size == 2 && segments[0] == "storage")
+}
+
+/**
+ * The primary internal storage root (/storage/emulated/0): shown as
+ * "Home" when it holds videos of its own (#173). Other volume roots
+ * keep their scanned name so two volumes never share one label.
+ */
+private fun isPrimaryStorageRootPath(path: String): Boolean {
+    val segments = normalizedTreePath(path).split('/').filter { it.isNotEmpty() }
+    return segments.size == 3 && segments[0] == "storage" && segments[1] == "emulated"
+}
+
+/**
  * Builds the forest from the flat folder list, preserving the input
  * order (already sorted by the active comparator) inside every level.
  * Folders with a blank path are roots and never parents. On duplicate
- * paths the first folder wins as the parent node.
+ * paths the first folder wins as the parent node. Storage roots are
+ * never parents (#173): their children become top-level roots, so the
+ * tree starts at Home instead of a single "0" node. A primary storage
+ * root that holds videos of its own stays as a root, labelled with
+ * [homeLabel] when given.
  */
-fun buildFolderTree(folders: List<MediaFolder>): List<FolderTreeNode> {
+fun buildFolderTree(folders: List<MediaFolder>, homeLabel: String? = null): List<FolderTreeNode> {
     val byPath = mutableMapOf<String, MediaFolder>()
     for (folder in folders) {
         val path = normalizedTreePath(folder.path)
-        if (path.isNotBlank() && path !in byPath) {
+        if (path.isNotBlank() && path !in byPath && !isStorageRootPath(path)) {
             byPath[path] = folder
         }
     }
@@ -110,9 +136,15 @@ fun buildFolderTree(folders: List<MediaFolder>): List<FolderTreeNode> {
         }
     }
     fun toNode(folder: MediaFolder): FolderTreeNode {
+        val displayFolder =
+            if (homeLabel != null && isPrimaryStorageRootPath(normalizedTreePath(folder.path))) {
+                folder.copy(name = homeLabel)
+            } else {
+                folder
+            }
         val children = childrenOf[normalizedTreePath(folder.path)]
             ?.map { toNode(it) } ?: emptyList()
-        return FolderTreeNode(folder, children)
+        return FolderTreeNode(displayFolder, children)
     }
     return roots.map { toNode(it) }
 }
@@ -162,7 +194,13 @@ fun LocalFolderTree(
     onClick: (MediaFolder) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val roots = remember(folders) { buildFolderTree(folders) }
+    // Issue #173: the primary storage root is labelled Home (localized);
+    // hoisted out of the remember block — stringResource is a @Composable
+    // call and cannot run inside remember's calculation lambda.
+    val homeLabel = stringResource(R.string.nav_local)
+    val roots = remember(folders, homeLabel) {
+        buildFolderTree(folders, homeLabel = homeLabel)
+    }
     val visibleRows = remember(roots, expandedKeys) {
         flattenVisibleTree(roots, expandedKeys)
     }
