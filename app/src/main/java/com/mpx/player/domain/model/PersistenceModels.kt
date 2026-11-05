@@ -28,6 +28,18 @@ data class PlaybackHistoryItem(
 )
 
 /**
+ * Issue #217: the UI-facing id of a user-created (Room) playlist.
+ * Room's autoGenerate ids start at 1 — the same small ints MediaStore
+ * uses for device playlist `_ID`s — so a bare `id.toString()` collided
+ * with device playlists in the merged Playlists list (wrong playlist
+ * opened/played, duplicate lazy-row keys). The "custom:" prefix keeps
+ * the two kinds in separate namespaces; device playlists keep their
+ * bare MediaStore id. The Room id itself is unchanged — only the
+ * UI-facing [Playlist.id] is namespaced.
+ */
+fun customPlaylistId(roomId: Long): String = "custom:$roomId"
+
+/**
  * Domain model representing a custom user-created playlist.
  * Maps seamlessly to the existing [Playlist] domain model.
  */
@@ -40,7 +52,7 @@ data class CustomPlaylist(
     val isVideoPlaylist: Boolean = false,
 ) {
     fun toPlaylist(): Playlist = Playlist(
-        id = id.toString(),
+        id = customPlaylistId(id),
         title = name,
         itemCount = itemCount,
         subtitle = if (isVideoPlaylist) "Video Playlist" else "Custom Playlist",
