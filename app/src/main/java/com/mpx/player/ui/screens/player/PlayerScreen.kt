@@ -102,6 +102,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -1370,10 +1372,43 @@ fun PlayerScreen(
                             )
                         }
 
+                        // Aspect Ratio Pill (issue #167): the aspect control
+                        // lives on the player page itself — tapping cycles
+                        // FIT -> FILL -> ZOOM -> 16:9 -> 4:3 -> 100% -> FIT
+                        // and applies it live, so the user never has to open
+                        // the Playback sheet just to change it. Same pill
+                        // language as the decoder pill beside it; the full
+                        // radio list stays in the sheet's Aspect page.
+                        Surface(
+                            modifier = Modifier
+                                .clip(MpxShapes.small)
+                                .semantics { contentDescription = context.getString(R.string.playback_sheet_aspect) }
+                                .clickable {
+                                    val modes = AspectRatioMode.values()
+                                    val next = modes[(modes.indexOf(state.aspectRatio) + 1) % modes.size]
+                                    playbackManager.setAspectRatio(next)
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.player_menu_aspect, context.getString(next.labelRes)),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                },
+                            color = Color.Transparent,
+                            shape = MpxShapes.small,
+                        ) {
+                            Text(
+                                text = stringResource(state.aspectRatio.labelRes),
+                                color = MpxTheme.colors.textPrimary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+
                         // (Favourite, audio tracks, subtitles, PiP and rotation
                         // all live in the Playback sheet now, MX-overflow
-                        // style, so the top bar is just back + title + decoder
-                        // pill + menu. See PlayerPlaybackSheet.)
+                        // style, so the top bar is back + title + decoder
+                        // pill + aspect pill + menu. See PlayerPlaybackSheet.)
                         IconButton(onClick = { playbackSheetPage = PlaybackSheetPage.Main }) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
