@@ -615,6 +615,28 @@ class MpvPlayerEngine(
             "time-pos" -> {
                 val sec = mpv.getPropertyDouble("time-pos") ?: 0.0
                 cachedPositionMs = (sec * 1000).toLong().coerceAtLeast(0L)
+                // Issue #181: vo can go null MID-playback (surface destroy
+                // after a resize) with no later attach/load to restore it —
+                // the file keeps playing with sound but no video, and the
+                // only restores so far (attachSurface, load) never run.
+                // time-pos keeps updating while that happens, so restore
+                // vo=gpu here whenever a surface is attached and vo is
+                // known null. One-shot (voIsNull flips false on restore),
+                // and safe for the same reason as the #161 fix: restoring
+                // a nulled vo cannot tear down a live VO, because there
+                // is none.
+                if (voIsNull) {
+                    synchronized(surfaceLock) {
+                        if (currentSurface != null && voIsNull) {
+                            try {
+                                mpv.setPropertyString("vo", "gpu")
+                                voIsNull = false
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed restoring vo=gpu on time-pos", e)
+                            }
+                        }
+                    }
+                }
                 // Seek latency: first position update landing within 500 ms of
                 // the seek target after a direct seek command.
                 synchronized(metricsLock) {
@@ -901,27 +923,35 @@ class MpvPlayerEngine(
             try {
                 mpv.attachSurface(surface)
                 setRuntimeProperty("force-window", "yes")
-                if (voIsNull) {
-                    // Issue #161: a detach mid-session left vo=null, and
-                    // mpv.attachSurface() binds to the CURRENT vo — with
-                    // vo=null there is no VO, so the next loadfile decodes
-                    // but renders to the null VO (sound, no video, no error:
-                    // the phone log shows "VO: [null]" on every load after
-                    // the first detach). Restore vo=gpu even when a load is
-                    // about to run. The Nov 4 race fix only forbids a
-                    // GRATUITOUS vo set when vo is already gpu; restoring a
-                    // nulled vo cannot tear down a live VO, because there
-                    // is none.
+            } catch (e: Exception) {
+                Log.e(TAG, "Error attaching surface", e)
+            }
+            // Issue #181: restore vo=gpu in its own try/catch, so a throwing
+            // native attach cannot skip it. A detach mid-session left vo=null,
+            // and mpv.attachSurface() binds to the CURRENT vo — with vo=null
+            // there is no VO, so the next loadfile decodes but renders to the
+            // null VO (sound, no video, no error: the phone log shows
+            // "VO: [null]" on every load after the first detach). Restore
+            // vo=gpu even when a load is about to run. The Nov 4 race fix
+            // only forbids a GRATUITOUS vo set when vo is already gpu;
+            // restoring a nulled vo cannot tear down a live VO, because
+            // there is none.
+            if (voIsNull) {
+                try {
                     mpv.setPropertyString("vo", "gpu")
                     voIsNull = false
-                } else if (willLoad) {
-                    // A load is about to run: loadfile itself initialises
-                    // VO against the attached surface; do not touch "vo".
-                } else {
-                    mpv.setPropertyString("vo", "gpu")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed restoring vo=gpu on attach", e)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in attachSurface", e)
+            } else if (willLoad) {
+                // A load is about to run: loadfile itself initialises
+                // VO against the attached surface; do not touch "vo".
+            } else {
+                try {
+                    mpv.setPropertyString("vo", "gpu")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed setting vo=gpu on attach", e)
+                }
             }
         }
         // Flush a load deferred for lack of surface (see load()). This is the
