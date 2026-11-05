@@ -1544,6 +1544,7 @@ fun PlayerScreen(
                                 isVideo = item.isVideo,
                                 durationMs = item.durationMs,
                             ),
+                        )
                     }
                 }
             },
