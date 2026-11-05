@@ -379,6 +379,25 @@ fun PlayerScreen(
         activity?.requestedOrientation = targetOrientation
         onDispose {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    // Issue #204: the window-brightness reset used to live in the
+    // orientation effect's onDispose above. That effect is keyed on
+    // targetOrientation, so its onDispose fired not only when leaving
+    // the player but every time the user picked Auto / Landscape /
+    // Portrait in the sheet or toggled auto-rotate — silently wiping
+    // the brightness just set with the vertical-drag gesture back to
+    // the system value. The reset belongs here instead: a
+    // DisposableEffect(Unit) disposes only when this PlayerScreen
+    // composition actually leaves (back navigation, activity finish).
+    // Rotation and PiP entry do NOT dispose it — MainActivity declares
+    // orientation and the screen-size changes in configChanges, so
+    // those only recompose. Unconditional on purpose, unlike the #92
+    // stop() below: with background play on, leaving still pops this
+    // route, and the override must not leak onto the Home screen.
+    DisposableEffect(Unit) {
+        onDispose {
             activity?.window?.let { window ->
                 val lp = window.attributes
                 lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
