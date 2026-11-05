@@ -1685,6 +1685,9 @@ fun LocalScreen(
         SortViewDialog(
             currentSort = folderSortField,
             currentView = viewMode,
+            // Folder contents are files, so the file-metadata rows
+            // (duration, location, ignore-extension) apply here.
+            isFileView = true,
             onViewChange = { newMode ->
                 updateViewMode(newMode)
             },

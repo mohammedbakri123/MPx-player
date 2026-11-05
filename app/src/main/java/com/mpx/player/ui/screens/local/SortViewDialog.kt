@@ -277,8 +277,8 @@ fun SortViewDialog(
                         val activeLabels = mutableListOf<String>()
                         if (showFieldSize) activeLabels.add(stringResource(R.string.sort_field_show_size))
                         if (showFieldDate) activeLabels.add(stringResource(R.string.sort_field_show_date))
-                        if (showFieldDuration && (isFileView || isFolderScope)) activeLabels.add(stringResource(R.string.sort_field_show_duration))
-                        if (showFieldLocation && (isFileView || isFolderScope)) activeLabels.add(stringResource(R.string.sort_field_show_location))
+                        if (showFieldDuration && isFileView) activeLabels.add(stringResource(R.string.sort_field_show_duration))
+                        if (showFieldLocation && isFileView) activeLabels.add(stringResource(R.string.sort_field_show_location))
                         val fieldsSummary = if (activeLabels.isEmpty()) {
                             stringResource(R.string.sort_field_none)
                         } else {
@@ -328,7 +328,7 @@ fun SortViewDialog(
                             Text(stringResource(R.string.sort_field_show_date), color = MpxTheme.colors.textPrimary)
                         }
                     }
-                    if ((isFileView || isFolderScope) && onShowFieldDurationChange != null) {
+                    if (isFileView && onShowFieldDurationChange != null) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -341,7 +341,7 @@ fun SortViewDialog(
                             Text(stringResource(R.string.sort_field_show_duration), color = MpxTheme.colors.textPrimary)
                         }
                     }
-                    if ((isFileView || isFolderScope) && onShowFieldLocationChange != null) {
+                    if (isFileView && onShowFieldLocationChange != null) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -484,7 +484,7 @@ fun SortViewDialog(
                         if (sortReverse) advParts.add(stringResource(R.string.sort_advanced_reverse_order))
                         if (sortNumeric) advParts.add(stringResource(R.string.sort_advanced_numeric))
                         if (sortCaseSensitive) advParts.add(stringResource(R.string.sort_advanced_case_sensitive))
-                        if (sortIgnoreExtension && (isFileView || isFolderScope)) advParts.add(stringResource(R.string.sort_advanced_ignore_extension))
+                        if (sortIgnoreExtension && isFileView) advParts.add(stringResource(R.string.sort_advanced_ignore_extension))
                         if (sortSecondaryReverse) advParts.add(stringResource(R.string.sort_advanced_secondary_reverse))
                         val advSummary = if (advParts.isEmpty()) {
                             stringResource(R.string.sort_advanced_summary_default)
@@ -533,7 +533,7 @@ fun SortViewDialog(
                             descRes = R.string.sort_advanced_case_sensitive_desc,
                         )
                     }
-                    if ((isFileView || isFolderScope) && onSortIgnoreExtensionChange != null) {
+                    if (isFileView && onSortIgnoreExtensionChange != null) {
                         AdvancedSwitchRow(
                             checked = sortIgnoreExtension,
                             onCheckedChange = onSortIgnoreExtensionChange,
@@ -551,7 +551,7 @@ fun SortViewDialog(
                     }
                 }
 
-                if (!isFolderScope && onShowAllFoldersChange != null) {
+                if (onShowAllFoldersChange != null) {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 12.dp),
                         color = MpxTheme.colors.border,
