@@ -680,6 +680,9 @@
     <string name="local_snackbar_folder_view">تم التبديل إلى عرض المجلدات</string>
     <string name="video_menu_play">تشغيل الفيديو</string>
     <string name="video_menu_play_folder">تشغيل المجلد (%1$s)</string>
+    <string name="multiselect_selected_count">%1$d محدد</string>
+    <string name="cd_exit_selection">إنهاء التحديد</string>
+    <string name="multiselect_play_folder">تشغيل المجلد</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
     <string name="player_auto_rotation">تدوير الشاشة التلقائي</string>

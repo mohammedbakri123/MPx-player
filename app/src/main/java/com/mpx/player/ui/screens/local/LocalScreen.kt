@@ -71,6 +71,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -235,8 +236,38 @@ fun LocalScreen(
     var folderMenuExpanded by remember { mutableStateOf(false) }
     var folderForMenu by remember { mutableStateOf<MediaFolder?>(null) }
     var videoForMenu by remember { mutableStateOf<VideoFile?>(null) }
-    var videoForPlaylistAdd by remember { mutableStateOf<VideoFile?>(null) }
+    // #144: videos queued for "Add to playlist" — one video from a tile
+    // menu, or the whole multi-select action-bar selection.
+    var videosForPlaylistAdd by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
+
+    // #144: long-press multi-select. One selection per view: folders on
+    // the root folder list, videos in file view and inside a folder.
+    // Long-press toggles an item (entering selection mode when empty);
+    // a tap while selecting toggles too. Back / the X exits and clears.
+    var selectedFolderIds by remember { mutableStateOf(setOf<String>()) }
+    var selectedVideoIds by remember { mutableStateOf(setOf<String>()) }
+    val isSelectionMode = selectedFolderIds.isNotEmpty() || selectedVideoIds.isNotEmpty()
+    val selectionCount = selectedFolderIds.size + selectedVideoIds.size
+
+    fun clearSelection() {
+        selectedFolderIds = emptySet()
+        selectedVideoIds = emptySet()
+    }
+
+    fun toggleFolderSelection(folder: MediaFolder) {
+        val key = folder.id.ifBlank { folder.path }
+        selectedFolderIds =
+            if (selectedFolderIds.contains(key)) selectedFolderIds - key
+            else selectedFolderIds + key
+    }
+
+    fun toggleVideoSelection(video: VideoFile) {
+        val key = video.id.ifBlank { video.path }
+        selectedVideoIds =
+            if (selectedVideoIds.contains(key)) selectedVideoIds - key
+            else selectedVideoIds + key
+    }
 
     // #146: shared "back to root" — the back button and the breadcrumb's
     // Local segment both run this (clears the folder and its search state).
@@ -249,6 +280,13 @@ fun LocalScreen(
     // Intercept back button when viewing a folder to navigate back to folder list
     BackHandler(enabled = currentFolder != null) {
         goToRoot()
+    }
+
+    // #144: back exits multi-select first — exactly one step — and only
+    // the next back leaves the folder. Registered after the folder
+    // handler so it wins while both are enabled.
+    BackHandler(enabled = isSelectionMode) {
+        clearSelection()
     }
 
     fun openFolder(folder: MediaFolder) {
@@ -485,6 +523,164 @@ fun LocalScreen(
         else sortedFolderVideos.filter { it.title.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
     }
 
+    // #144: multi-select actions for the action bar. They resolve the
+    // current selection to videos: directly selected videos, or — for
+    // selected folders — the videos inside them, loaded on IO. There is
+    // NO delete action: it never existed in the tile menus.
+    fun selectedVideosInView(): List<VideoFile> {
+        return when {
+            currentFolder != null -> filteredFolderVideos.filter {
+                selectedVideoIds.contains(it.id.ifBlank { it.path })
+            }
+            appSettings.fileView -> filteredVideos.filter {
+                selectedVideoIds.contains(it.id.ifBlank { it.path })
+            }
+            else -> emptyList()
+        }
+    }
+
+    fun selectedFoldersInView(): List<MediaFolder> {
+        return if (currentFolder == null && !appSettings.fileView) {
+            filteredFolders.filter {
+                selectedFolderIds.contains(it.id.ifBlank { it.path })
+            }
+        } else {
+            emptyList()
+        }
+    }
+
+    fun playSelection() {
+        val videos = selectedVideosInView()
+        val folders = selectedFoldersInView()
+        if (videos.isNotEmpty()) {
+            playbackManager?.playVideoFiles(videos)
+            onOpenPlayer()
+            clearSelection()
+        } else if (folders.isNotEmpty()) {
+            scope.launch(Dispatchers.IO) {
+                val all = folders.flatMap { repository.getVideosInFolder(it.id) }
+                withContext(Dispatchers.Main) {
+                    if (all.isEmpty()) {
+                        snackbarHostState.showSnackbar(
+                            context.getString(
+                                R.string.snackbar_no_playable_videos,
+                                folders.first().name,
+                            )
+                        )
+                    } else {
+                        playbackManager?.playVideoFiles(all)
+                        onOpenPlayer()
+                    }
+                    clearSelection()
+                }
+            }
+        }
+    }
+
+    fun playSelectionFolder() {
+        val videos = selectedVideosInView()
+        val folders = selectedFoldersInView()
+        if (videos.isNotEmpty()) {
+            // Play the folder the first selected video lives in,
+            // starting at that video.
+            val first = videos.first()
+            scope.launch(Dispatchers.IO) {
+                val vids = if (first.bucketId.isNotBlank()) {
+                    repository.getVideosInFolder(first.bucketId)
+                } else {
+                    listOf(first)
+                }
+                val startIndex = vids.indexOfFirst { it.id == first.id }.coerceAtLeast(0)
+                withContext(Dispatchers.Main) {
+                    playbackManager?.playVideoFiles(vids, startIndex)
+                    onOpenPlayer()
+                    clearSelection()
+                }
+            }
+        } else if (folders.isNotEmpty()) {
+            // A selected folder IS its folder: same as Play.
+            playSelection()
+        }
+    }
+
+    fun addSelectionToPlaylist() {
+        val videos = selectedVideosInView()
+        if (videos.isNotEmpty()) {
+            videosForPlaylistAdd = videos
+            showAddToPlaylistDialog = true
+            return
+        }
+        val folders = selectedFoldersInView()
+        scope.launch(Dispatchers.IO) {
+            val all = folders.flatMap { repository.getVideosInFolder(it.id) }
+            withContext(Dispatchers.Main) {
+                if (all.isEmpty()) {
+                    snackbarHostState.showSnackbar(
+                        context.getString(
+                            R.string.snackbar_no_playable_videos,
+                            folders.firstOrNull()?.name ?: "",
+                        )
+                    )
+                } else {
+                    videosForPlaylistAdd = all
+                    showAddToPlaylistDialog = true
+                }
+            }
+        }
+    }
+
+    fun toggleSelectionFavourite() {
+        val direct = selectedVideosInView()
+        val folders = selectedFoldersInView()
+        val favUris = favourites.map { it.mediaUri }.toSet()
+        scope.launch(Dispatchers.IO) {
+            val resolved = if (direct.isNotEmpty()) {
+                direct
+            } else {
+                folders.flatMap { repository.getVideosInFolder(it.id) }
+            }
+            if (resolved.isEmpty()) {
+                withContext(Dispatchers.Main) {
+                    snackbarHostState.showSnackbar(
+                        context.getString(
+                            R.string.snackbar_no_playable_videos,
+                            folders.firstOrNull()?.name ?: "",
+                        )
+                    )
+                }
+                return@launch
+            }
+            // Toggle as a group: if every selected video is already a
+            // favourite, remove them all; otherwise add the missing ones.
+            val allFav = resolved.all { favUris.contains(it.path) }
+            if (allFav) {
+                resolved.forEach { persistenceRepository.removeFavourite(it.path) }
+            } else {
+                resolved.filter { !favUris.contains(it.path) }.forEach { video ->
+                    persistenceRepository.addFavourite(
+                        FavouriteItem(
+                            mediaId = video.id,
+                            title = video.title,
+                            subtitle = video.folderName,
+                            mediaUri = video.path,
+                            isVideo = true,
+                            durationMs = video.durationMs,
+                        )
+                    )
+                }
+            }
+            withContext(Dispatchers.Main) {
+                clearSelection()
+                snackbarHostState.showSnackbar(
+                    context.getString(
+                        if (allFav) R.string.snackbar_removed_favourites
+                        else R.string.snackbar_added_to_favourites
+                    )
+                )
+            }
+        }
+    }
+
     var isRefreshing by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading, isFolderLoading) {
         if (!isLoading && !isFolderLoading) isRefreshing = false
@@ -495,7 +691,33 @@ fun LocalScreen(
         containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (currentFolder != null) {
+            if (isSelectionMode) {
+                // #144: selection top bar — count + close. Back exits too.
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = { clearSelection() }) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.cd_exit_selection),
+                                tint = MpxTheme.colors.textPrimary,
+                            )
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.multiselect_selected_count, selectionCount),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                            ),
+                            color = MpxTheme.colors.textPrimary,
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MpxTheme.colors.black,
+                    ),
+                )
+            } else if (currentFolder != null) {
                 // Folder View Top Bar
                 val folder = currentFolder!!
                 TopAppBar(
@@ -732,6 +954,9 @@ fun LocalScreen(
             }
         },
         floatingActionButton = {
+            // #144: the quick-play FAB hides while selecting, so a tap
+            // cannot play something outside the selection.
+            if (!isSelectionMode) {
             FloatingActionButton(
                 onClick = {
                     val played = if (currentFolder != null) {
@@ -773,9 +998,48 @@ fun LocalScreen(
                     modifier = Modifier.size(28.dp),
                 )
             }
+            }
         },
         bottomBar = {
-            if (currentFolder == null) {
+            if (isSelectionMode) {
+                // #144: multi-select action bar — exactly the old
+                // tile-menu actions: Play, Play folder, Add to playlist,
+                // Favourite. No delete: it never existed in those menus.
+                Column {
+                    HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MpxTheme.colors.black)
+                            .padding(vertical = 4.dp),
+                    ) {
+                        MultiSelectAction(
+                            icon = Icons.Filled.PlayArrow,
+                            label = stringResource(R.string.video_item_play),
+                            onClick = { playSelection() },
+                            modifier = Modifier.weight(1f),
+                        )
+                        MultiSelectAction(
+                            icon = Icons.Filled.Folder,
+                            label = stringResource(R.string.multiselect_play_folder),
+                            onClick = { playSelectionFolder() },
+                            modifier = Modifier.weight(1f),
+                        )
+                        MultiSelectAction(
+                            icon = Icons.AutoMirrored.Filled.QueueMusic,
+                            label = stringResource(R.string.music_menu_add_to_playlist),
+                            onClick = { addSelectionToPlaylist() },
+                            modifier = Modifier.weight(1f),
+                        )
+                        MultiSelectAction(
+                            icon = Icons.Filled.Favorite,
+                            label = stringResource(R.string.music_menu_toggle_favourite),
+                            onClick = { toggleSelectionFavourite() },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            } else if (currentFolder == null) {
                 Column {
                     HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
                     Row(
@@ -878,9 +1142,19 @@ fun LocalScreen(
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
                                         showLocation = appSettings.showFieldLocation,
+                                        // #144: tap toggles while selecting,
+                                        // long-press enters selection mode.
+                                        isSelected = selectedVideoIds.contains(
+                                            video.id.ifBlank { video.path }
+                                        ),
+                                        onLongClick = { toggleVideoSelection(video) },
                                         onClick = {
-                                            playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
-                                            onOpenPlayer()
+                                            if (isSelectionMode) {
+                                                toggleVideoSelection(video)
+                                            } else {
+                                                playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
+                                                onOpenPlayer()
+                                            }
                                         },
                                         onMenuClick = {
                                             videoForMenu = video
@@ -925,9 +1199,19 @@ fun LocalScreen(
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
                                         showLocation = appSettings.showFieldLocation,
+                                        // #144: tap toggles while selecting,
+                                        // long-press enters selection mode.
+                                        isSelected = selectedVideoIds.contains(
+                                            video.id.ifBlank { video.path }
+                                        ),
+                                        onLongClick = { toggleVideoSelection(video) },
                                         onClick = {
-                                            playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
-                                            onOpenPlayer()
+                                            if (isSelectionMode) {
+                                                toggleVideoSelection(video)
+                                            } else {
+                                                playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
+                                                onOpenPlayer()
+                                            }
                                         },
                                         onMenuClick = {
                                             videoForMenu = video
@@ -1040,10 +1324,19 @@ fun LocalScreen(
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
                                         showLocation = appSettings.showFieldLocation,
-                                        onClick = { playVideoWithFolder(video) },
+                                        // #144: tap toggles while selecting,
+                                        // long-press enters selection mode.
+                                        isSelected = selectedVideoIds.contains(
+                                            video.id.ifBlank { video.path }
+                                        ),
+                                        onLongClick = { toggleVideoSelection(video) },
+                                        onClick = {
+                                            if (isSelectionMode) toggleVideoSelection(video)
+                                            else playVideoWithFolder(video)
+                                        },
                                         onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
                                         onAddToPlaylist = {
-                                            videoForPlaylistAdd = video
+                                            videosForPlaylistAdd = listOf(video)
                                             showAddToPlaylistDialog = true
                                         },
                                         onToggleFavourite = {
@@ -1112,10 +1405,19 @@ fun LocalScreen(
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
                                         showLocation = appSettings.showFieldLocation,
-                                        onClick = { playVideoWithFolder(video) },
+                                        // #144: tap toggles while selecting,
+                                        // long-press enters selection mode.
+                                        isSelected = selectedVideoIds.contains(
+                                            video.id.ifBlank { video.path }
+                                        ),
+                                        onLongClick = { toggleVideoSelection(video) },
+                                        onClick = {
+                                            if (isSelectionMode) toggleVideoSelection(video)
+                                            else playVideoWithFolder(video)
+                                        },
                                         onPlayFolder = { playFolderById(video.bucketId, video.folderName) },
                                         onAddToPlaylist = {
-                                            videoForPlaylistAdd = video
+                                            videosForPlaylistAdd = listOf(video)
                                             showAddToPlaylistDialog = true
                                         },
                                         onToggleFavourite = {
@@ -1185,7 +1487,16 @@ fun LocalScreen(
                                         showThumbnails = appSettings.showThumbnails,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
-                                        onClick = { openFolder(folder) },
+                                        // #144: tap toggles while selecting,
+                                        // long-press enters selection mode.
+                                        isSelected = selectedFolderIds.contains(
+                                            folder.id.ifBlank { folder.path }
+                                        ),
+                                        onLongClick = { toggleFolderSelection(folder) },
+                                        onClick = {
+                                            if (isSelectionMode) toggleFolderSelection(folder)
+                                            else openFolder(folder)
+                                        },
                                         onMenuClick = {
                                             folderForMenu = folder
                                         },
@@ -1227,7 +1538,16 @@ fun LocalScreen(
                                         showThumbnails = appSettings.showThumbnails,
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
-                                        onClick = { openFolder(folder) },
+                                        // #144: tap toggles while selecting,
+                                        // long-press enters selection mode.
+                                        isSelected = selectedFolderIds.contains(
+                                            folder.id.ifBlank { folder.path }
+                                        ),
+                                        onLongClick = { toggleFolderSelection(folder) },
+                                        onClick = {
+                                            if (isSelectionMode) toggleFolderSelection(folder)
+                                            else openFolder(folder)
+                                        },
                                     )
                                 }
                             }
@@ -1669,7 +1989,7 @@ fun LocalScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                videoForPlaylistAdd = vid
+                                videosForPlaylistAdd = listOf(vid)
                                 videoForMenu = null
                                 showAddToPlaylistDialog = true
                             }
@@ -1724,32 +2044,38 @@ fun LocalScreen(
         )
     }
 
-    // Add Video to Playlist Dialog
-    if (showAddToPlaylistDialog && videoForPlaylistAdd != null) {
-        val vid = videoForPlaylistAdd!!
+    // Add Videos to Playlist Dialog — one video from a tile menu, or the
+    // whole #144 multi-select action-bar selection. The same dialog
+    // handles both; a multi-add shows the item count as its title.
+    if (showAddToPlaylistDialog && videosForPlaylistAdd.isNotEmpty()) {
+        val vids = videosForPlaylistAdd
         val videoPlaylists = customPlaylists.filter { it.isVideoPlaylist }
         AddToPlaylistDialog(
             playlists = videoPlaylists,
-            mediaTitle = vid.title,
+            mediaTitle = if (vids.size == 1) vids.first().title
+            else stringResource(R.string.playlist_items_count, vids.size),
             onDismiss = {
                 showAddToPlaylistDialog = false
-                videoForPlaylistAdd = null
+                videosForPlaylistAdd = emptyList()
             },
             onSelectPlaylist = { pl ->
                 scope.launch {
-                    persistenceRepository.addItemToPlaylist(
-                        PlaylistItem(
-                            playlistId = pl.id,
-                            mediaUri = vid.path,
-                            mediaId = vid.id,
-                            title = vid.title,
-                            subtitle = currentFolder?.name ?: "",
-                            isVideo = true,
-                            durationMs = vid.durationMs,
+                    vids.forEach { vid ->
+                        persistenceRepository.addItemToPlaylist(
+                            PlaylistItem(
+                                playlistId = pl.id,
+                                mediaUri = vid.path,
+                                mediaId = vid.id,
+                                title = vid.title,
+                                subtitle = vid.folderName,
+                                isVideo = true,
+                                durationMs = vid.durationMs,
+                            )
                         )
-                    )
+                    }
                     showAddToPlaylistDialog = false
-                    videoForPlaylistAdd = null
+                    videosForPlaylistAdd = emptyList()
+                    clearSelection()
                     snackbarHostState.showSnackbar(
                         context.getString(R.string.music_added_to_playlist_msg, pl.name)
                     )
@@ -1774,6 +2100,41 @@ fun LocalScreen(
                     )
                 }
             },
+        )
+    }
+}
+
+/**
+ * #144: one action in the multi-select action bar — icon above a short
+ * label, identity-blue icon, 48dp+ tap target, no new colors.
+ */
+@Composable
+private fun MultiSelectAction(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MpxTheme.colors.primary,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MpxTheme.colors.textPrimary,
+            fontSize = 11.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
