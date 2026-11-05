@@ -194,8 +194,12 @@ fun LocalFolderTree(
     onClick: (MediaFolder) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val roots = remember(folders) {
-        buildFolderTree(folders, homeLabel = stringResource(R.string.nav_local))
+    // Issue #173: the primary storage root is labelled Home (localized);
+    // hoisted out of the remember block — stringResource is a @Composable
+    // call and cannot run inside remember's calculation lambda.
+    val homeLabel = stringResource(R.string.nav_local)
+    val roots = remember(folders, homeLabel) {
+        buildFolderTree(folders, homeLabel = homeLabel)
     }
     val visibleRows = remember(roots, expandedKeys) {
         flattenVisibleTree(roots, expandedKeys)
