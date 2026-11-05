@@ -498,7 +498,7 @@ fun PlayerScreen(
         }
     }
     val enterPip = {
-        val entered = PipUtils.enterPip(context)
+        val entered = PipUtils.enterPip(activity)
         if (!entered) {
             val msg = if (!PipUtils.isPipSupported(context)) {
                 context.getString(R.string.player_pip_unsupported)

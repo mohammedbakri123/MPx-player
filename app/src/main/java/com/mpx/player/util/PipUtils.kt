@@ -5,7 +5,6 @@ import android.app.PendingIntent
 import android.app.PictureInPictureParams
 import android.app.RemoteAction
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Rect
@@ -176,37 +175,30 @@ object PipUtils {
     }
 
     /**
-     * Unwraps [ContextWrapper] layers (dialog windows, themed wrappers) to
-     * find the host [Activity]. This matters: the PiP button lives inside
-     * the Player Menu dialog, whose LocalContext is a dialog wrapper, not
-     * the activity — a plain `as? Activity` cast fails there and PiP entry
-     * silently returns false (issue #98).
-     */
-    private fun Context.findActivity(): Activity? {
-        var ctx: Context = this
-        while (ctx is ContextWrapper) {
-            if (ctx is Activity) return ctx
-            ctx = ctx.baseContext
-        }
-        return null
-    }
-
-    /**
      * Attempts to enter Picture-in-Picture mode on supported Android 8.0+ devices.
      * Returns true if PiP mode was successfully entered, or false otherwise.
+     *
+     * Takes the [Activity] itself, not a [Context]: PipUtils cannot resolve
+     * an Activity from a Context here — MainActivity provides a detached
+     * localized configuration context as LocalContext, so the old
+     * context.findActivity() walk returned null and PiP entry silently
+     * returned false (issue #198, same pattern as #179). Callers resolve
+     * the Activity the way #179 does (LocalView.current.context as?
+     * Activity) and pass it in; null means genuinely no Activity and
+     * entry fails the same way it did before.
      */
     fun enterPip(
-        context: Context,
+        activity: Activity?,
         settings: AppSettings? = null,
         isPlaying: Boolean = true,
         videoWidth: Int = 0,
         videoHeight: Int = 0,
     ): Boolean {
+        if (activity == null) return false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val activity = context.findActivity() ?: return false
             if (activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
                 return try {
-                    val realSettings = settings ?: SharedPrefsAppSettingsRepository(context).load()
+                    val realSettings = settings ?: SharedPrefsAppSettingsRepository(activity).load()
                     val params = buildPipParams(activity, realSettings, isPlaying, videoWidth, videoHeight)
                     if (params != null) {
                         activity.enterPictureInPictureMode(params)
