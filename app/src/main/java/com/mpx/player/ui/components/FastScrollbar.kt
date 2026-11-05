@@ -114,15 +114,26 @@ fun FastScrollbar(
 
         val availableDragSpace = (trackHeightPx - thumbHeightPx).coerceAtLeast(1f)
 
-        val firstVisibleItemIndex by remember {
-            derivedStateOf { listState.firstVisibleItemIndex }
+        // Issue #182: the thumb jumped in steps because the fraction used
+        // only the discrete firstVisibleItemIndex. Include the pixel
+        // offset inside the first visible item so the thumb glides
+        // continuously with the scroll instead of jumping item by item.
+        val scrollFraction by remember {
+            derivedStateOf {
+                val firstItemSize = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
+                val itemProgress = if (firstItemSize > 0) {
+                    listState.firstVisibleItemScrollOffset.toFloat() / firstItemSize.toFloat()
+                } else {
+                    0f
+                }
+                ((listState.firstVisibleItemIndex.toFloat() + itemProgress) / (itemCount - 1).coerceAtLeast(1)).coerceIn(0f, 1f)
+            }
         }
 
         val thumbOffsetPx = if (isDragging) {
             (dragY - thumbHeightPx / 2f).coerceIn(0f, availableDragSpace)
         } else {
-            val fraction = (firstVisibleItemIndex.toFloat() / (itemCount - 1).coerceAtLeast(1)).coerceIn(0f, 1f)
-            fraction * availableDragSpace
+            scrollFraction * availableDragSpace
         }
 
         // Section bubble preview text
@@ -292,15 +303,25 @@ fun GridFastScrollbar(
 
         val availableDragSpace = (trackHeightPx - thumbHeightPx).coerceAtLeast(1f)
 
-        val firstVisibleItemIndex by remember {
-            derivedStateOf { gridState.firstVisibleItemIndex }
+        // Issue #182: same continuous-fraction fix as the list variant —
+        // grid items report size as IntSize, so the vertical progress
+        // uses the first item's height.
+        val scrollFraction by remember {
+            derivedStateOf {
+                val firstItemHeight = gridState.layoutInfo.visibleItemsInfo.firstOrNull()?.size?.height ?: 0
+                val itemProgress = if (firstItemHeight > 0) {
+                    gridState.firstVisibleItemScrollOffset.toFloat() / firstItemHeight.toFloat()
+                } else {
+                    0f
+                }
+                ((gridState.firstVisibleItemIndex.toFloat() + itemProgress) / (itemCount - 1).coerceAtLeast(1)).coerceIn(0f, 1f)
+            }
         }
 
         val thumbOffsetPx = if (isDragging) {
             (dragY - thumbHeightPx / 2f).coerceIn(0f, availableDragSpace)
         } else {
-            val fraction = (firstVisibleItemIndex.toFloat() / (itemCount - 1).coerceAtLeast(1)).coerceIn(0f, 1f)
-            fraction * availableDragSpace
+            scrollFraction * availableDragSpace
         }
 
         val sectionText = remember(currentTargetIndex, isDragging) {
