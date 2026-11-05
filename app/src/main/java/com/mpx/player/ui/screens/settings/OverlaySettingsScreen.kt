@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,8 +61,6 @@ import com.mpx.player.util.PipUtils
 import com.mpx.player.ui.components.MpxSecondaryButton
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
-import android.content.Context
-import android.content.ContextWrapper
 
 /**
  * Real, complete settings screen for Picture-in-Picture (PiP) and floating pop-up play.
@@ -76,15 +75,18 @@ fun OverlaySettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    // Issue #198: do NOT resolve the Activity from LocalContext (see #179)
+    // — it is a detached localized configuration context, so
+    // context.findActivity() returns null and PiP entry silently fails.
+    // The host view's context IS the real Activity.
+    val activity = LocalView.current.context as? Activity
     var settings by remember { mutableStateOf(settingsRepository.load()) }
     val isSupported = remember(context) { PipUtils.isPipSupported(context) }
 
     fun update(next: AppSettings) {
         settings = next
         settingsRepository.save(next)
-        context.findActivity()?.let { activity ->
-            PipUtils.updatePipParams(activity, next)
-        }
+        activity?.let { PipUtils.updatePipParams(it, next) }
     }
 
     Scaffold(
@@ -206,7 +208,7 @@ fun OverlaySettingsScreen(
                     onClick = {
                         val playbackManager = PlaybackManager.getInstance(context)
                         val isPlaying = playbackManager.playbackState.value.isPlaying
-                        val entered = PipUtils.enterPip(context, settings, isPlaying)
+                        val entered = PipUtils.enterPip(activity, settings, isPlaying)
                         if (!entered) {
                             val msg = if (!isSupported) {
                                 context.getString(R.string.pip_not_supported)
@@ -594,11 +596,3 @@ private fun PlatformLimitItem(
     }
 }
 
-private fun Context.findActivity(): Activity? {
-    var ctx = this
-    while (ctx is ContextWrapper) {
-        if (ctx is Activity) return ctx
-        ctx = ctx.baseContext
-    }
-    return null
-}

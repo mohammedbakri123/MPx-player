@@ -1,6 +1,7 @@
 package com.mpx.player.ui.screens.me
 import com.mpx.player.ui.theme.MpxTheme
 
+import android.app.Activity
 import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
@@ -88,6 +89,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -132,6 +134,12 @@ fun MeScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    // Issue #198: do NOT resolve the Activity from LocalContext (see #179)
+    // — it is a detached localized configuration context, so
+    // context.findActivity() returns null and PiP entry silently fails.
+    // The host view's context IS the real Activity. Resolved here, in the
+    // screen body, so the dialog's onTestPip lambda captures the real one.
+    val activity = LocalView.current.context as? Activity
     val realPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
     val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     val persistenceRepository = realPlaybackManager.persistenceRepository
@@ -670,7 +678,7 @@ fun MeScreen(
                 showPopupPlayDialog = false
             },
             onTestPip = {
-                val entered = PipUtils.enterPip(context)
+                val entered = PipUtils.enterPip(activity)
                 if (!entered) {
                     val msg = if (!PipUtils.isPipSupported(context)) {
                         context.getString(R.string.pip_not_supported)
