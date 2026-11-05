@@ -2,20 +2,10 @@ package com.mpx.player.ui.screens.local
 import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
@@ -36,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,6 +48,11 @@ private fun formatVideoDate(epochSeconds: Long): String {
     return sdf.format(Date(millis))
 }
 
+/**
+ * #144: isSelected tints the row and shows a check on the thumbnail;
+ * onLongClick enters/toggles multi-select. While selected the 3-dot menu
+ * is hidden — the multi-select action bar owns the actions then.
+ */
 @Composable
 fun VideoItemRow(
     video: VideoFile,
@@ -66,6 +62,8 @@ fun VideoItemRow(
     showDuration: Boolean = true,
     showLocation: Boolean = true,
     showThumbnails: Boolean = true,
+    isSelected: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
     onPlayFolder: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
@@ -78,7 +76,11 @@ fun VideoItemRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .background(
+                if (isSelected) MpxTheme.colors.primary.copy(alpha = 0.12f)
+                else Color.Transparent
+            )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -96,6 +98,24 @@ fun VideoItemRow(
                 iconSize = 24.dp,
                 showThumbnails = showThumbnails,
             )
+
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp)
+                        .size(20.dp)
+                        .background(MpxTheme.colors.primary, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+            }
 
             if (showDuration && video.formattedDuration.isNotBlank()) {
                 Box(
@@ -196,51 +216,55 @@ fun VideoItemRow(
             }
         }
 
-        Box {
-            IconButton(
-                onClick = { if (onMenuClick != null) onMenuClick() else menuExpanded = true },
-                modifier = Modifier.size(48.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = stringResource(R.string.video_item_options_cd, video.title),
-                    tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                    modifier = Modifier.size(20.dp),
-                )
-            }
+        // #144: the 3-dot menu is hidden on a selected tile — the
+        // multi-select action bar owns the actions while selecting.
+        if (!isSelected) {
+            Box {
+                IconButton(
+                    onClick = { if (onMenuClick != null) onMenuClick() else menuExpanded = true },
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.video_item_options_cd, video.title),
+                        tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
 
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false },
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.video_menu_play)) },
-                    onClick = {
-                        menuExpanded = false
-                        onClick()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.video_menu_play_folder, video.folderName)) },
-                    onClick = {
-                        menuExpanded = false
-                        onPlayFolder()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.music_menu_add_to_playlist)) },
-                    onClick = {
-                        menuExpanded = false
-                        onAddToPlaylist()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.music_menu_toggle_favourite)) },
-                    onClick = {
-                        menuExpanded = false
-                        onToggleFavourite()
-                    },
-                )
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.video_menu_play)) },
+                        onClick = {
+                            menuExpanded = false
+                            onClick()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.video_menu_play_folder, video.folderName)) },
+                        onClick = {
+                            menuExpanded = false
+                            onPlayFolder()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.music_menu_add_to_playlist)) },
+                        onClick = {
+                            menuExpanded = false
+                            onAddToPlaylist()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.music_menu_toggle_favourite)) },
+                        onClick = {
+                            menuExpanded = false
+                            onToggleFavourite()
+                        },
+                    )
+                }
             }
         }
     }
@@ -255,6 +279,8 @@ fun VideoItemGridCard(
     showDuration: Boolean = true,
     showLocation: Boolean = true,
     showThumbnails: Boolean = true,
+    isSelected: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
     onPlayFolder: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
@@ -265,9 +291,13 @@ fun VideoItemGridCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = MpxShapes.large,
-        colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceVariant),
+        // #144: a selected card tints with the identity-blue accent.
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MpxTheme.colors.primary.copy(alpha = 0.12f)
+            else MpxTheme.colors.surfaceVariant
+        ),
     ) {
         Column(
             modifier = Modifier.padding(10.dp),
@@ -300,6 +330,25 @@ fun VideoItemGridCard(
                             color = MpxTheme.colors.textPrimary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+
+                if (isSelected) {
+                    // #144: check badge (TopEnd — the SD badge owns TopStart).
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .size(22.dp)
+                            .background(MpxTheme.colors.primary, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(13.dp),
                         )
                     }
                 }
@@ -377,23 +426,27 @@ fun VideoItemGridCard(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                if (onMenuClick != null) {
-                    IconButton(onClick = onMenuClick, modifier = Modifier.size(40.dp)) {
+                // #144: menu + favourite hide on a selected card — the
+                // multi-select action bar owns the actions while selecting.
+                if (!isSelected) {
+                    if (onMenuClick != null) {
+                        IconButton(onClick = onMenuClick, modifier = Modifier.size(40.dp)) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = stringResource(R.string.cd_more_options),
+                                tint = MpxTheme.colors.textSecondary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                    IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
                         Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = stringResource(R.string.cd_more_options),
-                            tint = MpxTheme.colors.textSecondary,
+                            imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = stringResource(R.string.music_menu_toggle_favourite),
+                            tint = if (isFavourite) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
                             modifier = Modifier.size(20.dp),
                         )
                     }
-                }
-                IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
-                    Icon(
-                        imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = stringResource(R.string.music_menu_toggle_favourite),
-                        tint = if (isFavourite) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
-                        modifier = Modifier.size(20.dp),
-                    )
                 }
             }
         }

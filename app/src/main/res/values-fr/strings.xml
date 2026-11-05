@@ -672,6 +672,9 @@
     <string name="local_snackbar_folder_view">Passage à la vue dossiers</string>
     <string name="video_menu_play">Lire la vidéo</string>
     <string name="video_menu_play_folder">Lire le dossier (%1$s)</string>
+    <string name="multiselect_selected_count">%1$d sélectionnés</string>
+    <string name="cd_exit_selection">Quitter la sélection</string>
+    <string name="multiselect_play_folder">Lire le dossier</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
     <string name="player_auto_rotation">Rotation automatique de l’écran</string>

@@ -672,6 +672,9 @@
     <string name="local_snackbar_folder_view">Переключено на вид папок</string>
     <string name="video_menu_play">Воспроизвести видео</string>
     <string name="video_menu_play_folder">Воспроизвести папку (%1$s)</string>
+    <string name="multiselect_selected_count">Выбрано: %1$d</string>
+    <string name="cd_exit_selection">Отменить выбор</string>
+    <string name="multiselect_play_folder">Воспроизвести папку</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
     <string name="player_auto_rotation">Автоповорот экрана</string>

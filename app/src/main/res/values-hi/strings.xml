@@ -672,6 +672,9 @@
     <string name="local_snackbar_folder_view">फ़ोल्डर दृश्य पर स्विच हुआ</string>
     <string name="video_menu_play">वीडियो चलाएँ</string>
     <string name="video_menu_play_folder">फ़ोल्डर चलाएँ (%1$s)</string>
+    <string name="multiselect_selected_count">%1$d चयनित</string>
+    <string name="cd_exit_selection">चयन समाप्त करें</string>
+    <string name="multiselect_play_folder">फ़ोल्डर चलाएँ</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
     <string name="player_auto_rotation">ऑटो स्क्रीन रोटेशन</string>

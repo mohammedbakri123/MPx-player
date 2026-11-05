@@ -672,6 +672,9 @@
     <string name="local_snackbar_folder_view">已切换到文件夹视图</string>
     <string name="video_menu_play">播放视频</string>
     <string name="video_menu_play_folder">播放文件夹（%1$s）</string>
+    <string name="multiselect_selected_count">已选 %1$d 项</string>
+    <string name="cd_exit_selection">退出选择</string>
+    <string name="multiselect_play_folder">播放文件夹</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
     <string name="player_auto_rotation">自动屏幕旋转</string>

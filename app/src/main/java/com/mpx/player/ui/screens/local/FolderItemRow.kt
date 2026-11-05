@@ -2,20 +2,10 @@ package com.mpx.player.ui.screens.local
 import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,12 +38,19 @@ private fun formatFolderDate(epochMillis: Long): String {
     return sdf.format(Date(millis))
 }
 
+/**
+ * #144: isSelected tints the row and shows a check on the thumbnail;
+ * onLongClick enters/toggles multi-select. While selected the 3-dot menu
+ * is hidden — the multi-select action bar owns the actions then.
+ */
 @Composable
 fun FolderItemRow(
     folder: MediaFolder,
     showSize: Boolean = true,
     showDate: Boolean = false,
     showThumbnails: Boolean = true,
+    isSelected: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -61,7 +58,11 @@ fun FolderItemRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .background(
+                if (isSelected) MpxTheme.colors.primary.copy(alpha = 0.12f)
+                else Color.Transparent
+            )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -84,6 +85,24 @@ fun FolderItemRow(
                     iconSize = 28.dp,
                     showThumbnails = showThumbnails,
                 )
+            }
+
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(2.dp)
+                        .size(20.dp)
+                        .background(MpxTheme.colors.primary, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
             }
         }
 
@@ -173,16 +192,20 @@ fun FolderItemRow(
             }
         }
 
-        IconButton(
-            onClick = onMenuClick,
-            modifier = Modifier.size(48.dp), // 48dp Android touch target standard
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = stringResource(R.string.folder_item_options_cd, folder.name),
-                tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                modifier = Modifier.size(20.dp),
-            )
+        // #144: the 3-dot menu is hidden on a selected tile — the
+        // multi-select action bar owns the actions while selecting.
+        if (!isSelected) {
+            IconButton(
+                onClick = onMenuClick,
+                modifier = Modifier.size(48.dp), // 48dp Android touch target standard
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = stringResource(R.string.folder_item_options_cd, folder.name),
+                    tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
     }
 }
@@ -193,15 +216,21 @@ fun FolderItemGridCard(
     showSize: Boolean = true,
     showDate: Boolean = false,
     showThumbnails: Boolean = true,
+    isSelected: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = MpxShapes.large,
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        // #144: a selected card tints with the identity-blue accent.
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MpxTheme.colors.primary.copy(alpha = 0.12f)
+            else Color.Transparent
+        ),
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -220,6 +249,24 @@ fun FolderItemGridCard(
                     iconSize = 40.dp,
                     showThumbnails = showThumbnails,
                 )
+                if (isSelected) {
+                    // #144: check badge (TopEnd — the SD badge owns TopStart).
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .size(22.dp)
+                            .background(MpxTheme.colors.primary, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(13.dp),
+                        )
+                    }
+                }
                 if (folder.isStorageRemovable) {
                     Box(
                         modifier = Modifier
