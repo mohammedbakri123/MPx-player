@@ -1401,9 +1401,8 @@ private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = w
         "0 B (no active WAL log)"
     }
 
-    // Counts are read in try/catch (non-composable); the localized
-    // format call must stay OUTSIDE it — composable invocations are
-    // not allowed inside try/catch.
+    // Built inside loadDevDiagnostics (a plain function, not a
+    // @Composable): context.getString, not stringResource.
     val recordCounts = try {
         val db = MpxDatabase.getInstance(context)
         listOf(
@@ -1415,7 +1414,7 @@ private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = w
     } catch (_: Exception) {
         listOf(0, 0, 0, 0)
     }
-    val recordStats = stringResource(R.string.dev_db_records_summary, recordCounts[0], recordCounts[1], recordCounts[2], recordCounts[3])
+    val recordStats = context.getString(R.string.dev_db_records_summary, recordCounts[0], recordCounts[1], recordCounts[2], recordCounts[3])
 
     val hasVideoPerm = MediaPermissions.hasVideoPermission(context)
     val hasAudioPerm = MediaPermissions.hasAudioPermission(context)
