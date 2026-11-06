@@ -1505,139 +1505,146 @@ fun PlayerScreen(
             }
         }
 
-        // In-memory Resume Notice Banner (theme surface, no heavy box)
-        if (!isInPipMode) state.resumedFromMs?.let { resumeMs ->
-            Surface(
+        // Banner stack — resume / decoder-fallback / user notification.
+        // One flowing Column anchored below the top bar, so a banner
+        // whose text wraps to 2-3 lines can never overlap the banner
+        // below it (#263). The old hardcoded top offsets (72/124/160dp)
+        // assumed ~52dp slots; the fallback banner is at least 48dp
+        // tall and taller when its note wraps, so the notification
+        // banner overlapped it whenever both were visible — and whenever
+        // all three were, even unwrapped.
+        if (!isInPipMode && (state.resumedFromMs != null || state.decoderFallbackNote != null || state.userNotification != null)) {
+            Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 72.dp),
-                color = MpxTheme.colors.surfaceVariant,
-                shape = MpxShapes.extraLarge,
+                    .padding(top = 72.dp, start = 16.dp, end = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            // In-memory Resume Notice Banner (theme surface, no heavy box)
+            state.resumedFromMs?.let { resumeMs ->
+                Surface(
+                    color = MpxTheme.colors.surfaceVariant,
+                    shape = MpxShapes.extraLarge,
                 ) {
-                    Text(
-                        text = stringResource(R.string.player_resumed_from, formatTimeMs(resumeMs)),
-                        color = MpxTheme.colors.textPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.player_start_over),
-                        color = MpxTheme.colors.primary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable {
-                            playbackManager.seekTo(0L)
-                            playbackManager.clearResumedNotification()
-                        },
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { playbackManager.clearResumedNotification() },
-                        modifier = Modifier.size(32.dp),
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = stringResource(R.string.player_cd_dismiss),
-                            tint = MpxTheme.colors.textSecondary,
-                            modifier = Modifier.size(16.dp),
+                        Text(
+                            text = stringResource(R.string.player_resumed_from, formatTimeMs(resumeMs)),
+                            color = MpxTheme.colors.textPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
                         )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.player_start_over),
+                            color = MpxTheme.colors.primary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable {
+                                playbackManager.seekTo(0L)
+                                playbackManager.clearResumedNotification()
+                            },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { playbackManager.clearResumedNotification() },
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.player_cd_dismiss),
+                                tint = MpxTheme.colors.textSecondary,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        // Platform Decoder Fallback Notice Banner (theme surface, no orange box)
-        if (!isInPipMode) state.decoderFallbackNote?.let { fallbackMsg ->
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = if (state.resumedFromMs != null) 124.dp else 72.dp, start = 16.dp, end = 16.dp),
-                color = MpxTheme.colors.surfaceVariant,
-                shape = MpxShapes.medium,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            // Platform Decoder Fallback Notice Banner (theme surface, no orange box)
+            state.decoderFallbackNote?.let { fallbackMsg ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MpxTheme.colors.surfaceVariant,
+                    shape = MpxShapes.medium,
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Info,
-                        contentDescription = null,
-                        tint = MpxTheme.colors.textSecondary,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = fallbackMsg,
-                        color = MpxTheme.colors.textPrimary,
-                        fontSize = 12.sp,
-                        lineHeight = 16.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { playbackManager.clearDecoderFallbackNote() },
-                        modifier = Modifier.size(32.dp),
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = stringResource(R.string.player_cd_dismiss),
+                            imageVector = Icons.Filled.Info,
+                            contentDescription = null,
                             tint = MpxTheme.colors.textSecondary,
                             modifier = Modifier.size(18.dp),
                         )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = fallbackMsg,
+                            color = MpxTheme.colors.textPrimary,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { playbackManager.clearDecoderFallbackNote() },
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.player_cd_dismiss),
+                                tint = MpxTheme.colors.textSecondary,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        // Honest User Notification Banner (theme surface, compact)
-        if (!isInPipMode) state.userNotification?.let { userMsg ->
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(
-                        top = if (state.decoderFallbackNote != null) 160.dp else if (state.resumedFromMs != null) 124.dp else 72.dp,
-                        start = 16.dp,
-                        end = 16.dp,
-                    ),
-                color = MpxTheme.colors.surfaceVariant,
-                shape = MpxShapes.medium,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            // Honest User Notification Banner (theme surface, compact)
+            state.userNotification?.let { userMsg ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MpxTheme.colors.surfaceVariant,
+                    shape = MpxShapes.medium,
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Info,
-                        contentDescription = null,
-                        tint = MpxTheme.colors.textSecondary,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = userMsg,
-                        color = MpxTheme.colors.textPrimary,
-                        fontSize = 12.sp,
-                        lineHeight = 16.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { playbackManager.clearUserNotification() },
-                        modifier = Modifier.size(32.dp),
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = stringResource(R.string.player_cd_dismiss),
+                            imageVector = Icons.Filled.Info,
+                            contentDescription = null,
                             tint = MpxTheme.colors.textSecondary,
                             modifier = Modifier.size(18.dp),
                         )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = userMsg,
+                            color = MpxTheme.colors.textPrimary,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { playbackManager.clearUserNotification() },
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.player_cd_dismiss),
+                                tint = MpxTheme.colors.textSecondary,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
                 }
+            }
             }
         }
 
@@ -1693,7 +1700,7 @@ fun PlayerScreen(
                         .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 24.dp),
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         IconButton(onClick = onClose) {
