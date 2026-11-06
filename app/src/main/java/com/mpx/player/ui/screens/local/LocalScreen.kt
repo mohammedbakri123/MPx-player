@@ -1274,6 +1274,9 @@ fun LocalScreen(
                     isSelectionMode = isSelectionMode,
                     onToggleFolderSelection = { toggleFolderSelection(it) },
                     onToggleVideoSelection = { toggleVideoSelection(it) },
+                    // Issue #321: search-result list rows get the heart too.
+                    favourites = favourites,
+                    onToggleVideoFavourite = { toggleVideoFavourite(it) },
                     onFolderClick = { folder ->
                         showSearchPage = false
                         openFolder(folder)
@@ -1353,6 +1356,11 @@ fun LocalScreen(
                                     VideoItemRow(
                                         video = video,
                                         showThumbnails = appSettings.showThumbnails,
+                                        // Issue #321: list rows get the
+                                        // favourite heart the grid card
+                                        // already had (#235).
+                                        isFavourite = favourites.any { it.mediaUri == video.path },
+                                        onToggleFavourite = { toggleVideoFavourite(video) },
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
@@ -1533,6 +1541,11 @@ fun LocalScreen(
                                     VideoItemRow(
                                         video = video,
                                         showThumbnails = appSettings.showThumbnails,
+                                        // Issue #321: list rows get the
+                                        // favourite heart the grid card
+                                        // already had (#235).
+                                        isFavourite = favourites.any { it.mediaUri == video.path },
+                                        onToggleFavourite = { toggleVideoFavourite(video) },
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,

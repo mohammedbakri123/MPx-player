@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -55,6 +57,7 @@ import com.mpx.player.ui.theme.MpxTheme
 @Composable
 fun AudioTrackRow(
     track: AudioTrack,
+    isFavourite: Boolean = false,
     showDuration: Boolean = true,
     showThumbnails: Boolean = true,
     isSelected: Boolean = false,
@@ -62,6 +65,7 @@ fun AudioTrackRow(
     showFullName: Boolean = false,
     onOptionsClick: (() -> Unit)? = null,
     onClick: () -> Unit,
+    onToggleFavourite: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -145,6 +149,26 @@ fun AudioTrackRow(
             )
         }
 
+        // Issue #321: the favourite heart — audio rows had none at all
+        // (neither list nor grid), so list-view users could not
+        // favourite a track. Same icon, size, tint and content
+        // description as the video grid card's heart (#235). It sits
+        // before the options button; both hide while selected (#144).
+        if (!isSelected) {
+            Spacer(Modifier.width(8.dp))
+            IconButton(
+                onClick = onToggleFavourite,
+                modifier = Modifier.size(40.dp),
+            ) {
+                Icon(
+                    imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = stringResource(R.string.music_menu_toggle_favourite),
+                    tint = if (isFavourite) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+
         // The track options button stays (it opens the track dialog);
         // hidden while selected — the action bar owns the actions then.
         if (!isSelected && onOptionsClick != null) {
@@ -167,6 +191,7 @@ fun AudioTrackRow(
 @Composable
 fun AudioTrackGridCard(
     track: AudioTrack,
+    isFavourite: Boolean = false,
     showDuration: Boolean = true,
     showThumbnails: Boolean = true,
     isSelected: Boolean = false,
@@ -174,6 +199,7 @@ fun AudioTrackGridCard(
     showFullName: Boolean = false,
     onOptionsClick: (() -> Unit)? = null,
     onClick: () -> Unit,
+    onToggleFavourite: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -256,8 +282,21 @@ fun AudioTrackGridCard(
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 Spacer(Modifier.weight(1f))
+                // Issue #321: the favourite heart — the audio grid card
+                // had none either. Same icon, size, tint and content
+                // description as the video grid card's heart (#235).
                 // #144: the options button hides on a selected card — the
                 // multi-select action bar owns the actions while selecting.
+                if (!isSelected) {
+                    IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
+                        Icon(
+                            imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = stringResource(R.string.music_menu_toggle_favourite),
+                            tint = if (isFavourite) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
                 if (!isSelected && onOptionsClick != null) {
                     IconButton(onClick = onOptionsClick, modifier = Modifier.size(40.dp)) {
                         Icon(

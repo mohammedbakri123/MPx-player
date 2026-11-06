@@ -857,6 +857,27 @@ fun MusicScreen(
         }
     }
 
+    // Issue #321: single-track favourite toggle for the track heart.
+    // Mirrors LocalScreen's toggleVideoFavourite (#235): the same
+    // repository toggle, so the heart flips through the observed
+    // favourites Flow — no manual refresh needed. The FavouriteItem
+    // shape matches the selection favourite below (audio: isVideo
+    // false, subtitle "artist • album").
+    fun toggleTrackFavourite(track: AudioTrack) {
+        scope.launch(Dispatchers.IO) {
+            persistenceRepository.toggleFavourite(
+                FavouriteItem(
+                    mediaId = track.id,
+                    title = track.title,
+                    subtitle = "${track.artist} • ${track.album}",
+                    mediaUri = track.path,
+                    isVideo = false,
+                    durationMs = track.durationMs,
+                ),
+            )
+        }
+    }
+
     fun toggleTrackSelectionFavourite() {
         val selected = selectedTracksInView()
         if (selected.isEmpty()) return
@@ -1642,6 +1663,9 @@ fun MusicScreen(
                                     showThumbnails = appSettings.showThumbnails,
                                     selectedTrackIds = selectedTrackIds,
                                     isSelectionMode = isTrackSelectionMode,
+                                    // Issue #321: the favourite heart.
+                                    favourites = favourites,
+                                    onToggleTrackFavourite = { toggleTrackFavourite(it) },
                                     onToggleTrackSelection = { toggleTrackSelection(it) },
                                     onTrackClick = { index ->
                                         playbackManager?.playAudioQueue(sortedTracks, startIndex = index)
@@ -2532,6 +2556,10 @@ private fun TracksTabContent(
     showThumbnails: Boolean = true,
     selectedTrackIds: Set<String> = emptySet(),
     isSelectionMode: Boolean = false,
+    // Issue #321: the favourite heart state + toggle for track rows
+    // and grid cards (audio had no heart in either layout).
+    favourites: List<FavouriteItem> = emptyList(),
+    onToggleTrackFavourite: (AudioTrack) -> Unit = {},
     onToggleTrackSelection: (AudioTrack) -> Unit = {},
     onTrackClick: (Int) -> Unit,
     onTrackOptionsClick: (AudioTrack) -> Unit,
@@ -2552,6 +2580,10 @@ private fun TracksTabContent(
                     val isSelected = selectedTrackIds.contains(track.id.ifBlank { track.path })
                     AudioTrackRow(
                         track = track,
+                        // Issue #321: the heart, wired to the same
+                        // favourites Flow + toggle as the video rows.
+                        isFavourite = favourites.any { it.mediaUri == track.path },
+                        onToggleFavourite = { onToggleTrackFavourite(track) },
                         showThumbnails = showThumbnails,
                         isSelected = isSelected,
                         onLongClick = { onToggleTrackSelection(track) },
@@ -2596,6 +2628,10 @@ private fun TracksTabContent(
                     val isSelected = selectedTrackIds.contains(track.id.ifBlank { track.path })
                     AudioTrackGridCard(
                         track = track,
+                        // Issue #321: the heart — the audio grid card
+                        // had none either.
+                        isFavourite = favourites.any { it.mediaUri == track.path },
+                        onToggleFavourite = { onToggleTrackFavourite(track) },
                         showThumbnails = showThumbnails,
                         isSelected = isSelected,
                         onLongClick = { onToggleTrackSelection(track) },
