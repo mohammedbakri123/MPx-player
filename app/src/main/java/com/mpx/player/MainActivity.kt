@@ -559,13 +559,6 @@ fun MpxApp(
                     permissionLauncher = localPermissionLauncher,
                     permissionResultHandler = localPermissionHandler,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
-                    onOpenMusic = {
-                        navController.navigate(Screen.Music.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
@@ -582,20 +575,12 @@ fun MpxApp(
             }
             composable(Screen.Me.route) {
                 MeScreen(
-                    onOpenLocal = {
-                        navController.navigate(Screen.Local.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onOpenMusic = {
-                        navController.navigate(Screen.Music.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
+                    // Issue #251: route tab shortcuts through
+                    // navigateToTab, which persists lastTabRoute — the
+                    // inline navigate() above never did, so after a
+                    // kill/reopen the app restored the stale dock tab.
+                    onOpenLocal = { navigateToTab(Screen.Local.route) },
+                    onOpenMusic = { navigateToTab(Screen.Music.route) },
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
