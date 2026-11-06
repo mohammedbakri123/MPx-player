@@ -159,6 +159,20 @@ private class SmbFileInputStream(
         return read
     }
 
+    /**
+     * Issue #301: random-access skip — advancing the read position
+     * transfers nothing over SMB. The default InputStream.skip would
+     * read-and-discard the skipped bytes; for a suffix range near the
+     * end of a large file that would download almost the whole file
+     * first. Reads past the end still return -1, as before.
+     */
+    override fun skip(n: Long): Long {
+        if (closed) throw IOException("Stream closed")
+        if (n <= 0L) return 0L
+        position += n
+        return n
+    }
+
     override fun close() {
         if (closed) return
         closed = true

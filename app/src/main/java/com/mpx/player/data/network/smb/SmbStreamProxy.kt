@@ -94,6 +94,11 @@ class SmbStreamProxy {
             val path = parts[1].trimStart('/')
             var rangeStart = 0L
             var rangeEnd: Long? = null
+            // Issue #301: a suffix range (bytes=-N) asks for the last N
+            // bytes. Its start is only known once the total length is,
+            // so it is kept apart from rangeStart/rangeEnd until the
+            // handle is opened below.
+            var suffixLength: Long? = null
             // Consume headers.
             while (true) {
                 val header = readLine(input) ?: break
@@ -101,9 +106,29 @@ class SmbStreamProxy {
                 if (header.startsWith("Range:", ignoreCase = true)) {
                     val value = header.substringAfter(":").trim()
                     if (value.startsWith("bytes=")) {
-                        val range = value.removePrefix("bytes=").split("-")
-                        rangeStart = range.getOrNull(0)?.toLongOrNull() ?: 0L
-                        rangeEnd = range.getOrNull(1)?.toLongOrNull()
+                        // Issue #301: only the first range of a
+                        // multi-range header is served (single 206).
+                        // Parsing "0-99,200-299" whole made the end
+                        // "99,200", which never parsed, so the request
+                        // fell through to end-of-file.
+                        val firstRange = value.removePrefix("bytes=").split(",").firstOrNull().orEmpty()
+                        val range = firstRange.split("-")
+                        val startText = range.getOrNull(0).orEmpty()
+                        val endText = range.getOrNull(1)
+                        if (startText.isEmpty() && endText != null) {
+                            // Suffix form: bytes=-N (empty start, end
+                            // present). The old code read the empty
+                            // start as 0 and served the FIRST N bytes.
+                            // Open at 0 for now; the real start
+                            // (total - N) is resolved below.
+                            suffixLength = endText.toLongOrNull()
+                            rangeStart = 0L
+                            rangeEnd = null
+                        } else {
+                            rangeStart = startText.toLongOrNull() ?: 0L
+                            rangeEnd = endText?.toLongOrNull()
+                            suffixLength = null
+                        }
                     }
                 }
             }
@@ -117,7 +142,17 @@ class SmbStreamProxy {
                 return
             }
             val total = handle.length
-            val isRange = rangeStart > 0L || rangeEnd != null
+            // Issue #301: resolve a suffix range now that the total is
+            // known — the last N bytes, clamped to the whole file when
+            // N exceeds the length. A suffix of 0 resolves to the end
+            // of the file and is unsatisfiable (416) via the check below.
+            val effectiveStart = if (suffixLength != null) {
+                (total - suffixLength).coerceAtLeast(0L)
+            } else {
+                rangeStart
+            }
+            val effectiveEnd = if (suffixLength != null) total - 1 else rangeEnd
+            val isRange = rangeStart > 0L || rangeEnd != null || suffixLength != null
             // Issue #253: an unsatisfiable range is 416 (RFC 7233), not
             // a 206 with a bogus length. The old arithmetic never even
             // got there: an out-of-range start made coerceIn throw
@@ -126,7 +161,7 @@ class SmbStreamProxy {
             // is empty, the start is past the end, or the end precedes
             // the start. The opened handle is closed on this path —
             // streamTo's finally only covers the success path.
-            if (isRange && (total == 0L || rangeStart >= total || (rangeEnd != null && rangeEnd < rangeStart))) {
+            if (isRange && (total == 0L || effectiveStart >= total || (effectiveEnd != null && effectiveEnd < effectiveStart))) {
                 writeHeaders(output, 416, "Range Not Satisfiable", "application/octet-stream", 0L, "bytes */$total")
                 try {
                     handle.input.close()
@@ -134,8 +169,8 @@ class SmbStreamProxy {
                 }
                 return
             }
-            val start = rangeStart.coerceIn(0L, total)
-            val end = (rangeEnd ?: (total - 1)).coerceIn(start, (total - 1).coerceAtLeast(0L))
+            val start = effectiveStart.coerceIn(0L, total)
+            val end = (effectiveEnd ?: (total - 1)).coerceIn(start, (total - 1).coerceAtLeast(0L))
             // An empty file with no Range is a plain 200 with length 0 —
             // the old (end - start + 1) computed 1 while 0 bytes follow.
             val length = if (total == 0L) 0L else (end - start + 1).coerceAtLeast(0L)
@@ -154,6 +189,21 @@ class SmbStreamProxy {
                 } catch (_: Exception) {
                 }
                 return
+            }
+            // Issue #301: a suffix range opened the stream at 0 — the
+            // start was not known until the total was. Advance to the
+            // resolved start before streaming. SmbFileInputStream.skip
+            // only moves the read position (no data is transferred), so
+            // this is cheap even near the end of a large file. The
+            // non-suffix path needs no skip: the opener already opened
+            // at rangeStart.
+            if (suffixLength != null && start > rangeStart) {
+                var toSkip = start - rangeStart
+                while (toSkip > 0) {
+                    val skipped = handle.input.skip(toSkip)
+                    if (skipped <= 0) break
+                    toSkip -= skipped
+                }
             }
             streamTo(handle.input, output, length)
         } catch (_: Exception) {
