@@ -114,6 +114,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.res.stringResource
@@ -125,6 +126,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
@@ -350,6 +353,31 @@ fun PlayerScreen(
     // Last subtitle settings pushed to the mpv engine. Plain holder (not state)
     // so pushing options does not schedule extra recompositions.
     val lastMpvSubtitleSettings = remember { arrayOfNulls<AppSettings>(1) }
+
+    // Issue #241: Settings can change while this screen sits in the back
+    // stack (user opens Settings, changes subtitle size/delay/speed, audio
+    // delay or zoom, then comes back). currentSettings was loaded once at
+    // entry, so the playing video kept the old values until the player was
+    // recreated. Reload on ON_RESUME — the same shape as LocalScreen's
+    // reload — and the AndroidView update block re-pushes to mpv only when
+    // the values actually changed (structural AppSettings equality), so an
+    // unchanged reload is a no-op. Settings only: no folder/permission
+    // refresh here, the player has none. A changed rotation setting also
+    // flows through the existing targetOrientation remember + effect below,
+    // which is the point: the user changed it in Settings.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                currentSettings = realSettingsRepo.load()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val state by playbackManager.playbackState.collectAsState()
 
     // Issue #149: after a process death in the background, Android restores
