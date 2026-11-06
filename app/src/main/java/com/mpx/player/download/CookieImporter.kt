@@ -7,23 +7,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Cookie import for restricted downloads (issue #337).
+ * Cookie import for restricted downloads (issue #337, rework).
  *
  * Seal reads the in-app WebView's cookie SQLite DB
  * (`DownloadUtil.getCookieListFromDatabase`, JunkFood02/Seal, GPL-3.0)
  * and writes a Netscape-format cookies file (`toCookiesFileContent`);
- * MPx has no in-app WebView, so it reads the system WebView cookie
- * store through `CookieManager.getCookie(url)` instead and writes the
- * same Netscape format — Seal's `Cookie.toNetscapeCookieString`
- * (`WebViewPage.kt:51`): tab-separated domain / subdomain-flag /
- * path / secure-flag / expiry / name / value.
+ * MPx reads the same cookies through `CookieManager.getCookie(url)`
+ * and writes the same Netscape format — Seal's
+ * `Cookie.toNetscapeCookieString` (`WebViewPage.kt:51`): tab-separated
+ * domain / subdomain-flag / path / secure-flag / expiry / name / value.
  *
- * Honest limit: `CookieManager` only sees cookies set by WebViews
- * running inside MPx itself — the store is per-app, so a login in
- * Chrome (or any other browser) is NOT visible here and the import
- * reports "no cookies". A cookies.txt file import, or an in-app
- * WebView login (Seal's pattern), would be needed to reach those
- * cookies; neither is part of this issue.
+ * `CookieManager` only sees cookies set by WebViews running inside
+ * MPx itself — the store is per-app. That is why the first attempt's
+ * "Import cookies from browser" button could never work: a login in
+ * Chrome (or any other browser) is invisible here. The in-app sign-in
+ * WebView (SignInWebViewDialog, Seal's pattern) is what puts the
+ * cookies there — the user signs in inside MPx, and this import reads
+ * what that WebView set.
  */
 object CookieImporter {
 
@@ -58,7 +58,7 @@ object CookieImporter {
         val secure = url.startsWith("https://")
         val content = buildString {
             append("# Netscape HTTP Cookie File\n")
-            append("# Cookies imported from the system WebView store by MPx\n")
+            append("# Cookies from MPx's in-app sign-in WebView\n")
             for ((name, value) in cookies) {
                 append(".").append(host).append('\t')
                     .append("TRUE\t/\t")

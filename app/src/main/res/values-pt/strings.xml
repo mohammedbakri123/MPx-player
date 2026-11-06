@@ -35,8 +35,8 @@
     <string name="download_ytdlp_update_failed">Falha ao atualizar yt-dlp</string>
     <string name="download_ytdlp_update_busy">Há um download em andamento — tente atualizar após terminar</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
-    <string name="download_import_cookies">Importar cookies do navegador</string>
-    <string name="download_no_cookies">Nenhum cookie encontrado para este site — entre na sua conta no navegador primeiro</string>
+    <string name="download_sign_in">Entre para baixar</string>
+    <string name="download_no_cookies">Nenhum cookie encontrado — entre na sua conta na janela primeiro e toque em «Concluído»</string>
     <string name="download_cookies_failed">Falha ao importar os cookies</string>
 
     <!-- Mini Player -->

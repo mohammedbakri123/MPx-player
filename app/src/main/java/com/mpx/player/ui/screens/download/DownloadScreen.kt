@@ -116,6 +116,11 @@ fun DownloadScreen(
     }
 
     var urlText by rememberSaveable { mutableStateOf("") }
+    // Issue #337: the in-app sign-in WebView, opened from the button
+    // below. The User-Agent is read once — there is no settings UI for
+    // it, so it cannot change while this screen is alive.
+    var showSignIn by rememberSaveable { mutableStateOf(false) }
+    val signInUserAgent = remember { downloader.loadUserAgent() }
 
     // Warm up the engine (extracts Python + yt-dlp on first run) so the
     // Download button works the moment the user pastes a link.
@@ -251,11 +256,12 @@ fun DownloadScreen(
                 }
             }
 
-            // Issue #337: import the browser's cookies for this URL and
-            // start the download with them, for age-gated / logged-in
-            // videos. The import is per-download (see MpxDownloader)
-            // and starts the download right away — the cookies only ever
-            // apply to that one download. Shown only once a URL is typed.
+            // Issue #337 (rework): sign in inside MPx's own WebView so
+            // the cookies it sets can be sent to yt-dlp for this one
+            // download (see SignInWebViewDialog). A login in Chrome is
+            // invisible to MPx, so the first attempt's "Import cookies
+            // from browser" button could never work and is gone. Shown
+            // only once a URL is typed.
             if (urlText.isNotBlank()) {
                 Row(
                     modifier = Modifier
@@ -264,21 +270,11 @@ fun DownloadScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(
-                        onClick = {
-                            scope.launch {
-                                when (downloader.importCookiesAndStart(urlText)) {
-                                    CookieImportOutcome.IMPORTED -> urlText = ""
-                                    CookieImportOutcome.NO_COOKIES ->
-                                        snackbarHostState.showSnackbar(noCookiesLabel)
-                                    CookieImportOutcome.FAILED ->
-                                        snackbarHostState.showSnackbar(cookiesFailedLabel)
-                                }
-                            }
-                        },
+                        onClick = { showSignIn = true },
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                     ) {
                         Text(
-                            text = stringResource(R.string.download_import_cookies),
+                            text = stringResource(R.string.download_sign_in),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MpxTheme.colors.primary,
@@ -286,6 +282,30 @@ fun DownloadScreen(
                         )
                     }
                 }
+            }
+
+            // Issue #337: the sign-in WebView. Done reads the cookies
+            // this WebView set and starts the download with them; the
+            // import is per-download (see MpxDownloader) and the cookies
+            // only ever apply to that one download.
+            if (showSignIn) {
+                SignInWebViewDialog(
+                    url = urlText,
+                    userAgent = signInUserAgent,
+                    onDismiss = { showSignIn = false },
+                    onUseCookies = {
+                        showSignIn = false
+                        scope.launch {
+                            when (downloader.importCookiesAndStart(urlText)) {
+                                CookieImportOutcome.IMPORTED -> urlText = ""
+                                CookieImportOutcome.NO_COOKIES ->
+                                    snackbarHostState.showSnackbar(noCookiesLabel)
+                                CookieImportOutcome.FAILED ->
+                                    snackbarHostState.showSnackbar(cookiesFailedLabel)
+                            }
+                        }
+                    },
+                )
             }
 
             if (initState == DownloaderInitState.FAILED) {

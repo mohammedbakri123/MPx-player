@@ -12,9 +12,10 @@ const val DEFAULT_PLAYER_MENU_LAYOUT =
 
 /**
  * Default download User-Agent (issue #337): Seal captures the in-app
- * WebView's UA at login and sends it with every request. MPx has no
- * in-app WebView, so it defaults to a current desktop Chrome UA —
- * the string restricted videos expect to see.
+ * WebView's UA at login and sends it with every request. MPx sends
+ * this UA both from the in-app sign-in WebView and from yt-dlp, so
+ * the site sees one consistent identity — a current desktop Chrome
+ * UA is the string restricted videos expect to see.
  */
 const val DEFAULT_DOWNLOAD_USER_AGENT =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"

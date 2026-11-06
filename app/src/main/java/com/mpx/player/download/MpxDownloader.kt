@@ -72,7 +72,7 @@ enum class YtDlpUpdateState {
     FAILED,
 }
 
-/** Result of an "Import cookies from browser" tap (issue #337). */
+/** Result of tapping Done in the in-app sign-in WebView (issue #337). */
 enum class CookieImportOutcome {
     /** Cookies were imported and the download started with them. */
     IMPORTED,
@@ -349,13 +349,21 @@ class MpxDownloader private constructor(context: Context) {
     }
 
     /**
-     * Imports the WebView cookies for [rawUrl]'s host and starts the
-     * download with them (issue #337). The import is per-download:
-     * the cookie file is written for this URL only, passed to that
-     * download's yt-dlp requests, and deleted when it exits — nothing
-     * is persisted and nothing is imported without the user tapping.
-     * A blank URL reports NO_COOKIES (the button is disabled then,
-     * so this is unreachable from the UI).
+     * The User-Agent the in-app sign-in WebView sends (issue #337):
+     * the same string yt-dlp sends, so the site sees one consistent
+     * identity between the login and the download (Seal's pattern).
+     */
+    fun loadUserAgent(): String = settingsRepository.load().downloadUserAgent
+
+    /**
+     * Imports the cookies MPx's own in-app sign-in WebView set for
+     * [rawUrl]'s host and starts the download with them (issue #337).
+     * The import is per-download: the cookie file is written for this
+     * URL only, passed to that download's yt-dlp requests, and deleted
+     * when it exits — nothing is persisted and nothing is imported
+     * without the user signing in and tapping Done. A blank URL
+     * reports NO_COOKIES (the button is disabled then, so this is
+     * unreachable from the UI).
      */
     suspend fun importCookiesAndStart(rawUrl: String): CookieImportOutcome {
         val url = CookieImporter.normalizeUrl(rawUrl) ?: return CookieImportOutcome.NO_COOKIES
