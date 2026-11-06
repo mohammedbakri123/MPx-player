@@ -550,7 +550,16 @@ private fun PlaybackSheetMainPage(
                 "audio" -> PlaybackSheetRow(
                     icon = Icons.Filled.Audiotrack,
                     title = stringResource(R.string.playback_sheet_audio_track),
-                    value = state.audioTracks.firstOrNull { it.isSelected }?.label,
+                    // Issue #262: an empty list (still preparing, or no
+                    // discrete tracks) is not "audio off" — keep the
+                    // value null so nothing shows, as before. "Off" is
+                    // only for tracks present with none selected.
+                    value = if (state.audioTracks.isEmpty()) {
+                        null
+                    } else {
+                        state.audioTracks.firstOrNull { it.isSelected }?.label
+                            ?: stringResource(R.string.player_state_off)
+                    },
                     onClick = { onPageChange(PlaybackSheetPage.AudioTracks) },
                     showChevron = true,
                 )
