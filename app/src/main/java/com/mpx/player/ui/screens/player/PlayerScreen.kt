@@ -40,8 +40,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -710,14 +712,21 @@ fun PlayerScreen(
     var sideSeekDirection by remember { mutableStateOf<SideSeekDirection?>(null) }
     var hideSideSeekJob by remember { mutableStateOf<Job?>(null) }
 
+    // Issue #328: the stripe's scroll state, owned here so the auto-hide
+    // timer below can see it. LazyListState.isScrollInProgress is true
+    // for the whole drag AND the fling until it settles, so keying the
+    // timer on it keeps the chrome up for the entire scroll.
+    val stripeListState = rememberLazyListState()
+
     // MX-style auto-hide (issue #85): MX's bottom controller in screen.xml
     // is visibility=gone by default and only appears on interaction. Mirror
     // that here: while playing, hide the chrome a few seconds after it
     // appears, so the video is not permanently covered. Stay visible while
-    // paused, while scrubbing/dragging, or while a dialog is open, so no
-    // interaction is ever cut off mid-use. Tap the video to bring it back.
-    LaunchedEffect(controlsVisible, state.isPlaying, playbackSheetPage, isScrubbingSlider, isDraggingSeek, showBrightnessIndicator, showVolumeIndicator, showZoomIndicator) {
-        if (controlsVisible && state.isPlaying && playbackSheetPage == null && !isScrubbingSlider && !isDraggingSeek && !showBrightnessIndicator && !showVolumeIndicator && !showZoomIndicator) {
+    // paused, while scrubbing/dragging, while scrolling the action stripe
+    // (#328), or while a dialog is open, so no interaction is ever cut off
+    // mid-use. Tap the video to bring it back.
+    LaunchedEffect(controlsVisible, state.isPlaying, playbackSheetPage, isScrubbingSlider, isDraggingSeek, showBrightnessIndicator, showVolumeIndicator, showZoomIndicator, stripeListState.isScrollInProgress) {
+        if (controlsVisible && state.isPlaying && playbackSheetPage == null && !isScrubbingSlider && !isDraggingSeek && !showBrightnessIndicator && !showVolumeIndicator && !showZoomIndicator && !stripeListState.isScrollInProgress) {
             delay(3000)
             controlsVisible = false
         }
@@ -1802,6 +1811,7 @@ fun PlayerScreen(
                         // horizontally scrollable strip under the top
                         // bar. Hides with the chrome.
                         PlayerActionStripe(
+                            listState = stripeListState,
                             state = state,
                             currentSettings = currentSettings,
                             isFavourite = isFavourite,
@@ -2197,6 +2207,7 @@ fun PlayerScreen(
  */
 @Composable
 private fun PlayerActionStripe(
+    listState: LazyListState,
     state: PlaybackState,
     currentSettings: AppSettings,
     isFavourite: Boolean,
@@ -2212,6 +2223,7 @@ private fun PlayerActionStripe(
         parsePlayerMenuLayout(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds)
     }
     LazyRow(
+        state = listState,
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         contentPadding = PaddingValues(horizontal = 4.dp),
