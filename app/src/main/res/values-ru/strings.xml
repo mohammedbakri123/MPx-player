@@ -46,6 +46,15 @@
     <string name="download_quality_codec_auto">Авто</string>
     <string name="download_quality_custom_sorter">Пользовательская сортировка форматов</string>
     <string name="download_quality_custom_sorter_hint">Если задано, заменяет выбранные выше разрешение и кодек.</string>
+    <string name="download_options_title">Параметры загрузки</string>
+    <string name="download_options_rate_limit">Ограничение скорости</string>
+    <string name="download_options_rate_limit_hint">Оставьте пустым, чтобы не ограничивать. Число без суффикса — КБ/с, например 500 = 500 КБ/с.</string>
+    <string name="download_options_proxy">Прокси</string>
+    <string name="download_options_proxy_hint">URL прокси, например http://proxy:8080. Оставьте пустым для прямого подключения.</string>
+    <string name="download_options_force_ipv4">Принудительно IPv4</string>
+    <string name="download_options_restrict_filenames">Ограничивать имена файлов</string>
+    <string name="download_options_restrict_filenames_short">Безопасные имена файлов</string>
+    <string name="download_options_summary_none">Ограничения не заданы</string>
     <string name="download_audio_only">Только аудио</string>
     <string name="download_subtitles">Скачать субтитры</string>
     <string name="download_notification_channel_name">Загрузки</string>

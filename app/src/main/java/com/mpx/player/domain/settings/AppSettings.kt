@@ -153,6 +153,15 @@ data class AppSettings(
     val downloadCodec: String = "Auto",
     val downloadResolution: Int = 0,
     val downloadCustomSorter: String = "",
+    // Small network/filename flags (issue #347, Seal's downloadVideo,
+    // DownloadUtil.kt:~700-730, JunkFood02/Seal, GPL-3.0): rate limit,
+    // proxy, force IPv4, restrict filenames. Rate limit is the raw
+    // yt-dlp `-r` value (e.g. "500K"); a bare number is read as KB/s,
+    // like Seal's "${maxDownloadRate}K". Blank = no limit / no proxy.
+    val downloadRateLimit: String = "",
+    val downloadProxy: String = "",
+    val downloadForceIpv4: Boolean = false,
+    val downloadRestrictFilenames: Boolean = false,
 ) {
     /**
      * Total number of currently visible music tabs.

@@ -16,6 +16,7 @@ import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.local.entity.DownloadHistoryEntity
 import com.mpx.player.data.local.entity.DownloadTaskEntity
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.ExternalSubtitle
 import com.yausername.aria2c.Aria2c
 import com.yausername.ffmpeg.FFmpeg
@@ -763,8 +764,11 @@ class MpxDownloader private constructor(context: Context) {
             addOption("-o", "%(title).200B")
             addOption("-R", "1")
             addOption("--socket-timeout", "5")
-            val userAgent = settingsRepository.load().downloadUserAgent
-            if (userAgent.isNotBlank()) addOption("--user-agent", userAgent)
+            val settings = settingsRepository.load()
+            if (settings.downloadUserAgent.isNotBlank()) addOption("--user-agent", settings.downloadUserAgent)
+            // Issue #347: same network flags as the info fetch — a
+            // proxied / rate-limited network needs them on the probe too.
+            addOptionsForNetworkFlags(settings)
         }
         val out = try {
             withContext(Dispatchers.IO) {
@@ -1418,6 +1422,30 @@ class MpxDownloader private constructor(context: Context) {
             addOption("--embed-subs")
         }
 
+    /**
+     * Issue #347: small network/filename flags, Seal's downloadVideo
+     * shape (DownloadUtil.kt:~700-730, JunkFood02/Seal, GPL-3.0):
+     * `-r` rate limit, `--proxy`, `-4` force IPv4. Applied to every
+     * yt-dlp request (info, playlist probe, download) — a slow or
+     * proxied network fails the info fetch the same way it fails the
+     * download. `--restrict-filenames` is download-only (applied at
+     * the call site): it changes the output filename, which info and
+     * probe requests never produce.
+     */
+    private fun YoutubeDLRequest.addOptionsForNetworkFlags(settings: AppSettings): YoutubeDLRequest =
+        apply {
+            val rateLimit = settings.downloadRateLimit.trim()
+            if (rateLimit.isNotBlank()) {
+                // Seal stores a bare number and appends "K"; MPx stores
+                // the raw `-r` value, so a bare number gets the same "K"
+                // (KB/s) and a suffixed value ("500K", "2M") passes as-is.
+                addOption("-r", if (rateLimit.all { it.isDigit() }) "${rateLimit}K" else rateLimit)
+            }
+            val proxy = settings.downloadProxy.trim()
+            if (proxy.isNotBlank()) addOption("--proxy", proxy)
+            if (settings.downloadForceIpv4) addOption("-4")
+        }
+
     private suspend fun runDownload(item: ActiveDownload) {
         val id = item.id
         // Issue #334: this download's own temp dir (Seal's `-P temp:`
@@ -1465,6 +1493,10 @@ class MpxDownloader private constructor(context: Context) {
                 addOption("--socket-timeout", "5")
                 if (userAgent.isNotBlank()) addOption("--user-agent", userAgent)
                 cookiesFile?.let { addOption("--cookies", it.absolutePath) }
+                // Issue #347: rate limit / proxy / IPv4 on the info
+                // fetch too — a slow or proxied network fails here the
+                // same way it fails the download.
+                addOptionsForNetworkFlags(settings)
             }
             // Issue #346: keep the whole VideoInfo, not just the title —
             // the id/extractor feed the download-archive pre-check and
@@ -1589,6 +1621,12 @@ class MpxDownloader private constructor(context: Context) {
                 // Same fail-fast options as the info fetch above.
                 addOption("-R", "1")
                 addOption("--socket-timeout", "5")
+                // Issue #347: rate limit / proxy / IPv4, same as the
+                // info fetch; restrict-filenames is download-only — it
+                // changes the output filename, which info/probe
+                // requests never produce.
+                addOptionsForNetworkFlags(settings)
+                if (settings.downloadRestrictFilenames) addOption("--restrict-filenames")
                 // Issue #337: same UA + cookies as the info fetch.
                 if (userAgent.isNotBlank()) addOption("--user-agent", userAgent)
                 cookiesFile?.let { addOption("--cookies", it.absolutePath) }

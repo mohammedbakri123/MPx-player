@@ -46,6 +46,15 @@
     <string name="download_quality_codec_auto">ऑटो</string>
     <string name="download_quality_custom_sorter">कस्टम फ़ॉर्मेट सॉर्टर</string>
     <string name="download_quality_custom_sorter_hint">सेट होने पर, यह ऊपर चुने गए रिज़ॉल्यूशन और कोडेक को ओवरराइड करता है।</string>
+    <string name="download_options_title">डाउनलोड विकल्प</string>
+    <string name="download_options_rate_limit">गति सीमा</string>
+    <string name="download_options_rate_limit_hint">कोई सीमा नहीं चाहिए तो खाली छोड़ें। अकेली संख्या का अर्थ KB/s है, जैसे 500 = 500 KB/s।</string>
+    <string name="download_options_proxy">प्रॉक्सी</string>
+    <string name="download_options_proxy_hint">प्रॉक्सी URL, जैसे http://proxy:8080। सीधे कनेक्शन के लिए खाली छोड़ें।</string>
+    <string name="download_options_force_ipv4">IPv4 ज़बरदस्ती करें</string>
+    <string name="download_options_restrict_filenames">फ़ाइल नाम सीमित करें</string>
+    <string name="download_options_restrict_filenames_short">सुरक्षित फ़ाइल नाम</string>
+    <string name="download_options_summary_none">कोई सीमा निर्धारित नहीं</string>
     <string name="download_audio_only">केवल ऑडियो</string>
     <string name="download_subtitles">उपशीर्षक डाउनलोड करें</string>
     <string name="download_notification_channel_name">डाउनलोड</string>

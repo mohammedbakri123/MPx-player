@@ -46,6 +46,15 @@
     <string name="download_quality_codec_auto">Auto</string>
     <string name="download_quality_custom_sorter">Custom format sorter</string>
     <string name="download_quality_custom_sorter_hint">When set, this overrides the resolution and codec choices above.</string>
+    <string name="download_options_title">Download options</string>
+    <string name="download_options_rate_limit">Rate limit</string>
+    <string name="download_options_rate_limit_hint">Leave empty for no limit. A bare number means KB/s, e.g. 500 = 500 KB/s.</string>
+    <string name="download_options_proxy">Proxy</string>
+    <string name="download_options_proxy_hint">Proxy URL, e.g. http://proxy:8080. Leave empty for a direct connection.</string>
+    <string name="download_options_force_ipv4">Force IPv4</string>
+    <string name="download_options_restrict_filenames">Restrict filenames</string>
+    <string name="download_options_restrict_filenames_short">Safe filenames</string>
+    <string name="download_options_summary_none">No limits set</string>
     <string name="download_audio_only">Audio only</string>
     <string name="download_subtitles">Download subtitles</string>
     <string name="download_notification_channel_name">Downloads</string>
