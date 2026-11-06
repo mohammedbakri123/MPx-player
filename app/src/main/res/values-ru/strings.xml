@@ -352,7 +352,6 @@
     <!-- Music Screen -->
     <string name="music_screen_title">Музыка</string>
     <string name="music_cd_equalizer">Эквалайзер</string>
-    <string name="music_equalizer_scheduled">Эквалайзер запланирован для аудио-фазы</string>
     <string name="music_library_refreshed">Музыкальная библиотека обновлена</string>
     <string name="music_search_placeholder">Поиск песен…</string>
     <string name="music_shuffle_all">Перемешать всё</string>

@@ -352,7 +352,6 @@
     <!-- Music Screen -->
     <string name="music_screen_title">موسيقى</string>
     <string name="music_cd_equalizer">معادل الصوت</string>
-    <string name="music_equalizer_scheduled">معادل الصوت مجدول لمرحلة الصوتيات</string>
     <string name="music_library_refreshed">تم تحديث مكتبة الموسيقى</string>
     <string name="music_search_placeholder">البحث في الأغاني…</string>
     <string name="music_shuffle_all">خلط الكل</string>
