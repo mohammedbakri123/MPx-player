@@ -46,6 +46,7 @@
     <string name="download_quality_custom_sorter">Пользовательская сортировка форматов</string>
     <string name="download_quality_custom_sorter_hint">Если задано, заменяет выбранные выше разрешение и кодек.</string>
     <string name="download_audio_only">Только аудио</string>
+    <string name="download_subtitles">Скачать субтитры</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Видео</string>

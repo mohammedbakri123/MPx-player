@@ -46,6 +46,7 @@
     <string name="download_quality_custom_sorter">自定义格式排序</string>
     <string name="download_quality_custom_sorter_hint">设置后，将覆盖上面选择的分辨率和编码。</string>
     <string name="download_audio_only">仅音频</string>
+    <string name="download_subtitles">下载字幕</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">视频</string>
