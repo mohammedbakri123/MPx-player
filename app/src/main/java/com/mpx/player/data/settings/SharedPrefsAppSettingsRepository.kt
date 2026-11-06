@@ -136,6 +136,13 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadResolution = prefs.getInt("download_resolution", 0)
                 .takeIf { it in 0..6 } ?: 0,
             downloadCustomSorter = prefs.getString("download_custom_sorter", "") ?: "",
+            // Issue #347: small network/filename flags. Stored raw —
+            // a blank rate limit / proxy means "off", and the downloader
+            // normalises a bare rate number to KB/s at request time.
+            downloadRateLimit = prefs.getString("download_rate_limit", "") ?: "",
+            downloadProxy = prefs.getString("download_proxy", "") ?: "",
+            downloadForceIpv4 = prefs.getBoolean("download_force_ipv4", false),
+            downloadRestrictFilenames = prefs.getBoolean("download_restrict_filenames", false),
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -252,6 +259,10 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("download_codec", settings.downloadCodec)
             .putInt("download_resolution", settings.downloadResolution)
             .putString("download_custom_sorter", settings.downloadCustomSorter)
+            .putString("download_rate_limit", settings.downloadRateLimit)
+            .putString("download_proxy", settings.downloadProxy)
+            .putBoolean("download_force_ipv4", settings.downloadForceIpv4)
+            .putBoolean("download_restrict_filenames", settings.downloadRestrictFilenames)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

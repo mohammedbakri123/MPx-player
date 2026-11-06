@@ -46,6 +46,15 @@
     <string name="download_quality_codec_auto">自动</string>
     <string name="download_quality_custom_sorter">自定义格式排序</string>
     <string name="download_quality_custom_sorter_hint">设置后，将覆盖上面选择的分辨率和编码。</string>
+    <string name="download_options_title">下载选项</string>
+    <string name="download_options_rate_limit">速度限制</string>
+    <string name="download_options_rate_limit_hint">留空表示不限速。单独的数字表示 KB/s，例如 500 = 500 KB/s。</string>
+    <string name="download_options_proxy">代理</string>
+    <string name="download_options_proxy_hint">代理 URL，例如 http://proxy:8080。留空表示直连。</string>
+    <string name="download_options_force_ipv4">强制 IPv4</string>
+    <string name="download_options_restrict_filenames">限制文件名</string>
+    <string name="download_options_restrict_filenames_short">安全文件名</string>
+    <string name="download_options_summary_none">未设置限制</string>
     <string name="download_audio_only">仅音频</string>
     <string name="download_subtitles">下载字幕</string>
     <string name="download_notification_channel_name">下载</string>

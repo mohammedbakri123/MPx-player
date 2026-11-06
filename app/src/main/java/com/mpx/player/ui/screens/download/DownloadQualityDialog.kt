@@ -198,3 +198,30 @@ internal fun downloadCodecLabel(codec: String): String {
         else -> stringResource(R.string.download_quality_codec_auto)
     }
 }
+
+/**
+ * Summary for the Download options row (issue #347, shared with
+ * DownloadScreen): what is actually set — the rate-limit value, the
+ * proxy URL, IPv4 (a protocol name, not translated), safe filenames —
+ * or "No limits set" when nothing is. The stored values are shown
+ * raw, so a typo'd proxy is visible in the row instead of hidden
+ * behind a generic label.
+ */
+@Composable
+internal fun downloadOptionsSummary(settings: AppSettings): String {
+    val parts = buildList {
+        val rateLimit = settings.downloadRateLimit.trim()
+        if (rateLimit.isNotBlank()) add(rateLimit)
+        val proxy = settings.downloadProxy.trim()
+        if (proxy.isNotBlank()) add(proxy)
+        if (settings.downloadForceIpv4) add("IPv4")
+        if (settings.downloadRestrictFilenames) {
+            add(stringResource(R.string.download_options_restrict_filenames_short))
+        }
+    }
+    return if (parts.isEmpty()) {
+        stringResource(R.string.download_options_summary_none)
+    } else {
+        parts.joinToString(" · ")
+    }
+}
