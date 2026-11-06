@@ -111,6 +111,35 @@ class MpvPlayerEngine(
      */
     private var fallbackReloadPending: Boolean = false
 
+    /**
+     * Issue #226: the aspect mode currently applied to mpv. The manager
+     * owns the UI-facing mode in PlaybackState; the engine tracks it too
+     * because ZOOM owns the video-zoom property while it is active (see
+     * [setAspectRatio]): applyPlaybackTweaks must not silently overwrite
+     * ZOOM's 2x magnification when an unrelated setting changes, and
+     * leaving ZOOM must restore the zoom the user had before. Defaults
+     * to FIT, matching PlaybackState's default.
+     */
+    private var currentAspectRatio: AspectRatioMode = AspectRatioMode.FIT
+    /**
+     * Issue #226: the live mpv video-zoom (log2 scale) that was active
+     * when ZOOM was entered, to restore when leaving ZOOM. Captured from
+     * the live property so it includes an in-progress pinch that has not
+     * been saved to settings yet; updated by any slider/pinch zoom change
+     * made while ZOOM is active, so leaving ZOOM restores the newest
+     * manual zoom, not a stale pre-ZOOM value. Null while ZOOM is not
+     * the active mode.
+     */
+    private var zoomBeforeAspectZoom: Double? = null
+    /**
+     * Issue #226: the persisted settings.videoZoom value at the moment
+     * ZOOM was entered — the baseline applyPlaybackTweaks compares
+     * against to tell a user-driven zoom change (sheet slider / pinch-end
+     * save) apart from an unrelated settings change while ZOOM is active.
+     * Null while ZOOM is not the active mode.
+     */
+    private var videoZoomAtAspectZoomEntry: Float? = null
+
     var decoderMode: DecoderMode = initialDecoderMode
         private set
 
@@ -534,7 +563,23 @@ class MpvPlayerEngine(
         if (!mpvInitialized || isReleased) return
         try {
             setRuntimeProperty("audio-delay", (settings.audioDelayMs / 1000.0).toString())
-            setRuntimeProperty("video-zoom", mpvVideoZoom(settings.videoZoom).toString())
+            if (currentAspectRatio == AspectRatioMode.ZOOM) {
+                // Issue #226: ZOOM owns video-zoom (2x magnification, see
+                // setAspectRatio). An unrelated settings change — audio
+                // delay, subtitle style — must not silently undo it. Only
+                // a user-driven zoom change moves it: the sheet slider and
+                // the pinch-end save both change settings.videoZoom, and
+                // then the new value becomes both the live zoom and the
+                // restore point for leaving ZOOM.
+                if (settings.videoZoom != videoZoomAtAspectZoomEntry) {
+                    val zoom = mpvVideoZoom(settings.videoZoom)
+                    setRuntimeProperty("video-zoom", zoom.toString())
+                    zoomBeforeAspectZoom = zoom
+                    videoZoomAtAspectZoomEntry = settings.videoZoom
+                }
+            } else {
+                setRuntimeProperty("video-zoom", mpvVideoZoom(settings.videoZoom).toString())
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Failed applying playback tweaks to mpv", e)
         }
@@ -549,6 +594,15 @@ class MpvPlayerEngine(
         if (!mpvInitialized || isReleased) return
         try {
             setRuntimeProperty("video-zoom", mpvVideoZoom(zoom).toString())
+            // Issue #226: a pinch while ZOOM is active moves the zoom the
+            // user will get back when leaving ZOOM — the preset must not
+            // resurrect the pre-ZOOM value over a newer manual zoom. (The
+            // pinch-end save flows through applyPlaybackTweaks and updates
+            // the same restore point; this keeps it correct even if the
+            // gesture ends without a save.)
+            if (currentAspectRatio == AspectRatioMode.ZOOM) {
+                zoomBeforeAspectZoom = mpvVideoZoom(zoom)
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Failed setting video zoom in MPV", e)
         }
@@ -1482,28 +1536,76 @@ class MpvPlayerEngine(
         }
     }
 
+    /**
+     * Issue #226: the six UI modes used to collapse to four engine states
+     * — FILL and ZOOM both set panscan=1.0, FIT and ORIGINAL both set
+     * panscan=0.0 — so picking ZOOM after FILL changed nothing on screen
+     * and 100% just fitted like FIT. Now every mode has a distinct state:
+     * ZOOM magnifies 2x beyond FILL via video-zoom (and owns that property
+     * while active — see applyPlaybackTweaks), and ORIGINAL is a true 1:1
+     * native size via video-unscaled. Every branch sets video-unscaled
+     * explicitly, so leaving ORIGINAL re-enables scaling.
+     */
     fun setAspectRatio(mode: AspectRatioMode) {
         try {
+            val wasZoom = currentAspectRatio == AspectRatioMode.ZOOM
+            if (mode == AspectRatioMode.ZOOM && !wasZoom) {
+                // Entering ZOOM: capture the live zoom so leaving ZOOM
+                // restores exactly what the user had — including an
+                // in-progress pinch that has not been saved to settings
+                // yet. Re-tapping ZOOM while already in it must not
+                // re-capture (the live value is the preset by then).
+                val savedZoom = loadSavedSubtitleSettings().videoZoom
+                zoomBeforeAspectZoom = try {
+                    mpv.getPropertyDouble("video-zoom")
+                } catch (_: Exception) {
+                    null
+                } ?: mpvVideoZoom(savedZoom)
+                videoZoomAtAspectZoomEntry = savedZoom
+            }
+            if (wasZoom && mode != AspectRatioMode.ZOOM) {
+                // Leaving ZOOM: give the zoom back. The restore value
+                // tracks any slider/pinch adjustment made while ZOOM was
+                // active, so the newest manual zoom wins.
+                zoomBeforeAspectZoom?.let { setRuntimeProperty("video-zoom", it.toString()) }
+                zoomBeforeAspectZoom = null
+                videoZoomAtAspectZoomEntry = null
+            }
+            currentAspectRatio = mode
             when (mode) {
                 AspectRatioMode.FIT -> {
                     mpv.setPropertyString("video-aspect-override", "no")
                     mpv.setPropertyDouble("panscan", 0.0)
+                    mpv.setPropertyString("video-unscaled", "no")
                 }
-                AspectRatioMode.FILL, AspectRatioMode.ZOOM -> {
+                AspectRatioMode.FILL -> {
                     mpv.setPropertyString("video-aspect-override", "no")
                     mpv.setPropertyDouble("panscan", 1.0)
+                    mpv.setPropertyString("video-unscaled", "no")
+                }
+                AspectRatioMode.ZOOM -> {
+                    mpv.setPropertyString("video-aspect-override", "no")
+                    mpv.setPropertyDouble("panscan", 1.0)
+                    mpv.setPropertyString("video-unscaled", "no")
+                    // Magnify 2x beyond FILL's crop-to-fill: video-zoom is
+                    // log2, so mpvVideoZoom(2.0f) == 1.0.
+                    setRuntimeProperty("video-zoom", mpvVideoZoom(2.0f).toString())
                 }
                 AspectRatioMode.SIXTEEN_NINE -> {
                     mpv.setPropertyString("video-aspect-override", "16:9")
                     mpv.setPropertyDouble("panscan", 0.0)
+                    mpv.setPropertyString("video-unscaled", "no")
                 }
                 AspectRatioMode.FOUR_THREE -> {
                     mpv.setPropertyString("video-aspect-override", "4:3")
                     mpv.setPropertyDouble("panscan", 0.0)
+                    mpv.setPropertyString("video-unscaled", "no")
                 }
                 AspectRatioMode.ORIGINAL -> {
                     mpv.setPropertyString("video-aspect-override", "no")
                     mpv.setPropertyDouble("panscan", 0.0)
+                    // True 1:1: mpv displays the video at native size.
+                    mpv.setPropertyString("video-unscaled", "yes")
                 }
             }
         } catch (e: Exception) {
