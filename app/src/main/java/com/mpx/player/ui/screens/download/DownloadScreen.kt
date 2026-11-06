@@ -147,6 +147,7 @@ fun DownloadScreen(
     var qualitySettings by remember { mutableStateOf(settingsRepository.load()) }
     var showQuality by rememberSaveable { mutableStateOf(false) }
     var showOptions by rememberSaveable { mutableStateOf(false) }
+    var showSponsorBlock by rememberSaveable { mutableStateOf(false) }
     // Issue #345: playlist probe state. The Download button first
     // asks the engine whether the URL resolves to a playlist; a
     // playlist with several entries opens the picker below, a single
@@ -601,6 +602,57 @@ fun DownloadScreen(
                     settingsRepository = settingsRepository,
                     onDismiss = {
                         showOptions = false
+                        qualitySettings = settingsRepository.load()
+                    },
+                )
+            }
+
+            // Issue #348: SponsorBlock row. The summary is the chosen
+            // categories, or "Off" when removal is disabled (or no
+            // categories are chosen, which passes no flag). Tapping
+            // opens the SponsorBlock dialog; the summary is re-read
+            // on dismiss.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showSponsorBlock = true }
+                    .padding(bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.download_sponsorblock_title),
+                        color = MpxTheme.colors.textPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Text(
+                        text = if (qualitySettings.downloadSponsorBlock &&
+                            qualitySettings.downloadSponsorBlockCategories.isNotBlank()
+                        ) {
+                            qualitySettings.downloadSponsorBlockCategories
+                        } else {
+                            stringResource(R.string.player_state_off)
+                        },
+                        color = MpxTheme.colors.textSecondary,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MpxTheme.colors.textSecondary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+
+            if (showSponsorBlock) {
+                DownloadSponsorBlockDialog(
+                    settingsRepository = settingsRepository,
+                    onDismiss = {
+                        showSponsorBlock = false
                         qualitySettings = settingsRepository.load()
                     },
                 )

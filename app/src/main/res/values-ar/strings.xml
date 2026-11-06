@@ -55,6 +55,10 @@
     <string name="download_options_restrict_filenames">تقييد أسماء الملفات</string>
     <string name="download_options_restrict_filenames_short">أسماء ملفات آمنة</string>
     <string name="download_options_summary_none">لا حدود مضبوطة</string>
+    <string name="download_sponsorblock_title">SponsorBlock</string>
+    <string name="download_sponsorblock_enable">إزالة مقاطع الرعاة</string>
+    <string name="download_sponsorblock_enable_desc">اقتطاع مقاطع الرعاة والمقدمات والخواتيم من الفيديوهات المنزّلة باستخدام SponsorBlock.</string>
+    <string name="download_sponsorblock_categories">الفئات المراد إزالتها</string>
     <string name="download_audio_only">صوت فقط</string>
     <string name="download_subtitles">تنزيل الترجمة</string>
     <string name="download_notification_channel_name">التنزيلات</string>

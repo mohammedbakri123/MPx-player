@@ -1446,6 +1446,24 @@ class MpxDownloader private constructor(context: Context) {
             if (settings.downloadForceIpv4) addOption("-4")
         }
 
+    /**
+     * Issue #348: SponsorBlock removal, Seal's shape
+     * (DownloadUtil.kt:751-752, JunkFood02/Seal, GPL-3.0):
+     * `--sponsorblock-remove <categories>` cuts the segments with
+     * the bundled ffmpeg (#336). Download-only: info/probe
+     * requests never produce a file to cut. Off by default; blank
+     * categories pass no flag. Applied to video and audio-only
+     * downloads alike, like Seal — yt-dlp cuts the segments from
+     * the extracted audio too.
+     */
+    private fun YoutubeDLRequest.addOptionsForSponsorBlock(settings: AppSettings): YoutubeDLRequest =
+        apply {
+            val categories = settings.downloadSponsorBlockCategories.trim()
+            if (settings.downloadSponsorBlock && categories.isNotBlank()) {
+                addOption("--sponsorblock-remove", categories)
+            }
+        }
+
     private suspend fun runDownload(item: ActiveDownload) {
         val id = item.id
         // Issue #334: this download's own temp dir (Seal's `-P temp:`
@@ -1606,6 +1624,10 @@ class MpxDownloader private constructor(context: Context) {
                 } else {
                     addOption("--concurrent-fragments", CONCURRENT_FRAGMENTS_DEFAULT)
                 }
+                // Issue #348: SponsorBlock removal (Seal's
+                // DownloadUtil.kt:751-752, JunkFood02/Seal, GPL-3.0) —
+                // the segments are cut with the bundled ffmpeg (#336).
+                addOptionsForSponsorBlock(settings)
                 addOption("--no-playlist")
                 addOption("--no-mtime")
                 // Issue #346: the download archive (Seal's
@@ -1687,6 +1709,30 @@ class MpxDownloader private constructor(context: Context) {
             // in the temp dir as `.part`), so this cannot mask a real
             // download failure.
             if (item.subtitles) {
+                val file = findOutputFile(response.out, beforeNames)
+                if (file != null) {
+                    val published = publishFinishedFile(file)
+                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
+                    recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
+                    refreshFiles()
+                    return
+                }
+            }
+            // Issue #348: SponsorBlock API unreachable — Seal's
+            // fallback (DownloadUtil.kt:805-815, JunkFood02/Seal,
+            // GPL-3.0). The video itself downloaded fine; only the
+            // segment lookup failed (yt-dlp fetches the segments while
+            // post-processing, after the download), so the row still
+            // completes instead of failing. A file in downloadsDir (or
+            // the temp dir, via the Destination line) here means the
+            // download phase finished — a partial never reaches
+            // downloadsDir and the temp file is only complete once the
+            // download phase ends, so this cannot mask a real download
+            // failure. Without a file there is nothing to keep and the
+            // error below is thrown as usual.
+            if (settings.downloadSponsorBlock &&
+                response.err.contains(SPONSORBLOCK_API_ERROR)
+            ) {
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
                     val published = publishFinishedFile(file)
@@ -1896,6 +1942,16 @@ class MpxDownloader private constructor(context: Context) {
          * No language picker in this issue — a follow-up if wanted.
          */
         private const val SUBTITLE_LANGS = "en,ar"
+
+        /**
+         * SponsorBlock API failure marker (issue #348): the stderr
+         * substring Seal matches in its fallback
+         * (DownloadUtil.kt:805-815, JunkFood02/Seal, GPL-3.0). When
+         * the download fails with this message, the video itself
+         * downloaded fine and the row still completes (see
+         * runDownload's non-zero-exit path).
+         */
+        private const val SPONSORBLOCK_API_ERROR = "Unable to communicate with SponsorBlock API"
 
         private val MEDIA_EXTENSIONS = setOf(
             "mp4", "mkv", "webm", "mov", "avi", "flv", "3gp", "ts", "m2ts",

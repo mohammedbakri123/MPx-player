@@ -143,6 +143,13 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadProxy = prefs.getString("download_proxy", "") ?: "",
             downloadForceIpv4 = prefs.getBoolean("download_force_ipv4", false),
             downloadRestrictFilenames = prefs.getBoolean("download_restrict_filenames", false),
+            // Issue #348: SponsorBlock. Stored raw — the categories
+            // string is passed to `--sponsorblock-remove` as-is.
+            downloadSponsorBlock = prefs.getBoolean("download_sponsorblock", false),
+            downloadSponsorBlockCategories = prefs.getString(
+                "download_sponsorblock_categories",
+                "sponsor,intro,outro,selfpromo",
+            ) ?: "sponsor,intro,outro,selfpromo",
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -263,6 +270,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("download_proxy", settings.downloadProxy)
             .putBoolean("download_force_ipv4", settings.downloadForceIpv4)
             .putBoolean("download_restrict_filenames", settings.downloadRestrictFilenames)
+            .putBoolean("download_sponsorblock", settings.downloadSponsorBlock)
+            .putString("download_sponsorblock_categories", settings.downloadSponsorBlockCategories)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill
