@@ -711,6 +711,18 @@ class MpvPlayerEngine(
      * decoding the current stream and the step-down is a no-op.
      */
     private fun attemptDecoderFallback(reason: String) {
+        // Issue #258: a fallback trigger queued on mainHandler before a
+        // deliberate stop still runs after it — and the premature-EOF
+        // check posts exactly such a trigger. The reload guard below
+        // would stop the reload, but the stage would still step down
+        // (HW -> HW+) and set the hwdec property for nothing. Nothing
+        // is loaded and there is no queue after a stop, so there is
+        // nothing to fall back for: drop stale triggers here, at the
+        // single entry point, instead of in each caller.
+        if (!fileLoadedForCurrentItem || currentQueue.isEmpty()) {
+            Log.d(TAG, "Decoder fallback ignored; nothing loaded ($reason)")
+            return
+        }
         // Issue #212: coalesce duplicate triggers for the same failure
         // (several mediacodec log lines, or a log line plus a premature
         // END_FILE) — while a fallback reload is in flight, one failure
@@ -989,6 +1001,17 @@ class MpvPlayerEngine(
                 }
             }
             MPV.mpvEvent.MPV_EVENT_FILE_LOADED -> {
+                // Issue #258: no active load means this FILE_LOADED
+                // belongs to a load the user deliberately stopped —
+                // stop() clears activeMediaUri, and a FILE_LOADED
+                // generated before the stop command was processed can
+                // still be delivered after it. Dropping it keeps the
+                // stop from re-marking the file loaded and posting READY
+                // for a session that no longer exists.
+                if (activeMediaUri.isNullOrBlank()) {
+                    Log.w(TAG, "Ignoring FILE_LOADED with no active load (stopped?)")
+                    return
+                }
                 // Drop stale FILE_LOADED event if the file changed before FILE_LOADED arrived
                 val loadedPath = try { mpv.getPropertyString("path") } catch (_: Exception) { null }
                 val isStale = if (!loadedPath.isNullOrBlank() && !activeMediaUri.isNullOrBlank()) {
@@ -1925,6 +1948,29 @@ class MpvPlayerEngine(
         activeMediaUri = null
         loadIssued = false
         lastMpvEvent = "none"
+        // Issue #258: a deliberate stop ends the loaded file AND the
+        // queue — the stop itself generates an END_FILE (reason=stop,
+        // eof-reached false), and with fileLoadedForCurrentItem still
+        // set that falls into the premature-EOF check and fires a
+        // spurious decoder fallback that reloads the stopped item at
+        // the stop position. Clearing the flag here routes the
+        // stop-generated END_FILE to the startup-failure branch, where
+        // reason=stop is benign. Clearing the queue too: the fallback
+        // reload and attachSurface()'s legacy reload both key on a
+        // non-empty currentQueue, so clearing the flag alone would let
+        // the next surface attach resurrect the stopped item. The
+        // cached position/duration/buffer go too (same reset load()
+        // does — issue #221), so the stopped item's time cannot leak
+        // into a later state read, and the in-flight fallback override
+        // is dropped so it cannot step a later load down a stage.
+        fileLoadedForCurrentItem = false
+        currentQueue = emptyList()
+        currentMediaIndex = 0
+        cachedPositionMs = 0L
+        cachedDurationMs = 0L
+        cachedBufferedMs = 0L
+        fallbackReloadPending = false
+        fallbackHwdecStage = null
         try {
             mpv.command("stop")
             cachedIsPlaying = false
