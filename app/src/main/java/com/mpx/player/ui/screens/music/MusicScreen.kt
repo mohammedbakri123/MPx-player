@@ -458,8 +458,10 @@ fun MusicScreen(
         permissionResultHandler.callback = { isGranted ->
         hasPermission = isGranted
         if (isGranted) {
+            // Issue #295: isLoading is snapshot state — write it on Main,
+            // before the IO work, not inside the IO block.
+            isLoading = true
             scope.launch(Dispatchers.IO) {
-                isLoading = true
                 val t = repository.getAudioTracks()
                 val p = repository.getPlaylists()
                 val al = repository.getAudioAlbums()
@@ -487,8 +489,10 @@ fun MusicScreen(
     fun refreshMusic() {
         if (MediaPermissions.hasAudioPermission(context)) {
             hasPermission = true
+            // Issue #295: isLoading is snapshot state — write it on Main,
+            // before the IO work, not inside the IO block.
+            isLoading = true
             scope.launch(Dispatchers.IO) {
-                isLoading = true
                 val t = repository.getAudioTracks()
                 val p = repository.getPlaylists()
                 val al = repository.getAudioAlbums()
@@ -524,8 +528,10 @@ fun MusicScreen(
                 appSettings = loadedSettings
                 viewMode = if (loadedSettings.musicViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
                 if (currentPerm) {
+                    // Issue #295: isLoading is snapshot state — write it
+                    // on Main, before the IO work, not inside the IO block.
+                    isLoading = true
                     scope.launch(Dispatchers.IO) {
-                        isLoading = true
                         val t = repository.getAudioTracks()
                         val p = repository.getPlaylists()
                         val al = repository.getAudioAlbums()
