@@ -127,6 +127,7 @@ private val MediaFolderSaver: Saver<MediaFolder?, List<Any>> = Saver(
                 it.lastModified,
                 it.isStorageRemovable,
                 it.totalDurationMs,
+                it.totalSizeBytes,
             )
         }
     },
@@ -141,6 +142,9 @@ private val MediaFolderSaver: Saver<MediaFolder?, List<Any>> = Saver(
             lastModified = saved[6] as Long,
             isStorageRemovable = saved[7] as Boolean,
             totalDurationMs = saved[8] as Long,
+            // Appended after totalDurationMs (#307): state saved by an
+            // older build has only 9 entries, so default to 0L there.
+            totalSizeBytes = saved.getOrNull(9) as? Long ?: 0L,
         )
     },
 )
