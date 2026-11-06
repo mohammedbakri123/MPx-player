@@ -1,4 +1,5 @@
 package com.mpx.player.ui.components.persistence
+import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
@@ -227,11 +228,22 @@ fun PlaybackHistoryDialog(
     // page, so rows past 100 are reachable here too.
     historyTotal: Int,
     onLoadMore: (() -> Unit)? = null,
+    // #266: the playback manager, so the dialog can apply the same
+    // "Resume at" guard as HistoryScreen (#252) — the label must only
+    // appear when a tap would actually resume.
+    playbackManager: PlaybackManager? = null,
     onDismiss: () -> Unit,
     onItemClick: (PlaybackHistoryItem) -> Unit,
     onClearHistory: () -> Unit,
 ) {
     val dateFormat = remember { SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()) }
+
+    // #266: same guard as HistoryScreen (#252) — read fresh on every
+    // composition so a Settings change is picked up when returning to
+    // this screen. Null manager (never in practice — Music passes its
+    // own) hides the label rather than promising a resume that cannot
+    // happen.
+    val resumePlaybackEnabled = playbackManager?.settingsRepository?.load()?.resumePlayback ?: false
 
     // #265: load the next page when scrolled near the end. Keys on
     // history.size too, so it re-fires after each page lands while the
@@ -362,7 +374,14 @@ fun PlaybackHistoryDialog(
                                             color = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
                                             fontSize = 11.sp,
                                         )
-                                        if (item.playbackPositionMs > 1_500L) {
+                                        // #266: same guard as HistoryScreen
+                                        // (#252) — hidden when resume is off,
+                                        // and the 2_000 ms floor matches
+                                        // PlaybackManager.shouldResume. The
+                                        // old > 1_500 ms check showed the
+                                        // label for positions that restart
+                                        // from 0 on tap.
+                                        if (resumePlaybackEnabled && item.playbackPositionMs > 2_000L) {
                                             Spacer(Modifier.width(6.dp))
                                             Text(
                                                 text = stringResource(R.string.history_resume_at, formatTime(item.playbackPositionMs)),
