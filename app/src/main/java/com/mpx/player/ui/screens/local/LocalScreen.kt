@@ -162,13 +162,19 @@ private val MediaFolderSaver: Saver<MediaFolder?, List<Any>> = Saver(
  * fallback mirrors the tree's parent walk (#196): scanned paths can differ
  * in case from the stored entry for the same directory. A blacklisted
  * storage root (e.g. `/storage/emulated/0`) hides everything under it —
- * that is the user's explicit choice, no guard is applied here.
+ * that is the user's explicit choice, no guard is applied here. A blank
+ * entry is different (#316): it normalizes to `""`, so `"$base/"` is `"/"`
+ * and every absolute path would match — blank/whitespace-only entries
+ * (and a lone `/`, which also normalizes to `""`) never match anything.
  */
 internal fun isPathBlacklisted(path: String, blacklist: Set<String>): Boolean {
     if (blacklist.isEmpty()) return false
     val normalized = normalizedTreePath(path)
     return blacklist.any { entry ->
         val base = normalizedTreePath(entry)
+        // #316: a blank entry normalizes to "", so "$base/" is "/" and
+        // every absolute path would match. Skip blank entries outright.
+        if (base.isBlank()) return@any false
         normalized == base ||
             normalized.startsWith("$base/") ||
             normalized.equals(base, ignoreCase = true) ||
