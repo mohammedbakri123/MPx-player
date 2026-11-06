@@ -745,7 +745,16 @@ class MediaStoreRepository(
                         val id = if (idCol >= 0) cursor.getLong(idCol).toString() else path
                         val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
                         val title = rawTitle?.ifBlank { "Unknown Track" } ?: "Unknown Track"
-                        if (!showHidden && isHiddenPath(path, title)) continue
+                        // Issue #281: same always-excluded check as videos
+                        // (#218) — audio under /Android/data or /Android/obb
+                        // is another app's private audio and stays out of the
+                        // library regardless of "Show hidden files". Applied
+                        // here, at the scan, so Albums / Artists / Folders /
+                        // Playlists (all re-scan via getAudioTracks()) are
+                        // fixed by this one change.
+                        if ((!showHidden && isHiddenPath(path, title)) ||
+                            isSystemCachePath(path)
+                        ) continue
 
                         val rawArtist = if (artistCol >= 0) cursor.getString(artistCol) else null
                         val artist = if (rawArtist.isNullOrBlank() || rawArtist == "<unknown>") {
