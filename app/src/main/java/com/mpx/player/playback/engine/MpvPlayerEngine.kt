@@ -2152,17 +2152,31 @@ class MpvPlayerEngine(
 
     override fun seekToNextMediaItem() {
         if (hasNextMediaItem) {
+            // Issue #305: resume only if it was playing — a paused
+            // track stays paused (mirrors setDecoderMode /
+            // reloadForDecoderFallback, and the previous-at-index-0
+            // branch below, which seeks without playing). mpv's pause
+            // property survives loadfile, so load() alone leaves the
+            // next item paused; the unconditional play() was the only
+            // thing resuming it. Skipping play() also leaves
+            // playRequested false (pause() cleared it), so a
+            // surface-deferred load stays paused when attachSurface()
+            // flushes it.
+            val wasPlaying = cachedIsPlaying
             val next = currentMediaIndex + 1
             load(currentQueue, next, 0L)
-            play()
+            if (wasPlaying) play()
         }
     }
 
     override fun seekToPreviousMediaItem() {
         if (hasPreviousMediaItem) {
+            // Issue #305: same paused-state preservation as
+            // seekToNextMediaItem above.
+            val wasPlaying = cachedIsPlaying
             val prev = currentMediaIndex - 1
             load(currentQueue, prev, 0L)
-            play()
+            if (wasPlaying) play()
         } else {
             seekTo(0L)
         }
