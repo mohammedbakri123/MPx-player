@@ -6,6 +6,11 @@ import com.mpx.player.domain.model.PlaybackResumePosition
 
 /**
  * Room entity representing a saved playback resume position for a media item.
+ *
+ * Issue #227: the primary key [mediaId] is the resume key — the stable media
+ * URI/path (see `PlaybackResumeManager.resumeKey`), NOT the bare MediaStore
+ * row id, which repeats across storage volumes. The PK stays a String, so
+ * only the values written changed; no migration was needed.
  */
 @Entity(tableName = "playback_resume")
 data class PlaybackResumeEntity(

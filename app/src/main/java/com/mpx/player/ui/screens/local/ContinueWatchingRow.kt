@@ -48,6 +48,7 @@ import com.mpx.player.ui.theme.MpxShapes
  */
 data class ContinueWatchingItem(
     val mediaUri: String,
+    /** Resume key for the item (issue #227): the stable media URI, not the bare MediaStore row id. */
     val mediaId: String,
     val title: String,
     val subtitle: String = "",
