@@ -305,6 +305,7 @@
     <string name="dialog_network_desc">أدخل أي رابط بث HTTP أو HTTPS أو HLS للتشغيل مباشرة:</string>
     <string name="dialog_network_samples">روابط بث عامة تجريبية:</string>
     <string name="dialog_network_play">تشغيل البث</string>
+    <string name="dialog_network_invalid_url">أدخل رابط بث صحيح يبدأ بـ http:// أو https:// أو rtsp://</string>
 
     <string name="dialog_privacy_title">الخصوصية والأمان</string>
     <string name="privacy_sec1_title">بنية برمجية تعمل 100% على الجهاز</string>

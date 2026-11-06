@@ -305,6 +305,7 @@
     <string name="dialog_network_desc">Enter any HTTP, HTTPS, or HLS stream URL to play directly:</string>
     <string name="dialog_network_samples">Sample Public Streams:</string>
     <string name="dialog_network_play">Play Stream</string>
+    <string name="dialog_network_invalid_url">Enter a valid stream URL starting with http://, https:// or rtsp://</string>
 
     <string name="dialog_privacy_title">Privacy &amp; Security</string>
     <string name="privacy_sec1_title">100% On-Device Architecture</string>

@@ -1011,6 +1011,20 @@ private fun PreferenceRow(
 // --- DIALOG IMPLEMENTATIONS ---
 
 /**
+ * Issue #297: the scheme rule for a network stream URL — the same rule
+ * pasteClipboard() applies to clipboard text (http://, https://,
+ * rtsp://). Typed text is trimmed first; paste checks the raw text and
+ * trims on accept, so the two paths share the scheme list but keep
+ * their own trimming behaviour.
+ */
+private fun isSupportedStreamUrl(text: String): Boolean {
+    val trimmed = text.trim()
+    return trimmed.startsWith("http://", ignoreCase = true) ||
+        trimmed.startsWith("https://", ignoreCase = true) ||
+        trimmed.startsWith("rtsp://", ignoreCase = true)
+}
+
+/**
  * Real Network Stream player dialog allowing direct stream input.
  */
 @Composable
@@ -1019,6 +1033,10 @@ private fun NetworkStreamDialog(
     onPlayStream: (String) -> Unit,
 ) {
     var urlText by remember { mutableStateOf("") }
+    // Issue #297: typed text is validated with the same scheme rule as
+    // pasteClipboard() below — Play is only enabled for a supported
+    // stream URL, so "hello" can no longer reach the player.
+    val isValidUrl = isSupportedStreamUrl(urlText)
     val context = LocalContext.current
     val clipboardManager = remember(context) { context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager }
 
@@ -1067,6 +1085,15 @@ private fun NetworkStreamDialog(
                         }
                     },
                     singleLine = true,
+                    // Issue #297: non-blank text without a supported
+                    // scheme is an error — the field shows why Play is
+                    // disabled instead of failing in the player.
+                    isError = urlText.isNotBlank() && !isValidUrl,
+                    supportingText = {
+                        if (urlText.isNotBlank() && !isValidUrl) {
+                            Text(stringResource(R.string.dialog_network_invalid_url))
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MpxTheme.colors.primary,
@@ -1077,8 +1104,11 @@ private fun NetworkStreamDialog(
         },
         confirmButton = {
             Button(
-                onClick = { if (urlText.isNotBlank()) onPlayStream(urlText.trim()) },
-                enabled = urlText.isNotBlank(),
+                // Issue #297: Play only for a supported stream URL —
+                // the same scheme rule as pasteClipboard(), so typed
+                // "hello" can no longer open the player.
+                onClick = { if (isValidUrl) onPlayStream(urlText.trim()) },
+                enabled = isValidUrl,
                 colors = ButtonDefaults.buttonColors(containerColor = MpxTheme.colors.primary),
             ) {
                 Text(stringResource(R.string.dialog_network_play))

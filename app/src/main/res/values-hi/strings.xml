@@ -305,6 +305,7 @@
     <string name="dialog_network_desc">सीधे चलाने के लिए कोई भी HTTP, HTTPS या HLS स्ट्रीम URL दर्ज करें:</string>
     <string name="dialog_network_samples">नमूना सार्वजनिक स्ट्रीम:</string>
     <string name="dialog_network_play">स्ट्रीम चलाएँ</string>
+    <string name="dialog_network_invalid_url">http://, https:// या rtsp:// से शुरू होने वाला मान्य स्ट्रीम URL दर्ज करें</string>
 
     <string name="dialog_privacy_title">गोपनीयता और सुरक्षा</string>
     <string name="privacy_sec1_title">100% ऑन-डिवाइस आर्किटेक्चर</string>
