@@ -115,6 +115,14 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             hiddenPlayerMenuIds = prefs.getString("player_menu_layout_hidden", "") ?: "",
             doubleTapSeekSeconds = prefs.getInt("double_tap_seek_seconds", 10),
             lastSmbHost = prefs.getString("last_smb_host", "") ?: "",
+            // Issue #333: yt-dlp update prefs. Channel is validated —
+            // a stale/corrupt value falls back to STABLE.
+            ytdlpAutoUpdate = prefs.getBoolean("ytdlp_auto_update", true),
+            ytdlpUpdateChannel = prefs.getString("ytdlp_update_channel", "STABLE")
+                ?.takeIf { it == "STABLE" || it == "NIGHTLY" } ?: "STABLE",
+            ytdlpUpdateIntervalMs = prefs.getLong("ytdlp_update_interval_ms", 7L * 24 * 60 * 60 * 1000),
+            ytdlpLastUpdateTimeMs = prefs.getLong("ytdlp_last_update_time_ms", 0L),
+            ytdlpVersion = prefs.getString("ytdlp_version", "") ?: "",
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -222,6 +230,11 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("player_menu_layout", settings.playerMenuLayout)
             .putString("player_menu_layout_hidden", settings.hiddenPlayerMenuIds)
             .putInt("double_tap_seek_seconds", settings.doubleTapSeekSeconds)
+            .putBoolean("ytdlp_auto_update", settings.ytdlpAutoUpdate)
+            .putString("ytdlp_update_channel", settings.ytdlpUpdateChannel)
+            .putLong("ytdlp_update_interval_ms", settings.ytdlpUpdateIntervalMs)
+            .putLong("ytdlp_last_update_time_ms", settings.ytdlpLastUpdateTimeMs)
+            .putString("ytdlp_version", settings.ytdlpVersion)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

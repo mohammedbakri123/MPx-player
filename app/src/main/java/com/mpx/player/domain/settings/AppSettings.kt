@@ -116,6 +116,18 @@ data class AppSettings(
     val hiddenPlayerMenuIds: String = "",
     // Double-tap seek amount in seconds (#158, mpvEx parity): 5/10/15/30.
     val doubleTapSeekSeconds: Int = 10,
+    // yt-dlp auto-update (issue #333, Seal UpdateUtil/YtdlpUpdater):
+    // the bundled yt-dlp rots as extractors change, so MPx checks for
+    // a newer one on launch. Channel STABLE (default) or NIGHTLY;
+    // lastUpdateTimeMs is the last check that returned (DONE or
+    // ALREADY_UP_TO_DATE — failures do not reset the interval, so a
+    // broken network retries on the next launch instead of waiting a
+    // week); ytdlpVersion is the installed version string once known.
+    val ytdlpAutoUpdate: Boolean = true,
+    val ytdlpUpdateChannel: String = "STABLE",
+    val ytdlpUpdateIntervalMs: Long = 7L * 24 * 60 * 60 * 1000,
+    val ytdlpLastUpdateTimeMs: Long = 0L,
+    val ytdlpVersion: String = "",
 ) {
     /**
      * Total number of currently visible music tabs.

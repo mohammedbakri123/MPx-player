@@ -28,6 +28,13 @@
     <string name="download_play">चलाएं</string>
     <string name="download_delete">डाउनलोड हटाएं</string>
     <string name="download_deleted">डाउनलोड हटा दिया गया</string>
+    <string name="download_update_ytdlp">yt-dlp अपडेट करें</string>
+    <string name="download_updating_ytdlp">yt-dlp अपडेट हो रहा है…</string>
+    <string name="download_ytdlp_updated">yt-dlp अपडेट हो गया</string>
+    <string name="download_ytdlp_up_to_date">yt-dlp पहले से नवीनतम है</string>
+    <string name="download_ytdlp_update_failed">yt-dlp अपडेट विफल</string>
+    <string name="download_ytdlp_update_busy">डाउनलोड चल रहा है — समाप्त होने के बाद अपडेट करें</string>
+    <string name="download_ytdlp_version">yt-dlp %1$s</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">वीडियो</string>

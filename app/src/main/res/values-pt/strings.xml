@@ -28,6 +28,13 @@
     <string name="download_play">Reproduzir</string>
     <string name="download_delete">Excluir download</string>
     <string name="download_deleted">Download excluído</string>
+    <string name="download_update_ytdlp">Atualizar yt-dlp</string>
+    <string name="download_updating_ytdlp">Atualizando yt-dlp…</string>
+    <string name="download_ytdlp_updated">yt-dlp atualizado</string>
+    <string name="download_ytdlp_up_to_date">yt-dlp já está atualizado</string>
+    <string name="download_ytdlp_update_failed">Falha ao atualizar yt-dlp</string>
+    <string name="download_ytdlp_update_busy">Há um download em andamento — tente atualizar após terminar</string>
+    <string name="download_ytdlp_version">yt-dlp %1$s</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vídeo</string>

@@ -28,6 +28,13 @@
     <string name="download_play">Play</string>
     <string name="download_delete">Delete download</string>
     <string name="download_deleted">Download deleted</string>
+    <string name="download_update_ytdlp">Update yt-dlp</string>
+    <string name="download_updating_ytdlp">Updating yt-dlp…</string>
+    <string name="download_ytdlp_updated">yt-dlp updated</string>
+    <string name="download_ytdlp_up_to_date">yt-dlp is already up to date</string>
+    <string name="download_ytdlp_update_failed">yt-dlp update failed</string>
+    <string name="download_ytdlp_update_busy">A download is running — try updating after it finishes</string>
+    <string name="download_ytdlp_version">yt-dlp %1$s</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Video</string>

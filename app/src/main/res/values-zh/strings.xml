@@ -28,6 +28,13 @@
     <string name="download_play">播放</string>
     <string name="download_delete">删除下载</string>
     <string name="download_deleted">下载已删除</string>
+    <string name="download_update_ytdlp">更新 yt-dlp</string>
+    <string name="download_updating_ytdlp">正在更新 yt-dlp…</string>
+    <string name="download_ytdlp_updated">yt-dlp 已更新</string>
+    <string name="download_ytdlp_up_to_date">yt-dlp 已是最新</string>
+    <string name="download_ytdlp_update_failed">yt-dlp 更新失败</string>
+    <string name="download_ytdlp_update_busy">有下载正在进行——完成后重试</string>
+    <string name="download_ytdlp_version">yt-dlp %1$s</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">视频</string>

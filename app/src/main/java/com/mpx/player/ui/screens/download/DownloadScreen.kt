@@ -34,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -59,6 +60,8 @@ import com.mpx.player.download.ActiveDownload
 import com.mpx.player.download.DownloadStatus
 import com.mpx.player.download.DownloaderInitState
 import com.mpx.player.download.MpxDownloader
+import com.mpx.player.download.YtDlpUpdateOutcome
+import com.mpx.player.download.YtDlpUpdateState
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
@@ -97,6 +100,9 @@ fun DownloadScreen(
     val initState by downloader.initState.collectAsState()
     val activeDownloads by downloader.activeDownloads.collectAsState()
     val downloadedFiles by downloader.downloadedFiles.collectAsState()
+    // Issue #333: yt-dlp version + update state for the manual update row.
+    val updateState by downloader.updateState.collectAsState()
+    val ytdlpVersion by downloader.ytdlpVersion.collectAsState()
 
     // DONE rows are redundant with the file list below (a DONE item always
     // has its file there), and CANCELED rows have no action — only live
@@ -121,6 +127,11 @@ fun DownloadScreen(
     val announcedIds = remember { mutableSetOf<String>() }
     val failedLabel = stringResource(R.string.download_failed)
     val completeLabel = stringResource(R.string.download_complete)
+    // Issue #333: manual yt-dlp update outcome labels.
+    val ytdlpUpdatedLabel = stringResource(R.string.download_ytdlp_updated)
+    val ytdlpUpToDateLabel = stringResource(R.string.download_ytdlp_up_to_date)
+    val ytdlpUpdateFailedLabel = stringResource(R.string.download_ytdlp_update_failed)
+    val ytdlpUpdateBusyLabel = stringResource(R.string.download_ytdlp_update_busy)
     LaunchedEffect(activeDownloads) {
         activeDownloads.forEach { item ->
             if (item.id !in announcedIds && (item.status == DownloadStatus.DONE || item.status == DownloadStatus.FAILED)) {
@@ -243,6 +254,54 @@ fun DownloadScreen(
                     fontSize = 13.sp,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
+            }
+
+            // Issue #333: installed yt-dlp version + manual update.
+            // The version is "" until the first update check records it
+            // (auto-update on launch, or this button).
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = if (ytdlpVersion.isNotBlank()) {
+                        stringResource(R.string.download_ytdlp_version, ytdlpVersion)
+                    } else {
+                        "yt-dlp"
+                    },
+                    color = MpxTheme.colors.textSecondary,
+                    fontSize = 13.sp,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            val message = when (downloader.updateYtDlpNow()) {
+                                YtDlpUpdateOutcome.UPDATED -> ytdlpUpdatedLabel
+                                YtDlpUpdateOutcome.UP_TO_DATE -> ytdlpUpToDateLabel
+                                YtDlpUpdateOutcome.FAILED -> ytdlpUpdateFailedLabel
+                                YtDlpUpdateOutcome.BUSY -> ytdlpUpdateBusyLabel
+                            }
+                            snackbarHostState.showSnackbar(message)
+                        }
+                    },
+                    enabled = updateState != YtDlpUpdateState.UPDATING,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = if (updateState == YtDlpUpdateState.UPDATING) {
+                            stringResource(R.string.download_updating_ytdlp)
+                        } else {
+                            stringResource(R.string.download_update_ytdlp)
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MpxTheme.colors.primary,
+                        fontSize = 13.sp,
+                    )
+                }
             }
 
             if (visibleActive.isEmpty() && downloadedFiles.isEmpty()) {

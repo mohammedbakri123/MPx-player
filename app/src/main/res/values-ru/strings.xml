@@ -28,6 +28,13 @@
     <string name="download_play">Играть</string>
     <string name="download_delete">Удалить загрузку</string>
     <string name="download_deleted">Загрузка удалена</string>
+    <string name="download_update_ytdlp">Обновить yt-dlp</string>
+    <string name="download_updating_ytdlp">Обновление yt-dlp…</string>
+    <string name="download_ytdlp_updated">yt-dlp обновлён</string>
+    <string name="download_ytdlp_up_to_date">yt-dlp уже обновлён</string>
+    <string name="download_ytdlp_update_failed">Не удалось обновить yt-dlp</string>
+    <string name="download_ytdlp_update_busy">Идёт загрузка — попробуйте обновить после её завершения</string>
+    <string name="download_ytdlp_version">yt-dlp %1$s</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Видео</string>
