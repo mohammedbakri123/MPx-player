@@ -495,8 +495,10 @@ fun LocalScreen(
         if (isLoading) return
         if (MediaPermissions.hasVideoPermission(context)) {
             hasPermission = true
+            // Issue #295: isLoading is snapshot state — write it on Main,
+            // before the IO work, not inside the IO block.
+            isLoading = true
             scope.launch(Dispatchers.IO) {
-                isLoading = true
                 val scanned = repository.getMediaFolders(showAll)
                 val scannedVideos = repository.getAllVideos(showAll)
                 val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, appSettings.blacklistedFolders)
@@ -519,8 +521,10 @@ fun LocalScreen(
         permissionResultHandler.callback = { isGranted ->
         hasPermission = isGranted
         if (isGranted) {
+            // Issue #295: isLoading is snapshot state — write it on Main,
+            // before the IO work, not inside the IO block.
+            isLoading = true
             scope.launch(Dispatchers.IO) {
-                isLoading = true
                 val scanned = repository.getMediaFolders(appSettings.showAllFolders)
                 val scannedVideos = repository.getAllVideos(appSettings.showAllFolders)
                 val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, appSettings.blacklistedFolders)
@@ -553,8 +557,10 @@ fun LocalScreen(
                 viewMode = if (loadedSettings.localViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
                 isTreeMode = loadedSettings.localTreeMode
                 if (currentPerm) {
+                    // Issue #295: isLoading is snapshot state — write it
+                    // on Main, before the IO work, not inside the IO block.
+                    isLoading = true
                     scope.launch(Dispatchers.IO) {
-                        isLoading = true
                         val scanned = repository.getMediaFolders(loadedSettings.showAllFolders)
                         val scannedVideos = repository.getAllVideos(loadedSettings.showAllFolders)
                         val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, loadedSettings.blacklistedFolders)
