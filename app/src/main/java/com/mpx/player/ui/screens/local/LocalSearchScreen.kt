@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -105,7 +106,9 @@ fun LocalSearchScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var query by remember { mutableStateOf("") }
+    // Issue #318: rememberSaveable, not remember — a plain remember
+    // dropped the typed query on rotation.
+    var query by rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 

@@ -294,17 +294,20 @@ fun LocalScreen(
     var showSortPopup by remember { mutableStateOf(false) }
     var popupFolderScope by remember { mutableStateOf(false) }
     // #142: the search page replaces the old inline root search.
-    var showSearchPage by remember { mutableStateOf(false) }
+    // Issue #318: rememberSaveable, not remember — the query inside
+    // LocalSearchScreen is saveable too, but it is only in composition
+    // while this flag is true, so a plain-remember flag would close the
+    // page on rotation and the saved query would never be reached.
+    // (Same query + flag pair as Music's #255.)
+    var showSearchPage by rememberSaveable { mutableStateOf(false) }
     // Issue #245: report the search page state to MainActivity so the
     // tab-swipe detector can turn off while the page is open — a swipe
-    // mid-search used to switch tabs and destroy the typed query (this
-    // flag and the query inside LocalSearchScreen are plain remember,
-    // lost when the composition is disposed). LaunchedEffect also fires
-    // on first composition, reporting false, which resets the flag if
-    // this screen was re-created while the page was open (e.g. after
-    // returning from the Player). The callback captures the parent's
-    // state object, not its value, so a stale instance still writes to
-    // the same state.
+    // mid-search used to switch tabs and destroy the typed query.
+    // LaunchedEffect also fires on first composition, reporting false,
+    // which resets the flag if this screen was re-created while the
+    // page was open (e.g. after returning from the Player). The
+    // callback captures the parent's state object, not its value, so a
+    // stale instance still writes to the same state.
     LaunchedEffect(showSearchPage) {
         onSearchPageChanged(showSearchPage)
     }
@@ -352,8 +355,11 @@ fun LocalScreen(
             }
         )
     }
-    var folderSearchQuery by remember { mutableStateOf("") }
-    var isFolderSearching by remember { mutableStateOf(false) }
+    // Issue #318: rememberSaveable, not remember — rotation dropped
+    // the folder search query (and the flag gating the search field,
+    // same query + flag pair as Music's #255).
+    var folderSearchQuery by rememberSaveable { mutableStateOf("") }
+    var isFolderSearching by rememberSaveable { mutableStateOf(false) }
     var showFolderSortDialog by remember { mutableStateOf(false) }
     // #144: videos queued for "Add to playlist" — the whole
     // multi-select action-bar selection.
