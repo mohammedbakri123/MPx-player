@@ -292,6 +292,14 @@ class PlaybackManager private constructor(context: Context) {
                     hasPrevious = engine.hasPreviousMediaItem,
                     hasNext = engine.hasNextMediaItem,
                     resumedFromMs = if (shouldResume) savedPos else null,
+                    // Issue #260: the new item's dimensions are not known
+                    // yet — drop the previous video's size so the PiP
+                    // params are not armed with a stale aspect while it
+                    // loads, and so the 0 -> WxH transition always
+                    // re-runs the effect even when the new video has the
+                    // same dimensions as the old one.
+                    videoWidth = 0,
+                    videoHeight = 0,
                 )
             }
             updateTracksState()
@@ -323,6 +331,13 @@ class PlaybackManager private constructor(context: Context) {
 
         override fun onPlaybackParametersChanged(speed: Float) {
             _playbackState.update { it.copy(speed = speed) }
+        }
+
+        override fun onVideoSizeChanged(width: Int, height: Int) {
+            // Issue #260: the video's dimensions became known (or the
+            // video unloaded) — publish them as state so the PiP params
+            // effect re-runs with the real aspect.
+            _playbackState.update { it.copy(videoWidth = width, videoHeight = height) }
         }
 
         override fun onVideoDecoderInitialized(decoderName: String) {
@@ -627,6 +642,11 @@ class PlaybackManager private constructor(context: Context) {
                 shuffleEnabled = if (keepShuffle) it.shuffleEnabled else false,
                 // A fresh video load is preparing until the engine reports READY.
                 isPreparing = targetItem.isVideo,
+                // Issue #260: same reset as onMediaItemTransition — the
+                // transition callback may land after this update, so the
+                // effect must not read the previous video's size here.
+                videoWidth = 0,
+                videoHeight = 0,
             )
         }
         updatePosition()

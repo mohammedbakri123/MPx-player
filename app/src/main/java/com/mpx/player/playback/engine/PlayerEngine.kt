@@ -50,6 +50,11 @@ interface PlayerEngine {
         fun onMediaItemTransition(index: Int, isAuto: Boolean) {}
         fun onTracksChanged() {}
         fun onPlaybackParametersChanged(speed: Float) {}
+        /**
+         * Issue #260: the video's display size (mpv dwidth/dheight) became
+         * known or changed. 0x0 while no video is loaded.
+         */
+        fun onVideoSizeChanged(width: Int, height: Int) {}
         fun onVideoDecoderInitialized(decoderName: String) {}
         fun onError(error: Exception) {}
     }
