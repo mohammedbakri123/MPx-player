@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -256,6 +257,10 @@ fun LocalFolderTree(
     isSelected: (MediaFolder) -> Boolean,
     onLongClick: (MediaFolder) -> Unit,
     onClick: (MediaFolder) -> Unit,
+    // Issue #279: the list state is hoisted by the caller (LocalScreen)
+    // so toggling tree <-> flat list keeps the tree's scroll position
+    // instead of discarding it. Defaults to a fresh state, as before.
+    listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier,
 ) {
     // Issue #173: the primary storage root is labelled Home (localized);
@@ -268,7 +273,6 @@ fun LocalFolderTree(
     val visibleRows = remember(roots, expandedKeys) {
         flattenVisibleTree(roots, expandedKeys)
     }
-    val listState = rememberLazyListState()
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
