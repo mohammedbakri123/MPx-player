@@ -1806,20 +1806,110 @@ fun MusicScreen(
 
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
-            onDismiss = { showCreatePlaylistDialog = false },
+            // Issue #310: cancelling creation must not lose the pending
+            // videos — the single-track add dialog reappears on its own
+            // (trackForPlaylistAdd is still set), and the multi-select
+            // one is put back explicitly below.
+            onDismiss = {
+                showCreatePlaylistDialog = false
+                if (tracksForPlaylistAdd.isNotEmpty()) showAddToPlaylistDialog = true
+            },
             // #268: Music creates audio playlists; the fixed type is
             // passed through (no selector on this screen).
             onConfirm = { name, isVideo ->
                 scope.launch {
-                    persistenceRepository.createPlaylist(name, isVideoPlaylist = isVideo)
-                    showCreatePlaylistDialog = false
-                    snackbarHostState.showSnackbar(context.getString(R.string.music_playlist_created_msg, name))
+                    // Issue #310: carry the pending add-to-playlist
+                    // track(s) into the newly created playlist, with
+                    // the same item mapping, order and feedback as
+                    // adding to an existing playlist below. A plain
+                    // create (no pending track) behaves as before.
+                    val targetTrack = trackForPlaylistAdd
+                    val selected = tracksForPlaylistAdd
+                    try {
+                        val newId = persistenceRepository.createPlaylist(
+                            name, isVideoPlaylist = isVideo
+                        )
+                        when {
+                            targetTrack != null -> {
+                                val rowId = persistenceRepository.addItemToPlaylist(
+                                    PlaylistItem(
+                                        playlistId = newId,
+                                        mediaUri = getPlayableUri(targetTrack),
+                                        mediaId = targetTrack.id,
+                                        title = targetTrack.title,
+                                        subtitle = "${targetTrack.artist} • ${targetTrack.album}",
+                                        isVideo = false,
+                                    )
+                                )
+                                trackForPlaylistAdd = null
+                                showCreatePlaylistDialog = false
+                                if (rowId != -1L) {
+                                    snackbarHostState.showSnackbar(context.getString(R.string.music_added_to_playlist_msg, name))
+                                } else {
+                                    snackbarHostState.showSnackbar(context.getString(R.string.music_already_in_playlist_msg, name))
+                                }
+                            }
+                            selected.isNotEmpty() -> {
+                                var addedCount = 0
+                                selected.forEach { track ->
+                                    val rowId = persistenceRepository.addItemToPlaylist(
+                                        PlaylistItem(
+                                            playlistId = newId,
+                                            mediaUri = track.path,
+                                            mediaId = track.id,
+                                            title = track.title,
+                                            subtitle = "${track.artist} • ${track.album}",
+                                            isVideo = false,
+                                            durationMs = track.durationMs,
+                                        )
+                                    )
+                                    if (rowId != -1L) addedCount++
+                                }
+                                tracksForPlaylistAdd = emptyList()
+                                showAddToPlaylistDialog = false
+                                clearTrackSelection()
+                                clearAlbumSelection()
+                                clearArtistSelection()
+                                clearPlaylistSelection()
+                                clearFolderSelection()
+                                showCreatePlaylistDialog = false
+                                when {
+                                    addedCount == selected.size -> snackbarHostState.showSnackbar(
+                                        context.getString(R.string.music_added_to_playlist_msg, name)
+                                    )
+                                    addedCount == 0 -> snackbarHostState.showSnackbar(
+                                        context.getString(R.string.music_already_in_playlist_msg, name)
+                                    )
+                                    else -> snackbarHostState.showSnackbar(
+                                        context.getString(
+                                            R.string.music_added_some_to_playlist_msg,
+                                            addedCount, name, selected.size - addedCount,
+                                        )
+                                    )
+                                }
+                            }
+                            else -> {
+                                showCreatePlaylistDialog = false
+                                snackbarHostState.showSnackbar(context.getString(R.string.music_playlist_created_msg, name))
+                            }
+                        }
+                    } catch (_: Exception) {
+                        // Creation failed — keep the pending track(s);
+                        // the add dialog comes back (single-track on its
+                        // own, multi-select explicitly) so the user can
+                        // retry instead of silently losing the selection.
+                        showCreatePlaylistDialog = false
+                        if (selected.isNotEmpty()) showAddToPlaylistDialog = true
+                    }
                 }
             },
         )
     }
 
-    if (trackForPlaylistAdd != null) {
+    // Issue #310: hidden while the create dialog is open — the pending
+    // track is carried through creation instead of being dropped, and
+    // comes back here if creation is cancelled or fails.
+    if (trackForPlaylistAdd != null && !showCreatePlaylistDialog) {
         val targetTrack = trackForPlaylistAdd!!
         AddToPlaylistDialog(
             playlists = customPlaylists,
@@ -1849,7 +1939,9 @@ fun MusicScreen(
                 }
             },
             onCreateNewPlaylist = {
-                trackForPlaylistAdd = null
+                // Issue #310: keep trackForPlaylistAdd — the create
+                // dialog's onConfirm adds it to the new playlist, and
+                // the add dialog comes back if creation is cancelled.
                 showCreatePlaylistDialog = true
             },
         )
@@ -1913,6 +2005,10 @@ fun MusicScreen(
                 }
             },
             onCreateNewPlaylist = {
+                // Issue #310: keep tracksForPlaylistAdd — the create
+                // dialog's onConfirm adds them to the new playlist, and
+                // its onDismiss puts this dialog back if creation is
+                // cancelled, so the pending tracks are never dropped.
                 showAddToPlaylistDialog = false
                 showCreatePlaylistDialog = true
             },
