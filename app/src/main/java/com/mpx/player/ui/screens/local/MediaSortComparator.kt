@@ -290,8 +290,15 @@ object MediaSortComparator {
             if (secCmp != 0) return@Comparator secCmp
         }
 
+        // #243: same-titled albums by different artists order by artist
+        // before the id tie-break, so the two rows sit deterministically
+        // instead of in hash order.
         val titleCmp = a.title.compareTo(b.title, ignoreCase = true)
-        if (titleCmp != 0) titleCmp else a.id.compareTo(b.id)
+        if (titleCmp != 0) titleCmp
+        else {
+            val artistCmp = a.artist.compareTo(b.artist, ignoreCase = true)
+            if (artistCmp != 0) artistCmp else a.id.compareTo(b.id)
+        }
     }
 
     private fun compareAlbumByField(
