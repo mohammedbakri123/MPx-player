@@ -118,6 +118,18 @@ object ThumbnailLoader {
         }
     }
 
+    // Issue #314: escape LIKE wildcards in a folder path before it is
+    // used as a LIKE pattern. `%` and `_` in a folder name (e.g.
+    // `100%_hits`) would otherwise match unrelated paths and pick
+    // another folder's video as this folder's thumbnail. `\` is the
+    // escape character, so it is escaped first. The caller appends the
+    // trailing `/%` wildcard, which stays unescaped.
+    private fun escapeLikePattern(value: String): String =
+        value
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
+
     private fun calculateInSampleSize(
         options: BitmapFactory.Options,
         reqWidth: Int,
@@ -317,11 +329,15 @@ object ThumbnailLoader {
 
                 // Fallback by folder path pattern if bucket id did not match
                 if (representativeVideoId == null && folderPath.isNotBlank()) {
+                    // Issue #314: escape the folder path's LIKE wildcards
+                    // (the trailing `/%` stays the only wildcard) and
+                    // declare the escape character, or a folder named
+                    // e.g. `100%_hits` matches unrelated paths.
                     context.contentResolver.query(
                         uri,
                         projection,
-                        "${MediaStore.Video.Media.DATA} LIKE ?",
-                        arrayOf("$folderPath/%"),
+                        "${MediaStore.Video.Media.DATA} LIKE ? ESCAPE '\\'",
+                        arrayOf("${escapeLikePattern(folderPath)}/%"),
                         "${MediaStore.Video.Media.DATE_MODIFIED} DESC LIMIT 1",
                     )?.use { cursor ->
                         if (cursor.moveToFirst()) {
