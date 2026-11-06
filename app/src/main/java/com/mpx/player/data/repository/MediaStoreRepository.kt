@@ -271,6 +271,11 @@ class MediaStoreRepository(
         val sevenDaysAgoSec = (System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000L) / 1000L
         val uris = getVideoContentUris()
 
+        // Issue #275: read once per scan — the row loop below needs it
+        // for the per-row hidden filter, and the display filter below
+        // reuses the same value.
+        val showHidden = showHiddenFiles()
+
         for (uri in uris) {
             try {
                 context.contentResolver.query(
@@ -292,6 +297,18 @@ class MediaStoreRepository(
                         val dataPath = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
                         val parentFile = if (dataPath.isNotBlank()) File(dataPath).parentFile else null
                         val parentPath = parentFile?.absolutePath.orEmpty()
+
+                        // Issue #275: apply the hidden filter before
+                        // accumulating — getVideosInFolder drops hidden
+                        // rows, so counting them here made the tile
+                        // count/size/duration (and the root strip, and
+                        // the stored subtitle size) lie about what the
+                        // folder contains. Same predicate as the folder
+                        // display filter and getVideosInFolder; the
+                        // path's own components carry the check (a
+                        // dotfile's name is its last component) — there
+                        // is no TITLE column in this projection.
+                        if (!showHidden && isHiddenPath(dataPath)) continue
 
                         // Issue #253: MediaStore bucket ids are the
                         // hash of the LOWER-CASED parent path, so the
@@ -413,7 +430,8 @@ class MediaStoreRepository(
             }
         }
 
-        val showHidden = showHiddenFiles()
+        // Issue #275: showHidden is read once at the top of the scan
+        // (the row loop uses it for the per-row hidden filter).
         // Issue #218: ONE filter for both modes. "Show all folders" only
         // adds empty folders (count == 0); it must not defeat the other
         // exclusions. Hidden folders need the hidden toggle, and system
