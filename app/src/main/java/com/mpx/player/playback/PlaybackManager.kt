@@ -132,7 +132,10 @@ class PlaybackManager private constructor(context: Context) {
                 startTicker()
             } else {
                 stopTicker()
-                updatePosition()
+                // Issue #274: pause is the flush point — the ticker stops
+                // here, so force this final position into Room at once
+                // instead of leaving it to the 5 s throttle window.
+                updatePosition(forceSave = true)
                 _playbackState.value.currentItem?.let { item ->
                     val pos = engine.currentPosition
                     val dur = engine.duration
@@ -496,7 +499,9 @@ class PlaybackManager private constructor(context: Context) {
         if (resumeMs > 0L) {
             // Issue #227: the manager keys this row by media.uri, not the
             // bare id — both are passed so the key can be derived.
-            resumeManager.saveResumePosition(media.id, resumeMs, media.uri, media.durationMs)
+            // Issue #274: force — an explicit user-chosen resume position
+            // must land in Room at once, not at the next throttle window.
+            resumeManager.saveResumePosition(media.id, resumeMs, media.uri, media.durationMs, force = true)
         }
         playQueue(listOf(media), startIndex = 0, autoPlay = true, forceResume = resumeMs > 0L)
     }
@@ -1156,7 +1161,11 @@ class PlaybackManager private constructor(context: Context) {
         tickerJob = null
     }
 
-    private fun updatePosition() {
+    // Issue #274: [forceSave] bypasses the manager's Room-write throttle
+    // for the final position when playback stops (pause) — the ticker
+    // stops with it, so without the flush the persisted position could
+    // sit up to 5 s behind. The ticker itself passes the default.
+    private fun updatePosition(forceSave: Boolean = false) {
         val current = engine.currentPosition
         val duration = engine.duration
         val buffered = engine.bufferedPosition
@@ -1171,6 +1180,7 @@ class PlaybackManager private constructor(context: Context) {
                     positionMs = current,
                     mediaUri = item.uri,
                     durationMs = duration,
+                    force = forceSave,
                 )
             }
         }
