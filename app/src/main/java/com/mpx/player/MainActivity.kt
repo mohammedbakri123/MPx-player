@@ -59,6 +59,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.download.MpxDownloader
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.ui.components.player.MiniPlayer
@@ -503,6 +504,15 @@ fun MpxApp(
             }
             onResetOpenPlayer?.invoke()
         }
+    }
+
+    // Issue #333: yt-dlp auto-update on launch (Seal YtdlpUpdater).
+    // The idle/network/interval gates live in the downloader; the
+    // check is silent when skipped, and it never blocks init or
+    // downloads.
+    val downloader = remember { MpxDownloader.getInstance(context) }
+    LaunchedEffect(Unit) {
+        downloader.maybeAutoUpdateYtDlp()
     }
 
     Scaffold(

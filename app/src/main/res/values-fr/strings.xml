@@ -28,6 +28,13 @@
     <string name="download_play">Lire</string>
     <string name="download_delete">Supprimer le téléchargement</string>
     <string name="download_deleted">Téléchargement supprimé</string>
+    <string name="download_update_ytdlp">Mettre à jour yt-dlp</string>
+    <string name="download_updating_ytdlp">Mise à jour de yt-dlp…</string>
+    <string name="download_ytdlp_updated">yt-dlp mis à jour</string>
+    <string name="download_ytdlp_up_to_date">yt-dlp est déjà à jour</string>
+    <string name="download_ytdlp_update_failed">Échec de la mise à jour de yt-dlp</string>
+    <string name="download_ytdlp_update_busy">Un téléchargement est en cours — réessayez après sa fin</string>
+    <string name="download_ytdlp_version">yt-dlp %1$s</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vidéo</string>

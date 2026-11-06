@@ -1,7 +1,10 @@
 package com.mpx.player.download
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Environment
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -55,6 +58,26 @@ enum class DownloaderInitState {
     FAILED,
 }
 
+/** Outcome of a yt-dlp update attempt (issue #333). */
+enum class YtDlpUpdateState {
+    IDLE,
+    UPDATING,
+    /** The update ran and installed a newer yt-dlp. */
+    DONE,
+    /** Already on the latest yt-dlp for the channel. */
+    UP_TO_DATE,
+    FAILED,
+}
+
+/** Result of a manual yt-dlp update request (issue #333). */
+enum class YtDlpUpdateOutcome {
+    UPDATED,
+    UP_TO_DATE,
+    FAILED,
+    /** A download is running, or an update is already in flight. */
+    BUSY,
+}
+
 /**
  * Downloader engine (issue #324): Seal's technique — the youtubedl-android
  * library (yausername/youtubedl-android 0.18.1, `:library` only), which
@@ -86,12 +109,23 @@ enum class DownloaderInitState {
  * curl_cffi TLS impersonation is documented broken on Android; POT
  * tokens). Direct links and many other sites work; some YouTube videos
  * may fail. Errors are surfaced, never swallowed.
+ *
+ * yt-dlp auto-update (issue #333): the bundled yt-dlp rots as
+ * extractors change, so [maybeAutoUpdateYtDlp] checks for a newer one
+ * on app launch (Seal's YtdlpUpdater gates: idle, network, weekly
+ * interval) and the Download tab offers a manual "Update yt-dlp".
+ * The update itself is Seal's `UpdateUtil.updateYtDlp()` copied with
+ * attribution — see [updateYtDlp].
  */
 class MpxDownloader private constructor(context: Context) {
 
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val initMutex = Mutex()
+    private val updateMutex = Mutex()
+    // Same pattern as PlaybackManager: read the shared settings blob
+    // directly (channel, auto-update flag, interval, last-update time).
+    private val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
 
     /** App-private external Downloads/MPx — falls back to internal files. */
     val downloadsDir: File = run {
@@ -108,6 +142,14 @@ class MpxDownloader private constructor(context: Context) {
 
     private val _downloadedFiles = MutableStateFlow<List<File>>(emptyList())
     val downloadedFiles: StateFlow<List<File>> = _downloadedFiles.asStateFlow()
+
+    /** Last yt-dlp update outcome (issue #333); IDLE until the first attempt. */
+    private val _updateState = MutableStateFlow(YtDlpUpdateState.IDLE)
+    val updateState: StateFlow<YtDlpUpdateState> = _updateState.asStateFlow()
+
+    /** Installed yt-dlp version once known (issue #333); "" until then. */
+    private val _ytdlpVersion = MutableStateFlow(settingsRepository.load().ytdlpVersion)
+    val ytdlpVersion: StateFlow<String> = _ytdlpVersion.asStateFlow()
 
     private val jobs = mutableMapOf<String, Job>()
 
@@ -137,6 +179,130 @@ class MpxDownloader private constructor(context: Context) {
                 false
             }
         }
+    }
+
+    /** True while a download is queued or running (issue #333 Idle gate). */
+    fun hasActiveDownloads(): Boolean {
+        return _activeDownloads.value.any {
+            it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.DOWNLOADING
+        }
+    }
+
+    /**
+     * yt-dlp update (issue #333), adapted from Seal's
+     * `UpdateUtil.updateYtDlp()` (JunkFood02/Seal, GPL-3.0,
+     * `app/src/main/java/com/junkfood/seal/util/UpdateUtil.kt:56-73`).
+     * The library API is identical in 0.18.1; only the settings access
+     * changed (Seal reads its PreferenceUtil keys, MPx reads the shared
+     * AppSettings blob). Calls the library's `updateYoutubeDL` on the
+     * configured channel, records the new version on DONE, and records
+     * the check time on any non-throwing return (DONE or
+     * ALREADY_UP_TO_DATE — a failure records nothing, so a broken
+     * network retries on the next launch instead of waiting out the
+     * interval). Throws on failure; the caller decides what to show.
+     */
+    suspend fun updateYtDlp(): YoutubeDL.UpdateStatus? =
+        withContext(Dispatchers.IO) {
+            val channel =
+                when (settingsRepository.load().ytdlpUpdateChannel) {
+                    "NIGHTLY" -> YoutubeDL.UpdateChannel.NIGHTLY
+                    else -> YoutubeDL.UpdateChannel.STABLE
+                }
+
+            YoutubeDL.getInstance()
+                .updateYoutubeDL(appContext = appContext, updateChannel = channel)
+                .also {
+                    if (it == YoutubeDL.UpdateStatus.DONE) {
+                        YoutubeDL.getInstance().version(appContext)?.let { version ->
+                            saveYtDlpVersion(version)
+                        }
+                    }
+                    saveYtDlpLastUpdateTime(System.currentTimeMillis())
+                }
+        }
+
+    /**
+     * Auto-update on launch (issue #333), Seal's `YtdlpUpdater` gates
+     * (`app/src/main/java/com/junkfood/seal/ui/page/YtdlpUpdater.kt:20-46`):
+     * skip while a download runs (Idle gate), skip without network,
+     * skip until the interval elapsed since the last check. When
+     * auto-update is off, still run once while the installed version
+     * is unknown, so the Download tab can show it. Silent — the outcome
+     * lands in [updateState]/[ytdlpVersion] only. Never blocks init or
+     * downloads: init runs first (fast no-op after the first run), and
+     * the library's update call does not hold any lock `execute` needs
+     * (`execute` is not synchronized; only `init`/`updateYoutubeDL`
+     * are, and they never overlap — the Idle gate plus [updateMutex]
+     * make sure of that).
+     */
+    suspend fun maybeAutoUpdateYtDlp() {
+        val settings = settingsRepository.load()
+        if (!settings.ytdlpAutoUpdate && settings.ytdlpVersion.isNotEmpty()) return
+        if (hasActiveDownloads()) return
+        if (!isNetworkAvailable()) return
+        val now = System.currentTimeMillis()
+        if (now < settings.ytdlpLastUpdateTimeMs + settings.ytdlpUpdateIntervalMs) return
+        if (!ensureInitialized()) return
+        runUpdateAttempt()
+    }
+
+    /**
+     * Manual "Update yt-dlp" (issue #333): the Download tab calls this.
+     * BUSY while a download runs or an update is already in flight;
+     * FAILED when the engine cannot start or the update throws.
+     */
+    suspend fun updateYtDlpNow(): YtDlpUpdateOutcome {
+        if (_updateState.value == YtDlpUpdateState.UPDATING) return YtDlpUpdateOutcome.BUSY
+        if (hasActiveDownloads()) return YtDlpUpdateOutcome.BUSY
+        if (!ensureInitialized()) return YtDlpUpdateOutcome.FAILED
+        return runUpdateAttempt()
+    }
+
+    /** One update attempt under [updateMutex]; re-checks the Idle gate inside. */
+    private suspend fun runUpdateAttempt(): YtDlpUpdateOutcome = updateMutex.withLock {
+        // A download may have started while init was running — the
+        // Idle gate is checked again here, inside the mutex.
+        if (hasActiveDownloads()) return YtDlpUpdateOutcome.BUSY
+        _updateState.value = YtDlpUpdateState.UPDATING
+        try {
+            when (updateYtDlp()) {
+                YoutubeDL.UpdateStatus.DONE -> {
+                    _updateState.value = YtDlpUpdateState.DONE
+                    YtDlpUpdateOutcome.UPDATED
+                }
+                YoutubeDL.UpdateStatus.ALREADY_UP_TO_DATE -> {
+                    _updateState.value = YtDlpUpdateState.UP_TO_DATE
+                    YtDlpUpdateOutcome.UP_TO_DATE
+                }
+                null -> {
+                    _updateState.value = YtDlpUpdateState.FAILED
+                    YtDlpUpdateOutcome.FAILED
+                }
+            }
+        } catch (_: Exception) {
+            _updateState.value = YtDlpUpdateState.FAILED
+            YtDlpUpdateOutcome.FAILED
+        }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val connectivity =
+            appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                ?: return false
+        val network = connectivity.activeNetwork ?: return false
+        val capabilities = connectivity.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    private fun saveYtDlpVersion(version: String) {
+        _ytdlpVersion.value = version
+        val settings = settingsRepository.load()
+        settingsRepository.save(settings.copy(ytdlpVersion = version))
+    }
+
+    private fun saveYtDlpLastUpdateTime(nowMs: Long) {
+        val settings = settingsRepository.load()
+        settingsRepository.save(settings.copy(ytdlpLastUpdateTimeMs = nowMs))
     }
 
     /** Starts a download. No-op for a blank URL. */

@@ -28,6 +28,13 @@
     <string name="download_play">تشغيل</string>
     <string name="download_delete">حذف التنزيل</string>
     <string name="download_deleted">تم حذف التنزيل</string>
+    <string name="download_update_ytdlp">تحديث yt-dlp</string>
+    <string name="download_updating_ytdlp">جارٍ تحديث yt-dlp…</string>
+    <string name="download_ytdlp_updated">تم تحديث yt-dlp</string>
+    <string name="download_ytdlp_up_to_date">yt-dlp محدّث بالفعل</string>
+    <string name="download_ytdlp_update_failed">فشل تحديث yt-dlp</string>
+    <string name="download_ytdlp_update_busy">هناك تنزيل جارٍ — حاول التحديث بعد انتهائه</string>
+    <string name="download_ytdlp_version">yt-dlp %1$s</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">فيديو</string>
