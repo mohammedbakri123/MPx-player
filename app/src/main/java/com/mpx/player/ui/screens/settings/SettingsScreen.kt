@@ -180,6 +180,17 @@ fun SettingsScreen(
         }
     }
 
+    // Issue #240: turning background play off must stop any background
+    // session — the same three calls the background-play toggle and the
+    // player toggle run when disabling. Shared here so Reset and the
+    // toggle can never drift apart again. (actualPlaybackManager is the
+    // same PlaybackManager singleton getInstance(context) returns.)
+    fun stopBackgroundPlayback() {
+        PlaybackService.stop(context)
+        actualPlaybackManager.setVideoBackgroundActive(false)
+        actualPlaybackManager.setBackgroundPlaying(false)
+    }
+
     fun toggleMusicTab(tabId: String, currentVal: Boolean) {
         if (currentVal && settings.visibleMusicTabsCount <= 1) {
             scope.launch {
@@ -549,10 +560,7 @@ fun SettingsScreen(
                                 ToggleRow(stringResource(R.string.player_background_play), settings.backgroundPlay) { enabled ->
                                     update(settings.copy(backgroundPlay = enabled))
                                     if (!enabled) {
-                                        PlaybackService.stop(context)
-                                        val pm = PlaybackManager.getInstance(context)
-                                        pm.setVideoBackgroundActive(false)
-                                        pm.setBackgroundPlaying(false)
+                                        stopBackgroundPlayback()
                                     }
                                 }
                                 Text(
@@ -576,8 +584,21 @@ fun SettingsScreen(
                                     }
                                 }
                                 ToggleRow(stringResource(R.string.player_auto_rotation), settings.autoScreenRotation) {
-                                    val nextOrient = if (it) "auto" else "landscape"
-                                    update(settings.copy(autoScreenRotation = it, screenOrientation = nextOrient))
+                                    // Issue #240: turning auto-rotation on
+                                    // must NOT overwrite the stored lock —
+                                    // every consumer treats
+                                    // autoScreenRotation=true as "ignore the
+                                    // lock" (PlayerScreen targetOrientation,
+                                    // the sheet radios), so leaving
+                                    // screenOrientation alone means turning
+                                    // auto off later restores the previous
+                                    // lock instead of forcing landscape.
+                                    // Turning auto off keeps whatever lock is
+                                    // stored (portrait/landscape, or "auto"
+                                    // when there never was one — the
+                                    // consumer falls through to landscape
+                                    // for anything that isn't portrait).
+                                    update(settings.copy(autoScreenRotation = it))
                                 }
                                 Text(
                                     stringResource(R.string.player_auto_rotation_desc),
@@ -792,7 +813,21 @@ fun SettingsScreen(
                                         onDismiss = { showResetDialog = false },
                                         confirmText = stringResource(R.string.general_reset_button),
                                         onConfirm = {
+                                            // Issue #240: Reset turns
+                                            // backgroundPlay off — run the
+                                            // same stop side effect the
+                                            // toggle runs, or a background
+                                            // session keeps playing while
+                                            // the setting reads off. Capture
+                                            // the pre-reset value first:
+                                            // update() replaces `settings`.
+                                            // Issue #228: commit the reset
+                                            // synchronously, as before.
+                                            val wasBackgroundPlay = settings.backgroundPlay
                                             update(AppSettings(), commit = true)
+                                            if (wasBackgroundPlay) {
+                                                stopBackgroundPlayback()
+                                            }
                                             showResetDialog = false
                                             scope.launch {
                                                 snackbarHostState.showSnackbar(context.getString(R.string.general_reset_done))
