@@ -324,6 +324,7 @@
     <string name="dialog_network_desc">Escribe cualquier URL de transmisión HTTP, HTTPS o HLS para reproducirla directamente:</string>
     <string name="dialog_network_samples">Transmisiones públicas de ejemplo:</string>
     <string name="dialog_network_play">Reproducir transmisión</string>
+    <string name="dialog_network_invalid_url">Introduce una URL de transmisión válida que comience por http://, https:// o rtsp://</string>
 
     <string name="dialog_privacy_title">Privacidad y seguridad</string>
     <string name="privacy_sec1_title">Arquitectura 100 % en el dispositivo</string>

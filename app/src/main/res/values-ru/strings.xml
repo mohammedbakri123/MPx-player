@@ -324,6 +324,7 @@
     <string name="dialog_network_desc">Введите любой URL потока HTTP, HTTPS или HLS для прямого воспроизведения:</string>
     <string name="dialog_network_samples">Примеры публичных потоков:</string>
     <string name="dialog_network_play">Воспроизвести поток</string>
+    <string name="dialog_network_invalid_url">Введите допустимый URL потока, начинающийся с http://, https:// или rtsp://</string>
 
     <string name="dialog_privacy_title">Конфиденциальность и безопасность</string>
     <string name="privacy_sec1_title">100% архитектура на устройстве</string>

@@ -324,6 +324,7 @@
     <string name="dialog_network_desc">输入任意 HTTP、HTTPS 或 HLS 串流 URL，即可直接播放：</string>
     <string name="dialog_network_samples">公开串流示例：</string>
     <string name="dialog_network_play">播放串流</string>
+    <string name="dialog_network_invalid_url">请输入以 http://、https:// 或 rtsp:// 开头的有效流媒体网址</string>
 
     <string name="dialog_privacy_title">隐私与安全</string>
     <string name="privacy_sec1_title">100% 本机架构</string>

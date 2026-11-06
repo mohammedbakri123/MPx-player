@@ -324,6 +324,7 @@
     <string name="dialog_network_desc">Saisissez n’importe quelle URL de flux HTTP, HTTPS ou HLS pour la lire directement :</string>
     <string name="dialog_network_samples">Exemples de flux publics :</string>
     <string name="dialog_network_play">Lire le flux</string>
+    <string name="dialog_network_invalid_url">Saisissez une URL de flux valide commençant par http://, https:// ou rtsp://</string>
 
     <string name="dialog_privacy_title">Confidentialité et sécurité</string>
     <string name="privacy_sec1_title">Architecture 100 % sur l’appareil</string>

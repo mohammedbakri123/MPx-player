@@ -324,6 +324,7 @@
     <string name="dialog_network_desc">Geben Sie eine beliebige HTTP-, HTTPS- oder HLS-Stream-URL ein, um sie direkt abzuspielen:</string>
     <string name="dialog_network_samples">Öffentliche Beispiel-Streams:</string>
     <string name="dialog_network_play">Stream abspielen</string>
+    <string name="dialog_network_invalid_url">Geben Sie eine gültige Stream-URL ein, die mit http://, https:// oder rtsp:// beginnt</string>
 
     <string name="dialog_privacy_title">Datenschutz &amp; Sicherheit</string>
     <string name="privacy_sec1_title">100 % On-Device-Architektur</string>
