@@ -167,7 +167,13 @@ fun MiniPlayer(
                             )
                         } else {
                             AsyncThumbnail(
-                                cacheKey = "audio_track_${item.id.ifBlank { item.uri }}",
+                                // Issue #278: the key must match
+                                // ThumbnailLoader.loadAudioTrackThumbnail's
+                                // volume-scoped key, or the synchronous
+                                // cache check misses.
+                                cacheKey = ThumbnailLoader.audioTrackCacheKey(
+                                    context, item.id, item.uri,
+                                ),
                                 loadBitmap = {
                                     ThumbnailLoader.loadAudioTrackThumbnail(
                                         context = context,

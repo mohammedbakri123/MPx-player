@@ -112,7 +112,9 @@ fun AsyncFolderThumbnail(
     showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
-    val cacheKey = "folder_${folder.id.ifBlank { folder.path }}"
+    // Issue #278: the key must match ThumbnailLoader.loadFolderThumbnail's
+    // volume-scoped key, or the synchronous cache check below misses.
+    val cacheKey = ThumbnailLoader.folderCacheKey(context, folder.id, folder.path)
 
     AsyncThumbnail(
         cacheKey = cacheKey,
@@ -142,7 +144,9 @@ fun AsyncAudioTrackThumbnail(
     showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
-    val cacheKey = "audio_track_${track.id.ifBlank { track.path }}"
+    // Issue #278: the key must match ThumbnailLoader.loadAudioTrackThumbnail's
+    // volume-scoped key, or the synchronous cache check below misses.
+    val cacheKey = ThumbnailLoader.audioTrackCacheKey(context, track.id, track.path)
 
     AsyncThumbnail(
         cacheKey = cacheKey,
@@ -202,8 +206,10 @@ fun AsyncVideoThumbnail(
     showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
-    val cacheKey = "video_${video.id.ifBlank { video.path }}"
+    // Issue #278: the key must match ThumbnailLoader.loadVideoThumbnail's
+    // volume-scoped key, or the synchronous cache check below misses.
     val videoIdLong = video.id.toLongOrNull() ?: -1L
+    val cacheKey = ThumbnailLoader.videoCacheKey(context, videoIdLong, video.path)
 
     AsyncThumbnail(
         cacheKey = cacheKey,
@@ -234,8 +240,12 @@ fun AsyncVideoThumbnail(
     showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
-    val cacheKey = "video_${mediaId.ifBlank { mediaUri }}"
+    // Issue #278: the key must match ThumbnailLoader.loadVideoThumbnail's
+    // volume-scoped key, or the synchronous cache check below misses.
+    // mediaUri here is the row's own content URI (MiniPlayer) or file
+    // path — either carries the volume.
     val videoIdLong = mediaId.toLongOrNull() ?: -1L
+    val cacheKey = ThumbnailLoader.videoCacheKey(context, videoIdLong, mediaUri)
 
     AsyncThumbnail(
         cacheKey = cacheKey,
