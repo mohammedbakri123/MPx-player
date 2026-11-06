@@ -295,14 +295,23 @@ class PlaybackManager private constructor(context: Context) {
                     currentIndex = index,
                     hasPrevious = engine.hasPreviousMediaItem,
                     hasNext = engine.hasNextMediaItem,
-                    // Issue #283: a transition to a new item clears the
-                    // resume banner — the banner belongs to the session
-                    // start (startPlayback sets it) and is dismissed via
-                    // clearResumedNotification(). This used to read
-                    // `if (shouldResume) savedPos else null`, but
-                    // shouldResume was dead (isAuto was always false),
-                    // so it was always null here.
-                    resumedFromMs = null,
+                    // Issue #330: only clear the resume banner when the
+                    // transition actually moves to a different item.
+                    // startPlayback sets resumedFromMs AFTER engineLoad
+                    // posts this transition, so the session-start
+                    // transition for the item startPlayback just set used
+                    // to wipe the banner in the same main-thread pass,
+                    // before Compose ever drew it. The transition's item
+                    // is the same item the state already shows (same URI
+                    // — the stable item identity, issue #227) for a
+                    // session start and for same-item reloads (decoder
+                    // fallback, attach, shuffle re-load), so the banner
+                    // stays; a move to another item (EOF auto-advance,
+                    // Next/Previous, a queue pick) clears it, so a stale
+                    // banner cannot linger across the advance. A
+                    // transition to no item (current == null, e.g. after
+                    // stop()) clears it too.
+                    resumedFromMs = if (current != null && current.uri == it.currentItem?.uri) it.resumedFromMs else null,
                     // Issue #260: the new item's dimensions are not known
                     // yet — drop the previous video's size so the PiP
                     // params are not armed with a stale aspect while it
