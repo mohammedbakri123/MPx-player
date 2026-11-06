@@ -1527,7 +1527,10 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 72.dp, start = 16.dp, end = 16.dp),
+                    // Issue #327: banners start below the top chrome now
+                    // that the action stripe lives under the top bar
+                    // (top bar 64dp + 8dp gap + ~48dp stripe + 8dp gap).
+                    .padding(top = 128.dp, start = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -1709,85 +1712,106 @@ fun PlayerScreen(
                         )
                         .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 24.dp),
                 ) {
-                    Row(
-                    modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton(onClick = onClose) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.player_cd_back),
-                                tint = MpxTheme.colors.textPrimary,
-                            )
-                        }
-
-                        Spacer(Modifier.width(4.dp))
-
-                        Text(
-                            text = state.currentItem?.title ?: "MPx Player",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp,
-                            ),
-                            color = MpxTheme.colors.textPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-
-                        Spacer(Modifier.width(8.dp))
-
-                        // Decoder Pill Badge: configured mode + real active codec
-                        // (e.g. "HW • H.264") once the engine reports a decoder name;
-                        // falls back to the mode label alone while initializing.
-                        // Issue #188: read the short codec label from the
-                        // shared helper instead of parsing the display name —
-                        // the old substring fallback mangled unknown names
-                        // ("software (unknown)" -> "HW • software (un…").
-                        val decoderPillText = state.activeDecoderName?.let { name ->
-                            val codec = MpxMediaCodecSelector.shortCodecLabel(name)
-                            if (codec != null) "${state.decoderMode.label} • $codec" else state.decoderMode.label
-                        } ?: state.decoderMode.label
-                        Surface(
-                            modifier = Modifier
-                                .clip(MpxShapes.small)
-                                .clickable {
-                                    val nextDecoder = when (state.decoderMode) {
-                                        DecoderMode.HW -> DecoderMode.HW_PLUS
-                                        DecoderMode.HW_PLUS -> DecoderMode.SW
-                                        DecoderMode.SW -> DecoderMode.HW
-                                    }
-                                    playbackManager.setDecoderMode(nextDecoder)
-                                    realSettingsRepo.save(realSettingsRepo.load().copy(decoderMode = nextDecoder.label))
-                                    currentSettings = realSettingsRepo.load()
-                                    Toast.makeText(context, context.getString(R.string.player_toast_decoder, context.getString(nextDecoder.titleRes)), Toast.LENGTH_SHORT).show()
-                                },
-                            color = Color.Transparent,
-                            shape = MpxShapes.small,
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            IconButton(onClick = onClose) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.player_cd_back),
+                                    tint = MpxTheme.colors.textPrimary,
+                                )
+                            }
+
+                            Spacer(Modifier.width(4.dp))
+
                             Text(
-                                text = decoderPillText,
+                                text = state.currentItem?.title ?: "MPx Player",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp,
+                                ),
                                 color = MpxTheme.colors.textPrimary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
                             )
+
+                            Spacer(Modifier.width(8.dp))
+
+                            // Decoder Pill Badge: configured mode + real active codec
+                            // (e.g. "HW • H.264") once the engine reports a decoder name;
+                            // falls back to the mode label alone while initializing.
+                            // Issue #188: read the short codec label from the
+                            // shared helper instead of parsing the display name —
+                            // the old substring fallback mangled unknown names
+                            // ("software (unknown)" -> "HW • software (un…").
+                            val decoderPillText = state.activeDecoderName?.let { name ->
+                                val codec = MpxMediaCodecSelector.shortCodecLabel(name)
+                                if (codec != null) "${state.decoderMode.label} • $codec" else state.decoderMode.label
+                            } ?: state.decoderMode.label
+                            Surface(
+                                modifier = Modifier
+                                    .clip(MpxShapes.small)
+                                    .clickable {
+                                        val nextDecoder = when (state.decoderMode) {
+                                            DecoderMode.HW -> DecoderMode.HW_PLUS
+                                            DecoderMode.HW_PLUS -> DecoderMode.SW
+                                            DecoderMode.SW -> DecoderMode.HW
+                                        }
+                                        playbackManager.setDecoderMode(nextDecoder)
+                                        realSettingsRepo.save(realSettingsRepo.load().copy(decoderMode = nextDecoder.label))
+                                        currentSettings = realSettingsRepo.load()
+                                        Toast.makeText(context, context.getString(R.string.player_toast_decoder, context.getString(nextDecoder.titleRes)), Toast.LENGTH_SHORT).show()
+                                    },
+                                color = Color.Transparent,
+                                shape = MpxShapes.small,
+                            ) {
+                                Text(
+                                    text = decoderPillText,
+                                    color = MpxTheme.colors.textPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
+                            }
+
+                            // (The aspect control moved to the Player Action Stripe
+                            // (#177) at the top of the screen — tap cycles, same as this
+                            // pill did; the full radio list stays in the sheet's
+                            // Aspect page. Favourite, audio tracks, subtitles, PiP
+                            // and rotation all live in the Playback sheet now,
+                            // MX-overflow style, so the top bar is back + title +
+                            // decoder pill + menu. See PlayerPlaybackSheet.)
+                            IconButton(onClick = { playbackSheetPage = PlaybackSheetPage.Main }) {
+                                Icon(
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = stringResource(R.string.player_cd_more),
+                                    tint = MpxTheme.colors.textPrimary,
+                                )
+                            }
                         }
 
-                        // (The aspect control moved to the Player Action Stripe
-                        // (#177) above the seek bar — tap cycles, same as this
-                        // pill did; the full radio list stays in the sheet's
-                        // Aspect page. Favourite, audio tracks, subtitles, PiP
-                        // and rotation all live in the Playback sheet now,
-                        // MX-overflow style, so the top bar is back + title +
-                        // decoder pill + menu. See PlayerPlaybackSheet.)
-                        IconButton(onClick = { playbackSheetPage = PlaybackSheetPage.Main }) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = stringResource(R.string.player_cd_more),
-                                tint = MpxTheme.colors.textPrimary,
-                            )
-                        }
+                        Spacer(Modifier.height(8.dp))
+
+                        // Player Action Stripe (issue #177, moved to the
+                        // top in #327): the user's chosen actions from
+                        // the Player Layout editor, in their order, as a
+                        // horizontally scrollable strip under the top
+                        // bar. Hides with the chrome.
+                        PlayerActionStripe(
+                            state = state,
+                            currentSettings = currentSettings,
+                            isFavourite = isFavourite,
+                            onOpenSheet = { playbackSheetPage = it },
+                            onToggleFavourite = toggleFavourite,
+                            onEnterPip = enterPip,
+                            onToggleBackgroundPlay = toggleBackgroundPlay,
+                            onAddToPlaylist = { showAddToPlaylistDialog = true },
+                            playbackManager = playbackManager,
+                        )
                     }
                 }
 
@@ -1806,24 +1830,6 @@ fun PlayerScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        // Player Action Stripe (issue #177): the user's
-                        // chosen actions from the Player Layout editor, in
-                        // their order, as a horizontally scrollable strip
-                        // above the seek bar. Hides with the chrome.
-                        PlayerActionStripe(
-                            state = state,
-                            currentSettings = currentSettings,
-                            isFavourite = isFavourite,
-                            onOpenSheet = { playbackSheetPage = it },
-                            onToggleFavourite = toggleFavourite,
-                            onEnterPip = enterPip,
-                            onToggleBackgroundPlay = toggleBackgroundPlay,
-                            onAddToPlaylist = { showAddToPlaylistDialog = true },
-                            playbackManager = playbackManager,
-                        )
-
-                        Spacer(Modifier.height(8.dp))
-
                         // Time & Slider Row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -1870,7 +1876,7 @@ fun PlayerScreen(
                         // Controls Row: Lock, Prev, 10s Replay, Play/Pause Hero,
                         // 10s Forward, Next — MX's subnavibar transport set.
                         // Speed lives in the Playback sheet now (aspect is in
-                        // the action stripe above the seek bar); shuffle and
+                        // the action stripe at the top); shuffle and
                         // repeat moved to the stripe too.
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -2173,9 +2179,10 @@ fun PlayerScreen(
 }
 
 /**
- * Player Action Stripe (issue #177): the user's chosen actions from the
+ * Player Action Stripe (issue #177, moved to the top of the screen
+ * in #327): the user's chosen actions from the
  * Player Layout editor (#158), in their order, as a horizontally
- * scrollable strip of compact buttons above the seek bar. Each button
+ * scrollable strip of compact buttons under the top bar. Each button
  * shows its icon and its short current value where it has one (speed,
  * decoder, aspect, ...); actions without a value show their short label.
  * Tapping opens the matching sheet page or toggles directly, exactly as
