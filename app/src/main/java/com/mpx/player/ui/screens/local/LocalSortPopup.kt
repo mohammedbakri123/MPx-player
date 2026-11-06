@@ -74,9 +74,12 @@ import com.mpx.player.ui.theme.MpxTheme
  * Scope: root scope edits the global sort/view; folder scope edits that
  * folder's view-mode override and the (global) folder sort. Sort direction
  * ([sortReverse]) is global in both scopes, as before. Secondary sort,
- * numeric/case/extension and the other advanced options stay in the old
- * SortViewDialog (section header / folder menu) — this popup is the quick
- * Sort & View picker, not the full sort dialog.
+ * numeric/case/extension and the other advanced options live in the old
+ * SortViewDialog — this popup is the quick Sort & View picker, not the
+ * full sort dialog. Issue #232: the "Advanced Sort Options" row at the
+ * bottom opens that dialog for the popup's scope (root or folder); the
+ * folder menu that used to open it is gone (#184), so without this row
+ * the folder-scope dialog was unreachable dead code.
  *
  * The popup offers exactly three sort fields (Title / Date / Size). If the
  * stored primary sort is another field (Duration, Date/Duration, ...), no
@@ -140,6 +143,11 @@ fun LocalSortPopup(
     showTreeMode: Boolean = true,
     showGridColumns: Boolean = true,
     showFieldsSection: Boolean = true,
+    // Issue #232: opens the full SortViewDialog for the popup's scope
+    // (root or folder) — the entry point the advanced options were
+    // missing. Null hides the row: Music reuses this popup but has no
+    // full sort dialog, so its call site leaves this unset.
+    onOpenFullSortDialog: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     var fieldsExpanded by remember { mutableStateOf(false) }
@@ -460,6 +468,49 @@ fun LocalSortPopup(
                             )
                         }
                     }
+                    }
+                }
+
+                // ---- Advanced sort options: open the full SortViewDialog ----
+                // Issue #232: the full field set, secondary sort,
+                // numeric/case/extension toggles, separate-layout and
+                // show-all toggles live only in SortViewDialog. The row
+                // opens it for the popup's scope and dismisses the popup
+                // first, so the dialog never stacks on top of the popup.
+                if (onOpenFullSortDialog != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onDismiss()
+                                onOpenFullSortDialog()
+                            }
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Sort,
+                                contentDescription = null,
+                                tint = MpxTheme.colors.primary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Text(
+                                text = stringResource(R.string.sort_advanced_dialog_title),
+                                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MpxTheme.colors.textPrimary,
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MpxTheme.colors.textSecondary,
+                        )
                     }
                 }
 
