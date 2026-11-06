@@ -21,6 +21,11 @@
     <string name="download_init_failed">No se pudo iniciar el descargador. Revisa el almacenamiento e inténtalo de nuevo.</string>
     <string name="download_queued">En cola…</string>
     <string name="download_eta">Quedan %1$s</string>
+    <string name="download_phase_fetching_info">Obteniendo información…</string>
+    <string name="download_phase_downloading">Descargando…</string>
+    <string name="download_phase_merging">Combinando video y audio…</string>
+    <string name="download_phase_post_processing">Postprocesando…</string>
+    <string name="download_speed">%1$s/s</string>
     <string name="download_complete">Descarga completa</string>
     <string name="download_failed">Error al descargar</string>
     <string name="download_interrupted">Interrumpido — la app se cerró durante la descarga</string>

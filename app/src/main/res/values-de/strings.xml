@@ -21,6 +21,11 @@
     <string name="download_init_failed">Downloader konnte nicht gestartet werden. Prüfe den Speicher und versuche es erneut.</string>
     <string name="download_queued">In Warteschlange…</string>
     <string name="download_eta">ETA %1$s</string>
+    <string name="download_phase_fetching_info">Infos werden abgerufen…</string>
+    <string name="download_phase_downloading">Wird heruntergeladen…</string>
+    <string name="download_phase_merging">Video und Audio werden zusammengeführt…</string>
+    <string name="download_phase_post_processing">Nachbearbeitung…</string>
+    <string name="download_speed">%1$s/s</string>
     <string name="download_complete">Download abgeschlossen</string>
     <string name="download_failed">Download fehlgeschlagen</string>
     <string name="download_interrupted">Unterbrochen — die App wurde während des Downloads geschlossen</string>

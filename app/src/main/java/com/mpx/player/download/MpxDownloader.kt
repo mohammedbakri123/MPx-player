@@ -9,6 +9,7 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import com.mpx.player.R
@@ -55,6 +56,22 @@ enum class DownloadStatus {
     CANCELED,
 }
 
+/**
+ * Which stage a running download is in (issue #350). Shown on the
+ * Download tab so merging / post-processing does not look like a
+ * stalled download.
+ */
+enum class DownloadPhase {
+    /** The getInfo phase is still running — no bytes yet. */
+    FETCHING_INFO,
+    /** Bytes are moving (yt-dlp `[download]` / aria2c lines, or the HTTP fallback). */
+    DOWNLOADING,
+    /** ffmpeg is merging the video+audio streams (`[Merger]`). */
+    MERGING,
+    /** A post-processor is running (`[ExtractAudio]`, `[EmbedSubtitle]`, `[SponsorBlock]`, …). */
+    POST_PROCESSING,
+}
+
 /** One download row shown on the Download tab while it is running or finished. */
 data class ActiveDownload(
     val id: String,
@@ -64,6 +81,14 @@ data class ActiveDownload(
     /** 0..100, -1 while the size is still unknown. */
     val progress: Float = -1f,
     val etaSeconds: Long = -1L,
+    /** Issue #350: bytes downloaded so far, -1 while unknown. */
+    val downloadedBytes: Long = -1L,
+    /** Issue #350: total bytes when known, -1 while unknown. */
+    val totalBytes: Long = -1L,
+    /** Issue #350: download speed in bytes/s, -1 while unknown. */
+    val speedBytesPerSec: Long = -1L,
+    /** Issue #350: which stage the download is in. */
+    val phase: DownloadPhase = DownloadPhase.FETCHING_INFO,
     /** The finished file's public location once published (#344); null until DONE. */
     val file: DownloadedFile? = null,
     val error: String? = null,
@@ -158,6 +183,124 @@ enum class YtDlpUpdateOutcome {
     FAILED,
     /** A download is running, or an update is already in flight. */
     BUSY,
+}
+
+/**
+ * Issue #350: what one yt-dlp stdout line says about the download.
+ * The library's progress callback (see [parseProgressLine]) passes
+ * the raw line as its 3rd parameter — the library itself only
+ * extracts progress % and ETA from it.
+ */
+private data class ProgressLine(
+    val downloadedBytes: Long = -1L,
+    val totalBytes: Long = -1L,
+    val speedBytesPerSec: Long = -1L,
+    /** A stage this line announces, or null when it says nothing about the stage. */
+    val phase: DownloadPhase? = null,
+    /** An ffmpeg progress line (`frame=… size=…`) — post-processing is running even without a header. */
+    val isFfmpegLine: Boolean = false,
+)
+
+// yt-dlp `[download]` lines (sizes are binary units, `~` marks an approximate total):
+//   [download]  45.2% of 120.50MiB at  2.41MiB/s ETA 00:27
+//   [download]  45.2% of ~120.50MiB at Unknown speed ETA Unknown
+//   [download] 100% of 120.50MiB in 00:05 at 24.10MiB/s   (final line: `in` instead of ETA)
+//   [download]  12.34KiB at  2.41MiB/s            (total unknown)
+private val YTDLP_DOWNLOAD_LINE =
+    Regex("""\[download\]\s+(\d+(?:\.\d+)?)%\s+of\s+~?([0-9.]+(?:KiB|MiB|GiB|TiB|B))(?:\s+in\s+\d+(?::\d+){1,2})?\s+at\s+([0-9.]+(?:KiB|MiB|GiB|TiB|B)/s|Unknown speed)""")
+private val YTDLP_DOWNLOAD_NO_TOTAL_LINE =
+    Regex("""\[download\]\s+([0-9.]+(?:KiB|MiB|GiB|TiB|B))(?:\s+in\s+\d+(?::\d+){1,2})?\s+at\s+([0-9.]+(?:KiB|MiB|GiB|TiB|B)/s|Unknown speed)""")
+
+// aria2c lines (used when `--downloader libaria2c.so` is active, #339):
+//   [#a1b2c3 120MiB/450MiB(26%) CN:8 DL:2.4MiB ETA:27s]
+private val ARIA2C_LINE =
+    Regex("""\[#\w{6}\s+([0-9.]+(?:KiB|MiB|GiB|TiB|B))/([0-9.]+(?:KiB|MiB|GiB|TiB|B))\((\d+(?:\.\d+)?)%\)[^\]]*?DL:([0-9.]+(?:KiB|MiB|GiB|TiB|B))""")
+
+private val YTDLP_SIZE_TOKEN = Regex("""^([0-9.]+)(KiB|MiB|GiB|TiB|KB|MB|GB|TB|B)$""")
+
+/** Post-processor headers that are not a merge — all post-processing. */
+private val POST_PROCESSOR_HEADERS = listOf(
+    "[ExtractAudio]", "[VideoConvertor]", "[EmbedSubtitle]", "[SponsorBlock]",
+    "[Metadata]", "[EmbedThumbnail]", "[Thumbnails]", "[FixupM4a]",
+    "[MoveFiles]", "[FFmpeg]",
+)
+
+/** Issue #350: yt-dlp/aria2c size tokens ("120.50MiB", "850KiB", "512B") to bytes, or -1 when unparseable. */
+private fun parseYtDlpSize(token: String): Long {
+    val match = YTDLP_SIZE_TOKEN.matchEntire(token.trim()) ?: return -1L
+    val value = match.groupValues[1].toDoubleOrNull() ?: return -1L
+    val mult = when (match.groupValues[2]) {
+        "B" -> 1L
+        "KiB" -> 1024L
+        "MiB" -> 1024L * 1024
+        "GiB" -> 1024L * 1024 * 1024
+        "TiB" -> 1024L * 1024 * 1024 * 1024
+        "KB" -> 1000L
+        "MB" -> 1000L * 1000
+        "GB" -> 1000L * 1000 * 1000
+        "TB" -> 1000L * 1000 * 1000 * 1000
+        else -> return -1L
+    }
+    return (value * mult).toLong()
+}
+
+private fun parseYtDlpSpeed(token: String): Long =
+    if (token == "Unknown speed") -1L else parseYtDlpSize(token.removeSuffix("/s"))
+
+/**
+ * Issue #350: parse one raw yt-dlp stdout line into sizes, speed,
+ * and stage. Verified against the youtubedl-android 0.18.1 AAR:
+ * `StreamProcessExtractor.processOutputLine` invokes the progress
+ * callback with `(getProgress(line), getEta(line), line)` — the 3rd
+ * parameter IS the raw line, fired for every line (on `\r` or `\n`).
+ * The library's own patterns only match `[download] …% … ETA mm:ss`
+ * (progress), `[#xxxxxx …(n%)…]` (aria2c), and `size=…` (ffmpeg,
+ * forced to 99%) — everything else is passed through untouched, so
+ * sizes, speed, and the merge/post-processing stage have to be
+ * parsed here.
+ */
+private fun parseProgressLine(line: String): ProgressLine {
+    if (line.startsWith("[Merger]")) return ProgressLine(phase = DownloadPhase.MERGING)
+    if (POST_PROCESSOR_HEADERS.any { line.startsWith(it) }) {
+        return ProgressLine(phase = DownloadPhase.POST_PROCESSING)
+    }
+    // ffmpeg progress lines during merge/convert (`frame=… size=…`) —
+    // the download phase is over; the caller keeps the current phase
+    // unless it is still DOWNLOADING, in which case this is
+    // post-processing (a header was missed or never printed).
+    if (line.startsWith("frame=") && line.contains("size=")) {
+        return ProgressLine(isFfmpegLine = true)
+    }
+    YTDLP_DOWNLOAD_LINE.find(line)?.let { match ->
+        val percent = match.groupValues[1].toFloatOrNull() ?: return@let
+        val total = parseYtDlpSize(match.groupValues[2])
+        val speed = parseYtDlpSpeed(match.groupValues[3])
+        return ProgressLine(
+            // Double math: Float would round a ~100 MB total by whole
+            // bytes and could leave downloaded < total at 100%.
+            downloadedBytes = if (total > 0) (total * percent.toDouble() / 100.0).toLong() else -1L,
+            totalBytes = total,
+            speedBytesPerSec = speed,
+            phase = DownloadPhase.DOWNLOADING,
+        )
+    }
+    YTDLP_DOWNLOAD_NO_TOTAL_LINE.find(line)?.let { match ->
+        return ProgressLine(
+            downloadedBytes = parseYtDlpSize(match.groupValues[1]),
+            speedBytesPerSec = parseYtDlpSpeed(match.groupValues[2]),
+            phase = DownloadPhase.DOWNLOADING,
+        )
+    }
+    ARIA2C_LINE.find(line)?.let { match ->
+        val total = parseYtDlpSize(match.groupValues[2])
+        return ProgressLine(
+            downloadedBytes = parseYtDlpSize(match.groupValues[1]),
+            totalBytes = total,
+            speedBytesPerSec = parseYtDlpSpeed(match.groupValues[4] + "/s"),
+            phase = DownloadPhase.DOWNLOADING,
+        )
+    }
+    return ProgressLine()
 }
 
 /**
@@ -1486,7 +1629,9 @@ class MpxDownloader private constructor(context: Context) {
                 }
                 return
             }
-            updateItem(id) { it.copy(status = DownloadStatus.DOWNLOADING) }
+            updateItem(id) {
+                it.copy(status = DownloadStatus.DOWNLOADING, phase = DownloadPhase.FETCHING_INFO)
+            }
 
             // Issue #337: the User-Agent goes on every yt-dlp request
             // (info + download), like Seal's `enableCookies` — a blank
@@ -1653,10 +1798,61 @@ class MpxDownloader private constructor(context: Context) {
                 if (userAgent.isNotBlank()) addOption("--user-agent", userAgent)
                 cookiesFile?.let { addOption("--cookies", it.absolutePath) }
             }
+            // Issue #350: the download phase starts here — getInfo is
+            // done, bytes are about to move. The callback below keeps
+            // the phase current from the output lines.
+            updateItem(id) { it.copy(phase = DownloadPhase.DOWNLOADING) }
+            // Issue #350: the callback's 3rd parameter is the raw
+            // yt-dlp output line (verified against the 0.18.1 AAR:
+            // StreamProcessExtractor passes every line through) — parse
+            // it for downloaded/total bytes, speed, and the
+            // merge/post-processing stage; the library only gives
+            // progress % + ETA. Emits are throttled to ~4/sec so the
+            // row does not recompose on every line, but a phase change
+            // or the final 100% always goes out immediately. The
+            // locals below are only touched on the extractor thread
+            // that invokes this callback; updateItem itself is
+            // thread-safe (StateFlow.update) and progress-only updates
+            // never touch Room (#342).
+            var lastEmitMs = 0L
+            var currentPhase = DownloadPhase.DOWNLOADING
+            var doneEmitted = false
             val response = withContext(Dispatchers.IO) {
-                YoutubeDL.getInstance().execute(request, id) { progress, eta, _ ->
-                    updateItem(id) {
-                        it.copy(progress = progress, etaSeconds = eta, status = DownloadStatus.DOWNLOADING)
+                YoutubeDL.getInstance().execute(request, id) { progress, eta, line ->
+                    val parsed = parseProgressLine(line)
+                    val nextPhase = when {
+                        parsed.phase != null -> parsed.phase
+                        parsed.isFfmpegLine && currentPhase == DownloadPhase.DOWNLOADING ->
+                            DownloadPhase.POST_PROCESSING
+                        else -> currentPhase
+                    }
+                    val now = SystemClock.uptimeMillis()
+                    val phaseChanged = nextPhase != currentPhase
+                    // The library's own progress may never reach exactly
+                    // 100 (its pattern needs `…% … ETA …` and the final
+                    // line prints `100% … in mm:ss`), so completion is
+                    // also recognised from the parsed sizes.
+                    val done = (progress >= 100f ||
+                        (parsed.totalBytes > 0 && parsed.downloadedBytes >= parsed.totalBytes)) &&
+                        !doneEmitted
+                    if (phaseChanged || done || now - lastEmitMs >= PROGRESS_EMIT_INTERVAL_MS) {
+                        lastEmitMs = now
+                        currentPhase = nextPhase
+                        if (done) doneEmitted = true
+                        updateItem(id) {
+                            it.copy(
+                                progress = progress,
+                                etaSeconds = eta,
+                                status = DownloadStatus.DOWNLOADING,
+                                phase = nextPhase,
+                                downloadedBytes = parsed.downloadedBytes.takeIf { it >= 0 }
+                                    ?: it.downloadedBytes,
+                                totalBytes = parsed.totalBytes.takeIf { it >= 0 }
+                                    ?: it.totalBytes,
+                                speedBytesPerSec = parsed.speedBytesPerSec.takeIf { it >= 0 }
+                                    ?: it.speedBytesPerSec,
+                            )
+                        }
                     }
                 }
             }
@@ -1818,6 +2014,10 @@ class MpxDownloader private constructor(context: Context) {
         val fileName = fileNameFromUrl(item.url)
         val partFile = File(tempDirFor, "$fileName.part")
         val outFile = File(downloadsDir, fileName)
+        // Issue #350: bytes are about to move again (the yt-dlp run
+        // failed) — the phase goes back to DOWNLOADING even if the
+        // failed run had reached merging.
+        updateItem(id) { it.copy(phase = DownloadPhase.DOWNLOADING) }
         try {
             withContext(Dispatchers.IO) {
                 val connection = URL(item.url).openConnection() as HttpURLConnection
@@ -1830,6 +2030,14 @@ class MpxDownloader private constructor(context: Context) {
                 }
                 val total = connection.contentLengthLong
                 var readSoFar = 0L
+                // Issue #350: the fallback counted readSoFar but never
+                // exposed it — report bytes + speed (bytes since the
+                // last emit over that interval), throttled like the
+                // yt-dlp path. With no Content-Length the bar stays
+                // indeterminate (-1) but the row still shows the
+                // downloaded size and speed.
+                var lastEmitMs = SystemClock.uptimeMillis()
+                var lastEmitReadSoFar = 0L
                 connection.inputStream.use { input ->
                     FileOutputStream(partFile).use { output ->
                         val buffer = ByteArray(64 * 1024)
@@ -1842,10 +2050,26 @@ class MpxDownloader private constructor(context: Context) {
                             if (n < 0) break
                             output.write(buffer, 0, n)
                             readSoFar += n
-                            if (total > 0) {
-                                val pct = (readSoFar * 100f / total).coerceIn(0f, 100f)
+                            val now = SystemClock.uptimeMillis()
+                            if (now - lastEmitMs >= PROGRESS_EMIT_INTERVAL_MS) {
+                                val dtMs = (now - lastEmitMs).coerceAtLeast(1L)
+                                val speed = (readSoFar - lastEmitReadSoFar) * 1000L / dtMs
+                                lastEmitMs = now
+                                lastEmitReadSoFar = readSoFar
+                                val pct = if (total > 0) {
+                                    (readSoFar * 100f / total).coerceIn(0f, 100f)
+                                } else {
+                                    -1f
+                                }
                                 updateItem(id) {
-                                    it.copy(progress = pct, status = DownloadStatus.DOWNLOADING)
+                                    it.copy(
+                                        progress = pct,
+                                        status = DownloadStatus.DOWNLOADING,
+                                        phase = DownloadPhase.DOWNLOADING,
+                                        downloadedBytes = readSoFar,
+                                        totalBytes = total,
+                                        speedBytesPerSec = speed,
+                                    )
                                 }
                             }
                         }
@@ -1957,6 +2181,15 @@ class MpxDownloader private constructor(context: Context) {
          * PreferenceUtil. No settings UI in this issue — a fixed value.
          */
         private const val CONCURRENT_FRAGMENTS_DEFAULT = "8"
+
+        /**
+         * Progress-row update throttle (issue #350): the yt-dlp
+         * callback fires on every output line (several per second),
+         * and every emit recomposes the Download tab row. Emit at
+         * most every 250ms (~4/sec); a phase change or the final 100%
+         * always goes out immediately (see runDownload).
+         */
+        private const val PROGRESS_EMIT_INTERVAL_MS = 250L
 
         /**
          * Subtitle languages fetched at download time (issue #341):

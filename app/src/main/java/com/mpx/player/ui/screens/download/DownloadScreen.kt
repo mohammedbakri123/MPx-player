@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -51,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -63,6 +65,7 @@ import com.mpx.player.data.local.entity.DownloadHistoryEntity
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.download.ActiveDownload
 import com.mpx.player.download.CookieImportOutcome
+import com.mpx.player.download.DownloadPhase
 import com.mpx.player.download.DownloadStatus
 import com.mpx.player.download.DownloadedFile
 import com.mpx.player.download.DownloaderInitState
@@ -840,17 +843,25 @@ private fun ActiveDownloadRow(
         }
         if (item.status == DownloadStatus.DOWNLOADING || item.status == DownloadStatus.QUEUED) {
             Spacer(Modifier.height(8.dp))
-            // progress < 0 means the size is still unknown (indeterminate).
+            // Issue #350: a thicker bar (8dp, rounded) so the current
+            // download's progress is readable at a glance. progress < 0
+            // means the size is still unknown (indeterminate).
             if (item.progress >= 0f) {
                 LinearProgressIndicator(
                     progress = { (item.progress / 100f).coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
                     color = MpxTheme.colors.primary,
                     trackColor = MpxTheme.colors.surfaceVariant,
                 )
             } else {
                 LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
                     color = MpxTheme.colors.primary,
                     trackColor = MpxTheme.colors.surfaceVariant,
                 )
@@ -864,13 +875,40 @@ private fun downloadStatusText(item: ActiveDownload): String {
     return when (item.status) {
         DownloadStatus.QUEUED -> stringResource(R.string.download_queued)
         DownloadStatus.DOWNLOADING -> {
-            val pct = if (item.progress >= 0f) "${item.progress.toInt()}%" else "…"
-            val eta = if (item.etaSeconds > 0) {
-                stringResource(R.string.download_eta, formatEta(item.etaSeconds))
-            } else {
-                ""
+            // Issue #350: the row shows live size / speed / % / ETA on
+            // one line, and the current phase on a second line while
+            // merging or post-processing, so a stalled-looking bar is
+            // explained. With an unknown total the bar is indeterminate
+            // but the downloaded size and speed still show. The ETA is
+            // only meaningful while bytes are moving.
+            val numbers = buildList {
+                if (item.downloadedBytes >= 0 && item.totalBytes > 0) {
+                    add("${formatSize(item.downloadedBytes)} / ${formatSize(item.totalBytes)}")
+                } else if (item.downloadedBytes >= 0) {
+                    add(formatSize(item.downloadedBytes))
+                }
+                if (item.speedBytesPerSec > 0) {
+                    add(stringResource(R.string.download_speed, formatSize(item.speedBytesPerSec)))
+                }
+                if (item.progress >= 0f) add("${item.progress.toInt()}%")
+                if (item.phase == DownloadPhase.DOWNLOADING && item.etaSeconds > 0) {
+                    add(stringResource(R.string.download_eta, formatEta(item.etaSeconds)))
+                }
+            }.joinToString(" · ")
+            val phaseLabel = stringResource(
+                when (item.phase) {
+                    DownloadPhase.FETCHING_INFO -> R.string.download_phase_fetching_info
+                    DownloadPhase.DOWNLOADING -> R.string.download_phase_downloading
+                    DownloadPhase.MERGING -> R.string.download_phase_merging
+                    DownloadPhase.POST_PROCESSING -> R.string.download_phase_post_processing
+                },
+            )
+            when (item.phase) {
+                DownloadPhase.FETCHING_INFO -> phaseLabel
+                DownloadPhase.DOWNLOADING -> numbers.ifBlank { phaseLabel }
+                DownloadPhase.MERGING, DownloadPhase.POST_PROCESSING ->
+                    if (numbers.isBlank()) phaseLabel else "$numbers\n$phaseLabel"
             }
-            listOf(pct, eta).filter { it.isNotBlank() }.joinToString(" · ")
         }
         DownloadStatus.DONE -> stringResource(R.string.download_complete)
         DownloadStatus.FAILED -> {

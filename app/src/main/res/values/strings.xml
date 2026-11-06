@@ -21,6 +21,11 @@
     <string name="download_init_failed">Downloader couldn\'t start. Check storage and try again.</string>
     <string name="download_queued">Queued…</string>
     <string name="download_eta">ETA %1$s</string>
+    <string name="download_phase_fetching_info">Fetching info…</string>
+    <string name="download_phase_downloading">Downloading…</string>
+    <string name="download_phase_merging">Merging video and audio…</string>
+    <string name="download_phase_post_processing">Post-processing…</string>
+    <string name="download_speed">%1$s/s</string>
     <string name="download_complete">Download complete</string>
     <string name="download_failed">Download failed</string>
     <string name="download_interrupted">Interrupted — app closed while downloading</string>

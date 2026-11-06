@@ -21,6 +21,11 @@
     <string name="download_init_failed">डाउनलोडर प्रारंभ नहीं हो सका। स्टोरेज जांचें और पुनः प्रयास करें।</string>
     <string name="download_queued">कतार में…</string>
     <string name="download_eta">शेष %1$s</string>
+    <string name="download_phase_fetching_info">जानकारी प्राप्त की जा रही है…</string>
+    <string name="download_phase_downloading">डाउनलोड हो रहा है…</string>
+    <string name="download_phase_merging">वीडियो और ऑडियो मर्ज किया जा रहा है…</string>
+    <string name="download_phase_post_processing">पोस्ट-प्रोसेसिंग…</string>
+    <string name="download_speed">%1$s/s</string>
     <string name="download_complete">डाउनलोड पूरा हुआ</string>
     <string name="download_failed">डाउनलोड विफल रहा</string>
     <string name="download_interrupted">बाधित — डाउनलोड के दौरान ऐप बंद हो गया</string>

@@ -21,6 +21,11 @@
     <string name="download_init_failed">Не удалось запустить загрузчик. Проверьте хранилище и попробуйте снова.</string>
     <string name="download_queued">В очереди…</string>
     <string name="download_eta">Осталось %1$s</string>
+    <string name="download_phase_fetching_info">Получение информации…</string>
+    <string name="download_phase_downloading">Загрузка…</string>
+    <string name="download_phase_merging">Объединение видео и аудио…</string>
+    <string name="download_phase_post_processing">Постобработка…</string>
+    <string name="download_speed">%1$s/s</string>
     <string name="download_complete">Загрузка завершена</string>
     <string name="download_failed">Не удалось скачать</string>
     <string name="download_interrupted">Прервано — приложение было закрыто во время загрузки</string>
