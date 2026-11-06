@@ -542,16 +542,26 @@ fun MpxApp(
         // and dock sit in the bottomBar, outside it, so swipes there do
         // nothing. Active only on the four tabs; no wrap at the ends.
         // A horizontal drag on a horizontally scrolling child (a chips
-        // row) is consumed by that child, not the page. The in-tab
-        // search page is still the Local route, so a swipe there also
-        // switches tabs. Direction follows the tab order, and the
-        // mpxTabEnter/mpxTabExit transitions slide the right way.
+        // row) is consumed by that child, not the page. Direction
+        // follows the tab order, and the mpxTabEnter/mpxTabExit
+        // transitions slide the right way.
+        // Issue #245: the in-tab search page is still the Local route,
+        // so a swipe there used to switch tabs and destroy the typed
+        // query (the page and its query are plain remember, lost when
+        // the composition is disposed). LocalScreen reports the page
+        // state through onSearchPageChanged below; while it is open the
+        // detector is off — dock taps still switch tabs, they are
+        // deliberate. The flag is a pointerInput key, so the detector
+        // restarts — and re-reads the flag — the moment the page opens
+        // or closes; a drag in flight then just resets totalDrag, which
+        // is harmless.
+        var isLocalSearchOpen by remember { mutableStateOf(false) }
         val swipeThresholdPx = with(density) { 100.dp.toPx() }
         Box(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .pointerInput(tabOrder, currentDestination?.route) {
+                .pointerInput(tabOrder, currentDestination?.route, isLocalSearchOpen) {
                     var totalDrag = 0f
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { _, dragAmount ->
@@ -559,7 +569,7 @@ fun MpxApp(
                         },
                         onDragEnd = {
                             val currentIndex = tabOrder.indexOf(currentDestination?.route)
-                            if (currentIndex >= 0) {
+                            if (currentIndex >= 0 && !isLocalSearchOpen) {
                                 when {
                                     totalDrag < -swipeThresholdPx && currentIndex < tabOrder.lastIndex ->
                                         navigateToTab(tabOrder[currentIndex + 1])
@@ -597,6 +607,10 @@ fun MpxApp(
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
+                    // Issue #245: while the search page is open the
+                    // tab-swipe detector above is off, so a swipe
+                    // mid-search cannot switch tabs and destroy the query.
+                    onSearchPageChanged = { isLocalSearchOpen = it },
                 )
             }
             composable(Screen.Music.route) {
