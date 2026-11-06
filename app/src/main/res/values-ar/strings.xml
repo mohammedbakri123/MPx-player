@@ -21,6 +21,11 @@
     <string name="download_init_failed">تعذّر تشغيل أداة التنزيل. تحقق من التخزين وحاول مجددًا.</string>
     <string name="download_queued">في الانتظار…</string>
     <string name="download_eta">المتبقي %1$s</string>
+    <string name="download_phase_fetching_info">جارٍ جلب المعلومات…</string>
+    <string name="download_phase_downloading">جارٍ التنزيل…</string>
+    <string name="download_phase_merging">جارٍ دمج الفيديو والصوت…</string>
+    <string name="download_phase_post_processing">جارٍ المعالجة اللاحقة…</string>
+    <string name="download_speed">%1$s/s</string>
     <string name="download_complete">اكتمل التنزيل</string>
     <string name="download_failed">فشل التنزيل</string>
     <string name="download_interrupted">انقطع التنزيل — أُغلق التطبيق أثناء التنزيل</string>

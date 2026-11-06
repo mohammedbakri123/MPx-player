@@ -21,6 +21,11 @@
     <string name="download_init_failed">Impossible de démarrer le téléchargeur. Vérifiez le stockage et réessayez.</string>
     <string name="download_queued">En attente…</string>
     <string name="download_eta">Reste %1$s</string>
+    <string name="download_phase_fetching_info">Récupération des infos…</string>
+    <string name="download_phase_downloading">Téléchargement…</string>
+    <string name="download_phase_merging">Fusion de la vidéo et de l\'audio…</string>
+    <string name="download_phase_post_processing">Post-traitement…</string>
+    <string name="download_speed">%1$s/s</string>
     <string name="download_complete">Téléchargement terminé</string>
     <string name="download_failed">Échec du téléchargement</string>
     <string name="download_interrupted">Interrompu — l’app s’est fermée pendant le téléchargement</string>
