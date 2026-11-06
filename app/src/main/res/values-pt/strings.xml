@@ -1035,14 +1035,14 @@
     <string name="pref_search_no_results">Nenhuma definição corresponde a «%1$s»</string>
     <string name="pref_player_summary">Retomar reprodução, reprodução em segundo plano, velocidade</string>
     <string name="pref_folders_empty_title">Nenhuma pasta na lista negra</string>
-    <string name="pref_folders_empty_message">As pastas ocultadas aqui não aparecem em Local.</string>
+    <string name="pref_folders_empty_message">As pastas ocultadas aqui não aparecem em Local nem em Música.</string>
     <string name="pref_folders_add">Adicionar pasta</string>
     <string name="pref_folders_select_title">Selecionar pastas para ocultar</string>
     <string name="pref_folders_loading">A carregar pastas…</string>
     <string name="pref_folders_none_available">Não há mais pastas para ocultar</string>
     <string name="pref_folders_clear_all">Limpar tudo</string>
     <string name="pref_folders_clear_confirm_title">Remover todas as pastas da lista negra?</string>
-    <string name="pref_folders_clear_confirm_message">Todas as pastas voltam a aparecer em Local.</string>
+    <string name="pref_folders_clear_confirm_message">Todas as pastas voltam a aparecer em Local e em Música.</string>
     <string name="pref_folders_remove">Remover</string>
     <string name="pref_layout_editor_desc">Escolhe que ações aparecem na folha de reprodução e na barra de ações, e em que ordem.</string>
     <string name="pref_layout_reset">Repor predefinições</string>

@@ -1035,14 +1035,14 @@
     <string name="pref_search_no_results">没有与“%1$s”匹配的设置</string>
     <string name="pref_player_summary">恢复播放、后台播放、速度</string>
     <string name="pref_folders_empty_title">没有已屏蔽的文件夹</string>
-    <string name="pref_folders_empty_message">在此隐藏的文件夹不会显示在“本地”中。</string>
+    <string name="pref_folders_empty_message">在此隐藏的文件夹不会显示在“本地”或“音乐”中。</string>
     <string name="pref_folders_add">添加文件夹</string>
     <string name="pref_folders_select_title">选择要隐藏的文件夹</string>
     <string name="pref_folders_loading">正在加载文件夹…</string>
     <string name="pref_folders_none_available">没有更多可隐藏的文件夹</string>
     <string name="pref_folders_clear_all">全部清除</string>
     <string name="pref_folders_clear_confirm_title">清除所有已屏蔽的文件夹？</string>
-    <string name="pref_folders_clear_confirm_message">所有文件夹将重新显示在“本地”中。</string>
+    <string name="pref_folders_clear_confirm_message">所有文件夹将重新显示在“本地”和“音乐”中。</string>
     <string name="pref_folders_remove">移除</string>
     <string name="pref_layout_editor_desc">选择在播放面板和操作栏中显示的操作及其顺序。</string>
     <string name="pref_layout_reset">恢复默认</string>

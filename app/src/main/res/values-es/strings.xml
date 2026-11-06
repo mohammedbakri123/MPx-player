@@ -1035,14 +1035,14 @@
     <string name="pref_search_no_results">Ningún ajuste coincide con «%1$s»</string>
     <string name="pref_player_summary">Reanudar reproducción, reproducción en segundo plano, velocidad</string>
     <string name="pref_folders_empty_title">No hay carpetas en la lista negra</string>
-    <string name="pref_folders_empty_message">Las carpetas que ocultes aquí no aparecerán en Local.</string>
+    <string name="pref_folders_empty_message">Las carpetas que ocultes aquí no aparecerán en Local ni en Música.</string>
     <string name="pref_folders_add">Añadir carpeta</string>
     <string name="pref_folders_select_title">Selecciona carpetas para ocultar</string>
     <string name="pref_folders_loading">Cargando carpetas…</string>
     <string name="pref_folders_none_available">No hay más carpetas para ocultar</string>
     <string name="pref_folders_clear_all">Limpiar todo</string>
     <string name="pref_folders_clear_confirm_title">¿Quitar todas las carpetas de la lista negra?</string>
-    <string name="pref_folders_clear_confirm_message">Todas las carpetas volverán a aparecer en Local.</string>
+    <string name="pref_folders_clear_confirm_message">Todas las carpetas volverán a aparecer en Local y en Música.</string>
     <string name="pref_folders_remove">Quitar</string>
     <string name="pref_layout_editor_desc">Elige qué acciones aparecen en la hoja de reproducción y en la barra de acciones, y en qué orden.</string>
     <string name="pref_layout_reset">Restablecer valores</string>

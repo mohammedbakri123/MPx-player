@@ -138,6 +138,7 @@ import com.mpx.player.ui.screens.local.MediaSortComparator
 import com.mpx.player.ui.screens.local.MultiSelectAction
 import com.mpx.player.ui.screens.local.SortField
 import com.mpx.player.ui.screens.local.ViewMode
+import com.mpx.player.ui.screens.local.isPathBlacklisted
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.MpxLoadingIndicator
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
@@ -176,6 +177,15 @@ private val MusicTabSaver: Saver<MusicTab, String> = Saver(
 // #265: one page of history rows in the PlaybackHistoryDialog — same
 // value as the full History page (its own private const there).
 private const val HISTORY_PAGE_SIZE = 100
+
+// Issue #300: the four audio-library lists after the folder blacklist is
+// applied (see applyAudioBlacklist in MusicScreen).
+private data class FilteredAudioLibrary(
+    val tracks: List<AudioTrack>,
+    val albums: List<AudioAlbum>,
+    val artists: List<AudioArtist>,
+    val folders: List<AudioFolder>,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -451,6 +461,58 @@ fun MusicScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // Issue #300: a track's folder, derived exactly the way
+    // MediaStoreRepository.getAudioFolders() and folderTracks() group it
+    // (parent dir; blank and content:// paths fall back to
+    // /storage/emulated/0/Music, #253/#267), so a track and its folder
+    // tile are hidden together by the blacklist below.
+    fun audioFolderPath(track: AudioTrack): String =
+        if (track.path.isNotBlank() && !track.path.startsWith("content://")) {
+            File(track.path).parent ?: "/storage/emulated/0/Music"
+        } else {
+            "/storage/emulated/0/Music"
+        }
+
+    // Issue #300: mirror LocalScreen.applyFolderBlacklist for the audio
+    // library — the folder blacklist (Preferences > Folders) hides
+    // blacklisted folders' audio from Music too, with the same prefix
+    // rule ([isPathBlacklisted]). Tracks and folders filter directly on
+    // their folder path; albums and artists derive from tracks, so they
+    // keep only rows with at least one visible track, with counts
+    // recomputed from the visible tracks (a stale count would be #275
+    // all over again). Playlists are deliberately NOT filtered: their
+    // members are explicit user choices, resolved by the repository when
+    // played. Runs on the IO thread at the load sites, like Local's.
+    fun applyAudioBlacklist(
+        scannedTracks: List<AudioTrack>,
+        scannedAlbums: List<AudioAlbum>,
+        scannedArtists: List<AudioArtist>,
+        scannedFolders: List<AudioFolder>,
+        blacklist: Set<String>,
+    ): FilteredAudioLibrary {
+        if (blacklist.isEmpty()) {
+            return FilteredAudioLibrary(scannedTracks, scannedAlbums, scannedArtists, scannedFolders)
+        }
+        val visibleTracks = scannedTracks.filter { !isPathBlacklisted(audioFolderPath(it), blacklist) }
+        val visibleFolders = scannedFolders.filter { !isPathBlacklisted(it.path, blacklist) }
+        val visibleAlbums = scannedAlbums.mapNotNull { album ->
+            val count = visibleTracks.count { it.album == album.title && it.artist == album.artist }
+            if (count > 0) album.copy(trackCount = count) else null
+        }
+        val visibleArtists = scannedArtists.mapNotNull { artist ->
+            val artistTracks = visibleTracks.filter { it.artist == artist.name }
+            if (artistTracks.isNotEmpty()) {
+                artist.copy(
+                    trackCount = artistTracks.size,
+                    albumCount = artistTracks.map { it.album }.distinct().size,
+                )
+            } else {
+                null
+            }
+        }
+        return FilteredAudioLibrary(visibleTracks, visibleAlbums, visibleArtists, visibleFolders)
+    }
+
     DisposableEffect(permissionResultHandler) {
         onDispose { permissionResultHandler.callback = null }
     }
@@ -467,12 +529,14 @@ fun MusicScreen(
                 val al = repository.getAudioAlbums()
                 val ar = repository.getAudioArtists()
                 val f = repository.getAudioFolders()
+                // Issue #300: folder blacklist hides blacklisted audio too.
+                val visible = applyAudioBlacklist(t, al, ar, f, appSettings.blacklistedFolders)
                 withContext(Dispatchers.Main) {
-                    tracks = t
+                    tracks = visible.tracks
                     playlists = p
-                    albums = al
-                    artists = ar
-                    folders = f
+                    albums = visible.albums
+                    artists = visible.artists
+                    folders = visible.folders
                     isLoading = false
                 }
             }
@@ -498,12 +562,14 @@ fun MusicScreen(
                 val al = repository.getAudioAlbums()
                 val ar = repository.getAudioArtists()
                 val f = repository.getAudioFolders()
+                // Issue #300: folder blacklist hides blacklisted audio too.
+                val visible = applyAudioBlacklist(t, al, ar, f, appSettings.blacklistedFolders)
                 withContext(Dispatchers.Main) {
-                    tracks = t
+                    tracks = visible.tracks
                     playlists = p
-                    albums = al
-                    artists = ar
-                    folders = f
+                    albums = visible.albums
+                    artists = visible.artists
+                    folders = visible.folders
                     isLoading = false
                 }
             }
@@ -537,12 +603,17 @@ fun MusicScreen(
                         val al = repository.getAudioAlbums()
                         val ar = repository.getAudioArtists()
                         val f = repository.getAudioFolders()
+                        // Issue #300: folder blacklist hides blacklisted
+                        // audio too — use the freshly reloaded settings,
+                        // so a blacklist change in Preferences applies on
+                        // return (this is the ON_RESUME reload).
+                        val visible = applyAudioBlacklist(t, al, ar, f, loadedSettings.blacklistedFolders)
                         withContext(Dispatchers.Main) {
-                            tracks = t
+                            tracks = visible.tracks
                             playlists = p
-                            albums = al
-                            artists = ar
-                            folders = f
+                            albums = visible.albums
+                            artists = visible.artists
+                            folders = visible.folders
                             isLoading = false
                         }
                     }
