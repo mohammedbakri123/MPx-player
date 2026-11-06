@@ -179,6 +179,11 @@ fun LocalScreen(
     onOpenSettings: () -> Unit,
     playbackManager: PlaybackManager? = null,
     settingsRepository: AppSettingsRepository? = null,
+    // Issue #245: reports whether the whole-page search is open so
+    // MainActivity can turn the tab-swipe detector off while it is —
+    // a swipe mid-search used to switch tabs and destroy the typed
+    // query. Defaults to a no-op for other callers.
+    onSearchPageChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -278,6 +283,19 @@ fun LocalScreen(
     var popupFolderScope by remember { mutableStateOf(false) }
     // #142: the search page replaces the old inline root search.
     var showSearchPage by remember { mutableStateOf(false) }
+    // Issue #245: report the search page state to MainActivity so the
+    // tab-swipe detector can turn off while the page is open — a swipe
+    // mid-search used to switch tabs and destroy the typed query (this
+    // flag and the query inside LocalSearchScreen are plain remember,
+    // lost when the composition is disposed). LaunchedEffect also fires
+    // on first composition, reporting false, which resets the flag if
+    // this screen was re-created while the page was open (e.g. after
+    // returning from the Player). The callback captures the parent's
+    // state object, not its value, so a stale instance still writes to
+    // the same state.
+    LaunchedEffect(showSearchPage) {
+        onSearchPageChanged(showSearchPage)
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
