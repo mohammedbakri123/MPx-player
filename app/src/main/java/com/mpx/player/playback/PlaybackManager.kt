@@ -59,8 +59,9 @@ class PlaybackManager private constructor(context: Context) {
      * load to a coroutine that awaits the preload first — a second tap
      * (or a restore) in that window must supersede the pending load, not
      * race it: the deferred load only runs while its generation is still
-     * the latest. stop() does not clear the currentQueue field, so a
-     * queue-identity check cannot serve as this guard.
+     * the latest. Issue #258: stop() bumps the generation too, so a
+     * deferred load cannot outlive a deliberate stop and resurrect the
+     * queue it just cleared.
      */
     private var playQueueGeneration = 0
 
@@ -1038,6 +1039,19 @@ class PlaybackManager private constructor(context: Context) {
         stopTicker()
         PlaybackService.stop(appContext)
         unshuffledQueue = null
+        // Issue #258: a deliberate stop ends the session, so the live
+        // queue goes too — otherwise the fallback reload's
+        // onMediaItemTransition (or any other in-flight transition)
+        // resurrects currentItem in state and persistQueue() re-saves
+        // the queue stop() just cleared from the store. With the queue
+        // empty, a late transition resolves to null and persistQueue
+        // re-saves nothing (save() clears on an empty list).
+        currentQueue = emptyList()
+        // Issue #258: a playQueue still awaiting the Room preload (the
+        // #220 slow path) holds its own captured items, so clearing
+        // the queue alone cannot stop it — bump the generation so its
+        // deferred startPlayback is superseded like any other stale load.
+        playQueueGeneration++
         queueStore.clear()
         // Issue #229: a deliberate stop ends the session (the persisted
         // queue is cleared just above, so it cannot be resurrected) — the
