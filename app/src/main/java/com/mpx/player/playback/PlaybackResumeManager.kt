@@ -1,6 +1,7 @@
 package com.mpx.player.playback
 
 import com.mpx.player.domain.repository.MediaPersistenceRepository
+import android.os.SystemClock
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -8,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 /**
  * Hybrid resume position manager backed by Room database persistence and in-memory cache.
@@ -31,6 +33,18 @@ class PlaybackResumeManager(
 ) {
     companion object {
         /**
+         * Issue #274: the Room-write throttle. The 250 ms ticker called
+         * [saveResumePosition] every tick, so Room got an upsert ~4x/s for
+         * hours of playback. The DB write is skipped while the position is
+         * unchanged, or while less than this long has passed since the last
+         * write for the same item and the position moved less than
+         * [RESUME_DB_WRITE_MIN_DELTA_MS]. A big seek still writes at once,
+         * so the persisted position stays within ~5 s of live playback.
+         */
+        private const val RESUME_DB_WRITE_MIN_INTERVAL_MS = 5_000L
+        private const val RESUME_DB_WRITE_MIN_DELTA_MS = 5_000L
+
+        /**
          * The resume key for one media item: its stable URI/path, falling back
          * to the bare id only when no URI is available (issue #227). Every
          * save/get/clear path must go through this so the key can never
@@ -41,6 +55,15 @@ class PlaybackResumeManager(
     }
 
     private val resumeMap = ConcurrentHashMap<String, Long>()
+
+    /**
+     * Issue #274: last Room write per resume key — (elapsedRealtime at the
+     * write, position written) — so the ticker's 250 ms saves can be
+     * throttled to one Room upsert per [RESUME_DB_WRITE_MIN_INTERVAL_MS].
+     * Only the DB write is gated; the in-memory [resumeMap] above is
+     * always updated immediately.
+     */
+    private val lastDbWrite = ConcurrentHashMap<String, Pair<Long, Long>>()
 
     /**
      * Issue #220: the Room preload, as a [Deferred] so readers can wait
@@ -109,28 +132,50 @@ class PlaybackResumeManager(
      * Stored under the [resumeKey] of [mediaUri] (falling back to [id]), so the
      * Room `mediaId` value is the media URI, not the bare MediaStore id
      * (issue #227).
+     *
+     * Issue #274: only the Room upsert is throttled — the in-memory map is
+     * always updated immediately, because reads (seek setup, the preload's
+     * putIfAbsent) must see the latest position. The DB write is skipped
+     * when the position is unchanged since the last write, or when less
+     * than [RESUME_DB_WRITE_MIN_INTERVAL_MS] has passed and the position
+     * moved less than [RESUME_DB_WRITE_MIN_DELTA_MS]; a big seek (or
+     * [force]) still writes at once. [force] is for explicit saves that
+     * must land immediately — [PlaybackManager.load] with a user-chosen
+     * resume position, and the pause flush in [PlaybackManager] — not for
+     * the ticker, which passes the default.
      */
     fun saveResumePosition(
         id: String,
         positionMs: Long,
         mediaUri: String = "",
         durationMs: Long = 0L,
+        force: Boolean = false,
     ) {
         // Only record position if past 1.5 seconds to avoid micro-resumes at 00:00
         if (positionMs > 1_500L) {
             val key = resumeKey(mediaUri, id)
             resumeMap[key] = positionMs
             persistenceRepository?.let { repo ->
-                coroutineScope.launch {
-                    try {
-                        repo.saveResumePosition(
-                            mediaId = key,
-                            mediaUri = mediaUri.ifBlank { id },
-                            positionMs = positionMs,
-                            durationMs = durationMs,
-                        )
-                    } catch (_: Exception) {
-                        // In-memory position remains intact if DB write fails
+                val last = lastDbWrite[key]
+                val now = SystemClock.elapsedRealtime()
+                val skipDbWrite = !force && last != null && (
+                    positionMs == last.second ||
+                        (now - last.first < RESUME_DB_WRITE_MIN_INTERVAL_MS &&
+                            abs(positionMs - last.second) < RESUME_DB_WRITE_MIN_DELTA_MS)
+                    )
+                if (!skipDbWrite) {
+                    lastDbWrite[key] = now to positionMs
+                    coroutineScope.launch {
+                        try {
+                            repo.saveResumePosition(
+                                mediaId = key,
+                                mediaUri = mediaUri.ifBlank { id },
+                                positionMs = positionMs,
+                                durationMs = durationMs,
+                            )
+                        } catch (_: Exception) {
+                            // In-memory position remains intact if DB write fails
+                        }
                     }
                 }
             }
@@ -145,6 +190,10 @@ class PlaybackResumeManager(
     fun clearResumePosition(id: String, mediaUri: String = "") {
         val key = resumeKey(mediaUri, id)
         resumeMap.remove(key)
+        // Issue #274: forget the throttle state too, so a later replay of
+        // the same item writes its fresh position at once instead of being
+        // gated by the cleared row's last write.
+        lastDbWrite.remove(key)
         persistenceRepository?.let { repo ->
             coroutineScope.launch {
                 try {
@@ -161,6 +210,8 @@ class PlaybackResumeManager(
      */
     fun clearAll() {
         resumeMap.clear()
+        // Issue #274: see clearResumePosition above.
+        lastDbWrite.clear()
         persistenceRepository?.let { repo ->
             coroutineScope.launch {
                 try {
