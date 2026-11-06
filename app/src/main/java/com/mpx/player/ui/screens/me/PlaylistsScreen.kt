@@ -150,8 +150,21 @@ fun PlaylistsScreen(
                             .fillMaxWidth()
                             .clickable {
                                 selectedPlaylist = pl
+                                // #269: clear the old list at once, so the
+                                // dialog never shows the previous playlist's
+                                // items under this title while loading.
+                                playlistItemsForDialog = emptyList()
                                 scope.launch {
-                                    playlistItemsForDialog = persistenceRepository.getPlaylistItems(pl.id)
+                                    val items = persistenceRepository.getPlaylistItems(pl.id)
+                                    // #269: a second tap starts a second
+                                    // load — only apply this one if this
+                                    // playlist is still selected, so the
+                                    // slower load cannot win over the newer
+                                    // tap and put the wrong songs under the
+                                    // dialog's title.
+                                    if (selectedPlaylist?.id == pl.id) {
+                                        playlistItemsForDialog = items
+                                    }
                                 }
                             }
                             .padding(vertical = 10.dp),

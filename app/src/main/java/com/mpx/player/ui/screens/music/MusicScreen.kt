@@ -1604,8 +1604,24 @@ fun MusicScreen(
                                         val custom = customPlaylists.find { customPlaylistId(it.id) == playlist.id }
                                         if (custom != null) {
                                             selectedCustomPlaylist = custom
+                                            // #269: clear the old list at
+                                            // once, so the dialog never shows
+                                            // the previous playlist's items
+                                            // under this title while loading.
+                                            playlistItemsForDialog = emptyList()
                                             scope.launch {
-                                                playlistItemsForDialog = persistenceRepository.getPlaylistItems(custom.id)
+                                                val items = persistenceRepository.getPlaylistItems(custom.id)
+                                                // #269: a second tap starts
+                                                // a second load — only apply
+                                                // this one if this playlist
+                                                // is still selected, so the
+                                                // slower load cannot win over
+                                                // the newer tap and put the
+                                                // wrong songs under the
+                                                // dialog's title.
+                                                if (selectedCustomPlaylist?.id == custom.id) {
+                                                    playlistItemsForDialog = items
+                                                }
                                             }
                                         } else {
                                             // Device (MediaStore) playlist: queue exactly its
