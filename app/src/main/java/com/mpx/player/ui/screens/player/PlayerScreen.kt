@@ -642,6 +642,9 @@ fun PlayerScreen(
     var seekStartMs by remember { mutableLongStateOf(0L) }
     var seekTargetMs by remember { mutableLongStateOf(0L) }
     var seekDeltaMs by remember { mutableLongStateOf(0L) }
+    // Issue #259: whether playback was running when a horizontal seek
+    // drag paused it, so the drag can resume it on release.
+    var wasPlayingBeforeSeekDrag by remember { mutableStateOf(false) }
     var accumulatedDragX by remember { mutableFloatStateOf(0f) }
 
     // Gesture states for seek, brightness, and volume
@@ -756,6 +759,19 @@ fun PlayerScreen(
         0f
     }
 
+    // Issue #259: resume playback paused for a seek drag, if it was
+    // playing when the drag started. Called on every exit path of a
+    // seek drag (clean release, cancellation, pinch takeover) so a
+    // paused-for-seek video can never get stuck paused. A no-op when
+    // the drag never paused anything (already-paused video, or a
+    // vertical drag that never became a seek).
+    fun resumeAfterSeekDrag() {
+        if (wasPlayingBeforeSeekDrag) {
+            wasPlayingBeforeSeekDrag = false
+            playbackManager.play()
+        }
+    }
+
     // Shared drag-delta handling for the single gesture detector below
     // (issue #166): mode detection (horizontal seek vs left-vertical
     // brightness vs right-vertical volume) plus the per-mode delta math.
@@ -774,6 +790,23 @@ fun PlayerScreen(
                     if (currentDuration > 0) {
                         currentDragMode = DragGestureMode.HORIZONTAL_SEEK
                         isDraggingSeek = true
+                        // Issue #259: pause while the user drag-seeks.
+                        // The anchor was captured at finger-down and
+                        // playback keeps advancing under it, so a slow
+                        // drag released seconds later seeks back by the
+                        // drag duration instead of landing where the HUD
+                        // showed. Pausing freezes the position, and
+                        // re-anchoring here — at the moment the drag is
+                        // recognised as a seek — drops any hold time
+                        // before the finger started moving. Only pause
+                        // when actually playing; a drag on a paused
+                        // video seeks without touching playback, and
+                        // resumeAfterSeekDrag restores it on release.
+                        if (state.isPlaying) {
+                            wasPlayingBeforeSeekDrag = true
+                            playbackManager.pause()
+                        }
+                        seekStartMs = state.currentPositionMs
                     }
                 } else {
                     val isLeftHalf = dragStartOffset.x < scopeWidth / 2f
@@ -1034,7 +1067,13 @@ fun PlayerScreen(
                             // tracks (a mid-seek drag is abandoned, not
                             // committed) and zoom from the finger distance.
                             if (!isPinching) {
-                                if (isDraggingSeek) isDraggingSeek = false
+                                if (isDraggingSeek) {
+                                    isDraggingSeek = false
+                                    // Issue #259: the abandoned seek drag
+                                    // had paused playback — resume it, the
+                                    // pinch must not leave the video paused.
+                                    resumeAfterSeekDrag()
+                                }
                                 currentDragMode = DragGestureMode.NONE
                                 pinchStartDistance = (pressed[0].position - pressed[1].position).getDistance()
                                 pinchStartZoom = currentSettings.videoZoom
@@ -1096,6 +1135,10 @@ fun PlayerScreen(
                                 if (isDraggingSeek) {
                                     playbackManager.seekTo(seekTargetMs)
                                     isDraggingSeek = false
+                                    // Issue #259: seek first, then resume —
+                                    // play() must see the post-seek state, and
+                                    // the video was playing before the drag.
+                                    resumeAfterSeekDrag()
                                 }
                             }
                             DragGestureMode.VERTICAL_BRIGHTNESS -> {
@@ -1117,6 +1160,10 @@ fun PlayerScreen(
                     } else {
                         if (isDraggingSeek) {
                             isDraggingSeek = false
+                            // Issue #259: the drag was cancelled, so no
+                            // seek — but restore playback if the drag had
+                            // paused it, the user never asked to pause.
+                            resumeAfterSeekDrag()
                         }
                         if (showBrightnessIndicator) {
                             hideBrightnessJob?.cancel()
