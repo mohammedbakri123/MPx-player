@@ -128,6 +128,14 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             // (no header), a missing key takes the desktop-Chrome default.
             downloadUserAgent = prefs.getString("download_user_agent", DEFAULT_DOWNLOAD_USER_AGENT)
                 ?: DEFAULT_DOWNLOAD_USER_AGENT,
+            // Issue #338: download quality. Codec and resolution are
+            // validated — a stale/corrupt value falls back to the
+            // defaults (Auto / no cap) instead of breaking the sorter.
+            downloadCodec = prefs.getString("download_codec", "Auto")
+                ?.takeIf { it in setOf("Auto", "VP9", "AV1", "H264") } ?: "Auto",
+            downloadResolution = prefs.getInt("download_resolution", 0)
+                .takeIf { it in 0..6 } ?: 0,
+            downloadCustomSorter = prefs.getString("download_custom_sorter", "") ?: "",
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -241,6 +249,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putLong("ytdlp_last_update_time_ms", settings.ytdlpLastUpdateTimeMs)
             .putString("ytdlp_version", settings.ytdlpVersion)
             .putString("download_user_agent", settings.downloadUserAgent)
+            .putString("download_codec", settings.downloadCodec)
+            .putInt("download_resolution", settings.downloadResolution)
+            .putString("download_custom_sorter", settings.downloadCustomSorter)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

@@ -38,6 +38,13 @@
     <string name="download_sign_in">डाउनलोड करने के लिए साइन इन करें</string>
     <string name="download_no_cookies">कोई कुकी नहीं मिली — पहले विंडो में साइन इन करें, फिर «हो गया» दबाएं</string>
     <string name="download_cookies_failed">कुकी आयात विफल रहा</string>
+    <string name="download_quality_title">डाउनलोड गुणवत्ता</string>
+    <string name="download_quality_resolution">रिज़ॉल्यूशन सीमा</string>
+    <string name="download_quality_resolution_none">कोई सीमा नहीं</string>
+    <string name="download_quality_codec">कोडेक प्राथमिकता</string>
+    <string name="download_quality_codec_auto">ऑटो</string>
+    <string name="download_quality_custom_sorter">कस्टम फ़ॉर्मेट सॉर्टर</string>
+    <string name="download_quality_custom_sorter_hint">सेट होने पर, यह ऊपर चुने गए रिज़ॉल्यूशन और कोडेक को ओवरराइड करता है।</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">वीडियो</string>

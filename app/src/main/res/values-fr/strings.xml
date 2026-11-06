@@ -38,6 +38,13 @@
     <string name="download_sign_in">Se connecter pour télécharger</string>
     <string name="download_no_cookies">Aucun cookie trouvé — connectez-vous d’abord dans la fenêtre, puis touchez « Terminé »</string>
     <string name="download_cookies_failed">Échec de l’importation des cookies</string>
+    <string name="download_quality_title">Qualité du téléchargement</string>
+    <string name="download_quality_resolution">Résolution maximale</string>
+    <string name="download_quality_resolution_none">Aucune limite</string>
+    <string name="download_quality_codec">Préférence de codec</string>
+    <string name="download_quality_codec_auto">Auto</string>
+    <string name="download_quality_custom_sorter">Tri de format personnalisé</string>
+    <string name="download_quality_custom_sorter_hint">Si défini, ceci remplace la résolution et le codec choisis ci-dessus.</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vidéo</string>

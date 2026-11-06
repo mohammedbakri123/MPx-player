@@ -12,13 +12,15 @@ import com.yausername.youtubedl_android.YoutubeDLRequest
  * - `checkIfAv1HardwareAccelerated` — same file, :987
  * - `connectWithDelimiter` — `app/src/main/java/com/junkfood/seal/util/TextUtil.kt:135`
  *
- * Seal reads these values from its DownloadPreferences (MMKV); MPx has no
- * download-quality settings yet (that is issue #338), so the functions
- * take the same values as plain parameters defaulting to Seal's own
- * defaults (PreferenceUtil.kt:220-233): quality format (vp9.2, or av01
- * when the device hardware-decodes AV1), no resolution cap, no custom
- * audio preset, no custom sorting fields. With those defaults the
- * sorter is just `vcodec:vp9.2` (or `vcodec:av01`).
+ * Seal reads these values from its DownloadPreferences (MMKV); MPx
+ * reads them from AppSettings (issue #338 — downloadCodec /
+ * downloadResolution / downloadCustomSorter) and MpxDownloader passes
+ * them in at request time. The functions take the same values as plain
+ * parameters defaulting to Seal's own defaults
+ * (PreferenceUtil.kt:220-233): quality format (vp9.2, or av01 when the
+ * device hardware-decodes AV1), no resolution cap, no custom audio
+ * preset, no custom sorting fields. With those defaults the sorter is
+ * just `vcodec:vp9.2` (or `vcodec:av01`).
  *
  * The sorter does not depend on ffmpeg being present: without ffmpeg it
  * still improves single-file picks (codec preference, resolution cap

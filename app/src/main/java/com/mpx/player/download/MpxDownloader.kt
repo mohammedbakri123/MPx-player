@@ -454,8 +454,12 @@ class MpxDownloader private constructor(context: Context) {
 
             // Issue #337: the User-Agent goes on every yt-dlp request
             // (info + download), like Seal's `enableCookies` — a blank
-            // setting sends no header at all.
-            val userAgent = settingsRepository.load().downloadUserAgent
+            // setting sends no header at all. The whole blob is loaded
+            // once here: the quality settings (#338) are read from the
+            // same load at request time below, so a change on the
+            // Download tab applies to the next download.
+            val settings = settingsRepository.load()
+            val userAgent = settings.downloadUserAgent
             val cookiesFile = item.cookiesFile?.takeIf { it.isFile }
 
             // Title first, so the row shows something real while the bytes
@@ -506,13 +510,34 @@ class MpxDownloader private constructor(context: Context) {
                 // downloadsDir on completion, so the Destination line in
                 // stdout still points at the final file.
                 addOption("-P", "temp:${tempDirFor.absolutePath}")
-                // Issue #336: Seal's `-S` format sorter instead of a
-                // hardcoded `-f` — no `-f` means yt-dlp picks (and, with
-                // ffmpeg bundled, merges) the best video+audio streams;
-                // the sorter prefers vp9.2 (av01 when the device
-                // hardware-decodes AV1). The sorter works without
-                // ffmpeg too (it still improves single-file picks).
-                applyFormatSorter(formatSorter())
+                // Issue #336 + #338: Seal's `-S` format sorter instead
+                // of a hardcoded `-f` — no `-f` means yt-dlp picks
+                // (and, with ffmpeg bundled, merges) the best
+                // video+audio streams. The sorter parameters come from
+                // the quality settings, read at request time above:
+                // "Auto" keeps #336's default (vp9.2, or av01 when the
+                // device hardware-decodes AV1); "VP9"/"AV1" force that
+                // codec; "H264" is Seal's compatibility format. A
+                // non-blank custom sorter replaces the built sorter
+                // entirely. The sorter works without ffmpeg too (it
+                // still improves single-file picks).
+                applyFormatSorter(
+                    formatSorter(
+                        videoFormat = if (settings.downloadCodec == "H264") {
+                            FORMAT_COMPATIBILITY
+                        } else {
+                            FORMAT_QUALITY
+                        },
+                        videoResolution = settings.downloadResolution,
+                        supportAv1HardwareDecoding = when (settings.downloadCodec) {
+                            "AV1" -> true
+                            "VP9" -> false
+                            else -> checkIfAv1HardwareAccelerated()
+                        },
+                    ),
+                    formatSorting = settings.downloadCustomSorter.isNotBlank(),
+                    sortingFields = settings.downloadCustomSorter,
+                )
                 addOption("--no-playlist")
                 addOption("--no-mtime")
                 // Same fail-fast options as the info fetch above.
