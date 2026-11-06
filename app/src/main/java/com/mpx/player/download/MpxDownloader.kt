@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Environment
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.yausername.aria2c.Aria2c
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
@@ -105,6 +106,13 @@ enum class YtDlpUpdateOutcome {
  * capping at the best single file (typically 720p). No `-f` is passed;
  * Seal's `-S` format sorter picks the streams (see FormatSorter.kt).
  *
+ * The `:aria2c` artifact is bundled too (issue #339, ~20 MB AAR —
+ * the arm64 release APK grows by its ~6.5 MB arm64 slice): when its
+ * init succeeds, downloads use `--downloader libaria2c.so` for
+ * multi-connection downloads; otherwise `--concurrent-fragments 8`
+ * (Seal's default) speeds up fragmented (HLS/DASH) videos instead.
+ * A failed aria2c init never fails the engine init.
+ *
  * Files go to the app-private external Downloads dir
  * (`Android/data/com.mpx.player/files/Download/MPx/`): no storage
  * permission is needed there, and raw File writes to the public
@@ -164,6 +172,15 @@ class MpxDownloader private constructor(context: Context) {
     private val _initState = MutableStateFlow(DownloaderInitState.IDLE)
     val initState: StateFlow<DownloaderInitState> = _initState.asStateFlow()
 
+    /**
+     * Whether the bundled aria2c native binary extracted cleanly
+     * (issue #339). Set in [ensureInitialized]; a failed init leaves
+     * it false and downloads fall back to `--concurrent-fragments`
+     * instead of failing the whole engine init.
+     */
+    @Volatile
+    private var aria2cAvailable = false
+
     private val _activeDownloads = MutableStateFlow<List<ActiveDownload>>(emptyList())
     val activeDownloads: StateFlow<List<ActiveDownload>> = _activeDownloads.asStateFlow()
 
@@ -209,6 +226,18 @@ class MpxDownloader private constructor(context: Context) {
                     // without this init yt-dlp cannot merge separate
                     // video+audio streams even with the artifact bundled.
                     FFmpeg.init(appContext)
+                    // Issue #339: aria2c ships in its own artifact
+                    // (Seal calls Aria2c.init at App start, App.kt:93).
+                    // Its failure must NOT fail the engine init: yt-dlp
+                    // still downloads fine without it, just on its own
+                    // downloader — the request below falls back to
+                    // `--concurrent-fragments` when this is false.
+                    aria2cAvailable = try {
+                        Aria2c.init(appContext)
+                        true
+                    } catch (_: Exception) {
+                        false
+                    }
                 }
                 _initState.value = DownloaderInitState.READY
                 true
@@ -538,6 +567,21 @@ class MpxDownloader private constructor(context: Context) {
                     formatSorting = settings.downloadCustomSorter.isNotBlank(),
                     sortingFields = settings.downloadCustomSorter,
                 )
+                // Issue #339: faster downloads, Seal's shape
+                // (DownloadUtil.kt:433-434 + :733-735, JunkFood02/Seal,
+                // GPL-3.0): aria2c when its init succeeded, else
+                // concurrent fragments. Seal's default fragment count
+                // is 8 (PreferenceUtil.kt:226 `CONCURRENT to 8`); there
+                // is no settings UI for it in this issue. Note Seal
+                // passes `--downloader libaria2c.so`, not
+                // `--external-downloader aria2c` — the latter would look
+                // for an `aria2c` binary on PATH, which does not exist
+                // on Android; the bundled native lib is selected by name.
+                if (aria2cAvailable) {
+                    addOption("--downloader", "libaria2c.so")
+                } else {
+                    addOption("--concurrent-fragments", CONCURRENT_FRAGMENTS_DEFAULT)
+                }
                 addOption("--no-playlist")
                 addOption("--no-mtime")
                 // Same fail-fast options as the info fetch above.
@@ -692,6 +736,13 @@ class MpxDownloader private constructor(context: Context) {
                 instance ?: MpxDownloader(context.applicationContext).also { instance = it }
             }
         }
+
+        /**
+         * Concurrent fragment count when aria2c is unavailable
+         * (issue #339): Seal's default, `CONCURRENT to 8` in its
+         * PreferenceUtil. No settings UI in this issue — a fixed value.
+         */
+        private const val CONCURRENT_FRAGMENTS_DEFAULT = "8"
 
         private val MEDIA_EXTENSIONS = setOf(
             "mp4", "mkv", "webm", "mov", "avi", "flv", "3gp", "ts", "m2ts",

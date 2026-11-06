@@ -135,6 +135,12 @@ dependencies {
     // LICENSE file exists in this repo yet).
     implementation("io.github.junkfood02.youtubedl-android:library:0.18.1")
     implementation("io.github.junkfood02.youtubedl-android:ffmpeg:0.18.1")
+    // `:aria2c` (issue #339) so yt-dlp can download with the bundled
+    // libaria2c.so multi-connection downloader: the AAR is ~20 MB across
+    // 4 ABIs, and the arm64 release APK grows by its ~6.5 MB arm64 slice
+    // (stored uncompressed). Seeded into mavenLocal() with
+    // tools/seed-maven.py; GPL-3.0, see the downloader class doc.
+    implementation("io.github.junkfood02.youtubedl-android:aria2c:0.18.1")
     // Data layer dependency (Room persistence)
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("androidx.room:room-ktx:2.8.5")
