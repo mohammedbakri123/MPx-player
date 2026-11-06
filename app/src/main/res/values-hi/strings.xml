@@ -58,6 +58,9 @@
     <string name="download_playlist_select_none">कुछ नहीं चुनें</string>
     <string name="download_playlist_download">%1$d डाउनलोड करें</string>
     <string name="download_playlist_fetching">प्लेलिस्ट जाँची जा रही है…</string>
+    <string name="download_history">इतिहास</string>
+    <string name="download_already_downloaded">पहले से डाउनलोड किया गया</string>
+    <string name="download_history_file_missing">फ़ाइल अब उपलब्ध नहीं है</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">वीडियो</string>

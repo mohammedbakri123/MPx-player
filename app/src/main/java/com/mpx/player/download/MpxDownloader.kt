@@ -13,6 +13,7 @@ import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
+import com.mpx.player.data.local.entity.DownloadHistoryEntity
 import com.mpx.player.data.local.entity.DownloadTaskEntity
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.playback.ExternalSubtitle
@@ -65,6 +66,13 @@ data class ActiveDownload(
     /** The finished file's public location once published (#344); null until DONE. */
     val file: DownloadedFile? = null,
     val error: String? = null,
+    /**
+     * Issue #346: this row finished because yt-dlp had already recorded
+     * the video in the download archive — nothing was downloaded this
+     * time. The tab shows "Already downloaded" instead of "Download
+     * complete" for it. Only meaningful with status DONE.
+     */
+    val alreadyDownloaded: Boolean = false,
     /** Issue #337: per-download Netscape cookie file, or null for a plain download. Deleted when the download exits. */
     val cookiesFile: File? = null,
     /** Issue #340: audio-only download — extract best audio as mp3 instead of video. */
@@ -219,6 +227,20 @@ class MpxDownloader private constructor(context: Context) {
     // feature uses — no second database). Building the Room object
     // does no I/O; every DAO call below runs on the IO scope.
     private val downloadTaskDao = MpxDatabase.getInstance(appContext).downloadTaskDao()
+    // Issue #346: the download history, same database. One row per
+    // finished download; the History section observes the flow below.
+    private val downloadHistoryDao = MpxDatabase.getInstance(appContext).downloadHistoryDao()
+
+    /**
+     * Issue #346: yt-dlp's `--download-archive` file (Seal's
+     * `FileUtil.getArchiveFile`, `filesDir/archive.txt`, JunkFood02/Seal,
+     * GPL-3.0). One line per finished download, `"<extractor> <id>"`,
+     * appended by yt-dlp itself on success — re-downloading an archived
+     * video is skipped instead of duplicated. Internal files dir, not
+     * cache: it must survive app restarts and updates. yt-dlp creates
+     * it on first use; the pre-check below only reads it when it exists.
+     */
+    private val archiveFile: File = File(appContext.filesDir, "ytdlp-archive.txt")
 
     /**
      * App-private external Downloads/MPx — staging only since #344
@@ -263,6 +285,10 @@ class MpxDownloader private constructor(context: Context) {
     private val _downloadedFiles = MutableStateFlow<List<DownloadedFile>>(emptyList())
     val downloadedFiles: StateFlow<List<DownloadedFile>> = _downloadedFiles.asStateFlow()
 
+    /** Issue #346: the download history, newest first, for the History section. */
+    private val _downloadHistory = MutableStateFlow<List<DownloadHistoryEntity>>(emptyList())
+    val downloadHistory: StateFlow<List<DownloadHistoryEntity>> = _downloadHistory.asStateFlow()
+
     /** Last yt-dlp update outcome (issue #333); IDLE until the first attempt. */
     private val _updateState = MutableStateFlow(YtDlpUpdateState.IDLE)
     val updateState: StateFlow<YtDlpUpdateState> = _updateState.asStateFlow()
@@ -303,6 +329,158 @@ class MpxDownloader private constructor(context: Context) {
         // Issue #342: restore the persisted queue on a background
         // thread — Room must not run on the calling thread.
         scope.launch { restorePersistedTasks() }
+        // Issue #346: load the download history for the History
+        // section; it refreshes on every insert/delete below.
+        scope.launch { refreshHistory() }
+    }
+
+    /** Issue #346: reload the history flow from Room. Best-effort — a failed read leaves the last good list. */
+    private suspend fun refreshHistory() {
+        try {
+            _downloadHistory.value = downloadHistoryDao.getAll()
+        } catch (_: Exception) {
+        }
+    }
+
+    /**
+     * Issue #346: record one finished download in the history. Called
+     * at every DONE site with the published file and whatever video
+     * info the getInfo phase captured (nulls for direct-link HTTP
+     * downloads, which have no extractor id). The title is read from
+     * the live row, not the [item] snapshot — the getInfo phase updates
+     * it after the download starts. A failed insert never breaks the
+     * download: the row is already DONE by then.
+     */
+    private fun recordHistory(
+        id: String,
+        url: String,
+        videoId: String?,
+        extractor: String?,
+        uploader: String?,
+        thumbnailUrl: String?,
+        published: DownloadedFile,
+    ) {
+        scope.launch {
+            try {
+                val title = _activeDownloads.value.firstOrNull { it.id == id }?.title
+                    ?: published.nameWithoutExtension
+                downloadHistoryDao.insert(
+                    DownloadHistoryEntity(
+                        videoId = videoId,
+                        extractor = extractor,
+                        url = url,
+                        title = title,
+                        uploader = uploader,
+                        thumbnailUrl = thumbnailUrl,
+                        fileUri = published.uri,
+                        fileName = published.name,
+                        fileSize = published.size,
+                        isPublic = published.isPublic,
+                        completedAt = System.currentTimeMillis(),
+                    ),
+                )
+                refreshHistory()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    /**
+     * Issue #346: forget one history entry. The file is NOT deleted —
+     * history is a record, and the file may already be gone (or still
+     * in the completed list). Called from the History section.
+     */
+    fun deleteHistoryEntry(id: Long) {
+        scope.launch {
+            try {
+                downloadHistoryDao.deleteById(id)
+                refreshHistory()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    /**
+     * Issue #346: the finished file of a history entry, or null when it
+     * is gone (deleted outside the app, or the MediaStore entry was
+     * removed). A public file is checked through the ContentResolver —
+     * the URI may be stale — a private one through File. The returned
+     * [DownloadedFile] plays exactly like a completed-list row.
+     */
+    fun historyFileIfExists(entry: DownloadHistoryEntity): DownloadedFile? {
+        val file = entry.toDownloadedFile()
+        val exists = try {
+            if (entry.isPublic) {
+                appContext.contentResolver.openFileDescriptor(Uri.parse(entry.fileUri), "r")
+                    ?.use { true } ?: false
+            } else {
+                File(entry.fileUri).isFile
+            }
+        } catch (_: Exception) {
+            false
+        }
+        return if (exists) file else null
+    }
+
+    /**
+     * Issue #346: has yt-dlp already recorded this video in the
+     * archive? Seal's pre-check (`DownloadUtil.kt:~703`,
+     * JunkFood02/Seal, GPL-3.0) compares the whole
+     * `"<extractor> <id>"` line; MPx matches the id and accepts
+     * either the extractor name or the extractor key as the first
+     * token — yt-dlp's archive line uses one of the two, and the
+     * library exposes both (`VideoInfo.extractor` / `extractorKey`).
+     * A null id (direct links) never matches.
+     */
+    private fun isArchived(extractor: String?, extractorKey: String?, videoId: String?): Boolean {
+        if (videoId.isNullOrBlank()) return false
+        val archive = try {
+            archiveFile.takeIf { it.isFile }?.readText().orEmpty()
+        } catch (_: Exception) {
+            return false
+        }
+        return archive.lineSequence().any { line ->
+            val parts = line.trim().split(' ').filter { it.isNotBlank() }
+            parts.size >= 2 && parts.last() == videoId &&
+                (parts[0] == extractor || parts[0] == extractorKey)
+        }
+    }
+
+    /**
+     * Issue #346: yt-dlp's own archive-skip signal in the download
+     * output — "[download] <id> has already been recorded in the
+     * archive". The pre-check above should have caught it, but the
+     * archive may have been written by an older build or a different
+     * extractor spelling; the stdout check is the backstop.
+     */
+    private fun isArchiveSkipped(stdout: String): Boolean =
+        stdout.contains("has already been recorded in the archive")
+
+    /**
+     * Issue #346: finish a download that yt-dlp skipped as already
+     * archived — never FAILED. With the file still there (latest
+     * history row for the video id, else the URL), the row completes
+     * with that file; without it, the row completes with the
+     * already-downloaded note (see [ActiveDownload.alreadyDownloaded]).
+     * No new history row: nothing was downloaded this time.
+     */
+    private suspend fun handleArchiveSkip(id: String, url: String, videoId: String?) {
+        val entry = try {
+            if (videoId != null) downloadHistoryDao.getLatestByVideoId(videoId) else null
+        } catch (_: Exception) {
+            null
+        } ?: try {
+            downloadHistoryDao.getLatestByUrl(url)
+        } catch (_: Exception) {
+            null
+        }
+        val existingFile = entry?.let { historyFileIfExists(it) }
+        if (existingFile != null) {
+            updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = existingFile) }
+        } else {
+            updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, alreadyDownloaded = true) }
+        }
+        refreshFiles()
     }
 
     /**
@@ -1246,6 +1424,15 @@ class MpxDownloader private constructor(context: Context) {
         // pattern, per-download instead of shared). Deleting it on any
         // exit path can never touch another download's partials.
         val tempDirFor = File(tempDir, id).apply { mkdirs() }
+        // Issue #346: video info from the getInfo phase, for the history
+        // record. Declared outside the try: the audio-fallback catch
+        // below records history too, and locals declared inside try are
+        // not visible in catch. Null until getInfo succeeds (direct
+        // links never get here).
+        var videoId: String? = null
+        var extractor: String? = null
+        var uploader: String? = null
+        var thumbnailUrl: String? = null
         try {
             if (!ensureInitialized()) {
                 updateItem(id) {
@@ -1279,9 +1466,14 @@ class MpxDownloader private constructor(context: Context) {
                 if (userAgent.isNotBlank()) addOption("--user-agent", userAgent)
                 cookiesFile?.let { addOption("--cookies", it.absolutePath) }
             }
-            val title = try {
-                withContext(Dispatchers.IO) { YoutubeDL.getInstance().getInfo(infoRequest).title }
-                    ?.takeIf { it.isNotBlank() } ?: item.url
+            // Issue #346: keep the whole VideoInfo, not just the title —
+            // the id/extractor feed the download-archive pre-check and
+            // the history record below (uploader/thumbnail ride along).
+            // The library mapper exposes all of them (verified against
+            // the 0.18.1 AAR: VideoInfo.id/extractor/extractorKey/
+            // uploader/thumbnail).
+            val info = try {
+                withContext(Dispatchers.IO) { YoutubeDL.getInstance().getInfo(infoRequest) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: InterruptedException) {
@@ -1300,7 +1492,22 @@ class MpxDownloader private constructor(context: Context) {
                 }
                 return
             }
+            val title = info.title?.takeIf { it.isNotBlank() } ?: item.url
+            videoId = info.id?.takeIf { it.isNotBlank() }
+            extractor = info.extractor?.takeIf { it.isNotBlank() }
+            val extractorKey = info.extractorKey?.takeIf { it.isNotBlank() }
+            uploader = info.uploader?.takeIf { it.isNotBlank() }
+            thumbnailUrl = info.thumbnail?.takeIf { it.isNotBlank() }
             updateItem(id) { it.copy(title = title) }
+
+            // Issue #346: already in the download archive — skip the
+            // yt-dlp run entirely. Never FAILED: the row completes
+            // with the existing file when it is still there, else with
+            // the already-downloaded note (see handleArchiveSkip).
+            if (isArchived(extractor, extractorKey, videoId)) {
+                handleArchiveSkip(id, item.url, videoId)
+                return
+            }
 
             val beforeNames = downloadsDir.listFiles()?.map { it.name }?.toSet() ?: emptySet()
             val request = YoutubeDLRequest(item.url).apply {
@@ -1369,6 +1576,16 @@ class MpxDownloader private constructor(context: Context) {
                 }
                 addOption("--no-playlist")
                 addOption("--no-mtime")
+                // Issue #346: the download archive (Seal's
+                // `useDownloadArchive`, DownloadUtil.kt:371-372,
+                // JunkFood02/Seal, GPL-3.0 — one file, one option).
+                // yt-dlp appends "<extractor> <id>" on success and
+                // skips archived videos on the next run; the pre-check
+                // above and the exit-0 branch below turn that skip
+                // into a DONE row instead of a failure. The file lives
+                // in the internal files dir (not cache) so it survives
+                // restarts and updates.
+                addOption("--download-archive", archiveFile.absolutePath)
                 // Same fail-fast options as the info fetch above.
                 addOption("-R", "1")
                 addOption("--socket-timeout", "5")
@@ -1391,6 +1608,15 @@ class MpxDownloader private constructor(context: Context) {
                     // the completed list picks it up from MediaStore.
                     val published = publishFinishedFile(file)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
+                    // Issue #346: record the finished download.
+                    recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
+                } else if (isArchiveSkipped(response.out)) {
+                    // Issue #346: yt-dlp skipped this video as already
+                    // archived — the pre-check above missed it (archive
+                    // written by an older build, or a different
+                    // extractor spelling). Same DONE handling as the
+                    // pre-check, never FAILED.
+                    handleArchiveSkip(id, item.url, videoId)
                 } else {
                     updateItem(id) {
                         it.copy(status = DownloadStatus.FAILED, error = "Finished but no file was found")
@@ -1408,6 +1634,7 @@ class MpxDownloader private constructor(context: Context) {
                 if (fallback != null) {
                     val published = publishFinishedFile(fallback)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
+                    recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
                     return
                 }
@@ -1426,6 +1653,7 @@ class MpxDownloader private constructor(context: Context) {
                 if (file != null) {
                     val published = publishFinishedFile(file)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
+                    recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
                     return
                 }
@@ -1451,10 +1679,14 @@ class MpxDownloader private constructor(context: Context) {
             } else if (item.audioOnly) {
                 // beforeNames is not in scope here (it is declared after
                 // the getInfo phase), so only the temp dir is searched.
+                // The video info locals are in scope (the getInfo phase
+                // ran before the execute), so the history record keeps
+                // its id/extractor/uploader.
                 val fallback = findAudioFallbackFile(null, tempDirFor)
                 if (fallback != null) {
                     val published = publishFinishedFile(fallback)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
+                    recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
                 } else {
                     updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
@@ -1528,6 +1760,10 @@ class MpxDownloader private constructor(context: Context) {
             // Issue #344: same public move as the yt-dlp path.
             val published = publishFinishedFile(outFile)
             updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
+            // Issue #346: record the finished download. A direct link
+            // has no video id/extractor/uploader/thumbnail — the
+            // history row carries the URL and the file name instead.
+            recordHistory(id, item.url, null, null, null, null, published)
             refreshFiles()
         } catch (e: CancellationException) {
             outFile.delete()

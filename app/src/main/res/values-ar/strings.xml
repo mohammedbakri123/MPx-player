@@ -58,6 +58,9 @@
     <string name="download_playlist_select_none">إلغاء تحديد الكل</string>
     <string name="download_playlist_download">تنزيل %1$d</string>
     <string name="download_playlist_fetching">جارٍ التحقق من قائمة التشغيل…</string>
+    <string name="download_history">السجل</string>
+    <string name="download_already_downloaded">تم تنزيله مسبقًا</string>
+    <string name="download_history_file_missing">الملف غير متوفر</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">فيديو</string>

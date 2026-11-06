@@ -59,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.data.local.entity.DownloadHistoryEntity
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.download.ActiveDownload
 import com.mpx.player.download.CookieImportOutcome
@@ -77,7 +78,9 @@ import com.mpx.player.ui.theme.MpxTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Download tab (issue #324): paste a video link, download it with yt-dlp,
@@ -106,6 +109,9 @@ fun DownloadScreen(
     val initState by downloader.initState.collectAsState()
     val activeDownloads by downloader.activeDownloads.collectAsState()
     val downloadedFiles by downloader.downloadedFiles.collectAsState()
+    // Issue #346: the download history, newest first — the History
+    // section below the completed list.
+    val downloadHistory by downloader.downloadHistory.collectAsState()
     // Issue #333: yt-dlp version + update state for the manual update row.
     val updateState by downloader.updateState.collectAsState()
     val ytdlpVersion by downloader.ytdlpVersion.collectAsState()
@@ -160,6 +166,9 @@ fun DownloadScreen(
     val announcedIds = remember { mutableSetOf<String>() }
     val failedLabel = stringResource(R.string.download_failed)
     val completeLabel = stringResource(R.string.download_complete)
+    // Issue #346: a row that finished because the video was already in
+    // the download archive announces that, not a plain completion.
+    val alreadyDownloadedLabel = stringResource(R.string.download_already_downloaded)
     // Issue #333: manual yt-dlp update outcome labels.
     val ytdlpUpdatedLabel = stringResource(R.string.download_ytdlp_updated)
     val ytdlpUpToDateLabel = stringResource(R.string.download_ytdlp_up_to_date)
@@ -172,7 +181,11 @@ fun DownloadScreen(
         activeDownloads.forEach { item ->
             if (item.id !in announcedIds && (item.status == DownloadStatus.DONE || item.status == DownloadStatus.FAILED)) {
                 announcedIds.add(item.id)
-                val message = if (item.status == DownloadStatus.DONE) completeLabel else failedLabel
+                val message = when {
+                    item.status == DownloadStatus.FAILED -> failedLabel
+                    item.alreadyDownloaded -> alreadyDownloadedLabel
+                    else -> completeLabel
+                }
                 scope.launch { snackbarHostState.showSnackbar(message) }
             }
         }
@@ -548,7 +561,7 @@ fun DownloadScreen(
                 )
             }
 
-            if (visibleActive.isEmpty() && downloadedFiles.isEmpty()) {
+            if (visibleActive.isEmpty() && downloadedFiles.isEmpty() && downloadHistory.isEmpty()) {
                 EmptyStateView(
                     title = stringResource(R.string.download_empty_title),
                     message = stringResource(R.string.download_empty_message),
@@ -609,6 +622,56 @@ fun DownloadScreen(
                                 }
                             },
                         )
+                    }
+                    // Issue #346: the download history, below the
+                    // completed list — the completed list is a scan of
+                    // files that exist now, history is the permanent
+                    // record (it survives the file being deleted, and
+                    // carries the title/uploader the scan cannot know).
+                    // Tap plays when the file is still there, else a
+                    // snackbar; the delete button forgets the entry
+                    // only — it never deletes the file.
+                    if (downloadHistory.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.download_history),
+                                color = MpxTheme.colors.textPrimary,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+                            )
+                        }
+                        items(downloadHistory, key = { it.id }) { entry ->
+                            DownloadHistoryRow(
+                                entry = entry,
+                                dateText = dateFormat.format(Date(entry.completedAt)),
+                                onPlay = {
+                                    scope.launch {
+                                        val file = withContext(Dispatchers.IO) {
+                                            downloader.historyFileIfExists(entry)
+                                        }
+                                        if (file != null) {
+                                            val isAudio = file.extension in AUDIO_EXTENSIONS
+                                            realPlaybackManager.load(
+                                                PlayableMedia(
+                                                    id = file.uri,
+                                                    title = file.nameWithoutExtension,
+                                                    uri = file.uri,
+                                                    isVideo = !isAudio,
+                                                    externalSubtitles = downloader.findSiblingSubtitles(file),
+                                                ),
+                                            )
+                                            onOpenPlayer()
+                                        } else {
+                                            snackbarHostState.showSnackbar(
+                                                context.getString(R.string.download_history_file_missing),
+                                            )
+                                        }
+                                    }
+                                },
+                                onDelete = { downloader.deleteHistoryEntry(entry.id) },
+                            )
+                        }
                     }
                 }
             }
@@ -755,6 +818,69 @@ private fun DownloadedFileRow(
             Spacer(Modifier.height(2.dp))
             Text(
                 text = "${formatSize(file.size)} · $dateText",
+                color = MpxTheme.colors.textSecondary,
+                fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        IconButton(onClick = onPlay) {
+            Icon(
+                imageVector = Icons.Filled.PlayArrow,
+                contentDescription = stringResource(R.string.download_play),
+                tint = MpxTheme.colors.primary,
+            )
+        }
+        IconButton(onClick = onDelete) {
+            Icon(
+                imageVector = Icons.Filled.Delete,
+                contentDescription = stringResource(R.string.download_delete),
+                tint = MpxTheme.colors.textSecondary,
+            )
+        }
+    }
+}
+
+/**
+ * One history row (issue #346): the recorded title, the uploader when
+ * known + the completion date, play and forget-entry buttons. Same row
+ * shape as DownloadedFileRow above; the delete button only removes the
+ * history entry, never the file.
+ */
+@Composable
+private fun DownloadHistoryRow(
+    entry: DownloadHistoryEntity,
+    dateText: String,
+    onPlay: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onPlay)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val isAudio = entry.fileName.substringAfterLast('.', "").lowercase() in AUDIO_EXTENSIONS
+        Icon(
+            imageVector = if (isAudio) Icons.Filled.MusicNote else Icons.Filled.Movie,
+            contentDescription = null,
+            tint = MpxTheme.colors.textSecondary,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = entry.title,
+                color = MpxTheme.colors.textPrimary,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = if (entry.uploader != null) "${entry.uploader} · $dateText" else dateText,
                 color = MpxTheme.colors.textSecondary,
                 fontSize = 13.sp,
                 maxLines = 1,

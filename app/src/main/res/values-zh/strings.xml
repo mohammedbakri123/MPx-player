@@ -58,6 +58,9 @@
     <string name="download_playlist_select_none">取消全选</string>
     <string name="download_playlist_download">下载 %1$d 项</string>
     <string name="download_playlist_fetching">正在检查播放列表…</string>
+    <string name="download_history">历史记录</string>
+    <string name="download_already_downloaded">已下载过</string>
+    <string name="download_history_file_missing">文件已不存在</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">视频</string>
