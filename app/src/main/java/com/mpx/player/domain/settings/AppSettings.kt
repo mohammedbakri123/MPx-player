@@ -10,6 +10,16 @@ package com.mpx.player.domain.settings
 const val DEFAULT_PLAYER_MENU_LAYOUT =
     "decoder,audio,subtitles,favourite,shuffle,repeat,pip,background,speed,aspect,rotation,sleep,playlist"
 
+/**
+ * Default download User-Agent (issue #337): Seal captures the in-app
+ * WebView's UA at login and sends it with every request. MPx sends
+ * this UA both from the in-app sign-in WebView and from yt-dlp, so
+ * the site sees one consistent identity — a current desktop Chrome
+ * UA is the string restricted videos expect to see.
+ */
+const val DEFAULT_DOWNLOAD_USER_AGENT =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+
 data class AppSettings(
     val showHiddenFiles: Boolean = false,
     val showThumbnails: Boolean = true,
@@ -128,6 +138,10 @@ data class AppSettings(
     val ytdlpUpdateIntervalMs: Long = 7L * 24 * 60 * 60 * 1000,
     val ytdlpLastUpdateTimeMs: Long = 0L,
     val ytdlpVersion: String = "",
+    // Cookies + User-Agent (issue #337): sent on every yt-dlp request
+    // (info + download) so age-gated / logged-in videos can download.
+    // Blank = send no User-Agent header at all.
+    val downloadUserAgent: String = DEFAULT_DOWNLOAD_USER_AGENT,
 ) {
     /**
      * Total number of currently visible music tabs.

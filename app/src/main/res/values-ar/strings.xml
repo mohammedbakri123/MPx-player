@@ -35,6 +35,9 @@
     <string name="download_ytdlp_update_failed">فشل تحديث yt-dlp</string>
     <string name="download_ytdlp_update_busy">هناك تنزيل جارٍ — حاول التحديث بعد انتهائه</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_sign_in">سجّل الدخول للتنزيل</string>
+    <string name="download_no_cookies">لم يتم العثور على ملفات تعريف ارتباط — سجّل الدخول في النافذة أولاً ثم اضغط «تم»</string>
+    <string name="download_cookies_failed">تعذّر استيراد ملفات تعريف الارتباط</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">فيديو</string>

@@ -35,6 +35,9 @@
     <string name="download_ytdlp_update_failed">Échec de la mise à jour de yt-dlp</string>
     <string name="download_ytdlp_update_busy">Un téléchargement est en cours — réessayez après sa fin</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_sign_in">Se connecter pour télécharger</string>
+    <string name="download_no_cookies">Aucun cookie trouvé — connectez-vous d’abord dans la fenêtre, puis touchez « Terminé »</string>
+    <string name="download_cookies_failed">Échec de l’importation des cookies</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vidéo</string>

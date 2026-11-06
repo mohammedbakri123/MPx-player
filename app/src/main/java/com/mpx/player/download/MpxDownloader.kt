@@ -50,6 +50,8 @@ data class ActiveDownload(
     val etaSeconds: Long = -1L,
     val file: File? = null,
     val error: String? = null,
+    /** Issue #337: per-download Netscape cookie file, or null for a plain download. Deleted when the download exits. */
+    val cookiesFile: File? = null,
 )
 
 enum class DownloaderInitState {
@@ -67,6 +69,16 @@ enum class YtDlpUpdateState {
     DONE,
     /** Already on the latest yt-dlp for the channel. */
     UP_TO_DATE,
+    FAILED,
+}
+
+/** Result of tapping Done in the in-app sign-in WebView (issue #337). */
+enum class CookieImportOutcome {
+    /** Cookies were imported and the download started with them. */
+    IMPORTED,
+    /** The WebView store has no cookies for this URL's host. */
+    NO_COOKIES,
+    /** The import itself threw (WebView store unreadable, disk error). */
     FAILED,
 }
 
@@ -170,6 +182,15 @@ class MpxDownloader private constructor(context: Context) {
 
     init {
         refreshFiles()
+        // Issue #337: drop orphaned per-download cookie files left by
+        // a kill between import and download start. Only the staging
+        // files are touched — per-download temp subdirs are untouched.
+        try {
+            tempDir.listFiles()
+                ?.filter { it.isFile && it.name.startsWith("cookies-") && it.name.endsWith(".txt") }
+                ?.forEach { it.delete() }
+        } catch (_: Exception) {
+        }
     }
 
     /** One-shot lazy init: extracts Python + the yt-dlp script on first use. */
@@ -327,8 +348,42 @@ class MpxDownloader private constructor(context: Context) {
         settingsRepository.save(settings.copy(ytdlpLastUpdateTimeMs = nowMs))
     }
 
+    /**
+     * The User-Agent the in-app sign-in WebView sends (issue #337):
+     * the same string yt-dlp sends, so the site sees one consistent
+     * identity between the login and the download (Seal's pattern).
+     */
+    fun loadUserAgent(): String = settingsRepository.load().downloadUserAgent
+
+    /**
+     * Imports the cookies MPx's own in-app sign-in WebView set for
+     * [rawUrl]'s host and starts the download with them (issue #337).
+     * The import is per-download: the cookie file is written for this
+     * URL only, passed to that download's yt-dlp requests, and deleted
+     * when it exits — nothing is persisted and nothing is imported
+     * without the user signing in and tapping Done. A blank URL
+     * reports NO_COOKIES (the button is disabled then, so this is
+     * unreachable from the UI).
+     */
+    suspend fun importCookiesAndStart(rawUrl: String): CookieImportOutcome {
+        val url = CookieImporter.normalizeUrl(rawUrl) ?: return CookieImportOutcome.NO_COOKIES
+        val stagingFile = File(tempDir, "cookies-${UUID.randomUUID()}.txt")
+        return try {
+            if (!CookieImporter.importForUrl(url, stagingFile)) {
+                stagingFile.delete()
+                CookieImportOutcome.NO_COOKIES
+            } else {
+                startDownload(url, cookiesFile = stagingFile)
+                CookieImportOutcome.IMPORTED
+            }
+        } catch (_: Exception) {
+            stagingFile.delete()
+            CookieImportOutcome.FAILED
+        }
+    }
+
     /** Starts a download. No-op for a blank URL. */
-    fun startDownload(rawUrl: String) {
+    fun startDownload(rawUrl: String, cookiesFile: File? = null) {
         val url = rawUrl.trim()
         if (url.isBlank()) return
         val id = UUID.randomUUID().toString()
@@ -337,6 +392,7 @@ class MpxDownloader private constructor(context: Context) {
             url = url,
             title = url,
             status = DownloadStatus.QUEUED,
+            cookiesFile = cookiesFile,
         )
         _activeDownloads.update { it + item }
         val job = scope.launch {
@@ -396,6 +452,12 @@ class MpxDownloader private constructor(context: Context) {
             }
             updateItem(id) { it.copy(status = DownloadStatus.DOWNLOADING) }
 
+            // Issue #337: the User-Agent goes on every yt-dlp request
+            // (info + download), like Seal's `enableCookies` — a blank
+            // setting sends no header at all.
+            val userAgent = settingsRepository.load().downloadUserAgent
+            val cookiesFile = item.cookiesFile?.takeIf { it.isFile }
+
             // Title first, so the row shows something real while the bytes
             // move. getInfo is a full yt-dlp run of its own. Seal's info
             // fetch (DownloadUtil.fetchVideoInfoFromUrl, JunkFood02/Seal,
@@ -407,6 +469,8 @@ class MpxDownloader private constructor(context: Context) {
             val infoRequest = YoutubeDLRequest(item.url).apply {
                 addOption("-R", "1")
                 addOption("--socket-timeout", "5")
+                if (userAgent.isNotBlank()) addOption("--user-agent", userAgent)
+                cookiesFile?.let { addOption("--cookies", it.absolutePath) }
             }
             val title = try {
                 withContext(Dispatchers.IO) { YoutubeDL.getInstance().getInfo(infoRequest).title }
@@ -454,6 +518,9 @@ class MpxDownloader private constructor(context: Context) {
                 // Same fail-fast options as the info fetch above.
                 addOption("-R", "1")
                 addOption("--socket-timeout", "5")
+                // Issue #337: same UA + cookies as the info fetch.
+                if (userAgent.isNotBlank()) addOption("--user-agent", userAgent)
+                cookiesFile?.let { addOption("--cookies", it.absolutePath) }
             }
             val response = withContext(Dispatchers.IO) {
                 YoutubeDL.getInstance().execute(request, id) { progress, eta, _ ->
@@ -503,6 +570,12 @@ class MpxDownloader private constructor(context: Context) {
             // can never touch another download's in-progress parts.
             try {
                 tempDirFor.deleteRecursively()
+            } catch (_: Exception) {
+            }
+            // Issue #337: the per-download cookie file dies with the
+            // download — it is never reused and never persisted.
+            try {
+                item.cookiesFile?.delete()
             } catch (_: Exception) {
             }
         }

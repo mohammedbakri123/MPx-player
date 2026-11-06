@@ -35,6 +35,9 @@
     <string name="download_ytdlp_update_failed">yt-dlp अपडेट विफल</string>
     <string name="download_ytdlp_update_busy">डाउनलोड चल रहा है — समाप्त होने के बाद अपडेट करें</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_sign_in">डाउनलोड करने के लिए साइन इन करें</string>
+    <string name="download_no_cookies">कोई कुकी नहीं मिली — पहले विंडो में साइन इन करें, फिर «हो गया» दबाएं</string>
+    <string name="download_cookies_failed">कुकी आयात विफल रहा</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">वीडियो</string>

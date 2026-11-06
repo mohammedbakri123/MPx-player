@@ -35,6 +35,9 @@
     <string name="download_ytdlp_update_failed">yt-dlp 更新失败</string>
     <string name="download_ytdlp_update_busy">有下载正在进行——完成后重试</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_sign_in">登录以下载</string>
+    <string name="download_no_cookies">未找到 Cookie — 请先在窗口中登录，然后点“完成”</string>
+    <string name="download_cookies_failed">Cookie 导入失败</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">视频</string>
