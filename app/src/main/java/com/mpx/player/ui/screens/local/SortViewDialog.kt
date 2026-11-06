@@ -62,6 +62,9 @@ enum class SortField(val labelRes: Int, val label: String) {
  * The six MX combined sort keys offered in the sort picker, in MX order.
  * Legacy entries (DATE, COUNT) stay in the enum so previously persisted
  * preferences keep working, but the picker offers the combined set.
+ * Issue #322: the picker also appends the current value when it is not
+ * in this list (see SortViewDialog), so a persisted legacy sort still
+ * shows a selected radio instead of none.
  */
 val MX_SORT_FIELDS: List<SortField> = listOf(
     SortField.NAME,
@@ -125,9 +128,20 @@ fun SortViewDialog(
 
     val dialogTitle = stringResource(R.string.sort_dialog_title)
 
-    val primaryFieldsToShow = availableSortFields ?: MX_SORT_FIELDS
+    // Issue #322: the offered list must contain the current value. The
+    // persisted sort can be a legacy field (DATE, COUNT) that
+    // MX_SORT_FIELDS excludes — DATE is even the AppSettings default — so
+    // a user with that sort would otherwise see no selected radio. The
+    // current value is appended (MX order untouched); picking it again is
+    // a no-op re-select. Same for the secondary sort.
+    val primaryFieldsToShow = (availableSortFields ?: MX_SORT_FIELDS).let { fields ->
+        if (currentSort in fields) fields else fields + currentSort
+    }
 
-    val secondaryFieldsToShow = availableSecondarySortFields ?: (listOf(SortField.NONE) + MX_SORT_FIELDS)
+    val secondaryFieldsToShow =
+        (availableSecondarySortFields ?: (listOf(SortField.NONE) + MX_SORT_FIELDS)).let { fields ->
+            if (currentSecondarySort in fields) fields else fields + currentSecondarySort
+        }
 
     AlertDialog(
         onDismissRequest = onDismiss,
