@@ -65,6 +65,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -76,11 +77,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
@@ -133,6 +137,26 @@ fun SettingsScreen(
     val context = LocalContext.current
     val actualPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
     var settings by remember { mutableStateOf(settingsRepository.load()) }
+
+    // Issue #270: reload settings on resume (same pattern as MeScreen,
+    // #231) — a PiP change made in Overlay Settings, a separate NavHost
+    // destination editing popupPlayEnabled / controls / size / position
+    // through the same repo, must show up here when coming back, without
+    // the screen being recreated. The PiP drill-down below reads the same
+    // `settings` state, so reloading the whole object covers all four
+    // fields; language/theme callbacks stay in update(), which is the
+    // only path that writes from this screen.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                settings = settingsRepository.load()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // Drill-down navigation (#77): null shows the category list, otherwise
     // the selected category's own sub-screen, like MX's per-header fragments.
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
