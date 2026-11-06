@@ -141,9 +141,9 @@ fun DownloadOptionsDialog(
     }
 }
 
-/** Section header inside the dialog: accent colour, like PreferenceSectionHeader. */
+/** Section header inside the dialog: accent colour, like PreferenceSectionHeader. Shared with DownloadSponsorBlockDialog. */
 @Composable
-private fun OptionsSectionLabel(text: String) {
+internal fun OptionsSectionLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelLarge,
@@ -153,9 +153,9 @@ private fun OptionsSectionLabel(text: String) {
     )
 }
 
-/** One switch row (DownloadScreen's audio-only toggle shape): whole row tappable. */
+/** One switch row (DownloadScreen's audio-only toggle shape): whole row tappable. Shared with DownloadSponsorBlockDialog. */
 @Composable
-private fun OptionsSwitchRow(
+internal fun OptionsSwitchRow(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,

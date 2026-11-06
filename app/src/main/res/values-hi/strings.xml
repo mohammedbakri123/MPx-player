@@ -55,6 +55,10 @@
     <string name="download_options_restrict_filenames">फ़ाइल नाम सीमित करें</string>
     <string name="download_options_restrict_filenames_short">सुरक्षित फ़ाइल नाम</string>
     <string name="download_options_summary_none">कोई सीमा निर्धारित नहीं</string>
+    <string name="download_sponsorblock_title">SponsorBlock</string>
+    <string name="download_sponsorblock_enable">प्रायोजक खंड हटाएं</string>
+    <string name="download_sponsorblock_enable_desc">SponsorBlock का उपयोग करके डाउनलोड किए गए वीडियो से प्रायोजक खंड, इंट्रो और आउट्रो काटें।</string>
+    <string name="download_sponsorblock_categories">हटाई जाने वाली श्रेणियाँ</string>
     <string name="download_audio_only">केवल ऑडियो</string>
     <string name="download_subtitles">उपशीर्षक डाउनलोड करें</string>
     <string name="download_notification_channel_name">डाउनलोड</string>

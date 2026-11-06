@@ -55,6 +55,10 @@
     <string name="download_options_restrict_filenames">Restringir nombres de archivo</string>
     <string name="download_options_restrict_filenames_short">Nombres de archivo seguros</string>
     <string name="download_options_summary_none">Sin límites</string>
+    <string name="download_sponsorblock_title">SponsorBlock</string>
+    <string name="download_sponsorblock_enable">Eliminar segmentos patrocinados</string>
+    <string name="download_sponsorblock_enable_desc">Corta los segmentos patrocinados, intros y outros de los vídeos descargados con SponsorBlock.</string>
+    <string name="download_sponsorblock_categories">Categorías a eliminar</string>
     <string name="download_audio_only">Solo audio</string>
     <string name="download_subtitles">Descargar subtítulos</string>
     <string name="download_notification_channel_name">Descargas</string>

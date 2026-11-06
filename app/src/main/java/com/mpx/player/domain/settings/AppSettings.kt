@@ -162,6 +162,16 @@ data class AppSettings(
     val downloadProxy: String = "",
     val downloadForceIpv4: Boolean = false,
     val downloadRestrictFilenames: Boolean = false,
+    // SponsorBlock (issue #348, Seal's DownloadUtil.kt:751-752,
+    // JunkFood02/Seal, GPL-3.0): cut sponsor segments, intros and
+    // outros from downloaded videos with the bundled ffmpeg (#336).
+    // Off by default. Categories are the raw `--sponsorblock-remove`
+    // value; Seal stores yt-dlp's "default" set, MPx stores the
+    // explicit four — sponsor, intro, outro, selfpromo — so the
+    // dialog's checkboxes have concrete state to reflect. Blank
+    // categories with the switch on passes no flag.
+    val downloadSponsorBlock: Boolean = false,
+    val downloadSponsorBlockCategories: String = "sponsor,intro,outro,selfpromo",
 ) {
     /**
      * Total number of currently visible music tabs.

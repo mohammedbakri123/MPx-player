@@ -55,6 +55,10 @@
     <string name="download_options_restrict_filenames">限制文件名</string>
     <string name="download_options_restrict_filenames_short">安全文件名</string>
     <string name="download_options_summary_none">未设置限制</string>
+    <string name="download_sponsorblock_title">SponsorBlock</string>
+    <string name="download_sponsorblock_enable">移除赞助片段</string>
+    <string name="download_sponsorblock_enable_desc">使用 SponsorBlock 从下载的视频中剪掉赞助片段、片头和片尾。</string>
+    <string name="download_sponsorblock_categories">要移除的类别</string>
     <string name="download_audio_only">仅音频</string>
     <string name="download_subtitles">下载字幕</string>
     <string name="download_notification_channel_name">下载</string>

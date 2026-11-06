@@ -55,6 +55,10 @@
     <string name="download_options_restrict_filenames">Ограничивать имена файлов</string>
     <string name="download_options_restrict_filenames_short">Безопасные имена файлов</string>
     <string name="download_options_summary_none">Ограничения не заданы</string>
+    <string name="download_sponsorblock_title">SponsorBlock</string>
+    <string name="download_sponsorblock_enable">Удалять спонсорские сегменты</string>
+    <string name="download_sponsorblock_enable_desc">Вырезает спонсорские сегменты, вступления и концовки из скачанных видео с помощью SponsorBlock.</string>
+    <string name="download_sponsorblock_categories">Категории для удаления</string>
     <string name="download_audio_only">Только аудио</string>
     <string name="download_subtitles">Скачать субтитры</string>
     <string name="download_notification_channel_name">Загрузки</string>
