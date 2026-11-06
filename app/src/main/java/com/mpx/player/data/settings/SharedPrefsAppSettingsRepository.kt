@@ -69,6 +69,12 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
         popupPlaySize = prefs.getString("popup_play_size", "Medium") ?: "Medium",
         popupPlayPosition = prefs.getString("popup_play_position", "BottomRight") ?: "BottomRight",
+        // Issue #292: only an explicit position is a valid "last" —
+        // a stale/corrupt value (including "RememberLast" itself)
+        // falls back to BottomRight.
+        lastPopupPlayPosition = prefs.getString("last_popup_play_position", "BottomRight")
+            ?.takeIf { it in setOf("TopLeft", "TopRight", "BottomLeft", "BottomRight", "Center") }
+            ?: "BottomRight",
         popupPlaySnapToEdge = prefs.getBoolean("popup_play_snap_to_edge", true),
         popupPlayCloseOnDone = prefs.getBoolean("popup_play_close_on_done", true),
         appLanguage = prefs.getString("app_language", "system") ?: "system",
@@ -175,6 +181,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("popup_play_controls", settings.popupPlayControls)
             .putString("popup_play_size", settings.popupPlaySize)
             .putString("popup_play_position", settings.popupPlayPosition)
+            .putString("last_popup_play_position", settings.lastPopupPlayPosition)
             .putBoolean("popup_play_snap_to_edge", settings.popupPlaySnapToEdge)
             .putBoolean("popup_play_close_on_done", settings.popupPlayCloseOnDone)
             .putString("last_smb_host", settings.lastSmbHost)

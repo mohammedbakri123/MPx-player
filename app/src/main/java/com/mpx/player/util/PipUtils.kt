@@ -23,6 +23,9 @@ import com.mpx.player.playback.PlaybackService
  */
 object PipUtils {
 
+    /** Explicit PiP positions (issue #292) — everything except "RememberLast". */
+    private val PIP_POSITIONS = setOf("TopLeft", "TopRight", "BottomLeft", "BottomRight", "Center")
+
     /**
      * Checks whether the current device and operating system support
      * Android Picture-in-Picture mode.
@@ -41,6 +44,11 @@ object PipUtils {
      *   aspect. Unknown dims (audio, or no video loaded yet) fall back
      *   to 16:9.
      * - [AppSettings.popupPlaySize] mapped to initial source rect hints
+     * - [AppSettings.popupPlayPosition] mapped to the source rect hint's
+     *   corner; "RememberLast" (issue #292) resolves to
+     *   [AppSettings.lastPopupPlayPosition] (BottomRight if nothing was
+     *   ever remembered), and the hint is shaped by the video's real
+     *   aspect, not hardcoded 16:9
      * - [AppSettings.popupPlayControls] mapped to [RemoteAction] sets (Prev/Next, Seek10, or Play/Pause only)
      * - Auto-enter on Android 12+ (API 31+) only for a video that is
      *   actually playing (issue #225)
@@ -58,12 +66,17 @@ object PipUtils {
 
         // 1. Aspect Ratio: the video's real display size whenever known.
         // Android enforces PiP aspect ratio between 1:2.39 (0.418) and 2.39:1 (2.39)
-        val rational = if (videoWidth > 0 && videoHeight > 0) {
-            val ratio = (videoWidth.toFloat() / videoHeight.toFloat()).coerceIn(1f / 2.39f, 2.39f)
-            Rational((ratio * 1000).toInt(), 1000)
+        // Issue #292: the video's real aspect, coerced to Android's PiP
+        // limits — shared by the aspect ratio here and the source-rect
+        // hint below, so a portrait video gets a portrait-shaped hint
+        // instead of a 16:9 one. Null when the size is unknown (audio,
+        // or no video loaded yet); both places fall back to 16:9.
+        val videoRatio: Float? = if (videoWidth > 0 && videoHeight > 0) {
+            (videoWidth.toFloat() / videoHeight.toFloat()).coerceIn(1f / 2.39f, 2.39f)
         } else {
-            Rational(16, 9)
+            null
         }
+        val rational = videoRatio?.let { Rational((it * 1000).toInt(), 1000) } ?: Rational(16, 9)
         try {
             builder.setAspectRatio(rational)
         } catch (_: Exception) {}
@@ -78,14 +91,39 @@ object PipUtils {
                 "Large" -> (screenW * 0.85f).toInt()
                 else -> (screenW * 0.65f).toInt() // "Medium"
             }
-            val targetH = (targetW * 9) / 16
+            // Issue #292: the hint is shaped like the video, not always
+            // 16:9 — targetH follows the same coerced video ratio as the
+            // aspect ratio above (unknown size falls back to 16:9), so a
+            // portrait video's hint is portrait-shaped. Clamped so the
+            // rect stays on screen: a tall portrait hint on a short
+            // (landscape) screen could otherwise push the bottom rects'
+            // top edge off-screen.
+            val rawTargetH = if (videoRatio != null) {
+                (targetW / videoRatio).toInt()
+            } else {
+                (targetW * 9) / 16
+            }
+            val targetH = rawTargetH.coerceIn(1, (screenH - 128).coerceAtLeast(1))
 
-            val rect = when (settings.popupPlayPosition) {
+            // Issue #292: "RememberLast" now resolves to the last
+            // explicitly chosen position (lastPopupPlayPosition),
+            // falling back to BottomRight when nothing was ever
+            // remembered. It used to fall through to the same
+            // bottom-right rect as BottomRight, so the choice was
+            // dead. Android exposes no API to read where the user
+            // dragged the PiP window, so the last position the app
+            // requested is the closest "last" it can know.
+            val effectivePosition = if (settings.popupPlayPosition == "RememberLast") {
+                settings.lastPopupPlayPosition.takeIf { it in PIP_POSITIONS } ?: "BottomRight"
+            } else {
+                settings.popupPlayPosition
+            }
+            val rect = when (effectivePosition) {
                 "TopLeft" -> Rect(16, 64, 16 + targetW, 64 + targetH)
                 "TopRight" -> Rect(screenW - targetW - 16, 64, screenW - 16, 64 + targetH)
                 "BottomLeft" -> Rect(16, screenH - targetH - 128, 16 + targetW, screenH - 128)
                 "Center" -> Rect((screenW - targetW) / 2, (screenH - targetH) / 2, (screenW + targetW) / 2, (screenH + targetH) / 2)
-                else -> Rect(screenW - targetW - 16, screenH - targetH - 128, screenW - 16, screenH - 128) // "BottomRight" / "RememberLast"
+                else -> Rect(screenW - targetW - 16, screenH - targetH - 128, screenW - 16, screenH - 128) // "BottomRight"
             }
             builder.setSourceRectHint(rect)
         } catch (_: Exception) {}

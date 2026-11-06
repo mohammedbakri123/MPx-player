@@ -402,7 +402,18 @@ fun OverlaySettingsScreen(
                         subtitle = subtitle,
                         selected = settings.popupPlayPosition == key,
                         enabled = isSupported && settings.popupPlayEnabled,
-                        onClick = { update(settings.copy(popupPlayPosition = key)) },
+                        // Issue #292: picking an explicit position also
+                        // remembers it, so a later RememberLast reuses
+                        // it. Picking RememberLast itself leaves the
+                        // last explicit choice untouched.
+                        onClick = {
+                            update(
+                                settings.copy(
+                                    popupPlayPosition = key,
+                                    lastPopupPlayPosition = if (key != "RememberLast") key else settings.lastPopupPlayPosition,
+                                ),
+                            )
+                        },
                     )
                 }
 
