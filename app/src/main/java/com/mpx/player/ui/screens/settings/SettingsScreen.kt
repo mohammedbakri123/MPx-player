@@ -163,6 +163,16 @@ fun SettingsScreen(
     // mpvEx-style search (#158): true shows the working settings search
     // page; back closes search before leaving the category list.
     var isSearching by rememberSaveable { mutableStateOf(false) }
+    // Issue #303: the search query lives here, not in PreferencesSearchScreen
+    // — opening a result sets isSearching = false, which removes the search
+    // screen from the composition and discards any state it owns (even
+    // rememberSaveable, cf. #255's MusicScreen query, which stays composed
+    // across tab switches), so a query kept inside it would reset every
+    // time a result category is opened. Hoisted here next to
+    // isSearching/selectedId, it survives rotation (rememberSaveable) and
+    // returning from a category, and resets when Settings itself is left,
+    // like isSearching/selectedId.
+    var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
     var showResetDialog by rememberSaveable { mutableStateOf(false) }
     // System back mirrors the TopAppBar icon: search closes first, then a
     // drilled-down category returns to the category list (#124); only at
@@ -305,10 +315,14 @@ fun SettingsScreen(
     ) { padding ->
         if (isSearching) {
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                PreferencesSearchScreen(onOpenCategory = { id ->
-                    isSearching = false
-                    selectedId = id
-                })
+                PreferencesSearchScreen(
+                    query = settingsSearchQuery,
+                    onQueryChange = { settingsSearchQuery = it },
+                    onOpenCategory = { id ->
+                        isSearching = false
+                        selectedId = id
+                    },
+                )
             }
         } else if (selectedCategory == null) {
             LazyColumn(

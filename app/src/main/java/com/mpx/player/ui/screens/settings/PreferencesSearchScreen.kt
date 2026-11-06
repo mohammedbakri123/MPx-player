@@ -23,10 +23,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -81,13 +78,24 @@ fun buildSettingsSearchIndex(): List<SettingsSearchEntry> = listOf(
  * Working settings search (#158, mpvEx parity): searches MPx's real
  * settings by title, summary and keywords, and opens the matching
  * category when a result is tapped. Back closes the search first.
+ *
+ * Issue #303: [query] is hoisted into SettingsScreen (rememberSaveable,
+ * next to isSearching/selectedId) and passed down — it must NOT live
+ * here. Opening a result sets isSearching = false, removing this screen
+ * from the composition and discarding any state it owns, so even a
+ * rememberSaveable query here would reset on every return from a
+ * category. The other remember state here is intentionally local: the
+ * search index is static and cheap to rebuild, the FocusRequester is
+ * transient (focus is re-requested on each entry), and the results are
+ * derived from the query.
  */
 @Composable
 fun PreferencesSearchScreen(
+    query: String,
+    onQueryChange: (String) -> Unit,
     onOpenCategory: (String) -> Unit,
 ) {
     val context = LocalContext.current
-    var query by remember { mutableStateOf("") }
     val entries = remember { buildSettingsSearchIndex() }
     val focusRequester = remember { FocusRequester() }
 
@@ -109,7 +117,7 @@ fun PreferencesSearchScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         TextField(
             value = query,
-            onValueChange = { query = it },
+            onValueChange = onQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -120,7 +128,7 @@ fun PreferencesSearchScreen(
             },
             trailingIcon = {
                 if (query.isNotEmpty()) {
-                    IconButton(onClick = { query = "" }) {
+                    IconButton(onClick = { onQueryChange("") }) {
                         Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_cancel), tint = MpxTheme.colors.textMuted)
                     }
                 }
