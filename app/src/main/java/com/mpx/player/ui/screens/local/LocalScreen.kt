@@ -880,7 +880,18 @@ fun LocalScreen(
                                     overflow = TextOverflow.Ellipsis,
                                 )
                                 val count = filteredFolderVideos.size
-                                val sizeStr = folder.totalSizeFormatted
+                                // #252: the count is the filtered list, so
+                                // the size must be too — the whole-folder
+                                // total misstates the matches while
+                                // searching. With no query the filtered list
+                                // IS the folder, so the stored total is kept
+                                // verbatim; with a query the filtered sizes
+                                // are summed and formatted the same way.
+                                val sizeStr = if (folderSearchQuery.isBlank()) {
+                                    folder.totalSizeFormatted
+                                } else {
+                                    formatSize(filteredFolderVideos.sumOf { it.sizeBytes })
+                                }
                                 val subText = if (count == 1) {
                                     stringResource(R.string.folder_view_subtitle_single, sizeStr)
                                 } else {
@@ -1091,12 +1102,24 @@ fun LocalScreen(
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        // #252: local_status_strip ("%d folders • %d
+                        // videos") is folder-shaped, so in file view the
+                        // list shows files while the strip counted folders.
+                        // File view shows the files count instead, reusing
+                        // the existing "%d videos" string — no new string.
                         Text(
-                            text = stringResource(
-                                R.string.local_status_strip,
-                                filteredFolders.size,
-                                filteredFolders.sumOf { it.videoCount },
-                            ),
+                            text = if (appSettings.fileView) {
+                                stringResource(
+                                    R.string.folder_item_videos_count,
+                                    filteredVideos.size,
+                                )
+                            } else {
+                                stringResource(
+                                    R.string.local_status_strip,
+                                    filteredFolders.size,
+                                    filteredFolders.sumOf { it.videoCount },
+                                )
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxTheme.colors.textSecondary,
                         )
@@ -2038,3 +2061,21 @@ fun LocalScreen(
     }
 }
 
+/**
+ * #252: formats a summed byte count for the folder subtitle while
+ * searching. Mirrors MediaStoreRepository.formatSize exactly (same
+ * thresholds, same "%.1f GB/MB/KB" units) so a filtered sum reads the
+ * same as the stored whole-folder total it replaces.
+ */
+private fun formatSize(bytes: Long): String {
+    if (bytes <= 0L) return "0 B"
+    val kb = bytes / 1024.0
+    val mb = kb / 1024.0
+    val gb = mb / 1024.0
+    return when {
+        gb >= 1.0 -> String.format(Locale.US, "%.1f GB", gb)
+        mb >= 1.0 -> String.format(Locale.US, "%.1f MB", mb)
+        kb >= 1.0 -> String.format(Locale.US, "%.1f KB", kb)
+        else -> "$bytes B"
+    }
+}
