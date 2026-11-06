@@ -2228,6 +2228,10 @@ fun LocalScreen(
                 }
             },
             onCreateNewPlaylist = {
+                // Issue #310: keep videosForPlaylistAdd — the create
+                // dialog's onConfirm adds them to the new playlist, and
+                // its onDismiss puts this dialog back if creation is
+                // cancelled, so the pending videos are never dropped.
                 showAddToPlaylistDialog = false
                 showCreatePlaylistDialog = true
             },
@@ -2236,17 +2240,71 @@ fun LocalScreen(
 
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
-            onDismiss = { showCreatePlaylistDialog = false },
+            // Issue #310: cancelling creation must not lose the pending
+            // videos — put the add dialog back so the user can pick an
+            // existing playlist or try creating again.
+            onDismiss = {
+                showCreatePlaylistDialog = false
+                if (videosForPlaylistAdd.isNotEmpty()) showAddToPlaylistDialog = true
+            },
             // #268: Local creates video playlists; the fixed type is
             // passed through (no selector on this screen).
             initialIsVideoPlaylist = true,
             onConfirm = { name, isVideo ->
                 scope.launch {
-                    persistenceRepository.createPlaylist(name, isVideoPlaylist = isVideo)
-                    showCreatePlaylistDialog = false
-                    snackbarHostState.showSnackbar(
-                        context.getString(R.string.snackbar_playlist_created, name)
-                    )
+                    // Issue #310: carry the pending add-to-playlist
+                    // videos into the newly created playlist, with the
+                    // same item mapping, order and feedback as adding
+                    // to an existing playlist above.
+                    val vids = videosForPlaylistAdd
+                    try {
+                        val newId = persistenceRepository.createPlaylist(
+                            name, isVideoPlaylist = isVideo
+                        )
+                        var addedCount = 0
+                        vids.forEach { vid ->
+                            val rowId = persistenceRepository.addItemToPlaylist(
+                                PlaylistItem(
+                                    playlistId = newId,
+                                    mediaUri = vid.path,
+                                    mediaId = vid.id,
+                                    title = vid.title,
+                                    subtitle = vid.folderName,
+                                    isVideo = true,
+                                    durationMs = vid.durationMs,
+                                )
+                            )
+                            if (rowId != -1L) addedCount++
+                        }
+                        if (vids.isNotEmpty()) {
+                            videosForPlaylistAdd = emptyList()
+                            clearSelection()
+                        }
+                        showCreatePlaylistDialog = false
+                        when {
+                            vids.isEmpty() -> snackbarHostState.showSnackbar(
+                                context.getString(R.string.snackbar_playlist_created, name)
+                            )
+                            addedCount == vids.size -> snackbarHostState.showSnackbar(
+                                context.getString(R.string.music_added_to_playlist_msg, name)
+                            )
+                            addedCount == 0 -> snackbarHostState.showSnackbar(
+                                context.getString(R.string.music_already_in_playlist_msg, name)
+                            )
+                            else -> snackbarHostState.showSnackbar(
+                                context.getString(
+                                    R.string.music_added_some_to_playlist_msg,
+                                    addedCount, name, vids.size - addedCount,
+                                )
+                            )
+                        }
+                    } catch (_: Exception) {
+                        // Creation failed — keep the pending videos and
+                        // put the add dialog back so the user can retry
+                        // instead of silently losing the selection.
+                        showCreatePlaylistDialog = false
+                        if (vids.isNotEmpty()) showAddToPlaylistDialog = true
+                    }
                 }
             },
         )
