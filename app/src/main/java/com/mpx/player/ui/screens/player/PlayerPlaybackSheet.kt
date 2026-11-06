@@ -81,6 +81,7 @@ import com.mpx.player.ui.components.player.formatTimeMs
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 /**
@@ -760,7 +761,16 @@ private fun PlaybackSheetSleepPage(
     // same string the Off chip and the stripe caption use); the first tap
     // in either direction starts a timer at the 30-minute default, and
     // only then does the value step ±5 from the running timer.
-    val timerMinutes = state.sleepTimerMinutes
+    // Issue #238: while a timer runs, the base is the REMAINING time
+    // ceiled to minutes — not sleepTimerMinutes, which is the set duration
+    // frozen at set time (the tick loop only updates
+    // sleepTimerRemainingSeconds). A minute into a 30 min timer the
+    // stepper shows "29 min" and + sets 34, matching the headline
+    // countdown and the stripe caption. Ceil, not floor: 29:59 remaining
+    // is still "30 min" until it actually drops below 29 minutes.
+    val timerMinutes: Int? = state.sleepTimerRemainingSeconds?.let { remaining ->
+        ceil(remaining / 60.0).toInt()
+    }
     StepperRow(
         label = stringResource(R.string.playback_sheet_sleep_custom),
         valueText = timerMinutes?.let { "$it min" }
