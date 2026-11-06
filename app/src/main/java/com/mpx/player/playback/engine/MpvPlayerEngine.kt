@@ -1813,10 +1813,13 @@ class MpvPlayerEngine(
         // the current stream would keep its old decoder and the pill would go
         // stale. MX restarts playback with the newly chosen decoder — do the
         // same: reload the current item at its position. No-op before any load.
+        // Issue #224: resume only if it was playing — a paused file stays
+        // paused (mirrors reloadForDecoderFallback, which never had this bug).
         if (mpvInitialized && !isReleased && fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
+            val wasPlaying = cachedIsPlaying
             val pos = cachedPositionMs
             load(currentQueue, currentMediaIndex, pos)
-            play()
+            if (wasPlaying) play()
         }
     }
 
