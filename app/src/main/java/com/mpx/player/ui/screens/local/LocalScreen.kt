@@ -592,8 +592,22 @@ fun LocalScreen(
         folderSearchQuery = ""
     }
 
+    // Issue #320: a refresh requested while a scan is in flight is
+    // queued instead of dropped. Repeated requests coalesce into this
+    // single pending refresh (latest showAll wins); it runs when the
+    // in-flight scan finishes (see the drain effect below, next to the
+    // isRefreshing effect). Null means no refresh is queued.
+    var pendingRefreshShowAll by remember { mutableStateOf<Boolean?>(null) }
+
     fun refreshFolders(showAll: Boolean = appSettings.showAllFolders) {
-        if (isLoading) return
+        if (isLoading) {
+            // Issue #320: queue instead of dropping — the pull-to-refresh
+            // spinner (isRefreshing) stays up until this queued refresh
+            // actually runs, and the Sort dialog's show-all toggle is no
+            // longer silently swallowed mid-scan.
+            pendingRefreshShowAll = showAll
+            return
+        }
         if (MediaPermissions.hasVideoPermission(context)) {
             hasPermission = true
             // Issue #295: isLoading is snapshot state — write it on Main,
@@ -971,6 +985,22 @@ fun LocalScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading, isFolderLoading) {
         if (!isLoading && !isFolderLoading) isRefreshing = false
+    }
+
+    // Issue #320: drain a queued refresh when the in-flight root scan
+    // finishes. The pending value is cleared BEFORE starting the refresh,
+    // so the isLoading=true the refresh sets cannot re-trigger this
+    // effect into a loop; a refresh queued during the drained scan is a
+    // new pending value and drains on the next finish. The permission /
+    // ON_RESUME scans set isLoading too, so a refresh requested during
+    // those also drains here instead of being dropped.
+    LaunchedEffect(isLoading) {
+        if (!isLoading) {
+            pendingRefreshShowAll?.let { showAll ->
+                pendingRefreshShowAll = null
+                refreshFolders(showAll)
+            }
+        }
     }
 
     Scaffold(
