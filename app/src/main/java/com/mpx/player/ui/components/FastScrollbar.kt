@@ -115,21 +115,55 @@ fun FastScrollbar(
 
         val availableDragSpace = (trackHeightPx - thumbHeightPx).coerceAtLeast(1f)
 
-        // Issue #182: the thumb jumped in steps because the fraction used
-        // only the discrete firstVisibleItemIndex. Include the pixel
-        // offset inside the first visible item so the thumb glides
-        // continuously with the scroll instead of jumping item by item.
-        val scrollFraction by remember {
+        // Issue #280: pixel-exact scroll geometry, mirroring the #236 fix
+        // for GridFastScrollbar — the fraction is the scroll offset over
+        // the list's total scroll range, so it is 0.0 at the top and
+        // exactly 1.0 at max scroll. The old item-index formula
+        // (firstVisibleItemIndex + itemProgress) / (itemCount - 1) topped
+        // out at (N - visibleCount) / (N - 1): e.g. 100 items of 100px, no
+        // spacing/padding, 500px viewport — total 10000px, max scroll
+        // 9500px; at max scroll the first visible item is #95, so the old
+        // fraction stopped at 95/99 = 0.96 and the thumb never reached the
+        // bottom. The new one is 9500/9500 = 1.0. Lists have no headers
+        // and one item per row, so the geometry is the grid's with
+        // columns = 1 and no header block; rows here are uniform in
+        // practice (folder/file/music rows), the same assumption #236
+        // makes for grid rows. The geometry is a State object (not a `by`
+        // value) so the drag handler below always reads it live, and it
+        // is keyed on itemCount so a list resize rebuilds it.
+        val scrollGeometryState = remember(itemCount) {
             derivedStateOf {
-                val firstItemSize = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
-                val itemProgress = if (firstItemSize > 0) {
-                    listState.firstVisibleItemScrollOffset.toFloat() / firstItemSize.toFloat()
-                } else {
-                    0f
-                }
-                ((listState.firstVisibleItemIndex.toFloat() + itemProgress) / (itemCount - 1).coerceAtLeast(1)).coerceIn(0f, 1f)
+                val info = listState.layoutInfo
+                val visible = info.visibleItemsInfo
+                if (visible.isEmpty()) return@derivedStateOf null
+                val firstItemHeightPx = visible.firstOrNull()?.size ?: 0
+                if (firstItemHeightPx <= 0) return@derivedStateOf null
+                val spacingPx = info.mainAxisItemSpacing.coerceAtLeast(0)
+                val pitchPx = firstItemHeightPx + spacingPx
+                // Total content height: top padding + every item + the
+                // gaps between items + bottom padding.
+                val totalHeightPx = info.beforeContentPadding +
+                    itemCount * firstItemHeightPx +
+                    (itemCount - 1).coerceAtLeast(0) * spacingPx +
+                    info.afterContentPadding
+                val maxScrollPx = (totalHeightPx - info.viewportSize.height)
+                    .toFloat().coerceAtLeast(0f)
+                // Scroll offset from the first visible item: its
+                // content-top minus how far it is scrolled into.
+                val scrollPx = info.beforeContentPadding +
+                    listState.firstVisibleItemIndex * pitchPx +
+                    listState.firstVisibleItemScrollOffset
+                ListScrollGeometry(
+                    maxScrollPx = maxScrollPx,
+                    beforePaddingPx = info.beforeContentPadding,
+                    pitchPx = pitchPx,
+                    scrollPx = scrollPx,
+                )
             }
         }
+        val scrollFraction = scrollGeometryState.value?.let { geo ->
+            if (geo.maxScrollPx > 0f) (geo.scrollPx / geo.maxScrollPx).coerceIn(0f, 1f) else 0f
+        } ?: 0f
 
         val thumbOffsetPx = if (isDragging) {
             (dragY - thumbHeightPx / 2f).coerceIn(0f, availableDragSpace)
@@ -190,25 +224,29 @@ fun FastScrollbar(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(itemCount, trackHeightPx, thumbHeightPx) {
+                    // Issue #280: the drag target is the exact inverse of
+                    // the thumb fraction — an absolute scroll position,
+                    // converted back to (item index, scroll offset).
+                    fun dragTo(y: Float) {
+                        val geo = scrollGeometryState.value ?: return
+                        dragY = y
+                        val fraction = ((y - thumbHeightPx / 2f) / availableDragSpace).coerceIn(0f, 1f)
+                        val targetScrollPx = (fraction * geo.maxScrollPx).roundToInt()
+                        val (targetIndex, targetOffset) = geo.targetForScroll(
+                            targetScrollPx, itemCount,
+                        )
+                        currentTargetIndex = targetIndex
+                        scope.launch {
+                            listState.scrollToItem(targetIndex, targetOffset)
+                        }
+                    }
                     detectVerticalDragGestures(
                         onDragStart = { offset ->
                             isDragging = true
-                            dragY = offset.y
-                            val fraction = ((dragY - thumbHeightPx / 2f) / availableDragSpace).coerceIn(0f, 1f)
-                            val targetIndex = (fraction * (itemCount - 1)).roundToInt().coerceIn(0, itemCount - 1)
-                            currentTargetIndex = targetIndex
-                            scope.launch {
-                                listState.scrollToItem(targetIndex)
-                            }
+                            dragTo(offset.y)
                         },
                         onVerticalDrag = { change, _ ->
-                            dragY = change.position.y
-                            val fraction = ((dragY - thumbHeightPx / 2f) / availableDragSpace).coerceIn(0f, 1f)
-                            val targetIndex = (fraction * (itemCount - 1)).roundToInt().coerceIn(0, itemCount - 1)
-                            currentTargetIndex = targetIndex
-                            scope.launch {
-                                listState.scrollToItem(targetIndex)
-                            }
+                            dragTo(change.position.y)
                         },
                         onDragEnd = {
                             isDragging = false
@@ -510,6 +548,37 @@ fun GridFastScrollbar(
                     .background(if (isDragging) thumbColor else thumbColor.copy(alpha = 0.85f)),
             )
         }
+    }
+}
+
+/**
+ * Issue #280: pixel-exact scroll geometry for [FastScrollbar], mirroring
+ * [GridScrollGeometry] (#236) for the list case — one item per row, no
+ * header block. [scrollPx] is the viewport top's distance from the
+ * content top and [maxScrollPx] the distance at max scroll, so
+ * `scrollPx / maxScrollPx` is 0.0 at the top and exactly 1.0 at the
+ * bottom. All values are px.
+ */
+private data class ListScrollGeometry(
+    val maxScrollPx: Float,
+    val beforePaddingPx: Int,
+    val pitchPx: Int,
+    val scrollPx: Int,
+) {
+    /**
+     * Inverse of the thumb fraction: the (item index, scroll offset) that
+     * puts the viewport top exactly at [targetScrollPx].
+     */
+    fun targetForScroll(
+        targetScrollPx: Int,
+        itemCount: Int,
+    ): Pair<Int, Int> {
+        if (itemCount <= 0 || pitchPx <= 0) return 0 to 0
+        val index = ((targetScrollPx - beforePaddingPx) / pitchPx)
+            .coerceIn(0, itemCount - 1)
+        val offset = (targetScrollPx - (beforePaddingPx + index * pitchPx))
+            .coerceAtLeast(0)
+        return index to offset
     }
 }
 
