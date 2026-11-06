@@ -719,6 +719,10 @@ class MediaStoreRepository(
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.DATA,
+            // Issue #311: one extra column in this existing scan (no
+            // new scan) — the albums / artists / folders DATE sort
+            // orders by each group's newest track date.
+            MediaStore.Audio.Media.DATE_MODIFIED,
         )
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         val uris = getAudioContentUris()
@@ -738,6 +742,7 @@ class MediaStoreRepository(
                     val albumCol = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM)
                     val durationCol = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION)
                     val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+                    val dateModifiedCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
 
                     while (cursor.moveToNext()) {
                         val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
@@ -772,6 +777,9 @@ class MediaStoreRepository(
                         }
 
                         val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
+                        // Issue #311: seconds since epoch, as MediaStore
+                        // reports it (same units as VideoFile.dateModified).
+                        val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol).coerceAtLeast(0L) else 0L
                         val effectivePath = path.ifBlank {
                             if (idCol >= 0) {
                                 ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
@@ -787,6 +795,7 @@ class MediaStoreRepository(
                                 durationFormatted = formatDuration(durationMs),
                                 durationMs = durationMs,
                                 path = effectivePath,
+                                dateModified = dateModified,
                             )
                         )
                     }
@@ -808,11 +817,11 @@ class MediaStoreRepository(
         // artist with its own track count, instead of one merged row
         // credited to whichever artist came first. The id is a hash of
         // the pair (NUL-separated so ("AB", "C") and ("A", "BC") cannot
-        // collide), still a String hash like before, so the DATE sort's
-        // id-recency approximation in MediaSortComparator is unchanged
-        // in kind. Artists are untouched: an artist's name is its
-        // identity by definition, so getAudioArtists() has no symmetric
-        // problem.
+        // collide), still a String hash like before. Issue #311: the
+        // DATE sort no longer orders by that hash — it orders by the
+        // newest track date in the album (latestTrackDateModified).
+        // Artists are untouched: an artist's name is its identity by
+        // definition, so getAudioArtists() has no symmetric problem.
         return tracks.groupBy { it.album to it.artist }
             .map { (pair, albumTracks) ->
                 val (albumName, artistName) = pair
@@ -821,6 +830,7 @@ class MediaStoreRepository(
                     title = albumName,
                     artist = artistName,
                     trackCount = albumTracks.size,
+                    latestTrackDateModified = albumTracks.maxOfOrNull { it.dateModified } ?: 0L,
                 )
             }
             .sortedBy { it.title.lowercase(Locale.US) }
@@ -835,6 +845,7 @@ class MediaStoreRepository(
                     name = artistName,
                     trackCount = artistTracks.size,
                     albumCount = artistTracks.map { it.album }.distinct().size,
+                    latestTrackDateModified = artistTracks.maxOfOrNull { it.dateModified } ?: 0L,
                 )
             }
             .sortedBy { it.name.lowercase(Locale.US) }
@@ -865,6 +876,7 @@ class MediaStoreRepository(
                 path = path,
                 trackCount = folderTracks.size,
                 isStorageRemovable = isRemovablePath(path),
+                latestTrackDateModified = folderTracks.maxOfOrNull { it.dateModified } ?: 0L,
             )
         }.sortedBy { it.name.lowercase(Locale.US) }
     }

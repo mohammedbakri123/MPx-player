@@ -272,7 +272,9 @@ object MediaSortComparator {
      * Constructs a Comparator for AudioAlbum with primary sort and secondary tie-break sort.
      * #185 (Albums tab): same field semantics as [audioTrackComparator].
      * Albums carry no duration: SIZE / DURATION sort by track count (most
-     * tracks first) — the album's "size". DATE is id recency, like tracks.
+     * tracks first) — the album's "size". Issue #311: DATE sorts by the
+     * newest track date in the album (latestTrackDateModified), not by
+     * the album id hash.
      */
     fun audioAlbumComparator(
         primary: SortField,
@@ -320,11 +322,12 @@ object MediaSortComparator {
                 else a.title.lowercase(Locale.US).compareTo(b.title.lowercase(Locale.US))
             }
         }
-        SortField.DATE -> compareIds(b.id, a.id)
-        // Albums carry no date: id recency first, track count breaks ties.
+        SortField.DATE -> b.latestTrackDateModified.compareTo(a.latestTrackDateModified)
+        // Issue #311: newest track date first, track count breaks ties.
+        // (Was id recency on the album id hash — meaningless order.)
         SortField.DATE_DURATION -> {
-            val idCmp = compareIds(b.id, a.id)
-            if (idCmp != 0) idCmp else b.trackCount.compareTo(a.trackCount)
+            val dateCmp = b.latestTrackDateModified.compareTo(a.latestTrackDateModified)
+            if (dateCmp != 0) dateCmp else b.trackCount.compareTo(a.trackCount)
         }
         // Albums carry no duration: track count is the album's size.
         SortField.SIZE, SortField.DURATION -> b.trackCount.compareTo(a.trackCount)
@@ -339,7 +342,8 @@ object MediaSortComparator {
      * Constructs a Comparator for AudioArtist with primary sort and secondary tie-break sort.
      * #185 (Artists tab): same field semantics as [audioAlbumComparator].
      * Artists carry no duration: SIZE / DURATION sort by track count (most
-     * tracks first) — the artist's "size". DATE is id recency, like tracks.
+     * tracks first) — the artist's "size". Issue #311: DATE sorts by the
+     * newest track date of the artist, not by the artist id hash.
      */
     fun audioArtistComparator(
         primary: SortField,
@@ -380,11 +384,12 @@ object MediaSortComparator {
                 else a.name.lowercase(Locale.US).compareTo(b.name.lowercase(Locale.US))
             }
         }
-        SortField.DATE -> compareIds(b.id, a.id)
-        // Artists carry no date: id recency first, track count breaks ties.
+        SortField.DATE -> b.latestTrackDateModified.compareTo(a.latestTrackDateModified)
+        // Issue #311: newest track date first, track count breaks ties.
+        // (Was id recency on the artist id hash — meaningless order.)
         SortField.DATE_DURATION -> {
-            val idCmp = compareIds(b.id, a.id)
-            if (idCmp != 0) idCmp else b.trackCount.compareTo(a.trackCount)
+            val dateCmp = b.latestTrackDateModified.compareTo(a.latestTrackDateModified)
+            if (dateCmp != 0) dateCmp else b.trackCount.compareTo(a.trackCount)
         }
         // Artists carry no duration: track count is the artist's size.
         SortField.SIZE, SortField.DURATION -> b.trackCount.compareTo(a.trackCount)
@@ -400,11 +405,13 @@ object MediaSortComparator {
      * #185 (Playlists tab): same field semantics as [audioAlbumComparator].
      * Playlists carry no duration: SIZE / DURATION sort by item count (most
      * items first) — the playlist's "size". COUNT is the playlist's own
-     * item count, so it sorts the same way. DATE is id recency, like
-     * albums/artists: ids are MediaStore numeric strings for device
-     * playlists and "custom:<id>" for custom ones, compared numerically
-     * with a string fallback (issue #242) — so custom playlists still
-     * sort after device ones, as #217 documented.
+     * item count, so it sorts the same way. DATE is id recency: ids are
+     * MediaStore numeric strings for device playlists and "custom:<id>"
+     * for custom ones, compared numerically with a string fallback
+     * (issue #242) — so custom playlists still sort after device ones,
+     * as #217 documented. (Issue #311: albums / artists / folders now
+     * sort DATE by real track date instead; playlists keep id recency
+     * because their ids are genuine MediaStore ids, not name hashes.)
      */
     fun audioPlaylistComparator(
         primary: SortField,
@@ -465,9 +472,9 @@ object MediaSortComparator {
 
     /**
      * Constructs a Comparator for AudioFolder with primary sort and secondary tie-break sort.
-     * #185 (Folders tab): same field semantics as [audioArtistComparator],
-     * except DATE has nothing to sort by — folders carry no date, and
-     * AudioFolder.id is a path hash, not recency, so DATE / DATE_DURATION
+     * #185 (Folders tab): same field semantics as [audioArtistComparator].
+     * Issue #311: DATE sorts by the newest track date in the folder
+     * (latestTrackDateModified) — it used to return 0 and silently
      * fall through to the name tie-break. Folders carry no size or
      * duration either: SIZE / DURATION / COUNT sort by track count (most
      * tracks first) — the folder's "size". STATUS_TYPE_LOCATION has no
@@ -512,9 +519,15 @@ object MediaSortComparator {
                 else a.name.lowercase(Locale.US).compareTo(b.name.lowercase(Locale.US))
             }
         }
-        // Folders carry no date (and id is a path hash, not recency):
-        // falls through to the name tie-break.
-        SortField.DATE, SortField.DATE_DURATION -> 0
+        // Issue #311: newest track date first; DATE_DURATION breaks
+        // date ties by track count, like albums / artists. (Was 0 —
+        // silently the name tie-break — because folders carry no date
+        // of their own and the id is a path hash.)
+        SortField.DATE -> b.latestTrackDateModified.compareTo(a.latestTrackDateModified)
+        SortField.DATE_DURATION -> {
+            val dateCmp = b.latestTrackDateModified.compareTo(a.latestTrackDateModified)
+            if (dateCmp != 0) dateCmp else b.trackCount.compareTo(a.trackCount)
+        }
         // Folders carry no size or duration: track count is the folder's size.
         SortField.SIZE, SortField.DURATION, SortField.COUNT -> b.trackCount.compareTo(a.trackCount)
         // Folders carry no resolution: falls through to the name tie-break.
@@ -542,7 +555,11 @@ object MediaSortComparator {
             }
         }
         SortField.DATE -> compareIds(b.id, a.id)
-        // Audio tracks carry no date: id recency first, duration breaks ties.
+        // Issue #311: tracks now carry a real date (AudioTrack.dateModified,
+        // MediaStore DATE_MODIFIED) but the track DATE sort deliberately
+        // still uses id recency — MediaStore ids are insertion order, and
+        // switching tracks to the real date is a separate behaviour change.
+        // DATE_DURATION keeps duration as the tie-break.
         SortField.DATE_DURATION -> {
             val idCmp = compareIds(b.id, a.id)
             if (idCmp != 0) idCmp else b.durationMs.compareTo(a.durationMs)

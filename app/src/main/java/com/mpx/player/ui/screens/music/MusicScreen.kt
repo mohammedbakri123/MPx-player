@@ -785,7 +785,9 @@ fun MusicScreen(
     // #185: the shared MediaSortComparator for playlists — same field
     // semantics as the audio album comparator. Playlists carry no
     // duration: SIZE / DURATION / COUNT sort by item count (most items
-    // first); DATE is id recency, like albums/artists.
+    // first); DATE is id recency — playlist ids are MediaStore numeric
+    // ids (genuine recency) or "custom:<id>", not name hashes, so that
+    // stays (issue #311 changed albums / artists / folders only).
     val sortedPlaylists = remember(filteredPlaylists, sortField, appSettings.sortReverse) {
         filteredPlaylists.sortedWith(
             MediaSortComparator.audioPlaylistComparator(
@@ -808,10 +810,10 @@ fun MusicScreen(
     }
 
     // #185: the shared MediaSortComparator for folders — same field
-    // semantics as the audio artist comparator. Folders carry no date,
-    // size or duration: SIZE / DURATION / COUNT sort by track count
-    // (most tracks first); DATE has nothing to sort by (folder ids are
-    // path hashes, not recency) and falls through to the name tie-break.
+    // semantics as the audio artist comparator. Folders carry no size
+    // or duration: SIZE / DURATION / COUNT sort by track count (most
+    // tracks first); DATE sorts by the newest track date in the folder
+    // (issue #311 — it used to return 0 and silently sort by name).
     val sortedFolders = remember(filteredFolders, sortField, appSettings.sortReverse) {
         filteredFolders.sortedWith(
             MediaSortComparator.audioFolderComparator(
