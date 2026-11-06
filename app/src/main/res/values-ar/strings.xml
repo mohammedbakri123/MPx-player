@@ -53,6 +53,11 @@
     <string name="download_notification_downloading">جارٍ التنزيل…</string>
     <string name="download_notification_downloading_percent">جارٍ التنزيل… %1$d%%</string>
     <string name="download_notification_downloading_files">جارٍ تنزيل %1$d ملفات</string>
+    <string name="download_playlist_title">قائمة تشغيل</string>
+    <string name="download_playlist_select_all">تحديد الكل</string>
+    <string name="download_playlist_select_none">إلغاء تحديد الكل</string>
+    <string name="download_playlist_download">تنزيل %1$d</string>
+    <string name="download_playlist_fetching">جارٍ التحقق من قائمة التشغيل…</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">فيديو</string>

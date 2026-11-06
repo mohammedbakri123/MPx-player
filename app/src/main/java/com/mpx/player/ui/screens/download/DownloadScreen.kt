@@ -66,6 +66,7 @@ import com.mpx.player.download.DownloadStatus
 import com.mpx.player.download.DownloadedFile
 import com.mpx.player.download.DownloaderInitState
 import com.mpx.player.download.MpxDownloader
+import com.mpx.player.download.PlaylistInfo
 import com.mpx.player.download.YtDlpUpdateOutcome
 import com.mpx.player.download.YtDlpUpdateState
 import com.mpx.player.playback.PlayableMedia
@@ -139,6 +140,14 @@ fun DownloadScreen(
     val settingsRepository = remember(context) { SharedPrefsAppSettingsRepository(context) }
     var qualitySettings by remember { mutableStateOf(settingsRepository.load()) }
     var showQuality by rememberSaveable { mutableStateOf(false) }
+    // Issue #345: playlist probe state. The Download button first
+    // asks the engine whether the URL resolves to a playlist; a
+    // playlist with several entries opens the picker below, a single
+    // entry (or a non-playlist / failed probe) downloads directly.
+    // Not saveable: a probe in flight dies with the screen, and the
+    // picker is re-opened by tapping Download again.
+    var fetchingPlaylist by remember { mutableStateOf(false) }
+    var playlistToPick by remember { mutableStateOf<PlaylistInfo?>(null) }
 
     // Warm up the engine (extracts Python + yt-dlp on first run) so the
     // Download button works the moment the user pastes a link.
@@ -249,10 +258,40 @@ fun DownloadScreen(
                 Spacer(Modifier.width(8.dp))
                 Button(
                     onClick = {
-                        downloader.startDownload(urlText, audioOnly = audioOnly, subtitles = subtitles)
-                        urlText = ""
+                        // Issue #345: probe for a playlist first. A
+                        // playlist with several entries opens the
+                        // picker; a single entry downloads directly;
+                        // a non-playlist URL or a failed probe falls
+                        // back to the plain single download (the
+                        // probe never fails the row). The probe is one
+                        // extra yt-dlp run for single videos too —
+                        // the cost of detection, same as Seal.
+                        val url = urlText
+                        scope.launch {
+                            fetchingPlaylist = true
+                            try {
+                                val playlist = downloader.fetchPlaylistInfo(url)
+                                when {
+                                    playlist == null -> {
+                                        downloader.startDownload(url, audioOnly = audioOnly, subtitles = subtitles)
+                                        urlText = ""
+                                    }
+                                    playlist.entries.size == 1 -> {
+                                        downloader.startDownload(
+                                            playlist.entries[0].url,
+                                            audioOnly = audioOnly,
+                                            subtitles = subtitles,
+                                        )
+                                        urlText = ""
+                                    }
+                                    else -> playlistToPick = playlist
+                                }
+                            } finally {
+                                fetchingPlaylist = false
+                            }
+                        }
                     },
-                    enabled = urlText.isNotBlank(),
+                    enabled = urlText.isNotBlank() && !fetchingPlaylist,
                     shape = MpxShapes.extraLarge,
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -267,11 +306,34 @@ fun DownloadScreen(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        stringResource(R.string.download_button),
+                        text = if (fetchingPlaylist) {
+                            stringResource(R.string.download_playlist_fetching)
+                        } else {
+                            stringResource(R.string.download_button)
+                        },
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
+            }
+
+            // Issue #345: playlist entry picker. The selected entries
+            // enqueue as their own rows (the #342 queue cap applies);
+            // the URL field clears only once the downloads start.
+            playlistToPick?.let { playlist ->
+                PlaylistPickerDialog(
+                    playlist = playlist,
+                    onDismiss = { playlistToPick = null },
+                    onDownload = { entries ->
+                        playlistToPick = null
+                        downloader.startDownloads(
+                            entries.map { it.url },
+                            audioOnly = audioOnly,
+                            subtitles = subtitles,
+                        )
+                        urlText = ""
+                    },
+                )
             }
 
             // Issue #340: audio-only toggle, right under the URL field

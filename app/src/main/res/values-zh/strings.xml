@@ -53,6 +53,11 @@
     <string name="download_notification_downloading">正在下载…</string>
     <string name="download_notification_downloading_percent">正在下载…%1$d%%</string>
     <string name="download_notification_downloading_files">正在下载 %1$d 个文件</string>
+    <string name="download_playlist_title">播放列表</string>
+    <string name="download_playlist_select_all">全选</string>
+    <string name="download_playlist_select_none">取消全选</string>
+    <string name="download_playlist_download">下载 %1$d 项</string>
+    <string name="download_playlist_fetching">正在检查播放列表…</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">视频</string>

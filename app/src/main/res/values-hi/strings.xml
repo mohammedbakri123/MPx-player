@@ -53,6 +53,11 @@
     <string name="download_notification_downloading">डाउनलोड हो रहा है…</string>
     <string name="download_notification_downloading_percent">डाउनलोड हो रहा है… %1$d%%</string>
     <string name="download_notification_downloading_files">%1$d फ़ाइलें डाउनलोड हो रही हैं</string>
+    <string name="download_playlist_title">प्लेलिस्ट</string>
+    <string name="download_playlist_select_all">सभी चुनें</string>
+    <string name="download_playlist_select_none">कुछ नहीं चुनें</string>
+    <string name="download_playlist_download">%1$d डाउनलोड करें</string>
+    <string name="download_playlist_fetching">प्लेलिस्ट जाँची जा रही है…</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">वीडियो</string>
