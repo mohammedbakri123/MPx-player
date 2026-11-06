@@ -171,7 +171,9 @@ fun AsyncAlbumThumbnail(
     showThumbnails: Boolean = true,
 ) {
     val context = LocalContext.current
-    val cacheKey = "album_${album.title}"
+    // #243: the cache key is the (album, artist) pair — two artists with
+    // a same-named album must not share one cached cover.
+    val cacheKey = "album_${album.title}\u0000${album.artist}"
 
     AsyncThumbnail(
         cacheKey = cacheKey,
@@ -179,6 +181,7 @@ fun AsyncAlbumThumbnail(
             ThumbnailLoader.loadAlbumThumbnail(
                 context = context,
                 albumTitle = album.title,
+                albumArtist = album.artist,
                 width = 240,
                 height = 240,
             )

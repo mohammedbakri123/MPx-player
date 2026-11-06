@@ -756,9 +756,10 @@ fun MusicScreen(
 
     // #185: Albums multi-select actions, mirroring the Tracks ones. An
     // album's tracks are its library tracks (getAudioAlbums groups by
-    // album name), in library order — no new repository call needed.
+    // (album, artist) — #243, so same-named albums by different artists
+    // stay separate), in library order — no new repository call needed.
     fun albumTracks(album: AudioAlbum): List<AudioTrack> =
-        tracks.filter { it.album == album.title }
+        tracks.filter { it.album == album.title && it.artist == album.artist }
 
     // Issue #234: resolve against the UNFILTERED sorted list — see selectedTracksInView.
     fun selectedAlbumsInView(): List<AudioAlbum> =

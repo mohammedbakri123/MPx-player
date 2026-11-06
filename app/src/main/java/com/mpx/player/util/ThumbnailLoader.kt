@@ -324,18 +324,34 @@ object ThumbnailLoader {
 
     /**
      * Loads real album art for an AudioAlbum by fetching the artwork of its first track.
+     * #243: scoped to (album, artist) — same-named albums by different
+     * artists must not share one cover. The artist filter is skipped
+     * only when no artist is supplied (legacy callers).
      */
     fun loadAlbumThumbnail(
         context: Context,
         albumTitle: String,
+        albumArtist: String = "",
         width: Int = 200,
         height: Int = 200,
     ): Bitmap? {
-        val key = "album_$albumTitle"
+        val key = "album_$albumTitle\u0000$albumArtist"
         getCached(key)?.let { return it }
 
         var trackId: String? = null
         var trackPath: String = ""
+
+        // #243: match the album's own artist as well as its title.
+        val selection = if (albumArtist.isNotBlank()) {
+            "${MediaStore.Audio.Media.ALBUM} = ? AND ${MediaStore.Audio.Media.ARTIST} = ? AND ${MediaStore.Audio.Media.IS_MUSIC} != 0"
+        } else {
+            "${MediaStore.Audio.Media.ALBUM} = ? AND ${MediaStore.Audio.Media.IS_MUSIC} != 0"
+        }
+        val selectionArgs = if (albumArtist.isNotBlank()) {
+            arrayOf(albumTitle, albumArtist)
+        } else {
+            arrayOf(albumTitle)
+        }
 
         val uris = getAudioContentUris(context)
         for (baseUri in uris) {
@@ -343,8 +359,8 @@ object ThumbnailLoader {
                 context.contentResolver.query(
                     baseUri,
                     arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DATA),
-                    "${MediaStore.Audio.Media.ALBUM} = ? AND ${MediaStore.Audio.Media.IS_MUSIC} != 0",
-                    arrayOf(albumTitle),
+                    selection,
+                    selectionArgs,
                     "${MediaStore.Audio.Media.TITLE} ASC LIMIT 1",
                 )?.use { cursor ->
                     if (cursor.moveToFirst()) {

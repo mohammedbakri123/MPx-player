@@ -735,12 +735,23 @@ class MediaStoreRepository(
 
     override fun getAudioAlbums(): List<AudioAlbum> {
         val tracks = getAudioTracks()
-        return tracks.groupBy { it.album }
-            .map { (albumName, albumTracks) ->
+        // #243: group by (album, artist) — two artists with a same-named
+        // album ("Greatest Hits") are two rows, each credited to its own
+        // artist with its own track count, instead of one merged row
+        // credited to whichever artist came first. The id is a hash of
+        // the pair (NUL-separated so ("AB", "C") and ("A", "BC") cannot
+        // collide), still a String hash like before, so the DATE sort's
+        // id-recency approximation in MediaSortComparator is unchanged
+        // in kind. Artists are untouched: an artist's name is its
+        // identity by definition, so getAudioArtists() has no symmetric
+        // problem.
+        return tracks.groupBy { it.album to it.artist }
+            .map { (pair, albumTracks) ->
+                val (albumName, artistName) = pair
                 AudioAlbum(
-                    id = albumName.hashCode().toString(),
+                    id = "$albumName\u0000$artistName".hashCode().toString(),
                     title = albumName,
-                    artist = albumTracks.firstOrNull()?.artist ?: "Unknown Artist",
+                    artist = artistName,
                     trackCount = albumTracks.size,
                 )
             }
