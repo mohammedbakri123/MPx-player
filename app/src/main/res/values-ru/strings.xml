@@ -963,6 +963,10 @@
     <string name="subtitle_sync_increase">Увеличить синхронизацию субтитров</string>
     <string name="subtitle_speed_decrease">Уменьшить скорость субтитров</string>
     <string name="subtitle_speed_increase">Увеличить скорость субтитров</string>
+    <string name="sleep_timer_decrease">Уменьшить таймер сна</string>
+    <string name="sleep_timer_increase">Увеличить таймер сна</string>
+    <string name="audio_delay_decrease">Уменьшить задержку звука</string>
+    <string name="audio_delay_increase">Увеличить задержку звука</string>
     <string name="decoder_mode_title">Режим декодера</string>
     <string name="dev_count_videos">%1$d видео</string>
     <string name="dev_count_tracks">%1$d треков</string>

@@ -963,6 +963,10 @@
     <string name="subtitle_sync_increase">उपशीर्षक सिंक बढ़ाएँ</string>
     <string name="subtitle_speed_decrease">उपशीर्षक गति घटाएँ</string>
     <string name="subtitle_speed_increase">उपशीर्षक गति बढ़ाएँ</string>
+    <string name="sleep_timer_decrease">स्लीप टाइमर घटाएँ</string>
+    <string name="sleep_timer_increase">स्लीप टाइमर बढ़ाएँ</string>
+    <string name="audio_delay_decrease">ऑडियो देरी घटाएँ</string>
+    <string name="audio_delay_increase">ऑडियो देरी बढ़ाएँ</string>
     <string name="decoder_mode_title">डीकोडर मोड</string>
     <string name="dev_count_videos">%1$d वीडियो</string>
     <string name="dev_count_tracks">%1$d ट्रैक</string>

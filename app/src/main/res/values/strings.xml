@@ -963,6 +963,10 @@
     <string name="subtitle_sync_increase">Increase subtitle sync</string>
     <string name="subtitle_speed_decrease">Decrease subtitle speed</string>
     <string name="subtitle_speed_increase">Increase subtitle speed</string>
+    <string name="sleep_timer_decrease">Decrease sleep timer</string>
+    <string name="sleep_timer_increase">Increase sleep timer</string>
+    <string name="audio_delay_decrease">Decrease audio delay</string>
+    <string name="audio_delay_increase">Increase audio delay</string>
     <string name="decoder_mode_title">Decoder Mode</string>
     <string name="dev_count_videos">%1$d videos</string>
     <string name="dev_count_tracks">%1$d tracks</string>

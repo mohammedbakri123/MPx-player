@@ -963,6 +963,10 @@
     <string name="subtitle_sync_increase">增大字幕同步</string>
     <string name="subtitle_speed_decrease">减小字幕速度</string>
     <string name="subtitle_speed_increase">增大字幕速度</string>
+    <string name="sleep_timer_decrease">减小睡眠定时器</string>
+    <string name="sleep_timer_increase">增大睡眠定时器</string>
+    <string name="audio_delay_decrease">减小音频延迟</string>
+    <string name="audio_delay_increase">增大音频延迟</string>
     <string name="decoder_mode_title">解码器模式</string>
     <string name="dev_count_videos">%1$d 个视频</string>
     <string name="dev_count_tracks">%1$d 个音频</string>
