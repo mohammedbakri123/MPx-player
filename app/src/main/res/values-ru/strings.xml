@@ -53,6 +53,11 @@
     <string name="download_notification_downloading">Загрузка…</string>
     <string name="download_notification_downloading_percent">Загрузка… %1$d%%</string>
     <string name="download_notification_downloading_files">Загрузка: файлов: %1$d</string>
+    <string name="download_playlist_title">Плейлист</string>
+    <string name="download_playlist_select_all">Выбрать все</string>
+    <string name="download_playlist_select_none">Снять выделение</string>
+    <string name="download_playlist_download">Скачать %1$d</string>
+    <string name="download_playlist_fetching">Проверка плейлиста…</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Видео</string>

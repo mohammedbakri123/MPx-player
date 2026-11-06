@@ -53,6 +53,11 @@
     <string name="download_notification_downloading">Téléchargement…</string>
     <string name="download_notification_downloading_percent">Téléchargement… %1$d%%</string>
     <string name="download_notification_downloading_files">Téléchargement de %1$d fichiers</string>
+    <string name="download_playlist_title">Playlist</string>
+    <string name="download_playlist_select_all">Tout sélectionner</string>
+    <string name="download_playlist_select_none">Tout désélectionner</string>
+    <string name="download_playlist_download">Télécharger %1$d</string>
+    <string name="download_playlist_fetching">Vérification de la playlist…</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vidéo</string>

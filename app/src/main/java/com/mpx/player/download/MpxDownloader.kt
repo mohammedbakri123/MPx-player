@@ -27,6 +27,7 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
+import org.json.JSONObject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -98,6 +99,20 @@ data class DownloadedFile(
     val nameWithoutExtension: String
         get() = if ('.' in name) name.substringBeforeLast('.') else name
 }
+
+/** One entry of a playlist (issue #345). */
+data class PlaylistEntry(
+    val url: String,
+    val title: String,
+    /** Duration in seconds, or null when yt-dlp does not report one. */
+    val durationSeconds: Long?,
+)
+
+/** A URL that resolves to a playlist (issue #345). */
+data class PlaylistInfo(
+    val title: String,
+    val entries: List<PlaylistEntry>,
+)
 
 enum class DownloaderInitState {
     IDLE,
@@ -543,6 +558,116 @@ class MpxDownloader private constructor(context: Context) {
         } catch (_: Exception) {
             stagingFile.delete()
             CookieImportOutcome.FAILED
+        }
+    }
+
+    /**
+     * Probes [rawUrl] for playlist content (issue #345), adapted from
+     * Seal's `getPlaylistOrVideoInfo` (JunkFood02/Seal, GPL-3.0,
+     * `DownloadUtil.kt:87-124`): `--flat-playlist --dump-single-json`
+     * with the same fail-fast options as the info fetch. Returns the
+     * playlist when the URL resolves to one with at least one usable
+     * entry, null otherwise — a single video, an empty playlist, a
+     * fetch failure, or a URL yt-dlp cannot read all return null, and
+     * the caller falls back to the plain single download. The
+     * library's `VideoInfo` mapper has no `entries` field, so the JSON
+     * is parsed here with org.json (platform API, no new dependency)
+     * instead of the library's getInfo. Cancellation propagates, so a
+     * cancelled probe never silently falls back to a download.
+     */
+    suspend fun fetchPlaylistInfo(rawUrl: String): PlaylistInfo? {
+        val url = rawUrl.trim()
+        if (url.isBlank()) return null
+        if (!ensureInitialized()) return null
+        val request = YoutubeDLRequest(url).apply {
+            addOption("--flat-playlist")
+            addOption("--dump-single-json")
+            addOption("-o", "%(title).200B")
+            addOption("-R", "1")
+            addOption("--socket-timeout", "5")
+            val userAgent = settingsRepository.load().downloadUserAgent
+            if (userAgent.isNotBlank()) addOption("--user-agent", userAgent)
+        }
+        val out = try {
+            withContext(Dispatchers.IO) {
+                YoutubeDL.getInstance().execute(request, UUID.randomUUID().toString()).out
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: InterruptedException) {
+            throw e
+        } catch (e: YoutubeDL.CanceledException) {
+            throw e
+        } catch (_: Exception) {
+            return null
+        }
+        return parsePlaylistInfo(out)
+    }
+
+    /**
+     * Parses a `--flat-playlist --dump-single-json` result (issue
+     * #345): the `_type` field tells a playlist from a single video
+     * (Seal's `PlaylistResult`/`VideoInfo` split, same idea, parsed
+     * with org.json instead of kotlinx.serialization). Entries with
+     * no title (unavailable videos) or no usable URL are skipped;
+     * null when the JSON is not a playlist or no entry survives.
+     */
+    private fun parsePlaylistInfo(json: String): PlaylistInfo? {
+        return try {
+            val root = JSONObject(json)
+            if (root.optString("_type") != "playlist") return null
+            val entries = root.optJSONArray("entries") ?: return null
+            val items = mutableListOf<PlaylistEntry>()
+            for (i in 0 until entries.length()) {
+                val entry = entries.optJSONObject(i) ?: continue
+                val title = entry.optString("title").trim()
+                if (title.isBlank()) continue
+                val entryUrl = playlistEntryUrl(entry) ?: continue
+                val duration = if (entry.has("duration") && !entry.isNull("duration")) {
+                    entry.optDouble("duration")
+                        .takeIf { it.isFinite() && it >= 0 }
+                        ?.toLong()
+                } else {
+                    null
+                }
+                items += PlaylistEntry(url = entryUrl, title = title, durationSeconds = duration)
+            }
+            if (items.isEmpty()) return null
+            PlaylistInfo(title = root.optString("title").trim(), entries = items)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * A flat-playlist entry's video URL (issue #345): the `url` field
+     * when yt-dlp provides it (YouTube gives the full watch URL);
+     * otherwise the YouTube watch URL built from the id (`ie_key`
+     * "Youtube"). Other extractors without a url cannot be addressed
+     * reliably and are skipped.
+     */
+    private fun playlistEntryUrl(entry: JSONObject): String? {
+        entry.optString("url").trim().takeIf { it.isNotBlank() }?.let { return it }
+        if (entry.optString("ie_key") == "Youtube") {
+            val id = entry.optString("id").trim()
+            if (id.isNotBlank()) return "https://www.youtube.com/watch?v=$id"
+        }
+        return null
+    }
+
+    /**
+     * Enqueues several downloads at once (issue #345): the playlist
+     * picker's selected entries. Each URL becomes its own row and the
+     * #342 queue cap (3 at a time) applies — [doYourWork] starts them
+     * as slots free up.
+     */
+    fun startDownloads(
+        urls: List<String>,
+        audioOnly: Boolean = false,
+        subtitles: Boolean = false,
+    ) {
+        for (url in urls) {
+            startDownload(url, audioOnly = audioOnly, subtitles = subtitles)
         }
     }
 
