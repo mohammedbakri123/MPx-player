@@ -2308,6 +2308,8 @@ private fun TracksTabContent(
             GridFastScrollbar(
                 gridState = gridState,
                 itemCount = tracks.size,
+                // Issue #236: the grid's real column count.
+                columns = 2,
                 getSectionText = { index ->
                     tracks.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
                 },
@@ -2433,6 +2435,11 @@ private fun PlaylistsTabContent(
             GridFastScrollbar(
                 gridState = gridState,
                 itemCount = playlistItemCount,
+                // Issue #236: the grid's real column count, plus the 3
+                // leading full-span action rows (New playlist / Favourites
+                // / Recently played) — each takes one row of its own.
+                columns = 2,
+                headerItems = 3,
                 getSectionText = { index ->
                     if (index < 3) "" else playlists.getOrNull(index - 3)?.title?.take(1)?.uppercase(Locale.US) ?: ""
                 },
@@ -2603,6 +2610,8 @@ private fun AlbumsTabContent(
             GridFastScrollbar(
                 gridState = gridState,
                 itemCount = albums.size,
+                // Issue #236: the grid's real column count.
+                columns = 2,
                 getSectionText = { index ->
                     albums.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
                 },
@@ -2691,6 +2700,8 @@ private fun ArtistsTabContent(
             GridFastScrollbar(
                 gridState = gridState,
                 itemCount = artists.size,
+                // Issue #236: the grid's real column count.
+                columns = 2,
                 getSectionText = { index ->
                     artists.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
                 },
@@ -2787,6 +2798,8 @@ private fun FoldersTabContent(
             GridFastScrollbar(
                 gridState = gridState,
                 itemCount = folders.size,
+                // Issue #236: the grid's real column count.
+                columns = 2,
                 getSectionText = { index ->
                     folders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
                 },

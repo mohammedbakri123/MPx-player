@@ -1340,6 +1340,9 @@ fun LocalScreen(
                             GridFastScrollbar(
                                 gridState = videoGridState,
                                 itemCount = filteredFolderVideos.size,
+                                // Issue #236: the grid's real column count —
+                                // the scrollbar's row math needs it.
+                                columns = appSettings.videoGridColumns.coerceIn(1, 4),
                                 getSectionText = { index ->
                                     filteredFolderVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
                                 },
@@ -1506,6 +1509,8 @@ fun LocalScreen(
                             GridFastScrollbar(
                                 gridState = gridState,
                                 itemCount = filteredVideos.size,
+                                // Issue #236: the grid's real column count.
+                                columns = appSettings.videoGridColumns.coerceIn(1, 4),
                                 getSectionText = { index ->
                                     filteredVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
                                 },
@@ -1638,6 +1643,8 @@ fun LocalScreen(
                             GridFastScrollbar(
                                 gridState = gridState,
                                 itemCount = filteredFolders.size,
+                                // Issue #236: the grid's real column count.
+                                columns = appSettings.folderGridColumns.coerceIn(1, 4),
                                 getSectionText = { index ->
                                     filteredFolders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
                                 },
