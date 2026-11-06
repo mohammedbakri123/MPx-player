@@ -115,7 +115,10 @@ fun VideoItemRow(
                 }
             }
 
-            if (showDuration && video.formattedDuration.isNotBlank()) {
+            // #315: durationMs 0 means unknown (MediaStore reports 0 for it,
+            // and a genuinely 0-length file has nothing worth showing) —
+            // no badge, not "0:00". formattedDuration is "0:00" for 0 ms.
+            if (showDuration && video.durationMs > 0 && video.formattedDuration.isNotBlank()) {
                 VideoDurationBadge(
                     duration = video.formattedDuration,
                     modifier = Modifier.align(Alignment.BottomEnd),
@@ -251,7 +254,8 @@ fun VideoItemGridCard(
                     showThumbnails = showThumbnails,
                 )
 
-                if (showDuration && video.formattedDuration.isNotBlank()) {
+                // #315: durationMs 0 means unknown — no badge, not "0:00".
+                if (showDuration && video.durationMs > 0 && video.formattedDuration.isNotBlank()) {
                     VideoDurationBadge(
                         duration = video.formattedDuration,
                         modifier = Modifier.align(Alignment.BottomEnd),
