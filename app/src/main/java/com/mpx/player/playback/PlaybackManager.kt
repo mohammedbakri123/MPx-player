@@ -168,7 +168,12 @@ class PlaybackManager private constructor(context: Context) {
                     // outlive a recovery — a file that loads fine after a
                     // spurious error clears it. Other notifications (e.g.
                     // 'External subtitle loaded') are left alone.
-                    userNotification = if (playbackState == PlayerEngine.STATE_READY && it.userNotification?.startsWith("Playback error:") == true) null else it.userNotification,
+                    // Issue #223: codec errors render as 'Playback failed:
+                    // unsupported codec ...' (player_codec_error), not
+                    // 'Playback error:' — the same READY clear must match
+                    // both prefixes, or the codec banner survives every
+                    // subsequent successful load.
+                    userNotification = if (playbackState == PlayerEngine.STATE_READY && (it.userNotification?.startsWith("Playback error:") == true || it.userNotification?.startsWith("Playback failed:") == true)) null else it.userNotification,
                 )
             }
             updatePosition()
