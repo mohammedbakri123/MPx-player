@@ -23,6 +23,7 @@
     <string name="download_eta">المتبقي %1$s</string>
     <string name="download_complete">اكتمل التنزيل</string>
     <string name="download_failed">فشل التنزيل</string>
+    <string name="download_interrupted">انقطع التنزيل — أُغلق التطبيق أثناء التنزيل</string>
     <string name="download_canceled">تم إلغاء التنزيل</string>
     <string name="download_retry">إعادة التنزيل</string>
     <string name="download_play">تشغيل</string>

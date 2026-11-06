@@ -23,6 +23,7 @@
     <string name="download_eta">ETA %1$s</string>
     <string name="download_complete">Download abgeschlossen</string>
     <string name="download_failed">Download fehlgeschlagen</string>
+    <string name="download_interrupted">Unterbrochen — die App wurde während des Downloads geschlossen</string>
     <string name="download_canceled">Download abgebrochen</string>
     <string name="download_retry">Erneut herunterladen</string>
     <string name="download_play">Abspielen</string>

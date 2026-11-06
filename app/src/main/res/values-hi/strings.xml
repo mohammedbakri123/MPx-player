@@ -23,6 +23,7 @@
     <string name="download_eta">शेष %1$s</string>
     <string name="download_complete">डाउनलोड पूरा हुआ</string>
     <string name="download_failed">डाउनलोड विफल रहा</string>
+    <string name="download_interrupted">बाधित — डाउनलोड के दौरान ऐप बंद हो गया</string>
     <string name="download_canceled">डाउनलोड रद्द किया गया</string>
     <string name="download_retry">पुनः डाउनलोड करें</string>
     <string name="download_play">चलाएं</string>

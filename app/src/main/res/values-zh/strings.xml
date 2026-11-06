@@ -23,6 +23,7 @@
     <string name="download_eta">还剩 %1$s</string>
     <string name="download_complete">下载完成</string>
     <string name="download_failed">下载失败</string>
+    <string name="download_interrupted">已中断 — 下载期间应用已关闭</string>
     <string name="download_canceled">下载已取消</string>
     <string name="download_retry">重新下载</string>
     <string name="download_play">播放</string>

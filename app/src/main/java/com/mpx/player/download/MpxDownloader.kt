@@ -4,6 +4,9 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Environment
+import com.mpx.player.R
+import com.mpx.player.data.local.db.MpxDatabase
+import com.mpx.player.data.local.entity.DownloadTaskEntity
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.yausername.aria2c.Aria2c
 import com.yausername.ffmpeg.FFmpeg
@@ -123,7 +126,9 @@ enum class YtDlpUpdateOutcome {
  * Download/ folder are blocked by scoped storage on API 30+ without
  * MANAGE_EXTERNAL_STORAGE. Files survive restarts and are deleted on
  * uninstall. The completed list is a scan of that dir, so it is
- * persistent by construction — no Room table.
+ * persistent by construction. The *queue* is persisted separately in
+ * Room (`download_tasks`, issue #342): unfinished tasks survive
+ * process death and are restored on start.
  *
  * Application-scoped singleton (like PlaybackManager): a download keeps
  * running when the user leaves the tab, and the screen just observes the
@@ -153,6 +158,10 @@ class MpxDownloader private constructor(context: Context) {
     // Same pattern as PlaybackManager: read the shared settings blob
     // directly (channel, auto-update flag, interval, last-update time).
     private val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
+    // Issue #342: the persisted queue (same MpxDatabase every other
+    // feature uses — no second database). Building the Room object
+    // does no I/O; every DAO call below runs on the IO scope.
+    private val downloadTaskDao = MpxDatabase.getInstance(appContext).downloadTaskDao()
 
     /** App-private external Downloads/MPx — falls back to internal files. */
     val downloadsDir: File = run {
@@ -211,6 +220,71 @@ class MpxDownloader private constructor(context: Context) {
                 ?.filter { it.isFile && it.name.startsWith("cookies-") && it.name.endsWith(".txt") }
                 ?.forEach { it.delete() }
         } catch (_: Exception) {
+        }
+        // Issue #342: a kill leaves per-download temp subdirs behind
+        // (the #334 finally block never ran). Nothing is downloading
+        // yet — this init runs at singleton construction, before any
+        // startDownload can happen — so every subdir here is stale:
+        // wipe them and let runDownload recreate its own on demand.
+        try {
+            tempDir.listFiles()
+                ?.filter { it.isDirectory }
+                ?.forEach { it.deleteRecursively() }
+        } catch (_: Exception) {
+        }
+        // Issue #342: restore the persisted queue on a background
+        // thread — Room must not run on the calling thread.
+        scope.launch { restorePersistedTasks() }
+    }
+
+    /**
+     * Issue #342: rebuild the queue from Room after a restart. Rows
+     * still DOWNLOADING when the process died are marked FAILED with
+     * an "interrupted" error — the retry button in the Download tab
+     * re-downloads them from scratch (yt-dlp has no resume for a
+     * killed process here). QUEUED rows resume where they left off
+     * and FAILED rows stay retryable. DONE/CANCELED rows should not
+     * exist (they are deleted on transition) and are dropped
+     * defensively. A restored task never carries cookies (#337 staging
+     * files are deleted on exit and never persisted), and a file that
+     * already landed before the kill still shows in the completed
+     * list even though its row comes back FAILED — the retry is a
+     * harmless duplicate in that case.
+     */
+    private suspend fun restorePersistedTasks() {
+        val restored = try {
+            downloadTaskDao.getAll()
+        } catch (_: Exception) {
+            return
+        }
+        val interrupted = appContext.getString(R.string.download_interrupted)
+        val items = mutableListOf<ActiveDownload>()
+        for (row in restored) {
+            when (row.status) {
+                DownloadStatus.DOWNLOADING.name -> {
+                    val failed = row.copy(status = DownloadStatus.FAILED.name, error = interrupted)
+                    try {
+                        downloadTaskDao.upsert(failed)
+                    } catch (_: Exception) {
+                    }
+                    items += failed.toActiveDownload()
+                }
+                DownloadStatus.QUEUED.name, DownloadStatus.FAILED.name -> {
+                    items += row.toActiveDownload()
+                }
+                else -> {
+                    try {
+                        downloadTaskDao.deleteById(row.id)
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+        }
+        if (items.isNotEmpty()) {
+            // Append, never replace: a download started between
+            // construction and this restore must not be lost.
+            _activeDownloads.update { it + items }
+            doYourWork()
         }
     }
 
@@ -419,7 +493,12 @@ class MpxDownloader private constructor(context: Context) {
         }
     }
 
-    /** Starts a download. No-op for a blank URL. */
+    /**
+     * Enqueues a download (issue #342). No-op for a blank URL. The row
+     * starts QUEUED and is persisted immediately, then [doYourWork]
+     * starts it as soon as a slot is free — at most
+     * [MAX_CONCURRENT_DOWNLOADS] yt-dlp processes run at once.
+     */
     fun startDownload(
         rawUrl: String,
         cookiesFile: File? = null,
@@ -439,21 +518,68 @@ class MpxDownloader private constructor(context: Context) {
             subtitles = subtitles,
         )
         _activeDownloads.update { it + item }
-        val job = scope.launch {
-            runDownload(item)
-        }
-        synchronized(jobs) { jobs[id] = job }
-        job.invokeOnCompletion { synchronized(jobs) { jobs.remove(id) } }
+        persistTask(item)
+        doYourWork()
     }
 
-    /** Cancels a running download (yt-dlp process + the coroutine). */
+    /**
+     * Issue #342: the queue pump, adapted from Seal's
+     * `DownloaderV2.doYourWork()` (JunkFood02/Seal, GPL-3.0,
+     * `download/DownloaderV2.kt:219-236` — cap at 3, pick the next
+     * waiting task). Seal starts one task per call and relies on state
+     * changes to re-trigger; MPx loops so freed slots fill immediately
+     * even with several tasks queued. Called after every enqueue,
+     * every job completion, every cancel, and once after restoring
+     * persisted tasks. The jobs lock is held while selecting and
+     * launching so [cancelDownload] cannot mark a row CANCELED in
+     * between — a canceled row must never start.
+     */
+    private fun doYourWork() {
+        synchronized(jobs) {
+            while (jobs.size < MAX_CONCURRENT_DOWNLOADS) {
+                val next = _activeDownloads.value
+                    .firstOrNull { it.status == DownloadStatus.QUEUED } ?: return
+                val job = scope.launch { runDownload(next) }
+                jobs[next.id] = job
+                job.invokeOnCompletion {
+                    synchronized(jobs) { jobs.remove(next.id) }
+                    // A cancel that landed before runDownload's first
+                    // state write leaves the row QUEUED forever — the
+                    // job is gone, so finish it as CANCELED here.
+                    // Any other terminal state is already set by
+                    // runDownload itself, so this is a no-op for it.
+                    val current = _activeDownloads.value.firstOrNull { it.id == next.id }
+                    if (current?.status == DownloadStatus.QUEUED) {
+                        updateItem(next.id) { it.copy(status = DownloadStatus.CANCELED, progress = -1f) }
+                    }
+                    doYourWork()
+                }
+            }
+        }
+    }
+
+    /**
+     * Cancels a download (yt-dlp process + the coroutine). A row still
+     * QUEUED has no job yet — it is marked CANCELED directly under the
+     * jobs lock, so [doYourWork] cannot pick it up in between (it
+     * never occupied a slot, so no slot is freed).
+     */
     fun cancelDownload(id: String) {
-        synchronized(jobs) { jobs[id] }?.cancel()
-        // Best effort: also kill the yt-dlp process directly (no-op when
-        // the download is still in the getInfo phase or the HTTP fallback).
-        try {
-            YoutubeDL.getInstance().destroyProcessById(id)
-        } catch (_: Exception) {
+        val job = synchronized(jobs) {
+            val running = jobs[id]
+            if (running == null) {
+                updateItem(id) { it.copy(status = DownloadStatus.CANCELED, progress = -1f) }
+            }
+            running
+        }
+        if (job != null) {
+            job.cancel()
+            // Best effort: also kill the yt-dlp process directly (no-op when
+            // the download is still in the getInfo phase or the HTTP fallback).
+            try {
+                YoutubeDL.getInstance().destroyProcessById(id)
+            } catch (_: Exception) {
+            }
         }
     }
 
@@ -477,8 +603,52 @@ class MpxDownloader private constructor(context: Context) {
         _downloadedFiles.value = files
     }
 
+    /**
+     * Issue #342: every row change flows through here, so persistence
+     * rides along: only a *status* change writes to Room (progress
+     * ticks do not — they would hammer the DB and a restart marks a
+     * mid-download row FAILED anyway). DONE and CANCELED rows are
+     * deleted (the finished file is in the completed list, a canceled
+     * row has no action); QUEUED, DOWNLOADING and FAILED rows are
+     * upserted. A failed write is swallowed — persistence is
+     * best-effort and must never break the download itself.
+     */
     private fun updateItem(id: String, transform: (ActiveDownload) -> ActiveDownload) {
-        _activeDownloads.update { list -> list.map { if (it.id == id) transform(it) else it } }
+        var previous: ActiveDownload? = null
+        var updated: ActiveDownload? = null
+        _activeDownloads.update { list ->
+            list.map {
+                if (it.id == id) {
+                    previous = it
+                    transform(it).also { updated = it }
+                } else it
+            }
+        }
+        val next = updated ?: return
+        if (previous?.status != next.status) persistTask(next)
+    }
+
+    /** Issue #342: one status write, preserving the queue position. */
+    private fun persistTask(item: ActiveDownload) {
+        scope.launch {
+            try {
+                when (item.status) {
+                    DownloadStatus.DONE, DownloadStatus.CANCELED ->
+                        downloadTaskDao.deleteById(item.id)
+                    else -> {
+                        // REPLACE would reset createdAt and move the
+                        // task to the back of the queue — keep the
+                        // stored value when the row already exists.
+                        val createdAt = downloadTaskDao.getById(item.id)?.createdAt
+                            ?: System.currentTimeMillis()
+                        downloadTaskDao.upsert(
+                            DownloadTaskEntity.fromActiveDownload(item, createdAt = createdAt),
+                        )
+                    }
+                }
+            } catch (_: Exception) {
+            }
+        }
     }
 
     /**
@@ -870,6 +1040,15 @@ class MpxDownloader private constructor(context: Context) {
                 instance ?: MpxDownloader(context.applicationContext).also { instance = it }
             }
         }
+
+        /**
+         * Concurrent downloads (issue #342): Seal's `MAX_CONCURRENCY`
+         * (`DownloaderV2.kt:43`, JunkFood02/Seal, GPL-3.0) — at most 3
+         * yt-dlp processes at once; the rest wait QUEUED and start as
+         * slots free up (see [MpxDownloader.doYourWork]). No settings
+         * UI in this issue — a fixed value.
+         */
+        private const val MAX_CONCURRENT_DOWNLOADS = 3
 
         /**
          * Concurrent fragment count when aria2c is unavailable
