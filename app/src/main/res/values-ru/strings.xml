@@ -23,6 +23,7 @@
     <string name="download_eta">Осталось %1$s</string>
     <string name="download_complete">Загрузка завершена</string>
     <string name="download_failed">Не удалось скачать</string>
+    <string name="download_interrupted">Прервано — приложение было закрыто во время загрузки</string>
     <string name="download_canceled">Загрузка отменена</string>
     <string name="download_retry">Повторить загрузку</string>
     <string name="download_play">Играть</string>

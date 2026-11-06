@@ -23,6 +23,7 @@
     <string name="download_eta">ETA %1$s</string>
     <string name="download_complete">Download complete</string>
     <string name="download_failed">Download failed</string>
+    <string name="download_interrupted">Interrupted — app closed while downloading</string>
     <string name="download_canceled">Download canceled</string>
     <string name="download_retry">Retry download</string>
     <string name="download_play">Play</string>
