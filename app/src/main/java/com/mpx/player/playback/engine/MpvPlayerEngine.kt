@@ -1702,7 +1702,16 @@ class MpvPlayerEngine(
                         if (parts.size == 2) {
                             val groupIndex = parts[0].toIntOrNull() ?: return
                             val trackIndex = parts[1].toIntOrNull() ?: return
-                            videoIds.getOrNull(groupIndex) ?: videoIds.getOrNull(trackIndex)
+                            // Issue #247: validate, don't fall back by
+                            // position — groupIndex is the ordinal among
+                            // video tracks and trackIndex is the mpv id,
+                            // so the track at that ordinal must carry
+                            // that id or the tap is stale and this is a
+                            // no-op (the ?: return below skips the vid
+                            // write). The old getOrNull(groupIndex) ?:
+                            // getOrNull(trackIndex) picked whatever id
+                            // sat at those positions once the list changed.
+                            videoIds.getOrNull(groupIndex)?.takeIf { it == trackIndex }
                         } else {
                             val ordinal = id.toIntOrNull() ?: return
                             videoIds.getOrNull(ordinal)
@@ -1716,12 +1725,18 @@ class MpvPlayerEngine(
 
     override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) {
         val tracks = getAudioTracks()
+        // Issue #247: no positional fallback — groupIndex is the ordinal
+        // among audio tracks, so getOrNull(groupIndex) picks whatever
+        // track sits at that position now, which is a different track
+        // when the list changed between render and tap. A stale tap is
+        // a no-op (the current selection stays, and aid is left alone —
+        // NOT set to "no"); the UI list refreshes via updateTracksState()
+        // in the manager and on every track-list change.
         val target = tracks.find { it.groupIndex == groupIndex && it.trackIndex == trackIndex }
-            ?: tracks.getOrNull(groupIndex)
         if (target != null) {
             try { mpv.setPropertyString("aid", target.trackIndex.toString()) } catch (_: Exception) {}
         } else {
-            try { mpv.setPropertyString("aid", "no") } catch (_: Exception) {}
+            Log.w(TAG, "Ignoring stale audio track pick ($groupIndex:$trackIndex): no such track")
         }
     }
 
@@ -1730,12 +1745,14 @@ class MpvPlayerEngine(
             try { mpv.setPropertyString("sid", "no") } catch (_: Exception) {}
         } else {
             val tracks = getSubtitleTracks()
+            // Issue #247: same as selectAudioTrack — no positional
+            // fallback; a stale tap is a no-op and sid is left alone
+            // (NOT set to "no", which would drop subtitles).
             val target = tracks.find { it.groupIndex == groupIndex && it.trackIndex == trackIndex }
-                ?: tracks.getOrNull(groupIndex)
             if (target != null) {
                 try { mpv.setPropertyString("sid", target.trackIndex.toString()) } catch (_: Exception) {}
             } else {
-                try { mpv.setPropertyString("sid", "no") } catch (_: Exception) {}
+                Log.w(TAG, "Ignoring stale subtitle track pick ($groupIndex:$trackIndex): no such track")
             }
         }
     }
