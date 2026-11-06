@@ -51,6 +51,7 @@ import androidx.compose.ui.window.Dialog
 import com.mpx.player.R
 import com.mpx.player.data.network.smb.SmbConnection
 import com.mpx.player.data.network.smb.SmbEntry
+import com.mpx.player.data.network.smb.SmbPlaybackSession
 import com.mpx.player.data.network.smb.SmbStreamProxy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -82,9 +83,11 @@ fun SmbBrowserDialog(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    // Process-lifetime proxy: it must outlive this dialog, because playback
-    // continues (and seeks re-request ranges) after the dialog is dismissed.
-    // It binds loopback only and serves only registered tokens.
+    // The proxy must outlive this dialog, because playback continues (and
+    // seeks re-request ranges) after the dialog is dismissed — so on play
+    // it is handed to SmbPlaybackSession (issue #229), which owns it until
+    // SMB playback ends. It binds loopback only and serves only
+    // registered tokens.
     val proxy = remember { SmbStreamProxy() }
 
     var host by remember { mutableStateOf(initialHost) }
@@ -216,6 +219,12 @@ fun SmbBrowserDialog(
             loading = false
             if (url != null) {
                 keepAlive = true
+                // Issue #229: hand the proxy + connection to the
+                // application-scoped session — the dialog is dismissed
+                // right after this, and nothing else would ever close
+                // them. Starting a new SMB play closes the previous
+                // session (its item has left the queue by then).
+                SmbPlaybackSession.start(proxy, conn)
                 onPlayMedia(entry.name, url, isVideo, "smb:$connectedHost/$share/$fullPath")
             } else {
                 showError(openFailed)
