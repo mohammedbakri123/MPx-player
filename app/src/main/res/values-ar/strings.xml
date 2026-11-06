@@ -183,6 +183,8 @@
     <string name="pip_window_controls_header">عناصر التحكم بنافذة صورة في صورة:</string>
     <string name="pip_controls_prev_next">السابق / التالي (افتراضي)</string>
     <string name="pip_controls_seek10">تقديم / إرجاع سريع (10 ثوانٍ)</string>
+    <string name="pip_seek_rewind">إرجاع %1$d ثوانٍ</string>
+    <string name="pip_seek_forward">تقديم %1$d ثوانٍ</string>
 
     <string name="list_show_all_folders">إظهار كافة المجلدات</string>
     <string name="list_show_all_folders_desc">إظهار كافة المجلدات المفحوصة بما فيها المجلدات الفارغة والمخفية</string>

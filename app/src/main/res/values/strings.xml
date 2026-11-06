@@ -183,6 +183,8 @@
     <string name="pip_window_controls_header">PiP Window Controls:</string>
     <string name="pip_controls_prev_next">Previous / Next (Default)</string>
     <string name="pip_controls_seek10">Fast Forward / Rewind (10s)</string>
+    <string name="pip_seek_rewind">Rewind %1$ds</string>
+    <string name="pip_seek_forward">Forward %1$ds</string>
 
     <string name="list_show_all_folders">Show all folders</string>
     <string name="list_show_all_folders_desc">Show every scanned folder including empty and hidden folders</string>

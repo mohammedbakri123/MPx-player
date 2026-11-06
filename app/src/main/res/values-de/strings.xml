@@ -183,6 +183,8 @@
     <string name="pip_window_controls_header">PiP-Fenstersteuerung:</string>
     <string name="pip_controls_prev_next">Zurück / Weiter (Standard)</string>
     <string name="pip_controls_seek10">Vor- / Zurückspulen (10 s)</string>
+    <string name="pip_seek_rewind">Zurück %1$d s</string>
+    <string name="pip_seek_forward">Vor %1$d s</string>
 
     <string name="list_show_all_folders">Alle Ordner anzeigen</string>
     <string name="list_show_all_folders_desc">Jeden gescannten Ordner anzeigen, einschließlich leerer und versteckter Ordner</string>

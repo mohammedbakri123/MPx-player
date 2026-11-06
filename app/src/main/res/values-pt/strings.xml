@@ -183,6 +183,8 @@
     <string name="pip_window_controls_header">Controles da janela PiP:</string>
     <string name="pip_controls_prev_next">Anterior / Próximo (padrão)</string>
     <string name="pip_controls_seek10">Avançar / retroceder (10s)</string>
+    <string name="pip_seek_rewind">Retroceder %1$d s</string>
+    <string name="pip_seek_forward">Avançar %1$d s</string>
 
     <string name="list_show_all_folders">Mostrar todas as pastas</string>
     <string name="list_show_all_folders_desc">Mostrar todas as pastas verificadas, incluindo pastas vazias e ocultas</string>

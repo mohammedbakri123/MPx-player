@@ -120,6 +120,10 @@ class PlaybackService : Service() {
         }
     }
 
+    /** Issue #351: the PiP seek duration is the double-tap skip setting, read fresh on every tap. */
+    private fun skipDurationMs(): Long =
+        playbackManager.settingsRepository.load().doubleTapSeekSeconds * 1000L
+
     private fun observePlaybackState() {
         serviceScope.launch {
             playbackManager.playbackState.collectLatest { state ->
@@ -137,8 +141,13 @@ class PlaybackService : Service() {
             ACTION_TOGGLE -> playbackManager.togglePlayPause()
             ACTION_NEXT -> playbackManager.skipNext()
             ACTION_PREVIOUS -> playbackManager.skipPrevious()
-            ACTION_SEEK_FORWARD_10 -> playbackManager.skipForward(10_000L)
-            ACTION_SEEK_BACKWARD_10 -> playbackManager.skipBackward(10_000L)
+            // Issue #351: PiP seek follows the double-tap skip setting
+            // (5/10/15/30 s, default 10), read live here so a changed
+            // setting applies even to PiP params built earlier. The
+            // ACTION_SEEK_*_10 names are legacy identifiers only — the
+            // duration is no longer 10 s by definition.
+            ACTION_SEEK_FORWARD_10 -> playbackManager.skipForward(skipDurationMs())
+            ACTION_SEEK_BACKWARD_10 -> playbackManager.skipBackward(skipDurationMs())
             ACTION_STOP -> {
                 playbackManager.pause()
                 playbackManager.setVideoBackgroundActive(false)

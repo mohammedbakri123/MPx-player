@@ -134,13 +134,24 @@ object PipUtils {
 
         when (settings.popupPlayControls) {
             "Seek10" -> {
-                // Seek back 10s
+                // Issue #351: the seek buttons follow the double-tap skip
+                // setting (5/10/15/30 s, default 10) instead of always
+                // jumping 10 s. The labels show the real duration; the
+                // service reads the same setting live at tap time, so a
+                // changed duration applies even to params built earlier
+                // (params are rebuilt on play/pause/item change in the
+                // Player screen, and on every fresh PiP entry).
+                val seekSeconds = settings.doubleTapSeekSeconds
+                val rewLabel = context.getString(R.string.pip_seek_rewind, seekSeconds)
+                val ffLabel = context.getString(R.string.pip_seek_forward, seekSeconds)
+
+                // Seek back by the configured duration
                 val rewIntent = Intent(context, PlaybackService::class.java).apply {
                     action = PlaybackService.ACTION_SEEK_BACKWARD_10
                 }
                 val rewPending = PendingIntent.getService(context, 101, rewIntent, flags)
                 val rewIcon = Icon.createWithResource(context, R.drawable.ic_notification_prev)
-                actions.add(RemoteAction(rewIcon, "Rewind 10s", "Rewind 10s", rewPending))
+                actions.add(RemoteAction(rewIcon, rewLabel, rewLabel, rewPending))
 
                 // Play / Pause
                 val toggleIntent = Intent(context, PlaybackService::class.java).apply {
@@ -153,13 +164,13 @@ object PipUtils {
                 )
                 actions.add(RemoteAction(toggleIcon, if (isPlaying) "Pause" else "Play", if (isPlaying) "Pause" else "Play", togglePending))
 
-                // Fast Forward 10s
+                // Fast Forward by the configured duration
                 val ffIntent = Intent(context, PlaybackService::class.java).apply {
                     action = PlaybackService.ACTION_SEEK_FORWARD_10
                 }
                 val ffPending = PendingIntent.getService(context, 103, ffIntent, flags)
                 val ffIcon = Icon.createWithResource(context, R.drawable.ic_notification_next)
-                actions.add(RemoteAction(ffIcon, "Forward 10s", "Forward 10s", ffPending))
+                actions.add(RemoteAction(ffIcon, ffLabel, ffLabel, ffPending))
             }
             "PlayPauseOnly" -> {
                 val toggleIntent = Intent(context, PlaybackService::class.java).apply {

@@ -183,6 +183,8 @@
     <string name="pip_window_controls_header">Controles de la ventana PiP:</string>
     <string name="pip_controls_prev_next">Anterior / Siguiente (predeterminado)</string>
     <string name="pip_controls_seek10">Avance / retroceso rápido (10 s)</string>
+    <string name="pip_seek_rewind">Retroceder %1$d s</string>
+    <string name="pip_seek_forward">Avanzar %1$d s</string>
 
     <string name="list_show_all_folders">Mostrar todas las carpetas</string>
     <string name="list_show_all_folders_desc">Mostrar todas las carpetas escaneadas, incluidas las vacías y las ocultas</string>
