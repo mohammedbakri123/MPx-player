@@ -2075,6 +2075,9 @@ class MpvPlayerEngine(
         } catch (e: Exception) {
             Log.w(TAG, "Error releasing MPV", e)
         }
+        // Issue #306: the log observer is gone, so no more appends can arrive —
+        // flush any lines still buffered in MpvLogFile and close its writer.
+        MpvLogFile.close()
     }
 
     override fun setDecoderMode(mode: DecoderMode) {
