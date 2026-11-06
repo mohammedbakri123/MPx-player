@@ -701,17 +701,17 @@
     <string name="multiselect_play_folder">Reproducir carpeta</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
-    <string name="player_auto_rotation">Rotación automática de pantalla</string>
-    <string name="player_auto_rotation_desc">Seguir la orientación del dispositivo mediante sensor en el reproductor, o bloquear en horizontal/vertical</string>
+    <string name="player_auto_rotation">Rotación adaptativa</string>
+    <string name="player_auto_rotation_desc">Seguir el video en el reproductor: los videos verticales se reproducen en vertical y los horizontales en horizontal, o bloquear en horizontal/vertical</string>
     <string name="player_locked_orientation_header">Orientación bloqueada:</string>
     <string name="player_rotation_dialog_title">Rotación de pantalla</string>
-    <string name="player_rotation_auto">Rotación automática (sensor)</string>
-    <string name="player_rotation_auto_desc">El reproductor sigue la orientación del dispositivo automáticamente</string>
+    <string name="player_rotation_auto">Adaptativa</string>
+    <string name="player_rotation_auto_desc">Sigue al video: los videos verticales se reproducen en vertical y los horizontales en horizontal</string>
     <string name="player_orientation_landscape">Horizontal</string>
     <string name="player_orientation_landscape_desc">Bloquear pantalla en modo horizontal</string>
     <string name="player_orientation_portrait">Vertical</string>
     <string name="player_orientation_portrait_desc">Bloquear pantalla en modo vertical</string>
-    <string name="toast_rotation_auto">Rotación automática de pantalla activada (sensor)</string>
+    <string name="toast_rotation_auto">Rotación adaptativa activada</string>
     <string name="toast_rotation_landscape">Pantalla bloqueada en horizontal</string>
     <string name="toast_rotation_portrait">Pantalla bloqueada en vertical</string>
     <string name="cd_screen_rotation">Rotación de pantalla</string>

@@ -701,17 +701,17 @@
     <string name="multiselect_play_folder">फ़ोल्डर चलाएँ</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
-    <string name="player_auto_rotation">ऑटो स्क्रीन रोटेशन</string>
-    <string name="player_auto_rotation_desc">प्लेयर में सेंसर के माध्यम से डिवाइस ओरिएंटेशन का पालन करें, या लैंडस्केप/पोर्ट्रेट पर लॉक करें</string>
+    <string name="player_auto_rotation">अनुकूली रोटेशन</string>
+    <string name="player_auto_rotation_desc">प्लेयर में वीडियो का पालन करें — पोर्ट्रेट वीडियो पोर्ट्रेट में, लैंडस्केप वीडियो लैंडस्केप में चलते हैं — या लैंडस्केप/पोर्ट्रेट पर लॉक करें</string>
     <string name="player_locked_orientation_header">लॉक की गई ओरिएंटेशन:</string>
     <string name="player_rotation_dialog_title">स्क्रीन रोटेशन</string>
-    <string name="player_rotation_auto">ऑटो रोटेट (सेंसर)</string>
-    <string name="player_rotation_auto_desc">प्लेयर स्वचालित रूप से डिवाइस ओरिएंटेशन का पालन करता है</string>
+    <string name="player_rotation_auto">अनुकूली</string>
+    <string name="player_rotation_auto_desc">वीडियो का पालन करता है — पोर्ट्रेट वीडियो पोर्ट्रेट में, लैंडस्केप वीडियो लैंडस्केप में चलते हैं</string>
     <string name="player_orientation_landscape">लैंडस्केप</string>
     <string name="player_orientation_landscape_desc">स्क्रीन को क्षैतिज लैंडस्केप मोड में लॉक करें</string>
     <string name="player_orientation_portrait">पोर्ट्रेट</string>
     <string name="player_orientation_portrait_desc">स्क्रीन को ऊर्ध्वाधर पोर्ट्रेट मोड में लॉक करें</string>
-    <string name="toast_rotation_auto">ऑटो स्क्रीन रोटेशन सक्षम हुआ (सेंसर)</string>
+    <string name="toast_rotation_auto">अनुकूली रोटेशन सक्षम हुआ</string>
     <string name="toast_rotation_landscape">स्क्रीन लैंडस्केप पर लॉक हुई</string>
     <string name="toast_rotation_portrait">स्क्रीन पोर्ट्रेट पर लॉक हुई</string>
     <string name="cd_screen_rotation">स्क्रीन रोटेशन</string>

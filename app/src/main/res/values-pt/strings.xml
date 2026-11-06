@@ -701,17 +701,17 @@
     <string name="multiselect_play_folder">Reproduzir pasta</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
-    <string name="player_auto_rotation">Rotação automática de tela</string>
-    <string name="player_auto_rotation_desc">Seguir a orientação do dispositivo via sensor no player, ou travar em paisagem/retrato</string>
+    <string name="player_auto_rotation">Rotação adaptativa</string>
+    <string name="player_auto_rotation_desc">Seguir o vídeo no player — vídeos verticais tocam na vertical, vídeos horizontais na horizontal — ou travar em paisagem/retrato</string>
     <string name="player_locked_orientation_header">Orientação travada:</string>
     <string name="player_rotation_dialog_title">Rotação de tela</string>
-    <string name="player_rotation_auto">Girar automaticamente (sensor)</string>
-    <string name="player_rotation_auto_desc">O player segue a orientação do dispositivo automaticamente</string>
+    <string name="player_rotation_auto">Adaptativa</string>
+    <string name="player_rotation_auto_desc">Segue o vídeo — vídeos verticais tocam na vertical, vídeos horizontais na horizontal</string>
     <string name="player_orientation_landscape">Paisagem</string>
     <string name="player_orientation_landscape_desc">Travar a tela no modo paisagem horizontal</string>
     <string name="player_orientation_portrait">Retrato</string>
     <string name="player_orientation_portrait_desc">Travar a tela no modo retrato vertical</string>
-    <string name="toast_rotation_auto">Rotação automática de tela ativada (sensor)</string>
+    <string name="toast_rotation_auto">Rotação adaptativa ativada</string>
     <string name="toast_rotation_landscape">Tela travada em paisagem</string>
     <string name="toast_rotation_portrait">Tela travada em retrato</string>
     <string name="cd_screen_rotation">Rotação de tela</string>

@@ -395,9 +395,50 @@ fun PlayerScreen(
         }
     }
 
-    val targetOrientation = remember(currentSettings.autoScreenRotation, currentSettings.screenOrientation) {
+    // Issue #329: adaptive rotation — in Auto mode the video's aspect
+    // decides the orientation *family*, and the sensor still flips
+    // within that family: a landscape video plays SENSOR_LANDSCAPE
+    // (either way up), a portrait video SENSOR_PORTRAIT. Aspect unknown
+    // yet (0x0), a square video, or an audio item falls back to today's
+    // plain SENSOR (no forcing). An explicit Portrait/Landscape lock
+    // still wins — that is the point of a lock, and the escape hatch
+    // (e.g. watching a portrait video while lying down: lock Landscape).
+    // The dims reset to 0 on every item change (#260), so a plain
+    // remember on state.videoWidth/Height would flicker through SENSOR
+    // between items. lastKnownVideoSize bridges the 0x0 window: it only
+    // updates when real video dims arrive (SideEffect below, after
+    // composition), so the previous video's family holds until the new
+    // video's dims land — at most one flip per item change, and none at
+    // all when both videos share a family (the effect key is the
+    // orientation value, not the dims). Audio items never update the
+    // bridge and fall back to SENSOR, so a podcast doesn't inherit the
+    // previous video's family.
+    var lastKnownVideoSize by remember { mutableStateOf(0 to 0) }
+    SideEffect {
+        if (state.currentItem?.isVideo == true && state.videoWidth > 0 && state.videoHeight > 0) {
+            lastKnownVideoSize = state.videoWidth to state.videoHeight
+        }
+    }
+    val targetOrientation = remember(
+        currentSettings.autoScreenRotation, currentSettings.screenOrientation,
+        state.currentItem?.isVideo, state.videoWidth, state.videoHeight, lastKnownVideoSize,
+    ) {
         if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" || currentSettings.screenOrientation == "sensor") {
-            ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            // #329: adaptive — aspect decides the family.
+            val (adaptiveWidth, adaptiveHeight) = if (state.currentItem?.isVideo == true) {
+                if (state.videoWidth > 0 && state.videoHeight > 0) {
+                    state.videoWidth to state.videoHeight
+                } else {
+                    lastKnownVideoSize
+                }
+            } else {
+                0 to 0
+            }
+            when {
+                adaptiveWidth > adaptiveHeight -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                adaptiveHeight > adaptiveWidth -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                else -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            }
         } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
             ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         } else {
@@ -2203,7 +2244,8 @@ fun PlayerScreen(
  * (issue #160 stays separate).
  *
  * No new strings: every caption reuses an existing one. The rotation
- * "Auto" caption reuses pip_size_auto ("Auto") — same displayed word.
+ * "Adaptive" caption reuses player_rotation_auto — same displayed word
+ * as the sheet's renamed mode (#329).
  */
 @Composable
 private fun PlayerActionStripe(
@@ -2341,9 +2383,11 @@ private fun PlayerActionStripe(
                     // Issue #249: "sensor" is a legacy persisted value
                     // that means Auto (targetOrientation above) — without
                     // it the stripe showed "Landscape" for an Auto player.
+                    // Issue #329: the caption reuses player_rotation_auto
+                    // ("Adaptive") so it matches the sheet's renamed mode.
                     caption = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" ||
                         currentSettings.screenOrientation == "sensor") {
-                        stringResource(R.string.pip_size_auto)
+                        stringResource(R.string.player_rotation_auto)
                     } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
                         stringResource(R.string.player_orientation_portrait)
                     } else {

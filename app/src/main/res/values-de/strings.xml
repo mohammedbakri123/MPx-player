@@ -701,17 +701,17 @@
     <string name="multiselect_play_folder">Ordner abspielen</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
-    <string name="player_auto_rotation">Automatische Bildschirmdrehung</string>
-    <string name="player_auto_rotation_desc">Geräteausrichtung im Player per Sensor folgen oder auf Querformat/Hochformat sperren</string>
+    <string name="player_auto_rotation">Adaptive Drehung</string>
+    <string name="player_auto_rotation_desc">Folgt im Player dem Video — Hochformatvideos laufen hochformat, Querformatvideos querformat — oder auf Querformat/Hochformat sperren</string>
     <string name="player_locked_orientation_header">Gesperrte Ausrichtung:</string>
     <string name="player_rotation_dialog_title">Bildschirmdrehung</string>
-    <string name="player_rotation_auto">Automatisch drehen (Sensor)</string>
-    <string name="player_rotation_auto_desc">Player folgt der Geräteausrichtung automatisch</string>
+    <string name="player_rotation_auto">Adaptiv</string>
+    <string name="player_rotation_auto_desc">Folgt dem Video — Hochformatvideos laufen hochformat, Querformatvideos querformat</string>
     <string name="player_orientation_landscape">Querformat</string>
     <string name="player_orientation_landscape_desc">Bildschirm im horizontalen Querformat sperren</string>
     <string name="player_orientation_portrait">Hochformat</string>
     <string name="player_orientation_portrait_desc">Bildschirm im vertikalen Hochformat sperren</string>
-    <string name="toast_rotation_auto">Automatische Bildschirmdrehung aktiviert (Sensor)</string>
+    <string name="toast_rotation_auto">Adaptive Drehung aktiviert</string>
     <string name="toast_rotation_landscape">Bildschirm auf Querformat gesperrt</string>
     <string name="toast_rotation_portrait">Bildschirm auf Hochformat gesperrt</string>
     <string name="cd_screen_rotation">Bildschirmdrehung</string>

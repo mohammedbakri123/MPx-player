@@ -701,17 +701,17 @@
     <string name="multiselect_play_folder">تشغيل المجلد</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
-    <string name="player_auto_rotation">تدوير الشاشة التلقائي</string>
-    <string name="player_auto_rotation_desc">اتباع اتجاه الجهاز عبر الحساس في المشغل، أو القفل في الوضع الأفقي/العمودي</string>
+    <string name="player_auto_rotation">تدوير تكيّفي</string>
+    <string name="player_auto_rotation_desc">اتباع الفيديو في المشغل — الفيديوهات العمودية تعمل عمودياً، والأفقية أفقياً — أو القفل في الوضع الأفقي/العمودي</string>
     <string name="player_locked_orientation_header">الاتجاه المقفول:</string>
     <string name="player_rotation_dialog_title">تدوير الشاشة</string>
-    <string name="player_rotation_auto">تدوير تلقائي (حساس)</string>
-    <string name="player_rotation_auto_desc">يتبع المشغل اتجاه الجهاز تلقائياً</string>
+    <string name="player_rotation_auto">تكيّفي</string>
+    <string name="player_rotation_auto_desc">يتبع الفيديو — الفيديوهات العمودية تعمل عمودياً، والأفقية تعمل أفقياً</string>
     <string name="player_orientation_landscape">أفقي</string>
     <string name="player_orientation_landscape_desc">قفل الشاشة في الوضع الأفقي</string>
     <string name="player_orientation_portrait">عمودي</string>
     <string name="player_orientation_portrait_desc">قفل الشاشة في الوضع العمودي</string>
-    <string name="toast_rotation_auto">تم تفعيل تدوير الشاشة التلقائي (حساس)</string>
+    <string name="toast_rotation_auto">تم تفعيل التدوير التكيّفي</string>
     <string name="toast_rotation_landscape">تم قفل الشاشة في الوضع الأفقي</string>
     <string name="toast_rotation_portrait">تم قفل الشاشة في الوضع العمودي</string>
     <string name="cd_screen_rotation">تدوير الشاشة</string>
