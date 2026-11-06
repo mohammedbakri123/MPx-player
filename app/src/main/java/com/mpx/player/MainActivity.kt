@@ -66,6 +66,7 @@ import com.mpx.player.ui.navigation.Screen
 import com.mpx.player.ui.navigation.navigationTabs
 import com.mpx.player.ui.screens.about.AboutBetaScreen
 import com.mpx.player.ui.ActivityResultHandler
+import com.mpx.player.ui.screens.download.DownloadScreen
 import com.mpx.player.ui.screens.local.LocalScreen
 import com.mpx.player.ui.screens.me.HistoryScreen
 import com.mpx.player.ui.screens.me.MeScreen
@@ -642,6 +643,12 @@ fun MpxApp(
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
+                )
+            }
+            composable(Screen.Download.route) {
+                DownloadScreen(
+                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                    playbackManager = playbackManager,
                 )
             }
             composable(Screen.Me.route) {

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Media access only. No network permission is declared
-         yet: downloads are a placeholder. -->
+    <!-- Media access + network. INTERNET is used by the downloader
+         (issue #324, yt-dlp) as well as playback. -->
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />

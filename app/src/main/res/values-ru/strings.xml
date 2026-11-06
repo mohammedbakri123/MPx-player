@@ -9,6 +9,25 @@
     <string name="nav_local">Главная</string>
     <string name="nav_music">Музыка</string>
     <string name="nav_me">Я</string>
+    <string name="nav_download">Загрузки</string>
+
+    <!-- Downloads (issue #324) -->
+    <string name="download_screen_title">Загрузки</string>
+    <string name="download_url_placeholder">Вставьте ссылку на видео…</string>
+    <string name="download_paste">Вставить</string>
+    <string name="download_button">Скачать</string>
+    <string name="download_empty_title">Пока нет загрузок</string>
+    <string name="download_empty_message">Вставьте ссылку на видео выше, чтобы скачать его и смотреть офлайн.</string>
+    <string name="download_init_failed">Не удалось запустить загрузчик. Проверьте хранилище и попробуйте снова.</string>
+    <string name="download_queued">В очереди…</string>
+    <string name="download_eta">Осталось %1$s</string>
+    <string name="download_complete">Загрузка завершена</string>
+    <string name="download_failed">Не удалось скачать</string>
+    <string name="download_canceled">Загрузка отменена</string>
+    <string name="download_retry">Повторить загрузку</string>
+    <string name="download_play">Играть</string>
+    <string name="download_delete">Удалить загрузку</string>
+    <string name="download_deleted">Загрузка удалена</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Видео</string>

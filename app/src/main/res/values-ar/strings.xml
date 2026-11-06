@@ -9,6 +9,25 @@
     <string name="nav_local">الرئيسية</string>
     <string name="nav_music">موسيقى</string>
     <string name="nav_me">أنا</string>
+    <string name="nav_download">التنزيلات</string>
+
+    <!-- Downloads (issue #324) -->
+    <string name="download_screen_title">التنزيلات</string>
+    <string name="download_url_placeholder">الصق رابط فيديو…</string>
+    <string name="download_paste">لصق</string>
+    <string name="download_button">تنزيل</string>
+    <string name="download_empty_title">لا توجد تنزيلات بعد</string>
+    <string name="download_empty_message">الصق رابط فيديو أعلاه لتنزيله ومشاهدته دون اتصال.</string>
+    <string name="download_init_failed">تعذّر تشغيل أداة التنزيل. تحقق من التخزين وحاول مجددًا.</string>
+    <string name="download_queued">في الانتظار…</string>
+    <string name="download_eta">المتبقي %1$s</string>
+    <string name="download_complete">اكتمل التنزيل</string>
+    <string name="download_failed">فشل التنزيل</string>
+    <string name="download_canceled">تم إلغاء التنزيل</string>
+    <string name="download_retry">إعادة التنزيل</string>
+    <string name="download_play">تشغيل</string>
+    <string name="download_delete">حذف التنزيل</string>
+    <string name="download_deleted">تم حذف التنزيل</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">فيديو</string>

@@ -9,6 +9,25 @@
     <string name="nav_local">Accueil</string>
     <string name="nav_music">Musique</string>
     <string name="nav_me">Moi</string>
+    <string name="nav_download">Téléchargements</string>
+
+    <!-- Downloads (issue #324) -->
+    <string name="download_screen_title">Téléchargements</string>
+    <string name="download_url_placeholder">Collez un lien vidéo…</string>
+    <string name="download_paste">Coller</string>
+    <string name="download_button">Télécharger</string>
+    <string name="download_empty_title">Aucun téléchargement</string>
+    <string name="download_empty_message">Collez un lien vidéo ci-dessus pour le télécharger et le regarder hors ligne.</string>
+    <string name="download_init_failed">Impossible de démarrer le téléchargeur. Vérifiez le stockage et réessayez.</string>
+    <string name="download_queued">En attente…</string>
+    <string name="download_eta">Reste %1$s</string>
+    <string name="download_complete">Téléchargement terminé</string>
+    <string name="download_failed">Échec du téléchargement</string>
+    <string name="download_canceled">Téléchargement annulé</string>
+    <string name="download_retry">Réessayer le téléchargement</string>
+    <string name="download_play">Lire</string>
+    <string name="download_delete">Supprimer le téléchargement</string>
+    <string name="download_deleted">Téléchargement supprimé</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vidéo</string>

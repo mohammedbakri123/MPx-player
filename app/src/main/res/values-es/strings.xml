@@ -9,6 +9,25 @@
     <string name="nav_local">Inicio</string>
     <string name="nav_music">Música</string>
     <string name="nav_me">Yo</string>
+    <string name="nav_download">Descargas</string>
+
+    <!-- Downloads (issue #324) -->
+    <string name="download_screen_title">Descargas</string>
+    <string name="download_url_placeholder">Pega un enlace de video…</string>
+    <string name="download_paste">Pegar</string>
+    <string name="download_button">Descargar</string>
+    <string name="download_empty_title">Aún no hay descargas</string>
+    <string name="download_empty_message">Pega un enlace de video arriba para descargarlo y verlo sin conexión.</string>
+    <string name="download_init_failed">No se pudo iniciar el descargador. Revisa el almacenamiento e inténtalo de nuevo.</string>
+    <string name="download_queued">En cola…</string>
+    <string name="download_eta">Quedan %1$s</string>
+    <string name="download_complete">Descarga completa</string>
+    <string name="download_failed">Error al descargar</string>
+    <string name="download_canceled">Descarga cancelada</string>
+    <string name="download_retry">Reintentar descarga</string>
+    <string name="download_play">Reproducir</string>
+    <string name="download_delete">Eliminar descarga</string>
+    <string name="download_deleted">Descarga eliminada</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vídeo</string>

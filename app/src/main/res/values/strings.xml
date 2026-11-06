@@ -9,6 +9,25 @@
     <string name="nav_local">Home</string>
     <string name="nav_music">Music</string>
     <string name="nav_me">Me</string>
+    <string name="nav_download">Downloads</string>
+
+    <!-- Downloads (issue #324) -->
+    <string name="download_screen_title">Downloads</string>
+    <string name="download_url_placeholder">Paste a video link…</string>
+    <string name="download_paste">Paste</string>
+    <string name="download_button">Download</string>
+    <string name="download_empty_title">No downloads yet</string>
+    <string name="download_empty_message">Paste a video link above to download it and watch it offline.</string>
+    <string name="download_init_failed">Downloader couldn\'t start. Check storage and try again.</string>
+    <string name="download_queued">Queued…</string>
+    <string name="download_eta">ETA %1$s</string>
+    <string name="download_complete">Download complete</string>
+    <string name="download_failed">Download failed</string>
+    <string name="download_canceled">Download canceled</string>
+    <string name="download_retry">Retry download</string>
+    <string name="download_play">Play</string>
+    <string name="download_delete">Delete download</string>
+    <string name="download_deleted">Download deleted</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Video</string>
