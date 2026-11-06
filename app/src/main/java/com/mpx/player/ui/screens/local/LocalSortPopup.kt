@@ -17,18 +17,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.AccountTree
+import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Title
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
@@ -53,6 +59,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
@@ -81,10 +89,11 @@ import com.mpx.player.ui.theme.MpxTheme
  * folder menu that used to open it is gone (#184), so without this row
  * the folder-scope dialog was unreachable dead code.
  *
- * The popup offers exactly three sort fields (Title / Date / Size). If the
- * stored primary sort is another field (Duration, Date/Duration, ...), no
- * tile is selected; tapping a tile switches to it. The full field set stays
- * available in SortViewDialog.
+ * The popup offers the three quick sort fields (Title / Date / Size),
+ * plus the stored primary sort as an extra tile when it is another field
+ * (issue #322: a persisted legacy sort such as COUNT — or DATE_DURATION,
+ * Duration, ... — used to show no selected tile at all). The full field
+ * set stays available in SortViewDialog.
  *
  * Tree view (#164) shows the folder hierarchy inline (LocalFolderTree);
  * the Tree tile is live and persists via AppSettings.localTreeMode.
@@ -112,6 +121,20 @@ internal fun orderLabelRes(field: SortField, ascending: Boolean): Int = when (fi
     SortField.DATE, SortField.DATE_DURATION -> if (ascending) R.string.sort_order_oldest else R.string.sort_order_newest
     SortField.SIZE -> if (ascending) R.string.sort_order_smallest else R.string.sort_order_largest
     else -> if (ascending) R.string.sort_direction_ascending else R.string.sort_direction_descending
+}
+
+// Issue #322: icon for a sort-field tile. The three standard tiles keep
+// their existing icons; any other persisted field gets a fitting one so
+// it can be offered as an extra tile instead of showing no selection.
+private fun sortFieldIcon(field: SortField): ImageVector = when (field) {
+    SortField.NAME -> Icons.Filled.Title
+    SortField.DATE, SortField.DATE_DURATION -> Icons.Filled.DateRange
+    SortField.SIZE -> Icons.Filled.Sort
+    SortField.COUNT -> Icons.Filled.FormatListNumbered
+    SortField.DURATION -> Icons.Filled.Timer
+    SortField.RESOLUTION_FRAMERATE -> Icons.Filled.AspectRatio
+    SortField.STATUS_TYPE_LOCATION -> Icons.Filled.Tune
+    SortField.NONE -> Icons.Filled.Close
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -191,6 +214,14 @@ fun LocalSortPopup(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 // ---- Sort by: Title / Date / Size icon tiles ----
+                // Issue #322: the stored primary sort is appended as an
+                // extra tile when it is not one of the three standard
+                // ones — a persisted legacy sort (COUNT) or any other
+                // field the full dialog offers (DATE_DURATION, Duration,
+                // ...) used to show no selected tile at all. The standard
+                // tiles keep their short popup labels; the extra tile uses
+                // the field's own (already localised) label. FlowRow so a
+                // fourth tile wraps instead of overflowing a narrow dialog.
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = stringResource(R.string.sort_popup_sort_by),
@@ -198,29 +229,27 @@ fun LocalSortPopup(
                         fontWeight = FontWeight.Medium,
                         color = MpxTheme.colors.textPrimary,
                     )
-                    Row(
+                    val sortTilesToShow = run {
+                        val standard = listOf(SortField.NAME, SortField.DATE, SortField.SIZE)
+                        if (currentSort in standard) standard else standard + currentSort
+                    }
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        SortTile(
-                            icon = Icons.Filled.Title,
-                            label = stringResource(R.string.sort_popup_sort_title),
-                            selected = currentSort == SortField.NAME,
-                            onClick = { onSortChange(SortField.NAME) },
-                        )
-                        SortTile(
-                            icon = Icons.Filled.DateRange,
-                            label = stringResource(R.string.sort_popup_sort_date),
-                            selected = currentSort == SortField.DATE,
-                            onClick = { onSortChange(SortField.DATE) },
-                        )
-                        SortTile(
-                            icon = Icons.Filled.Sort,
-                            label = stringResource(R.string.sort_popup_sort_size),
-                            selected = currentSort == SortField.SIZE,
-                            onClick = { onSortChange(SortField.SIZE) },
-                        )
+                        sortTilesToShow.forEach { field ->
+                            SortTile(
+                                icon = sortFieldIcon(field),
+                                label = when (field) {
+                                    SortField.NAME -> stringResource(R.string.sort_popup_sort_title)
+                                    SortField.DATE -> stringResource(R.string.sort_popup_sort_date)
+                                    SortField.SIZE -> stringResource(R.string.sort_popup_sort_size)
+                                    else -> stringResource(field.labelRes)
+                                },
+                                selected = currentSort == field,
+                                onClick = { onSortChange(field) },
+                            )
+                        }
                     }
                 }
 
@@ -601,6 +630,14 @@ private fun SortTile(
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             color = if (selected) MpxTheme.colors.textPrimary
             else MpxTheme.colors.textSecondary,
+            // Issue #322: an extra tile's label is the field's own label
+            // ("Resolution / Frame rate", ...), which is longer than the
+            // short popup labels — cap the width so the tile stays 72dp
+            // wide and the label wraps centred instead of stretching the row.
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 72.dp),
         )
     }
 }
