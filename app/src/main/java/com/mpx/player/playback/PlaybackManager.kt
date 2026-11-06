@@ -446,6 +446,9 @@ class PlaybackManager private constructor(context: Context) {
      * effect when [items] IS the live queue (same list instance); any
      * other list is a genuinely new queue and resets shuffle as before.
      * Every other caller passes a fresh list and gets the default.
+     * Issue #239: the same "not a new session" applies to speed — a
+     * live-queue pick keeps the speed that is playing instead of
+     * resetting to the persisted default.
      */
     fun playQueue(
         items: List<PlayableMedia>,
@@ -474,10 +477,21 @@ class PlaybackManager private constructor(context: Context) {
         val shouldResume = (forceResume || settings.resumePlayback) &&
             savedPos > 2_000L
 
+        // Issue #239: a live-queue pick (playLiveQueueItem) is not a new
+        // session, so the speed that is playing is kept — the same
+        // reasoning as the shuffle state above. Capture it before the
+        // load, mirroring setShuffleEnabled, which re-applies the playing
+        // speed after its own reload for the same reason.
+        val currentSpeed = _playbackState.value.speed
         engineLoad(items, targetIndex, if (shouldResume) savedPos else 0L)
-        // Persisted default speed (issue #76): every new session starts here.
-        // The in-player speed toggle stays session-only (see setSpeed).
-        engine.setSpeed(settings.defaultPlaybackSpeed)
+        if (keepShuffle) {
+            engine.setSpeed(currentSpeed)
+        } else {
+            // Persisted default speed (issue #76): every new session
+            // starts here. The in-player speed toggle stays session-only
+            // (see setSpeed).
+            engine.setSpeed(settings.defaultPlaybackSpeed)
+        }
         if (autoPlay) {
             engine.play()
         }
@@ -510,7 +524,10 @@ class PlaybackManager private constructor(context: Context) {
                 hasPrevious = engine.hasPreviousMediaItem,
                 hasNext = engine.hasNextMediaItem,
                 resumedFromMs = if (shouldResume) savedPos else null,
-                speed = settings.defaultPlaybackSpeed,
+                // Issue #239: a live-queue pick keeps the playing speed
+                // (state and engine agree — see the setSpeed above); a
+                // new session starts at the persisted default (#76).
+                speed = if (keepShuffle) it.speed else settings.defaultPlaybackSpeed,
                 // Issue #203: a live-queue pick keeps the shuffle flag as
                 // it is (on stays on, off stays off); a new queue resets
                 // it, as before.
