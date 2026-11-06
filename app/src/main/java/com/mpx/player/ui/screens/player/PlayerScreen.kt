@@ -1811,7 +1811,7 @@ fun PlayerScreen(
                             Spacer(Modifier.width(4.dp))
 
                             Text(
-                                text = state.currentItem?.title ?: "MPx Player",
+                                text = state.currentItem?.title ?: stringResource(R.string.app_name),
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 16.sp,

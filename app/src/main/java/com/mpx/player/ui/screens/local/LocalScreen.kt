@@ -528,7 +528,7 @@ fun LocalScreen(
 
     val persistenceRepository = remember(context) {
         playbackManager?.persistenceRepository
-            ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context))
+            ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context), context)
     }
     val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
     val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())

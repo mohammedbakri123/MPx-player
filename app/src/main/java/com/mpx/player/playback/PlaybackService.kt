@@ -227,11 +227,11 @@ class PlaybackService : Service() {
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentItem.title)
             .putString(
                 MediaMetadataCompat.METADATA_KEY_ARTIST,
-                currentItem.subtitle.ifBlank { "MPx Player" },
+                currentItem.subtitle.ifBlank { getString(R.string.app_name) },
             )
             .putString(
                 MediaMetadataCompat.METADATA_KEY_ALBUM,
-                if (currentItem.isVideo) "Video Playback" else "Music Track",
+                if (currentItem.isVideo) getString(R.string.media_session_album_video) else getString(R.string.media_session_album_music),
             )
             .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, state.durationMs)
             .build()

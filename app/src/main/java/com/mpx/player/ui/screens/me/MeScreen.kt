@@ -242,7 +242,7 @@ fun MeScreen(
             title = stringResource(R.string.tool_network_title),
             description = stringResource(R.string.tool_network_desc),
             icon = Icons.Filled.Cloud,
-            badge = "Real",
+            badge = stringResource(R.string.tool_badge_real),
             isAvailable = true,
         ),
         MeTool(

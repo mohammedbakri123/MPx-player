@@ -182,9 +182,13 @@
     <string name="pip_enable_toggle">Activar ventana flotante (PiP)</string>
     <string name="pip_window_controls_header">Controles de la ventana PiP:</string>
     <string name="pip_controls_prev_next">Anterior / Siguiente (predeterminado)</string>
-    <string name="pip_controls_seek10">Avance / retroceso rápido (10 s)</string>
+    <string name="pip_controls_seek10">Avance / retroceso rápido</string>
     <string name="pip_seek_rewind">Retroceder %1$d s</string>
     <string name="pip_seek_forward">Avanzar %1$d s</string>
+    <string name="pip_action_pause">Pausa</string>
+    <string name="pip_action_play">Reproducir</string>
+    <string name="pip_action_previous">Anterior</string>
+    <string name="pip_action_next">Siguiente</string>
 
     <string name="list_show_all_folders">Mostrar todas las carpetas</string>
     <string name="list_show_all_folders_desc">Mostrar todas las carpetas escaneadas, incluidas las vacías y las ocultas</string>
@@ -235,6 +239,9 @@
     <string name="subtitle_shadow_label">Sombra</string>
     <string name="subtitle_alignment_header">Alineación:</string>
     <string name="subtitle_padding_header">Margen inferior:</string>
+    <string name="subtitle_padding_small">Pequeño</string>
+    <string name="subtitle_padding_medium">Mediano</string>
+    <string name="subtitle_padding_large">Grande</string>
     <string name="subtitle_scale_header">Escala:</string>
     <string name="subtitle_ass_header">Avanzado (estilos ASS):</string>
     <string name="subtitle_sync_header">Sincronización de subtítulos</string>
@@ -326,6 +333,7 @@
     <string name="tool_badge_soon">Pronto</string>
     <string name="tool_badge_plugin">Complemento</string>
     <string name="tool_badge_planned">Previsto</string>
+    <string name="tool_badge_real">Real</string>
     <string name="tool_status_title">Guardar estados</string>
     <string name="tool_status_desc">Estados de WhatsApp</string>
     <string name="tool_private_title">Carpeta privada</string>
@@ -495,6 +503,18 @@
     <string name="action_more">Más</string>
     <string name="media_type_video">Vídeo</string>
     <string name="media_type_audio">Audio</string>
+    <string name="media_unknown_track">Pista desconocida</string>
+    <string name="media_unknown_artist">Artista desconocido</string>
+    <string name="media_unknown_album">Álbum desconocido</string>
+    <string name="media_video">Vídeo</string>
+    <string name="media_videos">Vídeos</string>
+    <string name="media_folder">Carpeta</string>
+    <string name="media_music">Música</string>
+    <string name="media_playlist">Lista de reproducción</string>
+    <string name="media_playlist_device">Lista de reproducción del dispositivo</string>
+    <string name="playlist_new">Nueva lista de reproducción</string>
+    <string name="media_session_album_video">Reproducción de vídeo</string>
+    <string name="media_session_album_music">Pista de música</string>
     <string name="favourites_dialog_title">Favoritos (%d)</string>
     <string name="favourites_empty_title">Aún no hay favoritos</string>
     <string name="favourites_empty_desc">Toca el icono de corazón en el reproductor o en las opciones de una pista para añadir favoritos.</string>
@@ -648,7 +668,7 @@
     <string name="pip_banner_unsupported_reason">La imagen en imagen no está disponible en este dispositivo o versión de Android.</string>
     <string name="pip_window_controls_desc">Elige qué controles aparecen en la ventana flotante.</string>
     <string name="pip_controls_prev_next_desc">Botones anterior y siguiente junto a reproducir/pausar.</string>
-    <string name="pip_controls_seek10_desc">Retrocede y avanza 10 segundos.</string>
+    <string name="pip_controls_seek10_desc">Retrocede y avanza según la duración de salto configurada.</string>
     <string name="pip_controls_play_pause_only">Solo reproducir / pausar</string>
     <string name="pip_controls_play_pause_only_desc">Solo un botón de reproducir/pausar en la ventana flotante.</string>
     <string name="pip_size_header">Tamaño de ventana</string>

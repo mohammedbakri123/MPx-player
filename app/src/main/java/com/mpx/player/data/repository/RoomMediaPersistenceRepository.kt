@@ -1,6 +1,8 @@
 package com.mpx.player.data.repository
 
+import android.content.Context
 import androidx.room.withTransaction
+import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.local.entity.CustomPlaylistEntity
 import com.mpx.player.data.local.entity.FavouriteEntity
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.map
  */
 class RoomMediaPersistenceRepository(
     private val database: MpxDatabase,
+    private val context: Context,
 ) : MediaPersistenceRepository {
 
     private val favouriteDao = database.favouriteDao()
@@ -147,7 +150,7 @@ class RoomMediaPersistenceRepository(
     override suspend fun createPlaylist(name: String, isVideoPlaylist: Boolean): Long {
         val now = System.currentTimeMillis()
         val entity = CustomPlaylistEntity(
-            name = name.trim().ifBlank { "New Playlist" },
+            name = name.trim().ifBlank { context.getString(R.string.playlist_new) },
             createdAt = now,
             updatedAt = now,
             isVideoPlaylist = isVideoPlaylist,

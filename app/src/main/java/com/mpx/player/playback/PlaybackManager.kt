@@ -40,7 +40,7 @@ class PlaybackManager private constructor(context: Context) {
 
     private val appContext: Context = context.applicationContext
     val database: MpxDatabase = MpxDatabase.getInstance(appContext)
-    val persistenceRepository: MediaPersistenceRepository = RoomMediaPersistenceRepository(database)
+    val persistenceRepository: MediaPersistenceRepository = RoomMediaPersistenceRepository(database, appContext)
     val resumeManager = PlaybackResumeManager(persistenceRepository)
     val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
 

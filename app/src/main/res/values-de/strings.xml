@@ -182,9 +182,13 @@
     <string name="pip_enable_toggle">Pop-up-Wiedergabe (PiP) aktivieren</string>
     <string name="pip_window_controls_header">PiP-Fenstersteuerung:</string>
     <string name="pip_controls_prev_next">Zurück / Weiter (Standard)</string>
-    <string name="pip_controls_seek10">Vor- / Zurückspulen (10 s)</string>
+    <string name="pip_controls_seek10">Vor- / Zurückspulen</string>
     <string name="pip_seek_rewind">Zurück %1$d s</string>
     <string name="pip_seek_forward">Vor %1$d s</string>
+    <string name="pip_action_pause">Pause</string>
+    <string name="pip_action_play">Abspielen</string>
+    <string name="pip_action_previous">Zurück</string>
+    <string name="pip_action_next">Weiter</string>
 
     <string name="list_show_all_folders">Alle Ordner anzeigen</string>
     <string name="list_show_all_folders_desc">Jeden gescannten Ordner anzeigen, einschließlich leerer und versteckter Ordner</string>
@@ -235,6 +239,9 @@
     <string name="subtitle_shadow_label">Schatten</string>
     <string name="subtitle_alignment_header">Ausrichtung:</string>
     <string name="subtitle_padding_header">Unterer Abstand:</string>
+    <string name="subtitle_padding_small">Klein</string>
+    <string name="subtitle_padding_medium">Mittel</string>
+    <string name="subtitle_padding_large">Groß</string>
     <string name="subtitle_scale_header">Skalierung:</string>
     <string name="subtitle_ass_header">Erweitert (ASS-Stile):</string>
     <string name="subtitle_sync_header">Untertitel-Synchronisation</string>
@@ -326,6 +333,7 @@
     <string name="tool_badge_soon">Bald</string>
     <string name="tool_badge_plugin">Plug-in</string>
     <string name="tool_badge_planned">Geplant</string>
+    <string name="tool_badge_real">Echt</string>
     <string name="tool_status_title">Status-Saver</string>
     <string name="tool_status_desc">WhatsApp-Status</string>
     <string name="tool_private_title">Privater Ordner</string>
@@ -495,6 +503,18 @@
     <string name="action_more">Mehr</string>
     <string name="media_type_video">Video</string>
     <string name="media_type_audio">Audio</string>
+    <string name="media_unknown_track">Unbekannter Titel</string>
+    <string name="media_unknown_artist">Unbekannter Künstler</string>
+    <string name="media_unknown_album">Unbekanntes Album</string>
+    <string name="media_video">Video</string>
+    <string name="media_videos">Videos</string>
+    <string name="media_folder">Ordner</string>
+    <string name="media_music">Musik</string>
+    <string name="media_playlist">Wiedergabeliste</string>
+    <string name="media_playlist_device">Geräte-Wiedergabeliste</string>
+    <string name="playlist_new">Neue Wiedergabeliste</string>
+    <string name="media_session_album_video">Videowiedergabe</string>
+    <string name="media_session_album_music">Musiktitel</string>
     <string name="favourites_dialog_title">Favoriten (%d)</string>
     <string name="favourites_empty_title">Noch keine Favoriten</string>
     <string name="favourites_empty_desc">Tippen Sie auf das Herz-Symbol im Player oder in den Titeloptionen, um Favoriten hinzuzufügen.</string>
@@ -648,7 +668,7 @@
     <string name="pip_banner_unsupported_reason">Bild-in-Bild ist auf diesem Gerät oder dieser Android-Version nicht verfügbar.</string>
     <string name="pip_window_controls_desc">Wählen Sie, welche Steuerelemente im schwebenden Fenster erscheinen.</string>
     <string name="pip_controls_prev_next_desc">Zurück- und Weiter-Tasten neben Wiedergabe/Pause.</string>
-    <string name="pip_controls_seek10_desc">Um 10 Sekunden vor- und zurückspringen.</string>
+    <string name="pip_controls_seek10_desc">Um die eingestellte Skip-Dauer vor- und zurückspringen.</string>
     <string name="pip_controls_play_pause_only">Nur Wiedergabe / Pause</string>
     <string name="pip_controls_play_pause_only_desc">Nur eine Wiedergabe/Pause-Taste im schwebenden Fenster.</string>
     <string name="pip_size_header">Fenstergröße</string>

@@ -787,9 +787,9 @@ fun SettingsScreen(
                                 Spacer(Modifier.height(8.dp))
                                 Text(stringResource(R.string.subtitle_padding_header), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)
                                 listOf(
-                                    "Small" to stringResource(R.string.player_subtitle_size_small),
-                                    "Medium" to stringResource(R.string.pip_size_medium),
-                                    "Large" to stringResource(R.string.player_subtitle_size_large),
+                                    "Small" to stringResource(R.string.subtitle_padding_small),
+                                    "Medium" to stringResource(R.string.subtitle_padding_medium),
+                                    "Large" to stringResource(R.string.subtitle_padding_large),
                                 ).forEach { (padding, label) ->
                                     ChoiceRow(label, settings.subtitleBottomPadding == padding) { update(settings.copy(subtitleBottomPadding = padding)) }
                                 }

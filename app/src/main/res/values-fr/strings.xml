@@ -182,9 +182,13 @@
     <string name="pip_enable_toggle">Activer la fenêtre flottante (PiP)</string>
     <string name="pip_window_controls_header">Contrôles de la fenêtre PiP :</string>
     <string name="pip_controls_prev_next">Précédent / Suivant (par défaut)</string>
-    <string name="pip_controls_seek10">Avance / retour rapide (10 s)</string>
+    <string name="pip_controls_seek10">Avance / retour rapide</string>
     <string name="pip_seek_rewind">Reculer de %1$d s</string>
     <string name="pip_seek_forward">Avancer de %1$d s</string>
+    <string name="pip_action_pause">Pause</string>
+    <string name="pip_action_play">Lecture</string>
+    <string name="pip_action_previous">Précédent</string>
+    <string name="pip_action_next">Suivant</string>
 
     <string name="list_show_all_folders">Afficher tous les dossiers</string>
     <string name="list_show_all_folders_desc">Afficher tous les dossiers analysés, y compris les dossiers vides et masqués</string>
@@ -235,6 +239,9 @@
     <string name="subtitle_shadow_label">Ombre portée</string>
     <string name="subtitle_alignment_header">Alignement :</string>
     <string name="subtitle_padding_header">Marge inférieure :</string>
+    <string name="subtitle_padding_small">Petit</string>
+    <string name="subtitle_padding_medium">Moyen</string>
+    <string name="subtitle_padding_large">Grand</string>
     <string name="subtitle_scale_header">Échelle :</string>
     <string name="subtitle_ass_header">Avancé (styles ASS) :</string>
     <string name="subtitle_sync_header">Synchronisation des sous-titres</string>
@@ -326,6 +333,7 @@
     <string name="tool_badge_soon">Bientôt</string>
     <string name="tool_badge_plugin">Extension</string>
     <string name="tool_badge_planned">Prévu</string>
+    <string name="tool_badge_real">Réel</string>
     <string name="tool_status_title">Enregistreur de statuts</string>
     <string name="tool_status_desc">Statuts WhatsApp</string>
     <string name="tool_private_title">Dossier privé</string>
@@ -495,6 +503,18 @@
     <string name="action_more">Plus</string>
     <string name="media_type_video">Vidéo</string>
     <string name="media_type_audio">Audio</string>
+    <string name="media_unknown_track">Piste inconnue</string>
+    <string name="media_unknown_artist">Artiste inconnu</string>
+    <string name="media_unknown_album">Album inconnu</string>
+    <string name="media_video">Vidéo</string>
+    <string name="media_videos">Vidéos</string>
+    <string name="media_folder">Dossier</string>
+    <string name="media_music">Musique</string>
+    <string name="media_playlist">Playlist</string>
+    <string name="media_playlist_device">Playlist de l\'appareil</string>
+    <string name="playlist_new">Nouvelle playlist</string>
+    <string name="media_session_album_video">Lecture vidéo</string>
+    <string name="media_session_album_music">Piste musicale</string>
     <string name="favourites_dialog_title">Favoris (%d)</string>
     <string name="favourites_empty_title">Pas encore de favoris</string>
     <string name="favourites_empty_desc">Appuyez sur l’icône cœur dans le lecteur ou dans les options d’une piste pour ajouter des favoris.</string>
@@ -648,7 +668,7 @@
     <string name="pip_banner_unsupported_reason">L’image dans l’image n’est pas disponible sur cet appareil ou cette version d’Android.</string>
     <string name="pip_window_controls_desc">Choisissez les contrôles qui apparaissent sur la fenêtre flottante.</string>
     <string name="pip_controls_prev_next_desc">Boutons précédent et suivant à côté de lecture/pause.</string>
-    <string name="pip_controls_seek10_desc">Reculer et avancer de 10 secondes.</string>
+    <string name="pip_controls_seek10_desc">Reculer et avancer selon la durée de saut configurée.</string>
     <string name="pip_controls_play_pause_only">Lecture / Pause uniquement</string>
     <string name="pip_controls_play_pause_only_desc">Seul un bouton lecture/pause sur la fenêtre flottante.</string>
     <string name="pip_size_header">Taille de la fenêtre</string>
