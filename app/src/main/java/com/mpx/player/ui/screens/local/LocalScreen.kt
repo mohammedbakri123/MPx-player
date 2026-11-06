@@ -19,7 +19,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -1316,8 +1318,17 @@ fun LocalScreen(
                     )
                 } else {
                     // Folder contents: video list or grid based on the shared viewMode (#186)
+                    // Issue #279: the list/grid states used to be created
+                    // inside the viewMode branches, in the same composition
+                    // slot for every folder — opening folder B kept folder
+                    // A's scroll offset. Key both states by folder id so
+                    // each folder starts at the top with its own state, and
+                    // hoist them above the branch so toggling list <-> grid
+                    // keeps each layout's own scroll position.
+                    val folderKey = folder.id.ifBlank { folder.path }
+                    val videoListState = remember(folderKey) { LazyListState() }
+                    val videoGridState = remember(folderKey) { LazyGridState() }
                     if (viewMode == ViewMode.LIST) {
-                        val videoListState = rememberLazyListState()
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyColumn(
                                 state = videoListState,
@@ -1369,7 +1380,6 @@ fun LocalScreen(
                             )
                         }
                     } else {
-                        val videoGridState = rememberLazyGridState()
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = videoGridState,
@@ -1493,8 +1503,12 @@ fun LocalScreen(
                         sortLabel = stringResource(R.string.local_sort_label, sortLabelText),
                         onSortClick = { showSortDialog = true },
                     )
+                    // Issue #279: hoisted above the viewMode branch so
+                    // toggling list <-> grid keeps each layout's own scroll
+                    // position instead of discarding it.
+                    val listState = rememberLazyListState()
+                    val gridState = rememberLazyGridState()
                     if (viewMode == ViewMode.LIST) {
-                        val listState = rememberLazyListState()
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyColumn(
                                 state = listState,
@@ -1542,7 +1556,6 @@ fun LocalScreen(
                             )
                         }
                     } else {
-                        val gridState = rememberLazyGridState()
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = gridState,
@@ -1611,9 +1624,16 @@ fun LocalScreen(
                     // #164: Tree view — the folder hierarchy inline. It
                     // applies to the folders LIST layout; GRID renders
                     // the flat grid below, exactly as in Folder mode.
+                    // Issue #279: hoisted above the tree/list/grid branches
+                    // so toggling between them keeps each layout's own
+                    // scroll position instead of discarding it.
+                    val treeListState = rememberLazyListState()
+                    val listState = rememberLazyListState()
+                    val gridState = rememberLazyGridState()
                     if (viewMode == ViewMode.LIST && isTreeMode) {
                         LocalFolderTree(
                             folders = filteredFolders,
+                            listState = treeListState,
                             expandedKeys = expandedTreeFolders,
                             onToggleExpand = { folder ->
                                 val key = folder.id.ifBlank { folder.path }
@@ -1636,7 +1656,6 @@ fun LocalScreen(
                             },
                         )
                     } else if (viewMode == ViewMode.LIST) {
-                        val listState = rememberLazyListState()
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyColumn(
                                 state = listState,
@@ -1683,7 +1702,6 @@ fun LocalScreen(
                             )
                         }
                     } else {
-                        val gridState = rememberLazyGridState()
                         Box(modifier = Modifier.fillMaxSize()) {
                             LazyVerticalGrid(
                                 state = gridState,
