@@ -48,6 +48,11 @@
     <string name="download_quality_custom_sorter_hint">Если задано, заменяет выбранные выше разрешение и кодек.</string>
     <string name="download_audio_only">Только аудио</string>
     <string name="download_subtitles">Скачать субтитры</string>
+    <string name="download_notification_channel_name">Загрузки</string>
+    <string name="download_notification_channel_description">Прогресс и завершение загрузок</string>
+    <string name="download_notification_downloading">Загрузка…</string>
+    <string name="download_notification_downloading_percent">Загрузка… %1$d%%</string>
+    <string name="download_notification_downloading_files">Загрузка: файлов: %1$d</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Видео</string>

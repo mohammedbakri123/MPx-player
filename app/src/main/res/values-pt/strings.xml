@@ -48,6 +48,11 @@
     <string name="download_quality_custom_sorter_hint">Quando definido, isto substitui a resolução e o codec escolhidos acima.</string>
     <string name="download_audio_only">Somente áudio</string>
     <string name="download_subtitles">Baixar legendas</string>
+    <string name="download_notification_channel_name">Downloads</string>
+    <string name="download_notification_channel_description">Progresso e conclusão de downloads</string>
+    <string name="download_notification_downloading">A baixar…</string>
+    <string name="download_notification_downloading_percent">A baixar… %1$d%%</string>
+    <string name="download_notification_downloading_files">A baixar %1$d ficheiros</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vídeo</string>

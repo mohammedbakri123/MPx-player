@@ -48,6 +48,11 @@
     <string name="download_quality_custom_sorter_hint">When set, this overrides the resolution and codec choices above.</string>
     <string name="download_audio_only">Audio only</string>
     <string name="download_subtitles">Download subtitles</string>
+    <string name="download_notification_channel_name">Downloads</string>
+    <string name="download_notification_channel_description">Download progress and completion</string>
+    <string name="download_notification_downloading">Downloading…</string>
+    <string name="download_notification_downloading_percent">Downloading… %1$d%%</string>
+    <string name="download_notification_downloading_files">Downloading %1$d files</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Video</string>

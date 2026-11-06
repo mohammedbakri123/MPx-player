@@ -48,6 +48,11 @@
     <string name="download_quality_custom_sorter_hint">设置后，将覆盖上面选择的分辨率和编码。</string>
     <string name="download_audio_only">仅音频</string>
     <string name="download_subtitles">下载字幕</string>
+    <string name="download_notification_channel_name">下载</string>
+    <string name="download_notification_channel_description">下载进度与完成情况</string>
+    <string name="download_notification_downloading">正在下载…</string>
+    <string name="download_notification_downloading_percent">正在下载…%1$d%%</string>
+    <string name="download_notification_downloading_files">正在下载 %1$d 个文件</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">视频</string>
