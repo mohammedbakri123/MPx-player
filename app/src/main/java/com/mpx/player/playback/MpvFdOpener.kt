@@ -86,6 +86,30 @@ class MpvFdOpener(context: Context) {
             external.map { it.copy(uri = resolveUri(it.uri)) }
         }
 
+    /**
+     * Closes the raw descriptors behind `fd://` URIs that [resolveUri]
+     * opened but that were never handed to libmpv (issue #332: pending
+     * subtitles overwritten, dropped as stale, or abandoned on stop /
+     * release). Non-`fd://` URIs are no-ops — nothing was opened for
+     * them. Only call for descriptors this side still owns: once a
+     * sub-add command has run, libmpv owns the descriptor (its stream
+     * closes it when it ends), so closing here would double-close.
+     * A descriptor that is already closed is silently ignored.
+     */
+    fun closeFds(uris: List<String>) {
+        for (uri in uris) {
+            if (!uri.startsWith("fd://")) continue
+            val fd = uri.removePrefix("fd://").toIntOrNull() ?: continue
+            try {
+                // Os.close() takes a FileDescriptor, not a raw int —
+                // adoptFd wraps the int and close() closes the fd.
+                android.os.ParcelFileDescriptor.adoptFd(fd).close()
+            } catch (_: Exception) {
+                // Already closed, or never a valid fd — nothing to do.
+            }
+        }
+    }
+
     private fun resolveUri(uri: String): String {
         if (!uri.startsWith("content://")) return uri
         return try {

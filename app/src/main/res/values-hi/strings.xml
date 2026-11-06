@@ -885,6 +885,7 @@
     <string name="player_default_speed_header">डिफ़ॉल्ट प्लेबैक गति</string>
     <string name="player_cd_play">चलाएं</string>
     <string name="player_toast_subtitle_loaded">उपशीर्षक लोड किया गया: %1$s</string>
+    <string name="player_subtitle_load_failed">उपशीर्षक लोड नहीं किया जा सका: %1$s</string>
     <string name="player_subtitle_load_error">\'%1$s\' लोड नहीं किया जा सका:\n\n%2$s</string>
     <string name="subtitle_unsupported_format">असमर्थित प्रारूप ’%1$s’। MPx Player वर्तमान में .srt (SubRip) और .vtt (WebVTT) उपशीर्षक फ़ाइलों का समर्थन करता है।</string>
     <string name="subtitle_unknown_format">अज्ञात प्रारूप</string>

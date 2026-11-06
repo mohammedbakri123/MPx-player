@@ -885,6 +885,7 @@
     <string name="player_default_speed_header">Velocidade de reprodução padrão</string>
     <string name="player_cd_play">Reproduzir</string>
     <string name="player_toast_subtitle_loaded">Legenda carregada: %1$s</string>
+    <string name="player_subtitle_load_failed">Não foi possível carregar a legenda: %1$s</string>
     <string name="player_subtitle_load_error">Não foi possível carregar \'%1$s\':\n\n%2$s</string>
     <string name="subtitle_unsupported_format">Formato não suportado ’%1$s’. O MPx Player suporta atualmente ficheiros de legendas .srt (SubRip) e .vtt (WebVTT).</string>
     <string name="subtitle_unknown_format">formato não reconhecido</string>

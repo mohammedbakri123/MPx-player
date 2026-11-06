@@ -518,14 +518,18 @@ fun PlayerScreen(
 
             when (val validation = SubtitleUtils.validateSubtitleFile(context, uri)) {
                 is SubtitleValidationResult.Supported -> {
-                    val loaded = playbackManager.loadExternalSubtitle(
+                    // Issue #332: no toast here any more. The old toast
+                    // fired from the synchronous return value and lied
+                    // whenever mpv rejected the file (mpv.command()
+                    // never throws for a rejected subtitle), so the
+                    // success/failure banner is now shown by
+                    // PlaybackManager once the sub-add outcome is
+                    // actually known (track in track-list, or timeout).
+                    playbackManager.loadExternalSubtitle(
                         uri = validation.uri,
                         displayName = validation.displayName,
                         mimeType = validation.mimeType,
                     )
-                    if (loaded) {
-                        Toast.makeText(context, context.getString(R.string.player_toast_subtitle_loaded, validation.displayName), Toast.LENGTH_SHORT).show()
-                    }
                 }
                 is SubtitleValidationResult.Unsupported -> {
                     subtitleErrorDialogText = context.getString(R.string.player_subtitle_load_error, validation.fileName, validation.reason)

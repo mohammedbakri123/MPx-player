@@ -18,6 +18,49 @@ enum class TrackType {
 }
 
 /**
+ * Outcome of [PlayerEngine.replaceMediaItem] for the external subtitles it
+ * was asked to add (issue #332).
+ *
+ * The synchronous result is deliberately NOT "the subtitle loaded":
+ * sub-add is async and `mpv.command()` never throws for a rejected file
+ * (the native JNI command only logs `mpv_error_string`), so the issued
+ * command alone proves nothing. ISSUED/QUEUED mean a sub-add was actually
+ * attempted; whether the track really loads is confirmed asynchronously
+ * via [PlayerEngine.Listener.onExternalSubtitleConfirmed] once the track
+ * appears in track-list (or the confirmation times out).
+ */
+enum class ReplaceMediaItemResult {
+    /**
+     * The file is loaded and at least one sub-add command was issued for a
+     * usable URI. Confirmed asynchronously via
+     * [PlayerEngine.Listener.onExternalSubtitleConfirmed].
+     */
+    ISSUED,
+
+    /**
+     * The file is not loaded yet; the subtitles were queued and will be
+     * sub-added on FILE_LOADED. Confirmed asynchronously at dispatch time,
+     * the same way as [ISSUED].
+     */
+    QUEUED,
+
+    /**
+     * Nothing new was added because every listed external subtitle is
+     * already in the item. No sub-add was issued and no confirmation is
+     * armed; callers should check the live track-list to see whether the
+     * track is actually there.
+     */
+    ALREADY_ADDED,
+
+    /**
+     * Nothing could be attempted: an invalid index, no new subtitles, or
+     * every subtitle URI provably unusable (unreadable `content://`,
+     * missing file). No confirmation is armed.
+     */
+    FAILED,
+}
+
+/**
  * Common playback engine interface extracted from PlaybackManager.
  * Defines the contract for core playback operations: surface attachment, media loading,
  * playback control, seeking, speed adjustments, track selection, and engine lifecycle.
@@ -62,6 +105,19 @@ interface PlayerEngine {
         fun onVideoSizeChanged(width: Int, height: Int) {}
         fun onVideoDecoderInitialized(decoderName: String) {}
         fun onError(error: Exception) {}
+
+        /**
+         * Issue #332: the outcome of a manually added external subtitle,
+         * confirmed once its track actually appears in track-list (sub-add
+         * is async and `mpv.command()` never throws for a rejected file,
+         * so the command returning says nothing). Fires only when the
+         * engine armed a confirmation for this [mediaId] — queue restores
+         * arm one the same way, and the manager ignores ids it did not
+         * arm. [success] true means the track appeared and `sid` was
+         * pinned to it; false means it never appeared within the
+         * confirmation timeout. Always delivered on the main thread.
+         */
+        fun onExternalSubtitleConfirmed(mediaId: String, success: Boolean) {}
     }
 
     /**
@@ -177,8 +233,13 @@ interface PlayerEngine {
      * The item is passed RAW (original URIs): the implementation resolves
      * only the subtitle URIs for the sub-add and never the media URI,
      * which is not reloaded here (issues #213/#219).
+     *
+     * Issue #332: returns what actually happened to the subtitles — the
+     * old `Unit` return let the caller claim success unconditionally.
+     * ISSUED/QUEUED are confirmed asynchronously via
+     * [Listener.onExternalSubtitleConfirmed]; see [ReplaceMediaItemResult].
      */
-    fun replaceMediaItem(index: Int, media: PlayableMedia)
+    fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult
 
     /**
      * Stops playback without releasing resources.
