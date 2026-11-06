@@ -623,6 +623,14 @@ fun LocalScreen(
     // selected folders — the videos inside them (#233: both halves are
     // combined, never videos-first with a folders-only fallback).
     // There is NO delete action: it never existed in the tile menus.
+    // Issue #234: the resolvers below filter the UNFILTERED sorted lists
+    // (sortedFolderVideos / sortedVideos / sortedFolders) — never the
+    // search-filtered ones. The search box helps find items; it must not
+    // narrow an existing selection. (filteredVideos / filteredFolders are
+    // aliases of the sorted lists today, but the resolvers name the sorted
+    // lists so the intent survives any future filtering of those aliases.
+    // The in-folder search box DOES filter filteredFolderVideos, which is
+    // why the folder branch previously dropped hidden selections here.)
     fun selectedVideosInView(): List<VideoFile> {
         return when {
             // #165: on the search page the selection resolves against
@@ -631,10 +639,10 @@ fun LocalScreen(
             showSearchPage -> allVideos.filter {
                 selectedVideoIds.contains(it.id.ifBlank { it.path })
             }
-            currentFolder != null -> filteredFolderVideos.filter {
+            currentFolder != null -> sortedFolderVideos.filter {
                 selectedVideoIds.contains(it.id.ifBlank { it.path })
             }
-            appSettings.fileView -> filteredVideos.filter {
+            appSettings.fileView -> sortedVideos.filter {
                 selectedVideoIds.contains(it.id.ifBlank { it.path })
             }
             else -> emptyList()
@@ -649,7 +657,7 @@ fun LocalScreen(
                 selectedFolderIds.contains(it.id.ifBlank { it.path })
             }
             currentFolder == null && !appSettings.fileView -> {
-                filteredFolders.filter {
+                sortedFolders.filter {
                     selectedFolderIds.contains(it.id.ifBlank { it.path })
                 }
             }

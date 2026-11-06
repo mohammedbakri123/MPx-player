@@ -522,6 +522,19 @@ fun MusicScreen(
         )
     }
 
+    // Issue #234: the same sort over the UNFILTERED list — the selection
+    // resolvers below must not lose items the search box hides. The
+    // visible list stays sortedTracks (search-filtered, then sorted).
+    val sortedAllTracks = remember(tracks, sortField, appSettings.sortReverse) {
+        tracks.sortedWith(
+            MediaSortComparator.audioTrackComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
     // #185: the Albums tab shares the screen search box (contains-filter
     // on title/artist, like Tracks) and the shared sort state — one
     // sortField / sortReverse for the whole Music screen, like Local.
@@ -550,6 +563,17 @@ fun MusicScreen(
         )
     }
 
+    // Issue #234: the same sort over the UNFILTERED list — see sortedAllTracks.
+    val sortedAllAlbums = remember(albums, sortField, appSettings.sortReverse) {
+        albums.sortedWith(
+            MediaSortComparator.audioAlbumComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
     // #185: the Artists tab shares the screen search box (contains-filter
     // on name, like Tracks/Albums) and the shared sort state — one
     // sortField / sortReverse for the whole Music screen, like Local.
@@ -569,6 +593,17 @@ fun MusicScreen(
     // SIZE / DURATION sort by track count (most tracks first).
     val sortedArtists = remember(filteredArtists, sortField, appSettings.sortReverse) {
         filteredArtists.sortedWith(
+            MediaSortComparator.audioArtistComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
+    // Issue #234: the same sort over the UNFILTERED list — see sortedAllTracks.
+    val sortedAllArtists = remember(artists, sortField, appSettings.sortReverse) {
+        artists.sortedWith(
             MediaSortComparator.audioArtistComparator(
                 primary = sortField,
                 secondary = SortField.NAME,
@@ -624,6 +659,17 @@ fun MusicScreen(
         )
     }
 
+    // Issue #234: the same sort over the UNFILTERED list — see sortedAllTracks.
+    val sortedAllPlaylists = remember(allPlaylists, sortField, appSettings.sortReverse) {
+        allPlaylists.sortedWith(
+            MediaSortComparator.audioPlaylistComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
     // #185: the shared MediaSortComparator for folders — same field
     // semantics as the audio artist comparator. Folders carry no date,
     // size or duration: SIZE / DURATION / COUNT sort by track count
@@ -639,8 +685,21 @@ fun MusicScreen(
         )
     }
 
+    // Issue #234: the same sort over the UNFILTERED list — see sortedAllTracks.
+    val sortedAllFolders = remember(folders, sortField, appSettings.sortReverse) {
+        folders.sortedWith(
+            MediaSortComparator.audioFolderComparator(
+                primary = sortField,
+                secondary = SortField.NAME,
+                reverse = appSettings.sortReverse,
+            )
+        )
+    }
+
+    // Issue #234: resolve against the UNFILTERED sorted list — the search
+    // box must not narrow an existing selection.
     fun selectedTracksInView(): List<AudioTrack> =
-        sortedTracks.filter { selectedTrackIds.contains(it.id.ifBlank { it.path }) }
+        sortedAllTracks.filter { selectedTrackIds.contains(it.id.ifBlank { it.path }) }
 
     fun playTrackSelection() {
         val selected = selectedTracksInView()
@@ -701,8 +760,9 @@ fun MusicScreen(
     fun albumTracks(album: AudioAlbum): List<AudioTrack> =
         tracks.filter { it.album == album.title }
 
+    // Issue #234: resolve against the UNFILTERED sorted list — see selectedTracksInView.
     fun selectedAlbumsInView(): List<AudioAlbum> =
-        sortedAlbums.filter { selectedAlbumIds.contains(it.id.ifBlank { it.title }) }
+        sortedAllAlbums.filter { selectedAlbumIds.contains(it.id.ifBlank { it.title }) }
 
     fun selectedAlbumTracks(): List<AudioTrack> =
         selectedAlbumsInView().flatMap { albumTracks(it) }
@@ -766,8 +826,9 @@ fun MusicScreen(
     fun artistTracks(artist: AudioArtist): List<AudioTrack> =
         tracks.filter { it.artist == artist.name }
 
+    // Issue #234: resolve against the UNFILTERED sorted list — see selectedTracksInView.
     fun selectedArtistsInView(): List<AudioArtist> =
-        sortedArtists.filter { selectedArtistIds.contains(it.id.ifBlank { it.name }) }
+        sortedAllArtists.filter { selectedArtistIds.contains(it.id.ifBlank { it.name }) }
 
     fun selectedArtistTracks(): List<AudioTrack> =
         selectedArtistsInView().flatMap { artistTracks(it) }
@@ -885,8 +946,9 @@ fun MusicScreen(
         }
     }
 
+    // Issue #234: resolve against the UNFILTERED sorted list — see selectedTracksInView.
     fun selectedPlaylistsInView(): List<Playlist> =
-        sortedPlaylists.filter { selectedPlaylistIds.contains(it.id.ifBlank { it.title }) }
+        sortedAllPlaylists.filter { selectedPlaylistIds.contains(it.id.ifBlank { it.title }) }
 
     fun playPlaylistSelection() {
         scope.launch(Dispatchers.IO) {
@@ -983,8 +1045,9 @@ fun MusicScreen(
             folderPath == folder.path
         }
 
+    // Issue #234: resolve against the UNFILTERED sorted list — see selectedTracksInView.
     fun selectedFoldersInView(): List<AudioFolder> =
-        sortedFolders.filter { selectedFolderIds.contains(it.id.ifBlank { it.path }) }
+        sortedAllFolders.filter { selectedFolderIds.contains(it.id.ifBlank { it.path }) }
 
     fun selectedFolderTracks(): List<AudioTrack> =
         selectedFoldersInView().flatMap { folderTracks(it) }
