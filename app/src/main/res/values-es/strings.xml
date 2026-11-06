@@ -413,6 +413,8 @@
     <string name="music_cleared_history_msg">Historial borrado</string>
     <string name="music_playlist_created_msg">Lista \"%s\" creada</string>
     <string name="music_added_to_playlist_msg">Añadido a \"%s\"</string>
+    <string name="music_already_in_playlist_msg">Ya está en \"%s\"</string>
+    <string name="music_added_some_to_playlist_msg">%1$d añadidos a \"%2$s\", %3$d ya estaban</string>
     <string name="music_deleted_playlist_msg">Se eliminó \"%s\"</string>
 
     <!-- Playlist & Persistence Dialogs -->
@@ -439,6 +441,10 @@
     <string name="playlist_no_custom_playlists">Aún no se han creado listas personalizadas.</string>
     <string name="playlist_items_subtitle">%d elementos • Lista personalizada</string>
     <string name="playlist_cd_delete">Eliminar lista</string>
+    <string name="playlist_cd_rename">Cambiar nombre de la lista</string>
+    <string name="playlist_rename_dialog_title">Cambiar nombre de la lista</string>
+    <string name="playlist_delete_confirm_title">¿Eliminar \"%s\"?</string>
+    <string name="playlist_delete_confirm_desc">Esta lista y todos sus elementos se eliminarán.</string>
     <string name="playlist_play_all">Reproducir todo</string>
     <string name="playlist_empty_title">La lista está vacía</string>
     <string name="playlist_empty_desc">Añade pistas desde el menú de opciones de cualquier pista.</string>

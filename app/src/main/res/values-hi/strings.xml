@@ -413,6 +413,8 @@
     <string name="music_cleared_history_msg">इतिहास साफ़ किया गया</string>
     <string name="music_playlist_created_msg">प्लेलिस्ट « %s » बनाई गई</string>
     <string name="music_added_to_playlist_msg">« %s » में जोड़ा गया</string>
+    <string name="music_already_in_playlist_msg">« %s » में पहले से मौजूद है</string>
+    <string name="music_added_some_to_playlist_msg">%1$d « %2$s » में जोड़े गए, %3$d पहले से मौजूद थे</string>
     <string name="music_deleted_playlist_msg">« %s » हटाई गई</string>
 
     <!-- Playlist & Persistence Dialogs -->
@@ -439,6 +441,10 @@
     <string name="playlist_no_custom_playlists">अभी कोई कस्टम प्लेलिस्ट नहीं बनाई गई है।</string>
     <string name="playlist_items_subtitle">%d आइटम • कस्टम प्लेलिस्ट</string>
     <string name="playlist_cd_delete">प्लेलिस्ट हटाएँ</string>
+    <string name="playlist_cd_rename">प्लेलिस्ट का नाम बदलें</string>
+    <string name="playlist_rename_dialog_title">प्लेलिस्ट का नाम बदलें</string>
+    <string name="playlist_delete_confirm_title">« %s » हटाएँ?</string>
+    <string name="playlist_delete_confirm_desc">यह प्लेलिस्ट और इसके सभी आइटम हटा दिए जाएँगे।</string>
     <string name="playlist_play_all">सभी चलाएँ</string>
     <string name="playlist_empty_title">प्लेलिस्ट खाली है</string>
     <string name="playlist_empty_desc">किसी भी ट्रैक के विकल्प मेनू से ट्रैक जोड़ें।</string>

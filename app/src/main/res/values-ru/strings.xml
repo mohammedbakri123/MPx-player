@@ -413,6 +413,8 @@
     <string name="music_cleared_history_msg">История очищена</string>
     <string name="music_playlist_created_msg">Плейлист «%s» создан</string>
     <string name="music_added_to_playlist_msg">Добавлено в «%s»</string>
+    <string name="music_already_in_playlist_msg">Уже в «%s»</string>
+    <string name="music_added_some_to_playlist_msg">%1$d добавлено в «%2$s», %3$d уже там</string>
     <string name="music_deleted_playlist_msg">Плейлист «%s» удалён</string>
 
     <!-- Playlist & Persistence Dialogs -->
@@ -439,6 +441,10 @@
     <string name="playlist_no_custom_playlists">Пользовательские плейлисты ещё не созданы.</string>
     <string name="playlist_items_subtitle">%d элементов • Пользовательский плейлист</string>
     <string name="playlist_cd_delete">Удалить плейлист</string>
+    <string name="playlist_cd_rename">Переименовать плейлист</string>
+    <string name="playlist_rename_dialog_title">Переименовать плейлист</string>
+    <string name="playlist_delete_confirm_title">Удалить «%s»?</string>
+    <string name="playlist_delete_confirm_desc">Этот плейлист и все его элементы будут удалены.</string>
     <string name="playlist_play_all">Воспроизвести всё</string>
     <string name="playlist_empty_title">Плейлист пуст</string>
     <string name="playlist_empty_desc">Добавляйте треки через меню параметров любого трека.</string>

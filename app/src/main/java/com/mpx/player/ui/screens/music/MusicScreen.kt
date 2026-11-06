@@ -1646,7 +1646,9 @@ fun MusicScreen(
             onSelectPlaylist = { pl ->
                 scope.launch {
                     val playableUri = getPlayableUri(targetTrack)
-                    persistenceRepository.addItemToPlaylist(
+                    // Issue #230: -1 means the track is already in the
+                    // playlist — say so instead of "added".
+                    val rowId = persistenceRepository.addItemToPlaylist(
                         PlaylistItem(
                             playlistId = pl.id,
                             mediaUri = playableUri,
@@ -1657,7 +1659,11 @@ fun MusicScreen(
                         )
                     )
                     trackForPlaylistAdd = null
-                    snackbarHostState.showSnackbar(context.getString(R.string.music_added_to_playlist_msg, pl.name))
+                    if (rowId != -1L) {
+                        snackbarHostState.showSnackbar(context.getString(R.string.music_added_to_playlist_msg, pl.name))
+                    } else {
+                        snackbarHostState.showSnackbar(context.getString(R.string.music_already_in_playlist_msg, pl.name))
+                    }
                 }
             },
             onCreateNewPlaylist = {
@@ -1683,8 +1689,12 @@ fun MusicScreen(
             },
             onSelectPlaylist = { pl ->
                 scope.launch {
+                    // Issue #230: addItemToPlaylist returns -1 for a track
+                    // that is already in the playlist — count the real
+                    // adds so the feedback tells the truth.
+                    var addedCount = 0
                     selected.forEach { track ->
-                        persistenceRepository.addItemToPlaylist(
+                        val rowId = persistenceRepository.addItemToPlaylist(
                             PlaylistItem(
                                 playlistId = pl.id,
                                 mediaUri = track.path,
@@ -1695,6 +1705,7 @@ fun MusicScreen(
                                 durationMs = track.durationMs,
                             )
                         )
+                        if (rowId != -1L) addedCount++
                     }
                     showAddToPlaylistDialog = false
                     tracksForPlaylistAdd = emptyList()
@@ -1703,9 +1714,20 @@ fun MusicScreen(
                     clearArtistSelection()
                     clearPlaylistSelection()
                     clearFolderSelection()
-                    snackbarHostState.showSnackbar(
-                        context.getString(R.string.music_added_to_playlist_msg, pl.name)
-                    )
+                    when {
+                        addedCount == selected.size -> snackbarHostState.showSnackbar(
+                            context.getString(R.string.music_added_to_playlist_msg, pl.name)
+                        )
+                        addedCount == 0 -> snackbarHostState.showSnackbar(
+                            context.getString(R.string.music_already_in_playlist_msg, pl.name)
+                        )
+                        else -> snackbarHostState.showSnackbar(
+                            context.getString(
+                                R.string.music_added_some_to_playlist_msg,
+                                addedCount, pl.name, selected.size - addedCount,
+                            )
+                        )
+                    }
                 }
             },
             onCreateNewPlaylist = {
@@ -1865,6 +1887,16 @@ fun MusicScreen(
                     persistenceRepository.deletePlaylist(pl.id)
                     selectedCustomPlaylist = null
                     snackbarHostState.showSnackbar(context.getString(R.string.music_deleted_playlist_msg, pl.name))
+                }
+            },
+            onRenamePlaylist = { newName ->
+                scope.launch {
+                    persistenceRepository.renamePlaylist(pl.id, newName)
+                    // Issue #230: the dialog reads its title from this
+                    // snapshot — update it so the new name shows at once.
+                    // The Playlists tab refreshes itself via the
+                    // observePlaylists Flow.
+                    selectedCustomPlaylist = pl.copy(name = newName)
                 }
             },
         )

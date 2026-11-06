@@ -1994,8 +1994,12 @@ fun LocalScreen(
             },
             onSelectPlaylist = { pl ->
                 scope.launch {
+                    // Issue #230: addItemToPlaylist returns -1 for an item
+                    // that is already in the playlist — count the real
+                    // adds so the feedback tells the truth.
+                    var addedCount = 0
                     vids.forEach { vid ->
-                        persistenceRepository.addItemToPlaylist(
+                        val rowId = persistenceRepository.addItemToPlaylist(
                             PlaylistItem(
                                 playlistId = pl.id,
                                 mediaUri = vid.path,
@@ -2006,13 +2010,25 @@ fun LocalScreen(
                                 durationMs = vid.durationMs,
                             )
                         )
+                        if (rowId != -1L) addedCount++
                     }
                     showAddToPlaylistDialog = false
                     videosForPlaylistAdd = emptyList()
                     clearSelection()
-                    snackbarHostState.showSnackbar(
-                        context.getString(R.string.music_added_to_playlist_msg, pl.name)
-                    )
+                    when {
+                        addedCount == vids.size -> snackbarHostState.showSnackbar(
+                            context.getString(R.string.music_added_to_playlist_msg, pl.name)
+                        )
+                        addedCount == 0 -> snackbarHostState.showSnackbar(
+                            context.getString(R.string.music_already_in_playlist_msg, pl.name)
+                        )
+                        else -> snackbarHostState.showSnackbar(
+                            context.getString(
+                                R.string.music_added_some_to_playlist_msg,
+                                addedCount, pl.name, vids.size - addedCount,
+                            )
+                        )
+                    }
                 }
             },
             onCreateNewPlaylist = {

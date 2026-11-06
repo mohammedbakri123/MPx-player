@@ -58,7 +58,10 @@ interface PlaylistDao {
     @Query("SELECT * FROM playlist_items WHERE playlistId = :playlistId ORDER BY orderIndex ASC, addedAt ASC")
     suspend fun getPlaylistItems(playlistId: Long): List<PlaylistItemEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    // Issue #230: IGNORE, not REPLACE — a re-add of an item that is already
+    // in the playlist must be a no-op (Room returns -1), not a delete +
+    // re-insert that silently moves the item to the end of the list.
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPlaylistItem(item: PlaylistItemEntity): Long
 
     @Query("DELETE FROM playlist_items WHERE id = :itemId")
