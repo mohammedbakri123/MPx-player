@@ -171,7 +171,9 @@ interface AppSettingsRepository {
      * layout saves so the value is on disk before the change returns.
      * Layout changes are user taps (a few per session at most), so the
      * synchronous write is cheap; high-frequency saves (pinch zoom,
-     * tab switches, playback tweaks) stay on apply().
+     * playback tweaks) stay on apply(). Issue #228: the last-tab save on
+     * a dock switch commits too — it is a discrete user tap, not a
+     * high-frequency write, and losing it reopens the wrong tab.
      */
     fun save(settings: AppSettings, commit: Boolean = false)
 }
