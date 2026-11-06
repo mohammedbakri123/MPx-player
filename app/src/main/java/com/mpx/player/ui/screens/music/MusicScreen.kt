@@ -1746,8 +1746,11 @@ fun MusicScreen(
                             .clip(MpxShapes.small)
                             .clickable {
                                 trackForOptions = null
-                                val idx = tracks.indexOfFirst { it.id == targetTrack.id }.coerceAtLeast(0)
-                                playbackManager?.playAudioQueue(tracks, startIndex = idx)
+                                // Issue #244: play the visible list — the
+                                // filtered, sorted queue row tap plays — not
+                                // the whole unsorted library.
+                                val idx = sortedTracks.indexOfFirst { it.id == targetTrack.id }.coerceAtLeast(0)
+                                playbackManager?.playAudioQueue(sortedTracks, startIndex = idx)
                                 onOpenPlayer()
                             }
                             .padding(vertical = 10.dp, horizontal = 8.dp),
