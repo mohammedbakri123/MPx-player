@@ -93,15 +93,18 @@ import com.mpx.player.ui.theme.MpxTheme
 // Sort direction, mpvEx-style: the ascending label depends on the field,
 // because MPx's natural order is A-Z for names but newest/largest first
 // for dates and sizes. sortReverse=false IS the natural order.
-private fun isSortAscending(field: SortField, sortReverse: Boolean): Boolean =
+// #252: shared with SortViewDialog (same package) so the full sort dialog
+// labels the direction the same way the popup does.
+internal fun isSortAscending(field: SortField, sortReverse: Boolean): Boolean =
     if (field == SortField.NAME) !sortReverse else sortReverse
 
 private fun sortReverseFor(field: SortField, ascending: Boolean): Boolean =
     if (field == SortField.NAME) !ascending else ascending
 
-private fun orderLabelRes(field: SortField, ascending: Boolean): Int = when (field) {
+internal fun orderLabelRes(field: SortField, ascending: Boolean): Int = when (field) {
     SortField.NAME -> if (ascending) R.string.sort_order_az else R.string.sort_order_za
-    SortField.DATE -> if (ascending) R.string.sort_order_oldest else R.string.sort_order_newest
+    // #252: DATE_DURATION sorts by date modified first, so it reads like DATE.
+    SortField.DATE, SortField.DATE_DURATION -> if (ascending) R.string.sort_order_oldest else R.string.sort_order_newest
     SortField.SIZE -> if (ascending) R.string.sort_order_smallest else R.string.sort_order_largest
     else -> if (ascending) R.string.sort_direction_ascending else R.string.sort_direction_descending
 }

@@ -85,6 +85,14 @@ fun HistoryScreen(
 
     val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
 
+    // #252: the "Resume at" label must only appear when a tap would
+    // actually resume — PlaybackManager.playQueue only resumes when
+    // settings.resumePlayback is on (forceResume is false for history
+    // taps), so with the setting off the label would promise a resume
+    // the tap does not deliver. Read fresh on every composition so a
+    // Settings change is picked up when returning to this screen.
+    val resumePlaybackEnabled = realPlaybackManager.settingsRepository.load().resumePlayback
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MpxTheme.colors.black,
@@ -225,7 +233,13 @@ fun HistoryScreen(
                                         color = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
                                         fontSize = 11.sp,
                                     )
-                                    if (item.playbackPositionMs > 1_500L) {
+                                    // #252: hidden when resume is off (see
+                                    // above), and the 2_000 ms floor matches
+                                    // PlaybackManager.shouldResume — a
+                                    // 1_501–2_000 ms position would otherwise
+                                    // show the label while the tap restarts
+                                    // from 0 even with the setting on.
+                                    if (resumePlaybackEnabled && item.playbackPositionMs > 2_000L) {
                                         Spacer(Modifier.width(6.dp))
                                         Text(
                                             text = stringResource(R.string.history_resume_at, formatTime(item.playbackPositionMs)),

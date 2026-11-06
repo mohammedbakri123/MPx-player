@@ -389,8 +389,15 @@ fun SortViewDialog(
 
                 // Paired direction selectors (Issue #70, MX pattern): two
                 // side-by-side choices bound to the existing reverse state.
+                // #252: the LABELS are field-aware, as in LocalSortPopup —
+                // Date's natural order (reverse=false) is newest-first, so
+                // it reads "Newest"/"Oldest", Name reads "A-Z"/"Z-A". Only
+                // the labels change; the SELECTION stays bound to
+                // sortReverse exactly as before.
                 if (onSortReverseChange != null) {
                     Spacer(Modifier.height(8.dp))
+                    val reverseFalseLabelRes = orderLabelRes(currentSort, isSortAscending(currentSort, false))
+                    val reverseTrueLabelRes = orderLabelRes(currentSort, isSortAscending(currentSort, true))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -404,7 +411,7 @@ fun SortViewDialog(
                         ) {
                             RadioButton(selected = !sortReverse, onClick = { onSortReverseChange(false) })
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_direction_ascending), color = MpxTheme.colors.textPrimary)
+                            Text(stringResource(reverseFalseLabelRes), color = MpxTheme.colors.textPrimary)
                         }
                         Row(
                             modifier = Modifier
@@ -415,7 +422,7 @@ fun SortViewDialog(
                         ) {
                             RadioButton(selected = sortReverse, onClick = { onSortReverseChange(true) })
                             Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.sort_direction_descending), color = MpxTheme.colors.textPrimary)
+                            Text(stringResource(reverseTrueLabelRes), color = MpxTheme.colors.textPrimary)
                         }
                     }
                 }
