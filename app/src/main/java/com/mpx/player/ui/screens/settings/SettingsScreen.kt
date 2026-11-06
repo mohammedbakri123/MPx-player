@@ -173,6 +173,16 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // Issue #299: diagnostics cache, hoisted out of
+    // DevelopmentSettingsSection (a LazyColumn item) — the section's own
+    // remember was dropped whenever it scrolled out of composition or the
+    // user switched categories, and its LaunchedEffect(Unit) then re-ran
+    // all five MediaStore scans. The cache lives for this Settings visit
+    // only: leaving Settings drops it, so the next visit loads fresh
+    // stats; switching categories inside Settings reuses it. The
+    // explicit Refresh button in the section still re-runs the scans.
+    var devDiagnostics by remember { mutableStateOf<DevDiagnosticsData?>(null) }
+
     // Issue #191: commit = true writes synchronously — the layout rows
     // below pass it so a swipe-away right after the tap cannot lose the
     // choice. Issue #228: the two hosted sub-screens (Player Layout,
@@ -876,6 +886,8 @@ fun SettingsScreen(
                                     context = context,
                                     playbackManager = actualPlaybackManager,
                                     settings = settings,
+                                    cachedDiagnostics = devDiagnostics,
+                                    onDiagnosticsLoaded = { devDiagnostics = it },
                                 )
                             }
                             "about" -> {
@@ -1090,9 +1102,15 @@ private fun DevelopmentSettingsSection(
     context: Context,
     playbackManager: PlaybackManager,
     settings: AppSettings,
+    // Issue #299: the loaded stats live in SettingsScreen, not here —
+    // this section is a LazyColumn item whose remember was dropped
+    // whenever it left composition, re-running the five MediaStore scans
+    // on every return. The cache is null until the first load (or a
+    // fresh Settings visit), non-null afterwards.
+    cachedDiagnostics: DevDiagnosticsData?,
+    onDiagnosticsLoaded: (DevDiagnosticsData) -> Unit,
 ) {
     val playbackState by playbackManager.playbackState.collectAsState()
-    var devDiagnostics by remember { mutableStateOf<DevDiagnosticsData?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -1101,16 +1119,20 @@ private fun DevelopmentSettingsSection(
         isRefreshing = true
         scope.launch {
             val stats = loadDevDiagnostics(context)
-            devDiagnostics = stats
+            onDiagnosticsLoaded(stats)
             isRefreshing = false
         }
     }
 
     LaunchedEffect(Unit) {
-        refreshStats()
+        // Issue #299: only load when there is nothing cached — scrolling
+        // the section out of composition and back, or switching categories
+        // inside Settings, reuses the cached stats instead of re-scanning.
+        // The Refresh button below still calls refreshStats() directly.
+        if (cachedDiagnostics == null) refreshStats()
     }
 
-    val stats = devDiagnostics
+    val stats = cachedDiagnostics
 
     // Section 1: App & Build Information
     DiagnosticSection(title = stringResource(R.string.dev_section_app_build)) {
