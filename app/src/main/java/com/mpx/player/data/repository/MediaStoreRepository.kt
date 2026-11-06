@@ -451,6 +451,7 @@ class MediaStoreRepository(
                 path = acc.path,
                 videoCount = acc.count,
                 totalSizeFormatted = formatSize(acc.totalSizeBytes),
+                totalSizeBytes = acc.totalSizeBytes,
                 totalDurationMs = acc.totalDurationMs,
                 isNew = acc.isNew,
                 lastModified = acc.lastModified,

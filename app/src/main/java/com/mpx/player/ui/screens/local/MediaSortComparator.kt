@@ -21,21 +21,6 @@ object MediaSortComparator {
         return if (dotIndex > 0) name.substring(0, dotIndex) else name
     }
 
-    private fun parseFormattedSize(formatted: String): Long {
-        if (formatted.isBlank()) return 0L
-        val parts = formatted.trim().split(" ")
-        if (parts.isEmpty()) return 0L
-        val num = parts[0].toDoubleOrNull() ?: return 0L
-        val unit = if (parts.size > 1) parts[1].uppercase(Locale.US) else ""
-        return when {
-            unit.startsWith("TB") -> (num * 1024L * 1024L * 1024L * 1024L).toLong()
-            unit.startsWith("GB") -> (num * 1024L * 1024L * 1024L).toLong()
-            unit.startsWith("MB") -> (num * 1024L * 1024L).toLong()
-            unit.startsWith("KB") -> (num * 1024L).toLong()
-            else -> num.toLong()
-        }
-    }
-
     /**
      * Compares two strings using natural numeric order (e.g. "Episode 2" comes before "Episode 10").
      */
@@ -241,7 +226,9 @@ object MediaSortComparator {
             if (dateCmp != 0) dateCmp else b.totalDurationMs.compareTo(a.totalDurationMs)
         }
         SortField.COUNT -> b.videoCount.compareTo(a.videoCount)
-        SortField.SIZE -> parseFormattedSize(b.totalSizeFormatted).compareTo(parseFormattedSize(a.totalSizeFormatted))
+        // Issue #307: sort on the real summed bytes, not the rounded
+        // display string — 1.04 GB and 1.05 GB both format to "1.0 GB".
+        SortField.SIZE -> b.totalSizeBytes.compareTo(a.totalSizeBytes)
         // Issue #70 fix: was lastModified (a copy of DATE). Now the folder's
         // real total video duration, summed at scan time.
         SortField.DURATION -> b.totalDurationMs.compareTo(a.totalDurationMs)

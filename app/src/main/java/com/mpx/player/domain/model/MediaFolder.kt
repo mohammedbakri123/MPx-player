@@ -10,6 +10,11 @@ data class MediaFolder(
     val path: String,
     val videoCount: Int,
     val totalSizeFormatted: String,
+    // Real summed size of the folder's videos (bytes), accumulated at scan
+    // time. Powers the folder SIZE sort (issue #307): sorting on the
+    // rounded display string above tied folders that format alike
+    // (e.g. 1.04 GB and 1.05 GB both read "1.0 GB").
+    val totalSizeBytes: Long = 0L,
     val isNew: Boolean = false,
     val lastModified: Long = 0L,
     val isStorageRemovable: Boolean = false,
