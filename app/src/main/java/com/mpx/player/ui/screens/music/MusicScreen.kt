@@ -90,6 +90,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -161,6 +162,15 @@ enum class MusicTab(
     ARTISTS("artists", R.string.music_tab_artists),
     FOLDERS("folders", R.string.music_tab_folders);
 }
+
+// Issue #256: Saver for the selected inner tab — MusicTab is an enum, so
+// it is not Bundle-saveable by default. Round-trips through the enum name
+// (same shape as LocalScreen's MediaFolderSaver, #175). An unknown or
+// corrupt restored name falls back to TRACKS, never crashes.
+private val MusicTabSaver: Saver<MusicTab, String> = Saver(
+    save = { it.name },
+    restore = { runCatching { MusicTab.valueOf(it) }.getOrNull() ?: MusicTab.TRACKS },
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -360,7 +370,17 @@ fun MusicScreen(
         list
     }
 
-    var selectedTab by remember { mutableStateOf(visibleTabs.firstOrNull() ?: MusicTab.TRACKS) }
+    // Issue #256: rememberSaveable, not remember — navigateToTab pops
+    // this tab with saveState/restoreState, which restores only
+    // back-stack-entry saved state, so a plain remember reset the inner
+    // tab to the first visible tab on every return. The name-based
+    // MusicTabSaver above round-trips the enum; the LaunchedEffect guard
+    // below still runs after a restore (it is keyed on visibleTabs, which
+    // is recomputed on re-creation) and resets to the first visible tab
+    // if the restored tab was hidden in Settings meanwhile.
+    var selectedTab by rememberSaveable(stateSaver = MusicTabSaver) {
+        mutableStateOf(visibleTabs.firstOrNull() ?: MusicTab.TRACKS)
+    }
 
     LaunchedEffect(visibleTabs) {
         if (selectedTab !in visibleTabs) {
