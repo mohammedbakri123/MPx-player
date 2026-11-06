@@ -20,6 +20,16 @@
 -keep class com.fasterxml.jackson.core.** { *; }
 -keepattributes *Annotation*,Signature,EnclosingMethod
 
+# Jackson (issue #324, youtubedl-android) references three JDK classes Android
+# never ships: java.beans.ConstructorProperties / java.beans.Transient
+# (Java7SupportImpl) and org.w3c.dom.bootstrap.DOMImplementationRegistry
+# (DOMSerializer). R8 fails the minified build on them — silence with the
+# exact rules R8 itself generated (missing_rules.txt). No keep needed:
+# none of this code is reachable from the app's JSON parsing.
+-dontwarn java.beans.ConstructorProperties
+-dontwarn java.beans.Transient
+-dontwarn org.w3c.dom.bootstrap.DOMImplementationRegistry
+
 # smbj (issue #78) pulls three transitive deps Android never uses at runtime:
 # javax.el (mbassy's EL filter), org.ietf.jgss (Kerberos GSS-API — smbj uses
 # NTLM on Android) and slf4j's StaticLoggerBinder (no binding shipped).
