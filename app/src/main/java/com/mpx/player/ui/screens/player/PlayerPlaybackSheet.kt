@@ -81,6 +81,7 @@ import com.mpx.player.ui.components.player.formatTimeMs
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -395,7 +396,12 @@ private fun formatDelaySeconds(delayMs: Int): String =
     if (delayMs == 0) "0.00s" else "%+.2fs".format(delayMs / 1000.0)
 
 private fun rotationLabel(settings: AppSettings): Int =
-    if (settings.autoScreenRotation || settings.screenOrientation == "auto") {
+    // Issue #249: "sensor" is a legacy persisted value the current UI
+    // never writes — PlayerScreen's targetOrientation treats it as Auto,
+    // so the label must too instead of falling through to Landscape.
+    // Exact ==, matching targetOrientation (not ignoreCase).
+    if (settings.autoScreenRotation || settings.screenOrientation == "auto" ||
+        settings.screenOrientation == "sensor") {
         R.string.player_rotation_auto
     } else if (settings.screenOrientation.equals("portrait", ignoreCase = true)) {
         R.string.player_orientation_portrait
@@ -655,7 +661,15 @@ private fun PlaybackSheetSpeedPage(
         ) {
             row.forEach { speed ->
                 FilterChip(
-                    selected = state.speed == speed,
+                    // Issue #249: epsilon, not Float == — the slider
+                    // (0.5..2.0, 29 steps = 0.05 per step) produces
+                    // inexact floats, so a slider-set 1.25x may not equal
+                    // the 1.25f preset exactly. 0.01f is far above float
+                    // rounding (~1e-7) and far below half the smallest
+                    // preset gap (0.125), so no two chips can match at
+                    // once. Display-only: tapping a chip still sets the
+                    // exact preset speed via setSpeed below.
+                    selected = abs(state.speed - speed) < 0.01f,
                     onClick = { playbackManager.setSpeed(speed) },
                     label = { Text(formatMultiplier(speed)) },
                     colors = FilterChipDefaults.filterChipColors(
@@ -899,7 +913,11 @@ private fun PlaybackSheetRotationPage(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val isAuto = currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto"
+    // Issue #249: "sensor" is a legacy persisted value — it means Auto
+    // (PlayerScreen's targetOrientation), so the Auto radio must be
+    // selected; without this no radio was selected at all.
+    val isAuto = currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" ||
+        currentSettings.screenOrientation == "sensor"
     val isLandscape = !currentSettings.autoScreenRotation &&
         currentSettings.screenOrientation.equals("landscape", ignoreCase = true)
     val isPortrait = !currentSettings.autoScreenRotation &&
