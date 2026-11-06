@@ -414,6 +414,21 @@ fun MusicScreen(
     // "" on every tab switch. A String is saveable by default, so no
     // custom Saver is needed (unlike #175's MediaFolder).
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    // #326: search lives in the top bar now (Local pattern) — the open
+    // state is rememberSaveable like the query, so rotation or a tab
+    // switch does not drop the field while a query is active.
+    var isSearching by rememberSaveable { mutableStateOf(false) }
+
+    // #326: Back exits search (exactly one step), like Local — it closes
+    // the field and clears the query. Guarded against selection mode:
+    // search can still be open when a long-press starts a selection
+    // (the top bar is replaced), and Back must exit the selection first.
+    // (Placed after the isSearching/searchQuery declarations: a local
+    // state var is only visible after its declaration.)
+    BackHandler(enabled = isSearching && !isTrackSelectionMode && !isAlbumSelectionMode && !isArtistSelectionMode && !isPlaylistSelectionMode && !isFolderSelectionMode) {
+        isSearching = false
+        searchQuery = ""
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -1137,6 +1152,21 @@ fun MusicScreen(
         if (!isLoading) isRefreshing = false
     }
 
+    // #326: Shuffle All (#64), shared by both top-bar states. Shuffles
+    // the currently visible/filtered track list (sortedTracks is
+    // search-filtered, then sorted — verified, the old button already
+    // shuffled the right list) and starts playback from it via the
+    // existing audio queue path, so next/previous follow shuffled order.
+    // No-op on an empty list instead of opening an empty player; the
+    // button is disabled then, instead of looking tappable and doing
+    // nothing like the old filled button did.
+    fun shuffleVisibleTracks() {
+        if (sortedTracks.isNotEmpty()) {
+            playbackManager?.playAudioQueue(sortedTracks.shuffled(), startIndex = 0)
+            onOpenPlayer()
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MpxTheme.colors.black,
@@ -1186,78 +1216,151 @@ fun MusicScreen(
             } else {
             TopAppBar(
                 title = {
-                    Text(
-                        text = stringResource(R.string.music_screen_title),
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                        ),
-                        color = MpxTheme.colors.textPrimary,
-                    )
+                    if (isSearching) {
+                        // #326: Local folder-view pattern — the title slot
+                        // becomes the search field while searching, so the
+                        // field gets the full bar width instead of sharing
+                        // a row with the shuffle button.
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text(
+                                    stringResource(R.string.music_search_placeholder),
+                                    color = MpxTheme.colors.textSecondary,
+                                    fontSize = 14.sp,
+                                )
+                            },
+                            singleLine = true,
+                            shape = MpxShapes.medium,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MpxTheme.colors.surfaceVariant,
+                                unfocusedContainerColor = MpxTheme.colors.surfaceVariant,
+                                focusedBorderColor = MpxTheme.colors.primary,
+                                unfocusedBorderColor = MpxTheme.colors.border,
+                                focusedTextColor = MpxTheme.colors.textPrimary,
+                                unfocusedTextColor = MpxTheme.colors.textPrimary,
+                            ),
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.music_screen_title),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                            ),
+                            color = MpxTheme.colors.textPrimary,
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MpxTheme.colors.black,
                 ),
                 actions = {
-                    IconButton(onClick = {
-                        updateViewMode(if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST)
-                    }) {
-                        Icon(
-                            imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
-                            contentDescription = stringResource(R.string.cd_toggle_view),
-                            tint = MpxTheme.colors.textPrimary,
-                        )
-                    }
-                    IconButton(onClick = {
-                        scope.launch {
-                            snackbarHostState.showSnackbar(context.getString(R.string.music_equalizer_scheduled))
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Equalizer,
-                            contentDescription = stringResource(R.string.music_cd_equalizer),
-                            tint = MpxTheme.colors.textPrimary,
-                        )
-                    }
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }) {
+                    if (isSearching) {
+                        // #326: while searching only Close + Shuffle stay —
+                        // the field needs the width, and shuffle-the-matches
+                        // is the action that matters mid-search.
+                        IconButton(onClick = { isSearching = false; searchQuery = "" }) {
                             Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = stringResource(R.string.action_more),
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.cd_close_search),
                                 tint = MpxTheme.colors.textPrimary,
                             )
                         }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
+                        IconButton(
+                            onClick = { shuffleVisibleTracks() },
+                            enabled = sortedTracks.isNotEmpty(),
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.local_menu_view_sort)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    showSortPopup = true
-                                },
+                            Icon(
+                                imageVector = Icons.Filled.Shuffle,
+                                contentDescription = stringResource(R.string.music_shuffle_all),
+                                tint = MpxTheme.colors.textPrimary,
                             )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.local_menu_refresh)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    refreshMusic()
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.music_library_refreshed))
-                                    }
-                                },
+                        }
+                    } else {
+                        IconButton(onClick = {
+                            updateViewMode(if (viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST)
+                        }) {
+                            Icon(
+                                imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
+                                contentDescription = stringResource(R.string.cd_toggle_view),
+                                tint = MpxTheme.colors.textPrimary,
                             )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.music_menu_manage_tabs), color = MpxTheme.colors.textPrimary) },
-                                leadingIcon = {
-                                    Icon(Icons.Filled.Tab, contentDescription = null, tint = MpxTheme.colors.primary)
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    showManageTabsDialog = true
-                                },
+                        }
+                        IconButton(onClick = {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(context.getString(R.string.music_equalizer_scheduled))
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Equalizer,
+                                contentDescription = stringResource(R.string.music_cd_equalizer),
+                                tint = MpxTheme.colors.textPrimary,
                             )
+                        }
+                        // #326: search and shuffle as quiet icon buttons, in
+                        // the Local folder-view order (search, then the play
+                        // action) before the overflow menu — no more big
+                        // filled Shuffle pill eating the header row.
+                        IconButton(onClick = { isSearching = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = stringResource(R.string.cd_search),
+                                tint = MpxTheme.colors.textPrimary,
+                            )
+                        }
+                        IconButton(
+                            onClick = { shuffleVisibleTracks() },
+                            enabled = sortedTracks.isNotEmpty(),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Shuffle,
+                                contentDescription = stringResource(R.string.music_shuffle_all),
+                                tint = MpxTheme.colors.textPrimary,
+                            )
+                        }
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(
+                                    imageVector = Icons.Filled.MoreVert,
+                                    contentDescription = stringResource(R.string.action_more),
+                                    tint = MpxTheme.colors.textPrimary,
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.local_menu_view_sort)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showSortPopup = true
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.local_menu_refresh)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        refreshMusic()
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(context.getString(R.string.music_library_refreshed))
+                                        }
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.music_menu_manage_tabs), color = MpxTheme.colors.textPrimary) },
+                                    leadingIcon = {
+                                        Icon(Icons.Filled.Tab, contentDescription = null, tint = MpxTheme.colors.primary)
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showManageTabsDialog = true
+                                    },
+                                )
+                            }
                         }
                     }
                 },
@@ -1366,77 +1469,11 @@ fun MusicScreen(
                 }
             }
 
-            // Search Bar + Shuffle All Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = {
-                        Text(
-                            stringResource(R.string.music_search_placeholder),
-                            color = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                            fontSize = 14.sp,
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = null,
-                            tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                            modifier = Modifier.size(20.dp),
-                        )
-                    },
-                    singleLine = true,
-                    shape = MpxShapes.extraLarge,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MpxTheme.colors.surfaceVariant,
-                        unfocusedContainerColor = MpxTheme.colors.surfaceVariant,
-                        focusedBorderColor = MpxTheme.colors.primary,
-                        unfocusedBorderColor = MpxTheme.colors.border,
-                        focusedTextColor = MpxTheme.colors.textPrimary,
-                        unfocusedTextColor = MpxTheme.colors.textPrimary,
-                    ),
-                )
-
-                Spacer(Modifier.width(10.dp))
-
-                Button(
-                    onClick = {
-                        // Shuffle All (#64): shuffle the currently visible/filtered
-                        // track list and start playback from it via the existing
-                        // audio queue path, so next/previous follow shuffled order.
-                        // No-op on an empty list instead of opening an empty player.
-                        if (sortedTracks.isNotEmpty()) {
-                            playbackManager?.playAudioQueue(sortedTracks.shuffled(), startIndex = 0)
-                            onOpenPlayer()
-                        }
-                    },
-                    shape = MpxShapes.extraLarge,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MpxTheme.colors.primary,
-                        contentColor = MpxTheme.colors.textPrimary,
-                    ),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Shuffle,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        stringResource(R.string.music_shuffle_all),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
+            // #326: the old "Search Bar + Shuffle All Row" lived here — a
+            // cramped search field squeezed next to a big filled Shuffle
+            // pill. Both now live in the top bar (Local pattern): the
+            // search icon expands a field in the title slot, shuffle is a
+            // quiet icon button. The tab row moves up to fill the space.
 
             // Tab Content
             if (!hasPermission) {
