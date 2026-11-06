@@ -108,7 +108,10 @@ fun AudioTrackRow(
                 }
             }
 
-            if (showDuration && track.durationFormatted.isNotBlank()) {
+            // #315: durationMs 0 means unknown (MediaStore reports 0 for it,
+            // and a genuinely 0-length file has nothing worth showing) —
+            // no badge, not "0:00". durationFormatted is "0:00" for 0 ms.
+            if (showDuration && track.durationMs > 0 && track.durationFormatted.isNotBlank()) {
                 VideoDurationBadge(
                     duration = track.durationFormatted,
                     modifier = Modifier.align(Alignment.BottomEnd),
@@ -202,7 +205,8 @@ fun AudioTrackGridCard(
                     showThumbnails = showThumbnails,
                 )
 
-                if (showDuration && track.durationFormatted.isNotBlank()) {
+                // #315: durationMs 0 means unknown — no badge, not "0:00".
+                if (showDuration && track.durationMs > 0 && track.durationFormatted.isNotBlank()) {
                     VideoDurationBadge(
                         duration = track.durationFormatted,
                         modifier = Modifier.align(Alignment.BottomEnd),
