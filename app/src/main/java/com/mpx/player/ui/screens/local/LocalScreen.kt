@@ -337,6 +337,11 @@ fun LocalScreen(
     // starts, so a stale scan can never overwrite the current folder's
     // videos (same Job-handle pattern as PlayerScreen's hide jobs).
     var folderVideosJob by remember { mutableStateOf<Job?>(null) }
+    // Issue #319: the in-flight root scan (refreshFolders, the
+    // permission callback, ON_RESUME) — cancelled on permission loss
+    // so a stale completion cannot repopulate the cleared lists
+    // afterwards, same Job-handle pattern as folderVideosJob (#277).
+    var foldersLoadJob by remember { mutableStateOf<Job?>(null) }
     var folderSortField by remember {
         mutableStateOf(
             try {
@@ -560,6 +565,33 @@ fun LocalScreen(
         return visibleFolders to visibleVideos
     }
 
+    // Issue #319: permission loss must clear ALL media state, not
+    // just folders — the old code left allVideos (file view + search)
+    // and the open folder's folderVideos stale, so the open folder
+    // view kept showing — and playing — videos after permission loss.
+    // The folder is closed, the selection and the pending
+    // playlist-add items are dropped, the add/create dialogs are
+    // closed, and both in-flight scans are cancelled first so a
+    // stale completion cannot repopulate the cleared lists afterwards
+    // (loadFolderVideos' folder-id guard alone is not enough: the
+    // open folder id still matches until it is cleared).
+    fun clearMediaStateOnPermissionLoss() {
+        foldersLoadJob?.cancel()
+        folderVideosJob?.cancel()
+        folders = emptyList()
+        allVideos = emptyList()
+        folderVideos = emptyList()
+        currentFolder = null
+        isLoading = false
+        isFolderLoading = false
+        clearSelection()
+        videosForPlaylistAdd = emptyList()
+        showAddToPlaylistDialog = false
+        showCreatePlaylistDialog = false
+        isFolderSearching = false
+        folderSearchQuery = ""
+    }
+
     fun refreshFolders(showAll: Boolean = appSettings.showAllFolders) {
         if (isLoading) return
         if (MediaPermissions.hasVideoPermission(context)) {
@@ -567,7 +599,8 @@ fun LocalScreen(
             // Issue #295: isLoading is snapshot state — write it on Main,
             // before the IO work, not inside the IO block.
             isLoading = true
-            scope.launch(Dispatchers.IO) {
+            foldersLoadJob?.cancel()
+            foldersLoadJob = scope.launch(Dispatchers.IO) {
                 val scanned = repository.getMediaFolders(showAll)
                 val scannedVideos = repository.getAllVideos(showAll)
                 val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, appSettings.blacklistedFolders)
@@ -579,7 +612,7 @@ fun LocalScreen(
             }
         } else {
             hasPermission = false
-            folders = emptyList()
+            clearMediaStateOnPermissionLoss()
         }
     }
 
@@ -593,7 +626,8 @@ fun LocalScreen(
             // Issue #295: isLoading is snapshot state — write it on Main,
             // before the IO work, not inside the IO block.
             isLoading = true
-            scope.launch(Dispatchers.IO) {
+            foldersLoadJob?.cancel()
+            foldersLoadJob = scope.launch(Dispatchers.IO) {
                 val scanned = repository.getMediaFolders(appSettings.showAllFolders)
                 val scannedVideos = repository.getAllVideos(appSettings.showAllFolders)
                 val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, appSettings.blacklistedFolders)
@@ -604,7 +638,8 @@ fun LocalScreen(
                 }
             }
         } else {
-            folders = emptyList()
+            // Issue #319: clear all media state, not just folders.
+            clearMediaStateOnPermissionLoss()
         }
         }
     }
@@ -632,7 +667,8 @@ fun LocalScreen(
                     // Issue #295: isLoading is snapshot state — write it
                     // on Main, before the IO work, not inside the IO block.
                     isLoading = true
-                    scope.launch(Dispatchers.IO) {
+                    foldersLoadJob?.cancel()
+                    foldersLoadJob = scope.launch(Dispatchers.IO) {
                         val scanned = repository.getMediaFolders(loadedSettings.showAllFolders)
                         val scannedVideos = repository.getAllVideos(loadedSettings.showAllFolders)
                         val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, loadedSettings.blacklistedFolders)
@@ -643,7 +679,12 @@ fun LocalScreen(
                         }
                     }
                 } else {
-                    folders = emptyList()
+                    // Issue #319: clear all media state, not just
+                    // folders — and close the open folder, so the
+                    // refreshFolderVideos call below is skipped
+                    // (currentFolder is null) instead of rescanning
+                    // a folder the app can no longer read.
+                    clearMediaStateOnPermissionLoss()
                 }
                 currentFolder?.let { cf ->
                     refreshFolderVideos(cf.id)
