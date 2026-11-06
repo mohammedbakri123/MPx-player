@@ -37,11 +37,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +74,11 @@ import kotlinx.coroutines.launch
  * Room-backed data and the same rows (icon, title, date + resume-at,
  * progress bar). Back returns to Me — exactly one step.
  */
+
+// #265: one page of history rows. The list grows by this much each time
+// the user scrolls near the end, until every row is loaded.
+private const val HISTORY_PAGE_SIZE = 100
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
@@ -83,7 +94,32 @@ fun HistoryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val dateFormat = remember { SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()) }
 
-    val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
+    // #265: the list is paged (HISTORY_PAGE_SIZE rows at a time) and the
+    // title shows the real total. The old code rendered history.size as
+    // the total while the observer capped at 100 rows, freezing the count
+    // at 100 and hiding every older row. The limit is rememberSaveable so
+    // rotation does not drop already-loaded rows.
+    val historyTotal by persistenceRepository.observeHistoryCount().collectAsState(initial = 0)
+    var historyLimit by rememberSaveable { mutableStateOf(HISTORY_PAGE_SIZE) }
+    val history by persistenceRepository.observeHistory(limit = historyLimit).collectAsState(initial = emptyList())
+
+    // #265: load the next page when the user scrolls near the end. The
+    // effect keys on history.size too, so it re-fires after each page
+    // lands while the user is still sitting at the bottom. It stops by
+    // itself once history.size reaches historyTotal.
+    val historyListState = rememberLazyListState()
+    val historyNearEnd by remember {
+        derivedStateOf {
+            val info = historyListState.layoutInfo
+            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: 0
+            lastVisible >= info.totalItemsCount - 5
+        }
+    }
+    LaunchedEffect(historyNearEnd, history.size) {
+        if (historyNearEnd && history.size < historyTotal) {
+            historyLimit += HISTORY_PAGE_SIZE
+        }
+    }
 
     // #252: the "Resume at" label must only appear when a tap would
     // actually resume — PlaybackManager.playQueue only resumes when
@@ -101,7 +137,7 @@ fun HistoryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(R.string.history_dialog_title, history.size),
+                        text = stringResource(R.string.history_dialog_title, historyTotal),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
@@ -171,6 +207,7 @@ fun HistoryScreen(
             }
         } else {
             LazyColumn(
+                state = historyListState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

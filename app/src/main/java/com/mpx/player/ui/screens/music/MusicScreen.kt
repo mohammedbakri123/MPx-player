@@ -173,6 +173,10 @@ private val MusicTabSaver: Saver<MusicTab, String> = Saver(
     restore = { runCatching { MusicTab.valueOf(it) }.getOrNull() ?: MusicTab.TRACKS },
 )
 
+// #265: one page of history rows in the PlaybackHistoryDialog — same
+// value as the full History page (its own private const there).
+private const val HISTORY_PAGE_SIZE = 100
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicScreen(
@@ -335,7 +339,15 @@ fun MusicScreen(
             ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context))
     }
     val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
-    val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
+    // #265: the dialog list is paged (HISTORY_PAGE_SIZE rows at a time)
+    // and the counts show the real total. The old code rendered
+    // history.size from the 100-row-capped observer, freezing the Music
+    // history count and the dialog title at 100 and hiding older rows.
+    // The limit is rememberSaveable so rotation does not drop rows the
+    // user already loaded in the dialog.
+    val historyTotal by persistenceRepository.observeHistoryCount().collectAsState(initial = 0)
+    var historyLimit by rememberSaveable { mutableStateOf(HISTORY_PAGE_SIZE) }
+    val history by persistenceRepository.observeHistory(limit = historyLimit).collectAsState(initial = emptyList())
     val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
     val allPlaylists = remember(customPlaylists, playlists) {
         customPlaylists.map { it.toPlaylist() } + playlists
@@ -1574,7 +1586,7 @@ fun MusicScreen(
                                     isSelectionMode = isPlaylistSelectionMode,
                                     onTogglePlaylistSelection = { togglePlaylistSelection(it) },
                                     favouritesCount = favourites.size,
-                                    historyCount = history.size,
+                                    historyCount = historyTotal,
                                     onCreatePlaylist = { showCreatePlaylistDialog = true },
                                     onFavouritesClick = { showFavouritesDialog = true },
                                     onHistoryClick = { showHistoryDialog = true },
@@ -2088,6 +2100,12 @@ fun MusicScreen(
     if (showHistoryDialog) {
         PlaybackHistoryDialog(
             history = history,
+            historyTotal = historyTotal,
+            // #265: same paging as the full History page — the dialog
+            // loads the next page when scrolled near the end.
+            onLoadMore = {
+                if (history.size < historyTotal) historyLimit += HISTORY_PAGE_SIZE
+            },
             onDismiss = { showHistoryDialog = false },
             onItemClick = { item ->
                 showHistoryDialog = false

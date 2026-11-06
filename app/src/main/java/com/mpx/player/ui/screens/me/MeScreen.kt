@@ -152,7 +152,10 @@ fun MeScreen(
 
     // Persistent Room data observation for live badge indicators
     val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
-    val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
+    // #265: the badge shows the real history total. The old code observed
+    // the 100-row-capped list and rendered history.size, freezing the
+    // badge at 100. The list itself is not needed here at all.
+    val historyTotal by persistenceRepository.observeHistoryCount().collectAsState(initial = 0)
     val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
 
     // Settings state
@@ -231,7 +234,7 @@ fun MeScreen(
             title = stringResource(R.string.tool_history_title),
             description = stringResource(R.string.tool_history_desc),
             icon = Icons.Filled.History,
-            badge = if (history.isNotEmpty()) "${history.size}" else null,
+            badge = if (historyTotal > 0) "$historyTotal" else null,
             isAvailable = true,
         ),
         MeTool(
