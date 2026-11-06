@@ -212,19 +212,24 @@ fun MiniPlayer(
 
                     Spacer(Modifier.width(8.dp))
 
-                    // Controls: Prev (if available), Hero Play/Pause, Next, Close
-                    if (state.hasPrevious) {
-                        IconButton(
-                            onClick = { playbackManager.skipPrevious() },
-                            modifier = Modifier.size(36.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.SkipPrevious,
-                                contentDescription = stringResource(R.string.mini_player_prev),
-                                tint = MpxTheme.colors.textPrimary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
+                    // Controls: Prev, Hero Play/Pause, Next, Close.
+                    // Issue #290: Prev/Next are always emitted and
+                    // disabled when there is no previous/next item —
+                    // they used to vanish, which shifted the play
+                    // button sideways at the first/last queue item.
+                    // Mirrors PlayerScreen's transport (enabled +
+                    // 0.3f-alpha tint when disabled).
+                    IconButton(
+                        onClick = { playbackManager.skipPrevious() },
+                        enabled = state.hasPrevious,
+                        modifier = Modifier.size(36.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.SkipPrevious,
+                            contentDescription = stringResource(R.string.mini_player_prev),
+                            tint = if (state.hasPrevious) MpxTheme.colors.textPrimary else MpxTheme.colors.textPrimary.copy(alpha = 0.3f),
+                            modifier = Modifier.size(20.dp),
+                        )
                     }
 
                     IconButton(
@@ -239,18 +244,17 @@ fun MiniPlayer(
                         )
                     }
 
-                    if (state.hasNext) {
-                        IconButton(
-                            onClick = { playbackManager.skipNext() },
-                            modifier = Modifier.size(36.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.SkipNext,
-                                contentDescription = stringResource(R.string.mini_player_next),
-                                tint = MpxTheme.colors.textPrimary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
+                    IconButton(
+                        onClick = { playbackManager.skipNext() },
+                        enabled = state.hasNext,
+                        modifier = Modifier.size(36.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.SkipNext,
+                            contentDescription = stringResource(R.string.mini_player_next),
+                            tint = if (state.hasNext) MpxTheme.colors.textPrimary else MpxTheme.colors.textPrimary.copy(alpha = 0.3f),
+                            modifier = Modifier.size(20.dp),
+                        )
                     }
 
                     // Queue button (issue #73): opens the real current queue.
