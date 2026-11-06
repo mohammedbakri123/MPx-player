@@ -433,6 +433,7 @@
     <string name="history_cd_resume">प्ले फिर से शुरू करें</string>
     <string name="playlist_create_dialog_title">नई प्लेलिस्ट</string>
     <string name="playlist_create_dialog_desc">इस कस्टम प्लेलिस्ट के लिए एक नाम दर्ज करें:</string>
+    <string name="playlist_create_type_label">प्लेलिस्ट का प्रकार</string>
     <string name="playlist_name_placeholder">प्लेलिस्ट नाम</string>
     <string name="playlist_add_dialog_title">प्लेलिस्ट में जोड़ें</string>
     <string name="playlist_add_to_header">« %s » को इसमें जोड़ें:</string>

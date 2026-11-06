@@ -2151,9 +2151,12 @@ fun LocalScreen(
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
-            onConfirm = { name ->
+            // #268: Local creates video playlists; the fixed type is
+            // passed through (no selector on this screen).
+            initialIsVideoPlaylist = true,
+            onConfirm = { name, isVideo ->
                 scope.launch {
-                    persistenceRepository.createPlaylist(name, isVideoPlaylist = true)
+                    persistenceRepository.createPlaylist(name, isVideoPlaylist = isVideo)
                     showCreatePlaylistDialog = false
                     snackbarHostState.showSnackbar(
                         context.getString(R.string.snackbar_playlist_created, name)

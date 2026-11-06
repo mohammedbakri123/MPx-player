@@ -433,6 +433,7 @@
     <string name="history_cd_resume">استئناف التشغيل</string>
     <string name="playlist_create_dialog_title">قائمة تشغيل جديدة</string>
     <string name="playlist_create_dialog_desc">أدخل اسماً لقائمة التشغيل المخصصة هذه:</string>
+    <string name="playlist_create_type_label">نوع قائمة التشغيل</string>
     <string name="playlist_name_placeholder">اسم قائمة التشغيل</string>
     <string name="playlist_add_dialog_title">إضافة إلى قائمة التشغيل</string>
     <string name="playlist_add_to_header">إضافة \"%s\" إلى:</string>

@@ -1784,9 +1784,11 @@ fun MusicScreen(
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
-            onConfirm = { name ->
+            // #268: Music creates audio playlists; the fixed type is
+            // passed through (no selector on this screen).
+            onConfirm = { name, isVideo ->
                 scope.launch {
-                    persistenceRepository.createPlaylist(name)
+                    persistenceRepository.createPlaylist(name, isVideoPlaylist = isVideo)
                     showCreatePlaylistDialog = false
                     snackbarHostState.showSnackbar(context.getString(R.string.music_playlist_created_msg, name))
                 }

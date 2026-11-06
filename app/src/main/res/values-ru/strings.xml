@@ -433,6 +433,7 @@
     <string name="history_cd_resume">Продолжить воспроизведение</string>
     <string name="playlist_create_dialog_title">Новый плейлист</string>
     <string name="playlist_create_dialog_desc">Введите имя для этого пользовательского плейлиста:</string>
+    <string name="playlist_create_type_label">Тип плейлиста</string>
     <string name="playlist_name_placeholder">Имя плейлиста</string>
     <string name="playlist_add_dialog_title">Добавить в плейлист</string>
     <string name="playlist_add_to_header">Добавить «%s» в:</string>
