@@ -56,6 +56,7 @@ import com.mpx.player.data.network.smb.SmbStreamProxy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 private val VIDEO_EXTS = setOf("mp4", "mkv", "avi", "mov", "webm", "m4v", "3gp", "ts", "m2ts", "flv", "wmv", "mpg", "mpeg")
 private val AUDIO_EXTS = setOf("mp3", "flac", "wav", "ogg", "m4a", "aac", "opus")
@@ -449,5 +450,5 @@ private fun formatSize(bytes: Long): String {
         value /= 1024
         unit++
     }
-    return if (unit == 0) "$bytes B" else "%.1f %s".format(value, units[unit])
+    return if (unit == 0) "$bytes B" else String.format(Locale.US, "%.1f %s", value, units[unit])
 }

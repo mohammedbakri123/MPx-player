@@ -797,7 +797,7 @@ fun SettingsScreen(
                                 Spacer(Modifier.height(8.dp))
                                 StepperRow(
                                     label = stringResource(R.string.subtitle_sync_header),
-                                    valueText = if (settings.subtitleDelayMs == 0) "0.00s" else "%+.2fs".format(settings.subtitleDelayMs / 1000.0),
+                                    valueText = if (settings.subtitleDelayMs == 0) "0.00s" else String.format(Locale.US, "%+.2fs", settings.subtitleDelayMs / 1000.0),
                                     minusContentDescription = stringResource(R.string.subtitle_sync_decrease),
                                     plusContentDescription = stringResource(R.string.subtitle_sync_increase),
                                     onMinus = { update(settings.copy(subtitleDelayMs = (settings.subtitleDelayMs - 100).coerceIn(-10000, 10000))) },
@@ -808,7 +808,7 @@ fun SettingsScreen(
                                 )
                                 StepperRow(
                                     label = stringResource(R.string.subtitle_speed_header),
-                                    valueText = "%.1f×".format(settings.subtitleSpeed),
+                                    valueText = String.format(Locale.US, "%.1f×", settings.subtitleSpeed),
                                     minusContentDescription = stringResource(R.string.subtitle_speed_decrease),
                                     plusContentDescription = stringResource(R.string.subtitle_speed_increase),
                                     onMinus = {

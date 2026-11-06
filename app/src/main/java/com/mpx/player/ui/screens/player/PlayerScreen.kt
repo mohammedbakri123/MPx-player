@@ -1393,7 +1393,7 @@ fun PlayerScreen(
                 ) {
                     val sign = if (seekDeltaMs >= 0) "+" else "-"
                     val absSeconds = (kotlin.math.abs(seekDeltaMs) / 1000).toInt()
-                    val deltaStr = String.format("%s%02d:%02d", sign, absSeconds / 60, absSeconds % 60)
+                    val deltaStr = String.format(Locale.US, "%s%02d:%02d", sign, absSeconds / 60, absSeconds % 60)
 
                     Text(
                         text = stringResource(R.string.player_hud_scrub, deltaStr),

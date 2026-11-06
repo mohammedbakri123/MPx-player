@@ -84,6 +84,7 @@ import com.mpx.player.ui.theme.MpxTheme
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+import java.util.Locale
 
 /**
  * Playback sheet (issue #153): one MpxBottomSheet replacing the Player Menu
@@ -397,7 +398,7 @@ private fun formatMultiplier(value: Float): String {
 
 /** "+0.50s" / "-0.20s" / "0.00s", same format the old subtitle dialog used. */
 private fun formatDelaySeconds(delayMs: Int): String =
-    if (delayMs == 0) "0.00s" else "%+.2fs".format(delayMs / 1000.0)
+    if (delayMs == 0) "0.00s" else String.format(Locale.US, "%+.2fs", delayMs / 1000.0)
 
 private fun rotationLabel(settings: AppSettings): Int =
     // Issue #249: "sensor" is a legacy persisted value the current UI
@@ -1288,7 +1289,7 @@ private fun PlaybackSheetSubtitleSettingsPage(
         val speed = currentSettings.subtitleSpeed
         StepperRow(
             label = stringResource(R.string.subtitle_speed_header),
-            valueText = "%.1f×".format(speed),
+            valueText = String.format(Locale.US, "%.1f×", speed),
             minusContentDescription = stringResource(R.string.subtitle_speed_header),
             plusContentDescription = stringResource(R.string.subtitle_speed_header),
             onMinus = {
