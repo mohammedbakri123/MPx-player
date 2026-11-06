@@ -25,7 +25,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             tracks = true
         }
 
-        return AppSettings(
+        val settings = AppSettings(
 
         showHiddenFiles = prefs.getBoolean("show_hidden_files", false),
         showThumbnails = prefs.getBoolean("show_thumbnails", true),
@@ -110,6 +110,30 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             doubleTapSeekSeconds = prefs.getInt("double_tap_seek_seconds", 10),
             lastSmbHost = prefs.getString("last_smb_host", "") ?: "",
         )
+
+        // Issue #257: one-time migration of the legacy "sensor"
+        // rotation value. Old builds persisted screenOrientation =
+        // "sensor" (meaning Auto); the current UI never writes it, the
+        // player treats it as Auto, but Settings' auto-rotation toggle
+        // reads only autoScreenRotation — false for a legacy value — so
+        // Settings showed auto-rotation OFF while the player was in
+        // sensor mode. Normalize to the canonical Auto representation
+        // (autoScreenRotation = true, screenOrientation = "auto") and
+        // persist it, so the stale value is gone for good. apply(), not
+        // commit(): load() runs on the main thread inside compositions,
+        // and the write is idempotent — after it the stored value is
+        // "auto" and this branch never runs again. save() never calls
+        // load(), and nothing listens for preference changes, so no
+        // loop is possible.
+        if (settings.screenOrientation.equals("sensor", ignoreCase = true)) {
+            val migrated = settings.copy(
+                autoScreenRotation = true,
+                screenOrientation = "auto",
+            )
+            save(migrated, commit = false)
+            return migrated
+        }
+        return settings
     }
 
     // The commit default lives on the interface only: Kotlin forbids
