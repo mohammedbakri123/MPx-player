@@ -1893,6 +1893,10 @@ fun LocalScreen(
                     appSettings = updated
                 },
                 onDismiss = { showSortPopup = false },
+                // Issue #232: the folder-scope full sort dialog
+                // (SortViewDialog for folder contents) had no entry point
+                // — this row in the popup is it.
+                onOpenFullSortDialog = { showFolderSortDialog = true },
             )
         } else {
             LocalSortPopup(
@@ -1974,6 +1978,11 @@ fun LocalScreen(
                     appSettings = updated
                 },
                 onDismiss = { showSortPopup = false },
+                // Issue #232: the root-scope full sort dialog
+                // (SortViewDialog for the root folders list) was reachable
+                // only from the file-view section header — this row in the
+                // popup is the entry point from the folders view.
+                onOpenFullSortDialog = { showSortDialog = true },
             )
         }
     }
