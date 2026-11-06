@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Environment
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -85,10 +86,12 @@ enum class YtDlpUpdateOutcome {
  * The plain yt-dlp_linux_aarch64 standalone binary does NOT run on Android
  * (glibc vs Bionic) — that route was checked and rejected.
  *
- * No `:ffmpeg` artifact is bundled (139 MB AAR): without ffmpeg, yt-dlp
- * cannot merge separate video+audio streams, so downloads use the best
- * SINGLE-file format (`best[ext=mp4]/best` — typically 720p for YouTube).
- * If merging matters later, adding `:ffmpeg` is the follow-up.
+ * The `:ffmpeg` artifact is bundled too (issue #336, 139 MB AAR across
+ * 4 ABIs — the arm64 release APK grows by its ~36 MB arm64 slice):
+ * with ffmpeg, yt-dlp merges
+ * the best separate video+audio streams (1080p+ on YouTube) instead of
+ * capping at the best single file (typically 720p). No `-f` is passed;
+ * Seal's `-S` format sorter picks the streams (see FormatSorter.kt).
  *
  * Files go to the app-private external Downloads dir
  * (`Android/data/com.mpx.player/files/Download/MPx/`): no storage
@@ -178,7 +181,14 @@ class MpxDownloader private constructor(context: Context) {
             // on first run) is retried on the next download attempt.
             _initState.value = DownloaderInitState.INITIALIZING
             return try {
-                withContext(Dispatchers.IO) { YoutubeDL.getInstance().init(appContext) }
+                withContext(Dispatchers.IO) {
+                    YoutubeDL.getInstance().init(appContext)
+                    // Issue #336: ffmpeg ships in its own artifact
+                    // (Seal calls FFmpeg.init at App start, App.kt:92);
+                    // without this init yt-dlp cannot merge separate
+                    // video+audio streams even with the artifact bundled.
+                    FFmpeg.init(appContext)
+                }
                 _initState.value = DownloaderInitState.READY
                 true
             } catch (e: CancellationException) {
@@ -432,9 +442,13 @@ class MpxDownloader private constructor(context: Context) {
                 // downloadsDir on completion, so the Destination line in
                 // stdout still points at the final file.
                 addOption("-P", "temp:${tempDirFor.absolutePath}")
-                // Best single-file format: no ffmpeg is bundled, so no
-                // merging of separate video+audio streams (see class doc).
-                addOption("-f", "best[ext=mp4]/best")
+                // Issue #336: Seal's `-S` format sorter instead of a
+                // hardcoded `-f` — no `-f` means yt-dlp picks (and, with
+                // ffmpeg bundled, merges) the best video+audio streams;
+                // the sorter prefers vp9.2 (av01 when the device
+                // hardware-decodes AV1). The sorter works without
+                // ffmpeg too (it still improves single-file picks).
+                applyFormatSorter(formatSorter())
                 addOption("--no-playlist")
                 addOption("--no-mtime")
                 // Same fail-fast options as the info fetch above.
