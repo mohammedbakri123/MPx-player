@@ -1302,9 +1302,12 @@ fun PlayerScreen(
         )
 
         // Empty-player state when opened without a queued video (issue #57)
+        // Issue #293: hidden in PiP like every other overlay — if the
+        // player is empty while in PiP, the window must not show this
+        // placeholder column.
         val currentMedia = state.currentItem
         if (currentMedia == null) {
-            Column(
+            if (!isInPipMode) Column(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(32.dp),
@@ -1339,7 +1342,10 @@ fun PlayerScreen(
             }
         } else if (!currentMedia.isVideo) {
             // Audio-only mode visual representation
-            Column(
+            // Issue #293: hidden in PiP like every other overlay — if the
+            // queue advances to an audio item while in PiP, the window
+            // must not show a music-note placeholder.
+            if (!isInPipMode) Column(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(32.dp),
@@ -1825,7 +1831,13 @@ fun PlayerScreen(
                                 val codec = MpxMediaCodecSelector.shortCodecLabel(name)
                                 if (codec != null) "${state.decoderMode.label} • $codec" else state.decoderMode.label
                             } ?: state.decoderMode.label
-                            Surface(
+                            // Issue #293: the decoder pill is video-only —
+                            // for audio-only or empty-player states it would
+                            // cycle HW/HW+/SW and toast a decoder change
+                            // that affects nothing, so it is not shown. (It
+                            // is already inside the controls overlay, which
+                            // is hidden in PiP.)
+                            if (state.currentItem?.isVideo == true) Surface(
                                 modifier = Modifier
                                     .clip(MpxShapes.small)
                                     .clickable {
