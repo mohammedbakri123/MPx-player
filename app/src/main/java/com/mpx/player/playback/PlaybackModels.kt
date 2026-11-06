@@ -154,4 +154,12 @@ data class PlaybackState(
     val playbackMetrics: EnginePlaybackMetrics? = null,
     /** Latest observed mpv load stage (null before any load). */
     val mpvLoadStage: MpvLoadStage? = null,
+    /**
+     * Issue #260: display size of the current video (mpv dwidth/dheight,
+     * observed — not polled). 0 until the video's dimensions are known;
+     * the PiP params effect keys on these, so the armed auto-enter
+     * aspect refreshes the moment they arrive instead of staying 16:9.
+     */
+    val videoWidth: Int = 0,
+    val videoHeight: Int = 0,
 )

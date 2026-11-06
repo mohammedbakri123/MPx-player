@@ -581,15 +581,25 @@ fun PlayerScreen(
     // item change (and on first composition), in PiP and out of it: in PiP
     // it refreshes the action label; out of PiP it re-arms/disarms
     // auto-enter to match the current session.
-    LaunchedEffect(state.isPlaying, state.currentItem?.id, isInPipMode) {
+    // Issue #260: the dimensions are observed state now, not plain
+    // getters — at item-change time they are still 0, so the params were
+    // armed with the 16:9 fallback and no later trigger corrected them
+    // (a portrait video auto-entered as a 16:9 window unless the user
+    // toggled play/pause first). Keying on state.videoWidth/Height
+    // re-runs this the moment mpv reports the real size, and the body
+    // reads the state values so the effect is a pure function of its
+    // keys. Manual PiP (enterPip above) and onUserLeaveHint keep reading
+    // the live getters — at tap time the video is already playing, so
+    // they were never stale.
+    LaunchedEffect(state.isPlaying, state.currentItem?.id, isInPipMode, state.videoWidth, state.videoHeight) {
         val act = activity ?: return@LaunchedEffect
         val item = state.currentItem
         PipUtils.updatePipParams(
             act,
             currentSettings,
             state.isPlaying,
-            playbackManager.videoWidth,
-            playbackManager.videoHeight,
+            state.videoWidth,
+            state.videoHeight,
             item?.isVideo == true,
         )
     }

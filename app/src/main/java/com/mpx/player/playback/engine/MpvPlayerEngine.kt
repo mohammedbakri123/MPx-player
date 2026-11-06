@@ -167,6 +167,10 @@ class MpvPlayerEngine(
     private var playRequested: Boolean = false
     private var cachedPlaybackState: Int = PlayerEngine.STATE_IDLE
     private var cachedSpeed: Float = 1.0f
+    // Issue #260: last video display size notified to the listener, so
+    // the dwidth/dheight branch below only fires on a real change.
+    private var cachedVideoWidth: Int = 0
+    private var cachedVideoHeight: Int = 0
 
     private var activeHwdec: String = ""
     private var activeVideoCodec: String = ""
@@ -531,6 +535,13 @@ class MpvPlayerEngine(
         // (gpu -> null -> gpu), so this adds no event spam; the branch
         // reads the value back and only acts when it is actually "null".
         mpv.observeProperty("vo", MPV.mpvFormat.MPV_FORMAT_STRING)
+        // Issue #260: observe the display size so the PiP aspect ratio
+        // refreshes the moment the dimensions become known — they are
+        // still 0 at item-change time, when the PlayerScreen effect arms
+        // the params with the 16:9 fallback. dwidth/dheight change
+        // rarely (0 -> WxH at load, 0 on unload), so this adds no spam.
+        mpv.observeProperty("dwidth", MPV.mpvFormat.MPV_FORMAT_INT64)
+        mpv.observeProperty("dheight", MPV.mpvFormat.MPV_FORMAT_INT64)
         mpv.observeProperty("track-list", MPV.mpvFormat.MPV_FORMAT_NONE)
 
         mpv.addObserver(eventObserver)
@@ -917,6 +928,24 @@ class MpvPlayerEngine(
                     cachedSpeed = speed
                     mainHandler.post {
                         engineListener?.onPlaybackParametersChanged(speed)
+                    }
+                }
+            }
+            "dwidth", "dheight" -> {
+                // Issue #260: the display size becomes known only once
+                // mpv has the video track — at load, or at first frame —
+                // long after the PlayerScreen effect armed the PiP params
+                // with the 16:9 fallback. The values are read back here
+                // (not trusted from the event) and notified only on a
+                // real change, so the dimensions become observed state
+                // and the params refresh the moment they are known.
+                val w = videoWidth
+                val h = videoHeight
+                if (w != cachedVideoWidth || h != cachedVideoHeight) {
+                    cachedVideoWidth = w
+                    cachedVideoHeight = h
+                    mainHandler.post {
+                        engineListener?.onVideoSizeChanged(w, h)
                     }
                 }
             }
