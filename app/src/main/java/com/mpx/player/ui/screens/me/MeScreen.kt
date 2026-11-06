@@ -77,6 +77,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -87,7 +88,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -96,6 +100,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.MeTool
@@ -152,6 +158,20 @@ fun MeScreen(
     // Settings state
     var appSettings by remember { mutableStateOf(realSettingsRepo.load()) }
     val activeLanguage = currentLanguage.ifBlank { appSettings.appLanguage }
+
+    // Issue #231: reload settings on resume (same pattern as LocalScreen) —
+    // a PiP/language/last-SMB-host change made in Settings must show up
+    // here without the tab being recreated.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                appSettings = realSettingsRepo.load()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     // Dialog navigation states
     var showFavouritesDialog by remember { mutableStateOf(false) }
@@ -235,8 +255,10 @@ fun MeScreen(
             title = stringResource(R.string.tool_local_network_title),
             description = stringResource(R.string.tool_local_network_desc),
             icon = Icons.Filled.Wifi,
-            badge = stringResource(R.string.tool_badge_soon),
-            isAvailable = false,
+            // Issue #231: the SMB browser works — the tile is real, not
+            // "Soon", and must not look greyed out.
+            badge = null,
+            isAvailable = true,
         ),
         MeTool(
             id = "cloud_drive",
@@ -459,11 +481,11 @@ fun MeScreen(
                         PreferenceRow(
                             icon = Icons.Filled.Language,
                             title = stringResource(R.string.pref_app_language),
-                            subtitle = when (activeLanguage.lowercase()) {
-                                LocaleHelper.LANGUAGE_ARABIC -> stringResource(R.string.lang_arabic)
-                                LocaleHelper.LANGUAGE_ENGLISH -> stringResource(R.string.lang_english)
-                                else -> stringResource(R.string.lang_system_default)
-                            },
+                            // Issue #231: the display name comes from the
+                            // shared LocaleHelper mapping, so every supported
+                            // language names itself instead of falling back
+                            // to "System default".
+                            subtitle = stringResource(LocaleHelper.languageTitleRes(activeLanguage)),
                             onClick = { showLanguageDialog = true },
                         )
                         HorizontalDivider(
@@ -478,7 +500,14 @@ fun MeScreen(
                                 if (appSettings.popupPlayEnabled) {
                                     stringResource(
                                         R.string.pip_status_enabled,
-                                        if (appSettings.popupPlayControls == "Seek10") stringResource(R.string.pip_controls_seek10) else stringResource(R.string.pip_controls_prev_next),
+                                        // Issue #231: map all three control
+                                        // values explicitly — PlayPauseOnly
+                                        // used to render as "Prev/Next".
+                                        when (appSettings.popupPlayControls) {
+                                            "Seek10" -> stringResource(R.string.pip_controls_seek10)
+                                            "PlayPauseOnly" -> stringResource(R.string.pip_controls_play_pause_only)
+                                            else -> stringResource(R.string.pip_controls_prev_next) // "PrevNext" (Default)
+                                        },
                                     )
                                 } else {
                                     stringResource(R.string.pip_status_disabled)
@@ -643,11 +672,9 @@ fun MeScreen(
                 onLanguageChanged?.invoke(selectedLang)
                 showLanguageDialog = false
                 scope.launch {
-                    val langName = when (selectedLang.lowercase()) {
-                        LocaleHelper.LANGUAGE_ARABIC -> "العربية"
-                        LocaleHelper.LANGUAGE_ENGLISH -> "English"
-                        else -> context.getString(R.string.lang_system_default)
-                    }
+                    // Issue #231: the shared mapping names every supported
+                    // language (the old when only knew Arabic and English).
+                    val langName = context.getString(LocaleHelper.languageTitleRes(selectedLang))
                     snackbarHostState.showSnackbar(context.getString(R.string.lang_applied_msg, langName))
                 }
             },
@@ -1071,23 +1098,15 @@ private fun AppLanguageDialog(
     onDismiss: () -> Unit,
     onSelectLanguage: (String) -> Unit,
 ) {
-    val languages = listOf(
+    // Issue #231: one shared language list — the Me dialog offers the same
+    // 10 options, in the same order, as the Settings language picker.
+    val languages = LocaleHelper.SUPPORTED_LANGUAGES.map { option ->
         Triple(
-            LocaleHelper.LANGUAGE_SYSTEM,
-            stringResource(R.string.lang_system_default),
-            stringResource(R.string.lang_system_default_desc),
-        ),
-        Triple(
-            LocaleHelper.LANGUAGE_ENGLISH,
-            stringResource(R.string.lang_english),
-            stringResource(R.string.lang_english_desc),
-        ),
-        Triple(
-            LocaleHelper.LANGUAGE_ARABIC,
-            stringResource(R.string.lang_arabic),
-            stringResource(R.string.lang_arabic_desc),
-        ),
-    )
+            option.code,
+            stringResource(option.titleRes),
+            stringResource(option.descRes),
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1106,7 +1125,9 @@ private fun AppLanguageDialog(
             }
         },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            // Issue #231: the list grew from 3 to 10 languages, so it
+            // scrolls instead of overflowing the dialog on short screens.
+            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 languages.forEach { (langKey, langTitle, langDesc) ->
                     val isSelected = currentLanguage.equals(langKey, ignoreCase = true)
                     Row(
@@ -1290,6 +1311,24 @@ private fun CustomPopupPlayDialog(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.pip_controls_seek10), color = MpxTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                // Issue #231: the third controls mode — Play/Pause only —
+                // was a real RemoteAction set in PipUtils but had no radio.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { currentControls = "PlayPauseOnly" }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = currentControls == "PlayPauseOnly",
+                        onClick = { currentControls = "PlayPauseOnly" },
+                        colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.pip_controls_play_pause_only), color = MpxTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
                 }
 
                 Spacer(Modifier.height(10.dp))

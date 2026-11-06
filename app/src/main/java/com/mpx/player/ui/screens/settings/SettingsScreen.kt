@@ -194,18 +194,9 @@ fun SettingsScreen(
     }
 
     val activeLanguage = currentLanguage.ifBlank { settings.appLanguage }
-    val languageSubtitle = when (activeLanguage.lowercase()) {
-        LocaleHelper.LANGUAGE_ARABIC -> stringResource(R.string.lang_arabic)
-        LocaleHelper.LANGUAGE_ENGLISH -> stringResource(R.string.lang_english)
-        LocaleHelper.LANGUAGE_SPANISH -> stringResource(R.string.lang_spanish)
-        LocaleHelper.LANGUAGE_FRENCH -> stringResource(R.string.lang_french)
-        LocaleHelper.LANGUAGE_HINDI -> stringResource(R.string.lang_hindi)
-        LocaleHelper.LANGUAGE_CHINESE -> stringResource(R.string.lang_chinese)
-        LocaleHelper.LANGUAGE_RUSSIAN -> stringResource(R.string.lang_russian)
-        LocaleHelper.LANGUAGE_GERMAN -> stringResource(R.string.lang_german)
-        LocaleHelper.LANGUAGE_PORTUGUESE -> stringResource(R.string.lang_portuguese)
-        else -> stringResource(R.string.lang_system_default)
-    }
+    // Issue #231: one shared language list — the display name comes from
+    // LocaleHelper.languageTitleRes, the same mapping the Me screen uses.
+    val languageSubtitle = stringResource(LocaleHelper.languageTitleRes(activeLanguage))
 
     val themeSubtitle = when (settings.appTheme) {
         "Light" -> stringResource(R.string.theme_option_light)
@@ -353,65 +344,17 @@ fun SettingsScreen(
                     Column {
                         when (selectedCategory.id) {
                             "language" -> {
-                                val languageOptions = listOf(
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_SYSTEM,
-                                        stringResource(R.string.lang_system_default),
-                                        stringResource(R.string.lang_system_default_desc),
-                                    ),
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_ENGLISH,
-                                        stringResource(R.string.lang_english),
-                                        stringResource(R.string.lang_english_desc),
-                                    ),
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_ARABIC,
-                                        stringResource(R.string.lang_arabic),
-                                        stringResource(R.string.lang_arabic_desc),
-                                    ),
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_SPANISH,
-                                        stringResource(R.string.lang_spanish),
-                                        stringResource(R.string.lang_spanish_desc),
-                                    ),
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_FRENCH,
-                                        stringResource(R.string.lang_french),
-                                        stringResource(R.string.lang_french_desc),
-                                    ),
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_HINDI,
-                                        stringResource(R.string.lang_hindi),
-                                        stringResource(R.string.lang_hindi_desc),
-                                    ),
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_CHINESE,
-                                        stringResource(R.string.lang_chinese),
-                                        stringResource(R.string.lang_chinese_desc),
-                                    ),
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_RUSSIAN,
-                                        stringResource(R.string.lang_russian),
-                                        stringResource(R.string.lang_russian_desc),
-                                    ),
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_GERMAN,
-                                        stringResource(R.string.lang_german),
-                                        stringResource(R.string.lang_german_desc),
-                                    ),
-                                    Triple(
-                                        LocaleHelper.LANGUAGE_PORTUGUESE,
-                                        stringResource(R.string.lang_portuguese),
-                                        stringResource(R.string.lang_portuguese_desc),
-                                    ),
-                                )
-                                languageOptions.forEach { (langCode, langTitle, langDesc) ->
+                                // Issue #231: one shared language list —
+                                // Settings and the Me dialog offer the same
+                                // 10 options, in the same order.
+                                val languageOptions = LocaleHelper.SUPPORTED_LANGUAGES
+                                languageOptions.forEach { option ->
                                     ChoiceRowWithSubtitle(
-                                        title = langTitle,
-                                        subtitle = langDesc,
-                                        selected = activeLanguage.equals(langCode, ignoreCase = true),
+                                        title = stringResource(option.titleRes),
+                                        subtitle = stringResource(option.descRes),
+                                        selected = activeLanguage.equals(option.code, ignoreCase = true),
                                     ) {
-                                        update(settings.copy(appLanguage = langCode))
+                                        update(settings.copy(appLanguage = option.code))
                                     }
                                 }
                                 Spacer(Modifier.height(6.dp))
