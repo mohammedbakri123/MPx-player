@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.provider.MediaStore
+import com.mpx.player.R
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
@@ -322,8 +323,8 @@ class MediaStoreRepository(
 
                         val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
                         val folderName = rawBucketName?.ifBlank { null }
-                            ?: parentFile?.name?.ifBlank { "Videos" }
-                            ?: "Videos"
+                            ?: parentFile?.name?.ifBlank { context.getString(R.string.media_videos) }
+                            ?: context.getString(R.string.media_videos)
 
                         val size = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
                         val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
@@ -425,7 +426,7 @@ class MediaStoreRepository(
                     folderMap.getOrPut(bucketId) {
                         FolderAccumulator(
                             id = bucketId,
-                            name = dir.name.ifBlank { "Folder" },
+                            name = dir.name.ifBlank { context.getString(R.string.media_folder) },
                             path = path,
                             isRemovable = isRemovablePath(path),
                         ).apply {
@@ -534,8 +535,8 @@ class MediaStoreRepository(
                             val file = if (path.isNotBlank()) File(path) else null
                             val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
                             val title = rawTitle?.ifBlank { null }
-                                ?: file?.name?.ifBlank { "Video" }
-                                ?: "Video"
+                                ?: file?.name?.ifBlank { context.getString(R.string.media_video) }
+                                ?: context.getString(R.string.media_video)
                             if (!showHidden && isHiddenPath(path, title)) continue
                             val rawId = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
                             val id = rawId.ifBlank { path }
@@ -552,8 +553,8 @@ class MediaStoreRepository(
                             val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
                             val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
                             val folderName = rawBucketName?.ifBlank { null }
-                                ?: file?.parentFile?.name?.ifBlank { "Videos" }
-                                ?: "Videos"
+                                ?: file?.parentFile?.name?.ifBlank { context.getString(R.string.media_videos) }
+                                ?: context.getString(R.string.media_videos)
                             videos.add(
                                 VideoFile(
                                     id = id,
@@ -640,8 +641,8 @@ class MediaStoreRepository(
                         val file = if (path.isNotBlank()) File(path) else null
                         val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
                         val title = rawTitle?.ifBlank { null }
-                            ?: file?.name?.ifBlank { "Video" }
-                            ?: "Video"
+                            ?: file?.name?.ifBlank { context.getString(R.string.media_video) }
+                            ?: context.getString(R.string.media_video)
 
                         // Issue #218: these exclusions are independent of
                         // showAll. Hidden files need the "Show hidden files"
@@ -681,8 +682,8 @@ class MediaStoreRepository(
 
                         val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
                         val folderName = rawBucketName?.ifBlank { null }
-                            ?: file?.parentFile?.name?.ifBlank { "Videos" }
-                            ?: "Videos"
+                            ?: file?.parentFile?.name?.ifBlank { context.getString(R.string.media_videos) }
+                            ?: context.getString(R.string.media_videos)
 
                         val isRecent = dateAdded > sevenDaysAgoSec || dateModified > sevenDaysAgoSec
                         val isRemovable = isRemovablePath(path)
@@ -763,7 +764,7 @@ class MediaStoreRepository(
 
                         val id = if (idCol >= 0) cursor.getLong(idCol).toString() else path
                         val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
-                        val title = rawTitle?.ifBlank { "Unknown Track" } ?: "Unknown Track"
+                        val title = rawTitle?.ifBlank { context.getString(R.string.media_unknown_track) } ?: context.getString(R.string.media_unknown_track)
                         // Issue #281: same always-excluded check as videos
                         // (#218) — audio under /Android/data or /Android/obb
                         // is another app's private audio and stays out of the
@@ -777,14 +778,14 @@ class MediaStoreRepository(
 
                         val rawArtist = if (artistCol >= 0) cursor.getString(artistCol) else null
                         val artist = if (rawArtist.isNullOrBlank() || rawArtist == "<unknown>") {
-                            "Unknown Artist"
+                            context.getString(R.string.media_unknown_artist)
                         } else {
                             rawArtist
                         }
 
                         val rawAlbum = if (albumCol >= 0) cursor.getString(albumCol) else null
                         val album = if (rawAlbum.isNullOrBlank() || rawAlbum == "<unknown>") {
-                            "Unknown Album"
+                            context.getString(R.string.media_unknown_album)
                         } else {
                             rawAlbum
                         }
@@ -893,7 +894,7 @@ class MediaStoreRepository(
             folderMap.getOrPut(folderPath) { mutableListOf() }.add(track)
         }
         return folderMap.map { (path, folderTracks) ->
-            val name = File(path).name.ifBlank { "Music" }
+            val name = File(path).name.ifBlank { context.getString(R.string.media_music) }
             AudioFolder(
                 id = path.hashCode().toString(),
                 name = name,
@@ -958,7 +959,7 @@ class MediaStoreRepository(
                     val nameCol = cursor.getColumnIndex(MediaStore.Audio.Playlists.NAME)
                     while (cursor.moveToNext()) {
                         val rawId = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
-                        val name = if (nameCol >= 0) cursor.getString(nameCol) ?: "Playlist" else "Playlist"
+                        val name = if (nameCol >= 0) cursor.getString(nameCol) ?: context.getString(R.string.media_playlist) else context.getString(R.string.media_playlist)
                         val id = if (volume != null) "$volume:$rawId" else rawId
                         if (seenIds.add(id)) {
                             val memberTracks = rawId.toLongOrNull()?.let { playlistId ->
@@ -969,7 +970,7 @@ class MediaStoreRepository(
                                     id = id,
                                     title = name,
                                     itemCount = memberTracks.size,
-                                    subtitle = "Device Playlist",
+                                    subtitle = context.getString(R.string.media_playlist_device),
                                 )
                             )
                         }

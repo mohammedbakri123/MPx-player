@@ -182,9 +182,13 @@
     <string name="pip_enable_toggle">Ativar reprodução em janela (PiP)</string>
     <string name="pip_window_controls_header">Controles da janela PiP:</string>
     <string name="pip_controls_prev_next">Anterior / Próximo (padrão)</string>
-    <string name="pip_controls_seek10">Avançar / retroceder (10s)</string>
+    <string name="pip_controls_seek10">Avançar / retroceder</string>
     <string name="pip_seek_rewind">Retroceder %1$d s</string>
     <string name="pip_seek_forward">Avançar %1$d s</string>
+    <string name="pip_action_pause">Pausa</string>
+    <string name="pip_action_play">Reproduzir</string>
+    <string name="pip_action_previous">Anterior</string>
+    <string name="pip_action_next">Seguinte</string>
 
     <string name="list_show_all_folders">Mostrar todas as pastas</string>
     <string name="list_show_all_folders_desc">Mostrar todas as pastas verificadas, incluindo pastas vazias e ocultas</string>
@@ -235,6 +239,9 @@
     <string name="subtitle_shadow_label">Sombra</string>
     <string name="subtitle_alignment_header">Alinhamento:</string>
     <string name="subtitle_padding_header">Margem inferior:</string>
+    <string name="subtitle_padding_small">Pequeno</string>
+    <string name="subtitle_padding_medium">Médio</string>
+    <string name="subtitle_padding_large">Grande</string>
     <string name="subtitle_scale_header">Escala:</string>
     <string name="subtitle_ass_header">Avançado (estilos ASS):</string>
     <string name="subtitle_sync_header">Sincronização de legendas</string>
@@ -326,6 +333,7 @@
     <string name="tool_badge_soon">Em breve</string>
     <string name="tool_badge_plugin">Plug-in</string>
     <string name="tool_badge_planned">Planeado</string>
+    <string name="tool_badge_real">Real</string>
     <string name="tool_status_title">Salvar status</string>
     <string name="tool_status_desc">Status do WhatsApp</string>
     <string name="tool_private_title">Pasta privada</string>
@@ -495,6 +503,18 @@
     <string name="action_more">Mais</string>
     <string name="media_type_video">Vídeo</string>
     <string name="media_type_audio">Áudio</string>
+    <string name="media_unknown_track">Faixa desconhecida</string>
+    <string name="media_unknown_artist">Artista desconhecido</string>
+    <string name="media_unknown_album">Álbum desconhecido</string>
+    <string name="media_video">Vídeo</string>
+    <string name="media_videos">Vídeos</string>
+    <string name="media_folder">Pasta</string>
+    <string name="media_music">Música</string>
+    <string name="media_playlist">Lista de reprodução</string>
+    <string name="media_playlist_device">Lista de reprodução do dispositivo</string>
+    <string name="playlist_new">Nova lista de reprodução</string>
+    <string name="media_session_album_video">Reprodução de vídeo</string>
+    <string name="media_session_album_music">Faixa de música</string>
     <string name="favourites_dialog_title">Favoritos (%d)</string>
     <string name="favourites_empty_title">Ainda sem favoritos</string>
     <string name="favourites_empty_desc">Toque no ícone de coração no player ou nas opções da faixa para adicionar favoritos.</string>
@@ -648,7 +668,7 @@
     <string name="pip_banner_unsupported_reason">O picture-in-picture não está disponível neste dispositivo ou versão do Android.</string>
     <string name="pip_window_controls_desc">Escolha quais controles aparecem na janela flutuante.</string>
     <string name="pip_controls_prev_next_desc">Botões anterior e próximo ao lado de reproduzir/pausar.</string>
-    <string name="pip_controls_seek10_desc">Retroceder e avançar 10 segundos.</string>
+    <string name="pip_controls_seek10_desc">Retroceder e avançar pela duração de salto configurada.</string>
     <string name="pip_controls_play_pause_only">Somente reproduzir / pausar</string>
     <string name="pip_controls_play_pause_only_desc">Somente um botão de reproduzir/pausar na janela flutuante.</string>
     <string name="pip_size_header">Tamanho da janela</string>

@@ -162,7 +162,8 @@ object PipUtils {
                     context,
                     if (isPlaying) R.drawable.ic_notification_pause else R.drawable.ic_notification_play,
                 )
-                actions.add(RemoteAction(toggleIcon, if (isPlaying) "Pause" else "Play", if (isPlaying) "Pause" else "Play", togglePending))
+                val toggleLabel = context.getString(if (isPlaying) R.string.pip_action_pause else R.string.pip_action_play)
+                actions.add(RemoteAction(toggleIcon, toggleLabel, toggleLabel, togglePending))
 
                 // Fast Forward by the configured duration
                 val ffIntent = Intent(context, PlaybackService::class.java).apply {
@@ -181,7 +182,8 @@ object PipUtils {
                     context,
                     if (isPlaying) R.drawable.ic_notification_pause else R.drawable.ic_notification_play,
                 )
-                actions.add(RemoteAction(toggleIcon, if (isPlaying) "Pause" else "Play", if (isPlaying) "Pause" else "Play", togglePending))
+                val toggleLabel = context.getString(if (isPlaying) R.string.pip_action_pause else R.string.pip_action_play)
+                actions.add(RemoteAction(toggleIcon, toggleLabel, toggleLabel, togglePending))
             }
             else -> { // "PrevNext" (Default)
                 val prevIntent = Intent(context, PlaybackService::class.java).apply {
@@ -189,7 +191,7 @@ object PipUtils {
                 }
                 val prevPending = PendingIntent.getService(context, 104, prevIntent, flags)
                 val prevIcon = Icon.createWithResource(context, R.drawable.ic_notification_prev)
-                actions.add(RemoteAction(prevIcon, "Previous", "Previous", prevPending))
+                actions.add(RemoteAction(prevIcon, context.getString(R.string.pip_action_previous), context.getString(R.string.pip_action_previous), prevPending))
 
                 val toggleIntent = Intent(context, PlaybackService::class.java).apply {
                     action = PlaybackService.ACTION_TOGGLE
@@ -199,14 +201,15 @@ object PipUtils {
                     context,
                     if (isPlaying) R.drawable.ic_notification_pause else R.drawable.ic_notification_play,
                 )
-                actions.add(RemoteAction(toggleIcon, if (isPlaying) "Pause" else "Play", if (isPlaying) "Pause" else "Play", togglePending))
+                val toggleLabel = context.getString(if (isPlaying) R.string.pip_action_pause else R.string.pip_action_play)
+                actions.add(RemoteAction(toggleIcon, toggleLabel, toggleLabel, togglePending))
 
                 val nextIntent = Intent(context, PlaybackService::class.java).apply {
                     action = PlaybackService.ACTION_NEXT
                 }
                 val nextPending = PendingIntent.getService(context, 105, nextIntent, flags)
                 val nextIcon = Icon.createWithResource(context, R.drawable.ic_notification_next)
-                actions.add(RemoteAction(nextIcon, "Next", "Next", nextPending))
+                actions.add(RemoteAction(nextIcon, context.getString(R.string.pip_action_next), context.getString(R.string.pip_action_next), nextPending))
             }
         }
         builder.setActions(actions)

@@ -182,9 +182,13 @@
     <string name="pip_enable_toggle">पॉप-अप प्ले (PiP) सक्षम करें</string>
     <string name="pip_window_controls_header">PiP विंडो नियंत्रण:</string>
     <string name="pip_controls_prev_next">पिछला / अगला (डिफ़ॉल्ट)</string>
-    <string name="pip_controls_seek10">फ़ास्ट फ़ॉरवर्ड / रिवाइंड (10 सेकंड)</string>
+    <string name="pip_controls_seek10">फ़ास्ट फ़ॉरवर्ड / रिवाइंड</string>
     <string name="pip_seek_rewind">%1$d सेकंड पीछे</string>
     <string name="pip_seek_forward">%1$d सेकंड आगे</string>
+    <string name="pip_action_pause">रोकें</string>
+    <string name="pip_action_play">चलाएँ</string>
+    <string name="pip_action_previous">पिछला</string>
+    <string name="pip_action_next">अगला</string>
 
     <string name="list_show_all_folders">सभी फ़ोल्डर दिखाएँ</string>
     <string name="list_show_all_folders_desc">खाली और छिपे फ़ोल्डर सहित हर स्कैन किया गया फ़ोल्डर दिखाएँ</string>
@@ -235,6 +239,9 @@
     <string name="subtitle_shadow_label">ड्रॉप शैडो</string>
     <string name="subtitle_alignment_header">संरेखण:</string>
     <string name="subtitle_padding_header">निचला पैडिंग:</string>
+    <string name="subtitle_padding_small">छोटा</string>
+    <string name="subtitle_padding_medium">मध्यम</string>
+    <string name="subtitle_padding_large">बड़ा</string>
     <string name="subtitle_scale_header">स्केल:</string>
     <string name="subtitle_ass_header">उन्नत (ASS स्टाइल):</string>
     <string name="subtitle_sync_header">उपशीर्षक सिंक</string>
@@ -326,6 +333,7 @@
     <string name="tool_badge_soon">जल्द ही</string>
     <string name="tool_badge_plugin">प्लगइन</string>
     <string name="tool_badge_planned">नियोजित</string>
+    <string name="tool_badge_real">असली</string>
     <string name="tool_status_title">स्टेटस सेवर</string>
     <string name="tool_status_desc">WhatsApp स्टेटस</string>
     <string name="tool_private_title">प्राइवेट फ़ोल्डर</string>
@@ -495,6 +503,18 @@
     <string name="action_more">अधिक</string>
     <string name="media_type_video">वीडियो</string>
     <string name="media_type_audio">ऑडियो</string>
+    <string name="media_unknown_track">अज्ञात ट्रैक</string>
+    <string name="media_unknown_artist">अज्ञात कलाकार</string>
+    <string name="media_unknown_album">अज्ञात एल्बम</string>
+    <string name="media_video">वीडियो</string>
+    <string name="media_videos">वीडियो</string>
+    <string name="media_folder">फ़ोल्डर</string>
+    <string name="media_music">संगीत</string>
+    <string name="media_playlist">प्लेलिस्ट</string>
+    <string name="media_playlist_device">डिवाइस प्लेलिस्ट</string>
+    <string name="playlist_new">नई प्लेलिस्ट</string>
+    <string name="media_session_album_video">वीडियो प्लेबैक</string>
+    <string name="media_session_album_music">संगीत ट्रैक</string>
     <string name="favourites_dialog_title">पसंदीदा (%d)</string>
     <string name="favourites_empty_title">अभी कोई पसंदीदा नहीं</string>
     <string name="favourites_empty_desc">पसंदीदा जोड़ने के लिए प्लेयर या ट्रैक विकल्पों में हार्ट आइकन पर टैप करें।</string>
@@ -648,7 +668,7 @@
     <string name="pip_banner_unsupported_reason">इस डिवाइस या Android संस्करण पर पिक्चर-इन-पिक्चर उपलब्ध नहीं है।</string>
     <string name="pip_window_controls_desc">चुनें कि फ़्लोटिंग विंडो पर कौन से नियंत्रण दिखें।</string>
     <string name="pip_controls_prev_next_desc">प्ले/पॉज़ के बगल में पिछले और अगले बटन।</string>
-    <string name="pip_controls_seek10_desc">10 सेकंड पीछे और आगे जाएँ।</string>
+    <string name="pip_controls_seek10_desc">कॉन्फ़िगर की गई स्किप अवधि के अनुसार पीछे और आगे जाएँ।</string>
     <string name="pip_controls_play_pause_only">केवल प्ले / पॉज़</string>
     <string name="pip_controls_play_pause_only_desc">फ़्लोटिंग विंडो पर केवल प्ले/पॉज़ बटन।</string>
     <string name="pip_size_header">विंडो आकार</string>

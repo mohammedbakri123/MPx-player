@@ -182,9 +182,13 @@
     <string name="pip_enable_toggle">تفعيل التشغيل في نافذة منبثقة (صورة في صورة)</string>
     <string name="pip_window_controls_header">عناصر التحكم بنافذة صورة في صورة:</string>
     <string name="pip_controls_prev_next">السابق / التالي (افتراضي)</string>
-    <string name="pip_controls_seek10">تقديم / إرجاع سريع (10 ثوانٍ)</string>
+    <string name="pip_controls_seek10">تقديم / إرجاع سريع</string>
     <string name="pip_seek_rewind">إرجاع %1$d ثوانٍ</string>
     <string name="pip_seek_forward">تقديم %1$d ثوانٍ</string>
+    <string name="pip_action_pause">إيقاف مؤقت</string>
+    <string name="pip_action_play">تشغيل</string>
+    <string name="pip_action_previous">السابق</string>
+    <string name="pip_action_next">التالي</string>
 
     <string name="list_show_all_folders">إظهار كافة المجلدات</string>
     <string name="list_show_all_folders_desc">إظهار كافة المجلدات المفحوصة بما فيها المجلدات الفارغة والمخفية</string>
@@ -235,6 +239,9 @@
     <string name="subtitle_shadow_label">ظل منسدل</string>
     <string name="subtitle_alignment_header">المحاذاة:</string>
     <string name="subtitle_padding_header">الحاشية السفلية:</string>
+    <string name="subtitle_padding_small">صغير</string>
+    <string name="subtitle_padding_medium">متوسط</string>
+    <string name="subtitle_padding_large">كبير</string>
     <string name="subtitle_scale_header">الحجم:</string>
     <string name="subtitle_ass_header">متقدم (أنماط ASS):</string>
     <string name="subtitle_sync_header">مزامنة الترجمة</string>
@@ -326,6 +333,7 @@
     <string name="tool_badge_soon">قريباً</string>
     <string name="tool_badge_plugin">إضافة</string>
     <string name="tool_badge_planned">مخطط له</string>
+    <string name="tool_badge_real">حقيقي</string>
     <string name="tool_status_title">حفظ الحالة</string>
     <string name="tool_status_desc">حالة واتساب</string>
     <string name="tool_private_title">المجلد الخاص</string>
@@ -495,6 +503,18 @@
     <string name="action_more">المزيد</string>
     <string name="media_type_video">فيديو</string>
     <string name="media_type_audio">صوت</string>
+    <string name="media_unknown_track">مسار غير معروف</string>
+    <string name="media_unknown_artist">فنان غير معروف</string>
+    <string name="media_unknown_album">ألبوم غير معروف</string>
+    <string name="media_video">فيديو</string>
+    <string name="media_videos">فيديوهات</string>
+    <string name="media_folder">مجلد</string>
+    <string name="media_music">موسيقى</string>
+    <string name="media_playlist">قائمة تشغيل</string>
+    <string name="media_playlist_device">قائمة تشغيل الجهاز</string>
+    <string name="playlist_new">قائمة تشغيل جديدة</string>
+    <string name="media_session_album_video">تشغيل فيديو</string>
+    <string name="media_session_album_music">مقطع موسيقي</string>
     <string name="favourites_dialog_title">المفضلة (%d)</string>
     <string name="favourites_empty_title">لا توجد عناصر مفضلة بعد</string>
     <string name="favourites_empty_desc">اضغط على أيقونة القلب في المشغل أو خيارات المسار لإضافة المفضلة.</string>
@@ -648,7 +668,7 @@
     <string name="pip_banner_unsupported_reason">صورة داخل صورة غير متوفرة على هذا الجهاز أو إصدار أندرويد هذا.</string>
     <string name="pip_window_controls_desc">اختر عناصر التحكم التي تظهر على النافذة العائمة.</string>
     <string name="pip_controls_prev_next_desc">زرا السابق والتالي بجانب التشغيل/الإيقاف المؤقت.</string>
-    <string name="pip_controls_seek10_desc">التخطي للخلف وللأمام بمقدار 10 ثوانٍ.</string>
+    <string name="pip_controls_seek10_desc">التخطي للخلف وللأمام بمقدار مدة التخطي المضبوطة.</string>
     <string name="pip_controls_play_pause_only">تشغيل / إيقاف مؤقت فقط</string>
     <string name="pip_controls_play_pause_only_desc">زر تشغيل/إيقاف مؤقت فقط على النافذة العائمة.</string>
     <string name="pip_size_header">حجم النافذة</string>

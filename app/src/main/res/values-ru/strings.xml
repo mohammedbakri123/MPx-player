@@ -182,9 +182,13 @@
     <string name="pip_enable_toggle">Включить режим «картинка в картинке» (PiP)</string>
     <string name="pip_window_controls_header">Элементы управления окном PiP:</string>
     <string name="pip_controls_prev_next">Назад / Вперёд (по умолчанию)</string>
-    <string name="pip_controls_seek10">Перемотка вперёд / назад (10 с)</string>
+    <string name="pip_controls_seek10">Перемотка вперёд / назад</string>
     <string name="pip_seek_rewind">Назад на %1$d с</string>
     <string name="pip_seek_forward">Вперёд на %1$d с</string>
+    <string name="pip_action_pause">Пауза</string>
+    <string name="pip_action_play">Играть</string>
+    <string name="pip_action_previous">Назад</string>
+    <string name="pip_action_next">Далее</string>
 
     <string name="list_show_all_folders">Показывать все папки</string>
     <string name="list_show_all_folders_desc">Показывать все отсканированные папки, включая пустые и скрытые</string>
@@ -235,6 +239,9 @@
     <string name="subtitle_shadow_label">Тень</string>
     <string name="subtitle_alignment_header">Выравнивание:</string>
     <string name="subtitle_padding_header">Нижний отступ:</string>
+    <string name="subtitle_padding_small">Маленький</string>
+    <string name="subtitle_padding_medium">Средний</string>
+    <string name="subtitle_padding_large">Большой</string>
     <string name="subtitle_scale_header">Масштаб:</string>
     <string name="subtitle_ass_header">Дополнительно (стили ASS):</string>
     <string name="subtitle_sync_header">Синхронизация субтитров</string>
@@ -326,6 +333,7 @@
     <string name="tool_badge_soon">Скоро</string>
     <string name="tool_badge_plugin">Плагин</string>
     <string name="tool_badge_planned">Запланировано</string>
+    <string name="tool_badge_real">Настоящий</string>
     <string name="tool_status_title">Сохранение статусов</string>
     <string name="tool_status_desc">Статусы WhatsApp</string>
     <string name="tool_private_title">Личная папка</string>
@@ -495,6 +503,18 @@
     <string name="action_more">Ещё</string>
     <string name="media_type_video">Видео</string>
     <string name="media_type_audio">Аудио</string>
+    <string name="media_unknown_track">Неизвестный трек</string>
+    <string name="media_unknown_artist">Неизвестный исполнитель</string>
+    <string name="media_unknown_album">Неизвестный альбом</string>
+    <string name="media_video">Видео</string>
+    <string name="media_videos">Видео</string>
+    <string name="media_folder">Папка</string>
+    <string name="media_music">Музыка</string>
+    <string name="media_playlist">Плейлист</string>
+    <string name="media_playlist_device">Плейлист устройства</string>
+    <string name="playlist_new">Новый плейлист</string>
+    <string name="media_session_album_video">Воспроизведение видео</string>
+    <string name="media_session_album_music">Музыкальный трек</string>
     <string name="favourites_dialog_title">Избранное (%d)</string>
     <string name="favourites_empty_title">Пока нет избранного</string>
     <string name="favourites_empty_desc">Нажмите значок сердца в плеере или в параметрах трека, чтобы добавить избранное.</string>
@@ -648,7 +668,7 @@
     <string name="pip_banner_unsupported_reason">Режим «картинка в картинке» недоступен на этом устройстве или версии Android.</string>
     <string name="pip_window_controls_desc">Выберите, какие элементы управления отображаются в плавающем окне.</string>
     <string name="pip_controls_prev_next_desc">Кнопки «назад» и «вперёд» рядом с воспроизведением/паузой.</string>
-    <string name="pip_controls_seek10_desc">Перемотка назад и вперёд на 10 секунд.</string>
+    <string name="pip_controls_seek10_desc">Перемотка назад и вперёд на настроенную длительность пропуска.</string>
     <string name="pip_controls_play_pause_only">Только воспроизведение / пауза</string>
     <string name="pip_controls_play_pause_only_desc">Только кнопка воспроизведения/паузы в плавающем окне.</string>
     <string name="pip_size_header">Размер окна</string>

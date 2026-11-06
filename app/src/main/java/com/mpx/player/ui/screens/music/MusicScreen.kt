@@ -352,7 +352,7 @@ fun MusicScreen(
 
     val persistenceRepository = remember(context) {
         playbackManager?.persistenceRepository
-            ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context))
+            ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context), context)
     }
     val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
     // #265: the dialog list is paged (HISTORY_PAGE_SIZE rows at a time)
