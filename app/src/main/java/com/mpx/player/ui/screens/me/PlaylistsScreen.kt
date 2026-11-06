@@ -259,7 +259,17 @@ fun PlaylistsScreen(
                 scope.launch {
                     persistenceRepository.deletePlaylist(pl.id)
                     selectedPlaylist = null
-                    snackbarHostState.showSnackbar("Playlist deleted")
+                    snackbarHostState.showSnackbar(context.getString(R.string.music_deleted_playlist_msg, pl.name))
+                }
+            },
+            onRenamePlaylist = { newName ->
+                scope.launch {
+                    persistenceRepository.renamePlaylist(pl.id, newName)
+                    // Issue #230: the dialog reads its title from this
+                    // snapshot — update it so the new name shows at once.
+                    // The Playlists list refreshes itself via the
+                    // observePlaylists Flow.
+                    selectedPlaylist = pl.copy(name = newName)
                 }
             },
         )

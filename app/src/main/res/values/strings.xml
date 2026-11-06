@@ -413,6 +413,8 @@
     <string name="music_cleared_history_msg">Cleared History</string>
     <string name="music_playlist_created_msg">Playlist \"%s\" created</string>
     <string name="music_added_to_playlist_msg">Added to \"%s\"</string>
+    <string name="music_already_in_playlist_msg">Already in \"%s\"</string>
+    <string name="music_added_some_to_playlist_msg">%1$d added to \"%2$s\", %3$d already there</string>
     <string name="music_deleted_playlist_msg">Deleted \"%s\"</string>
 
     <!-- Playlist & Persistence Dialogs -->
@@ -439,6 +441,10 @@
     <string name="playlist_no_custom_playlists">No custom playlists created yet.</string>
     <string name="playlist_items_subtitle">%d items • Custom Playlist</string>
     <string name="playlist_cd_delete">Delete playlist</string>
+    <string name="playlist_cd_rename">Rename playlist</string>
+    <string name="playlist_rename_dialog_title">Rename Playlist</string>
+    <string name="playlist_delete_confirm_title">Delete \"%s\"?</string>
+    <string name="playlist_delete_confirm_desc">This playlist and all its items will be deleted.</string>
     <string name="playlist_play_all">Play All</string>
     <string name="playlist_empty_title">Playlist is Empty</string>
     <string name="playlist_empty_desc">Add tracks using the options menu on any track.</string>

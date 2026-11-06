@@ -45,6 +45,11 @@ interface MediaPersistenceRepository {
     // --- Playlist Items ---
     fun observePlaylistItems(playlistId: Long): Flow<List<PlaylistItem>>
     suspend fun getPlaylistItems(playlistId: Long): List<PlaylistItem>
+    /**
+     * Adds [item] to its playlist. Issue #230: returns the new row id, or
+     * -1 when the item is already in the playlist (the insert is a no-op —
+     * the existing row keeps its position, it is NOT moved to the end).
+     */
     suspend fun addItemToPlaylist(item: PlaylistItem): Long
     suspend fun removeItemFromPlaylist(playlistItemId: Long)
     suspend fun removeMediaFromPlaylist(playlistId: Long, mediaUri: String)

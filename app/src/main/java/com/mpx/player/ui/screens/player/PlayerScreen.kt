@@ -2002,7 +2002,11 @@ fun PlayerScreen(
             onDismiss = { showAddToPlaylistDialog = false },
             onSelectPlaylist = { pl ->
                 scope.launch {
-                    playbackManager.persistenceRepository.addItemToPlaylist(
+                    // Issue #230: -1 means the item is already in the
+                    // playlist — say so instead of "added". This screen
+                    // has no snackbar host, so feedback is a Toast like
+                    // the rest of the player screen.
+                    val rowId = playbackManager.persistenceRepository.addItemToPlaylist(
                         PlaylistItem(
                             playlistId = pl.id,
                             mediaUri = current.uri,
@@ -2014,6 +2018,12 @@ fun PlayerScreen(
                         )
                     )
                     showAddToPlaylistDialog = false
+                    val msg = if (rowId != -1L) {
+                        context.getString(R.string.music_added_to_playlist_msg, pl.name)
+                    } else {
+                        context.getString(R.string.music_already_in_playlist_msg, pl.name)
+                    }
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 }
             },
             onCreateNewPlaylist = {

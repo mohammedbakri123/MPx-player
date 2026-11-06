@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Movie
@@ -62,6 +63,7 @@ import com.mpx.player.domain.model.PlaylistItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.mpx.player.ui.components.MpxDialog
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -380,12 +382,16 @@ fun PlaybackHistoryDialog(
 
 /**
  * Dialog to create a new custom playlist persisted in Room.
+ * Issue #230: also reused for renaming — pass [initialName] plus the
+ * rename title and Save confirm; the text-field + save pattern is the same.
  */
 @Composable
 fun CreatePlaylistDialog(
     initialName: String = "",
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
+    titleRes: Int = R.string.playlist_create_dialog_title,
+    confirmRes: Int = R.string.action_create,
 ) {
     var name by rememberSaveable { mutableStateOf(initialName) }
 
@@ -396,7 +402,7 @@ fun CreatePlaylistDialog(
         modifier = Modifier.border(MpxHairline, MpxTheme.colors.border, AlertDialogDefaults.shape),
         title = {
             Text(
-                text = stringResource(R.string.playlist_create_dialog_title),
+                text = stringResource(titleRes),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MpxTheme.colors.textPrimary,
             )
@@ -434,7 +440,7 @@ fun CreatePlaylistDialog(
                 enabled = name.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = MpxTheme.colors.primary),
             ) {
-                Text(stringResource(R.string.action_create))
+                Text(stringResource(confirmRes))
             }
         },
         dismissButton = {
@@ -568,7 +574,10 @@ fun AddToPlaylistDialog(
 }
 
 /**
- * Dialog displaying contents of a custom playlist with Play All and delete actions.
+ * Dialog displaying contents of a custom playlist with Play All, rename
+ * and delete actions. Issue #230: rename calls the existing repo method
+ * via [onRenamePlaylist]; delete asks for confirmation first — the trash
+ * tap alone never deletes anything.
  */
 @Composable
 fun PlaylistDetailsDialog(
@@ -579,7 +588,13 @@ fun PlaylistDetailsDialog(
     onPlayItem: (PlaylistItem) -> Unit,
     onRemoveItem: (Long) -> Unit,
     onDeletePlaylist: () -> Unit,
+    onRenamePlaylist: (String) -> Unit,
 ) {
+    // Issue #230: both sub-dialogs are hosted here so both callers
+    // (Playlists page, Music screen) get rename + delete-confirm for free.
+    var showRename by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MpxTheme.colors.black,
@@ -605,12 +620,21 @@ fun PlaylistDetailsDialog(
                         color = MpxTheme.colors.textSecondary,
                     )
                 }
-                IconButton(onClick = onDeletePlaylist) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.playlist_cd_delete),
-                        tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
-                    )
+                Row {
+                    IconButton(onClick = { showRename = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = stringResource(R.string.playlist_cd_rename),
+                            tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
+                        )
+                    }
+                    IconButton(onClick = { showDeleteConfirm = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = stringResource(R.string.playlist_cd_delete),
+                            tint = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
+                        )
+                    }
                 }
             }
         },
@@ -728,6 +752,39 @@ fun PlaylistDetailsDialog(
             }
         },
     )
+
+    // Issue #230: rename reuses the create dialog's text-field + save
+    // pattern, pre-filled with the current name.
+    if (showRename) {
+        CreatePlaylistDialog(
+            initialName = playlist.name,
+            onDismiss = { showRename = false },
+            onConfirm = { newName ->
+                showRename = false
+                onRenamePlaylist(newName)
+            },
+            titleRes = R.string.playlist_rename_dialog_title,
+            confirmRes = R.string.action_save,
+        )
+    }
+
+    // Issue #230: one accidental trash tap must not delete the playlist —
+    // only the confirm button here runs onDeletePlaylist.
+    if (showDeleteConfirm) {
+        MpxDialog(
+            title = stringResource(R.string.playlist_delete_confirm_title, playlist.name),
+            onDismiss = { showDeleteConfirm = false },
+            confirmText = stringResource(R.string.playlist_cd_delete),
+            onConfirm = {
+                showDeleteConfirm = false
+                onDeletePlaylist()
+            },
+            dismissText = stringResource(R.string.action_cancel),
+            body = {
+                Text(stringResource(R.string.playlist_delete_confirm_desc))
+            },
+        )
+    }
 }
 
 private fun formatTime(ms: Long): String {

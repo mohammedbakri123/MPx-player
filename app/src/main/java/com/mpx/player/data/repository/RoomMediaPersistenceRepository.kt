@@ -175,10 +175,14 @@ class RoomMediaPersistenceRepository(
     override suspend fun addItemToPlaylist(item: PlaylistItem): Long {
         val order = playlistDao.getNextOrderIndex(item.playlistId)
         val entity = PlaylistItemEntity.fromDomain(item.copy(orderIndex = order))
+        // Issue #230: IGNORE returns -1 when the item is already in the
+        // playlist — the existing row keeps its position. Only bump
+        // updatedAt when something was actually added.
         val rowId = playlistDao.insertPlaylistItem(entity)
-        // Bump playlist updatedAt
-        playlistDao.getPlaylistById(item.playlistId)?.let { pl ->
-            playlistDao.updatePlaylist(pl.copy(updatedAt = System.currentTimeMillis()))
+        if (rowId != -1L) {
+            playlistDao.getPlaylistById(item.playlistId)?.let { pl ->
+                playlistDao.updatePlaylist(pl.copy(updatedAt = System.currentTimeMillis()))
+            }
         }
         return rowId
     }
