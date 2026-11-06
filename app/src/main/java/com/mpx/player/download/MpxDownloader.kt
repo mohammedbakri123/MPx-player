@@ -53,6 +53,8 @@ data class ActiveDownload(
     val error: String? = null,
     /** Issue #337: per-download Netscape cookie file, or null for a plain download. Deleted when the download exits. */
     val cookiesFile: File? = null,
+    /** Issue #340: audio-only download — extract best audio as mp3 instead of video. */
+    val audioOnly: Boolean = false,
 )
 
 enum class DownloaderInitState {
@@ -394,7 +396,7 @@ class MpxDownloader private constructor(context: Context) {
      * reports NO_COOKIES (the button is disabled then, so this is
      * unreachable from the UI).
      */
-    suspend fun importCookiesAndStart(rawUrl: String): CookieImportOutcome {
+    suspend fun importCookiesAndStart(rawUrl: String, audioOnly: Boolean = false): CookieImportOutcome {
         val url = CookieImporter.normalizeUrl(rawUrl) ?: return CookieImportOutcome.NO_COOKIES
         val stagingFile = File(tempDir, "cookies-${UUID.randomUUID()}.txt")
         return try {
@@ -402,7 +404,7 @@ class MpxDownloader private constructor(context: Context) {
                 stagingFile.delete()
                 CookieImportOutcome.NO_COOKIES
             } else {
-                startDownload(url, cookiesFile = stagingFile)
+                startDownload(url, cookiesFile = stagingFile, audioOnly = audioOnly)
                 CookieImportOutcome.IMPORTED
             }
         } catch (_: Exception) {
@@ -412,7 +414,7 @@ class MpxDownloader private constructor(context: Context) {
     }
 
     /** Starts a download. No-op for a blank URL. */
-    fun startDownload(rawUrl: String, cookiesFile: File? = null) {
+    fun startDownload(rawUrl: String, cookiesFile: File? = null, audioOnly: Boolean = false) {
         val url = rawUrl.trim()
         if (url.isBlank()) return
         val id = UUID.randomUUID().toString()
@@ -422,6 +424,7 @@ class MpxDownloader private constructor(context: Context) {
             title = url,
             status = DownloadStatus.QUEUED,
             cookiesFile = cookiesFile,
+            audioOnly = audioOnly,
         )
         _activeDownloads.update { it + item }
         val job = scope.launch {
@@ -465,6 +468,25 @@ class MpxDownloader private constructor(context: Context) {
     private fun updateItem(id: String, transform: (ActiveDownload) -> ActiveDownload) {
         _activeDownloads.update { list -> list.map { if (it.id == id) transform(it) else it } }
     }
+
+    /**
+     * Issue #340: audio-only options, adapted from Seal's
+     * `addOptionsForAudioDownloads` (DownloadUtil.kt:559-604,
+     * JunkFood02/Seal, GPL-3.0). Seal's full version also handles
+     * subtitles, an explicit format id, and metadata embedding prefs;
+     * MPx keeps the convert branch only: `-x` extracts the best audio
+     * and `--audio-format mp3` converts it with the bundled ffmpeg
+     * (#336) — mp3 plays everywhere, including MPx's own player.
+     * `--embed-metadata` tags the file with the video's title/uploader.
+     * No `-f` and no video sorter: with `-x`, yt-dlp's default format
+     * selection already picks the best audio stream.
+     */
+    private fun YoutubeDLRequest.addOptionsForAudioDownloads(): YoutubeDLRequest =
+        apply {
+            addOption("-x")
+            addOption("--audio-format", "mp3")
+            addOption("--embed-metadata")
+        }
 
     private suspend fun runDownload(item: ActiveDownload) {
         val id = item.id
@@ -539,34 +561,40 @@ class MpxDownloader private constructor(context: Context) {
                 // downloadsDir on completion, so the Destination line in
                 // stdout still points at the final file.
                 addOption("-P", "temp:${tempDirFor.absolutePath}")
-                // Issue #336 + #338: Seal's `-S` format sorter instead
-                // of a hardcoded `-f` — no `-f` means yt-dlp picks
-                // (and, with ffmpeg bundled, merges) the best
-                // video+audio streams. The sorter parameters come from
-                // the quality settings, read at request time above:
-                // "Auto" keeps #336's default (vp9.2, or av01 when the
-                // device hardware-decodes AV1); "VP9"/"AV1" force that
-                // codec; "H264" is Seal's compatibility format. A
-                // non-blank custom sorter replaces the built sorter
-                // entirely. The sorter works without ffmpeg too (it
-                // still improves single-file picks).
-                applyFormatSorter(
-                    formatSorter(
-                        videoFormat = if (settings.downloadCodec == "H264") {
-                            FORMAT_COMPATIBILITY
-                        } else {
-                            FORMAT_QUALITY
-                        },
-                        videoResolution = settings.downloadResolution,
-                        supportAv1HardwareDecoding = when (settings.downloadCodec) {
-                            "AV1" -> true
-                            "VP9" -> false
-                            else -> checkIfAv1HardwareAccelerated()
-                        },
-                    ),
-                    formatSorting = settings.downloadCustomSorter.isNotBlank(),
-                    sortingFields = settings.downloadCustomSorter,
-                )
+                // Issue #340: audio-only downloads extract best audio
+                // as mp3 instead of the video sorter below.
+                if (item.audioOnly) {
+                    addOptionsForAudioDownloads()
+                } else {
+                    // Issue #336 + #338: Seal's `-S` format sorter instead
+                    // of a hardcoded `-f` — no `-f` means yt-dlp picks
+                    // (and, with ffmpeg bundled, merges) the best
+                    // video+audio streams. The sorter parameters come from
+                    // the quality settings, read at request time above:
+                    // "Auto" keeps #336's default (vp9.2, or av01 when the
+                    // device hardware-decodes AV1); "VP9"/"AV1" force that
+                    // codec; "H264" is Seal's compatibility format. A
+                    // non-blank custom sorter replaces the built sorter
+                    // entirely. The sorter works without ffmpeg too (it
+                    // still improves single-file picks).
+                    applyFormatSorter(
+                        formatSorter(
+                            videoFormat = if (settings.downloadCodec == "H264") {
+                                FORMAT_COMPATIBILITY
+                            } else {
+                                FORMAT_QUALITY
+                            },
+                            videoResolution = settings.downloadResolution,
+                            supportAv1HardwareDecoding = when (settings.downloadCodec) {
+                                "AV1" -> true
+                                "VP9" -> false
+                                else -> checkIfAv1HardwareAccelerated()
+                            },
+                        ),
+                        formatSorting = settings.downloadCustomSorter.isNotBlank(),
+                        sortingFields = settings.downloadCustomSorter,
+                    )
+                }
                 // Issue #339: faster downloads, Seal's shape
                 // (DownloadUtil.kt:433-434 + :733-735, JunkFood02/Seal,
                 // GPL-3.0): aria2c when its init succeeded, else
@@ -610,8 +638,18 @@ class MpxDownloader private constructor(context: Context) {
                 refreshFiles()
                 return
             }
-            // Non-zero exit without an exception: fall through to the
-            // direct-link fallback below when it applies.
+            // Non-zero exit without an exception: an audio-only download
+            // may still have its file (see findAudioFallbackFile) —
+            // otherwise fall through to the direct-link fallback below
+            // when it applies.
+            if (item.audioOnly) {
+                val fallback = findAudioFallbackFile(beforeNames, tempDirFor)
+                if (fallback != null) {
+                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = fallback) }
+                    refreshFiles()
+                    return
+                }
+            }
             throw YoutubeDLException(response.err.ifBlank { "yt-dlp exited with code ${response.exitCode}" })
         } catch (e: CancellationException) {
             updateItem(id) { it.copy(status = DownloadStatus.CANCELED, progress = -1f) }
@@ -625,9 +663,21 @@ class MpxDownloader private constructor(context: Context) {
             updateItem(id) { it.copy(status = DownloadStatus.CANCELED, progress = -1f) }
         } catch (e: Exception) {
             // yt-dlp failed. A direct media link gets one more chance via
-            // a plain HTTP download; anything else is a real failure.
+            // a plain HTTP download; an audio-only download may still
+            // have its raw audio on disk (conversion failed after the
+            // download); anything else is a real failure.
             if (isDirectMediaUrl(item.url)) {
                 runHttpFallback(item)
+            } else if (item.audioOnly) {
+                // beforeNames is not in scope here (it is declared after
+                // the getInfo phase), so only the temp dir is searched.
+                val fallback = findAudioFallbackFile(null, tempDirFor)
+                if (fallback != null) {
+                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = fallback) }
+                    refreshFiles()
+                } else {
+                    updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
+                }
             } else {
                 updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
             }
@@ -704,6 +754,36 @@ class MpxDownloader private constructor(context: Context) {
             outFile.delete()
             updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
         }
+    }
+
+    /**
+     * Issue #340: conversion fallback for audio-only downloads. When
+     * `--audio-format mp3` fails (ffmpeg error, odd container), yt-dlp
+     * exits non-zero but the raw best-audio file is usually already on
+     * disk — either written to downloadsDir before a later step failed,
+     * or still sitting in this download's temp dir as the unconverted
+     * intermediate. Move the newest such file into downloadsDir and
+     * return it, so the raw audio is kept instead of failing the row.
+     * [beforeNames] is null when called from the catch block (it is not
+     * in scope there), in which case only the temp dir is searched.
+     * Null when nothing usable exists.
+     */
+    private fun findAudioFallbackFile(beforeNames: Set<String>?, tempDirFor: File): File? {
+        // A finished .mp3 written before a later step failed.
+        if (beforeNames != null) {
+            downloadsDir.listFiles()
+                ?.filter { it.isFile && it.name !in beforeNames && isMediaFile(it) && !it.name.endsWith(".part") }
+                ?.maxByOrNull { it.lastModified() }
+                ?.let { return it }
+        }
+        // Raw intermediate still in this download's temp dir: move it
+        // out (the finally block deletes the temp dir right after this).
+        val raw = tempDirFor.listFiles()
+            ?.filter { it.isFile && isMediaFile(it) && !it.name.endsWith(".part") }
+            ?.maxByOrNull { it.lastModified() }
+            ?: return null
+        val target = File(downloadsDir, raw.name)
+        return if (raw.renameTo(target)) target else null
     }
 
     /** Finds the file yt-dlp just wrote: the Destination line first, else the newest new file. */

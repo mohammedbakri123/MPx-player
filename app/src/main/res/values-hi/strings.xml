@@ -45,6 +45,7 @@
     <string name="download_quality_codec_auto">ऑटो</string>
     <string name="download_quality_custom_sorter">कस्टम फ़ॉर्मेट सॉर्टर</string>
     <string name="download_quality_custom_sorter_hint">सेट होने पर, यह ऊपर चुने गए रिज़ॉल्यूशन और कोडेक को ओवरराइड करता है।</string>
+    <string name="download_audio_only">केवल ऑडियो</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">वीडियो</string>
