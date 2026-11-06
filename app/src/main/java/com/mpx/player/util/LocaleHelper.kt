@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.LocaleList
 import android.text.TextUtils
 import android.view.View
+import com.mpx.player.R
 import java.util.Locale
 
 /**
@@ -26,6 +27,50 @@ object LocaleHelper {
     const val LANGUAGE_RUSSIAN = "ru"
     const val LANGUAGE_GERMAN = "de"
     const val LANGUAGE_PORTUGUESE = "pt"
+
+    /**
+     * One language option: the stored code plus the display-name and
+     * description string resources.
+     */
+    data class LanguageOption(val code: String, val titleRes: Int, val descRes: Int)
+
+    /**
+     * The single shared language list (issue #231): the language picker in
+     * SettingsScreen and the language dialog on the Me screen offer the
+     * same 10 options, in the same order, with the same names. Add a new
+     * language here — and in [getLocale] and [languageTitleRes] — and both
+     * pickers gain it.
+     */
+    val SUPPORTED_LANGUAGES: List<LanguageOption> = listOf(
+        LanguageOption(LANGUAGE_SYSTEM, R.string.lang_system_default, R.string.lang_system_default_desc),
+        LanguageOption(LANGUAGE_ENGLISH, R.string.lang_english, R.string.lang_english_desc),
+        LanguageOption(LANGUAGE_ARABIC, R.string.lang_arabic, R.string.lang_arabic_desc),
+        LanguageOption(LANGUAGE_SPANISH, R.string.lang_spanish, R.string.lang_spanish_desc),
+        LanguageOption(LANGUAGE_FRENCH, R.string.lang_french, R.string.lang_french_desc),
+        LanguageOption(LANGUAGE_HINDI, R.string.lang_hindi, R.string.lang_hindi_desc),
+        LanguageOption(LANGUAGE_CHINESE, R.string.lang_chinese, R.string.lang_chinese_desc),
+        LanguageOption(LANGUAGE_RUSSIAN, R.string.lang_russian, R.string.lang_russian_desc),
+        LanguageOption(LANGUAGE_GERMAN, R.string.lang_german, R.string.lang_german_desc),
+        LanguageOption(LANGUAGE_PORTUGUESE, R.string.lang_portuguese, R.string.lang_portuguese_desc),
+    )
+
+    /**
+     * Display-name string for a language code (issue #231) — the same
+     * mapping the language subtitle and the "language applied" snackbar use.
+     * Unknown codes fall back to "System Default", matching [getLocale].
+     */
+    fun languageTitleRes(languageCode: String): Int = when (languageCode.lowercase()) {
+        LANGUAGE_ARABIC -> R.string.lang_arabic
+        LANGUAGE_ENGLISH -> R.string.lang_english
+        LANGUAGE_SPANISH -> R.string.lang_spanish
+        LANGUAGE_FRENCH -> R.string.lang_french
+        LANGUAGE_HINDI -> R.string.lang_hindi
+        LANGUAGE_CHINESE -> R.string.lang_chinese
+        LANGUAGE_RUSSIAN -> R.string.lang_russian
+        LANGUAGE_GERMAN -> R.string.lang_german
+        LANGUAGE_PORTUGUESE -> R.string.lang_portuguese
+        else -> R.string.lang_system_default
+    }
 
     /**
      * Resolves the target [Locale] for a given language code.
