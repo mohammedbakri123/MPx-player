@@ -527,8 +527,28 @@ fun LocalScreen(
     ): Pair<List<MediaFolder>, List<VideoFile>> {
         if (blacklist.isEmpty()) return scanned to scannedVideos
         val visibleFolders = scanned.filter { !isPathBlacklisted(it.path, blacklist) }
+        // Issue #317: a content://-pathed video (blank DATA) has no
+        // filesystem parent — File(path).parent is the meaningless
+        // "content://media/external/...", so it could never match a
+        // blacklisted folder and leaked into file view and search.
+        // Resolve it from the folder list instead: the video's bucketId
+        // is the scanned folder's id (MediaFolder.id == bucket id), and
+        // the folder carries the real parent path. Built from the
+        // unfiltered list — the blacklisted folder itself must stay in
+        // the map, or its videos could never be matched. A video whose
+        // bucket has no folder entry (bucket "unknown", or every row in
+        // the bucket had blank DATA so the folder path is unknown)
+        // falls back to the old File.parent behaviour — visible, never
+        // falsely hidden.
+        val folderPathByBucketId = scanned
+            .filter { it.path.isNotBlank() }
+            .associate { it.id to it.path }
         val visibleVideos = scannedVideos.filter { video ->
-            val parent = File(video.path).parent
+            val parent = if (video.path.isNotBlank() && !video.path.startsWith("content://")) {
+                File(video.path).parent
+            } else {
+                folderPathByBucketId[video.bucketId] ?: File(video.path).parent
+            }
             parent == null || !isPathBlacklisted(parent, blacklist)
         }
         return visibleFolders to visibleVideos

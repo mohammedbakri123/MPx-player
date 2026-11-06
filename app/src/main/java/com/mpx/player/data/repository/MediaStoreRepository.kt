@@ -341,6 +341,15 @@ class MediaStoreRepository(
                                 isRemovable = isRemovable,
                             )
                         }
+                        // Issue #317: the accumulator's path is whatever
+                        // the first row in the bucket had — if that row's
+                        // DATA was blank, the path starts "" and would
+                        // stay "" even when later rows in the same bucket
+                        // carry a real parent, and the bucket lookup in
+                        // applyFolderBlacklist could then never resolve
+                        // the bucket's content:// videos. Fill it in from
+                        // the first row that has one.
+                        if (acc.path.isBlank() && parentPath.isNotBlank()) acc.path = parentPath
                         if (parentPath.isNotBlank()) {
                             seenPaths.add(parentPath)
                         }
@@ -723,6 +732,9 @@ class MediaStoreRepository(
             // new scan) — the albums / artists / folders DATE sort
             // orders by each group's newest track date.
             MediaStore.Audio.Media.DATE_MODIFIED,
+            // Issue #317: BUCKET_ID, so a content://-pathed track can
+            // be resolved to its real folder (see bucketId below).
+            MediaStore.Audio.Media.BUCKET_ID,
         )
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         val uris = getAudioContentUris()
@@ -743,6 +755,7 @@ class MediaStoreRepository(
                     val durationCol = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION)
                     val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
                     val dateModifiedCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
+                    val bucketIdCol = cursor.getColumnIndex(MediaStore.Audio.Media.BUCKET_ID)
 
                     while (cursor.moveToNext()) {
                         val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
@@ -780,6 +793,16 @@ class MediaStoreRepository(
                         // Issue #311: seconds since epoch, as MediaStore
                         // reports it (same units as VideoFile.dateModified).
                         val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol).coerceAtLeast(0L) else 0L
+                        // Issue #317: same fallback scheme as the video
+                        // scans (#253) — MediaStore bucket ids are the
+                        // hash of the LOWER-CASED parent path, so the
+                        // fallback must hash the lower-cased path too.
+                        // A blank-DATA track has no parent to hash and
+                        // falls back to "unknown".
+                        val parentPath = if (path.isNotBlank()) File(path).parent.orEmpty() else ""
+                        val rawBucketId = if (bucketIdCol >= 0) cursor.getString(bucketIdCol) else null
+                        val bucketId = rawBucketId?.ifBlank { null }
+                            ?: parentPath.ifBlank { "unknown" }.lowercase(Locale.US).hashCode().toString()
                         val effectivePath = path.ifBlank {
                             if (idCol >= 0) {
                                 ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
@@ -796,6 +819,7 @@ class MediaStoreRepository(
                                 durationMs = durationMs,
                                 path = effectivePath,
                                 dateModified = dateModified,
+                                bucketId = bucketId,
                             )
                         )
                     }
@@ -1096,7 +1120,12 @@ class MediaStoreRepository(
     private class FolderAccumulator(
         val id: String,
         val name: String,
-        val path: String,
+        // Issue #317: var, not val — the path is whatever the first row
+        // in the bucket had, and if that row's DATA was blank the path
+        // starts "" and is filled in from the first later row that has
+        // one (see getMediaFolders), so the bucket lookup in
+        // applyFolderBlacklist can resolve content:// videos.
+        var path: String,
         var isRemovable: Boolean = false,
     ) {
         var count: Int = 0

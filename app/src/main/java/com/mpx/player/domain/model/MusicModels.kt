@@ -11,6 +11,12 @@ data class AudioTrack(
     val durationFormatted: String,
     val durationMs: Long = 0L,
     val path: String = "",
+    // Issue #317: MediaStore BUCKET_ID for the track (same scheme as
+    // VideoFile.bucketId, #253: the real BUCKET_ID, else the hash of
+    // the lower-cased parent path, else "unknown"). Lets the blacklist
+    // resolve a content://-pathed track's real folder from the folder
+    // list — File(path).parent is meaningless for such tracks.
+    val bucketId: String = "",
     // Issue #311: MediaStore DATE_MODIFIED, seconds since epoch, as
     // MediaStore reports it (same units as VideoFile.dateModified).
     // 0 when the column is absent. Drives the albums / artists /

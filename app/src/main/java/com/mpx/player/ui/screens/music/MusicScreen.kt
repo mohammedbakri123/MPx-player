@@ -466,11 +466,21 @@ fun MusicScreen(
     // (parent dir; blank and content:// paths fall back to
     // /storage/emulated/0/Music, #253/#267), so a track and its folder
     // tile are hidden together by the blacklist below.
-    fun audioFolderPath(track: AudioTrack): String =
+    // Issue #317: a content:// track's File.parent is meaningless, so
+    // the old /Music fallback let it leak out of a blacklisted
+    // subfolder. folderPathByBucketId resolves it from the folder list
+    // instead: the key is the MediaStore BUCKET_ID scheme (#253 — hash
+    // of the lower-cased parent path), and the track carries its bucket
+    // id. An unknown bucket keeps the old /Music fallback — visible,
+    // never falsely hidden.
+    fun audioFolderPath(
+        track: AudioTrack,
+        folderPathByBucketId: Map<String, String> = emptyMap(),
+    ): String =
         if (track.path.isNotBlank() && !track.path.startsWith("content://")) {
             File(track.path).parent ?: "/storage/emulated/0/Music"
         } else {
-            "/storage/emulated/0/Music"
+            folderPathByBucketId[track.bucketId] ?: "/storage/emulated/0/Music"
         }
 
     // Issue #300: mirror LocalScreen.applyFolderBlacklist for the audio
@@ -493,7 +503,15 @@ fun MusicScreen(
         if (blacklist.isEmpty()) {
             return FilteredAudioLibrary(scannedTracks, scannedAlbums, scannedArtists, scannedFolders)
         }
-        val visibleTracks = scannedTracks.filter { !isPathBlacklisted(audioFolderPath(it), blacklist) }
+        // Issue #317: bucket id -> folder path, so content:// tracks
+        // resolve to their real folder (see audioFolderPath). Built
+        // from the unfiltered list so a blacklisted folder stays
+        // resolvable; the key is the MediaStore BUCKET_ID scheme
+        // (#253): hash of the lower-cased parent path.
+        val folderPathByBucketId = scannedFolders
+            .filter { it.path.isNotBlank() }
+            .associate { it.path.lowercase(Locale.US).hashCode().toString() to it.path }
+        val visibleTracks = scannedTracks.filter { !isPathBlacklisted(audioFolderPath(it, folderPathByBucketId), blacklist) }
         val visibleFolders = scannedFolders.filter { !isPathBlacklisted(it.path, blacklist) }
         val visibleAlbums = scannedAlbums.mapNotNull { album ->
             val count = visibleTracks.count { it.album == album.title && it.artist == album.artist }
