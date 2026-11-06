@@ -1373,10 +1373,17 @@ fun PlayerScreen(
             }
         }
 
-        // Side Seek HUD (Double-tap left -10s / right +10s feedback) —
-        // same slim gradient-strip language as the volume/brightness HUDs
+        // Side Seek HUD (double-tap left/right seek feedback — the seconds
+        // follow the doubleTapSeekSeconds setting, #237, same source as
+        // the seek itself) — same slim gradient-strip language as the
+        // volume/brightness HUDs
         if (!isInPipMode) sideSeekDirection?.let { direction ->
             val isBackward = direction == SideSeekDirection.BACKWARD
+            // Issue #237: read the setting fresh here, as the seek does in
+            // the gesture handler — the HUD composes right after the tap,
+            // so this is the value that was just jumped by. (currentSettings
+            // is a snapshot that only updates on some actions; see #241.)
+            val seekSeconds = realSettingsRepo.load().doubleTapSeekSeconds
             Box(
                 modifier = Modifier
                     .align(if (isBackward) Alignment.CenterStart else Alignment.CenterEnd)
@@ -1404,7 +1411,7 @@ fun PlayerScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = if (isBackward) "-10s" else "+10s",
+                        text = if (isBackward) "-${seekSeconds}s" else "+${seekSeconds}s",
                         color = MpxTheme.colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
