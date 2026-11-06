@@ -210,7 +210,13 @@ fun MusicScreen(
     // Sort & View popup, like Local. Persisted in
     // AppSettings.musicPrimarySortField; direction is the shared global
     // sortReverse, same as Local's popup.
-    var sortField by remember {
+    // Issue #294: keyed on musicPrimarySortField, like sortReverse is
+    // read straight from appSettings — a Settings reset (or any other
+    // outside change) re-derives the field on resume instead of the
+    // one-time remember going stale. The popup's onSortChange still
+    // works: it writes the same value to both sortField and settings,
+    // so the re-derived value is identical.
+    var sortField by remember(appSettings.musicPrimarySortField) {
         mutableStateOf(
             try {
                 SortField.valueOf(appSettings.musicPrimarySortField)
