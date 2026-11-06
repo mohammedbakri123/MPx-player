@@ -94,6 +94,22 @@ object MediaSortComparator {
     }
 
     /**
+     * Issue #242: compares two media ids numerically when both are plain
+     * numbers. MediaStore ids are numeric strings, and lexicographic
+     * comparison orders "9" before "10" (and "100" before "99") — wrong
+     * recency once ids pass single digits. Falls back to plain string
+     * comparison when either side is not numeric, which keeps the #217
+     * ordering for custom playlists: "custom:<id>" never parses as a
+     * Long, so it still sorts after device ids, exactly as before.
+     */
+    private fun compareIds(a: String, b: String): Int {
+        val numA = a.toLongOrNull()
+        val numB = b.toLongOrNull()
+        return if (numA != null && numB != null) numA.compareTo(numB)
+        else a.compareTo(b)
+    }
+
+    /**
      * Constructs a Comparator for VideoFile with primary sort and secondary tie-break sort.
      */
     fun videoComparator(
@@ -118,7 +134,7 @@ object MediaSortComparator {
 
         // Final stable tie-breaker: title then id
         val titleCmp = a.title.compareTo(b.title, ignoreCase = true)
-        if (titleCmp != 0) titleCmp else a.id.compareTo(b.id)
+        if (titleCmp != 0) titleCmp else compareIds(a.id, b.id)
     }
 
     private fun compareVideoByField(
@@ -199,7 +215,7 @@ object MediaSortComparator {
         }
 
         val nameCmp = a.name.compareTo(b.name, ignoreCase = true)
-        if (nameCmp != 0) nameCmp else a.id.compareTo(b.id)
+        if (nameCmp != 0) nameCmp else compareIds(a.id, b.id)
     }
 
     private fun compareFolderByField(
@@ -262,7 +278,7 @@ object MediaSortComparator {
         }
 
         val titleCmp = a.title.compareTo(b.title, ignoreCase = true)
-        if (titleCmp != 0) titleCmp else a.id.compareTo(b.id)
+        if (titleCmp != 0) titleCmp else compareIds(a.id, b.id)
     }
 
     /**
@@ -291,7 +307,7 @@ object MediaSortComparator {
         }
 
         val titleCmp = a.title.compareTo(b.title, ignoreCase = true)
-        if (titleCmp != 0) titleCmp else a.id.compareTo(b.id)
+        if (titleCmp != 0) titleCmp else compareIds(a.id, b.id)
     }
 
     private fun compareAlbumByField(
@@ -310,10 +326,10 @@ object MediaSortComparator {
                 else a.title.lowercase(Locale.US).compareTo(b.title.lowercase(Locale.US))
             }
         }
-        SortField.DATE -> b.id.compareTo(a.id)
+        SortField.DATE -> compareIds(b.id, a.id)
         // Albums carry no date: id recency first, track count breaks ties.
         SortField.DATE_DURATION -> {
-            val idCmp = b.id.compareTo(a.id)
+            val idCmp = compareIds(b.id, a.id)
             if (idCmp != 0) idCmp else b.trackCount.compareTo(a.trackCount)
         }
         // Albums carry no duration: track count is the album's size.
@@ -351,7 +367,7 @@ object MediaSortComparator {
         }
 
         val nameCmp = a.name.compareTo(b.name, ignoreCase = true)
-        if (nameCmp != 0) nameCmp else a.id.compareTo(b.id)
+        if (nameCmp != 0) nameCmp else compareIds(a.id, b.id)
     }
 
     private fun compareArtistByField(
@@ -370,10 +386,10 @@ object MediaSortComparator {
                 else a.name.lowercase(Locale.US).compareTo(b.name.lowercase(Locale.US))
             }
         }
-        SortField.DATE -> b.id.compareTo(a.id)
+        SortField.DATE -> compareIds(b.id, a.id)
         // Artists carry no date: id recency first, track count breaks ties.
         SortField.DATE_DURATION -> {
-            val idCmp = b.id.compareTo(a.id)
+            val idCmp = compareIds(b.id, a.id)
             if (idCmp != 0) idCmp else b.trackCount.compareTo(a.trackCount)
         }
         // Artists carry no duration: track count is the artist's size.
@@ -392,8 +408,9 @@ object MediaSortComparator {
      * items first) — the playlist's "size". COUNT is the playlist's own
      * item count, so it sorts the same way. DATE is id recency, like
      * albums/artists: ids are MediaStore numeric strings for device
-     * playlists and Long-as-string for custom ones, compared as strings
-     * (the same approximation the album/artist comparators use).
+     * playlists and "custom:<id>" for custom ones, compared numerically
+     * with a string fallback (issue #242) — so custom playlists still
+     * sort after device ones, as #217 documented.
      */
     fun audioPlaylistComparator(
         primary: SortField,
@@ -415,7 +432,7 @@ object MediaSortComparator {
         }
 
         val titleCmp = a.title.compareTo(b.title, ignoreCase = true)
-        if (titleCmp != 0) titleCmp else a.id.compareTo(b.id)
+        if (titleCmp != 0) titleCmp else compareIds(a.id, b.id)
     }
 
     private fun comparePlaylistByField(
@@ -434,10 +451,10 @@ object MediaSortComparator {
                 else a.title.lowercase(Locale.US).compareTo(b.title.lowercase(Locale.US))
             }
         }
-        SortField.DATE -> b.id.compareTo(a.id)
+        SortField.DATE -> compareIds(b.id, a.id)
         // Playlists carry no date: id recency first, item count breaks ties.
         SortField.DATE_DURATION -> {
-            val idCmp = b.id.compareTo(a.id)
+            val idCmp = compareIds(b.id, a.id)
             if (idCmp != 0) idCmp else b.itemCount.compareTo(a.itemCount)
         }
         // Playlists carry no duration: item count is the playlist's size.
@@ -482,7 +499,7 @@ object MediaSortComparator {
         }
 
         val nameCmp = a.name.compareTo(b.name, ignoreCase = true)
-        if (nameCmp != 0) nameCmp else a.id.compareTo(b.id)
+        if (nameCmp != 0) nameCmp else compareIds(a.id, b.id)
     }
 
     private fun compareAudioFolderByField(
@@ -530,10 +547,10 @@ object MediaSortComparator {
                 else a.title.lowercase(Locale.US).compareTo(b.title.lowercase(Locale.US))
             }
         }
-        SortField.DATE -> b.id.compareTo(a.id)
+        SortField.DATE -> compareIds(b.id, a.id)
         // Audio tracks carry no date: id recency first, duration breaks ties.
         SortField.DATE_DURATION -> {
-            val idCmp = b.id.compareTo(a.id)
+            val idCmp = compareIds(b.id, a.id)
             if (idCmp != 0) idCmp else b.durationMs.compareTo(a.durationMs)
         }
         SortField.SIZE, SortField.DURATION -> b.durationMs.compareTo(a.durationMs)
