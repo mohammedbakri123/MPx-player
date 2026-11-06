@@ -1273,7 +1273,16 @@ class MpvPlayerEngine(
         val pending = pendingLoad
         if (pending != null) {
             pendingLoad = null
-            load(pending.first, pending.second, pending.third)
+            // Issue #273: a scrub parked by seekTo() while this load was
+            // deferred belongs to this exact load — load() clears
+            // pendingSeekMs at its top, so pass the parked position as
+            // the resume position here, or the flush would reload at the
+            // original resumeMs and the scrub would silently vanish
+            // (dragging the seek bar during the loading splash did
+            // nothing). pendingSeekMs is null unless parked after this
+            // load was registered — a new load() clears it — so it can
+            // never be a stale seek for a different item.
+            load(pending.first, pending.second, pendingSeekMs ?: pending.third)
             // Issue #246: only resume if play was actually requested.
             // A pause during prepare (or a paused restore, which never
             // calls play()) must leave the file loaded but paused — the
