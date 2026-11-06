@@ -2213,8 +2213,17 @@ private fun PlayerActionStripe(
                 )
                 "audio" -> PlayerActionStripeButton(
                     icon = Icons.Filled.Audiotrack,
-                    caption = state.audioTracks.firstOrNull { it.isSelected }?.label
-                        ?: stringResource(R.string.player_state_off),
+                    // Issue #262: an empty list (still preparing, or no
+                    // discrete tracks) is not "audio off" — the video's
+                    // audio is playing via the default output. Show no
+                    // caption until a track list exists; "Off" is only
+                    // for tracks present with none selected.
+                    caption = if (state.audioTracks.isEmpty()) {
+                        null
+                    } else {
+                        state.audioTracks.firstOrNull { it.isSelected }?.label
+                            ?: stringResource(R.string.player_state_off)
+                    },
                     contentDescription = stringResource(R.string.playback_sheet_audio_track),
                     active = false,
                     onClick = { onOpenSheet(PlaybackSheetPage.AudioTracks) },
@@ -2345,7 +2354,7 @@ private fun PlayerActionStripe(
 @Composable
 private fun PlayerActionStripeButton(
     icon: ImageVector,
-    caption: String,
+    caption: String?,
     contentDescription: String,
     active: Boolean,
     onClick: () -> Unit,
@@ -2363,16 +2372,20 @@ private fun PlayerActionStripeButton(
             tint = if (active) MpxTheme.colors.primary else MpxTheme.colors.textPrimary,
             modifier = Modifier.size(20.dp),
         )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = caption,
-            color = if (active) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 76.dp),
-        )
+        // Issue #262: a null caption (audio with no tracks known yet)
+        // renders icon-only instead of a wrong "Off".
+        if (caption != null) {
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = caption,
+                color = if (active) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 76.dp),
+            )
+        }
     }
 }
 
