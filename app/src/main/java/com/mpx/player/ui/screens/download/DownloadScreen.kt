@@ -63,17 +63,16 @@ import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.download.ActiveDownload
 import com.mpx.player.download.CookieImportOutcome
 import com.mpx.player.download.DownloadStatus
+import com.mpx.player.download.DownloadedFile
 import com.mpx.player.download.DownloaderInitState
 import com.mpx.player.download.MpxDownloader
 import com.mpx.player.download.YtDlpUpdateOutcome
 import com.mpx.player.download.YtDlpUpdateState
-import com.mpx.player.playback.ExternalSubtitle
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -511,24 +510,30 @@ fun DownloadScreen(
                             },
                         )
                     }
-                    items(downloadedFiles, key = { it.absolutePath }) { file ->
+                    items(downloadedFiles, key = { it.uri }) { file ->
                         DownloadedFileRow(
                             file = file,
-                            dateText = dateFormat.format(Date(file.lastModified())),
+                            dateText = dateFormat.format(Date(file.lastModified)),
                             onPlay = {
-                                val isAudio = file.extension.lowercase() in AUDIO_EXTENSIONS
+                                val isAudio = file.extension in AUDIO_EXTENSIONS
                                 realPlaybackManager.load(
                                     PlayableMedia(
-                                        id = file.absolutePath,
+                                        id = file.uri,
                                         title = file.nameWithoutExtension,
-                                        uri = file.absolutePath,
+                                        uri = file.uri,
                                         isVideo = !isAudio,
-                                        // Issue #341: sidecar subtitles
-                                        // yt-dlp wrote next to this file
+                                        // Issue #341/#344: sidecar subtitles
                                         // ride along as external subtitles
                                         // — the engine sub-adds and pins
-                                        // them via the #332 flow.
-                                        externalSubtitles = findSiblingSubtitles(file),
+                                        // them via the #332 flow. A public
+                                        // file resolves them from
+                                        // MediaStore, a private leftover
+                                        // from the private dir (see
+                                        // MpxDownloader.findSiblingSubtitles).
+                                        // content:// URIs play through
+                                        // MpvFdOpener (#150), file paths
+                                        // directly.
+                                        externalSubtitles = downloader.findSiblingSubtitles(file),
                                     ),
                                 )
                                 onOpenPlayer()
@@ -656,7 +661,7 @@ private fun downloadStatusText(item: ActiveDownload): String {
 
 @Composable
 private fun DownloadedFileRow(
-    file: File,
+    file: DownloadedFile,
     dateText: String,
     onPlay: () -> Unit,
     onDelete: () -> Unit,
@@ -668,7 +673,7 @@ private fun DownloadedFileRow(
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val isAudio = file.extension.lowercase() in AUDIO_EXTENSIONS
+        val isAudio = file.extension in AUDIO_EXTENSIONS
         Icon(
             imageVector = if (isAudio) Icons.Filled.MusicNote else Icons.Filled.Movie,
             contentDescription = null,
@@ -687,7 +692,7 @@ private fun DownloadedFileRow(
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = "${formatSize(file.length())} · $dateText",
+                text = "${formatSize(file.size)} · $dateText",
                 color = MpxTheme.colors.textSecondary,
                 fontSize = 13.sp,
                 maxLines = 1,
@@ -712,45 +717,6 @@ private fun DownloadedFileRow(
 }
 
 private val AUDIO_EXTENSIONS = setOf("mp3", "m4a", "aac", "ogg", "opus", "flac", "wav")
-
-/**
- * Issue #341: sidecar subtitles yt-dlp wrote next to [video] with
- * `--write-subs --sub-langs en,ar`. yt-dlp names them
- * `<title>.<lang>.srt|.vtt` (e.g. `video.en.vtt`, `video.ar.srt`),
- * so a file counts when its name starts with the video's base name
- * plus "." and its extension is a subtitle format. SRT/VTT are the
- * two formats MPx's own subtitle validation claims (SubtitleUtils);
- * ASS is mpv-native too and yt-dlp writes it for some sites, so it
- * rides along with the `text/x-ssa` mime type. The list is sorted by
- * name for a stable order (`.ar` before `.en`); the engine sub-adds
- * them in this order and pins the first. A missing parent dir or a
- * listing failure returns an empty list, never null.
- */
-private val SUBTITLE_EXTENSIONS = setOf("srt", "vtt", "webvtt", "ass")
-
-private fun findSiblingSubtitles(video: File): List<ExternalSubtitle> {
-    val base = video.nameWithoutExtension
-    val dir = video.parentFile ?: return emptyList()
-    return try {
-        dir.listFiles()
-            ?.filter { it.isFile && it.name.startsWith("$base.") && it.extension.lowercase() in SUBTITLE_EXTENSIONS }
-            ?.sortedBy { it.name }
-            ?.map {
-                ExternalSubtitle(
-                    uri = it.absolutePath,
-                    name = it.name,
-                    mimeType = when (it.extension.lowercase()) {
-                        "srt" -> "application/x-subrip"
-                        "ass" -> "text/x-ssa"
-                        else -> "text/vtt"
-                    },
-                )
-            }
-            ?: emptyList()
-    } catch (_: Exception) {
-        emptyList()
-    }
-}
 
 private fun formatEta(seconds: Long): String {
     val h = seconds / 3600
