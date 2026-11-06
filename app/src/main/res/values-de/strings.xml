@@ -45,6 +45,7 @@
     <string name="download_quality_codec_auto">Automatisch</string>
     <string name="download_quality_custom_sorter">Benutzerdefinierte Formatsortierung</string>
     <string name="download_quality_custom_sorter_hint">Wenn gesetzt, überschreibt dies die Auflösungs- und Codec-Auswahl oben.</string>
+    <string name="download_audio_only">Nur Audio</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Video</string>

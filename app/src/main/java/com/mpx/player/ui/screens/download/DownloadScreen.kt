@@ -34,6 +34,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -118,6 +120,10 @@ fun DownloadScreen(
     }
 
     var urlText by rememberSaveable { mutableStateOf("") }
+    // Issue #340: audio-only toggle — a per-download choice, applied to
+    // the next download started from this tab (plain Download button
+    // or the sign-in flow below). Not a persisted setting.
+    var audioOnly by rememberSaveable { mutableStateOf(false) }
     // Issue #337: the in-app sign-in WebView, opened from the button
     // below. The User-Agent is read once — there is no settings UI for
     // it, so it cannot change while this screen is alive.
@@ -239,7 +245,7 @@ fun DownloadScreen(
                 Spacer(Modifier.width(8.dp))
                 Button(
                     onClick = {
-                        downloader.startDownload(urlText)
+                        downloader.startDownload(urlText, audioOnly = audioOnly)
                         urlText = ""
                     },
                     enabled = urlText.isNotBlank(),
@@ -262,6 +268,33 @@ fun DownloadScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
+            }
+
+            // Issue #340: audio-only toggle, right under the URL field
+            // (same ToggleRow shape as SettingsScreen). The mode applies
+            // to the next download started — plain button or sign-in.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { audioOnly = !audioOnly }
+                    .padding(bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.download_audio_only),
+                    color = MpxTheme.colors.textPrimary,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(
+                    checked = audioOnly,
+                    onCheckedChange = { audioOnly = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MpxTheme.colors.primary,
+                        checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
+                    ),
+                )
             }
 
             // Issue #337 (rework): sign in inside MPx's own WebView so
@@ -304,7 +337,7 @@ fun DownloadScreen(
                     onUseCookies = {
                         showSignIn = false
                         scope.launch {
-                            when (downloader.importCookiesAndStart(urlText)) {
+                            when (downloader.importCookiesAndStart(urlText, audioOnly = audioOnly)) {
                                 CookieImportOutcome.IMPORTED -> urlText = ""
                                 CookieImportOutcome.NO_COOKIES ->
                                     snackbarHostState.showSnackbar(noCookiesLabel)
@@ -437,7 +470,7 @@ fun DownloadScreen(
                         ActiveDownloadRow(
                             item = item,
                             onCancel = { downloader.cancelDownload(item.id) },
-                            onRetry = { downloader.startDownload(item.url) },
+                            onRetry = { downloader.startDownload(item.url, audioOnly = item.audioOnly) },
                         )
                     }
                     items(downloadedFiles, key = { it.absolutePath }) { file ->
