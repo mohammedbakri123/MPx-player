@@ -9,6 +9,25 @@
     <string name="nav_local">होम</string>
     <string name="nav_music">संगीत</string>
     <string name="nav_me">मैं</string>
+    <string name="nav_download">डाउनलोड</string>
+
+    <!-- Downloads (issue #324) -->
+    <string name="download_screen_title">डाउनलोड</string>
+    <string name="download_url_placeholder">वीडियो लिंक पेस्ट करें…</string>
+    <string name="download_paste">पेस्ट करें</string>
+    <string name="download_button">डाउनलोड करें</string>
+    <string name="download_empty_title">अभी कोई डाउनलोड नहीं</string>
+    <string name="download_empty_message">इसे डाउनलोड करके ऑफ़लाइन देखने के लिए ऊपर वीडियो लिंक पेस्ट करें।</string>
+    <string name="download_init_failed">डाउनलोडर प्रारंभ नहीं हो सका। स्टोरेज जांचें और पुनः प्रयास करें।</string>
+    <string name="download_queued">कतार में…</string>
+    <string name="download_eta">शेष %1$s</string>
+    <string name="download_complete">डाउनलोड पूरा हुआ</string>
+    <string name="download_failed">डाउनलोड विफल रहा</string>
+    <string name="download_canceled">डाउनलोड रद्द किया गया</string>
+    <string name="download_retry">पुनः डाउनलोड करें</string>
+    <string name="download_play">चलाएं</string>
+    <string name="download_delete">डाउनलोड हटाएं</string>
+    <string name="download_deleted">डाउनलोड हटा दिया गया</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">वीडियो</string>

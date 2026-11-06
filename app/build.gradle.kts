@@ -86,6 +86,13 @@ android {
         compose = true
     }
     packaging {
+        // Issue #324: youtubedl-android ships native libs that must be
+        // extracted at install time (useLegacyPackaging). AGP 9 refuses
+        // android:extractNativeLibs="true" in the manifest — this is the
+        // build-script equivalent.
+        jniLibs {
+            useLegacyPackaging = true
+        }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -117,6 +124,14 @@ dependencies {
     // SMB client for Local Network browsing (issue #78): pure-Java SMB2/3,
     // Apache 2.0, no native code, no MX code.
     implementation("com.hierynomus:smbj:0.12.0")
+    // Downloader engine (issue #324): youtubedl-android, the library Seal
+    // uses — CPython + a lazy-extractors yt-dlp build as native .so files.
+    // `:library` ONLY: the `:ffmpeg` artifact is 139 MB and would balloon
+    // the release APK, so downloads use the best single-file format
+    // (typically 720p for YouTube) — no video+audio merging. Seeded into
+    // mavenLocal() with tools/seed-maven.py; GPL-3.0, see the downloader
+    // class doc (no LICENSE file exists in this repo yet).
+    implementation("io.github.junkfood02.youtubedl-android:library:0.18.1")
     // Data layer dependency (Room persistence)
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("androidx.room:room-ktx:2.8.5")

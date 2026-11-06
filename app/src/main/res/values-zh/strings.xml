@@ -9,6 +9,25 @@
     <string name="nav_local">首页</string>
     <string name="nav_music">音乐</string>
     <string name="nav_me">我的</string>
+    <string name="nav_download">下载</string>
+
+    <!-- Downloads (issue #324) -->
+    <string name="download_screen_title">下载</string>
+    <string name="download_url_placeholder">粘贴视频链接…</string>
+    <string name="download_paste">粘贴</string>
+    <string name="download_button">下载</string>
+    <string name="download_empty_title">暂无下载</string>
+    <string name="download_empty_message">在上方粘贴视频链接即可下载并离线观看。</string>
+    <string name="download_init_failed">下载器无法启动。请检查存储空间后重试。</string>
+    <string name="download_queued">排队中…</string>
+    <string name="download_eta">还剩 %1$s</string>
+    <string name="download_complete">下载完成</string>
+    <string name="download_failed">下载失败</string>
+    <string name="download_canceled">下载已取消</string>
+    <string name="download_retry">重新下载</string>
+    <string name="download_play">播放</string>
+    <string name="download_delete">删除下载</string>
+    <string name="download_deleted">下载已删除</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">视频</string>

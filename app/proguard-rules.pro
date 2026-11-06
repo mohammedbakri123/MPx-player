@@ -10,6 +10,16 @@
 # needed).
 -keep class is.xyz.mpv.** { *; }
 
+# youtubedl-android (issue #324): the AAR ships no consumer ProGuard rules.
+# Jackson parses VideoInfo/VideoFormat via reflection, and the library's
+# entry points are reached from the app by name — keep the library and the
+# Jackson databind/core it parses with. The minified build is the proof
+# step: a stripped VideoInfo would only fail at download time on device.
+-keep class com.yausername.youtubedl_android.** { *; }
+-keep class com.fasterxml.jackson.databind.** { *; }
+-keep class com.fasterxml.jackson.core.** { *; }
+-keepattributes *Annotation*,Signature,EnclosingMethod
+
 # smbj (issue #78) pulls three transitive deps Android never uses at runtime:
 # javax.el (mbassy's EL filter), org.ietf.jgss (Kerberos GSS-API — smbj uses
 # NTLM on Android) and slf4j's StaticLoggerBinder (no binding shipped).
