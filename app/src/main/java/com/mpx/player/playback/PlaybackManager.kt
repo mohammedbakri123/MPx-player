@@ -576,7 +576,16 @@ class PlaybackManager private constructor(context: Context) {
         }
         updatePosition()
         updateTracksState()
-        startTicker()
+        // Issue #222: only run the 250 ms ticker when this session
+        // actually plays. A paused restore (restorePersistedQueueIfEmpty
+        // passes autoPlay = false) produces no playing-state transition,
+        // so an unconditional startTicker() here ran forever — Room
+        // resume writes, state emissions and notification rebuilds
+        // every 250 ms until the next play/pause. Pressing play after
+        // the restore still starts the ticker via onIsPlayingChanged.
+        if (autoPlay) {
+            startTicker()
+        }
         armPreparingWatchdog()
     }
 
