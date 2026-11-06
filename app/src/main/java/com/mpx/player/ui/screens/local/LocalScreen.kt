@@ -760,6 +760,24 @@ fun LocalScreen(
         }
     }
 
+    // Issue #235: single-video favourite toggle for the grid card heart.
+    // Uses the same repository toggle the player uses, so the heart flips
+    // through the observed favourites Flow — no manual refresh needed.
+    fun toggleVideoFavourite(video: VideoFile) {
+        scope.launch(Dispatchers.IO) {
+            persistenceRepository.toggleFavourite(
+                FavouriteItem(
+                    mediaId = video.id,
+                    title = video.title,
+                    subtitle = video.folderName,
+                    mediaUri = video.path,
+                    isVideo = true,
+                    durationMs = video.durationMs,
+                ),
+            )
+        }
+    }
+
     fun toggleSelectionFavourite() {
         val direct = selectedVideosInView()
         val folders = selectedFoldersInView()
@@ -1291,6 +1309,12 @@ fun LocalScreen(
                                     VideoItemGridCard(
                                         video = video,
                                         showThumbnails = appSettings.showThumbnails,
+                                        // Issue #235: the folder-view grid
+                                        // passed neither isFavourite nor a
+                                        // handler — the heart was always
+                                        // outline and dead.
+                                        isFavourite = favourites.any { it.mediaUri == video.path },
+                                        onToggleFavourite = { toggleVideoFavourite(video) },
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
@@ -1457,6 +1481,10 @@ fun LocalScreen(
                                         video = video,
                                         showThumbnails = appSettings.showThumbnails,
                                         isFavourite = isFav,
+                                        // Issue #235: the file-view grid
+                                        // showed the state but passed no
+                                        // handler — the heart was dead.
+                                        onToggleFavourite = { toggleVideoFavourite(video) },
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
                                         showDuration = appSettings.showFieldDuration,
