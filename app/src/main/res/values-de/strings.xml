@@ -58,6 +58,9 @@
     <string name="download_playlist_select_none">Keine auswählen</string>
     <string name="download_playlist_download">%1$d herunterladen</string>
     <string name="download_playlist_fetching">Playlist wird geprüft…</string>
+    <string name="download_history">Verlauf</string>
+    <string name="download_already_downloaded">Bereits heruntergeladen</string>
+    <string name="download_history_file_missing">Datei nicht mehr verfügbar</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Video</string>

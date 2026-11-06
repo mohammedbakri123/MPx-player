@@ -6,12 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mpx.player.data.local.dao.DownloadHistoryDao
 import com.mpx.player.data.local.dao.DownloadTaskDao
 import com.mpx.player.data.local.dao.FavouriteDao
 import com.mpx.player.data.local.dao.PlaybackHistoryDao
 import com.mpx.player.data.local.dao.PlaybackResumeDao
 import com.mpx.player.data.local.dao.PlaylistDao
 import com.mpx.player.data.local.entity.CustomPlaylistEntity
+import com.mpx.player.data.local.entity.DownloadHistoryEntity
 import com.mpx.player.data.local.entity.DownloadTaskEntity
 import com.mpx.player.data.local.entity.FavouriteEntity
 import com.mpx.player.data.local.entity.PlaybackHistoryEntity
@@ -20,7 +22,8 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
 
 /**
  * Main Room SQLite database for MPx Player.
- * Persists favourites, playback history, custom playlists, and media resume positions.
+ * Persists favourites, playback history, custom playlists, media resume positions,
+ * the download queue (#342) and the download history (#346).
  *
  * Fresh-install strategy:
  * Starts with empty tables on fresh installs (no mock data).
@@ -34,8 +37,9 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
         PlaylistItemEntity::class,
         PlaybackResumeEntity::class,
         DownloadTaskEntity::class,
+        DownloadHistoryEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class MpxDatabase : RoomDatabase() {
@@ -45,6 +49,7 @@ abstract class MpxDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
     abstract fun playbackResumeDao(): PlaybackResumeDao
     abstract fun downloadTaskDao(): DownloadTaskDao
+    abstract fun downloadHistoryDao(): DownloadHistoryDao
 
     companion object {
         private const val DATABASE_NAME = "mpx_player.db"
@@ -73,6 +78,28 @@ abstract class MpxDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Issue #346: the download_history table. Same rule as #342 —
+         * a proper migration, so the 2→3 jump must NOT wipe the user's
+         * favourites, history and playlists through the pre-existing
+         * fallbackToDestructiveMigration() below. Column order/types
+         * match the entity exactly, as Room validates.
+         */
+        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `download_history` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`videoId` TEXT, `extractor` TEXT, " +
+                        "`url` TEXT NOT NULL, `title` TEXT NOT NULL, " +
+                        "`uploader` TEXT, `thumbnailUrl` TEXT, " +
+                        "`fileUri` TEXT NOT NULL, `fileName` TEXT NOT NULL, " +
+                        "`fileSize` INTEGER NOT NULL, `isPublic` INTEGER NOT NULL, " +
+                        "`completedAt` INTEGER NOT NULL)",
+                )
+            }
+        }
+
         fun getInstance(context: Context): MpxDatabase {
             return instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -80,7 +107,7 @@ abstract class MpxDatabase : RoomDatabase() {
                     MpxDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }

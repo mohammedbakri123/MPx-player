@@ -58,6 +58,9 @@
     <string name="download_playlist_select_none">Снять выделение</string>
     <string name="download_playlist_download">Скачать %1$d</string>
     <string name="download_playlist_fetching">Проверка плейлиста…</string>
+    <string name="download_history">История</string>
+    <string name="download_already_downloaded">Уже загружено</string>
+    <string name="download_history_file_missing">Файл больше недоступен</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Видео</string>
