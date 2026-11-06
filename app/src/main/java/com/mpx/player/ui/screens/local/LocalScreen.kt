@@ -100,6 +100,7 @@ import com.mpx.player.util.MediaPermissions
 import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.mpx.player.ui.theme.MpxHairline
@@ -317,6 +318,10 @@ fun LocalScreen(
     }
     var folderVideos by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
     var isFolderLoading by remember { mutableStateOf(false) }
+    // #277: the in-flight folder-videos load — cancelled before a new one
+    // starts, so a stale scan can never overwrite the current folder's
+    // videos (same Job-handle pattern as PlayerScreen's hide jobs).
+    var folderVideosJob by remember { mutableStateOf<Job?>(null) }
     var folderSortField by remember {
         mutableStateOf(
             try {
@@ -401,6 +406,31 @@ fun LocalScreen(
         clearSelection()
     }
 
+    // #277: the single entry point for every folder-videos scan
+    // (openFolder, refreshFolderVideos — hence the ON_RESUME refresh and
+    // pull-to-refresh too). Declared before openFolder, because local
+    // functions are only visible after their declaration point.
+    // One in-flight load at a time: the previous load is cancelled
+    // before a new one starts, and the result is only applied if this
+    // folder is still the open one when the scan completes — tapping
+    // folder A then B quickly can no longer show A's videos under B's
+    // header, whichever scan finishes last. isFolderLoading is written
+    // here on Main (all callers run on Main); the old code wrote it
+    // from the IO thread in both functions.
+    fun loadFolderVideos(folderId: String) {
+        folderVideosJob?.cancel()
+        isFolderLoading = true
+        folderVideosJob = scope.launch(Dispatchers.IO) {
+            val vids = repository.getVideosInFolder(folderId)
+            withContext(Dispatchers.Main) {
+                if (currentFolder?.id == folderId) {
+                    folderVideos = vids
+                }
+                isFolderLoading = false
+            }
+        }
+    }
+
     fun openFolder(folder: MediaFolder) {
         // Issue #276: a new folder is a new view — a selection made in
         // the previous folder no longer resolves against this folder's
@@ -411,25 +441,17 @@ fun LocalScreen(
         folderSearchQuery = ""
         // Issue #186: one layout for Home and all folders — the folder
         // contents use the shared viewMode, no per-folder lookup.
-        scope.launch(Dispatchers.IO) {
-            isFolderLoading = true
-            val vids = repository.getVideosInFolder(folder.id)
-            withContext(Dispatchers.Main) {
-                folderVideos = vids
-                isFolderLoading = false
-            }
-        }
+        // #277: clear at once, so the previous folder's videos are never
+        // shown under this folder's header while the scan runs (same as
+        // the #269 playlist-dialog clear).
+        folderVideos = emptyList()
+        loadFolderVideos(folder.id)
     }
 
     fun refreshFolderVideos(folderId: String) {
-        scope.launch(Dispatchers.IO) {
-            isFolderLoading = true
-            val vids = repository.getVideosInFolder(folderId)
-            withContext(Dispatchers.Main) {
-                folderVideos = vids
-                isFolderLoading = false
-            }
-        }
+        // #277: same folder — no synchronous clear, so pull-to-refresh /
+        // ON_RESUME keeps showing the current videos while reloading.
+        loadFolderVideos(folderId)
     }
 
     // #169: randomStart plays a random video from the folder instead of
