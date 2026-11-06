@@ -944,6 +944,10 @@
     <string name="subtitle_sync_increase">Augmenter la synchronisation des sous-titres</string>
     <string name="subtitle_speed_decrease">Diminuer la vitesse des sous-titres</string>
     <string name="subtitle_speed_increase">Augmenter la vitesse des sous-titres</string>
+    <string name="sleep_timer_decrease">Diminuer la minuterie de veille</string>
+    <string name="sleep_timer_increase">Augmenter la minuterie de veille</string>
+    <string name="audio_delay_decrease">Diminuer le délai audio</string>
+    <string name="audio_delay_increase">Augmenter le délai audio</string>
     <string name="decoder_mode_title">Mode décodeur</string>
     <string name="dev_count_videos">%1$d vidéos</string>
     <string name="dev_count_tracks">%1$d pistes</string>

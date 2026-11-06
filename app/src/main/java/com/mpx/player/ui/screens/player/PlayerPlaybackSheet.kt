@@ -802,8 +802,8 @@ private fun PlaybackSheetSleepPage(
         label = stringResource(R.string.playback_sheet_sleep_custom),
         valueText = timerMinutes?.let { "$it min" }
             ?: stringResource(R.string.player_sleep_timer_off),
-        minusContentDescription = stringResource(R.string.playback_sheet_sleep_custom),
-        plusContentDescription = stringResource(R.string.playback_sheet_sleep_custom),
+        minusContentDescription = stringResource(R.string.sleep_timer_decrease),
+        plusContentDescription = stringResource(R.string.sleep_timer_increase),
         onMinus = {
             val mins = timerMinutes?.let { (it - 5).coerceIn(5, 180) } ?: 30
             playbackManager.setSleepTimer(mins)
@@ -1032,8 +1032,8 @@ private fun AudioDelayStepper(
     StepperRow(
         label = stringResource(R.string.playback_sheet_audio_delay),
         valueText = formatDelaySeconds(delayMs),
-        minusContentDescription = stringResource(R.string.playback_sheet_audio_delay),
-        plusContentDescription = stringResource(R.string.playback_sheet_audio_delay),
+        minusContentDescription = stringResource(R.string.audio_delay_decrease),
+        plusContentDescription = stringResource(R.string.audio_delay_increase),
         onMinus = {
             onSettingsChanged(
                 currentSettings.copy(audioDelayMs = (delayMs - 100).coerceIn(-10000, 10000)),
@@ -1222,8 +1222,8 @@ private fun PlaybackSheetSubtitleDelayPage(
         StepperRow(
             label = stringResource(R.string.subtitle_sync_header),
             valueText = formatDelaySeconds(delayMs),
-            minusContentDescription = stringResource(R.string.subtitle_sync_header),
-            plusContentDescription = stringResource(R.string.subtitle_sync_header),
+            minusContentDescription = stringResource(R.string.subtitle_sync_decrease),
+            plusContentDescription = stringResource(R.string.subtitle_sync_increase),
             onMinus = {
                 onSettingsChanged(
                     currentSettings.copy(subtitleDelayMs = (delayMs - 100).coerceIn(-10000, 10000)),
@@ -1289,8 +1289,8 @@ private fun PlaybackSheetSubtitleSettingsPage(
         StepperRow(
             label = stringResource(R.string.subtitle_speed_header),
             valueText = "%.1f×".format(speed),
-            minusContentDescription = stringResource(R.string.subtitle_speed_header),
-            plusContentDescription = stringResource(R.string.subtitle_speed_header),
+            minusContentDescription = stringResource(R.string.subtitle_speed_decrease),
+            plusContentDescription = stringResource(R.string.subtitle_speed_increase),
             onMinus = {
                 val stepped = ((speed * 10).roundToInt() - 1) / 10f
                 onSettingsChanged(currentSettings.copy(subtitleSpeed = stepped.coerceIn(0.5f, 2.0f)))

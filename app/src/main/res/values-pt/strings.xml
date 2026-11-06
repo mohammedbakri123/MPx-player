@@ -944,6 +944,10 @@
     <string name="subtitle_sync_increase">Aumentar a sincronização das legendas</string>
     <string name="subtitle_speed_decrease">Diminuir a velocidade das legendas</string>
     <string name="subtitle_speed_increase">Aumentar a velocidade das legendas</string>
+    <string name="sleep_timer_decrease">Diminuir o temporizador de suspensão</string>
+    <string name="sleep_timer_increase">Aumentar o temporizador de suspensão</string>
+    <string name="audio_delay_decrease">Diminuir o atraso de áudio</string>
+    <string name="audio_delay_increase">Aumentar o atraso de áudio</string>
     <string name="decoder_mode_title">Modo de descodificador</string>
     <string name="dev_count_videos">%1$d vídeos</string>
     <string name="dev_count_tracks">%1$d faixas</string>

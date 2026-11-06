@@ -944,6 +944,10 @@
     <string name="subtitle_sync_increase">زيادة مزامنة الترجمة</string>
     <string name="subtitle_speed_decrease">تقليل سرعة الترجمة</string>
     <string name="subtitle_speed_increase">زيادة سرعة الترجمة</string>
+    <string name="sleep_timer_decrease">تقليل مؤقت النوم</string>
+    <string name="sleep_timer_increase">زيادة مؤقت النوم</string>
+    <string name="audio_delay_decrease">تقليل تأخير الصوت</string>
+    <string name="audio_delay_increase">زيادة تأخير الصوت</string>
     <string name="decoder_mode_title">وضع فك التشفير</string>
     <string name="dev_count_videos">%1$d مقطع فيديو</string>
     <string name="dev_count_tracks">%1$d مقطع صوتي</string>
