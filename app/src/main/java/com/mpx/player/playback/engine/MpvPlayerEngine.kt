@@ -970,6 +970,30 @@ class MpvPlayerEngine(
                     mainHandler.post {
                         engineListener?.onPlaybackStateChanged(PlayerEngine.STATE_ENDED)
                     }
+                } else if (cachedPlaybackState == PlayerEngine.STATE_ENDED &&
+                    fileLoadedForCurrentItem
+                ) {
+                    // Issue #271: mpv clears eof-reached on any seek away
+                    // from EOF, and an in-place restart (Repeat ONE,
+                    // Play-after-EOF, Previous-at-start, or a scrub while
+                    // paused) seeks instead of reloading — so no
+                    // FILE_LOADED ever arrives to reset the state, and
+                    // play()/togglePlayPause() kept seeing the stale ENDED
+                    // and seeking to 0 again (pausing at 1:00 after a
+                    // Repeat ONE restart, then pressing Play, jumped back
+                    // to 0:00). Reset to READY here: the seek proves
+                    // playback genuinely left the ended state.
+                    // fileLoadedForCurrentItem guards the fresh-load case:
+                    // load() clears it synchronously, so an eof-clear
+                    // caused by unloading the old file during a queue
+                    // advance (Repeat ALL / next) cannot post an early
+                    // READY before FILE_LOADED — that would cancel the
+                    // preparing watchdog and clear isPreparing while the
+                    // next file still loads.
+                    cachedPlaybackState = PlayerEngine.STATE_READY
+                    mainHandler.post {
+                        engineListener?.onPlaybackStateChanged(PlayerEngine.STATE_READY)
+                    }
                 }
             }
         }
