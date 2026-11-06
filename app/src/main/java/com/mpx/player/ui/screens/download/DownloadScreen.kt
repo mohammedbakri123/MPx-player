@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.download.ActiveDownload
+import com.mpx.player.download.CookieImportOutcome
 import com.mpx.player.download.DownloadStatus
 import com.mpx.player.download.DownloaderInitState
 import com.mpx.player.download.MpxDownloader
@@ -132,6 +133,9 @@ fun DownloadScreen(
     val ytdlpUpToDateLabel = stringResource(R.string.download_ytdlp_up_to_date)
     val ytdlpUpdateFailedLabel = stringResource(R.string.download_ytdlp_update_failed)
     val ytdlpUpdateBusyLabel = stringResource(R.string.download_ytdlp_update_busy)
+    // Issue #337: cookie import outcome labels.
+    val noCookiesLabel = stringResource(R.string.download_no_cookies)
+    val cookiesFailedLabel = stringResource(R.string.download_cookies_failed)
     LaunchedEffect(activeDownloads) {
         activeDownloads.forEach { item ->
             if (item.id !in announcedIds && (item.status == DownloadStatus.DONE || item.status == DownloadStatus.FAILED)) {
@@ -244,6 +248,43 @@ fun DownloadScreen(
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
+                }
+            }
+
+            // Issue #337: import the browser's cookies for this URL and
+            // start the download with them, for age-gated / logged-in
+            // videos. The import is per-download (see MpxDownloader)
+            // and starts the download right away — the cookies only ever
+            // apply to that one download. Shown only once a URL is typed.
+            if (urlText.isNotBlank()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                when (downloader.importCookiesAndStart(urlText)) {
+                                    CookieImportOutcome.IMPORTED -> urlText = ""
+                                    CookieImportOutcome.NO_COOKIES ->
+                                        snackbarHostState.showSnackbar(noCookiesLabel)
+                                    CookieImportOutcome.FAILED ->
+                                        snackbarHostState.showSnackbar(cookiesFailedLabel)
+                                }
+                            }
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.download_import_cookies),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MpxTheme.colors.primary,
+                            fontSize = 13.sp,
+                        )
+                    }
                 }
             }
 

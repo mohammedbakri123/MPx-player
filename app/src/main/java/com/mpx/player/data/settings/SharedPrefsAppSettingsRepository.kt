@@ -3,6 +3,7 @@ package com.mpx.player.data.settings
 import android.content.Context
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.domain.settings.DEFAULT_DOWNLOAD_USER_AGENT
 import com.mpx.player.domain.settings.DEFAULT_PLAYER_MENU_LAYOUT
 
 /**
@@ -123,6 +124,10 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             ytdlpUpdateIntervalMs = prefs.getLong("ytdlp_update_interval_ms", 7L * 24 * 60 * 60 * 1000),
             ytdlpLastUpdateTimeMs = prefs.getLong("ytdlp_last_update_time_ms", 0L),
             ytdlpVersion = prefs.getString("ytdlp_version", "") ?: "",
+            // Issue #337: download User-Agent; a stored blank stays blank
+            // (no header), a missing key takes the desktop-Chrome default.
+            downloadUserAgent = prefs.getString("download_user_agent", DEFAULT_DOWNLOAD_USER_AGENT)
+                ?: DEFAULT_DOWNLOAD_USER_AGENT,
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -235,6 +240,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putLong("ytdlp_update_interval_ms", settings.ytdlpUpdateIntervalMs)
             .putLong("ytdlp_last_update_time_ms", settings.ytdlpLastUpdateTimeMs)
             .putString("ytdlp_version", settings.ytdlpVersion)
+            .putString("download_user_agent", settings.downloadUserAgent)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

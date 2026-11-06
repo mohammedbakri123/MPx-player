@@ -35,6 +35,9 @@
     <string name="download_ytdlp_update_failed">Error al actualizar yt-dlp</string>
     <string name="download_ytdlp_update_busy">Hay una descarga en curso: inténtalo cuando termine</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_import_cookies">Importar cookies del navegador</string>
+    <string name="download_no_cookies">No se encontraron cookies para este sitio — inicia sesión en tu navegador primero</string>
+    <string name="download_cookies_failed">No se pudieron importar las cookies</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vídeo</string>

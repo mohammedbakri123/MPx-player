@@ -35,6 +35,9 @@
     <string name="download_ytdlp_update_failed">Не удалось обновить yt-dlp</string>
     <string name="download_ytdlp_update_busy">Идёт загрузка — попробуйте обновить после её завершения</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_import_cookies">Импортировать cookies из браузера</string>
+    <string name="download_no_cookies">Cookies для этого сайта не найдены — сначала войдите в браузере</string>
+    <string name="download_cookies_failed">Не удалось импортировать cookies</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Видео</string>
