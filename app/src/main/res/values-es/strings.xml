@@ -808,10 +808,6 @@
     <string name="sort_advanced_ignore_extension_desc">Ordenar por título sin considerar la extensión del archivo</string>
     <string name="sort_advanced_summary_default">Opciones de orden estándar</string>
     <!-- Issue 55: Continue Watching Row -->
-    <string name="continue_watching_title">Seguir viendo</string>
-    <string name="continue_watching_dismiss">Quitar de Seguir viendo</string>
-    <string name="continue_watching_dismissed">Se quitó \"%1$s\" de Seguir viendo</string>
-    <string name="continue_watching_resume_at">Reanudar en %1$s</string>
     <!-- Issue 54: Sleep Timer -->
     <string name="player_sleep_timer">Temporizador de apagado</string>
     <string name="player_sleep_timer_off">Desactivado</string>

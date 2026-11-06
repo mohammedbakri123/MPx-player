@@ -808,10 +808,6 @@
     <string name="sort_advanced_ignore_extension_desc">फ़ाइल एक्सटेंशन पर विचार किए बिना फ़ाइल शीर्षक के अनुसार क्रमबद्ध करें</string>
     <string name="sort_advanced_summary_default">मानक क्रम विकल्प</string>
     <!-- Issue 55: Continue Watching Row -->
-    <string name="continue_watching_title">देखना जारी रखें</string>
-    <string name="continue_watching_dismiss">देखना जारी रखें से हटाएँ</string>
-    <string name="continue_watching_dismissed">« %1$s » को देखना जारी रखें से हटाया गया</string>
-    <string name="continue_watching_resume_at">%1$s पर फिर से शुरू करें</string>
     <!-- Issue 54: Sleep Timer -->
     <string name="player_sleep_timer">स्लीप टाइमर</string>
     <string name="player_sleep_timer_off">बंद</string>

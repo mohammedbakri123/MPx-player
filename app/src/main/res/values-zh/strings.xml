@@ -808,10 +808,6 @@
     <string name="sort_advanced_ignore_extension_desc">按文件标题排序，不考虑文件扩展名</string>
     <string name="sort_advanced_summary_default">标准排序选项</string>
     <!-- Issue 55: Continue Watching Row -->
-    <string name="continue_watching_title">继续观看</string>
-    <string name="continue_watching_dismiss">从“继续观看”中移除</string>
-    <string name="continue_watching_dismissed">已从“继续观看”中移除“%1$s”</string>
-    <string name="continue_watching_resume_at">从 %1$s 处续播</string>
     <!-- Issue 54: Sleep Timer -->
     <string name="player_sleep_timer">睡眠定时器</string>
     <string name="player_sleep_timer_off">关闭</string>

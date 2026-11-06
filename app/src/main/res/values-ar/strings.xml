@@ -808,10 +808,6 @@
     <string name="sort_advanced_ignore_extension_desc">الترتيب حسب عنوان الملف دون مراعاة الامتداد</string>
     <string name="sort_advanced_summary_default">خيارات الترتيب القياسية</string>
     <!-- Issue 55: Continue Watching Row -->
-    <string name="continue_watching_title">متابعة المشاهدة</string>
-    <string name="continue_watching_dismiss">إزالة من متابعة المشاهدة</string>
-    <string name="continue_watching_dismissed">تمت إزالة \"%1$s\" من متابعة المشاهدة</string>
-    <string name="continue_watching_resume_at">استئناف عند %1$s</string>
     <!-- Issue 54: Sleep Timer -->
     <string name="player_sleep_timer">مؤقت النوم</string>
     <string name="player_sleep_timer_off">إيقاف</string>
