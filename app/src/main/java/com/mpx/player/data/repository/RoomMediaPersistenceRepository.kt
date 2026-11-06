@@ -1,5 +1,6 @@
 package com.mpx.player.data.repository
 
+import androidx.room.withTransaction
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.local.entity.CustomPlaylistEntity
 import com.mpx.player.data.local.entity.FavouriteEntity
@@ -57,13 +58,20 @@ class RoomMediaPersistenceRepository(
     }
 
     override suspend fun toggleFavourite(item: FavouriteItem): Boolean {
-        val currentlyFav = favouriteDao.isFavourite(item.mediaUri)
-        return if (currentlyFav) {
-            favouriteDao.deleteFavouriteByUri(item.mediaUri)
-            false
-        } else {
-            favouriteDao.insertFavourite(FavouriteEntity.fromDomain(item))
-            true
+        // Issue #296: the read and the insert/delete must be one atomic
+        // step — two rapid toggles used to both read the same value and
+        // both insert, ending favourited when the user meant
+        // unfavourited. Room's transaction serialises concurrent calls,
+        // so the second toggle reads the first one's committed value.
+        return database.withTransaction {
+            val currentlyFav = favouriteDao.isFavourite(item.mediaUri)
+            if (currentlyFav) {
+                favouriteDao.deleteFavouriteByUri(item.mediaUri)
+                false
+            } else {
+                favouriteDao.insertFavourite(FavouriteEntity.fromDomain(item))
+                true
+            }
         }
     }
 
@@ -148,13 +156,18 @@ class RoomMediaPersistenceRepository(
     }
 
     override suspend fun renamePlaylist(playlistId: Long, newName: String) {
-        val existing = playlistDao.getPlaylistById(playlistId) ?: return
-        playlistDao.updatePlaylist(
-            existing.copy(
-                name = newName.trim().ifBlank { existing.name },
-                updatedAt = System.currentTimeMillis(),
+        // Issue #296: same read-then-write shape as toggleFavourite —
+        // read the row, then write a copy of it. Kept atomic so a
+        // concurrent rename cannot overwrite with a stale copy.
+        database.withTransaction {
+            val existing = playlistDao.getPlaylistById(playlistId) ?: return@withTransaction
+            playlistDao.updatePlaylist(
+                existing.copy(
+                    name = newName.trim().ifBlank { existing.name },
+                    updatedAt = System.currentTimeMillis(),
+                )
             )
-        )
+        }
     }
 
     override suspend fun deletePlaylist(playlistId: Long) {
@@ -178,18 +191,24 @@ class RoomMediaPersistenceRepository(
     }
 
     override suspend fun addItemToPlaylist(item: PlaylistItem): Long {
-        val order = playlistDao.getNextOrderIndex(item.playlistId)
-        val entity = PlaylistItemEntity.fromDomain(item.copy(orderIndex = order))
-        // Issue #230: IGNORE returns -1 when the item is already in the
-        // playlist — the existing row keeps its position. Only bump
-        // updatedAt when something was actually added.
-        val rowId = playlistDao.insertPlaylistItem(entity)
-        if (rowId != -1L) {
-            playlistDao.getPlaylistById(item.playlistId)?.let { pl ->
-                playlistDao.updatePlaylist(pl.copy(updatedAt = System.currentTimeMillis()))
+        // Issue #296: the order-index read and the insert must be one
+        // atomic step — two concurrent adds used to receive the same
+        // orderIndex. The updatedAt bump is inside the same transaction,
+        // so it only fires when the insert actually added a row.
+        return database.withTransaction {
+            val order = playlistDao.getNextOrderIndex(item.playlistId)
+            val entity = PlaylistItemEntity.fromDomain(item.copy(orderIndex = order))
+            // Issue #230: IGNORE returns -1 when the item is already in the
+            // playlist — the existing row keeps its position. Only bump
+            // updatedAt when something was actually added.
+            val rowId = playlistDao.insertPlaylistItem(entity)
+            if (rowId != -1L) {
+                playlistDao.getPlaylistById(item.playlistId)?.let { pl ->
+                    playlistDao.updatePlaylist(pl.copy(updatedAt = System.currentTimeMillis()))
+                }
             }
+            rowId
         }
-        return rowId
     }
 
     override suspend fun removeItemFromPlaylist(playlistItemId: Long) {
