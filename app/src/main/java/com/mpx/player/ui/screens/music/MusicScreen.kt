@@ -90,6 +90,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -386,7 +387,12 @@ fun MusicScreen(
     }
 
     var showManageTabsDialog by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+    // Issue #255: rememberSaveable, not remember — navigateToTab pops
+    // this tab with saveState/restoreState, which restores only
+    // back-stack-entry saved state, so a plain remember query reset to
+    // "" on every tab switch. A String is saveable by default, so no
+    // custom Saver is needed (unlike #175's MediaFolder).
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
