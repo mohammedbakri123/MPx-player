@@ -1,19 +1,28 @@
 package com.mpx.player.download
 
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
+import android.media.MediaScannerConnection
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import android.webkit.MimeTypeMap
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.local.entity.DownloadTaskEntity
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.mpx.player.playback.ExternalSubtitle
 import com.yausername.aria2c.Aria2c
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -52,7 +61,8 @@ data class ActiveDownload(
     /** 0..100, -1 while the size is still unknown. */
     val progress: Float = -1f,
     val etaSeconds: Long = -1L,
-    val file: File? = null,
+    /** The finished file's public location once published (#344); null until DONE. */
+    val file: DownloadedFile? = null,
     val error: String? = null,
     /** Issue #337: per-download Netscape cookie file, or null for a plain download. Deleted when the download exits. */
     val cookiesFile: File? = null,
@@ -61,6 +71,33 @@ data class ActiveDownload(
     /** Issue #341: also fetch subtitles (en,ar) at download time, embedded + sidecar. */
     val subtitles: Boolean = false,
 )
+
+/**
+ * One finished file in the completed list (issue #344).
+ *
+ * [uri] is either a `content://` MediaStore URI (public file in
+ * `Downloads/MPx/`, [isPublic] true) or an absolute filesystem path
+ * (app-private file, [isPublic] false — the publish to the public
+ * folder failed, or the device is below API 29 where the MediaStore
+ * Downloads collection does not exist). The player opens both: file
+ * paths directly, `content://` URIs through MpvFdOpener (#150).
+ * [lastModified] is ms since epoch (MediaStore reports seconds).
+ */
+data class DownloadedFile(
+    val uri: String,
+    val name: String,
+    val size: Long,
+    val lastModified: Long,
+    val isPublic: Boolean,
+) {
+    /** Extension without the dot, lowercase; "" when the name has none. */
+    val extension: String
+        get() = if ('.' in name) name.substringAfterLast('.').lowercase() else ""
+
+    /** Name without the extension, for display and titles. */
+    val nameWithoutExtension: String
+        get() = if ('.' in name) name.substringBeforeLast('.') else name
+}
 
 enum class DownloaderInitState {
     IDLE,
@@ -120,15 +157,20 @@ enum class YtDlpUpdateOutcome {
  * (Seal's default) speeds up fragmented (HLS/DASH) videos instead.
  * A failed aria2c init never fails the engine init.
  *
- * Files go to the app-private external Downloads dir
- * (`Android/data/com.mpx.player/files/Download/MPx/`): no storage
+ * Downloads still land in the app-private external Downloads dir
+ * (`Android/data/com.mpx.player/files/Download/MPx/`) — no storage
  * permission is needed there, and raw File writes to the public
  * Download/ folder are blocked by scoped storage on API 30+ without
- * MANAGE_EXTERNAL_STORAGE. Files survive restarts and are deleted on
- * uninstall. The completed list is a scan of that dir, so it is
- * persistent by construction. The *queue* is persisted separately in
- * Room (`download_tasks`, issue #342): unfinished tasks survive
- * process death and are restored on start.
+ * MANAGE_EXTERNAL_STORAGE. On success the finished file is moved
+ * into the public `Downloads/MPx/` folder via a MediaStore insert
+ * (issue #344, API 29+): the private copy is deleted, the public
+ * entry is scanned into the media library so galleries, file
+ * managers and other players see it, and it survives uninstall.
+ * The completed list is a MediaStore query of that folder plus any
+ * private leftovers (a failed publish keeps the private file), so
+ * it is persistent by construction. The *queue* is persisted
+ * separately in Room (`download_tasks`, issue #342): unfinished
+ * tasks survive process death and are restored on start.
  *
  * Application-scoped singleton (like PlaybackManager): a download keeps
  * running when the user leaves the tab, and the screen just observes the
@@ -163,7 +205,13 @@ class MpxDownloader private constructor(context: Context) {
     // does no I/O; every DAO call below runs on the IO scope.
     private val downloadTaskDao = MpxDatabase.getInstance(appContext).downloadTaskDao()
 
-    /** App-private external Downloads/MPx — falls back to internal files. */
+    /**
+     * App-private external Downloads/MPx — staging only since #344
+     * (falls back to internal files). yt-dlp downloads here, then a
+     * finished file is moved into the public `Downloads/MPx/` folder
+     * via MediaStore and the private copy deleted; the private dir
+     * keeps in-progress work and publish failures only.
+     */
     val downloadsDir: File = run {
         val external = appContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
         val base = if (external != null) File(external, "MPx") else File(appContext.filesDir, "downloads/MPx")
@@ -197,8 +245,8 @@ class MpxDownloader private constructor(context: Context) {
     private val _activeDownloads = MutableStateFlow<List<ActiveDownload>>(emptyList())
     val activeDownloads: StateFlow<List<ActiveDownload>> = _activeDownloads.asStateFlow()
 
-    private val _downloadedFiles = MutableStateFlow<List<File>>(emptyList())
-    val downloadedFiles: StateFlow<List<File>> = _downloadedFiles.asStateFlow()
+    private val _downloadedFiles = MutableStateFlow<List<DownloadedFile>>(emptyList())
+    val downloadedFiles: StateFlow<List<DownloadedFile>> = _downloadedFiles.asStateFlow()
 
     /** Last yt-dlp update outcome (issue #333); IDLE until the first attempt. */
     private val _updateState = MutableStateFlow(YtDlpUpdateState.IDLE)
@@ -232,6 +280,11 @@ class MpxDownloader private constructor(context: Context) {
                 ?.forEach { it.deleteRecursively() }
         } catch (_: Exception) {
         }
+        // Issue #344: files finished before this change are still in
+        // the private dir — move them to the public folder once, so
+        // nothing is stranded there. Off the calling thread: the
+        // publish copies bytes through MediaStore.
+        scope.launch { migratePrivateDownloadsToPublic() }
         // Issue #342: restore the persisted queue on a background
         // thread — Room must not run on the calling thread.
         scope.launch { restorePersistedTasks() }
@@ -590,24 +643,389 @@ class MpxDownloader private constructor(context: Context) {
         }
     }
 
-    /** Deletes a downloaded file from disk and refreshes the list. */
-    fun deleteFile(file: File) {
+    /**
+     * Deletes a downloaded file and refreshes the list (issue #344).
+     * A public file is deleted through its MediaStore entry — no
+     * permission is needed for a file the app created; a private
+     * leftover is deleted as a plain file.
+     */
+    fun deleteFile(file: DownloadedFile) {
         scope.launch {
             try {
-                file.delete()
+                if (file.isPublic) {
+                    appContext.contentResolver.delete(Uri.parse(file.uri), null, null)
+                } else {
+                    File(file.uri).delete()
+                }
             } catch (_: Exception) {
             }
             refreshFiles()
         }
     }
 
-    /** Re-scans the download dir for completed media files, newest first. */
+    /**
+     * Re-scans the completed list, newest first (issue #344): the
+     * public `Downloads/MPx/` folder via a MediaStore query, plus any
+     * app-private leftovers (a failed publish keeps the private file,
+     * and the startup migration moves pre-#344 files out — so the
+     * private dir only ever holds in-progress work and publish
+     * failures). Subtitle sidecars are not media and never listed.
+     */
     fun refreshFiles() {
-        val files = downloadsDir.listFiles()
+        val files = queryPublicDownloadEntries()
+            .filter { isMediaFileName(it.name) }
+            .toMutableList()
+        downloadsDir.listFiles()
             ?.filter { it.isFile && isMediaFile(it) && !it.name.endsWith(".part") }
-            ?.sortedByDescending { it.lastModified() }
-            ?: emptyList()
-        _downloadedFiles.value = files
+            ?.map {
+                DownloadedFile(
+                    uri = it.absolutePath,
+                    name = it.name,
+                    size = it.length(),
+                    lastModified = it.lastModified(),
+                    isPublic = false,
+                )
+            }
+            ?.let { files += it }
+        _downloadedFiles.value = files.sortedByDescending { it.lastModified }
+    }
+
+    /**
+     * Every entry MPx put in the public `Downloads/MPx/` folder
+     * (issue #344): one MediaStore.Downloads query on RELATIVE_PATH,
+     * newest first. Files the app created are visible without any
+     * storage permission; other apps' files in the same folder are
+     * not returned to us, so this is exactly our own downloads.
+     * Media files and subtitle sidecars alike — callers filter by
+     * name. An empty list on any failure (provider error, API < 29),
+     * never null.
+     */
+    private fun queryPublicDownloadEntries(): List<DownloadedFile> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return emptyList()
+        val projection = arrayOf(
+            MediaStore.Downloads._ID,
+            MediaStore.Downloads.DISPLAY_NAME,
+            MediaStore.Downloads.SIZE,
+            MediaStore.Downloads.DATE_MODIFIED,
+        )
+        val entries = mutableListOf<DownloadedFile>()
+        try {
+            appContext.contentResolver.query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                projection,
+                "${MediaStore.Downloads.RELATIVE_PATH} = ?",
+                arrayOf(PUBLIC_DOWNLOADS_RELATIVE_PATH_SLASH),
+                "${MediaStore.Downloads.DATE_MODIFIED} DESC",
+            )?.use { cursor ->
+                val idCol = cursor.getColumnIndex(MediaStore.Downloads._ID)
+                val nameCol = cursor.getColumnIndex(MediaStore.Downloads.DISPLAY_NAME)
+                val sizeCol = cursor.getColumnIndex(MediaStore.Downloads.SIZE)
+                val dateCol = cursor.getColumnIndex(MediaStore.Downloads.DATE_MODIFIED)
+                while (cursor.moveToNext()) {
+                    if (idCol < 0 || nameCol < 0) continue
+                    val id = cursor.getLong(idCol)
+                    val name = cursor.getString(nameCol).orEmpty()
+                    if (name.isBlank()) continue
+                    val size = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
+                    val modified = if (dateCol >= 0) cursor.getLong(dateCol).coerceAtLeast(0L) else 0L
+                    entries += DownloadedFile(
+                        uri = ContentUris.withAppendedId(
+                            MediaStore.Downloads.EXTERNAL_CONTENT_URI, id,
+                        ).toString(),
+                        name = name,
+                        size = size,
+                        lastModified = modified * 1000L,
+                        isPublic = true,
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return entries
+    }
+
+    /**
+     * Sidecar subtitles for [file] (issue #341, moved here from
+     * DownloadScreen in #344 so both storage locations are covered):
+     * a public video's sidecars are MediaStore entries in the same
+     * `Downloads/MPx/` folder (`<title>.<lang>.srt|.vtt`, e.g.
+     * `video.en.vtt`); a private leftover's sidecars sit next to it
+     * in the private dir. Either way the URIs ride along as
+     * [ExternalSubtitle]s and the engine sub-adds and pins them via
+     * the #332 flow — `content://` subtitles go through MpvFdOpener
+     * like `content://` video. SRT/VTT are the two formats MPx's own
+     * subtitle validation claims (SubtitleUtils); ASS is mpv-native
+     * too and yt-dlp writes it for some sites. Sorted by name for a
+     * stable order (`.ar` before `.en`).
+     */
+    fun findSiblingSubtitles(file: DownloadedFile): List<ExternalSubtitle> {
+        val base = file.nameWithoutExtension
+        val prefix = "$base."
+        val siblings: List<DownloadedFile> = if (file.isPublic) {
+            queryPublicDownloadEntries()
+                .filter { it.name.startsWith(prefix) && it.extension in SUBTITLE_EXTENSIONS }
+        } else {
+            val dir = File(file.uri).parentFile ?: return emptyList()
+            try {
+                dir.listFiles()
+                    ?.filter { it.isFile && it.name.startsWith(prefix) && it.extension.lowercase() in SUBTITLE_EXTENSIONS }
+                    ?.map {
+                        DownloadedFile(
+                            uri = it.absolutePath,
+                            name = it.name,
+                            size = it.length(),
+                            lastModified = it.lastModified(),
+                            isPublic = false,
+                        )
+                    }
+                    ?: emptyList()
+            } catch (_: Exception) {
+                return emptyList()
+            }
+        }
+        return siblings.sortedBy { it.name }.map {
+            ExternalSubtitle(
+                uri = it.uri,
+                name = it.name,
+                mimeType = when (it.extension) {
+                    "srt" -> "application/x-subrip"
+                    "ass" -> "text/x-ssa"
+                    else -> "text/vtt"
+                },
+            )
+        }
+    }
+
+    /**
+     * Moves a finished private file into the public `Downloads/MPx/`
+     * folder (issue #344) and returns how the completed list should
+     * represent it. The video's subtitle sidecars move with it, so
+     * [findSiblingSubtitles] still finds them. On any failure — or
+     * below API 29, where the MediaStore Downloads collection does
+     * not exist — the private file is kept and returned as the
+     * fallback, so a failed publish never loses a download.
+     */
+    private fun publishFinishedFile(privateFile: File): DownloadedFile {
+        val published = publishToPublicDownloads(privateFile)
+        if (published.isPublic) {
+            publishSiblingSubtitles(privateFile)
+        }
+        return published
+    }
+
+    /**
+     * One file into the public Downloads folder (issue #344):
+     * MediaStore insert into the Downloads collection with
+     * RELATIVE_PATH `Download/MPx` — scoped storage, API 29+, no
+     * permission is needed for files the app itself creates, and
+     * explicitly NOT Seal's `MANAGE_EXTERNAL_STORAGE` +
+     * `requestLegacyExternalStorage` route. IS_PENDING hides the
+     * half-copied file from other apps until the bytes are in, then
+     * the entry is scanned into the media library (see
+     * [scanPublicFile]). The private copy is deleted only after the
+     * bytes are safely in MediaStore. Returns the public entry, or
+     * the private file as fallback on any failure. Never throws.
+     */
+    private fun publishToPublicDownloads(
+        privateFile: File,
+        scanIntoLibrary: Boolean = true,
+    ): DownloadedFile {
+        val private = DownloadedFile(
+            uri = privateFile.absolutePath,
+            name = privateFile.name,
+            size = privateFile.length(),
+            lastModified = privateFile.lastModified(),
+            isPublic = false,
+        )
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return private
+        val mimeType = mimeTypeFor(privateFile.name)
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, privateFile.name)
+            put(MediaStore.Downloads.MIME_TYPE, mimeType)
+            put(MediaStore.Downloads.RELATIVE_PATH, PUBLIC_DOWNLOADS_RELATIVE_PATH)
+            put(MediaStore.Downloads.IS_PENDING, 1)
+        }
+        val uri = try {
+            appContext.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+        } catch (_: Exception) {
+            null
+        } ?: return private
+        // 1. Copy the bytes. Failure: drop the entry, keep the private file.
+        try {
+            appContext.contentResolver.openOutputStream(uri, "w")?.use { output ->
+                FileInputStream(privateFile).use { input -> input.copyTo(output) }
+            } ?: throw IllegalStateException("no output stream")
+        } catch (_: Exception) {
+            try {
+                appContext.contentResolver.delete(uri, null, null)
+            } catch (_: Exception) {
+            }
+            return private
+        }
+        // 2. Un-hide the entry. Failure: drop the entry, keep the private file.
+        try {
+            val clearPending = ContentValues().apply {
+                put(MediaStore.Downloads.IS_PENDING, 0)
+            }
+            appContext.contentResolver.update(uri, clearPending, null, null)
+        } catch (_: Exception) {
+            try {
+                appContext.contentResolver.delete(uri, null, null)
+            } catch (_: Exception) {
+            }
+            return private
+        }
+        // 3. Read back what MediaStore actually stored — it uniquifies
+        // the display name on collision ("name (1).mp4"). Best-effort:
+        // the private file's values are the fallback.
+        var actualName = privateFile.name
+        var actualSize = privateFile.length()
+        var actualModified = privateFile.lastModified()
+        try {
+            appContext.contentResolver.query(
+                uri,
+                arrayOf(
+                    MediaStore.Downloads.DISPLAY_NAME,
+                    MediaStore.Downloads.SIZE,
+                    MediaStore.Downloads.DATE_MODIFIED,
+                ),
+                null, null, null,
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameCol = cursor.getColumnIndex(MediaStore.Downloads.DISPLAY_NAME)
+                    val sizeCol = cursor.getColumnIndex(MediaStore.Downloads.SIZE)
+                    val dateCol = cursor.getColumnIndex(MediaStore.Downloads.DATE_MODIFIED)
+                    if (nameCol >= 0) cursor.getString(nameCol)?.takeIf { it.isNotBlank() }?.let { actualName = it }
+                    if (sizeCol >= 0) cursor.getLong(sizeCol).takeIf { it > 0L }?.let { actualSize = it }
+                    if (dateCol >= 0) cursor.getLong(dateCol).takeIf { it > 0L }?.let { actualModified = it * 1000L }
+                }
+            }
+        } catch (_: Exception) {
+        }
+        // 4. The bytes are in MediaStore now — the private copy dies.
+        try {
+            privateFile.delete()
+        } catch (_: Exception) {
+        }
+        // 5. Scan, so galleries / file managers / other players see
+        // the file (a Downloads-collection entry alone is not in the
+        // Video/Audio collections). Best-effort.
+        if (scanIntoLibrary) scanPublicFile(actualName, mimeType)
+        return DownloadedFile(
+            uri = uri.toString(),
+            name = actualName,
+            size = actualSize,
+            lastModified = actualModified,
+            isPublic = true,
+        )
+    }
+
+    /**
+     * Moves the subtitle sidecars yt-dlp wrote next to [video] into
+     * the public folder too (issue #344, #341): same base name, same
+     * folder, so [findSiblingSubtitles] still finds them after the
+     * video moved. Best-effort per file — a sidecar that fails to
+     * publish stays private next to nothing (its video is gone), so
+     * it is deleted rather than stranded. Never scanned (see
+     * [scanPublicFile] — subtitles are not media).
+     */
+    private fun publishSiblingSubtitles(video: File) {
+        val base = video.nameWithoutExtension
+        val prefix = "$base."
+        val sidecars = try {
+            downloadsDir.listFiles()
+                ?.filter { it.isFile && it.name.startsWith(prefix) && it.extension.lowercase() in SUBTITLE_EXTENSIONS }
+                ?: emptyList()
+        } catch (_: Exception) {
+            return
+        }
+        for (sidecar in sidecars) {
+            val published = publishToPublicDownloads(sidecar, scanIntoLibrary = false)
+            if (!published.isPublic) {
+                try {
+                    sidecar.delete()
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+    /**
+     * Scans one published file into the media library (issue #344),
+     * adapted from Seal's `FileUtil.scanFileToMediaLibraryPostDownload`
+     * (JunkFood02/Seal, GPL-3.0 — `FileUtil.kt:107-118`): Seal scans
+     * every file in its download dir matching the title; MPx scans
+     * just the one finished file. The scan runs in the system
+     * MediaScanner process, which can read the public path — a
+     * Downloads-collection entry alone never lands in the
+     * Video/Audio collections, so without this galleries, file
+     * managers and other players would not see the file. Subtitle
+     * sidecars are never scanned (Seal drops them from its scan list
+     * too — they are not media).
+     */
+    private fun scanPublicFile(publicName: String, mimeType: String) {
+        try {
+            val publicPath = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "$PUBLIC_DOWNLOADS_RELATIVE_PATH/$publicName",
+            ).absolutePath
+            MediaScannerConnection.scanFile(appContext, arrayOf(publicPath), arrayOf(mimeType), null)
+        } catch (_: Exception) {
+        }
+    }
+
+    /** MIME type for a MediaStore insert, from the file extension. */
+    private fun mimeTypeFor(name: String): String {
+        val ext = name.substringAfterLast('.', "").lowercase()
+        MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)?.let { return it }
+        return when (ext) {
+            "mp4", "mov" -> "video/mp4"
+            "mkv" -> "video/x-matroska"
+            "webm" -> "video/webm"
+            "avi" -> "video/x-msvideo"
+            "flv" -> "video/x-flv"
+            "3gp" -> "video/3gpp"
+            "ts", "m2ts" -> "video/mp2t"
+            "mp3" -> "audio/mpeg"
+            "m4a" -> "audio/mp4"
+            "aac" -> "audio/aac"
+            "ogg", "opus" -> "audio/ogg"
+            "flac" -> "audio/flac"
+            "wav" -> "audio/x-wav"
+            "srt" -> "application/x-subrip"
+            "ass" -> "text/x-ssa"
+            "vtt", "webvtt" -> "text/vtt"
+            else -> "application/octet-stream"
+        }
+    }
+
+    /**
+     * Issue #344: files finished before this change still sit in the
+     * private dir — move them to the public folder once, so nothing
+     * is stranded there. Runs in the IO scope at singleton
+     * construction. The list is snapshotted first: a download
+     * starting later (restored QUEUED rows) writes its own files
+     * after this snapshot and publishes them itself on success, so
+     * the migration can never grab an in-progress file. A `.part`
+     * file is never finished and is skipped (the temp-dir cleanup
+     * above already wiped stale temp subdirs).
+     */
+    private suspend fun migratePrivateDownloadsToPublic() {
+        val leftovers = try {
+            downloadsDir.listFiles()
+                ?.filter { it.isFile && isMediaFile(it) && !it.name.endsWith(".part") }
+                ?: emptyList()
+        } catch (_: Exception) {
+            return
+        }
+        if (leftovers.isEmpty()) return
+        for (file in leftovers) {
+            try {
+                publishFinishedFile(file)
+            } catch (_: Exception) {
+            }
+        }
+        refreshFiles()
     }
 
     /**
@@ -843,7 +1261,11 @@ class MpxDownloader private constructor(context: Context) {
             if (response.exitCode == 0) {
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
-                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = file) }
+                    // Issue #344: the finished file moves to the public
+                    // Downloads/MPx/ folder before the row completes, so
+                    // the completed list picks it up from MediaStore.
+                    val published = publishFinishedFile(file)
+                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                 } else {
                     updateItem(id) {
                         it.copy(status = DownloadStatus.FAILED, error = "Finished but no file was found")
@@ -859,7 +1281,8 @@ class MpxDownloader private constructor(context: Context) {
             if (item.audioOnly) {
                 val fallback = findAudioFallbackFile(beforeNames, tempDirFor)
                 if (fallback != null) {
-                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = fallback) }
+                    val published = publishFinishedFile(fallback)
+                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     refreshFiles()
                     return
                 }
@@ -876,7 +1299,8 @@ class MpxDownloader private constructor(context: Context) {
             if (item.subtitles) {
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
-                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = file) }
+                    val published = publishFinishedFile(file)
+                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     refreshFiles()
                     return
                 }
@@ -904,7 +1328,8 @@ class MpxDownloader private constructor(context: Context) {
                 // the getInfo phase), so only the temp dir is searched.
                 val fallback = findAudioFallbackFile(null, tempDirFor)
                 if (fallback != null) {
-                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = fallback) }
+                    val published = publishFinishedFile(fallback)
+                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     refreshFiles()
                 } else {
                     updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
@@ -975,7 +1400,9 @@ class MpxDownloader private constructor(context: Context) {
                     }
                 }
             }
-            updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = outFile) }
+            // Issue #344: same public move as the yt-dlp path.
+            val published = publishFinishedFile(outFile)
+            updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
             refreshFiles()
         } catch (e: CancellationException) {
             outFile.delete()
@@ -1076,9 +1503,27 @@ class MpxDownloader private constructor(context: Context) {
             "mp3", "m4a", "aac", "ogg", "opus", "flac", "wav",
         )
 
+        /**
+         * Public folder for finished downloads (issue #344):
+         * `Downloads/MPx/` via MediaStore, RELATIVE_PATH form (no
+         * leading slash, no trailing slash — the stored value gains
+         * one; see [PUBLIC_DOWNLOADS_RELATIVE_PATH_SLASH]).
+         */
+        private const val PUBLIC_DOWNLOADS_RELATIVE_PATH = "Download/MPx"
+        private const val PUBLIC_DOWNLOADS_RELATIVE_PATH_SLASH = "Download/MPx/"
+
+        /** Subtitle sidecar extensions (issue #341, moved here in #344). */
+        private val SUBTITLE_EXTENSIONS = setOf("srt", "vtt", "webvtt", "ass")
+
         fun isMediaFile(file: File): Boolean {
             val ext = file.extension.lowercase()
             return ext in MEDIA_EXTENSIONS
+        }
+
+        /** Same check by file name (MediaStore rows have no File). */
+        fun isMediaFileName(name: String): Boolean {
+            val ext = name.substringAfterLast('.', "")
+            return '.' in name && ext.lowercase() in MEDIA_EXTENSIONS
         }
 
         /** A direct media link: path ends in a media extension (query stripped). */
