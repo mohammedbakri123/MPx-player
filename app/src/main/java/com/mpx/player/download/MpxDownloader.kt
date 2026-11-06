@@ -1239,7 +1239,7 @@ class MpxDownloader private constructor(context: Context) {
                 name = it.name,
                 mimeType = when (it.extension) {
                     "srt" -> "application/x-subrip"
-                    "ass" -> "text/x-ssa"
+                    "ass", "ssa" -> "text/x-ssa"
                     else -> "text/vtt"
                 },
             )
@@ -1443,7 +1443,7 @@ class MpxDownloader private constructor(context: Context) {
             "flac" -> "audio/flac"
             "wav" -> "audio/x-wav"
             "srt" -> "application/x-subrip"
-            "ass" -> "text/x-ssa"
+            "ass", "ssa" -> "text/x-ssa"
             "vtt", "webvtt" -> "text/vtt"
             else -> "application/octet-stream"
         }
@@ -2223,7 +2223,7 @@ class MpxDownloader private constructor(context: Context) {
         private const val PUBLIC_DOWNLOADS_RELATIVE_PATH_SLASH = "Download/MPx/"
 
         /** Subtitle sidecar extensions (issue #341, moved here in #344). */
-        private val SUBTITLE_EXTENSIONS = setOf("srt", "vtt", "webvtt", "ass")
+        private val SUBTITLE_EXTENSIONS = setOf("srt", "vtt", "webvtt", "ass", "ssa")
 
         fun isMediaFile(file: File): Boolean {
             val ext = file.extension.lowercase()
