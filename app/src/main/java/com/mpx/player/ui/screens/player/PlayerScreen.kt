@@ -1084,6 +1084,19 @@ fun PlayerScreen(
                                             }
                                         }
                                     }
+                                } else {
+                                    // Issue #288: gestures off — the first
+                                    // tap's chrome toggle is still pending
+                                    // (it only fires when no second tap
+                                    // arrives), so a double-tap must toggle
+                                    // the chrome once instead of swallowing
+                                    // it. Fires exactly once: the deferred
+                                    // toggle above never ran for this pair.
+                                    controlsVisible = !controlsVisible
+                                    if (sideSeekDirection != null) {
+                                        hideSideSeekJob?.cancel()
+                                        sideSeekDirection = null
+                                    }
                                 }
                             }
                         }
