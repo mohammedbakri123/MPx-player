@@ -38,6 +38,13 @@
     <string name="download_sign_in">سجّل الدخول للتنزيل</string>
     <string name="download_no_cookies">لم يتم العثور على ملفات تعريف ارتباط — سجّل الدخول في النافذة أولاً ثم اضغط «تم»</string>
     <string name="download_cookies_failed">تعذّر استيراد ملفات تعريف الارتباط</string>
+    <string name="download_quality_title">جودة التنزيل</string>
+    <string name="download_quality_resolution">الحد الأقصى للدقة</string>
+    <string name="download_quality_resolution_none">بدون حد</string>
+    <string name="download_quality_codec">تفضيل برنامج الترميز</string>
+    <string name="download_quality_codec_auto">تلقائي</string>
+    <string name="download_quality_custom_sorter">فرز تنسيق مخصص</string>
+    <string name="download_quality_custom_sorter_hint">عند تعيينه، يتجاوز هذا الخيار خياري الدقة وبرنامج الترميز أعلاه.</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">فيديو</string>

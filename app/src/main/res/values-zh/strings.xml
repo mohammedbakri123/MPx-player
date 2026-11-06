@@ -38,6 +38,13 @@
     <string name="download_sign_in">登录以下载</string>
     <string name="download_no_cookies">未找到 Cookie — 请先在窗口中登录，然后点“完成”</string>
     <string name="download_cookies_failed">Cookie 导入失败</string>
+    <string name="download_quality_title">下载画质</string>
+    <string name="download_quality_resolution">分辨率上限</string>
+    <string name="download_quality_resolution_none">无限制</string>
+    <string name="download_quality_codec">编码偏好</string>
+    <string name="download_quality_codec_auto">自动</string>
+    <string name="download_quality_custom_sorter">自定义格式排序</string>
+    <string name="download_quality_custom_sorter_hint">设置后，将覆盖上面选择的分辨率和编码。</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">视频</string>

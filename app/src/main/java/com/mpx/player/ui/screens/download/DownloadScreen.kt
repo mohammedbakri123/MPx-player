@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
@@ -56,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.download.ActiveDownload
 import com.mpx.player.download.CookieImportOutcome
 import com.mpx.player.download.DownloadStatus
@@ -121,6 +123,12 @@ fun DownloadScreen(
     // it, so it cannot change while this screen is alive.
     var showSignIn by rememberSaveable { mutableStateOf(false) }
     val signInUserAgent = remember { downloader.loadUserAgent() }
+    // Issue #338: download quality settings. The row below shows the
+    // saved choices; the dialog edits them, and the summary is re-read
+    // when the dialog closes so it always shows the saved value.
+    val settingsRepository = remember(context) { SharedPrefsAppSettingsRepository(context) }
+    var qualitySettings by remember { mutableStateOf(settingsRepository.load()) }
+    var showQuality by rememberSaveable { mutableStateOf(false) }
 
     // Warm up the engine (extracts Python + yt-dlp on first run) so the
     // Download button works the moment the user pastes a link.
@@ -363,6 +371,55 @@ fun DownloadScreen(
                         fontSize = 13.sp,
                     )
                 }
+            }
+
+            // Issue #338: download quality row. The summary is the
+            // custom sorter when one is set (it replaces the built
+            // sorter), otherwise resolution + codec. Tapping opens the
+            // quality dialog; the summary is re-read on dismiss.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showQuality = true }
+                    .padding(bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.download_quality_title),
+                        color = MpxTheme.colors.textPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Text(
+                        text = if (qualitySettings.downloadCustomSorter.isNotBlank()) {
+                            qualitySettings.downloadCustomSorter
+                        } else {
+                            "${downloadResolutionLabel(qualitySettings.downloadResolution)} · " +
+                                downloadCodecLabel(qualitySettings.downloadCodec)
+                        },
+                        color = MpxTheme.colors.textSecondary,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MpxTheme.colors.textSecondary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+
+            if (showQuality) {
+                DownloadQualityDialog(
+                    settingsRepository = settingsRepository,
+                    onDismiss = {
+                        showQuality = false
+                        qualitySettings = settingsRepository.load()
+                    },
+                )
             }
 
             if (visibleActive.isEmpty() && downloadedFiles.isEmpty()) {

@@ -142,6 +142,17 @@ data class AppSettings(
     // (info + download) so age-gated / logged-in videos can download.
     // Blank = send no User-Agent header at all.
     val downloadUserAgent: String = DEFAULT_DOWNLOAD_USER_AGENT,
+    // Download quality (issue #338): wires #336's FormatSorter to real
+    // user settings. downloadCodec: "Auto" (Seal's default — vp9.2, or
+    // av01 when the device hardware-decodes AV1), "VP9", "AV1", "H264"
+    // (Seal's compatibility format proto,vcodec:h264,ext).
+    // downloadResolution is Seal's videoResolution code (0 = no cap,
+    // 1 = 2160, 2 = 1440, 3 = 1080, 4 = 720, 5 = 480, 6 = 360).
+    // downloadCustomSorter is the advanced override — when non-blank
+    // it is passed to `-S` as-is, replacing the built sorter.
+    val downloadCodec: String = "Auto",
+    val downloadResolution: Int = 0,
+    val downloadCustomSorter: String = "",
 ) {
     /**
      * Total number of currently visible music tabs.

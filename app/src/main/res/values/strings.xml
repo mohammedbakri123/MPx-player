@@ -38,6 +38,13 @@
     <string name="download_sign_in">Sign in to download</string>
     <string name="download_no_cookies">No cookies found — sign in in the window first, then tap Done</string>
     <string name="download_cookies_failed">Cookie import failed</string>
+    <string name="download_quality_title">Download quality</string>
+    <string name="download_quality_resolution">Resolution cap</string>
+    <string name="download_quality_resolution_none">No limit</string>
+    <string name="download_quality_codec">Codec preference</string>
+    <string name="download_quality_codec_auto">Auto</string>
+    <string name="download_quality_custom_sorter">Custom format sorter</string>
+    <string name="download_quality_custom_sorter_hint">When set, this overrides the resolution and codec choices above.</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Video</string>
