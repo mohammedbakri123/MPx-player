@@ -49,6 +49,13 @@ data class AppSettings(
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10, PlayPauseOnly
     val popupPlaySize: String = "Medium", // Small, Medium, Large, Auto
     val popupPlayPosition: String = "BottomRight", // BottomRight, BottomLeft, TopRight, TopLeft, Center, RememberLast
+    // Issue #292: the last explicitly chosen PiP position, used when
+    // popupPlayPosition is RememberLast. Updated whenever the user
+    // picks an explicit position in Overlay settings. Android offers
+    // no API to read where the user dragged the PiP window, so the
+    // last position the app requested is the closest "last" it can
+    // know; picking RememberLast itself leaves this untouched.
+    val lastPopupPlayPosition: String = "BottomRight",
     val popupPlaySnapToEdge: Boolean = true,
     val popupPlayCloseOnDone: Boolean = true,
     val appLanguage: String = "system", // system, en, ar, es, fr, hi, zh, ru, de, pt
