@@ -2160,7 +2160,11 @@ private fun PlayerActionStripe(
                 )
                 "rotation" -> PlayerActionStripeButton(
                     icon = Icons.Filled.ScreenRotation,
-                    caption = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto") {
+                    // Issue #249: "sensor" is a legacy persisted value
+                    // that means Auto (targetOrientation above) — without
+                    // it the stripe showed "Landscape" for an Auto player.
+                    caption = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" ||
+                        currentSettings.screenOrientation == "sensor") {
                         stringResource(R.string.pip_size_auto)
                     } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
                         stringResource(R.string.player_orientation_portrait)
