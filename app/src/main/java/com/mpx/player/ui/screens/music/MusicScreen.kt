@@ -1086,13 +1086,20 @@ fun MusicScreen(
     // no new repository call needed.
     // #200: a folder's tracks are its library tracks, grouped exactly the
     // way MediaStoreRepository.getAudioFolders() groups them (parent dir of
-    // the file path, blank paths fall back to /storage/emulated/0/Music) —
-    // no new repository call needed. Declared here, before the selection
+    // the file path, blank and content:// paths fall back to
+    // /storage/emulated/0/Music) — no new repository call needed. Declared here, before the selection
     // helpers below, because local functions are only visible after their
     // declaration point — selectedFolderTracks() calls it.
+    // #267: mirror MediaStoreRepository.getAudioFolders() (#253) exactly —
+    // a content:// path has no filesystem parent, so File(...).parent is
+    // the meaningless "content://media/external/audio/media" and never
+    // equals any folder path. Such tracks group under the Music fallback,
+    // like blank paths — otherwise tapping the "Music" folder (or Play /
+    // Add-to-playlist / Favourite on a folder selection) silently dropped
+    // every content:// track.
     fun folderTracks(folder: AudioFolder): List<AudioTrack> =
         tracks.filter { track ->
-            val folderPath = if (track.path.isNotBlank()) {
+            val folderPath = if (track.path.isNotBlank() && !track.path.startsWith("content://")) {
                 File(track.path).parent ?: "/storage/emulated/0/Music"
             } else {
                 "/storage/emulated/0/Music"
