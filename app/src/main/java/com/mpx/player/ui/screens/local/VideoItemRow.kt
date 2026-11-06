@@ -60,6 +60,7 @@ private fun formatVideoDate(epochSeconds: Long): String {
 @Composable
 fun VideoItemRow(
     video: VideoFile,
+    isFavourite: Boolean = false,
     showSize: Boolean = true,
     showDate: Boolean = false,
     showDuration: Boolean = true,
@@ -69,6 +70,7 @@ fun VideoItemRow(
     onLongClick: (() -> Unit)? = null,
     showFullName: Boolean = false,
     onClick: () -> Unit,
+    onToggleFavourite: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -204,6 +206,23 @@ fun VideoItemRow(
                         )
                     }
                 }
+            }
+        }
+
+        // Issue #321: the favourite heart, mirroring VideoItemGridCard
+        // (#235) — list rows had no favourite affordance at all. Same
+        // icon, size, tint and content description as the grid card, and
+        // hidden while selected (#144: the multi-select action bar owns
+        // the actions then).
+        if (!isSelected) {
+            Spacer(Modifier.width(8.dp))
+            IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
+                Icon(
+                    imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = stringResource(R.string.music_menu_toggle_favourite),
+                    tint = if (isFavourite) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
+                    modifier = Modifier.size(20.dp),
+                )
             }
         }
     }

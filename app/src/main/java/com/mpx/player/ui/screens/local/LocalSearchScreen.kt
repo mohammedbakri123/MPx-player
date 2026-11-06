@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.ui.components.EmptyStateView
@@ -101,6 +102,9 @@ fun LocalSearchScreen(
     isSelectionMode: Boolean = false,
     onToggleFolderSelection: (MediaFolder) -> Unit = {},
     onToggleVideoSelection: (VideoFile) -> Unit = {},
+    // Issue #321: search-result list rows get the favourite heart too.
+    favourites: List<FavouriteItem> = emptyList(),
+    onToggleVideoFavourite: (VideoFile) -> Unit = {},
     onFolderClick: (MediaFolder) -> Unit,
     onVideoClick: (VideoFile) -> Unit,
     onBack: () -> Unit,
@@ -278,6 +282,10 @@ fun LocalSearchScreen(
                                 VideoItemRow(
                                     video = video,
                                     showThumbnails = showThumbnails,
+                                    // Issue #321: search-result list rows
+                                    // get the favourite heart too.
+                                    isFavourite = favourites.any { it.mediaUri == video.path },
+                                    onToggleFavourite = { onToggleVideoFavourite(video) },
                                     showSize = showFieldSize,
                                     showDate = showFieldDate,
                                     showDuration = showFieldDuration,
