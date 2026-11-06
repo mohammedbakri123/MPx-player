@@ -293,9 +293,15 @@ class MediaStoreRepository(
                         val parentFile = if (dataPath.isNotBlank()) File(dataPath).parentFile else null
                         val parentPath = parentFile?.absolutePath.orEmpty()
 
+                        // Issue #253: MediaStore bucket ids are the
+                        // hash of the LOWER-CASED parent path, so the
+                        // fallback must hash the lower-cased path too —
+                        // the case-sensitive hash could never equal a
+                        // real bucket id, and the folder then opened
+                        // empty (see getVideosInFolder's path fallback).
                         val rawBucketId = if (bucketIdCol >= 0) cursor.getString(bucketIdCol) else null
                         val bucketId = rawBucketId?.ifBlank { null }
-                            ?: parentPath.ifBlank { "unknown" }.hashCode().toString()
+                            ?: parentPath.ifBlank { "unknown" }.lowercase(Locale.US).hashCode().toString()
 
                         val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
                         val folderName = rawBucketName?.ifBlank { null }
@@ -386,7 +392,10 @@ class MediaStoreRepository(
             for (dir in candidateDirs) {
                 val path = dir.absolutePath
                 if (path.isNotBlank() && seenPaths.add(path)) {
-                    val bucketId = path.hashCode().toString()
+                    // Issue #253: same lower-cased hash as the
+                    // folder-list fallback above — a bucket id is the
+                    // hash of the lower-cased parent path.
+                    val bucketId = path.lowercase(Locale.US).hashCode().toString()
                     folderMap.getOrPut(bucketId) {
                         FolderAccumulator(
                             id = bucketId,
@@ -436,8 +445,6 @@ class MediaStoreRepository(
 
     override fun getVideosInFolder(bucketId: String): List<VideoFile> {
         val showHidden = showHiddenFiles()
-        val videos = mutableListOf<VideoFile>()
-        val seenPaths = mutableSetOf<String>()
         val sevenDaysAgoSec = (System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000L) / 1000L
         val projection = arrayOf(
             MediaStore.Video.Media._ID,
@@ -452,79 +459,108 @@ class MediaStoreRepository(
             MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
         )
         val uris = getVideoContentUris()
-        for (uri in uris) {
-            try {
-                context.contentResolver.query(
-                    uri,
-                    projection,
-                    "${MediaStore.Video.Media.BUCKET_ID} = ?",
-                    arrayOf(bucketId),
-                    "${MediaStore.Video.Media.TITLE} COLLATE NOCASE ASC",
-                )?.use { cursor ->
-                    val idCol = cursor.getColumnIndex(MediaStore.Video.Media._ID)
-                    val titleCol = cursor.getColumnIndex(MediaStore.Video.Media.TITLE)
-                    val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
-                    val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
-                    val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
-                    val widthCol = cursor.getColumnIndex(MediaStore.Video.Media.WIDTH)
-                    val heightCol = cursor.getColumnIndex(MediaStore.Video.Media.HEIGHT)
-                    val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
-                    val dateAddedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED)
-                    val bucketNameCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
-                    while (cursor.moveToNext()) {
-                        val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
-                        if (path.isNotBlank() && !seenPaths.add(path)) continue
-                        val file = if (path.isNotBlank()) File(path) else null
-                        val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
-                        val title = rawTitle?.ifBlank { null }
-                            ?: file?.name?.ifBlank { "Video" }
-                            ?: "Video"
-                        if (!showHidden && isHiddenPath(path, title)) continue
-                        val rawId = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
-                        val id = rawId.ifBlank { path }
-                        val effectivePath = path.ifBlank {
-                            if (idCol >= 0) {
-                                ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
-                            } else ""
-                        }
-                        val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
-                        val sizeBytes = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
-                        val widthPx = if (widthCol >= 0) cursor.getInt(widthCol).coerceAtLeast(0) else 0
-                        val heightPx = if (heightCol >= 0) cursor.getInt(heightCol).coerceAtLeast(0) else 0
-                        val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
-                        val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
-                        val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
-                        val folderName = rawBucketName?.ifBlank { null }
-                            ?: file?.parentFile?.name?.ifBlank { "Videos" }
-                            ?: "Videos"
-                        videos.add(
-                            VideoFile(
-                                id = id,
-                                title = title,
-                                path = effectivePath,
-                                durationMs = durationMs,
-                                sizeBytes = sizeBytes,
-                                sizeFormatted = formatSize(sizeBytes),
-                                dateModified = dateModified,
-                                bucketId = bucketId,
-                                folderName = folderName,
-                                formattedDuration = formatDuration(durationMs),
-                                formattedSize = formatSize(sizeBytes),
-                                isRemovable = isRemovablePath(path),
-                                isNew = dateAdded > sevenDaysAgoSec || dateModified > sevenDaysAgoSec,
-                                heightPx = heightPx,
-                                widthPx = widthPx,
+
+        // Issue #253: a folder id that is a fallback (its rows' stored
+        // BUCKET_ID was blank at folder-list time) never matches a
+        // BUCKET_ID = ? query, so the folder opens empty despite
+        // videoCount > 0. Resolve by the folder's path from the cached
+        // folder list instead — the parent directory is exactly what a
+        // bucket id denotes. The path pass runs only when the bucket
+        // query came back empty, so the normal (indexed) path is
+        // untouched, and only when the folder list was loaded first
+        // (otherwise the path is unknown and behaviour is unchanged).
+        val folderPath = cachedFolders?.third?.firstOrNull { it.id == bucketId }?.path.orEmpty()
+
+        fun queryVideos(parentPathFilter: String?): List<VideoFile> {
+            val videos = mutableListOf<VideoFile>()
+            val seenPaths = mutableSetOf<String>()
+            for (uri in uris) {
+                try {
+                    context.contentResolver.query(
+                        uri,
+                        projection,
+                        if (parentPathFilter == null) "${MediaStore.Video.Media.BUCKET_ID} = ?" else null,
+                        if (parentPathFilter == null) arrayOf(bucketId) else null,
+                        "${MediaStore.Video.Media.TITLE} COLLATE NOCASE ASC",
+                    )?.use { cursor ->
+                        val idCol = cursor.getColumnIndex(MediaStore.Video.Media._ID)
+                        val titleCol = cursor.getColumnIndex(MediaStore.Video.Media.TITLE)
+                        val dataCol = cursor.getColumnIndex(MediaStore.Video.Media.DATA)
+                        val durationCol = cursor.getColumnIndex(MediaStore.Video.Media.DURATION)
+                        val sizeCol = cursor.getColumnIndex(MediaStore.Video.Media.SIZE)
+                        val widthCol = cursor.getColumnIndex(MediaStore.Video.Media.WIDTH)
+                        val heightCol = cursor.getColumnIndex(MediaStore.Video.Media.HEIGHT)
+                        val dateModifiedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
+                        val dateAddedCol = cursor.getColumnIndex(MediaStore.Video.Media.DATE_ADDED)
+                        val bucketNameCol = cursor.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
+                        while (cursor.moveToNext()) {
+                            val path = if (dataCol >= 0) cursor.getString(dataCol).orEmpty() else ""
+                            if (path.isNotBlank() && !seenPaths.add(path)) continue
+                            // Path pass only: an exact parent match, so
+                            // videos in subfolders never leak in (a LIKE
+                            // on the path would include them).
+                            if (parentPathFilter != null) {
+                                val parent = if (path.isNotBlank()) File(path).parent else null
+                                if (parent != parentPathFilter) continue
+                            }
+                            val file = if (path.isNotBlank()) File(path) else null
+                            val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
+                            val title = rawTitle?.ifBlank { null }
+                                ?: file?.name?.ifBlank { "Video" }
+                                ?: "Video"
+                            if (!showHidden && isHiddenPath(path, title)) continue
+                            val rawId = if (idCol >= 0) cursor.getLong(idCol).toString() else ""
+                            val id = rawId.ifBlank { path }
+                            val effectivePath = path.ifBlank {
+                                if (idCol >= 0) {
+                                    ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
+                                } else ""
+                            }
+                            val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
+                            val sizeBytes = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
+                            val widthPx = if (widthCol >= 0) cursor.getInt(widthCol).coerceAtLeast(0) else 0
+                            val heightPx = if (heightCol >= 0) cursor.getInt(heightCol).coerceAtLeast(0) else 0
+                            val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
+                            val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
+                            val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
+                            val folderName = rawBucketName?.ifBlank { null }
+                                ?: file?.parentFile?.name?.ifBlank { "Videos" }
+                                ?: "Videos"
+                            videos.add(
+                                VideoFile(
+                                    id = id,
+                                    title = title,
+                                    path = effectivePath,
+                                    durationMs = durationMs,
+                                    sizeBytes = sizeBytes,
+                                    sizeFormatted = formatSize(sizeBytes),
+                                    dateModified = dateModified,
+                                    bucketId = bucketId,
+                                    folderName = folderName,
+                                    formattedDuration = formatDuration(durationMs),
+                                    formattedSize = formatSize(sizeBytes),
+                                    isRemovable = isRemovablePath(path),
+                                    isNew = dateAdded > sevenDaysAgoSec || dateModified > sevenDaysAgoSec,
+                                    heightPx = heightPx,
+                                    widthPx = widthPx,
+                                )
                             )
-                        )
+                        }
                     }
+                } catch (_: SecurityException) {
+                    // Continue to next volume
+                } catch (_: Exception) {
+                    // Continue to next volume
                 }
-            } catch (_: SecurityException) {
-                // Continue to next volume
-            } catch (_: Exception) {
-                // Continue to next volume
             }
+            return videos
         }
-        return videos.sortedBy { it.title.lowercase(Locale.US) }
+
+        val byBucketId = queryVideos(null)
+        if (byBucketId.isNotEmpty() || folderPath.isBlank()) {
+            return byBucketId.sortedBy { it.title.lowercase(Locale.US) }
+        }
+        return queryVideos(folderPath).sortedBy { it.title.lowercase(Locale.US) }
     }
 
     override fun getAllVideos(): List<VideoFile> = getAllVideos(showAll = false)
@@ -606,9 +642,13 @@ class MediaStoreRepository(
                         val dateModified = if (dateModifiedCol >= 0) cursor.getLong(dateModifiedCol) else 0L
                         val dateAdded = if (dateAddedCol >= 0) cursor.getLong(dateAddedCol) else 0L
 
+                        // Issue #253: same lower-cased hash as the
+                        // folder-list fallback — VideoFile.bucketId is
+                        // passed back into getVideosInFolder, so it must
+                        // equal the folder id for the same directory.
                         val rawBucketId = if (bucketIdCol >= 0) cursor.getString(bucketIdCol) else null
                         val bucketId = rawBucketId?.ifBlank { null }
-                            ?: file?.parentFile?.absolutePath?.ifBlank { "unknown" }?.hashCode()?.toString()
+                            ?: file?.parentFile?.absolutePath?.ifBlank { "unknown" }?.lowercase(Locale.US)?.hashCode()?.toString()
                             ?: "unknown"
 
                         val rawBucketName = if (bucketNameCol >= 0) cursor.getString(bucketNameCol) else null
@@ -776,7 +816,13 @@ class MediaStoreRepository(
         val tracks = getAudioTracks()
         val folderMap = mutableMapOf<String, MutableList<AudioTrack>>()
         for (track in tracks) {
-            val folderPath = if (track.path.isNotBlank()) {
+            // Issue #253: getAudioTracks substitutes a content:// URI
+            // for a blank DATA path, and File(content://…).parent is
+            // meaningless ("content://media/external/audio/media") —
+            // every such track landed in one bogus folder. A content://
+            // path has no filesystem parent, so it groups under the
+            // Music fallback exactly like a blank path.
+            val folderPath = if (track.path.isNotBlank() && !track.path.startsWith("content://")) {
                 File(track.path).parent ?: "/storage/emulated/0/Music"
             } else {
                 "/storage/emulated/0/Music"
