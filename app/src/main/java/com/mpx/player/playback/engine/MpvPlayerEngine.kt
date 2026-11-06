@@ -119,6 +119,23 @@ class MpvPlayerEngine(
     private var cachedDurationMs: Long = 0L
     private var cachedBufferedMs: Long = 0L
     private var cachedIsPlaying: Boolean = false
+    /**
+     * Issue #246: explicit play intent, recorded by play()/pause() and
+     * consulted by attachSurface() when it flushes a not-yet-loaded file.
+     * Neither cachedIsPlaying nor mpv's "pause" property can answer that
+     * question for a file that never loaded: play() deliberately does NOT
+     * force cachedIsPlaying=true (the real state arrives via the
+     * pause/idle observers once libmpv starts), and with no file loaded
+     * mpv is idle so the observer computes playing=false even after
+     * play() ran — so a cachedIsPlaying gate would break every
+     * play-from-library. And "pause" cannot tell a fresh autoPlay
+     * (pause=false, play() called) from a paused restore (pause=false,
+     * play() never called — autoPlay=false). Only the explicit intent
+     * recorded here distinguishes them. Set by play(), cleared by
+     * pause()/stop()/release(); load() deliberately never touches it
+     * (startPlayback loads BEFORE it plays).
+     */
+    private var playRequested: Boolean = false
     private var cachedPlaybackState: Int = PlayerEngine.STATE_IDLE
     private var cachedSpeed: Float = 1.0f
 
@@ -1151,7 +1168,13 @@ class MpvPlayerEngine(
         if (pending != null) {
             pendingLoad = null
             load(pending.first, pending.second, pending.third)
-            play()
+            // Issue #246: only resume if play was actually requested.
+            // A pause during prepare (or a paused restore, which never
+            // calls play()) must leave the file loaded but paused — the
+            // old unconditional play() overrode the pause on every
+            // surface recreate. cachedIsPlaying cannot gate this: it is
+            // false while idle with no file loaded, even after play().
+            if (playRequested) play()
             return
         }
         // Legacy load-before-surface recovery (kept as a safety net for loads
@@ -1160,7 +1183,8 @@ class MpvPlayerEngine(
         // surface exists. No-op when the file already loaded (rotation, etc.).
         if (mpvInitialized && !isReleased && !fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
             load(currentQueue, currentMediaIndex, cachedPositionMs)
-            play()
+            // Issue #246: same gate as the deferred flush above.
+            if (playRequested) play()
         }
     }
 
@@ -1409,6 +1433,10 @@ class MpvPlayerEngine(
     override fun play() {
         try {
             mpv.setPropertyBoolean("pause", false)
+            // Issue #246: record the intent — attachSurface() consults
+            // this when it flushes a not-yet-loaded file (cachedIsPlaying
+            // is false while idle, so it cannot carry the intent).
+            playRequested = true
             // Deliberately NOT forcing cachedIsPlaying=true here: that lie is
             // exactly the "pause button showing over a black 00:00 screen"
             // symptom — the real playing state arrives via the pause/idle
@@ -1422,6 +1450,10 @@ class MpvPlayerEngine(
         try {
             mpv.setPropertyBoolean("pause", true)
             cachedIsPlaying = false
+            // Issue #246: clear the play intent, so a later surface
+            // re-attach does not resume a file the user paused during
+            // prepare.
+            playRequested = false
             mainHandler.post { engineListener?.onIsPlayingChanged(false) }
         } catch (e: Exception) {
             Log.e(TAG, "Error pausing MPV", e)
@@ -1762,6 +1794,11 @@ class MpvPlayerEngine(
         try {
             mpv.command("stop")
             cachedIsPlaying = false
+            // Issue #246: a deliberate stop ends the play intent too, so
+            // a stale intent cannot auto-play a later paused restore if
+            // a surface re-attaches while the old queue is still current
+            // and the file never loaded.
+            playRequested = false
             cachedPlaybackState = PlayerEngine.STATE_IDLE
         } catch (e: Exception) {
             Log.w(TAG, "Error stopping MPV", e)
@@ -1773,6 +1810,8 @@ class MpvPlayerEngine(
         pendingSeekMs = null
         pendingSubtitles = null
         pendingExternalPin = false
+        // Issue #246: the engine is dead; no stale play intent survives it.
+        playRequested = false
         activeMediaId = null
         activeMediaUri = null
         isReleased = true
