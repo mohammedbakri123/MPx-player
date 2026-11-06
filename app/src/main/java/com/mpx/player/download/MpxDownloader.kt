@@ -387,20 +387,46 @@ class MpxDownloader private constructor(context: Context) {
             updateItem(id) { it.copy(status = DownloadStatus.DOWNLOADING) }
 
             // Title first, so the row shows something real while the bytes
-            // move. getInfo is a full yt-dlp run of its own; when it fails
-            // (unsupported site, network) the download still goes ahead
-            // with the URL as the title.
+            // move. getInfo is a full yt-dlp run of its own. Seal's info
+            // fetch (DownloadUtil.fetchVideoInfoFromUrl, JunkFood02/Seal,
+            // GPL-3.0) fails fast with `-R 1` + `--socket-timeout 5`, and
+            // a failure is terminal there — MPx does the same: an info
+            // failure marks the row FAILED with the real cause instead of
+            // proceeding blind and failing later at execute() with a
+            // worse error. Cancellation still propagates as a cancel.
+            val infoRequest = YoutubeDLRequest(item.url).apply {
+                addOption("-R", "1")
+                addOption("--socket-timeout", "5")
+            }
             val title = try {
-                withContext(Dispatchers.IO) { YoutubeDL.getInstance().getInfo(item.url).title }
+                withContext(Dispatchers.IO) { YoutubeDL.getInstance().getInfo(infoRequest).title }
                     ?.takeIf { it.isNotBlank() } ?: item.url
-            } catch (_: Exception) {
-                item.url
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: InterruptedException) {
+                throw e
+            } catch (e: YoutubeDL.CanceledException) {
+                throw e
+            } catch (e: Exception) {
+                // A direct media link does not need yt-dlp info at all —
+                // the plain HTTP fallback (same as the execute() failure
+                // path below) is still the right next step for it. Any
+                // other URL fails here with the real cause.
+                if (isDirectMediaUrl(item.url)) {
+                    runHttpFallback(item)
+                } else {
+                    updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
+                }
+                return
             }
             updateItem(id) { it.copy(title = title) }
 
             val beforeNames = downloadsDir.listFiles()?.map { it.name }?.toSet() ?: emptySet()
             val request = YoutubeDLRequest(item.url).apply {
-                addOption("-o", File(downloadsDir, "%(title)s.%(ext)s").absolutePath)
+                // Seal's output template (DownloadUtil.BASENAME,
+                // JunkFood02/Seal, GPL-3.0): title truncated to 200 bytes
+                // so long titles cannot exceed filesystem filename limits.
+                addOption("-o", File(downloadsDir, "%(title).200B.%(ext)s").absolutePath)
                 // Issue #334: partials go to this download's own temp dir
                 // (Seal's `-P temp:`); yt-dlp moves the finished file into
                 // downloadsDir on completion, so the Destination line in
@@ -411,6 +437,9 @@ class MpxDownloader private constructor(context: Context) {
                 addOption("-f", "best[ext=mp4]/best")
                 addOption("--no-playlist")
                 addOption("--no-mtime")
+                // Same fail-fast options as the info fetch above.
+                addOption("-R", "1")
+                addOption("--socket-timeout", "5")
             }
             val response = withContext(Dispatchers.IO) {
                 YoutubeDL.getInstance().execute(request, id) { progress, eta, _ ->
