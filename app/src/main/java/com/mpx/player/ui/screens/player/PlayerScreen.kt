@@ -2068,12 +2068,26 @@ fun PlayerScreen(
                                             fontWeight = FontWeight.Medium,
                                         )
                                         Spacer(Modifier.width(6.dp))
-                                        Icon(
-                                            imageVector = Icons.Filled.Close,
-                                            contentDescription = stringResource(R.string.player_sleep_timer_cancel),
-                                            tint = MpxTheme.colors.textPrimary,
+                                        // Issue #286: the cancel X needs a
+                                        // real touch target — it was a bare
+                                        // 14dp icon, so taps just outside it
+                                        // hit the chip and opened the Sleep
+                                        // sheet instead of cancelling. The
+                                        // Box keeps the icon visually 14dp
+                                        // but pads the clickable out to
+                                        // 48dp wide x the chip's full
+                                        // content height (22dp — a true
+                                        // 48dp-tall target would need a
+                                        // 48dp-tall chip). clickable comes
+                                        // before padding so the hit area
+                                        // includes the padding. The Box is
+                                        // nested inside the Surface's
+                                        // clickable, so taps inside it are
+                                        // consumed here and never open the
+                                        // sheet.
+                                        Box(
+                                            contentAlignment = Alignment.Center,
                                             modifier = Modifier
-                                                .size(14.dp)
                                                 .clickable {
                                                     playbackManager.cancelSleepTimer()
                                                     Toast.makeText(
@@ -2081,8 +2095,16 @@ fun PlayerScreen(
                                                         context.getString(R.string.player_sleep_timer_canceled_toast),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
-                                                },
-                                        )
+                                                }
+                                                .padding(horizontal = 17.dp, vertical = 4.dp),
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Close,
+                                                contentDescription = stringResource(R.string.player_sleep_timer_cancel),
+                                                tint = MpxTheme.colors.textPrimary,
+                                                modifier = Modifier.size(14.dp),
+                                            )
+                                        }
                                     }
                                 }
                             }
