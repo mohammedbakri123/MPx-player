@@ -63,6 +63,7 @@ import com.mpx.player.ui.components.AsyncVideoThumbnail
 import com.mpx.player.util.ThumbnailLoader
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
+import java.util.Locale
 
 fun formatTimeMs(millis: Long): String {
     if (millis <= 0) return "00:00"
@@ -71,9 +72,9 @@ fun formatTimeMs(millis: Long): String {
     val minutes = (totalSeconds / 60) % 60
     val hours = totalSeconds / 3600
     return if (hours > 0) {
-        String.format("%d:%02d:%02d", hours, minutes, seconds)
+        String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
     } else {
-        String.format("%02d:%02d", minutes, seconds)
+        String.format(Locale.US, "%02d:%02d", minutes, seconds)
     }
 }
 
