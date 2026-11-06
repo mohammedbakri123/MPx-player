@@ -391,16 +391,19 @@ object ThumbnailLoader {
         if (bitmap == null && trackPath.isNotBlank() && File(trackPath).exists()) {
             try {
                 val mmr = MediaMetadataRetriever()
-                mmr.setDataSource(trackPath)
-                val pictureBytes = mmr.embeddedPicture
-                mmr.release()
+                try {
+                    mmr.setDataSource(trackPath)
+                    val pictureBytes = mmr.embeddedPicture
 
-                if (pictureBytes != null && pictureBytes.isNotEmpty()) {
-                    val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                    BitmapFactory.decodeByteArray(pictureBytes, 0, pictureBytes.size, opts)
-                    opts.inSampleSize = calculateInSampleSize(opts, width, height)
-                    opts.inJustDecodeBounds = false
-                    bitmap = BitmapFactory.decodeByteArray(pictureBytes, 0, pictureBytes.size, opts)
+                    if (pictureBytes != null && pictureBytes.isNotEmpty()) {
+                        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        BitmapFactory.decodeByteArray(pictureBytes, 0, pictureBytes.size, opts)
+                        opts.inSampleSize = calculateInSampleSize(opts, width, height)
+                        opts.inJustDecodeBounds = false
+                        bitmap = BitmapFactory.decodeByteArray(pictureBytes, 0, pictureBytes.size, opts)
+                    }
+                } finally {
+                    mmr.release()
                 }
             } catch (_: Exception) {}
         }
