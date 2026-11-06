@@ -387,9 +387,13 @@ private fun PlaybackSheetRadioRow(
     }
 }
 
-/** "1×" / "1.25×" / "0.75×" — trims the trailing ".0" off whole values. */
-private fun formatMultiplier(value: Float): String =
-    value.toString().removeSuffix(".0") + "×"
+/** "1×" / "1.25×" / "0.75×" — rounds to 2 decimals (pinch produces
+ * long floats) and trims the trailing ".0" off whole values, matching
+ * the player HUD's formatMultiplier in PlayerScreen (#261). */
+private fun formatMultiplier(value: Float): String {
+    val rounded = (value * 100).roundToInt() / 100f
+    return rounded.toString().removeSuffix(".0") + "×"
+}
 
 /** "+0.50s" / "-0.20s" / "0.00s", same format the old subtitle dialog used. */
 private fun formatDelaySeconds(delayMs: Int): String =
