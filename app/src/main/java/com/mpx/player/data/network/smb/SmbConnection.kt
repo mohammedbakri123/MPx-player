@@ -55,14 +55,24 @@ class SmbConnection(
                 .build()
             val smbClient = SMBClient(config)
             client = smbClient
-            val conn = smbClient.connect(host)
-            connection = conn
-            val auth = if (username.isBlank()) {
-                AuthenticationContext.anonymous()
-            } else {
-                AuthenticationContext(username, password.toCharArray(), domain)
+            try {
+                val conn = smbClient.connect(host)
+                connection = conn
+                val auth = if (username.isBlank()) {
+                    AuthenticationContext.anonymous()
+                } else {
+                    AuthenticationContext(username, password.toCharArray(), domain)
+                }
+                session = conn.authenticate(auth)
+            } catch (e: Exception) {
+                // Issue #323: a failed connect must not leave the client
+                // (or a half-open connection, e.g. socket up but auth
+                // failed) behind — close what this call opened and drop
+                // the references, so a later close() is a no-op.
+                // close() re-enters this lock; synchronized is reentrant.
+                close()
+                throw e
             }
-            session = conn.authenticate(auth)
         }
     }
 
@@ -97,23 +107,51 @@ class SmbConnection(
     /** Opens a file stream starting at [offset]; total length comes from the share. */
     fun openStream(share: String, path: String, offset: Long): SmbStreamProxy.StreamHandle? {
         val disk = openShare(share)
-        val file = disk.openFile(
-            path,
-            EnumSet.of(AccessMask.GENERIC_READ),
-            emptySet(),
-            SMB2ShareAccess.ALL,
-            SMB2CreateDisposition.FILE_OPEN,
-            emptySet<SMB2CreateOptions>(),
-        )
-        val length = file.fileInformation.standardInformation.endOfFile
-        val stream = SmbFileInputStream(disk, file, offset)
-        return SmbStreamProxy.StreamHandle(stream, length)
+        // Issue #323: openFile (or the fileInformation read below) can
+        // throw, and the share must not leak then. The file is tracked
+        // separately so both handles are closed on failure; on success
+        // the SmbFileInputStream takes ownership of both (its close()
+        // closes file then share).
+        var file: com.hierynomus.smbj.share.File? = null
+        try {
+            file = disk.openFile(
+                path,
+                EnumSet.of(AccessMask.GENERIC_READ),
+                emptySet(),
+                SMB2ShareAccess.ALL,
+                SMB2CreateDisposition.FILE_OPEN,
+                emptySet<SMB2CreateOptions>(),
+            )
+            val length = file.fileInformation.standardInformation.endOfFile
+            val stream = SmbFileInputStream(disk, file, offset)
+            return SmbStreamProxy.StreamHandle(stream, length)
+        } catch (e: Exception) {
+            try {
+                file?.close()
+            } catch (_: Exception) {
+            }
+            try {
+                disk.close()
+            } catch (_: Exception) {
+            }
+            throw e
+        }
     }
 
     private fun openShare(share: String): DiskShare {
         val sess = session ?: throw IOException("Not connected")
         val opened = sess.connectShare(share)
-        return opened as? DiskShare ?: throw IOException("Share is not a disk share: $share")
+        // Issue #323: connectShare hands us an open share even when it
+        // is not a disk share — close it before throwing, or it leaks
+        // (same open-then-use shape as openStream/connect above).
+        if (opened !is DiskShare) {
+            try {
+                opened.close()
+            } catch (_: Exception) {
+            }
+            throw IOException("Share is not a disk share: $share")
+        }
+        return opened
     }
 
     fun close() {
