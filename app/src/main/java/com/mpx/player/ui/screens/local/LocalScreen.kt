@@ -619,9 +619,10 @@ fun LocalScreen(
     }
 
     // #144: multi-select actions for the action bar. They resolve the
-    // current selection to videos: directly selected videos, or — for
-    // selected folders — the videos inside them, loaded on IO. There is
-    // NO delete action: it never existed in the tile menus.
+    // current selection to videos: directly selected videos PLUS — for
+    // selected folders — the videos inside them (#233: both halves are
+    // combined, never videos-first with a folders-only fallback).
+    // There is NO delete action: it never existed in the tile menus.
     fun selectedVideosInView(): List<VideoFile> {
         return when {
             // #165: on the search page the selection resolves against
@@ -656,30 +657,37 @@ fun LocalScreen(
         }
     }
 
+    // Issue #233: videos inside the given folders — the folder half of a
+    // multi-select. Call only from an IO coroutine: it scans MediaStore
+    // buckets. (The folder half must never be silently dropped when the
+    // selection also holds videos — see the four actions below.)
+    fun videosInFolders(folders: List<MediaFolder>): List<VideoFile> =
+        folders.flatMap { repository.getVideosInFolder(it.id) }
+
     fun playSelection() {
         val videos = selectedVideosInView()
         val folders = selectedFoldersInView()
-        if (videos.isNotEmpty()) {
-            playbackManager?.playVideoFiles(videos)
-            onOpenPlayer()
-            clearSelection()
-        } else if (folders.isNotEmpty()) {
-            scope.launch(Dispatchers.IO) {
-                val all = folders.flatMap { repository.getVideosInFolder(it.id) }
-                withContext(Dispatchers.Main) {
-                    if (all.isEmpty()) {
-                        snackbarHostState.showSnackbar(
-                            context.getString(
-                                R.string.snackbar_no_playable_videos,
-                                folders.first().name,
-                            )
+        if (videos.isEmpty() && folders.isEmpty()) return
+        scope.launch(Dispatchers.IO) {
+            // Issue #233: combine both halves — selected videos first,
+            // then the videos inside selected folders, deduped by id so
+            // a video that is both directly selected and inside a
+            // selected folder plays once.
+            val all = (videos + videosInFolders(folders))
+                .distinctBy { it.id.ifBlank { it.path } }
+            withContext(Dispatchers.Main) {
+                if (all.isEmpty()) {
+                    snackbarHostState.showSnackbar(
+                        context.getString(
+                            R.string.snackbar_no_playable_videos,
+                            folders.first().name,
                         )
-                    } else {
-                        playbackManager?.playVideoFiles(all)
-                        onOpenPlayer()
-                    }
-                    clearSelection()
+                    )
+                } else {
+                    playbackManager?.playVideoFiles(all)
+                    onOpenPlayer()
                 }
+                clearSelection()
             }
         }
     }
@@ -697,9 +705,16 @@ fun LocalScreen(
                 } else {
                     listOf(first)
                 }
-                val startIndex = vids.indexOfFirst { it.id == first.id }.coerceAtLeast(0)
+                // Issue #233: do not drop the folder half of a mixed
+                // selection — the videos inside selected folders are
+                // appended after this folder's videos, deduped by id so
+                // a video already in the folder plays once (including
+                // when the first video's own folder is selected).
+                val all = (vids + videosInFolders(folders))
+                    .distinctBy { it.id.ifBlank { it.path } }
+                val startIndex = all.indexOfFirst { it.id == first.id }.coerceAtLeast(0)
                 withContext(Dispatchers.Main) {
-                    playbackManager?.playVideoFiles(vids, startIndex)
+                    playbackManager?.playVideoFiles(all, startIndex)
                     onOpenPlayer()
                     clearSelection()
                 }
@@ -712,14 +727,15 @@ fun LocalScreen(
 
     fun addSelectionToPlaylist() {
         val videos = selectedVideosInView()
-        if (videos.isNotEmpty()) {
-            videosForPlaylistAdd = videos
-            showAddToPlaylistDialog = true
-            return
-        }
         val folders = selectedFoldersInView()
+        if (videos.isEmpty() && folders.isEmpty()) return
         scope.launch(Dispatchers.IO) {
-            val all = folders.flatMap { repository.getVideosInFolder(it.id) }
+            // Issue #233: combine both halves — selected videos first,
+            // then the videos inside selected folders, deduped by id so
+            // a video that is both directly selected and inside a
+            // selected folder is added once.
+            val all = (videos + videosInFolders(folders))
+                .distinctBy { it.id.ifBlank { it.path } }
             withContext(Dispatchers.Main) {
                 if (all.isEmpty()) {
                     snackbarHostState.showSnackbar(
@@ -741,11 +757,13 @@ fun LocalScreen(
         val folders = selectedFoldersInView()
         val favUris = favourites.map { it.mediaUri }.toSet()
         scope.launch(Dispatchers.IO) {
-            val resolved = if (direct.isNotEmpty()) {
-                direct
-            } else {
-                folders.flatMap { repository.getVideosInFolder(it.id) }
-            }
+            // Issue #233: combine both halves — selected videos first,
+            // then the videos inside selected folders, deduped by path
+            // (favourites are keyed by path, so a video that is both
+            // directly selected and inside a selected folder must
+            // resolve once).
+            val resolved = (direct + videosInFolders(folders))
+                .distinctBy { it.path }
             if (resolved.isEmpty()) {
                 withContext(Dispatchers.Main) {
                     snackbarHostState.showSnackbar(
