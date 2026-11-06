@@ -183,6 +183,8 @@
     <string name="pip_window_controls_header">PiP 窗口控制：</string>
     <string name="pip_controls_prev_next">上一曲 / 下一曲（默认）</string>
     <string name="pip_controls_seek10">快进 / 快退（10 秒）</string>
+    <string name="pip_seek_rewind">快退 %1$d 秒</string>
+    <string name="pip_seek_forward">快进 %1$d 秒</string>
 
     <string name="list_show_all_folders">显示所有文件夹</string>
     <string name="list_show_all_folders_desc">显示所有已扫描的文件夹，包括空文件夹和隐藏文件夹</string>

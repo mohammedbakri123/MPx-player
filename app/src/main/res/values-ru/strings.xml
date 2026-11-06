@@ -183,6 +183,8 @@
     <string name="pip_window_controls_header">Элементы управления окном PiP:</string>
     <string name="pip_controls_prev_next">Назад / Вперёд (по умолчанию)</string>
     <string name="pip_controls_seek10">Перемотка вперёд / назад (10 с)</string>
+    <string name="pip_seek_rewind">Назад на %1$d с</string>
+    <string name="pip_seek_forward">Вперёд на %1$d с</string>
 
     <string name="list_show_all_folders">Показывать все папки</string>
     <string name="list_show_all_folders_desc">Показывать все отсканированные папки, включая пустые и скрытые</string>

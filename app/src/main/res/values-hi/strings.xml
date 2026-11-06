@@ -183,6 +183,8 @@
     <string name="pip_window_controls_header">PiP विंडो नियंत्रण:</string>
     <string name="pip_controls_prev_next">पिछला / अगला (डिफ़ॉल्ट)</string>
     <string name="pip_controls_seek10">फ़ास्ट फ़ॉरवर्ड / रिवाइंड (10 सेकंड)</string>
+    <string name="pip_seek_rewind">%1$d सेकंड पीछे</string>
+    <string name="pip_seek_forward">%1$d सेकंड आगे</string>
 
     <string name="list_show_all_folders">सभी फ़ोल्डर दिखाएँ</string>
     <string name="list_show_all_folders_desc">खाली और छिपे फ़ोल्डर सहित हर स्कैन किया गया फ़ोल्डर दिखाएँ</string>
