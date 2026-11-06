@@ -482,7 +482,7 @@
     <string name="music_added_to_favourites">已添加到收藏</string>
     <string name="music_removed_from_favourites">已从收藏中移除</string>
     <string name="music_cleared_favourites_msg">已清空收藏</string>
-    <string name="music_cleared_history_msg">已清空历史记录</string>
+    <string name="music_cleared_history_msg">已清空历史记录和续播位置</string>
     <string name="music_playlist_created_msg">播放列表“%s”已创建</string>
     <string name="music_added_to_playlist_msg">已添加到“%s”</string>
     <string name="music_already_in_playlist_msg">已在“%s”中</string>
@@ -596,7 +596,7 @@
     <string name="snackbar_folder_options">%1$s 的文件夹选项</string>
     <string name="snackbar_removed_favourites">已从收藏中移除</string>
     <string name="snackbar_cleared_favourites">已清空收藏</string>
-    <string name="snackbar_cleared_history">已清空历史记录</string>
+    <string name="snackbar_cleared_history">已清空历史记录和续播位置</string>
     <string name="snackbar_playlist_created">播放列表“%1$s”已创建</string>
     <string name="snackbar_playlist_deleted">已删除“%1$s”</string>
 

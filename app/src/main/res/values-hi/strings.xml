@@ -482,7 +482,7 @@
     <string name="music_added_to_favourites">पसंदीदा में जोड़ा गया</string>
     <string name="music_removed_from_favourites">पसंदीदा से हटाया गया</string>
     <string name="music_cleared_favourites_msg">पसंदीदा साफ़ किए गए</string>
-    <string name="music_cleared_history_msg">इतिहास साफ़ किया गया</string>
+    <string name="music_cleared_history_msg">इतिहास और फिर से शुरू करने की स्थिति साफ़ की गई</string>
     <string name="music_playlist_created_msg">प्लेलिस्ट « %s » बनाई गई</string>
     <string name="music_added_to_playlist_msg">« %s » में जोड़ा गया</string>
     <string name="music_already_in_playlist_msg">« %s » में पहले से मौजूद है</string>
@@ -596,7 +596,7 @@
     <string name="snackbar_folder_options">%1$s के लिए फ़ोल्डर विकल्प</string>
     <string name="snackbar_removed_favourites">पसंदीदा से हटाया गया</string>
     <string name="snackbar_cleared_favourites">पसंदीदा साफ़ किए गए</string>
-    <string name="snackbar_cleared_history">इतिहास साफ़ किया गया</string>
+    <string name="snackbar_cleared_history">इतिहास और फिर से शुरू करने की स्थिति साफ़ की गई</string>
     <string name="snackbar_playlist_created">प्लेलिस्ट « %1$s » बनाई गई</string>
     <string name="snackbar_playlist_deleted">« %1$s » हटाई गई</string>
 

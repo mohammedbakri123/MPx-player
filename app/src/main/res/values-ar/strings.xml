@@ -482,7 +482,7 @@
     <string name="music_added_to_favourites">تمت الإضافة إلى المفضلة</string>
     <string name="music_removed_from_favourites">تمت الإزالة من المفضلة</string>
     <string name="music_cleared_favourites_msg">تم مسح المفضلة</string>
-    <string name="music_cleared_history_msg">تم مسح السجل</string>
+    <string name="music_cleared_history_msg">تم مسح السجل ومواضع الاستئناف</string>
     <string name="music_playlist_created_msg">تم إنشاء قائمة التشغيل \"%s\"</string>
     <string name="music_added_to_playlist_msg">تمت الإضافة إلى \"%s\"</string>
     <string name="music_already_in_playlist_msg">موجود بالفعل في \"%s\"</string>
@@ -596,7 +596,7 @@
     <string name="snackbar_folder_options">خيارات المجلد لـ %1$s</string>
     <string name="snackbar_removed_favourites">تمت الإزالة من المفضلة</string>
     <string name="snackbar_cleared_favourites">تم مسح المفضلة</string>
-    <string name="snackbar_cleared_history">تم مسح السجل</string>
+    <string name="snackbar_cleared_history">تم مسح السجل ومواضع الاستئناف</string>
     <string name="snackbar_playlist_created">تم إنشاء قائمة التشغيل \"%1$s\"</string>
     <string name="snackbar_playlist_deleted">تم حذف \"%1$s\"</string>
 
