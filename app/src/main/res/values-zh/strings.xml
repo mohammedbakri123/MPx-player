@@ -885,6 +885,7 @@
     <string name="player_default_speed_header">默认播放速度</string>
     <string name="player_cd_play">播放</string>
     <string name="player_toast_subtitle_loaded">已加载字幕：%1$s</string>
+    <string name="player_subtitle_load_failed">无法加载字幕：%1$s</string>
     <string name="player_subtitle_load_error">无法加载“%1$s”：\n\n%2$s</string>
     <string name="subtitle_unsupported_format">不支持的格式“%1$s”。MPx Player 目前支持 .srt (SubRip) 和 .vtt (WebVTT) 字幕文件。</string>
     <string name="subtitle_unknown_format">无法识别的格式</string>

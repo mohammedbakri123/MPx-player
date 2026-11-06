@@ -54,6 +54,16 @@ class MpvPlayerEngine(
 
     companion object {
         private const val TAG = "MpvPlayerEngine"
+
+        /**
+         * Issue #332: how long to wait for a sub-added external subtitle
+         * track to appear in track-list before reporting the add as
+         * failed. Local .srt/.vtt files appear in well under a second;
+         * 5s leaves room for slow storage. A track that lands after the
+         * timeout still shows (the #192 pin keeps retrying) — only the
+         * failure banner is stale then.
+         */
+        private const val SUBTITLE_CONFIRMATION_TIMEOUT_MS = 5_000L
     }
 
     private val appContext: Context = context.applicationContext
@@ -235,6 +245,81 @@ class MpvPlayerEngine(
      * never pin a track on another item. */
     @Volatile
     private var pendingExternalPin: Boolean = false
+
+    /**
+     * Issue #332: outcome confirmation for a sub-add. `mpv.command()`
+     * never throws for a rejected subtitle file — the native JNI command
+     * only logs `mpv_error_string` (libplayer.so contains no Java
+     * exception class at all) — so the issued command proves nothing and
+     * the old unconditional success toast lied. The only real signal is
+     * the new track appearing in track-list, which the #192 pin already
+     * watches: a confirmation is armed whenever a sub-add is issued
+     * (replaceMediaItem's loaded branch, or the FILE_LOADED dispatch),
+     * resolved the moment the pin lands for the current item, and
+     * reported as failure if the track never appears within
+     * [SUBTITLE_CONFIRMATION_TIMEOUT_MS]. The listener is notified for
+     * every armed confirmation; the manager ignores ids it did not arm
+     * (queue restores confirm the same way). Armed on Main
+     * (replaceMediaItem) and on the event thread (FILE_LOADED dispatch);
+     * read/cleared on the event thread (track-list handler) and Main
+     * (timeout): volatile. Cleared on stop/release.
+     */
+    @Volatile
+    private var pendingSubtitleConfirmation: PendingSubtitleConfirmation? = null
+
+    private data class PendingSubtitleConfirmation(val mediaId: String)
+
+    private val subtitleConfirmationTimeout = Runnable {
+        val pending = pendingSubtitleConfirmation ?: return@Runnable
+        pendingSubtitleConfirmation = null
+        engineListener?.onExternalSubtitleConfirmed(pending.mediaId, false)
+    }
+
+    /**
+     * Issue #332: arm the sub-add outcome confirmation for [mediaId]
+     * (replacing any earlier one — the manager only ever waits for the
+     * latest pick per item). The timeout reports failure if the track
+     * never appears; [confirmPendingSubtitle] resolves it early when the
+     * pin lands.
+     */
+    private fun armSubtitleConfirmation(mediaId: String) {
+        mainHandler.removeCallbacks(subtitleConfirmationTimeout)
+        pendingSubtitleConfirmation = PendingSubtitleConfirmation(mediaId)
+        mainHandler.postDelayed(subtitleConfirmationTimeout, SUBTITLE_CONFIRMATION_TIMEOUT_MS)
+    }
+
+    /**
+     * Issue #332: resolve an armed confirmation. Only confirms when the
+     * confirmation belongs to the currently loaded item — a pin landing
+     * after a queue advance belongs to the new item, not the old pick.
+     * A failure after the timeout has already fired is a no-op (the
+     * field is null by then).
+     */
+    private fun confirmPendingSubtitle(success: Boolean) {
+        val pending = pendingSubtitleConfirmation ?: return
+        if (pending.mediaId != activeMediaId) return
+        pendingSubtitleConfirmation = null
+        mainHandler.removeCallbacks(subtitleConfirmationTimeout)
+        mainHandler.post {
+            engineListener?.onExternalSubtitleConfirmed(pending.mediaId, success)
+        }
+    }
+
+    /**
+     * Issue #332: whether a resolved subtitle URI is one mpv can actually
+     * open. A `content://` URI that survived resolution unchanged means
+     * [MpvFdOpener] could not open it (permission revoked, file gone) —
+     * mpv cannot open `content://` at all, so sub-adding it can only
+     * fail. A plain filesystem path must exist. `fd://` (resolution
+     * succeeded) and http(s) (mpv tries the network) are usable; their
+     * real outcome is confirmed asynchronously via the track-list pin.
+     */
+    private fun isUsableSubtitleUri(uri: String): Boolean = when {
+        uri.startsWith("fd://") -> true
+        uri.startsWith("content://") -> false
+        uri.startsWith("http://") || uri.startsWith("https://") -> true
+        else -> File(uri.removePrefix("file://")).exists()
+    }
 
     private fun isPathMatch(path1: String?, path2: String?): Boolean {
         if (path1 == null || path2 == null) return false
@@ -958,7 +1043,16 @@ class MpvPlayerEngine(
                 // before the new track is in track-list. Re-attempt on
                 // every track-list refresh until the just-added external
                 // track is visible and sid is pinned to it.
-                attemptExternalPin()
+                // Issue #332: a pin landing is the only proof the sub-add
+                // actually worked, so it resolves an armed confirmation.
+                // attemptExternalPin() also returns true when nothing was
+                // pending (a no-op), so only a pin that WAS pending and
+                // just succeeded counts.
+                val hadPendingPin = pendingExternalPin
+                val pinOk = attemptExternalPin()
+                if (hadPendingPin && pinOk) {
+                    confirmPendingSubtitle(true)
+                }
                 mainHandler.post {
                     engineListener?.onTracksChanged()
                 }
@@ -1117,17 +1211,40 @@ class MpvPlayerEngine(
                         isPathMatch(pending.mediaUri, activeMediaUri) ||
                         pending.mediaUri == currentQueue.getOrNull(currentMediaIndex)?.uri
                     if (matches) {
-                        var addedAny = false
-                        pending.subtitles.forEach { sub ->
+                        var issuedAny = false
+                        val subs = pending.subtitles
+                        for ((i, sub) in subs.withIndex()) {
+                            // Issue #332: skip a URI mpv provably cannot
+                            // open — a content:// URI whose fd resolution
+                            // failed, or a file deleted since it was
+                            // queued — instead of sub-adding it and
+                            // letting mpv fail silently. mpv.command()
+                            // never throws for a rejected file, so without
+                            // this the caller could never know it failed.
+                            if (!isUsableSubtitleUri(sub.uri)) {
+                                Log.w(TAG, "Skipping unusable pending subtitle ${sub.uri}")
+                                continue
+                            }
                             try {
                                 if (sub.title != null) {
                                     mpv.command("sub-add", sub.uri, sub.flag, sub.title)
                                 } else {
                                     mpv.command("sub-add", sub.uri, sub.flag)
                                 }
-                                addedAny = true
+                                issuedAny = true
                             } catch (e: Exception) {
                                 Log.w(TAG, "Failed adding pending subtitle ${sub.uri}", e)
+                                // Issue #332: the remaining queued entries
+                                // were never handed to mpv, so their
+                                // descriptors are still ours — close them.
+                                // The failed entry's descriptor is NOT
+                                // closed: mpv.command is synchronous, so
+                                // by the time it throws libmpv has already
+                                // run the open attempt and owns (and
+                                // closes) it; closing here would
+                                // double-close.
+                                fdOpener.closeFds(subs.drop(i + 1).map { it.uri })
+                                break
                             }
                         }
                         // Issue #192/#199: pin sid to the just-added
@@ -1136,14 +1253,26 @@ class MpvPlayerEngine(
                         // async, so the immediate attempt usually runs
                         // before the new track is in track-list, and the
                         // track-list handler re-attempts it until it is
-                        // pinned. A failed add (addedAny false) never
+                        // pinned. A failed add (issuedAny false) never
                         // arms the pin.
-                        if (addedAny) {
+                        if (issuedAny) {
                             pendingExternalPin = true
-                            attemptExternalPin()
+                            // Issue #332: arm the outcome confirmation
+                            // BEFORE the immediate pin attempt — the
+                            // track may already be in track-list, and a
+                            // synchronous pin landing must resolve it.
+                            armSubtitleConfirmation(pending.mediaId)
+                            if (attemptExternalPin()) {
+                                confirmPendingSubtitle(true)
+                            }
                         }
                     } else {
                         Log.w(TAG, "Dropping stale pending subtitles for ${pending.mediaUri} (active: $activeMediaUri)")
+                        // Issue #332: the dropped subtitles were never
+                        // handed to mpv, so their descriptors are still
+                        // ours — close them instead of leaking one fd per
+                        // dropped subtitle until the process dies.
+                        fdOpener.closeFds(pending.subtitles.map { it.uri })
                     }
                 } else {
                     // Issue #189: auto-select an embedded subtitle track
@@ -1521,6 +1650,11 @@ class MpvPlayerEngine(
             // after process death).
             subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name))
         }
+        // Issue #332: the previous pending subtitles were never dispatched
+        // (their file never reached FILE_LOADED) — their descriptors are
+        // still ours, so close them before overwriting, or they leak one
+        // fd per abandoned subtitle until the process dies.
+        pendingSubtitles?.let { fdOpener.closeFds(it.subtitles.map { sub -> sub.uri }) }
         pendingSubtitles = if (subs.isNotEmpty()) {
             PendingSubtitles(mediaUri = resolvedTarget.uri, mediaId = resolvedTarget.id, subtitles = subs)
         } else {
@@ -1918,94 +2052,146 @@ class MpvPlayerEngine(
         return false
     }
 
-    override fun replaceMediaItem(index: Int, media: PlayableMedia) {
-        if (index in currentQueue.indices) {
-            // Issue #197: remember the item mpv already has, so only
-            // genuinely NEW external subtitles are sub-added below.
-            val previous = currentQueue.getOrNull(index)
-            val updated = currentQueue.toMutableList()
-            updated[index] = media
-            currentQueue = updated
+    override fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult {
+        if (index !in currentQueue.indices) {
+            return ReplaceMediaItemResult.FAILED
+        }
+        // Issue #197: remember the item mpv already has, so only
+        // genuinely NEW external subtitles are sub-added below.
+        val previous = currentQueue.getOrNull(index)
+        val updated = currentQueue.toMutableList()
+        updated[index] = media
+        currentQueue = updated
 
-            val pending = pendingLoad
-            if (pending != null && index == pending.second) {
-                pendingLoad = Triple(updated, pending.second, pending.third)
+        val pending = pendingLoad
+        if (pending != null && index == pending.second) {
+            pendingLoad = Triple(updated, pending.second, pending.third)
+        }
+
+        if (index != currentMediaIndex) {
+            // Not the live item: the subtitles are stored in the queue
+            // and will be attempted when the item loads (issue #332:
+            // same outcome as QUEUED — the FILE_LOADED dispatch arms
+            // the confirmation then).
+            return ReplaceMediaItemResult.QUEUED
+        }
+
+        // Issue #213/#219: the stored queue keeps the RAW item
+        // (original URIs) so a later load() re-resolves it fresh.
+        // Only subtitle URIs are resolved here — replaceMediaItem
+        // never reloads the media (sub-add only), so resolving the
+        // media URI would open an fd nobody uses. The dedupe below
+        // still compares RAW lists on both sides, so name+URI
+        // identity keeps working (and, unlike before, two different
+        // same-named content:// files can now be told apart by URI).
+        if (fileLoadedForCurrentItem) {
+            // Issue #197: sub-add ONLY the external subtitles
+            // that are new since the previous item. The manager
+            // hands replaceMediaItem the item's FULL external
+            // list (existing + newly added), and mpv creates a
+            // brand-new track for every sub-add call with no
+            // dedupe — so re-adding the whole list duplicated
+            // the first .srt the moment a second one was added.
+            // The not-loaded branch below intentionally keeps
+            // the full list: pendingSubtitles is overwritten,
+            // not appended, and dispatched exactly once on
+            // FILE_LOADED, so it cannot duplicate. Only the new
+            // subtitles' URIs are resolved — the legacy single
+            // subtitleUri is never sub-added on this branch, so
+            // opening an fd for it would leak it.
+            val newExts = media.externalSubtitles.filter { rawExt ->
+                previous?.externalSubtitles?.none { isSameExternalSubtitle(it, rawExt) } ?: true
             }
-
-            if (index == currentMediaIndex) {
-                // Issue #213/#219: the stored queue keeps the RAW item
-                // (original URIs) so a later load() re-resolves it fresh.
-                // Only subtitle URIs are resolved here — replaceMediaItem
-                // never reloads the media (sub-add only), so resolving the
-                // media URI would open an fd nobody uses. The dedupe below
-                // still compares RAW lists on both sides, so name+URI
-                // identity keeps working (and, unlike before, two different
-                // same-named content:// files can now be told apart by URI).
-                if (fileLoadedForCurrentItem) {
-                    // Issue #197: sub-add ONLY the external subtitles
-                    // that are new since the previous item. The manager
-                    // hands replaceMediaItem the item's FULL external
-                    // list (existing + newly added), and mpv creates a
-                    // brand-new track for every sub-add call with no
-                    // dedupe — so re-adding the whole list duplicated
-                    // the first .srt the moment a second one was added.
-                    // The not-loaded branch below intentionally keeps
-                    // the full list: pendingSubtitles is overwritten,
-                    // not appended, and dispatched exactly once on
-                    // FILE_LOADED, so it cannot duplicate. Only the new
-                    // subtitles' URIs are resolved — the legacy single
-                    // subtitleUri is never sub-added on this branch, so
-                    // opening an fd for it would leak it.
-                    var addedAny = false
-                    val newExts = media.externalSubtitles.filter { rawExt ->
-                        previous?.externalSubtitles?.none { isSameExternalSubtitle(it, rawExt) } ?: true
-                    }
-                    newExts.zip(fdOpener.resolveExternalSubtitles(newExts))
-                        .forEach { (rawExt, resolvedExt) ->
-                            try {
-                                mpv.command("sub-add", resolvedExt.uri, "select", rawExt.name)
-                                addedAny = true
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed adding external subtitle ${rawExt.name}", e)
-                            }
-                        }
-                    // Issue #192/#199: pin sid to the just-added external
-                    // track — sub-add "select" alone does not stick. Arm
-                    // the durable pin first: sub-add is async, so the
-                    // immediate attempt usually runs before the new track
-                    // is in track-list, and the track-list handler
-                    // re-attempts it until it is pinned. A failed add
-                    // (addedAny false) never arms the pin.
-                    if (addedAny) {
-                        pendingExternalPin = true
-                        attemptExternalPin()
-                    }
-                } else {
-                    // Queue for dispatch when FILE_LOADED arrives. The
-                    // subtitle URIs are the resolved ones (mpv cannot open
-                    // content://); mediaUri is the currently-loading item's
-                    // resolved URI so the FILE_LOADED match succeeds, falling
-                    // back to the raw URI — the FILE_LOADED match also
-                    // accepts the raw URI of the current item, which covers
-                    // a load still deferred for lack of surface.
-                    val resolved = fdOpener.resolveSubtitlesOnly(media)
-                    val subs = mutableListOf<PendingSubtitle>()
-                    resolved.subtitleUri?.let { subUri ->
-                        subs.add(PendingSubtitle(uri = subUri, flag = "select"))
-                    }
-                    resolved.externalSubtitles.forEach { ext ->
-                        subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name))
-                    }
-                    pendingSubtitles = if (subs.isNotEmpty()) {
-                        PendingSubtitles(
-                            mediaUri = activeMediaUri ?: media.uri,
-                            mediaId = media.id,
-                            subtitles = subs,
-                        )
-                    } else {
-                        null
-                    }
+            val resolved = fdOpener.resolveExternalSubtitles(newExts)
+            var issuedAny = false
+            for ((i, pair) in newExts.zip(resolved).withIndex()) {
+                val (rawExt, resolvedExt) = pair
+                // Issue #332: skip a URI mpv provably cannot open — a
+                // content:// URI whose fd resolution failed, or a
+                // missing file — instead of sub-adding it and letting
+                // mpv fail silently. mpv.command() never throws for a
+                // rejected file, so without this the caller could never
+                // know the add failed.
+                if (!isUsableSubtitleUri(resolvedExt.uri)) {
+                    Log.w(TAG, "Skipping unusable external subtitle ${rawExt.name} (${resolvedExt.uri})")
+                    continue
                 }
+                try {
+                    mpv.command("sub-add", resolvedExt.uri, "select", rawExt.name)
+                    issuedAny = true
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed adding external subtitle ${rawExt.name}", e)
+                    // Issue #332: the remaining resolved entries were
+                    // never handed to mpv, so their descriptors are
+                    // still ours — close them. The failed entry's
+                    // descriptor is NOT closed: mpv.command is
+                    // synchronous, so by the time it throws libmpv has
+                    // already run the open attempt and owns (and
+                    // closes) it; closing here would double-close.
+                    fdOpener.closeFds(resolved.drop(i + 1).map { it.uri })
+                    break
+                }
+            }
+            // Issue #192/#199: pin sid to the just-added external
+            // track — sub-add "select" alone does not stick. Arm
+            // the durable pin first: sub-add is async, so the
+            // immediate attempt usually runs before the new track
+            // is in track-list, and the track-list handler
+            // re-attempts it until it is pinned. A failed add
+            // (issuedAny false) never arms the pin.
+            if (issuedAny) {
+                pendingExternalPin = true
+                // Issue #332: arm the outcome confirmation BEFORE
+                // the immediate pin attempt — the track may already
+                // be in track-list, and a synchronous pin landing
+                // must resolve it.
+                armSubtitleConfirmation(media.id)
+                if (attemptExternalPin()) {
+                    confirmPendingSubtitle(true)
+                }
+                return ReplaceMediaItemResult.ISSUED
+            }
+            // Issue #332: nothing was issued — either every new
+            // subtitle was unusable, or there was nothing new at all
+            // (the subtitles are already in the item).
+            return if (newExts.isEmpty()) {
+                ReplaceMediaItemResult.ALREADY_ADDED
+            } else {
+                ReplaceMediaItemResult.FAILED
+            }
+        } else {
+            // Queue for dispatch when FILE_LOADED arrives. The
+            // subtitle URIs are the resolved ones (mpv cannot open
+            // content://); mediaUri is the currently-loading item's
+            // resolved URI so the FILE_LOADED match succeeds, falling
+            // back to the raw URI — the FILE_LOADED match also
+            // accepts the raw URI of the current item, which covers
+            // a load still deferred for lack of surface.
+            val resolved = fdOpener.resolveSubtitlesOnly(media)
+            val subs = mutableListOf<PendingSubtitle>()
+            resolved.subtitleUri?.let { subUri ->
+                subs.add(PendingSubtitle(uri = subUri, flag = "select"))
+            }
+            resolved.externalSubtitles.forEach { ext ->
+                subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name))
+            }
+            // Issue #332: close the previous pending subtitles'
+            // descriptors before overwriting — they were never
+            // dispatched, so they are still ours.
+            pendingSubtitles?.let { fdOpener.closeFds(it.subtitles.map { sub -> sub.uri }) }
+            pendingSubtitles = if (subs.isNotEmpty()) {
+                PendingSubtitles(
+                    mediaUri = activeMediaUri ?: media.uri,
+                    mediaId = media.id,
+                    subtitles = subs,
+                )
+            } else {
+                null
+            }
+            return if (subs.isNotEmpty()) {
+                ReplaceMediaItemResult.QUEUED
+            } else {
+                ReplaceMediaItemResult.FAILED
             }
         }
     }
@@ -2013,8 +2199,16 @@ class MpvPlayerEngine(
     override fun stop() {
         pendingLoad = null
         pendingSeekMs = null
+        // Issue #332: the pending subtitles were never dispatched, so
+        // their descriptors are still ours — close them instead of
+        // leaking one fd per abandoned subtitle. The confirmation is
+        // dropped too: the stop itself is the outcome, and no banner
+        // should arrive for an item that no longer plays.
+        pendingSubtitles?.let { fdOpener.closeFds(it.subtitles.map { sub -> sub.uri }) }
         pendingSubtitles = null
         pendingExternalPin = false
+        pendingSubtitleConfirmation = null
+        mainHandler.removeCallbacks(subtitleConfirmationTimeout)
         activeMediaId = null
         activeMediaUri = null
         loadIssued = false
@@ -2059,8 +2253,14 @@ class MpvPlayerEngine(
     override fun release() {
         pendingLoad = null
         pendingSeekMs = null
+        // Issue #332: same as stop() — never-dispatched pending
+        // subtitles still own their descriptors; close them, and drop
+        // the confirmation (the timeout runnable is removed with every
+        // other callback below).
+        pendingSubtitles?.let { fdOpener.closeFds(it.subtitles.map { sub -> sub.uri }) }
         pendingSubtitles = null
         pendingExternalPin = false
+        pendingSubtitleConfirmation = null
         // Issue #246: the engine is dead; no stale play intent survives it.
         playRequested = false
         activeMediaId = null

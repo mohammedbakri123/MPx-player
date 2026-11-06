@@ -885,6 +885,7 @@
     <string name="player_default_speed_header">Default playback speed</string>
     <string name="player_cd_play">Play</string>
     <string name="player_toast_subtitle_loaded">Loaded subtitle: %1$s</string>
+    <string name="player_subtitle_load_failed">Could not load subtitle: %1$s</string>
     <string name="player_subtitle_load_error">Cannot load \'%1$s\':\n\n%2$s</string>
     <string name="subtitle_unsupported_format">Unsupported format ’%1$s’. MPx Player currently supports .srt (SubRip) and .vtt (WebVTT) subtitle files.</string>
     <string name="subtitle_unknown_format">unrecognized format</string>
