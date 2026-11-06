@@ -898,8 +898,12 @@ private fun PlaybackSheetRotationPage(
             subtitle = stringResource(R.string.player_rotation_auto_desc),
             selected = isAuto,
             onClick = {
+                // Issue #240: picking Auto must not overwrite the stored
+                // lock — autoScreenRotation=true already means "ignore the
+                // lock" to every consumer, so leaving screenOrientation
+                // alone lets a later lock-off restore it.
                 onSettingsChanged(
-                    currentSettings.copy(autoScreenRotation = true, screenOrientation = "auto"),
+                    currentSettings.copy(autoScreenRotation = true),
                 )
                 Toast.makeText(
                     context,
