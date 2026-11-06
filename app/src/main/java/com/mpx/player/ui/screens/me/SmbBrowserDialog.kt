@@ -53,7 +53,10 @@ import com.mpx.player.data.network.smb.SmbConnection
 import com.mpx.player.data.network.smb.SmbEntry
 import com.mpx.player.data.network.smb.SmbPlaybackSession
 import com.mpx.player.data.network.smb.SmbStreamProxy
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -97,6 +100,15 @@ fun SmbBrowserDialog(
     var domain by remember { mutableStateOf("") }
 
     var connection by remember { mutableStateOf<SmbConnection?>(null) }
+    // In-flight connect (issue #302): the Connect button is disabled while
+    // loading, but a second tap can still land before recomposition, and
+    // the dialog can be dismissed while a connect is in flight — both
+    // need the job handle so the stale attempt can be cancelled.
+    var connectJob by remember { mutableStateOf<Job?>(null) }
+    // Set by dismissDialog(): the connect success path must not adopt a
+    // connection after the dialog went away (the dismiss already closed
+    // the old one, and nobody owns the fresh one).
+    var dismissed by remember { mutableStateOf(false) }
     var connectedHost by remember { mutableStateOf("") }
     var currentShare by remember { mutableStateOf<String?>(null) }
     var currentPath by remember { mutableStateOf("") } // "" = share root; segments joined by "/"
@@ -135,19 +147,73 @@ fun SmbBrowserDialog(
         }
     }
 
+    fun dismissDialog() {
+        // Issue #302: the dialog can be dismissed while a connect is in
+        // flight. Cancel it and mark the dismissal so the success path
+        // below cannot adopt the fresh connection afterwards, and drop the
+        // dialog's reference to the closed connection.
+        dismissed = true
+        connectJob?.cancel()
+        connectJob = null
+        if (!keepAlive) {
+            connection?.close()
+            connection = null
+        }
+        onDismiss()
+    }
+
     fun connect() {
         val h = host.trim()
         if (h.isEmpty()) return
+        dismissed = false
         loading = true
         error = null
-        scope.launch {
-            val result = withContext(Dispatchers.IO) {
-                runCatching {
-                    connection?.close()
-                    SmbConnection(h, username.trim(), password, domain.trim()).also { it.connect() }
+        // A previous connect can still be in flight if a second tap
+        // landed before recomposition disabled the button; cancel it so
+        // only the newest attempt can adopt its connection.
+        connectJob?.cancel()
+        connectJob = scope.launch {
+            val old = connection
+            val fresh = SmbConnection(h, username.trim(), password, domain.trim())
+            val result = try {
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        try {
+                            fresh.connect()
+                        } catch (e: Exception) {
+                            // Half-open (socket connected, auth failed):
+                            // close it so it does not leak.
+                            fresh.close()
+                            throw e
+                        }
+                        // Only close the old connection once the new one
+                        // is live, so a failed reconnect leaves the
+                        // previous (still working) connection assigned
+                        // instead of a closed object (issue #302).
+                        old?.close()
+                        fresh
+                    }
                 }
+            } catch (e: CancellationException) {
+                // Cancelled (dismissed, or superseded) while the blocking
+                // connect was in flight: the success path below never
+                // runs, so close the fresh connection here — nobody owns
+                // it — and rethrow so cancellation still propagates.
+                // SmbConnection.close() is idempotent, so this is safe
+                // even if the inner catch above already closed it.
+                withContext(NonCancellable + Dispatchers.IO) { fresh.close() }
+                throw e
             }
             result.onSuccess { conn ->
+                if (dismissed) {
+                    // Dismissed after the blocking connect returned but
+                    // before the scope was cancelled at disposal: nobody
+                    // owns this connection, so close it instead of
+                    // assigning it (issue #302).
+                    conn.close()
+                    loading = false
+                    return@onSuccess
+                }
                 connection = conn
                 connectedHost = h
                 onHostRemembered(h)
@@ -169,6 +235,10 @@ fun SmbBrowserDialog(
                     loadDirectory(wantedShare, "")
                 }
             }.onFailure { e ->
+                // The old connection was never closed (it is closed only
+                // after a new one connects), so `connection` still points
+                // at a live object — or null on a first connect — and the
+                // next browse attempt starts from a clean state.
                 showError(e.message ?: unknownError)
             }
         }
@@ -232,10 +302,7 @@ fun SmbBrowserDialog(
         }
     }
 
-    Dialog(onDismissRequest = {
-        if (!keepAlive) connection?.close()
-        onDismiss()
-    }) {
+    Dialog(onDismissRequest = { dismissDialog() }) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -418,10 +485,7 @@ fun SmbBrowserDialog(
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    TextButton(onClick = {
-                        connection?.close()
-                        onDismiss()
-                    }) {
+                    TextButton(onClick = { dismissDialog() }) {
                         Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (!browsing) {
