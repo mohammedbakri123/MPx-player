@@ -41,6 +41,17 @@ class PlaybackService : Service() {
     private lateinit var mediaSession: MediaSessionCompat
     private var isForegroundActive = false
 
+    // Issue #284: the values the notification / MediaSession were last
+    // rebuilt from. updateSessionAndNotification runs on every
+    // playbackState emission — including the 250 ms position ticker —
+    // but the notification shows no position at all and the MediaSession
+    // only needs a 1-second position granularity (the system
+    // extrapolates the seek bar from the update time + speed), so a
+    // rebuild is skipped unless something displayed actually changed.
+    // Play/pause and track changes still rebuild immediately (they
+    // change the snapshot), and seeks land within one 1-second bucket.
+    private var lastNotificationSnapshot: NotificationSnapshot? = null
+
     override fun onCreate() {
         super.onCreate()
         playbackManager = PlaybackManager.getInstance(applicationContext)
@@ -164,6 +175,23 @@ class PlaybackService : Service() {
             }
             return
         }
+
+        // Issue #284: rebuild only when something the notification or
+        // MediaSession shows actually changed — track (title/subtitle/
+        // video-vs-audio), play state, speed, duration, or the 1-second
+        // position bucket. The 250 ms ticker otherwise emits an identical
+        // snapshot 4x/second and each one used to rebuild the full
+        // notification (4 PendingIntents), MediaSession state, and
+        // metadata. The stop paths above still run on every emission.
+        val snapshot = NotificationSnapshot(
+            item = currentItem,
+            isPlaying = state.isPlaying,
+            speed = state.speed,
+            durationMs = state.durationMs,
+            positionBucketMs = state.currentPositionMs / 1_000L,
+        )
+        if (snapshot == lastNotificationSnapshot) return
+        lastNotificationSnapshot = snapshot
 
         // 1. Update MediaSession PlaybackState
         val actions = PlaybackStateCompat.ACTION_PLAY or
@@ -358,6 +386,22 @@ class PlaybackService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    /**
+     * Issue #284: the values the notification / MediaSession actually
+     * display. [PlayableMedia] is a data class, so equality covers
+     * title/subtitle/video-vs-audio; [positionBucketMs] is the position
+     * in whole seconds — the MediaSession seek bar is extrapolated by
+     * the system from the update time + speed, so 1-second granularity
+     * is smooth while the 250 ms ticker no longer triggers a rebuild.
+     */
+    private data class NotificationSnapshot(
+        val item: PlayableMedia?,
+        val isPlaying: Boolean,
+        val speed: Float,
+        val durationMs: Long,
+        val positionBucketMs: Long,
+    )
 
     companion object {
         const val CHANNEL_ID = "mpx_playback_channel"
