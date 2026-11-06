@@ -241,7 +241,12 @@ fun LocalScreen(
             }
         )
     }
-    var sortField by remember {
+    // Issue #331: keyed on primarySortField, like #294's MusicScreen
+    // fix — a Settings reset (or any other outside change) re-derives
+    // the field on resume instead of the one-time remember going stale.
+    // The popup's onSortChange still works: it writes the same value to
+    // both sortField and settings, so the re-derived value is identical.
+    var sortField by remember(appSettings.primarySortField) {
         mutableStateOf(
             try {
                 SortField.valueOf(appSettings.primarySortField)
@@ -250,7 +255,8 @@ fun LocalScreen(
             }
         )
     }
-    var secondarySortField by remember {
+    // Issue #331: same keying as sortField above.
+    var secondarySortField by remember(appSettings.secondarySortField) {
         mutableStateOf(
             try {
                 SortField.valueOf(appSettings.secondarySortField)
@@ -328,7 +334,12 @@ fun LocalScreen(
     // starts, so a stale scan can never overwrite the current folder's
     // videos (same Job-handle pattern as PlayerScreen's hide jobs).
     var folderVideosJob by remember { mutableStateOf<Job?>(null) }
-    var folderSortField by remember {
+    // Issue #331: same defect as the root sort fields above — the
+    // folder-scope fields are one-time remembers too, so a Settings
+    // reset left them stale. Keyed on their settings values, same as
+    // #294's MusicScreen fix; the folder popups' onSortChange writes the
+    // same value to both the local state and settings.
+    var folderSortField by remember(appSettings.folderPrimarySortField) {
         mutableStateOf(
             try {
                 SortField.valueOf(appSettings.folderPrimarySortField)
@@ -337,7 +348,7 @@ fun LocalScreen(
             }
         )
     }
-    var folderSecondarySortField by remember {
+    var folderSecondarySortField by remember(appSettings.folderSecondarySortField) {
         mutableStateOf(
             try {
                 SortField.valueOf(appSettings.folderSecondarySortField)
