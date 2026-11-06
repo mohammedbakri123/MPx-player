@@ -808,10 +808,6 @@
     <string name="sort_advanced_ignore_extension_desc">Trier par titre sans tenir compte de l’extension du fichier</string>
     <string name="sort_advanced_summary_default">Options de tri standard</string>
     <!-- Issue 55: Continue Watching Row -->
-    <string name="continue_watching_title">Continuer à regarder</string>
-    <string name="continue_watching_dismiss">Retirer de Continuer à regarder</string>
-    <string name="continue_watching_dismissed">« %1$s » retiré de Continuer à regarder</string>
-    <string name="continue_watching_resume_at">Reprendre à %1$s</string>
     <!-- Issue 54: Sleep Timer -->
     <string name="player_sleep_timer">Minuteur de mise en veille</string>
     <string name="player_sleep_timer_off">Désactivé</string>

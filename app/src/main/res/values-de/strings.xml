@@ -808,10 +808,6 @@
     <string name="sort_advanced_ignore_extension_desc">Nach Dateititel sortieren, ohne die Dateierweiterung zu berücksichtigen</string>
     <string name="sort_advanced_summary_default">Standard-Sortieroptionen</string>
     <!-- Issue 55: Continue Watching Row -->
-    <string name="continue_watching_title">Weiter ansehen</string>
-    <string name="continue_watching_dismiss">Aus „Weiter ansehen“ entfernen</string>
-    <string name="continue_watching_dismissed">„%1$s“ aus „Weiter ansehen“ entfernt</string>
-    <string name="continue_watching_resume_at">Fortsetzen bei %1$s</string>
     <!-- Issue 54: Sleep Timer -->
     <string name="player_sleep_timer">Schlaf-Timer</string>
     <string name="player_sleep_timer_off">Aus</string>

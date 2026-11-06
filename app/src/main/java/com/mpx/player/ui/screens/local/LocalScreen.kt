@@ -89,7 +89,6 @@ import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.settings.AppSettingsRepository
-import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.MpxLoadingIndicator
@@ -468,8 +467,6 @@ fun LocalScreen(
     }
     val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
     val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
-    // Issue #250: saved resume positions, the feed for Continue Watching.
-    val resumePositions by persistenceRepository.observeResumePositions().collectAsState(initial = emptyList())
 
 
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
@@ -616,35 +613,6 @@ fun LocalScreen(
     val filteredVideos = sortedVideos
 
     val rootEmpty = if (appSettings.fileView) filteredVideos.isEmpty() else filteredFolders.isEmpty()
-
-    // Issue #250: Continue Watching — saved resume positions joined to
-    // the library by media URI (the #227 resume key, not the bare id),
-    // newest first, unfinished only, capped at 10. Positions whose
-    // media is no longer in the library (deleted file, blacklisted
-    // folder — allVideos is already blacklist-filtered) never render.
-    val continueWatchingItems = remember(resumePositions, allVideos) {
-        val videosByUri = allVideos.associateBy { it.path }
-        resumePositions
-            .sortedByDescending { it.lastUpdated }
-            .mapNotNull { position ->
-                val video = videosByUri[position.mediaUri] ?: return@mapNotNull null
-                if (position.positionMs <= 0L) return@mapNotNull null
-                // A fully-watched video is not "continue watching".
-                val durationMs = position.durationMs.takeIf { it > 0L } ?: video.durationMs
-                if (durationMs > 0L && position.positionMs >= durationMs) return@mapNotNull null
-                ContinueWatchingItem(
-                    mediaUri = position.mediaUri,
-                    mediaId = position.mediaId,
-                    title = video.title,
-                    subtitle = video.folderName,
-                    positionMs = position.positionMs,
-                    durationMs = durationMs,
-                    lastPlayedAt = position.lastUpdated,
-                )
-            }
-            .distinctBy { it.mediaUri }
-            .take(10)
-    }
 
     // Folder view sorted and filtered videos
     val sortedFolderVideos = remember(folderVideos, folderSortField, folderSecondarySortField, appSettings) {
@@ -1425,51 +1393,6 @@ fun LocalScreen(
                 }
             } else {
                 // ==================== ROOT FOLDERS VIEW ====================
-                // Issue #250: Continue Watching — above the folder/file
-                // list, root only (not the folder view, not the search
-                // page — those are the branches above), hidden while
-                // selecting and when the root is empty or permission is
-                // missing. The row itself takes no space when its list
-                // is empty, so this adds no gap when there is nothing
-                // to continue.
-                if (hasPermission && !rootEmpty && !isSelectionMode) {
-                    ContinueWatchingRow(
-                        items = continueWatchingItems,
-                        onItemClick = { item ->
-                            // Re-resolve against the current library: a
-                            // video deleted between render and tap is a
-                            // no-op instead of playing a stale entry.
-                            allVideos.firstOrNull { it.path == item.mediaUri }?.let { video ->
-                                // PlaybackManager.load() is the Continue
-                                // Watching entry point: an explicit
-                                // resumeMs bypasses the automatic-resume
-                                // toggle and resumes exactly here.
-                                playbackManager?.load(
-                                    PlayableMedia(
-                                        id = video.id,
-                                        title = video.title,
-                                        subtitle = video.folderName,
-                                        uri = video.path,
-                                        isVideo = true,
-                                        durationMs = video.durationMs,
-                                    ),
-                                    resumeMs = item.positionMs,
-                                )
-                                onOpenPlayer()
-                            }
-                        },
-                        onDismissItem = { item ->
-                            // Through the manager, not the repository
-                            // directly: it clears the in-memory resume
-                            // map too, so a later play of this video
-                            // starts from 0. The stored PK (mediaId) is
-                            // the key in both the pre-#227 (bare id) and
-                            // post-#227 (URI) layouts.
-                            playbackManager?.resumeManager?.clearResumePosition(item.mediaId)
-                        },
-                        showThumbnails = appSettings.showThumbnails,
-                    )
-                }
                 if (!hasPermission) {
                     EmptyStateView(
                         title = stringResource(R.string.empty_permission_title),

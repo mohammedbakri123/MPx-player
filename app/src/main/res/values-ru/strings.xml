@@ -808,10 +808,6 @@
     <string name="sort_advanced_ignore_extension_desc">Сортировать по названию файла без учёта расширения</string>
     <string name="sort_advanced_summary_default">Стандартные параметры сортировки</string>
     <!-- Issue 55: Continue Watching Row -->
-    <string name="continue_watching_title">Продолжить просмотр</string>
-    <string name="continue_watching_dismiss">Удалить из «Продолжить просмотр»</string>
-    <string name="continue_watching_dismissed">«%1$s» удалено из «Продолжить просмотр»</string>
-    <string name="continue_watching_resume_at">Продолжить с %1$s</string>
     <!-- Issue 54: Sleep Timer -->
     <string name="player_sleep_timer">Таймер сна</string>
     <string name="player_sleep_timer_off">Выкл.</string>
