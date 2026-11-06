@@ -67,6 +67,7 @@ import com.mpx.player.download.DownloaderInitState
 import com.mpx.player.download.MpxDownloader
 import com.mpx.player.download.YtDlpUpdateOutcome
 import com.mpx.player.download.YtDlpUpdateState
+import com.mpx.player.playback.ExternalSubtitle
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
@@ -124,6 +125,10 @@ fun DownloadScreen(
     // the next download started from this tab (plain Download button
     // or the sign-in flow below). Not a persisted setting.
     var audioOnly by rememberSaveable { mutableStateOf(false) }
+    // Issue #341: download subtitles toggle — same per-download
+    // choice as audio-only, applied to the next download started
+    // from this tab (plain button or sign-in). Not a persisted setting.
+    var subtitles by rememberSaveable { mutableStateOf(false) }
     // Issue #337: the in-app sign-in WebView, opened from the button
     // below. The User-Agent is read once — there is no settings UI for
     // it, so it cannot change while this screen is alive.
@@ -245,7 +250,7 @@ fun DownloadScreen(
                 Spacer(Modifier.width(8.dp))
                 Button(
                     onClick = {
-                        downloader.startDownload(urlText, audioOnly = audioOnly)
+                        downloader.startDownload(urlText, audioOnly = audioOnly, subtitles = subtitles)
                         urlText = ""
                     },
                     enabled = urlText.isNotBlank(),
@@ -297,6 +302,33 @@ fun DownloadScreen(
                 )
             }
 
+            // Issue #341: download subtitles toggle, right under the
+            // audio-only toggle (same row style). Video downloads only —
+            // an mp3 has no use for a sidecar subtitle file.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { subtitles = !subtitles }
+                    .padding(bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.download_subtitles),
+                    color = MpxTheme.colors.textPrimary,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(
+                    checked = subtitles,
+                    onCheckedChange = { subtitles = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MpxTheme.colors.primary,
+                        checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
+                    ),
+                )
+            }
+
             // Issue #337 (rework): sign in inside MPx's own WebView so
             // the cookies it sets can be sent to yt-dlp for this one
             // download (see SignInWebViewDialog). A login in Chrome is
@@ -337,7 +369,7 @@ fun DownloadScreen(
                     onUseCookies = {
                         showSignIn = false
                         scope.launch {
-                            when (downloader.importCookiesAndStart(urlText, audioOnly = audioOnly)) {
+                            when (downloader.importCookiesAndStart(urlText, audioOnly = audioOnly, subtitles = subtitles)) {
                                 CookieImportOutcome.IMPORTED -> urlText = ""
                                 CookieImportOutcome.NO_COOKIES ->
                                     snackbarHostState.showSnackbar(noCookiesLabel)
@@ -470,7 +502,13 @@ fun DownloadScreen(
                         ActiveDownloadRow(
                             item = item,
                             onCancel = { downloader.cancelDownload(item.id) },
-                            onRetry = { downloader.startDownload(item.url, audioOnly = item.audioOnly) },
+                            onRetry = {
+                                downloader.startDownload(
+                                    item.url,
+                                    audioOnly = item.audioOnly,
+                                    subtitles = item.subtitles,
+                                )
+                            },
                         )
                     }
                     items(downloadedFiles, key = { it.absolutePath }) { file ->
@@ -485,6 +523,12 @@ fun DownloadScreen(
                                         title = file.nameWithoutExtension,
                                         uri = file.absolutePath,
                                         isVideo = !isAudio,
+                                        // Issue #341: sidecar subtitles
+                                        // yt-dlp wrote next to this file
+                                        // ride along as external subtitles
+                                        // — the engine sub-adds and pins
+                                        // them via the #332 flow.
+                                        externalSubtitles = findSiblingSubtitles(file),
                                     ),
                                 )
                                 onOpenPlayer()
@@ -668,6 +712,45 @@ private fun DownloadedFileRow(
 }
 
 private val AUDIO_EXTENSIONS = setOf("mp3", "m4a", "aac", "ogg", "opus", "flac", "wav")
+
+/**
+ * Issue #341: sidecar subtitles yt-dlp wrote next to [video] with
+ * `--write-subs --sub-langs en,ar`. yt-dlp names them
+ * `<title>.<lang>.srt|.vtt` (e.g. `video.en.vtt`, `video.ar.srt`),
+ * so a file counts when its name starts with the video's base name
+ * plus "." and its extension is a subtitle format. SRT/VTT are the
+ * two formats MPx's own subtitle validation claims (SubtitleUtils);
+ * ASS is mpv-native too and yt-dlp writes it for some sites, so it
+ * rides along with the `text/x-ssa` mime type. The list is sorted by
+ * name for a stable order (`.ar` before `.en`); the engine sub-adds
+ * them in this order and pins the first. A missing parent dir or a
+ * listing failure returns an empty list, never null.
+ */
+private val SUBTITLE_EXTENSIONS = setOf("srt", "vtt", "webvtt", "ass")
+
+private fun findSiblingSubtitles(video: File): List<ExternalSubtitle> {
+    val base = video.nameWithoutExtension
+    val dir = video.parentFile ?: return emptyList()
+    return try {
+        dir.listFiles()
+            ?.filter { it.isFile && it.name.startsWith("$base.") && it.extension.lowercase() in SUBTITLE_EXTENSIONS }
+            ?.sortedBy { it.name }
+            ?.map {
+                ExternalSubtitle(
+                    uri = it.absolutePath,
+                    name = it.name,
+                    mimeType = when (it.extension.lowercase()) {
+                        "srt" -> "application/x-subrip"
+                        "ass" -> "text/x-ssa"
+                        else -> "text/vtt"
+                    },
+                )
+            }
+            ?: emptyList()
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
 
 private fun formatEta(seconds: Long): String {
     val h = seconds / 3600

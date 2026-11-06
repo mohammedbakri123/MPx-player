@@ -55,6 +55,8 @@ data class ActiveDownload(
     val cookiesFile: File? = null,
     /** Issue #340: audio-only download — extract best audio as mp3 instead of video. */
     val audioOnly: Boolean = false,
+    /** Issue #341: also fetch subtitles (en,ar) at download time, embedded + sidecar. */
+    val subtitles: Boolean = false,
 )
 
 enum class DownloaderInitState {
@@ -396,7 +398,11 @@ class MpxDownloader private constructor(context: Context) {
      * reports NO_COOKIES (the button is disabled then, so this is
      * unreachable from the UI).
      */
-    suspend fun importCookiesAndStart(rawUrl: String, audioOnly: Boolean = false): CookieImportOutcome {
+    suspend fun importCookiesAndStart(
+        rawUrl: String,
+        audioOnly: Boolean = false,
+        subtitles: Boolean = false,
+    ): CookieImportOutcome {
         val url = CookieImporter.normalizeUrl(rawUrl) ?: return CookieImportOutcome.NO_COOKIES
         val stagingFile = File(tempDir, "cookies-${UUID.randomUUID()}.txt")
         return try {
@@ -404,7 +410,7 @@ class MpxDownloader private constructor(context: Context) {
                 stagingFile.delete()
                 CookieImportOutcome.NO_COOKIES
             } else {
-                startDownload(url, cookiesFile = stagingFile, audioOnly = audioOnly)
+                startDownload(url, cookiesFile = stagingFile, audioOnly = audioOnly, subtitles = subtitles)
                 CookieImportOutcome.IMPORTED
             }
         } catch (_: Exception) {
@@ -414,7 +420,12 @@ class MpxDownloader private constructor(context: Context) {
     }
 
     /** Starts a download. No-op for a blank URL. */
-    fun startDownload(rawUrl: String, cookiesFile: File? = null, audioOnly: Boolean = false) {
+    fun startDownload(
+        rawUrl: String,
+        cookiesFile: File? = null,
+        audioOnly: Boolean = false,
+        subtitles: Boolean = false,
+    ) {
         val url = rawUrl.trim()
         if (url.isBlank()) return
         val id = UUID.randomUUID().toString()
@@ -425,6 +436,7 @@ class MpxDownloader private constructor(context: Context) {
             status = DownloadStatus.QUEUED,
             cookiesFile = cookiesFile,
             audioOnly = audioOnly,
+            subtitles = subtitles,
         )
         _activeDownloads.update { it + item }
         val job = scope.launch {
@@ -486,6 +498,26 @@ class MpxDownloader private constructor(context: Context) {
             addOption("-x")
             addOption("--audio-format", "mp3")
             addOption("--embed-metadata")
+        }
+
+    /**
+     * Issue #341: subtitle options, adapted from Seal's video-download
+     * subtitle block (DownloadUtil.kt:452-468, JunkFood02/Seal,
+     * GPL-3.0). Seal also has auto-subs, a language setting, an
+     * embed-vs-keep choice and `--convert-subs`; MPx keeps the fixed
+     * core: `--write-subs` keeps the sidecar file next to the video
+     * (the player picks it up as an external subtitle — see
+     * DownloadScreen.findSiblingSubtitles), `--embed-subs` muxes the
+     * subs into the video itself with the bundled ffmpeg (#336), and
+     * `--sub-langs en,ar` is the fixed default (English + Arabic,
+     * matching MPx's locales) — no language picker in this issue.
+     * `--write-subs` alone needs no ffmpeg.
+     */
+    private fun YoutubeDLRequest.addOptionsForSubtitles(): YoutubeDLRequest =
+        apply {
+            addOption("--write-subs")
+            addOption("--sub-langs", SUBTITLE_LANGS)
+            addOption("--embed-subs")
         }
 
     private suspend fun runDownload(item: ActiveDownload) {
@@ -594,6 +626,11 @@ class MpxDownloader private constructor(context: Context) {
                         formatSorting = settings.downloadCustomSorter.isNotBlank(),
                         sortingFields = settings.downloadCustomSorter,
                     )
+                    // Issue #341: subtitles for video downloads only —
+                    // an mp3 has no use for a sidecar subtitle file.
+                    if (item.subtitles) {
+                        addOptionsForSubtitles()
+                    }
                 }
                 // Issue #339: faster downloads, Seal's shape
                 // (DownloadUtil.kt:433-434 + :733-735, JunkFood02/Seal,
@@ -646,6 +683,23 @@ class MpxDownloader private constructor(context: Context) {
                 val fallback = findAudioFallbackFile(beforeNames, tempDirFor)
                 if (fallback != null) {
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = fallback) }
+                    refreshFiles()
+                    return
+                }
+            }
+            // Issue #341: a subtitle download whose post-processing
+            // (embed) failed after the video itself landed — yt-dlp
+            // only moves the finished file out of the temp dir once the
+            // download phase completed, and a missing subtitle is a
+            // warning, not an error, so a file in downloadsDir here
+            // means the download succeeded and the subs must not fail
+            // the row. A partial never reaches downloadsDir (it stays
+            // in the temp dir as `.part`), so this cannot mask a real
+            // download failure.
+            if (item.subtitles) {
+                val file = findOutputFile(response.out, beforeNames)
+                if (file != null) {
+                    updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = file) }
                     refreshFiles()
                     return
                 }
@@ -823,6 +877,13 @@ class MpxDownloader private constructor(context: Context) {
          * PreferenceUtil. No settings UI in this issue — a fixed value.
          */
         private const val CONCURRENT_FRAGMENTS_DEFAULT = "8"
+
+        /**
+         * Subtitle languages fetched at download time (issue #341):
+         * fixed default, English + Arabic, matching MPx's locales.
+         * No language picker in this issue — a follow-up if wanted.
+         */
+        private const val SUBTITLE_LANGS = "en,ar"
 
         private val MEDIA_EXTENSIONS = setOf(
             "mp4", "mkv", "webm", "mov", "avi", "flv", "3gp", "ts", "m2ts",

@@ -46,6 +46,7 @@
     <string name="download_quality_custom_sorter">فرز تنسيق مخصص</string>
     <string name="download_quality_custom_sorter_hint">عند تعيينه، يتجاوز هذا الخيار خياري الدقة وبرنامج الترميز أعلاه.</string>
     <string name="download_audio_only">صوت فقط</string>
+    <string name="download_subtitles">تنزيل الترجمة</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">فيديو</string>
