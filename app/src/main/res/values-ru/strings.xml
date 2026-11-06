@@ -482,7 +482,7 @@
     <string name="music_added_to_favourites">Добавлено в избранное</string>
     <string name="music_removed_from_favourites">Удалено из избранного</string>
     <string name="music_cleared_favourites_msg">Избранное очищено</string>
-    <string name="music_cleared_history_msg">История очищена</string>
+    <string name="music_cleared_history_msg">История и позиции возобновления очищены</string>
     <string name="music_playlist_created_msg">Плейлист «%s» создан</string>
     <string name="music_added_to_playlist_msg">Добавлено в «%s»</string>
     <string name="music_already_in_playlist_msg">Уже в «%s»</string>
@@ -596,7 +596,7 @@
     <string name="snackbar_folder_options">Параметры папки: %1$s</string>
     <string name="snackbar_removed_favourites">Удалено из избранного</string>
     <string name="snackbar_cleared_favourites">Избранное очищено</string>
-    <string name="snackbar_cleared_history">История очищена</string>
+    <string name="snackbar_cleared_history">История и позиции возобновления очищены</string>
     <string name="snackbar_playlist_created">Плейлист «%1$s» создан</string>
     <string name="snackbar_playlist_deleted">Плейлист «%1$s» удалён</string>
 

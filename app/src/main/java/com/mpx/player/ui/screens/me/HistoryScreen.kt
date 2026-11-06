@@ -159,6 +159,15 @@ fun HistoryScreen(
                         TextButton(onClick = {
                             scope.launch {
                                 persistenceRepository.clearHistory()
+                                // Issue #353: clearing history must also
+                                // forget every saved resume position, or
+                                // videos keep offering to resume from the
+                                // old position (and the "Resumed from"
+                                // banner still appears). The resume
+                                // manager's clearAll() clears the
+                                // in-memory map, the throttle state, and
+                                // the Room table.
+                                realPlaybackManager.resumeManager.clearAll()
                                 snackbarHostState.showSnackbar(context.getString(R.string.snackbar_cleared_history))
                             }
                         }) {

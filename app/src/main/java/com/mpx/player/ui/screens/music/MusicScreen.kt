@@ -2375,6 +2375,16 @@ fun MusicScreen(
             onClearHistory = {
                 scope.launch {
                     persistenceRepository.clearHistory()
+                    // Issue #353: clearing history must also forget every
+                    // saved resume position, or videos keep offering to
+                    // resume from the old position (and the "Resumed
+                    // from" banner still appears). Prefer the resume
+                    // manager's clearAll() — it clears the in-memory map,
+                    // the throttle state, and the Room table. With no
+                    // manager in scope there is no in-memory state, so
+                    // clear the Room table directly instead.
+                    playbackManager?.resumeManager?.clearAll()
+                        ?: persistenceRepository.clearAllResumePositions()
                     snackbarHostState.showSnackbar(context.getString(R.string.music_cleared_history_msg))
                 }
             },

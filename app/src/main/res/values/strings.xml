@@ -482,7 +482,7 @@
     <string name="music_added_to_favourites">Added to Favourites</string>
     <string name="music_removed_from_favourites">Removed from Favourites</string>
     <string name="music_cleared_favourites_msg">Cleared Favourites</string>
-    <string name="music_cleared_history_msg">Cleared History</string>
+    <string name="music_cleared_history_msg">Cleared history and resume positions</string>
     <string name="music_playlist_created_msg">Playlist \"%s\" created</string>
     <string name="music_added_to_playlist_msg">Added to \"%s\"</string>
     <string name="music_already_in_playlist_msg">Already in \"%s\"</string>
@@ -596,7 +596,7 @@
     <string name="snackbar_folder_options">Folder options for %1$s</string>
     <string name="snackbar_removed_favourites">Removed from Favourites</string>
     <string name="snackbar_cleared_favourites">Cleared Favourites</string>
-    <string name="snackbar_cleared_history">Cleared History</string>
+    <string name="snackbar_cleared_history">Cleared history and resume positions</string>
     <string name="snackbar_playlist_created">Playlist \"%1$s\" created</string>
     <string name="snackbar_playlist_deleted">Deleted \"%1$s\"</string>
 
