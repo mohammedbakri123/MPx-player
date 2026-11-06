@@ -228,10 +228,14 @@ fun OverlaySettingsScreen(
             item {
                 SectionHeader(stringResource(R.string.overlay_section_trigger))
 
+                // Issue #253: on a PiP-less device this toggle could be
+                // enabled even though it can never take effect — the
+                // Settings PiP category guards its toggle the same way.
                 SettingsToggleRow(
                     title = stringResource(R.string.pip_auto_title),
                     subtitle = stringResource(R.string.pip_auto_desc),
                     checked = settings.popupPlayEnabled,
+                    enabled = isSupported,
                     onCheckedChange = { update(settings.copy(popupPlayEnabled = it)) },
                 )
 
@@ -275,6 +279,7 @@ fun OverlaySettingsScreen(
                         title = title,
                         subtitle = subtitle,
                         selected = settings.popupPlayControls == key,
+                        enabled = isSupported && settings.popupPlayEnabled,
                         onClick = { update(settings.copy(popupPlayControls = key)) },
                     )
                 }
@@ -324,6 +329,7 @@ fun OverlaySettingsScreen(
                         title = title,
                         subtitle = subtitle,
                         selected = settings.popupPlaySize == key,
+                        enabled = isSupported && settings.popupPlayEnabled,
                         onClick = { update(settings.copy(popupPlaySize = key)) },
                     )
                 }
@@ -383,6 +389,7 @@ fun OverlaySettingsScreen(
                         title = title,
                         subtitle = subtitle,
                         selected = settings.popupPlayPosition == key,
+                        enabled = isSupported && settings.popupPlayEnabled,
                         onClick = { update(settings.copy(popupPlayPosition = key)) },
                     )
                 }
@@ -492,12 +499,13 @@ private fun SettingsToggleRow(
     title: String,
     subtitle: String,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
+            .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -519,6 +527,7 @@ private fun SettingsToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MpxTheme.colors.primary,
                 checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
@@ -532,18 +541,20 @@ private fun SettingsRadioRow(
     title: String,
     subtitle: String,
     selected: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
             selected = selected,
             onClick = onClick,
+            enabled = enabled,
             colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
         )
         Spacer(Modifier.width(8.dp))

@@ -117,10 +117,28 @@ class SmbStreamProxy {
                 return
             }
             val total = handle.length
+            val isRange = rangeStart > 0L || rangeEnd != null
+            // Issue #253: an unsatisfiable range is 416 (RFC 7233), not
+            // a 206 with a bogus length. The old arithmetic never even
+            // got there: an out-of-range start made coerceIn throw
+            // (min > max), so the connection was dropped with no
+            // response at all. A range is unsatisfiable when the file
+            // is empty, the start is past the end, or the end precedes
+            // the start. The opened handle is closed on this path —
+            // streamTo's finally only covers the success path.
+            if (isRange && (total == 0L || rangeStart >= total || (rangeEnd != null && rangeEnd < rangeStart))) {
+                writeHeaders(output, 416, "Range Not Satisfiable", "application/octet-stream", 0L, "bytes */$total")
+                try {
+                    handle.input.close()
+                } catch (_: Exception) {
+                }
+                return
+            }
             val start = rangeStart.coerceIn(0L, total)
             val end = (rangeEnd ?: (total - 1)).coerceIn(start, (total - 1).coerceAtLeast(0L))
-            val length = (end - start + 1).coerceAtLeast(0L)
-            val isRange = rangeStart > 0L || rangeEnd != null
+            // An empty file with no Range is a plain 200 with length 0 —
+            // the old (end - start + 1) computed 1 while 0 bytes follow.
+            val length = if (total == 0L) 0L else (end - start + 1).coerceAtLeast(0L)
             if (isRange) {
                 writeHeaders(output, 206, "Partial Content", "application/octet-stream", length, "bytes $start-$end/$total")
             } else {
