@@ -61,7 +61,10 @@ class PlaybackManager private constructor(context: Context) {
      * race it: the deferred load only runs while its generation is still
      * the latest. Issue #258: stop() bumps the generation too, so a
      * deferred load cannot outlive a deliberate stop and resurrect the
-     * queue it just cleared.
+     * queue it just cleared. Issue #272: the fast path bumps it as well —
+     * a preload-complete playQueue is a new session just like a slow one,
+     * and without the bump a pending deferred load would fire after it
+     * and take over.
      */
     private var playQueueGeneration = 0
 
@@ -553,6 +556,13 @@ class PlaybackManager private constructor(context: Context) {
         // blocked — the preload is one Room query). A newer playQueue in
         // that window supersedes this one via playQueueGeneration.
         if (resumeManager.isPreloadComplete) {
+            // Issue #272: the fast path is a new session too — bump the
+            // generation so a still-pending deferred load (tap A while the
+            // preload was pending) cannot fire after this load and take
+            // over. Without this, tap B once the preload lands started B,
+            // then A's coroutine resumed, saw its generation still match,
+            // and put A back on screen.
+            playQueueGeneration++
             startPlayback(items, targetIndex, targetItem, autoPlay, forceResume, keepShuffle)
         } else {
             val generation = ++playQueueGeneration
