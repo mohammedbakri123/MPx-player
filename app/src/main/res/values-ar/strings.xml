@@ -1011,14 +1011,14 @@
     <string name="pref_search_no_results">لا توجد إعدادات تطابق "%1$s"</string>
     <string name="pref_player_summary">استئناف التشغيل، التشغيل في الخلفية، السرعة</string>
     <string name="pref_folders_empty_title">لا توجد مجلدات محظورة</string>
-    <string name="pref_folders_empty_message">المجلدات التي تخفيها هنا لن تظهر في قسم الوسائط المحلية.</string>
+    <string name="pref_folders_empty_message">المجلدات التي تخفيها هنا لن تظهر في قسم الوسائط المحلية أو في قسم الموسيقى.</string>
     <string name="pref_folders_add">إضافة مجلد</string>
     <string name="pref_folders_select_title">اختر المجلدات لإخفائها</string>
     <string name="pref_folders_loading">جارٍ تحميل المجلدات…</string>
     <string name="pref_folders_none_available">لا توجد مجلدات أخرى لإخفائها</string>
     <string name="pref_folders_clear_all">مسح الكل</string>
     <string name="pref_folders_clear_confirm_title">مسح جميع المجلدات المحظورة؟</string>
-    <string name="pref_folders_clear_confirm_message">ستظهر جميع المجلدات في قسم الوسائط المحلية مجددًا.</string>
+    <string name="pref_folders_clear_confirm_message">ستظهر جميع المجلدات في قسم الوسائط المحلية وقسم الموسيقى مجددًا.</string>
     <string name="pref_folders_remove">إزالة</string>
     <string name="pref_layout_editor_desc">اختر الإجراءات التي تظهر في ورقة التشغيل وشريط الإجراءات وترتيبها.</string>
     <string name="pref_layout_reset">إعادة إلى الافتراضي</string>

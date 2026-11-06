@@ -1011,14 +1011,14 @@
     <string name="pref_search_no_results">Нет настроек, соответствующих «%1$s»</string>
     <string name="pref_player_summary">Продолжение воспроизведения, фоновая игра, скорость</string>
     <string name="pref_folders_empty_title">Нет папок в чёрном списке</string>
-    <string name="pref_folders_empty_message">Скрытые здесь папки не будут отображаться в разделе «Локально».</string>
+    <string name="pref_folders_empty_message">Скрытые здесь папки не будут отображаться в разделах «Локально» и «Музыка».</string>
     <string name="pref_folders_add">Добавить папку</string>
     <string name="pref_folders_select_title">Выберите папки для скрытия</string>
     <string name="pref_folders_loading">Загрузка папок…</string>
     <string name="pref_folders_none_available">Больше нет папок для скрытия</string>
     <string name="pref_folders_clear_all">Очистить всё</string>
     <string name="pref_folders_clear_confirm_title">Убрать все папки из чёрного списка?</string>
-    <string name="pref_folders_clear_confirm_message">Все папки снова появятся в разделе «Локально».</string>
+    <string name="pref_folders_clear_confirm_message">Все папки снова появятся в разделах «Локально» и «Музыка».</string>
     <string name="pref_folders_remove">Убрать</string>
     <string name="pref_layout_editor_desc">Выберите, какие действия показывать на панели воспроизведения и на панели действий, и в каком порядке.</string>
     <string name="pref_layout_reset">Сбросить к значениям по умолчанию</string>

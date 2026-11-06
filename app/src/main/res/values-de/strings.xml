@@ -1011,14 +1011,14 @@
     <string name="pref_search_no_results">Keine Einstellung passt zu „%1$s“</string>
     <string name="pref_player_summary">Wiedergabe fortsetzen, Hintergrundwiedergabe, Geschwindigkeit</string>
     <string name="pref_folders_empty_title">Keine blockierten Ordner</string>
-    <string name="pref_folders_empty_message">Ordner, die du hier ausblendest, erscheinen nicht in „Lokal“.</string>
+    <string name="pref_folders_empty_message">Ordner, die du hier ausblendest, erscheinen nicht in „Lokal“ oder in „Musik“.</string>
     <string name="pref_folders_add">Ordner hinzufügen</string>
     <string name="pref_folders_select_title">Ordner zum Ausblenden wählen</string>
     <string name="pref_folders_loading">Ordner werden geladen…</string>
     <string name="pref_folders_none_available">Keine weiteren Ordner zum Ausblenden</string>
     <string name="pref_folders_clear_all">Alle löschen</string>
     <string name="pref_folders_clear_confirm_title">Alle blockierten Ordner entfernen?</string>
-    <string name="pref_folders_clear_confirm_message">Alle Ordner erscheinen wieder in „Lokal“.</string>
+    <string name="pref_folders_clear_confirm_message">Alle Ordner erscheinen wieder in „Lokal“ und in „Musik“.</string>
     <string name="pref_folders_remove">Entfernen</string>
     <string name="pref_layout_editor_desc">Wähle, welche Aktionen in der Wiedergabe-Leiste und im Aktionsstreifen erscheinen und in welcher Reihenfolge.</string>
     <string name="pref_layout_reset">Auf Standard zurücksetzen</string>

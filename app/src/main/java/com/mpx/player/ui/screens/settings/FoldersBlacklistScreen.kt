@@ -39,7 +39,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mpx.player.R
 import com.mpx.player.data.repository.MediaStoreRepository
-import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.ui.components.MpxDialog
 import com.mpx.player.ui.components.MpxPrimaryButton
@@ -54,10 +53,11 @@ import kotlinx.coroutines.withContext
 /**
  * Folder blacklist management (#158, mpvEx parity). A real setting:
  * blacklisted folder paths are stored in [AppSettings.blacklistedFolders]
- * and hidden from Local (filtered at every folder/video load site in
- * LocalScreen). Mirrors mpvEx's Folders preferences screen: a list with
- * per-item remove, clear-all with confirmation, and an add dialog that
- * scans all video folders with checkboxes.
+ * and hidden from Local and Music (filtered at every load site in
+ * LocalScreen and MusicScreen, #300). Mirrors mpvEx's Folders preferences
+ * screen: a list with per-item remove, clear-all with confirmation, and
+ * an add dialog that scans all media folders (video + audio) with
+ * checkboxes.
  *
  * Limitation vs mpvEx: no long-press multi-select delete on the list
  * itself — per-item remove plus clear-all covers the same actions.
@@ -193,7 +193,17 @@ fun FoldersBlacklistScreen(
     }
 }
 
-/** Add dialog: scans all video folders (excluding already-blacklisted) with checkboxes. */
+// Issue #300: the blacklist hides audio too, so a folder with only songs
+// must be black-listable. Video and audio folders are merged on (path,
+// name) and de-duplicated by path — a folder holding both videos and
+// songs appears once. Only path/name are shown, so neither folder type's
+// extra fields (video counts, sizes) are needed here.
+private data class BlacklistFolderOption(
+    val path: String,
+    val name: String,
+)
+
+/** Add dialog: scans all media folders (video + audio, excluding already-blacklisted) with checkboxes. */
 @Composable
 private fun FoldersBlacklistAddDialog(
     alreadyBlacklisted: Set<String>,
@@ -201,15 +211,18 @@ private fun FoldersBlacklistAddDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    var folders by remember { mutableStateOf<List<MediaFolder>?>(null) }
+    var folders by remember { mutableStateOf<List<BlacklistFolderOption>?>(null) }
     var selected by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     LaunchedEffect(Unit) {
         val scanned = withContext(Dispatchers.IO) {
-            MediaStoreRepository(context)
-                .getMediaFolders(showAllFolders = true)
-                .filter { !isPathBlacklisted(it.path, alreadyBlacklisted) }
-                .sortedBy { it.name.lowercase() }
+            val repo = MediaStoreRepository(context)
+            (repo.getMediaFolders(showAllFolders = true).map { it.path to it.name } +
+                repo.getAudioFolders().map { it.path to it.name })
+                .distinctBy { it.first }
+                .filter { !isPathBlacklisted(it.first, alreadyBlacklisted) }
+                .sortedBy { it.second.lowercase() }
+                .map { (path, name) -> BlacklistFolderOption(path = path, name = name) }
         }
         folders = scanned
     }

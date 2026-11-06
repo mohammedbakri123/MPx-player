@@ -1011,14 +1011,14 @@
     <string name="pref_search_no_results">No settings match "%1$s"</string>
     <string name="pref_player_summary">Resume playback, background play, speed</string>
     <string name="pref_folders_empty_title">No blacklisted folders</string>
-    <string name="pref_folders_empty_message">Folders you hide here will not appear in Local.</string>
+    <string name="pref_folders_empty_message">Folders you hide here will not appear in Local or Music.</string>
     <string name="pref_folders_add">Add folder</string>
     <string name="pref_folders_select_title">Select folders to hide</string>
     <string name="pref_folders_loading">Loading folders…</string>
     <string name="pref_folders_none_available">No more folders to hide</string>
     <string name="pref_folders_clear_all">Clear all</string>
     <string name="pref_folders_clear_confirm_title">Clear all blacklisted folders?</string>
-    <string name="pref_folders_clear_confirm_message">All folders will appear in Local again.</string>
+    <string name="pref_folders_clear_confirm_message">All folders will appear in Local and Music again.</string>
     <string name="pref_folders_remove">Remove</string>
     <string name="pref_layout_editor_desc">Choose which actions appear in the playback sheet and the action stripe, and in what order.</string>
     <string name="pref_layout_reset">Reset to default</string>
