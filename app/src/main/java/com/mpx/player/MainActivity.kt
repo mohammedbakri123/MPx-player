@@ -133,6 +133,13 @@ class MainActivity : ComponentActivity() {
     private var currentPalette by mutableStateOf("Blue")
     private var currentDarkSurface by mutableStateOf("TrueBlack")
     private var openPlayerOnStart by mutableStateOf(false)
+    // Issue #248: bumps on every handled configuration change (see
+    // onConfigurationChanged below). The setContent remembers for the
+    // localized context/config are keyed on it, so a dark-mode toggle,
+    // font-scale or density change rebuilds them from the live
+    // resources.configuration instead of leaving the stale snapshot
+    // that isSystemInDarkTheme() reads through LocalConfiguration.
+    private var configEpoch by mutableStateOf(0)
     // Issue #206: the NavHost's current route, mirrored from MpxApp via
     // onDestinationChanged. onUserLeaveHint gates Home-press PiP on it —
     // without this the activity cannot tell whether the Player is visible.
@@ -196,10 +203,16 @@ class MainActivity : ComponentActivity() {
                 LocaleHelper.isRtl(targetLocale)
             }
             val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
-            val localizedContext = remember(this, targetLocale) {
+            // Issue #248: keyed on configEpoch as well as the locale —
+            // a handled configuration change (dark-mode toggle,
+            // font-scale, density) rebuilds these from the live
+            // resources.configuration. Without the key they would keep
+            // the snapshot taken at first composition and the "System"
+            // theme would never follow the system.
+            val localizedContext = remember(this, targetLocale, configEpoch) {
                 LocaleHelper.createLocalizedContext(this, targetLocale)
             }
-            val localizedConfig = remember(this, targetLocale) {
+            val localizedConfig = remember(this, targetLocale, configEpoch) {
                 Configuration(resources.configuration).apply {
                     setLocale(targetLocale)
                     setLayoutDirection(targetLocale)
@@ -354,6 +367,22 @@ class MainActivity : ComponentActivity() {
             playbackManager.setBackgroundPlaying(false)
             PlaybackService.stop(this)
         }
+    }
+
+    // Issue #248: uiMode/fontScale/density are in configChanges, so a
+    // system dark-mode toggle (or font-size / display-size change) no
+    // longer recreates the activity and the PlayerScreen stop-on-leave
+    // effect never fires for it. But the setContent remembers below
+    // snapshot resources.configuration, so without a nudge they would
+    // keep the OLD uiMode and isSystemInDarkTheme() (which reads
+    // LocalConfiguration.uiMode) would never flip — the "System" theme
+    // would stop following the system. Bumping configEpoch re-runs
+    // setContent and rebuilds the snapshots from the live configuration.
+    // resources.configuration already reflects the new config when this
+    // is called. No playback state is touched here.
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        configEpoch++
     }
 
     override fun onPictureInPictureModeChanged(
