@@ -433,6 +433,7 @@
     <string name="history_cd_resume">Wiedergabe fortsetzen</string>
     <string name="playlist_create_dialog_title">Neue Wiedergabeliste</string>
     <string name="playlist_create_dialog_desc">Geben Sie einen Namen für diese eigene Wiedergabeliste ein:</string>
+    <string name="playlist_create_type_label">Art der Wiedergabeliste</string>
     <string name="playlist_name_placeholder">Name der Wiedergabeliste</string>
     <string name="playlist_add_dialog_title">Zur Wiedergabeliste hinzufügen</string>
     <string name="playlist_add_to_header">„%s“ hinzufügen zu:</string>

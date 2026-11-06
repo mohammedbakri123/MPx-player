@@ -433,6 +433,7 @@
     <string name="history_cd_resume">Resume play</string>
     <string name="playlist_create_dialog_title">New Playlist</string>
     <string name="playlist_create_dialog_desc">Enter a name for this custom playlist:</string>
+    <string name="playlist_create_type_label">Playlist type</string>
     <string name="playlist_name_placeholder">Playlist name</string>
     <string name="playlist_add_dialog_title">Add to Playlist</string>
     <string name="playlist_add_to_header">Add \"%s\" to:</string>

@@ -202,9 +202,13 @@ fun PlaylistsScreen(
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
-            onConfirm = { name ->
+            // #268: ask for the type instead of hardcoding video — a
+            // playlist made here must be addable from Music when it is
+            // audio. Audio is the default.
+            showTypeSelector = true,
+            onConfirm = { name, isVideo ->
                 scope.launch {
-                    persistenceRepository.createPlaylist(name, isVideoPlaylist = true)
+                    persistenceRepository.createPlaylist(name, isVideoPlaylist = isVideo)
                     showCreatePlaylistDialog = false
                     snackbarHostState.showSnackbar("Playlist \"$name\" created")
                 }

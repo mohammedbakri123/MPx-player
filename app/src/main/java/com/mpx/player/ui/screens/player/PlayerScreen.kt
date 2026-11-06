@@ -2192,11 +2192,14 @@ fun PlayerScreen(
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
-            onConfirm = { name ->
+            // #268: the new playlist matches the playing item's type;
+            // the fixed type is passed through (no selector here).
+            initialIsVideoPlaylist = state.currentItem?.isVideo ?: false,
+            onConfirm = { name, isVideo ->
                 scope.launch {
                     val newId = playbackManager.persistenceRepository.createPlaylist(
                         name = name,
-                        isVideoPlaylist = state.currentItem?.isVideo ?: false,
+                        isVideoPlaylist = isVideo,
                     )
                     state.currentItem?.let { current ->
                         playbackManager.persistenceRepository.addItemToPlaylist(

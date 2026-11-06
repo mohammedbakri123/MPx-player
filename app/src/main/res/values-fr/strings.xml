@@ -433,6 +433,7 @@
     <string name="history_cd_resume">Reprendre la lecture</string>
     <string name="playlist_create_dialog_title">Nouvelle liste</string>
     <string name="playlist_create_dialog_desc">Saisissez un nom pour cette liste personnalisée :</string>
+    <string name="playlist_create_type_label">Type de liste</string>
     <string name="playlist_name_placeholder">Nom de la liste</string>
     <string name="playlist_add_dialog_title">Ajouter à la liste</string>
     <string name="playlist_add_to_header">Ajouter « %s » à :</string>

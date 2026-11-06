@@ -433,6 +433,7 @@
     <string name="history_cd_resume">续播</string>
     <string name="playlist_create_dialog_title">新建播放列表</string>
     <string name="playlist_create_dialog_desc">为此自定义播放列表输入一个名称：</string>
+    <string name="playlist_create_type_label">播放列表类型</string>
     <string name="playlist_name_placeholder">播放列表名称</string>
     <string name="playlist_add_dialog_title">添加到播放列表</string>
     <string name="playlist_add_to_header">将“%s”添加到：</string>
