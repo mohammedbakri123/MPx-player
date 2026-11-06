@@ -352,7 +352,6 @@
     <!-- Music Screen -->
     <string name="music_screen_title">संगीत</string>
     <string name="music_cd_equalizer">इक्वलाइज़र</string>
-    <string name="music_equalizer_scheduled">इक्वलाइज़र ऑडियो चरण के लिए निर्धारित है</string>
     <string name="music_library_refreshed">संगीत लाइब्रेरी रिफ़्रेश हुई</string>
     <string name="music_search_placeholder">गाने खोजें…</string>
     <string name="music_shuffle_all">सभी शफ़ल करें</string>

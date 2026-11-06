@@ -352,7 +352,6 @@
     <!-- Music Screen -->
     <string name="music_screen_title">Musik</string>
     <string name="music_cd_equalizer">Equalizer</string>
-    <string name="music_equalizer_scheduled">Equalizer ist für die Audiophase vorgesehen</string>
     <string name="music_library_refreshed">Musikbibliothek aktualisiert</string>
     <string name="music_search_placeholder">Titel suchen…</string>
     <string name="music_shuffle_all">Alle mischen</string>

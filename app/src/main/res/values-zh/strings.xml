@@ -352,7 +352,6 @@
     <!-- Music Screen -->
     <string name="music_screen_title">音乐</string>
     <string name="music_cd_equalizer">均衡器</string>
-    <string name="music_equalizer_scheduled">均衡器已排期至音频阶段</string>
     <string name="music_library_refreshed">音乐库已刷新</string>
     <string name="music_search_placeholder">搜索歌曲…</string>
     <string name="music_shuffle_all">全部随机播放</string>

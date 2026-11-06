@@ -146,6 +146,7 @@ import com.mpx.player.ui.components.persistence.FavouritesDialog
 import com.mpx.player.ui.components.persistence.PlaybackHistoryDialog
 import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
 import com.mpx.player.util.MediaPermissions
+import com.mpx.player.util.PipUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -1290,8 +1291,17 @@ fun MusicScreen(
                             )
                         }
                         IconButton(onClick = {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(context.getString(R.string.music_equalizer_scheduled))
+                            // #264: wire to the system equalizer like Me's
+                            // Equalizer tool (mpv-only: no ExoPlayer audio
+                            // session any more, so the system equalizer
+                            // opens against the global output mix, session
+                            // 0). On devices without a control panel, say
+                            // so instead of pretending something was
+                            // scheduled (the old snackbar lied).
+                            if (!PipUtils.launchSystemEqualizer(context, 0)) {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(context.getString(R.string.equalizer_dialog_msg))
+                                }
                             }
                         }) {
                             Icon(
