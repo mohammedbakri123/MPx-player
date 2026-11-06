@@ -59,13 +59,22 @@ fun AsyncThumbnail(
     val cachedBitmap = remember(cacheKey) { ThumbnailLoader.getCached(cacheKey) }
     var bitmap by remember(cacheKey) { mutableStateOf(cachedBitmap) }
 
+    // Issue #312: read the cache live on every run. The remembered
+    // cachedBitmap snapshot above is null when the first load had not
+    // finished at first composition, so a thumbnails off/on toggle
+    // re-ran this effect and re-downloaded from IO even though bitmap
+    // already holds the image. The live lookup reuses the cached bitmap
+    // (every loader putCached()s on success), and bitmap itself is the
+    // fallback when the entry was evicted from the LRU.
     LaunchedEffect(cacheKey, showThumbnails) {
-        if (showThumbnails && cachedBitmap == null) {
-            val loaded = withContext(Dispatchers.IO) {
-                loadBitmap()
-            }
-            if (loaded != null) {
-                bitmap = loaded
+        if (showThumbnails && bitmap == null) {
+            ThumbnailLoader.getCached(cacheKey)?.let { bitmap = it } ?: run {
+                val loaded = withContext(Dispatchers.IO) {
+                    loadBitmap()
+                }
+                if (loaded != null) {
+                    bitmap = loaded
+                }
             }
         }
     }
