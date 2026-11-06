@@ -2106,6 +2106,7 @@ fun MusicScreen(
             onLoadMore = {
                 if (history.size < historyTotal) historyLimit += HISTORY_PAGE_SIZE
             },
+            playbackManager = playbackManager,
             onDismiss = { showHistoryDialog = false },
             onItemClick = { item ->
                 showHistoryDialog = false
