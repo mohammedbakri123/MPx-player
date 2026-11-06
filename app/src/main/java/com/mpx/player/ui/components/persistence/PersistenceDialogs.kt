@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
@@ -43,6 +44,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -219,11 +222,33 @@ fun FavouritesDialog(
 @Composable
 fun PlaybackHistoryDialog(
     history: List<PlaybackHistoryItem>,
+    // #265: the real total (history itself is one page of it) and the
+    // load-more callback — the dialog pages exactly like the full History
+    // page, so rows past 100 are reachable here too.
+    historyTotal: Int,
+    onLoadMore: (() -> Unit)? = null,
     onDismiss: () -> Unit,
     onItemClick: (PlaybackHistoryItem) -> Unit,
     onClearHistory: () -> Unit,
 ) {
     val dateFormat = remember { SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()) }
+
+    // #265: load the next page when scrolled near the end. Keys on
+    // history.size too, so it re-fires after each page lands while the
+    // user is still sitting at the bottom; stops once all rows are in.
+    val historyListState = rememberLazyListState()
+    val historyNearEnd by remember {
+        derivedStateOf {
+            val info = historyListState.layoutInfo
+            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: 0
+            lastVisible >= info.totalItemsCount - 5
+        }
+    }
+    LaunchedEffect(historyNearEnd, history.size) {
+        if (historyNearEnd && history.size < historyTotal) {
+            onLoadMore?.invoke()
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -245,7 +270,7 @@ fun PlaybackHistoryDialog(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = stringResource(R.string.history_dialog_title, history.size),
+                        text = stringResource(R.string.history_dialog_title, historyTotal),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MpxTheme.colors.textPrimary,
                     )
@@ -289,6 +314,7 @@ fun PlaybackHistoryDialog(
                 }
             } else {
                 LazyColumn(
+                    state = historyListState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(max = 380.dp),

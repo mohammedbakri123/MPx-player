@@ -9,11 +9,19 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PlaybackHistoryDao {
-    @Query("SELECT * FROM playback_history ORDER BY lastPlayedAt DESC LIMIT :limit")
-    fun observeHistory(limit: Int = 100): Flow<List<PlaybackHistoryEntity>>
+    // #265: offset-based paging — the old LIMIT 100 with no offset made
+    // rows past 100 unreachable. Callers page by growing the limit.
+    @Query("SELECT * FROM playback_history ORDER BY lastPlayedAt DESC LIMIT :limit OFFSET :offset")
+    fun observeHistory(limit: Int = 100, offset: Int = 0): Flow<List<PlaybackHistoryEntity>>
 
-    @Query("SELECT * FROM playback_history ORDER BY lastPlayedAt DESC LIMIT :limit")
-    suspend fun getHistory(limit: Int = 100): List<PlaybackHistoryEntity>
+    @Query("SELECT * FROM playback_history ORDER BY lastPlayedAt DESC LIMIT :limit OFFSET :offset")
+    suspend fun getHistory(limit: Int = 100, offset: Int = 0): List<PlaybackHistoryEntity>
+
+    // #265: reactive total — Room re-emits on every table change, so the
+    // counts in Me / Music / History stay honest instead of freezing at
+    // the 100-row cap (the old code rendered history.size as the total).
+    @Query("SELECT COUNT(*) FROM playback_history")
+    fun observeHistoryCount(): Flow<Int>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertHistory(history: PlaybackHistoryEntity): Long

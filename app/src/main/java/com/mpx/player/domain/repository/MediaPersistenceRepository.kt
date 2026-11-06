@@ -27,8 +27,10 @@ interface MediaPersistenceRepository {
     suspend fun clearFavourites()
 
     // --- Playback History ---
-    fun observeHistory(limit: Int = 100): Flow<List<PlaybackHistoryItem>>
-    suspend fun getHistory(limit: Int = 100): List<PlaybackHistoryItem>
+    fun observeHistory(limit: Int = 100, offset: Int = 0): Flow<List<PlaybackHistoryItem>>
+    suspend fun getHistory(limit: Int = 100, offset: Int = 0): List<PlaybackHistoryItem>
+    // #265: reactive total for the counts in Me / Music / History.
+    fun observeHistoryCount(): Flow<Int>
     suspend fun recordHistory(item: PlaybackHistoryItem)
     suspend fun deleteHistoryItem(mediaUri: String)
     suspend fun clearHistory()

@@ -73,14 +73,19 @@ class RoomMediaPersistenceRepository(
 
     // --- Playback History ---
 
-    override fun observeHistory(limit: Int): Flow<List<PlaybackHistoryItem>> {
-        return playbackHistoryDao.observeHistory(limit).map { list ->
+    override fun observeHistory(limit: Int, offset: Int): Flow<List<PlaybackHistoryItem>> {
+        return playbackHistoryDao.observeHistory(limit, offset).map { list ->
             list.map { it.toDomain() }
         }
     }
 
-    override suspend fun getHistory(limit: Int): List<PlaybackHistoryItem> {
-        return playbackHistoryDao.getHistory(limit).map { it.toDomain() }
+    override suspend fun getHistory(limit: Int, offset: Int): List<PlaybackHistoryItem> {
+        return playbackHistoryDao.getHistory(limit, offset).map { it.toDomain() }
+    }
+
+    // #265: reactive total — see PlaybackHistoryDao.observeHistoryCount.
+    override fun observeHistoryCount(): Flow<Int> {
+        return playbackHistoryDao.observeHistoryCount()
     }
 
     override suspend fun recordHistory(item: PlaybackHistoryItem) {
