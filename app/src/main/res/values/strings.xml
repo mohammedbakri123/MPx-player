@@ -701,17 +701,17 @@
     <string name="multiselect_play_folder">Play folder</string>
 
     <!-- Auto Screen Rotation (Issue 19) -->
-    <string name="player_auto_rotation">Auto Screen Rotation</string>
-    <string name="player_auto_rotation_desc">Follow device orientation via sensor in the player, or lock to landscape/portrait</string>
+    <string name="player_auto_rotation">Adaptive Rotation</string>
+    <string name="player_auto_rotation_desc">Follow the video in the player — portrait videos play portrait, landscape videos play landscape — or lock to landscape/portrait</string>
     <string name="player_locked_orientation_header">Locked Orientation:</string>
     <string name="player_rotation_dialog_title">Screen Rotation</string>
-    <string name="player_rotation_auto">Auto rotate (Sensor)</string>
-    <string name="player_rotation_auto_desc">Player follows device orientation automatically</string>
+    <string name="player_rotation_auto">Adaptive</string>
+    <string name="player_rotation_auto_desc">Follows the video — portrait videos play portrait, landscape videos play landscape</string>
     <string name="player_orientation_landscape">Landscape</string>
     <string name="player_orientation_landscape_desc">Lock screen in horizontal landscape mode</string>
     <string name="player_orientation_portrait">Portrait</string>
     <string name="player_orientation_portrait_desc">Lock screen in vertical portrait mode</string>
-    <string name="toast_rotation_auto">Auto screen rotation enabled (Sensor)</string>
+    <string name="toast_rotation_auto">Adaptive rotation enabled</string>
     <string name="toast_rotation_landscape">Screen locked to Landscape</string>
     <string name="toast_rotation_portrait">Screen locked to Portrait</string>
     <string name="cd_screen_rotation">Screen rotation</string>
