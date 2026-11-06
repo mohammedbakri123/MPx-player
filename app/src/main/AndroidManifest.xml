@@ -10,6 +10,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- API 34 companion to the DownloadService dataSync type below —
+         same pattern as FOREGROUND_SERVICE_MEDIA_PLAYBACK for the
+         playback service; without it startForeground throws. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Legacy storage permission for Android 12 and below (API 24..32) -->
@@ -49,6 +53,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Download foreground service (issue #343): progress +
+             completion notifications while downloads run; dataSync is
+             the type for downloads. Started when a job launches, stops
+             itself when the queue empties. -->
+        <service
+            android:name=".download.DownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <service
             android:name=".playback.PlaybackService"

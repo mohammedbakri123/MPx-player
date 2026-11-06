@@ -48,6 +48,11 @@
     <string name="download_quality_custom_sorter_hint">Si se establece, esto anula la resolución y el códec elegidos arriba.</string>
     <string name="download_audio_only">Solo audio</string>
     <string name="download_subtitles">Descargar subtítulos</string>
+    <string name="download_notification_channel_name">Descargas</string>
+    <string name="download_notification_channel_description">Progreso y finalización de descargas</string>
+    <string name="download_notification_downloading">Descargando…</string>
+    <string name="download_notification_downloading_percent">Descargando… %1$d%%</string>
+    <string name="download_notification_downloading_files">Descargando %1$d archivos</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vídeo</string>

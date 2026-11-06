@@ -535,12 +535,14 @@ class MpxDownloader private constructor(context: Context) {
      * between — a canceled row must never start.
      */
     private fun doYourWork() {
+        var launched = false
         synchronized(jobs) {
             while (jobs.size < MAX_CONCURRENT_DOWNLOADS) {
                 val next = _activeDownloads.value
-                    .firstOrNull { it.status == DownloadStatus.QUEUED } ?: return
+                    .firstOrNull { it.status == DownloadStatus.QUEUED } ?: break
                 val job = scope.launch { runDownload(next) }
                 jobs[next.id] = job
+                launched = true
                 job.invokeOnCompletion {
                     synchronized(jobs) { jobs.remove(next.id) }
                     // A cancel that landed before runDownload's first
@@ -556,6 +558,11 @@ class MpxDownloader private constructor(context: Context) {
                 }
             }
         }
+        // Issue #343: a launched job gets a foreground service
+        // (progress notification + process priority). The service
+        // stops itself when the queue empties, so the caller never
+        // needs a matching stop.
+        if (launched) DownloadService.start(appContext)
     }
 
     /**

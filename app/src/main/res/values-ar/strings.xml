@@ -48,6 +48,11 @@
     <string name="download_quality_custom_sorter_hint">عند تعيينه، يتجاوز هذا الخيار خياري الدقة وبرنامج الترميز أعلاه.</string>
     <string name="download_audio_only">صوت فقط</string>
     <string name="download_subtitles">تنزيل الترجمة</string>
+    <string name="download_notification_channel_name">التنزيلات</string>
+    <string name="download_notification_channel_description">تقدّم التنزيلات واكتمالها</string>
+    <string name="download_notification_downloading">جارٍ التنزيل…</string>
+    <string name="download_notification_downloading_percent">جارٍ التنزيل… %1$d%%</string>
+    <string name="download_notification_downloading_files">جارٍ تنزيل %1$d ملفات</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">فيديو</string>

@@ -48,6 +48,11 @@
     <string name="download_quality_custom_sorter_hint">सेट होने पर, यह ऊपर चुने गए रिज़ॉल्यूशन और कोडेक को ओवरराइड करता है।</string>
     <string name="download_audio_only">केवल ऑडियो</string>
     <string name="download_subtitles">उपशीर्षक डाउनलोड करें</string>
+    <string name="download_notification_channel_name">डाउनलोड</string>
+    <string name="download_notification_channel_description">डाउनलोड प्रगति और पूर्णता</string>
+    <string name="download_notification_downloading">डाउनलोड हो रहा है…</string>
+    <string name="download_notification_downloading_percent">डाउनलोड हो रहा है… %1$d%%</string>
+    <string name="download_notification_downloading_files">%1$d फ़ाइलें डाउनलोड हो रही हैं</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">वीडियो</string>

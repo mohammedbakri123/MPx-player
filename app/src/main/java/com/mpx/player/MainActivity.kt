@@ -59,6 +59,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.download.DownloadService
 import com.mpx.player.download.MpxDownloader
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
@@ -135,6 +136,9 @@ class MainActivity : ComponentActivity() {
     private var currentPalette by mutableStateOf("Blue")
     private var currentDarkSurface by mutableStateOf("TrueBlack")
     private var openPlayerOnStart by mutableStateOf(false)
+    // Issue #343: same pattern for a download notification tap — the
+    // Download tab opens when the activity starts from that intent.
+    private var openDownloadsOnStart by mutableStateOf(false)
     // Issue #248: bumps on every handled configuration change (see
     // onConfigurationChanged below). The setContent remembers for the
     // localized context/config are keyed on it, so a dark-mode toggle,
@@ -241,6 +245,8 @@ class MainActivity : ComponentActivity() {
                         currentDarkSurface = currentDarkSurface,
                         openPlayerRequested = openPlayerOnStart,
                         onResetOpenPlayer = { openPlayerOnStart = false },
+                        openDownloadsRequested = openDownloadsOnStart,
+                        onResetOpenDownloads = { openDownloadsOnStart = false },
                         onLanguageChanged = { newLang ->
                             currentLanguage = newLang
                             val s = settingsRepository.load()
@@ -283,6 +289,13 @@ class MainActivity : ComponentActivity() {
             intent?.action == PlaybackService.ACTION_OPEN_PLAYER
         ) {
             openPlayerOnStart = true
+        }
+        // Issue #343: a download notification tap carries this action/
+        // extra instead — same handling, different destination.
+        if (intent?.getBooleanExtra(DownloadService.EXTRA_OPEN_DOWNLOADS, false) == true ||
+            intent?.action == DownloadService.ACTION_OPEN_DOWNLOADS
+        ) {
+            openDownloadsOnStart = true
         }
     }
 
@@ -457,6 +470,10 @@ fun MpxApp(
     currentDarkSurface: String = "TrueBlack",
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
+    // Issue #343: same pattern for a download notification tap — the
+    // Download tab opens when the activity starts from that intent.
+    openDownloadsRequested: Boolean = false,
+    onResetOpenDownloads: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
@@ -503,6 +520,15 @@ fun MpxApp(
                 launchSingleTop = true
             }
             onResetOpenPlayer?.invoke()
+        }
+    }
+
+    // Issue #343: a download notification tap — same pattern, the
+    // Download dock tab instead of the Player.
+    LaunchedEffect(openDownloadsRequested) {
+        if (openDownloadsRequested) {
+            navigateToTab(Screen.Download.route)
+            onResetOpenDownloads?.invoke()
         }
     }
 
