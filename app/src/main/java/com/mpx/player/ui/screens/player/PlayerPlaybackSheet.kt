@@ -806,21 +806,31 @@ private fun PlaybackSheetSleepPage(
         plusContentDescription = stringResource(R.string.playback_sheet_sleep_custom),
         onMinus = {
             val mins = timerMinutes?.let { (it - 5).coerceIn(5, 180) } ?: 30
-            playbackManager.setSleepTimer(mins)
-            Toast.makeText(
-                context,
-                context.getString(R.string.player_sleep_timer_set_toast, mins),
-                Toast.LENGTH_SHORT,
-            ).show()
+            // Issue #285: minus at the 5-minute floor is a no-op — with
+            // 4:59 remaining the stepper shows "5 min" and the stepped
+            // value is also 5, so re-arming setSleepTimer would reset the
+            // countdown to a full 5:00, making the timer longer.
+            if (timerMinutes == null || mins != timerMinutes) {
+                playbackManager.setSleepTimer(mins)
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.player_sleep_timer_set_toast, mins),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
         },
         onPlus = {
             val mins = timerMinutes?.let { (it + 5).coerceIn(5, 180) } ?: 30
-            playbackManager.setSleepTimer(mins)
-            Toast.makeText(
-                context,
-                context.getString(R.string.player_sleep_timer_set_toast, mins),
-                Toast.LENGTH_SHORT,
-            ).show()
+            // Issue #285: same as minus — plus at the 180-minute ceiling
+            // is a no-op instead of re-arming a full 180.
+            if (timerMinutes == null || mins != timerMinutes) {
+                playbackManager.setSleepTimer(mins)
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.player_sleep_timer_set_toast, mins),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
         },
         onReset = if (state.sleepTimerMinutes != null) {
             {
