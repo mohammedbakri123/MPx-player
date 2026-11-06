@@ -249,25 +249,22 @@ class PlaybackManager private constructor(context: Context) {
             }
         }
 
-        override fun onMediaItemTransition(index: Int, isAuto: Boolean) {
+        override fun onMediaItemTransition(index: Int) {
             val current = currentQueue.getOrNull(index)
 
-            // The resume seek below needs isAuto, which the engine never
-            // passes (both MpvPlayerEngine call sites pass false), so it
-            // cannot fire today — the live read here is the history
-            // position, which must still wait for the preload (issue
-            // #220) instead of recording 0 when the transition fires in
-            // the first moments after construction.
-            // Issue #227: the resume lookup key is the media URI, not the
-            // bare id — pass both so the manager can derive it.
-            val savedPos = current?.let { resumeManager.getResumePosition(it.id, it.uri) }
-            val shouldResume = settingsRepository.load().resumePlayback &&
-                isAuto && savedPos != null && savedPos > 2_000L
-
-            if (shouldResume && savedPos != null) {
-                engine.seekTo(savedPos)
-            }
-
+            // Issue #283: there is deliberately no resume seek here. The
+            // old branch sought to the saved position when isAuto was
+            // true, but the engine always passed false (a Media3
+            // MEDIA_ITEM_TRANSITION_REASON_AUTO leftover), so it could
+            // never fire. Resume is applied in-place instead: every load
+            // already carries its start position in load()'s resumeMs —
+            // startPlayback passes the saved position, the EOF
+            // auto-advance passes 0L on purpose, and shuffle passes the
+            // live position. A seek here would only race the load.
+            // The live read below is the history position, which must
+            // still wait for the preload (issue #220) instead of
+            // recording 0 when the transition fires in the first moments
+            // after construction.
             current?.let { item ->
                 scope.launch(Dispatchers.IO) {
                     try {
@@ -298,7 +295,14 @@ class PlaybackManager private constructor(context: Context) {
                     currentIndex = index,
                     hasPrevious = engine.hasPreviousMediaItem,
                     hasNext = engine.hasNextMediaItem,
-                    resumedFromMs = if (shouldResume) savedPos else null,
+                    // Issue #283: a transition to a new item clears the
+                    // resume banner — the banner belongs to the session
+                    // start (startPlayback sets it) and is dismissed via
+                    // clearResumedNotification(). This used to read
+                    // `if (shouldResume) savedPos else null`, but
+                    // shouldResume was dead (isAuto was always false),
+                    // so it was always null here.
+                    resumedFromMs = null,
                     // Issue #260: the new item's dimensions are not known
                     // yet — drop the previous video's size so the PiP
                     // params are not armed with a stale aspect while it

@@ -47,7 +47,12 @@ interface PlayerEngine {
     interface Listener {
         fun onPlaybackStateChanged(playbackState: Int) {}
         fun onIsPlayingChanged(isPlaying: Boolean) {}
-        fun onMediaItemTransition(index: Int, isAuto: Boolean) {}
+        // Issue #283: no isAuto flag — the old Media3-style
+        // MEDIA_ITEM_TRANSITION_REASON_AUTO never survived the mpv
+        // port (the engine always passed false), and no resume seek
+        // happens here: resume is applied in-place via load()'s
+        // resumeMs. A transition only reports which index is now live.
+        fun onMediaItemTransition(index: Int) {}
         fun onTracksChanged() {}
         fun onPlaybackParametersChanged(speed: Float) {}
         /**

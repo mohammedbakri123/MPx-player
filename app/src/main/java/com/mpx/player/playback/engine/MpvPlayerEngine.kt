@@ -1462,7 +1462,8 @@ class MpvPlayerEngine(
         if (targetItem.isVideo && !hasSurface) {
             pendingLoad = Triple(items, targetIndex, resumeMs)
             mainHandler.post {
-                engineListener?.onMediaItemTransition(targetIndex, false)
+                // Issue #283: no isAuto flag (it was always false).
+                engineListener?.onMediaItemTransition(targetIndex)
             }
             return
         }
@@ -1587,7 +1588,8 @@ class MpvPlayerEngine(
         }
 
         mainHandler.post {
-            engineListener?.onMediaItemTransition(targetIndex, false)
+            // Issue #283: no isAuto flag (it was always false).
+            engineListener?.onMediaItemTransition(targetIndex)
         }
     }
 
