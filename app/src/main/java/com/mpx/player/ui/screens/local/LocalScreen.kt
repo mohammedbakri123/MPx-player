@@ -373,10 +373,15 @@ fun LocalScreen(
 
     // #146: shared "back to root" — the back button and the breadcrumb's
     // Local segment both run this (clears the folder and its search state).
+    // Issue #276: also clear the multi-select — at root in folder mode
+    // selectedVideosInView() returns emptyList, so a folder's video
+    // selection would survive as a lying "N selected" badge whose actions
+    // resolve to nothing.
     fun goToRoot() {
         currentFolder = null
         isFolderSearching = false
         folderSearchQuery = ""
+        clearSelection()
     }
 
     // #142: back from the search page returns to Local (exactly one step).
@@ -397,6 +402,10 @@ fun LocalScreen(
     }
 
     fun openFolder(folder: MediaFolder) {
+        // Issue #276: a new folder is a new view — a selection made in
+        // the previous folder no longer resolves against this folder's
+        // videos, so clear it instead of leaving a lying badge behind.
+        clearSelection()
         currentFolder = folder
         isFolderSearching = false
         folderSearchQuery = ""
@@ -549,6 +558,9 @@ fun LocalScreen(
                 // is itself blacklisted OR sits under a blacklisted parent.
                 if (currentFolder != null && isPathBlacklisted(currentFolder!!.path, loadedSettings.blacklistedFolders)) {
                     currentFolder = null
+                    // Issue #276: leaving the folder this way must clear
+                    // the selection too, like every other folder exit.
+                    clearSelection()
                 }
                 viewMode = if (loadedSettings.localViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
                 isTreeMode = loadedSettings.localTreeMode
@@ -893,9 +905,10 @@ fun LocalScreen(
                 TopAppBar(
                     navigationIcon = {
                         IconButton(onClick = {
-                            currentFolder = null
-                            isFolderSearching = false
-                            folderSearchQuery = ""
+                            // Issue #276: go through goToRoot() (not the
+                            // inline clear) so leaving the folder also
+                            // clears the multi-select.
+                            goToRoot()
                         }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -1274,7 +1287,10 @@ fun LocalScreen(
                         message = stringResource(R.string.folder_view_empty_desc),
                         icon = Icons.Filled.PlayArrow,
                         actionLabel = stringResource(R.string.action_back_to_folders),
-                        onActionClick = { currentFolder = null },
+                        // Issue #276: leaving the folder via the empty
+                        // state goes through goToRoot() so the selection
+                        // is cleared like every other folder exit.
+                        onActionClick = { goToRoot() },
                     )
                 } else {
                     // Folder contents: video list or grid based on the shared viewMode (#186)
@@ -1708,6 +1724,13 @@ fun LocalScreen(
             separateViewLayout = appSettings.separateViewLayout,
             isFileView = appSettings.fileView,
             onFileViewChange = { isChecked ->
+                // Issue #276: folder-mode and file-view selections do not
+                // resolve in each other (selectedFoldersInView() is
+                // emptyList in file view, selectedVideosInView() is
+                // emptyList at root in folder mode), so switching views
+                // must clear the selection instead of leaving a badge
+                // whose actions resolve to nothing.
+                clearSelection()
                 val updated = appSettings.copy(fileView = isChecked)
                 realSettingsRepo.save(updated, commit = true)
                 appSettings = updated
