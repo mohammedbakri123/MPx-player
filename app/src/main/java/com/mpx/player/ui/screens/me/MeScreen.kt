@@ -626,13 +626,13 @@ fun MeScreen(
             onRemoveFavourite = { uri ->
                 scope.launch {
                     persistenceRepository.removeFavourite(uri)
-                    snackbarHostState.showSnackbar("Removed from Favourites")
+                    snackbarHostState.showSnackbar(context.getString(R.string.snackbar_removed_favourites))
                 }
             },
             onClearAll = {
                 scope.launch {
                     persistenceRepository.clearFavourites()
-                    snackbarHostState.showSnackbar("Cleared Favourites")
+                    snackbarHostState.showSnackbar(context.getString(R.string.snackbar_cleared_favourites))
                 }
             },
         )
