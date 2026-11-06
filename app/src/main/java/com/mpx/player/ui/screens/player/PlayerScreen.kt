@@ -1024,13 +1024,23 @@ fun PlayerScreen(
                             // restore the speed that was playing before.
                             // The finally also covers the detector restarting
                             // mid-hold, so 2x can never get stuck on.
+                            // Issue #289: restore only if the same track is
+                            // still current — if the track ended and
+                            // auto-advanced mid-hold, startPlayback already
+                            // reset the new track to defaultPlaybackSpeed,
+                            // and restoring the old track's speed here would
+                            // overwrite it. The URI is the stable item
+                            // identity (issue #227).
                             val previousSpeed = state.speed
+                            val heldItemUri = state.currentItem?.uri
                             playbackManager.setSpeed(2f)
                             isLongPress2x = true
                             try {
                                 waitForUpOrCancellation()
                             } finally {
-                                playbackManager.setSpeed(previousSpeed)
+                                if (state.currentItem?.uri == heldItemUri) {
+                                    playbackManager.setSpeed(previousSpeed)
+                                }
                                 isLongPress2x = false
                             }
                         } else {
