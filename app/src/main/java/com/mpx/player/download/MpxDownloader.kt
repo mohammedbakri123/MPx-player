@@ -134,6 +134,18 @@ class MpxDownloader private constructor(context: Context) {
         base.apply { mkdirs() }
     }
 
+    /**
+     * Partial downloads live here (issue #334): yt-dlp writes
+     * `<title>.<ext>.part` into the temp dir and moves the finished file
+     * into [downloadsDir] on completion, so a `.part` file can never be
+     * mistaken for a finished download. Pattern from Seal
+     * (JunkFood02/Seal, GPL-3.0 — `DownloadUtil.kt` `-P temp:` plus
+     * `FileUtil.getExternalTempDir()`); Seal uses one shared tmp dir,
+     * MPx gives each download its own subdir (named by the download id)
+     * so a cancel can only ever delete that download's own partials.
+     */
+    private val tempDir: File = File(downloadsDir, "tmp").apply { mkdirs() }
+
     private val _initState = MutableStateFlow(DownloaderInitState.IDLE)
     val initState: StateFlow<DownloaderInitState> = _initState.asStateFlow()
 
@@ -361,6 +373,10 @@ class MpxDownloader private constructor(context: Context) {
 
     private suspend fun runDownload(item: ActiveDownload) {
         val id = item.id
+        // Issue #334: this download's own temp dir (Seal's `-P temp:`
+        // pattern, per-download instead of shared). Deleting it on any
+        // exit path can never touch another download's partials.
+        val tempDirFor = File(tempDir, id).apply { mkdirs() }
         try {
             if (!ensureInitialized()) {
                 updateItem(id) {
@@ -385,6 +401,11 @@ class MpxDownloader private constructor(context: Context) {
             val beforeNames = downloadsDir.listFiles()?.map { it.name }?.toSet() ?: emptySet()
             val request = YoutubeDLRequest(item.url).apply {
                 addOption("-o", File(downloadsDir, "%(title)s.%(ext)s").absolutePath)
+                // Issue #334: partials go to this download's own temp dir
+                // (Seal's `-P temp:`); yt-dlp moves the finished file into
+                // downloadsDir on completion, so the Destination line in
+                // stdout still points at the final file.
+                addOption("-P", "temp:${tempDirFor.absolutePath}")
                 // Best single-file format: no ffmpeg is bundled, so no
                 // merging of separate video+audio streams (see class doc).
                 addOption("-f", "best[ext=mp4]/best")
@@ -414,17 +435,14 @@ class MpxDownloader private constructor(context: Context) {
             // direct-link fallback below when it applies.
             throw YoutubeDLException(response.err.ifBlank { "yt-dlp exited with code ${response.exitCode}" })
         } catch (e: CancellationException) {
-            cleanupPartialFiles()
             updateItem(id) { it.copy(status = DownloadStatus.CANCELED, progress = -1f) }
             throw e
         } catch (e: InterruptedException) {
             // Coroutine cancellation interrupts the thread blocked in
             // execute()/getInfo() — that is a user cancel, not a failure.
-            cleanupPartialFiles()
             updateItem(id) { it.copy(status = DownloadStatus.CANCELED, progress = -1f) }
             throw CancellationException("Download canceled", e)
         } catch (e: YoutubeDL.CanceledException) {
-            cleanupPartialFiles()
             updateItem(id) { it.copy(status = DownloadStatus.CANCELED, progress = -1f) }
         } catch (e: Exception) {
             // yt-dlp failed. A direct media link gets one more chance via
@@ -433,6 +451,16 @@ class MpxDownloader private constructor(context: Context) {
                 runHttpFallback(item)
             } else {
                 updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
+            }
+        } finally {
+            // Issue #334: the temp dir holds only this download's partials
+            // — the finished file was already moved into downloadsDir, and
+            // the HTTP fallback writes straight to downloadsDir, not here —
+            // so deleting it on every exit (success, failure, or cancel)
+            // can never touch another download's in-progress parts.
+            try {
+                tempDirFor.deleteRecursively()
+            } catch (_: Exception) {
             }
         }
     }
@@ -505,15 +533,6 @@ class MpxDownloader private constructor(context: Context) {
         return downloadsDir.listFiles()
             ?.filter { it.isFile && it.name !in beforeNames && isMediaFile(it) && !it.name.endsWith(".part") }
             ?.maxByOrNull { it.lastModified() }
-    }
-
-    private fun cleanupPartialFiles() {
-        try {
-            downloadsDir.listFiles()
-                ?.filter { it.isFile && it.name.endsWith(".part") }
-                ?.forEach { it.delete() }
-        } catch (_: Exception) {
-        }
     }
 
     private fun shortError(e: Exception): String {
