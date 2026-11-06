@@ -1511,7 +1511,14 @@ class MpvPlayerEngine(
             subs.add(PendingSubtitle(uri = subUri, flag = "select"))
         }
         resolvedTarget.externalSubtitles.forEach { ext ->
-            subs.add(PendingSubtitle(uri = ext.uri, flag = "auto", title = ext.name))
+            // Issue #282: "select", not "auto" — like the legacy
+            // subtitleUri above and both replaceMediaItem branches.
+            // MPx never sets mpv's 'slang', so "auto" never selects the
+            // track and the #189 auto-select else-branch in FILE_LOADED
+            // is skipped whenever pendingSubtitles != null; the track
+            // was loaded but never shown (notably on a restored queue
+            // after process death).
+            subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name))
         }
         pendingSubtitles = if (subs.isNotEmpty()) {
             PendingSubtitles(mediaUri = resolvedTarget.uri, mediaId = resolvedTarget.id, subtitles = subs)
