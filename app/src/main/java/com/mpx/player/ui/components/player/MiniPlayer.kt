@@ -39,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -92,7 +93,20 @@ fun MiniPlayer(
     val item = state.currentItem
     var showQueue by remember { mutableStateOf(false) }
 
-    if (showQueue) {
+    // Issue #291: the queue dialog used to outlive the mini-player —
+    // it was rendered outside the AnimatedVisibility and showQueue was
+    // never cleared when playback stopped, so stopping playback left
+    // the dialog floating over the home screen with an empty queue.
+    // Clear the flag when the item goes null (stop() sets currentItem
+    // to null, PlaybackManager.kt:1099), and gate the render on the
+    // item too so it vanishes in the same composition instead of one
+    // frame later. A track change (non-null item to another non-null
+    // item) does not dismiss the dialog.
+    LaunchedEffect(item) {
+        if (item == null) showQueue = false
+    }
+
+    if (showQueue && item != null) {
         QueueDialog(
             queue = state.queue,
             currentIndex = state.currentIndex,
