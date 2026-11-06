@@ -88,6 +88,11 @@ import com.mpx.player.ui.theme.MpxTheme
  *
  * Tree view (#164) shows the folder hierarchy inline (LocalFolderTree);
  * the Tree tile is live and persists via AppSettings.localTreeMode.
+ *
+ * Issue #309: folder scope hides the Tree tile, the Folder-grid slider
+ * and the Total-videos field chip — all three edit the root folders
+ * list and change nothing inside a folder. The Video-grid slider stays:
+ * folder contents render in the video grid (videoGridColumns).
  */
 
 // Sort direction, mpvEx-style: the ascending label depends on the field,
@@ -146,6 +151,18 @@ fun LocalSortPopup(
     showTreeMode: Boolean = true,
     showGridColumns: Boolean = true,
     showFieldsSection: Boolean = true,
+    // Issue #309: folder scope hides only the Folder-grid slider — it
+    // edits the root folders grid, while folder contents use the
+    // Video-grid slider below. The section header stays because the
+    // Video slider remains; Music hides the whole section via
+    // showGridColumns, unchanged.
+    showFolderGridColumns: Boolean = true,
+    // Issue #309: the "Total videos" field chip is folder-row-only
+    // (LocalFolderTree / folder rows); video rows inside a folder never
+    // render it. Folder scope hides just that chip, not the section.
+    // (Named ...Chip because showFieldCount itself is the field's
+    // on/off state — this flag is only whether the chip is shown.)
+    showFieldCountChip: Boolean = true,
     // Issue #232: opens the full SortViewDialog for the popup's scope
     // (root or folder) — the entry point the advanced options were
     // missing. Null hides the row: Music reuses this popup but has no
@@ -344,6 +361,10 @@ fun LocalSortPopup(
                         fontWeight = FontWeight.Medium,
                         color = MpxTheme.colors.textPrimary,
                     )
+                    // Issue #309: the Folder-grid slider edits the root
+                    // folders grid only — hidden in folder scope, where
+                    // the Video-grid slider below is the live one.
+                    if (showFolderGridColumns) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             text = stringResource(R.string.sort_popup_folder_grid),
@@ -363,6 +384,7 @@ fun LocalSortPopup(
                             color = MpxTheme.colors.textSecondary,
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                         )
+                    }
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
@@ -409,7 +431,10 @@ fun LocalSortPopup(
                             val activeLabels = mutableListOf<String>()
                             if (showFullName) activeLabels.add(stringResource(R.string.sort_popup_field_full_name))
                             if (showFieldLocation) activeLabels.add(stringResource(R.string.sort_popup_field_path))
-                            if (showFieldCount) activeLabels.add(stringResource(R.string.sort_popup_field_total_videos))
+                            // Issue #309: the Total-videos chip is hidden
+                            // in folder scope, so it must not appear in
+                            // the active-fields summary there either.
+                            if (showFieldCountChip && showFieldCount) activeLabels.add(stringResource(R.string.sort_popup_field_total_videos))
                             if (showFieldDuration) activeLabels.add(stringResource(R.string.sort_popup_field_total_duration))
                             if (showFieldSize) activeLabels.add(stringResource(R.string.sort_popup_field_folder_size))
                             if (showFieldDate) activeLabels.add(stringResource(R.string.sort_popup_sort_date))
@@ -449,11 +474,15 @@ fun LocalSortPopup(
                                 selected = showFieldLocation,
                                 onClick = { onShowFieldLocationChange(!showFieldLocation) },
                             )
+                            // Issue #309: folder-row-only chip — hidden
+                            // in folder scope, where no video row renders it.
+                            if (showFieldCountChip) {
                             MpxFilterChip(
                                 label = stringResource(R.string.sort_popup_field_total_videos),
                                 selected = showFieldCount,
                                 onClick = { onShowFieldCountChange(!showFieldCount) },
                             )
+                            }
                             MpxFilterChip(
                                 label = stringResource(R.string.sort_popup_field_total_duration),
                                 selected = showFieldDuration,

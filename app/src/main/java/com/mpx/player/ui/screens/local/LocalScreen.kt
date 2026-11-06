@@ -2008,6 +2008,10 @@ fun LocalScreen(
                 // #164: Folder / Tree mode for the root folders list.
                 isTreeMode = isTreeMode,
                 onTreeModeChange = { updateTreeMode(it) },
+                // Issue #309: Tree mode edits the root folders list and
+                // changes nothing inside a folder — hide the tile here
+                // (Music precedent: showTreeMode = false).
+                showTreeMode = false,
                 folderGridColumns = appSettings.folderGridColumns,
                 onFolderGridColumnsChange = { columns ->
                     // Issue #191: the slider fires on every drag tick, and
@@ -2019,6 +2023,11 @@ fun LocalScreen(
                         appSettings = updated
                     }
                 },
+                // Issue #309: the Folder-grid slider edits the root
+                // folders grid only — hide it in folder scope. The
+                // Video-grid slider below stays: folder contents
+                // render in the video grid (videoGridColumns).
+                showFolderGridColumns = false,
                 videoGridColumns = appSettings.videoGridColumns,
                 onVideoGridColumnsChange = { columns ->
                     // Issue #191: the slider fires on every drag tick, and
@@ -2048,6 +2057,10 @@ fun LocalScreen(
                     realSettingsRepo.save(updated, commit = true)
                     appSettings = updated
                 },
+                // Issue #309: the Total-videos chip is folder-row-only —
+                // no video row inside a folder renders it. Hide the chip
+                // here; the setting itself is untouched.
+                showFieldCountChip = false,
                 showFieldDuration = appSettings.showFieldDuration,
                 onShowFieldDurationChange = { show ->
                     val updated = appSettings.copy(showFieldDuration = show)
