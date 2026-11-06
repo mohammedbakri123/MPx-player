@@ -1536,7 +1536,7 @@ class MpxDownloader private constructor(context: Context) {
                 // path below) is still the right next step for it. Any
                 // other URL fails here with the real cause.
                 if (isDirectMediaUrl(item.url)) {
-                    runHttpFallback(item)
+                    runHttpFallback(item, tempDirFor)
                 } else {
                     updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
                 }
@@ -1759,7 +1759,7 @@ class MpxDownloader private constructor(context: Context) {
             // have its raw audio on disk (conversion failed after the
             // download); anything else is a real failure.
             if (isDirectMediaUrl(item.url)) {
-                runHttpFallback(item)
+                runHttpFallback(item, tempDirFor)
             } else if (item.audioOnly) {
                 // beforeNames is not in scope here (it is declared after
                 // the getInfo phase), so only the temp dir is searched.
@@ -1781,8 +1781,8 @@ class MpxDownloader private constructor(context: Context) {
         } finally {
             // Issue #334: the temp dir holds only this download's partials
             // — the finished file was already moved into downloadsDir, and
-            // the HTTP fallback writes straight to downloadsDir, not here —
-            // so deleting it on every exit (success, failure, or cancel)
+            // the HTTP fallback stages its bytes here too (#349) — so
+            // deleting it on every exit (success, failure, or cancel)
             // can never touch another download's in-progress parts.
             try {
                 tempDirFor.deleteRecursively()
@@ -1802,10 +1802,21 @@ class MpxDownloader private constructor(context: Context) {
      * when yt-dlp failed. No new dependency: HttpURLConnection is in the
      * platform. Progress comes from Content-Length when the server sends
      * one, otherwise it stays indeterminate (-1).
+     *
+     * Issue #349: the bytes go to `<name>.part` inside this download's
+     * own temp dir ([tempDirFor], the #334 per-download dir), and the
+     * file is renamed to its final name in [downloadsDir] only on
+     * successful completion. The old code wrote the final name straight
+     * into downloadsDir while downloading, so a crash mid-download left
+     * a full-named partial that the completed list showed as finished.
+     * A crash now leaves only a `.part` in a temp subdir, which the
+     * #342 startup wipe deletes — and `refreshFiles()` excludes `.part`
+     * files anyway, so the completed list can never see one.
      */
-    private suspend fun runHttpFallback(item: ActiveDownload) {
+    private suspend fun runHttpFallback(item: ActiveDownload, tempDirFor: File) {
         val id = item.id
         val fileName = fileNameFromUrl(item.url)
+        val partFile = File(tempDirFor, "$fileName.part")
         val outFile = File(downloadsDir, fileName)
         try {
             withContext(Dispatchers.IO) {
@@ -1820,7 +1831,7 @@ class MpxDownloader private constructor(context: Context) {
                 val total = connection.contentLengthLong
                 var readSoFar = 0L
                 connection.inputStream.use { input ->
-                    FileOutputStream(outFile).use { output ->
+                    FileOutputStream(partFile).use { output ->
                         val buffer = ByteArray(64 * 1024)
                         while (true) {
                             // Blocking reads do not suspend, so cancellation
@@ -1841,6 +1852,17 @@ class MpxDownloader private constructor(context: Context) {
                     }
                 }
             }
+            // Download finished: move the partial to its final name.
+            // Same filesystem (both under the app-private dir), so
+            // renameTo is atomic; the copy is only a fallback if the
+            // rename ever refuses (e.g. a stale target) so a fully
+            // downloaded file is never lost.
+            if (!partFile.renameTo(outFile)) {
+                partFile.inputStream().use { input ->
+                    FileOutputStream(outFile).use { output -> input.copyTo(output) }
+                }
+                partFile.delete()
+            }
             // Issue #344: same public move as the yt-dlp path.
             val published = publishFinishedFile(outFile)
             updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
@@ -1850,11 +1872,11 @@ class MpxDownloader private constructor(context: Context) {
             recordHistory(id, item.url, null, null, null, null, published)
             refreshFiles()
         } catch (e: CancellationException) {
-            outFile.delete()
+            partFile.delete()
             updateItem(id) { it.copy(status = DownloadStatus.CANCELED, progress = -1f) }
             throw e
         } catch (e: Exception) {
-            outFile.delete()
+            partFile.delete()
             updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
         }
     }
