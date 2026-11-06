@@ -223,7 +223,7 @@ fun PlaylistsScreen(
                 scope.launch {
                     persistenceRepository.createPlaylist(name, isVideoPlaylist = isVideo)
                     showCreatePlaylistDialog = false
-                    snackbarHostState.showSnackbar("Playlist \"$name\" created")
+                    snackbarHostState.showSnackbar(context.getString(R.string.snackbar_playlist_created, name))
                 }
             },
         )

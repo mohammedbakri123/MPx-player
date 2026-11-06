@@ -159,7 +159,7 @@ fun HistoryScreen(
                         TextButton(onClick = {
                             scope.launch {
                                 persistenceRepository.clearHistory()
-                                snackbarHostState.showSnackbar("Cleared History")
+                                snackbarHostState.showSnackbar(context.getString(R.string.snackbar_cleared_history))
                             }
                         }) {
                             Text(
