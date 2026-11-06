@@ -377,6 +377,17 @@ class PlaybackManager private constructor(context: Context) {
         private set
 
     /**
+     * Issue #225: display size of the current video (engine's
+     * `dwidth`/`dheight`), the PiP aspect-ratio source of truth. 0 when
+     * no video is loaded.
+     */
+    val videoWidth: Int
+        get() = engine.videoWidth
+
+    val videoHeight: Int
+        get() = engine.videoHeight
+
+    /**
      * Loads [items] into the engine. The items are passed RAW (original
      * content:// URIs) — the engine resolves only the target item to an
      * fd at load time (issues #213/#219): an fd is single-use, so

@@ -667,7 +667,19 @@ fun MeScreen(
                 showPopupPlayDialog = false
             },
             onTestPip = {
-                val entered = PipUtils.enterPip(activity)
+                // Issue #225: pass the real playback state and video size —
+                // the old bare call defaulted to playing with 0x0 dims
+                // (wrong action label, 16:9 window) and armed auto-enter
+                // for whatever session followed.
+                val pipState = realPlaybackManager.playbackState.value
+                val entered = PipUtils.enterPip(
+                    activity,
+                    null,
+                    pipState.isPlaying,
+                    realPlaybackManager.videoWidth,
+                    realPlaybackManager.videoHeight,
+                    pipState.currentItem?.isVideo == true,
+                )
                 if (!entered) {
                     val msg = if (!PipUtils.isPipSupported(context)) {
                         context.getString(R.string.pip_not_supported)

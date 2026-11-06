@@ -235,7 +235,22 @@ class MainActivity : ComponentActivity() {
                         onThemeChanged = { currentTheme = it },
                         onPaletteChanged = { currentPalette = it },
                         onDarkSurfaceChanged = { currentDarkSurface = it },
-                        onDestinationChanged = { currentRoute = it },
+                        onDestinationChanged = { route ->
+                            currentRoute = route
+                            // Issue #225: leaving the Player route disarms
+                            // system auto-enter. The Player route's params
+                            // refresh arms it only while a video is playing
+                            // there; the armed flag must not outlive that
+                            // session — Home from Local/Music/Me must never
+                            // pop a PiP window (#206), playback just keeps
+                            // going in the background (#205). Returning to
+                            // the Player re-arms it via the PlayerScreen
+                            // refresh. (While in PiP the route stays
+                            // Player, so this never disarms mid-PiP.)
+                            if (route != Screen.Player.route) {
+                                PipUtils.updatePipParams(this@MainActivity, settingsRepository.load(), false)
+                            }
+                        },
                     )
                 }
             }
@@ -380,7 +395,17 @@ class MainActivity : ComponentActivity() {
             val playbackManager = PlaybackManager.getInstance(this)
             val state = playbackManager.playbackState.value
             if (state.isPlaying && state.currentItem?.isVideo == true) {
-                PipUtils.enterPip(this)
+                // Issue #225: pass the real playback state and video size —
+                // the old bare enterPip(this) defaulted to playing with 0x0
+                // dims, so a portrait video got a 16:9 window.
+                PipUtils.enterPip(
+                    this,
+                    settings,
+                    state.isPlaying,
+                    playbackManager.videoWidth,
+                    playbackManager.videoHeight,
+                    true,
+                )
             }
         }
     }
