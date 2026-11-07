@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Feedback & questions (Discussions)
+    url: https://github.com/mohammedbakri123/MPx-player/discussions
+    about: "Not a bug? Tell us what works, what's slow, or ask a question — in English or Arabic."
+  - name: 💬 Chat with users (Telegram)
+    url: https://github.com/mohammedbakri123/MPx-player/blob/master/docs/community/telegram.md
+    about: "Join the Telegram group once its link is posted — setup is in docs/community/telegram.md."

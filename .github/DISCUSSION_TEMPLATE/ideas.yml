@@ -1,0 +1,21 @@
+name: 💡 Idea
+description: A small idea for MPx — not a full feature request, just something worth discussing.
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What should MPx do, and why would it help?
+      placeholder: Let me sort folders by date added...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: How do you use MPx today, and where does this fit?
+      placeholder: ""
+    validations:
+      required: false
