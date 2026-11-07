@@ -1,0 +1,37 @@
+name: 💬 Feedback
+description: Tried MPx? Tell us what works and what doesn't.
+title: "[Feedback] "
+labels: ["feedback"]
+body:
+  - type: textarea
+    id: version
+    attributes:
+      label: What version did you try?
+      description: e.g. v0.3.5.2 — find it in Me > About, or the release you downloaded.
+      placeholder: v0.3.5.2
+    validations:
+      required: false
+  - type: textarea
+    id: device
+    attributes:
+      label: Your device
+      description: Phone model + Android version. Helps a lot for playback and scrolling bugs.
+      placeholder: Samsung A52, Android 14
+    validations:
+      required: false
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Your feedback
+      description: What did you try? What felt good, slow, confusing, or broken? Be specific — one clear point beats ten vague ones.
+      placeholder: Library scrolling stutters when I have 500+ videos...
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshots / recording
+      description: Drag a screenshot or short recording here if you have one.
+      placeholder: ""
+    validations:
+      required: false
