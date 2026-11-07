@@ -130,6 +130,11 @@ fun LocalSearchScreen(
     }
     val hasQuery = query.isNotBlank()
     val noResults = hasQuery && matchedFolders.isEmpty() && matchedVideos.isEmpty()
+    // Issue #360: the favourite URIs as a Set, computed once per
+    // favourites change — the search rows used to run
+    // favourites.any { it.mediaUri == video.path } per row, a full
+    // list scan on every row composition while scrolling.
+    val favouriteUris = remember(favourites) { favourites.map { it.mediaUri }.toSet() }
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(
@@ -284,7 +289,7 @@ fun LocalSearchScreen(
                                     showThumbnails = showThumbnails,
                                     // Issue #321: search-result list rows
                                     // get the favourite heart too.
-                                    isFavourite = favourites.any { it.mediaUri == video.path },
+                                    isFavourite = video.path in favouriteUris,
                                     onToggleFavourite = { onToggleVideoFavourite(video) },
                                     showSize = showFieldSize,
                                     showDate = showFieldDate,
