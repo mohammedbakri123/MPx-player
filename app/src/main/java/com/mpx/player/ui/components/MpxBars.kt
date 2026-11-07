@@ -39,7 +39,8 @@ import com.mpx.player.R
  * Material3 NavigationBar: 28dp rounded top corners, labels always shown,
  * tap-only tabs — tabs NEVER switch by swipe (UX law). The selected tab
  * gets an identity-blue pill (primary at 15% alpha) instead of a grey
- * container, and the bar stays true black. The mini-player is a full-width
+ * container, and the bar sits on the raised surface (#364) so it reads
+ * as its own bar against the page. The mini-player is a full-width
  * strip above the dock. The blur surface uses Haze 1.6.0: callers own
  * the [HazeState] and apply `Modifier.haze(state)` to the content
  * behind the bar.
@@ -83,7 +84,9 @@ fun RowScope.MpxDockTab(
 
 /**
  * Dock bar, mpvEx-style (#157): Material3 NavigationBar with 28dp rounded
- * top corners on a true-black container. Height is the standard NavigationBar
+ * top corners on a slightly raised container (#364: surfaceRaised, not
+ * black — the dock must read as its own bar against the page, in every
+ * theme). Height is the standard NavigationBar
  * height (the bar's own 80dp, not the old custom 64dp dock) — the tab switch
  * animation (slide + fade) lives on the NavHost in MainActivity, and the
  * show/hide slide lives on the Scaffold bottomBar slot there.
@@ -97,7 +100,7 @@ fun MpxBottomBar(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)),
-        containerColor = MpxTheme.colors.black,
+        containerColor = MpxTheme.colors.surfaceRaised,
         tonalElevation = 0.dp,
         windowInsets = WindowInsets(0, 0, 0, 0),
         content = content,
