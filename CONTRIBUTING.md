@@ -14,7 +14,7 @@ Thanks for helping. MPx is a small project with one maintainer, so small, focuse
 - Try the latest release and report what breaks — device, Android version, MPx version, and steps to reproduce.
 - Answer a question in Discussions if you know the answer.
 - Translate: strings live in `app/src/main/res/values/strings.xml`, with one `values-<lang>/strings.xml` per language. Keep every key present in every locale — a missing key breaks the build parity check.
-- Take real phone screenshots for the README (see `docs/screenshots/README.md`).
+- Take real phone screenshots for the README.
 
 ## Good first issues
 

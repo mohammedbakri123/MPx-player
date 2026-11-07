@@ -42,7 +42,7 @@ Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx
 
 ## Screenshots
 
-Real phone screenshots are coming — the ones in this repo's history were early desktop mockups, not the current app. See [`docs/screenshots/README.md`](docs/screenshots/README.md) for how to add them.
+Real phone screenshots are coming — the ones in this repo's history were early desktop mockups, not the current app.
 
 If you try v0.3.5.2, a screenshot of the player, Library, or Download tab in [Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) would help a lot.
 
@@ -52,7 +52,7 @@ This is where the project lives — please use these, not DMs:
 
 - **Try it & give feedback:** [GitHub Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) — tell us what works, what's slow, what's confusing. Device + Android version + what you were playing helps more than "it doesn't work".
 - **Bugs & feature requests:** [Issues](https://github.com/mohammedbakri123/MPx-player/issues) — use the templates. Search first; a duplicate with a "+1" and your device info is still useful.
-- **Chat with other users:** Telegram group — link goes here once the group is created. Setup and rules are in [`docs/community/telegram.md`](docs/community/telegram.md).
+- **Chat with other users:** Telegram group — link coming soon.
 - **Contribute code:** see [CONTRIBUTING.md](CONTRIBUTING.md). Small fixes are welcome — check the [`good first issue`](https://github.com/mohammedbakri123/MPx-player/labels/good%20first%20issue) label.
 
 Please be kind. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
