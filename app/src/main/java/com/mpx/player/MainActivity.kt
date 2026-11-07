@@ -5,13 +5,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -202,6 +207,27 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            // Issue #365: the status/navigation bars follow the app
+            // theme — the same resolution MpxTheme uses below (System
+            // follows the device, legacy Midnight/Classic read as Dark).
+            // Transparent scrims, so the app background shows through
+            // edge to edge; the Scaffold owns the insets, so the layout
+            // does not move. The player manages its own bars during
+            // playback (WindowInsetsControllerCompat there) and this
+            // only sets the default state for the main screens.
+            val isDarkTheme = when (currentTheme) {
+                "Light" -> false
+                "Dark", "Midnight", "Classic" -> true
+                else -> isSystemInDarkTheme()
+            }
+            SideEffect {
+                enableEdgeToEdge(
+                    statusBarStyle = if (isDarkTheme) SystemBarStyle.dark(Color.TRANSPARENT)
+                    else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+                    navigationBarStyle = if (isDarkTheme) SystemBarStyle.dark(Color.TRANSPARENT)
+                    else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+                )
+            }
             val targetLocale = remember(currentLanguage) {
                 LocaleHelper.getLocale(currentLanguage)
             }
