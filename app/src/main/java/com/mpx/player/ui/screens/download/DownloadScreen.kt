@@ -17,15 +17,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -76,6 +78,7 @@ import com.mpx.player.download.YtDlpUpdateState
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
+import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
 import java.text.SimpleDateFormat
@@ -151,6 +154,11 @@ fun DownloadScreen(
     var showQuality by rememberSaveable { mutableStateOf(false) }
     var showOptions by rememberSaveable { mutableStateOf(false) }
     var showSponsorBlock by rememberSaveable { mutableStateOf(false) }
+    // Issue #359: the settings rows (audio-only, subtitles, yt-dlp
+    // version, quality, options, SponsorBlock) used to stack above the
+    // list, always visible — the page read as one dense block. They
+    // now live in one collapsed-by-default section below.
+    var showDownloadOptions by rememberSaveable { mutableStateOf(false) }
     // Issue #345: playlist probe state. The Download button first
     // asks the engine whether the URL resolves to a playlist; a
     // playlist with several entries opens the picker below, a single
@@ -242,6 +250,21 @@ fun DownloadScreen(
                             fontSize = 14.sp,
                         )
                     },
+                    // Issue #359: Paste lives in the field now, not as
+                    // its own button — the row is field + Download only.
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            clipboardManager.getText()?.text?.takeIf { it.isNotBlank() }?.let {
+                                urlText = it
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.ContentPaste,
+                                contentDescription = stringResource(R.string.download_paste),
+                                tint = MpxTheme.colors.textSecondary,
+                            )
+                        }
+                    },
                     singleLine = true,
                     shape = MpxShapes.extraLarge,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -253,26 +276,6 @@ fun DownloadScreen(
                         unfocusedTextColor = MpxTheme.colors.textPrimary,
                     ),
                 )
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = {
-                        clipboardManager.getText()?.text?.takeIf { it.isNotBlank() }?.let {
-                            urlText = it
-                        }
-                    },
-                    shape = MpxShapes.extraLarge,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MpxTheme.colors.surfaceVariant,
-                        contentColor = MpxTheme.colors.textPrimary,
-                    ),
-                ) {
-                    Text(
-                        stringResource(R.string.download_paste),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
                 Spacer(Modifier.width(8.dp))
                 Button(
                     onClick = {
@@ -354,59 +357,296 @@ fun DownloadScreen(
                 )
             }
 
-            // Issue #340: audio-only toggle, right under the URL field
-            // (same ToggleRow shape as SettingsScreen). The mode applies
-            // to the next download started — plain button or sign-in.
+            // Issue #359: one collapsed-by-default "Download options"
+            // section holds the six settings rows that used to stack
+            // above the list, always visible. The header is a single
+            // row with a chevron; the rows inside get real vertical
+            // padding and hairline dividers instead of running together.
+            HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { audioOnly = !audioOnly }
-                    .padding(bottom = 4.dp),
+                    .clickable { showDownloadOptions = !showDownloadOptions }
+                    .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.download_audio_only),
+                    text = stringResource(R.string.download_options_title),
                     color = MpxTheme.colors.textPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f),
                 )
-                Switch(
-                    checked = audioOnly,
-                    onCheckedChange = { audioOnly = it },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MpxTheme.colors.primary,
-                        checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
-                    ),
+                Icon(
+                    imageVector = if (showDownloadOptions) Icons.Filled.KeyboardArrowDown
+                    else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MpxTheme.colors.textSecondary,
+                    modifier = Modifier.size(24.dp),
                 )
             }
+            if (showDownloadOptions) {
+                    // Issue #340: audio-only toggle, right under the URL field
+                    // (same ToggleRow shape as SettingsScreen). The mode applies
+                    // to the next download started — plain button or sign-in.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { audioOnly = !audioOnly }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.download_audio_only),
+                        color = MpxTheme.colors.textPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = audioOnly,
+                        onCheckedChange = { audioOnly = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MpxTheme.colors.primary,
+                            checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
+                        ),
+                    )
+                }
 
-            // Issue #341: download subtitles toggle, right under the
-            // audio-only toggle (same row style). Video downloads only —
-            // an mp3 has no use for a sidecar subtitle file.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { subtitles = !subtitles }
-                    .padding(bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.download_subtitles),
-                    color = MpxTheme.colors.textPrimary,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f),
-                )
-                Switch(
-                    checked = subtitles,
-                    onCheckedChange = { subtitles = it },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MpxTheme.colors.primary,
-                        checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
-                    ),
-                )
+                HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+                // Issue #341: download subtitles toggle, right under the
+                // audio-only toggle (same row style). Video downloads only —
+                // an mp3 has no use for a sidecar subtitle file.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { subtitles = !subtitles }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.download_subtitles),
+                        color = MpxTheme.colors.textPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = subtitles,
+                        onCheckedChange = { subtitles = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MpxTheme.colors.primary,
+                            checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
+                        ),
+                    )
+                }
+
+                if (initState == DownloaderInitState.FAILED) {
+                    Text(
+                        text = stringResource(R.string.download_init_failed),
+                        color = MpxTheme.colors.textSecondary,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                }
+
+                HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+                // Issue #333: installed yt-dlp version + manual update.
+                // The version is "" until the first update check records it
+                // (auto-update on launch, or this button).
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = if (ytdlpVersion.isNotBlank()) {
+                            stringResource(R.string.download_ytdlp_version, ytdlpVersion)
+                        } else {
+                            "yt-dlp"
+                        },
+                        color = MpxTheme.colors.textSecondary,
+                        fontSize = 13.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                val message = when (downloader.updateYtDlpNow()) {
+                                    YtDlpUpdateOutcome.UPDATED -> ytdlpUpdatedLabel
+                                    YtDlpUpdateOutcome.UP_TO_DATE -> ytdlpUpToDateLabel
+                                    YtDlpUpdateOutcome.FAILED -> ytdlpUpdateFailedLabel
+                                    YtDlpUpdateOutcome.BUSY -> ytdlpUpdateBusyLabel
+                                }
+                                snackbarHostState.showSnackbar(message)
+                            }
+                        },
+                        enabled = updateState != YtDlpUpdateState.UPDATING,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = if (updateState == YtDlpUpdateState.UPDATING) {
+                                stringResource(R.string.download_updating_ytdlp)
+                            } else {
+                                stringResource(R.string.download_update_ytdlp)
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MpxTheme.colors.primary,
+                            fontSize = 13.sp,
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+                // Issue #338: download quality row. The summary is the
+                // custom sorter when one is set (it replaces the built
+                // sorter), otherwise resolution + codec. Tapping opens the
+                // quality dialog; the summary is re-read on dismiss.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showQuality = true }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.download_quality_title),
+                            color = MpxTheme.colors.textPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Text(
+                            text = if (qualitySettings.downloadCustomSorter.isNotBlank()) {
+                                qualitySettings.downloadCustomSorter
+                            } else {
+                                "${downloadResolutionLabel(qualitySettings.downloadResolution)} · " +
+                                    downloadCodecLabel(qualitySettings.downloadCodec)
+                            },
+                            color = MpxTheme.colors.textSecondary,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MpxTheme.colors.textSecondary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+
+                if (showQuality) {
+                    DownloadQualityDialog(
+                        settingsRepository = settingsRepository,
+                        onDismiss = {
+                            showQuality = false
+                            qualitySettings = settingsRepository.load()
+                        },
+                    )
+                }
+
+                HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+                // Issue #347: download options row. The summary lists what
+                // is actually set (rate limit value, proxy URL, IPv4, safe
+                // filenames) or "No limits set". Tapping opens the options
+                // dialog; the summary is re-read on dismiss.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showOptions = true }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.download_options_title),
+                            color = MpxTheme.colors.textPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Text(
+                            text = downloadOptionsSummary(qualitySettings),
+                            color = MpxTheme.colors.textSecondary,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MpxTheme.colors.textSecondary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+
+                if (showOptions) {
+                    DownloadOptionsDialog(
+                        settingsRepository = settingsRepository,
+                        onDismiss = {
+                            showOptions = false
+                            qualitySettings = settingsRepository.load()
+                        },
+                    )
+                }
+
+                HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
+                // Issue #348: SponsorBlock row. The summary is the chosen
+                // categories, or "Off" when removal is disabled (or no
+                // categories are chosen, which passes no flag). Tapping
+                // opens the SponsorBlock dialog; the summary is re-read
+                // on dismiss.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showSponsorBlock = true }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.download_sponsorblock_title),
+                            color = MpxTheme.colors.textPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Text(
+                            text = if (qualitySettings.downloadSponsorBlock &&
+                                qualitySettings.downloadSponsorBlockCategories.isNotBlank()
+                            ) {
+                                qualitySettings.downloadSponsorBlockCategories
+                            } else {
+                                stringResource(R.string.player_state_off)
+                            },
+                            color = MpxTheme.colors.textSecondary,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MpxTheme.colors.textSecondary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+
+                if (showSponsorBlock) {
+                    DownloadSponsorBlockDialog(
+                        settingsRepository = settingsRepository,
+                        onDismiss = {
+                            showSponsorBlock = false
+                            qualitySettings = settingsRepository.load()
+                        },
+                    )
+                }
             }
+            HorizontalDivider(color = MpxTheme.colors.border, thickness = MpxHairline)
 
             // Issue #337 (rework): sign in inside MPx's own WebView so
             // the cookies it sets can be sent to yt-dlp for this one
@@ -460,206 +700,6 @@ fun DownloadScreen(
                 )
             }
 
-            if (initState == DownloaderInitState.FAILED) {
-                Text(
-                    text = stringResource(R.string.download_init_failed),
-                    color = MpxTheme.colors.textSecondary,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-            }
-
-            // Issue #333: installed yt-dlp version + manual update.
-            // The version is "" until the first update check records it
-            // (auto-update on launch, or this button).
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = if (ytdlpVersion.isNotBlank()) {
-                        stringResource(R.string.download_ytdlp_version, ytdlpVersion)
-                    } else {
-                        "yt-dlp"
-                    },
-                    color = MpxTheme.colors.textSecondary,
-                    fontSize = 13.sp,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            val message = when (downloader.updateYtDlpNow()) {
-                                YtDlpUpdateOutcome.UPDATED -> ytdlpUpdatedLabel
-                                YtDlpUpdateOutcome.UP_TO_DATE -> ytdlpUpToDateLabel
-                                YtDlpUpdateOutcome.FAILED -> ytdlpUpdateFailedLabel
-                                YtDlpUpdateOutcome.BUSY -> ytdlpUpdateBusyLabel
-                            }
-                            snackbarHostState.showSnackbar(message)
-                        }
-                    },
-                    enabled = updateState != YtDlpUpdateState.UPDATING,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                ) {
-                    Text(
-                        text = if (updateState == YtDlpUpdateState.UPDATING) {
-                            stringResource(R.string.download_updating_ytdlp)
-                        } else {
-                            stringResource(R.string.download_update_ytdlp)
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MpxTheme.colors.primary,
-                        fontSize = 13.sp,
-                    )
-                }
-            }
-
-            // Issue #338: download quality row. The summary is the
-            // custom sorter when one is set (it replaces the built
-            // sorter), otherwise resolution + codec. Tapping opens the
-            // quality dialog; the summary is re-read on dismiss.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showQuality = true }
-                    .padding(bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.download_quality_title),
-                        color = MpxTheme.colors.textPrimary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = if (qualitySettings.downloadCustomSorter.isNotBlank()) {
-                            qualitySettings.downloadCustomSorter
-                        } else {
-                            "${downloadResolutionLabel(qualitySettings.downloadResolution)} · " +
-                                downloadCodecLabel(qualitySettings.downloadCodec)
-                        },
-                        color = MpxTheme.colors.textSecondary,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MpxTheme.colors.textSecondary,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-
-            if (showQuality) {
-                DownloadQualityDialog(
-                    settingsRepository = settingsRepository,
-                    onDismiss = {
-                        showQuality = false
-                        qualitySettings = settingsRepository.load()
-                    },
-                )
-            }
-
-            // Issue #347: download options row. The summary lists what
-            // is actually set (rate limit value, proxy URL, IPv4, safe
-            // filenames) or "No limits set". Tapping opens the options
-            // dialog; the summary is re-read on dismiss.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showOptions = true }
-                    .padding(bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.download_options_title),
-                        color = MpxTheme.colors.textPrimary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = downloadOptionsSummary(qualitySettings),
-                        color = MpxTheme.colors.textSecondary,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MpxTheme.colors.textSecondary,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-
-            if (showOptions) {
-                DownloadOptionsDialog(
-                    settingsRepository = settingsRepository,
-                    onDismiss = {
-                        showOptions = false
-                        qualitySettings = settingsRepository.load()
-                    },
-                )
-            }
-
-            // Issue #348: SponsorBlock row. The summary is the chosen
-            // categories, or "Off" when removal is disabled (or no
-            // categories are chosen, which passes no flag). Tapping
-            // opens the SponsorBlock dialog; the summary is re-read
-            // on dismiss.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showSponsorBlock = true }
-                    .padding(bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.download_sponsorblock_title),
-                        color = MpxTheme.colors.textPrimary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = if (qualitySettings.downloadSponsorBlock &&
-                            qualitySettings.downloadSponsorBlockCategories.isNotBlank()
-                        ) {
-                            qualitySettings.downloadSponsorBlockCategories
-                        } else {
-                            stringResource(R.string.player_state_off)
-                        },
-                        color = MpxTheme.colors.textSecondary,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MpxTheme.colors.textSecondary,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-
-            if (showSponsorBlock) {
-                DownloadSponsorBlockDialog(
-                    settingsRepository = settingsRepository,
-                    onDismiss = {
-                        showSponsorBlock = false
-                        qualitySettings = settingsRepository.load()
-                    },
-                )
-            }
 
             if (visibleActive.isEmpty() && downloadedFiles.isEmpty() && downloadHistory.isEmpty()) {
                 EmptyStateView(
@@ -788,7 +828,7 @@ private fun ActiveDownloadRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 12.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -930,7 +970,7 @@ private fun DownloadedFileRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onPlay)
-            .padding(vertical = 10.dp),
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val isAudio = file.extension in AUDIO_EXTENSIONS
@@ -957,13 +997,6 @@ private fun DownloadedFileRow(
                 fontSize = 13.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-            )
-        }
-        IconButton(onClick = onPlay) {
-            Icon(
-                imageVector = Icons.Filled.PlayArrow,
-                contentDescription = stringResource(R.string.download_play),
-                tint = MpxTheme.colors.primary,
             )
         }
         IconButton(onClick = onDelete) {
@@ -993,7 +1026,7 @@ private fun DownloadHistoryRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onPlay)
-            .padding(vertical = 10.dp),
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val isAudio = entry.fileName.substringAfterLast('.', "").lowercase() in AUDIO_EXTENSIONS
@@ -1020,13 +1053,6 @@ private fun DownloadHistoryRow(
                 fontSize = 13.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-            )
-        }
-        IconButton(onClick = onPlay) {
-            Icon(
-                imageVector = Icons.Filled.PlayArrow,
-                contentDescription = stringResource(R.string.download_play),
-                tint = MpxTheme.colors.primary,
             )
         }
         IconButton(onClick = onDelete) {
