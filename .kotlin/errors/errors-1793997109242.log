@@ -1,0 +1,40 @@
+kotlin version: 2.5.0-Beta2
+error message: Incremental compilation failed: java.lang.NegativeArraySizeException: -234829312
+java.io.IOException: java.lang.NegativeArraySizeException: -234829312
+	at org.jetbrains.kotlin.com.intellij.util.io.IOUtil.readString(IOUtil.java:94)
+	at org.jetbrains.kotlin.incremental.storage.StringExternalizer.read(externalizers.kt:259)
+	at org.jetbrains.kotlin.incremental.storage.FileDescriptor.read(FileToPathConverter.kt:37)
+	at org.jetbrains.kotlin.incremental.storage.FileDescriptor.read(FileToPathConverter.kt:30)
+	at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.doGet(PersistentMapImpl.java:675)
+	at org.jetbrains.kotlin.com.intellij.util.io.PersistentMapImpl.get(PersistentMapImpl.java:608)
+	at org.jetbrains.kotlin.com.intellij.util.io.PersistentHashMap.get(PersistentHashMap.java:196)
+	at org.jetbrains.kotlin.incremental.storage.LazyStorage.get(LazyStorage.kt:76)
+	at org.jetbrains.kotlin.incremental.storage.InMemoryStorage.get(InMemoryStorage.kt:68)
+	at org.jetbrains.kotlin.incremental.storage.PersistentStorageWrapper.get(PersistentStorage.kt:105)
+	at org.jetbrains.kotlin.incremental.AbstractIncrementalCache.getSourceFileIfClass(AbstractIncrementalCache.kt:131)
+	at org.jetbrains.kotlin.incremental.IncrementalJvmCompilerRunnerBase.additionalDirtyFiles$addSourceFilesWhenClassLikeDeclarationNameClash(IncrementalJvmCompilerRunnerBase.kt:134)
+	at org.jetbrains.kotlin.incremental.IncrementalJvmCompilerRunnerBase.additionalDirtyFiles(IncrementalJvmCompilerRunnerBase.kt:140)
+	at org.jetbrains.kotlin.incremental.IncrementalJvmCompilerRunnerBase.additionalDirtyFiles(IncrementalJvmCompilerRunnerBase.kt:55)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.doCompile(IncrementalCompilerRunner.kt:654)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compileImpl(IncrementalCompilerRunner.kt:530)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.tryCompileIncrementally$lambda$0$compile(IncrementalCompilerRunner.kt:304)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.tryCompileIncrementally(IncrementalCompilerRunner.kt:322)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compile(IncrementalCompilerRunner.kt:163)
+	at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.compileIncrementallyInProcess(JvmCompilationOperationImpl.kt:323)
+	at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.compileIncrementallyInProcess(JvmCompilationOperationImpl.kt:53)
+	at org.jetbrains.kotlin.buildtools.internal.BaseCompilationOperationImpl.compileInProcess(BaseCompilationOperationImpl.kt:221)
+	at org.jetbrains.kotlin.buildtools.internal.jvm.operations.JvmCompilationOperationImpl.compileInProcess(JvmCompilationOperationImpl.kt:255)
+	at org.jetbrains.kotlin.buildtools.internal.BaseCompilationOperationImpl.executeCancellableImpl(BaseCompilationOperationImpl.kt:77)
+	at org.jetbrains.kotlin.buildtools.internal.BaseCompilationOperationImpl.executeCancellableImpl(BaseCompilationOperationImpl.kt:34)
+	at org.jetbrains.kotlin.buildtools.internal.CancellableBuildOperationImpl.executeImpl(CancellableBuildOperationImpl.kt:60)
+	at org.jetbrains.kotlin.buildtools.internal.BuildOperationImpl.execute(BuildOperationImpl.kt:39)
+	at org.jetbrains.kotlin.buildtools.internal.KotlinToolchainsImpl$BuildSessionImpl.executeOperation$lambda$1(KotlinToolchainsImpl.kt:105)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+Caused by: java.lang.NegativeArraySizeException: -234829312
+	at org.jetbrains.kotlin.com.intellij.util.io.IOUtil.readString(IOUtil.java:86)
+	... 31 more
+
+

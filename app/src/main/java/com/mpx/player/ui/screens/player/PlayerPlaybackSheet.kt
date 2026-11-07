@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
-import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subtitles
@@ -90,7 +89,7 @@ import java.util.Locale
 /**
  * Playback sheet (issue #153): one MpxBottomSheet replacing the Player Menu
  * AlertDialog and the whole activeDialog chain (Sleep Timer / Audio Tracks /
- * Subtitles / Decoder / Screen Rotation). Design is inspired by both mpvEx
+ * Subtitles / Decoder). Design is inspired by both mpvEx
  * (one focused sheet per function, drilled into from a main sheet) and MX
  * Player (every row shows its CURRENT value on the right).
  *
@@ -119,7 +118,6 @@ enum class PlaybackSheetPage {
     SleepTimer,
     Decoder,
     AspectRatio,
-    Rotation,
     Zoom,
     AudioTracks,
     AudioDelay,
@@ -153,7 +151,6 @@ fun PlayerPlaybackSheet(
         PlaybackSheetPage.SleepTimer -> R.string.player_sleep_timer_dialog_title
         PlaybackSheetPage.Decoder -> R.string.player_dialog_decoder_selection
         PlaybackSheetPage.AspectRatio -> R.string.playback_sheet_aspect
-        PlaybackSheetPage.Rotation -> R.string.player_rotation_dialog_title
         PlaybackSheetPage.Zoom -> R.string.playback_sheet_zoom
         PlaybackSheetPage.AudioTracks -> R.string.player_dialog_audio_tracks
         PlaybackSheetPage.AudioDelay -> R.string.playback_sheet_audio_delay
@@ -241,11 +238,6 @@ fun PlayerPlaybackSheet(
                 PlaybackSheetPage.AspectRatio -> PlaybackSheetAspectPage(
                     state = state,
                     playbackManager = playbackManager,
-                    onDismiss = dismiss,
-                )
-                PlaybackSheetPage.Rotation -> PlaybackSheetRotationPage(
-                    currentSettings = currentSettings,
-                    onSettingsChanged = onSettingsChanged,
                     onDismiss = dismiss,
                 )
                 PlaybackSheetPage.Zoom -> PlaybackSheetZoomPage(
@@ -408,19 +400,6 @@ private fun formatMultiplier(value: Float): String {
 private fun formatDelaySeconds(delayMs: Int): String =
     if (delayMs == 0) "0.00s" else String.format(Locale.US, "%+.2fs", delayMs / 1000.0)
 
-private fun rotationLabel(settings: AppSettings): Int =
-    // Issue #249: "sensor" is a legacy persisted value the current UI
-    // never writes — PlayerScreen's targetOrientation treats it as Auto,
-    // so the label must too instead of falling through to Landscape.
-    // Exact ==, matching targetOrientation (not ignoreCase).
-    if (settings.autoScreenRotation || settings.screenOrientation == "auto" ||
-        settings.screenOrientation == "sensor") {
-        R.string.player_rotation_auto
-    } else if (settings.screenOrientation.equals("portrait", ignoreCase = true)) {
-        R.string.player_orientation_portrait
-    } else {
-        R.string.player_orientation_landscape
-    }
 
 @Composable
 private fun PlaybackSheetMainPage(
@@ -551,13 +530,6 @@ private fun PlaybackSheetMainPage(
                     title = stringResource(R.string.playback_sheet_aspect),
                     value = stringResource(state.aspectRatio.labelRes),
                     onClick = { onPageChange(PlaybackSheetPage.AspectRatio) },
-                    showChevron = true,
-                )
-                "rotation" -> PlaybackSheetRow(
-                    icon = Icons.Filled.ScreenRotation,
-                    title = stringResource(R.string.playback_sheet_rotation),
-                    value = stringResource(rotationLabel(currentSettings)),
-                    onClick = { onPageChange(PlaybackSheetPage.Rotation) },
                     showChevron = true,
                 )
                 "audio" -> PlaybackSheetRow(
@@ -935,78 +907,6 @@ private fun PlaybackSheetAspectPage(
                 },
             )
         }
-    }
-}
-
-@Composable
-private fun PlaybackSheetRotationPage(
-    currentSettings: AppSettings,
-    onSettingsChanged: (AppSettings) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val context = LocalContext.current
-    // Issue #249: "sensor" is a legacy persisted value — it means Auto
-    // (PlayerScreen's targetOrientation), so the Auto radio must be
-    // selected; without this no radio was selected at all.
-    val isAuto = currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" ||
-        currentSettings.screenOrientation == "sensor"
-    val isLandscape = !currentSettings.autoScreenRotation &&
-        currentSettings.screenOrientation.equals("landscape", ignoreCase = true)
-    val isPortrait = !currentSettings.autoScreenRotation &&
-        currentSettings.screenOrientation.equals("portrait", ignoreCase = true)
-    Column {
-        PlaybackSheetRadioRow(
-            title = stringResource(R.string.player_rotation_auto),
-            subtitle = stringResource(R.string.player_rotation_auto_desc),
-            selected = isAuto,
-            onClick = {
-                // Issue #240: picking Auto must not overwrite the stored
-                // lock — autoScreenRotation=true already means "ignore the
-                // lock" to every consumer, so leaving screenOrientation
-                // alone lets a later lock-off restore it.
-                onSettingsChanged(
-                    currentSettings.copy(autoScreenRotation = true),
-                )
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.toast_rotation_auto),
-                    Toast.LENGTH_SHORT,
-                ).show()
-                onDismiss()
-            },
-        )
-        PlaybackSheetRadioRow(
-            title = stringResource(R.string.player_orientation_landscape),
-            subtitle = stringResource(R.string.player_orientation_landscape_desc),
-            selected = isLandscape,
-            onClick = {
-                onSettingsChanged(
-                    currentSettings.copy(autoScreenRotation = false, screenOrientation = "landscape"),
-                )
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.toast_rotation_landscape),
-                    Toast.LENGTH_SHORT,
-                ).show()
-                onDismiss()
-            },
-        )
-        PlaybackSheetRadioRow(
-            title = stringResource(R.string.player_orientation_portrait),
-            subtitle = stringResource(R.string.player_orientation_portrait_desc),
-            selected = isPortrait,
-            onClick = {
-                onSettingsChanged(
-                    currentSettings.copy(autoScreenRotation = false, screenOrientation = "portrait"),
-                )
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.toast_rotation_portrait),
-                    Toast.LENGTH_SHORT,
-                ).show()
-                onDismiss()
-            },
-        )
     }
 }
 
