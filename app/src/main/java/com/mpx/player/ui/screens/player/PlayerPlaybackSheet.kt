@@ -26,10 +26,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PictureInPictureAlt
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.ScreenRotation
@@ -510,7 +510,7 @@ private fun PlaybackSheetMainPage(
                     },
                 )
                 "background" -> PlaybackSheetRow(
-                    icon = Icons.Filled.PlayArrow,
+                    icon = Icons.Filled.Headphones,
                     title = stringResource(R.string.playback_sheet_background_play),
                     value = stringResource(
                         if (currentSettings.backgroundPlay) R.string.player_state_on else R.string.player_state_off,

@@ -57,6 +57,7 @@ import androidx.compose.material.icons.filled.BrightnessLow
 import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
@@ -2410,7 +2411,7 @@ private fun PlayerActionStripe(
                     onClick = onEnterPip,
                 )
                 "background" -> PlayerActionStripeButton(
-                    icon = Icons.Filled.PlayArrow,
+                    icon = Icons.Filled.Headphones,
                     caption = stringResource(
                         if (currentSettings.backgroundPlay) R.string.player_state_on else R.string.player_state_off,
                     ),
