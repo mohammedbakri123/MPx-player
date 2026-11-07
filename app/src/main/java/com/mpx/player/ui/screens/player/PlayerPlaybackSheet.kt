@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -164,9 +165,16 @@ fun PlayerPlaybackSheet(
         onDismiss = dismiss,
         sheetState = sheetState,
     ) {
+        // Issue #362: cap the sheet at 560dp and center it. In
+        // landscape the uncapped fillMaxWidth stretched edge to edge;
+        // in portrait on a phone the width is already under 560dp, so
+        // nothing changes there, and wide tablets get the same centered
+        // column. The content keeps its vertical scroll.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .widthIn(max = 560.dp)
+                .align(Alignment.CenterHorizontally)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 24.dp),
