@@ -2,8 +2,6 @@ package com.mpx.player.ui.components
 import com.mpx.player.ui.theme.MpxTheme
 
 import android.graphics.Bitmap
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -82,33 +80,33 @@ fun AsyncThumbnail(
     // With thumbnails off, always show the honest placeholder icon, even for
     // media whose thumbnail is already in the in-memory cache.
     val displayBitmap = if (showThumbnails) bitmap else null
-    Crossfade(
-        targetState = displayBitmap,
-        animationSpec = tween(durationMillis = 180),
-        label = "thumbnailCrossfade",
-        modifier = modifier,
-    ) { currentBitmap ->
-        if (currentBitmap != null) {
-            Image(
-                bitmap = currentBitmap.asImageBitmap(),
+    // Issue #360: no Crossfade here. A 180ms alpha animation on every
+    // thumbnail meant every newly visible row animated for 180ms while
+    // scrolling, and asImageBitmap() re-wrapped the bitmap on every
+    // animation frame. The bitmap is wrapped once per bitmap (remembered
+    // below); the honest placeholder shows while loading, exactly as
+    // before — the fade added nothing but frames.
+    val displayImage = remember(displayBitmap) { displayBitmap?.asImageBitmap() }
+    if (displayImage != null) {
+        Image(
+            bitmap = displayImage,
+            contentDescription = contentDescription,
+            contentScale = ContentScale.Crop,
+            modifier = modifier.fillMaxSize(),
+        )
+    } else {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MpxTheme.colors.black),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = placeholderIcon,
                 contentDescription = contentDescription,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+                tint = placeholderTint,
+                modifier = Modifier.size(iconSize),
             )
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MpxTheme.colors.black),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = placeholderIcon,
-                    contentDescription = contentDescription,
-                    tint = placeholderTint,
-                    modifier = Modifier.size(iconSize),
-                )
-            }
         }
     }
 }

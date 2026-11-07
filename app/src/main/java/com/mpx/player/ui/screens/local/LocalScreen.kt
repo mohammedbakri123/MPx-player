@@ -531,6 +531,10 @@ fun LocalScreen(
             ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context), context)
     }
     val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
+    // Issue #360: the favourite URIs as a Set, computed once per
+    // favourites change — the rows below used to scan the whole
+    // favourites list per row on every composition while scrolling.
+    val favouriteUris = remember(favourites) { favourites.map { it.mediaUri }.toSet() }
     val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
 
 
@@ -1473,7 +1477,7 @@ fun LocalScreen(
                                         // Issue #321: list rows get the
                                         // favourite heart the grid card
                                         // already had (#235).
-                                        isFavourite = favourites.any { it.mediaUri == video.path },
+                                        isFavourite = video.path in favouriteUris,
                                         onToggleFavourite = { toggleVideoFavourite(video) },
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
@@ -1533,7 +1537,7 @@ fun LocalScreen(
                                         // passed neither isFavourite nor a
                                         // handler — the heart was always
                                         // outline and dead.
-                                        isFavourite = favourites.any { it.mediaUri == video.path },
+                                        isFavourite = video.path in favouriteUris,
                                         onToggleFavourite = { toggleVideoFavourite(video) },
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
@@ -1658,7 +1662,7 @@ fun LocalScreen(
                                         // Issue #321: list rows get the
                                         // favourite heart the grid card
                                         // already had (#235).
-                                        isFavourite = favourites.any { it.mediaUri == video.path },
+                                        isFavourite = video.path in favouriteUris,
                                         onToggleFavourite = { toggleVideoFavourite(video) },
                                         showSize = appSettings.showFieldSize,
                                         showDate = appSettings.showFieldDate,
@@ -1707,7 +1711,7 @@ fun LocalScreen(
                                     key = { it.id.ifBlank { it.path } },
                                     contentType = { "video_item_grid" },
                                 ) { video ->
-                                    val isFav = favourites.any { it.mediaUri == video.path }
+                                    val isFav = video.path in favouriteUris
                                     VideoItemGridCard(
                                         video = video,
                                         showThumbnails = appSettings.showThumbnails,

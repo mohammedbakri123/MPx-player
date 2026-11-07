@@ -2592,6 +2592,11 @@ private fun TracksTabContent(
     onTrackClick: (Int) -> Unit,
     onTrackOptionsClick: (AudioTrack) -> Unit,
 ) {
+    // Issue #360: the favourite URIs as a Set, computed once per
+    // favourites change — the rows below used to run
+    // favourites.any { it.mediaUri == track.path } per row, a full
+    // list scan on every row composition while scrolling.
+    val favouriteUris = remember(favourites) { favourites.map { it.mediaUri }.toSet() }
     if (viewMode == ViewMode.LIST) {
         val listState = rememberLazyListState()
         Box(modifier = Modifier.fillMaxSize()) {
@@ -2610,7 +2615,7 @@ private fun TracksTabContent(
                         track = track,
                         // Issue #321: the heart, wired to the same
                         // favourites Flow + toggle as the video rows.
-                        isFavourite = favourites.any { it.mediaUri == track.path },
+                        isFavourite = track.path in favouriteUris,
                         onToggleFavourite = { onToggleTrackFavourite(track) },
                         showThumbnails = showThumbnails,
                         isSelected = isSelected,
@@ -2658,7 +2663,7 @@ private fun TracksTabContent(
                         track = track,
                         // Issue #321: the heart — the audio grid card
                         // had none either.
-                        isFavourite = favourites.any { it.mediaUri == track.path },
+                        isFavourite = track.path in favouriteUris,
                         onToggleFavourite = { onToggleTrackFavourite(track) },
                         showThumbnails = showThumbnails,
                         isSelected = isSelected,
