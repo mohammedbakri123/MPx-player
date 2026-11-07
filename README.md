@@ -1,45 +1,98 @@
-# MPx Player — native Android (Kotlin)
+# MPx Player
 
-A native Android rewrite of MPx Player, replacing the Flutter app
-(which is preserved, untouched, on the `feat/mpx-modern-ui`
-branch of the Flutter repo).
+[![Latest release](https://img.shields.io/github/v/release/mohammedbakri123/MPx-player)](https://github.com/mohammedbakri123/MPx-player/releases/latest)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/mohammedbakri123/MPx-player)](https://github.com/mohammedbakri123/MPx-player/stargazers)
 
-## Stack
+A free, open-source media player for Android — built in native Kotlin with Jetpack Compose, powered by **mpv** for playback.
 
-- Kotlin, Jetpack Compose, Material 3, Navigation Compose
-- Playback engine: **not wired yet**. The player screen is a
-  UI shell. The planned engine is Media3 (ExoPlayer) for
-  streaming-style playback, with an FFmpeg-based path to be
-  decided for local HW/SW decoding and ASS subtitles — the
-  same two-layer shape MX uses (own FFmpeg engine for local,
-  ExoPlayer for online). No playback is faked.
-- Data: **not wired yet**. Library scanning (MediaStore),
-  favourites, history, playlists, and downloads need a
-  repository layer (Room planned). Screens show empty /
-  placeholder states until then.
+No ads. No tracking. Your files stay on your device.
 
-## Pages (MX structure, MPx's own code)
+## Download
 
-- Local — "Media" header, shortcut chips, Folders list
-- Music — Tracks / Playlists / Albums / Artists / Folders tabs
-- Transfer — downloader placeholder (disabled, not built)
-- Me — tools grid, App Theme, Settings, Legal, Help
-- Settings — plain list: List, Player, Decoder, Audio,
-  Subtitle, General, Development, App Language
-- Player — full-screen shell, black chrome, 16:9 video area
+**Latest: [v0.3.5.2](https://github.com/mohammedbakri123/MPx-player/releases/tag/v0.3.5.2)** — picked external subtitles now show.
 
-## Build (toolchain not installed on this VM yet)
+Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx-player/releases/latest), then open it on your phone. Android will ask once to allow installs from your browser — that's normal for apps installed outside the Play Store.
 
-Requires JDK 17, Android SDK (platform 34, build-tools),
-and the Gradle wrapper. This VM lost its Java install in
-a VM reset, so install the toolchain before building:
+- Requires Android 7.0+ (API 24)
+- Current APK is ~87 MB (it bundles ffmpeg and aria2c for the downloader)
+
+> This is an active project under development. Releases are verified by green builds. If something breaks on your device, please report it — see [Community](#community) below.
+
+## What it does
+
+**Playback (mpv)**
+- Local video and music, folders, playlists, history and favourites
+- Wide codec support via mpv, including files other players refuse
+- External subtitles — pick a `.srt` / `.ass` / `.ssa` / `.vtt` file while a video plays, and it stays selected
+- Picture-in-Picture, double-tap to skip, resume where you left off
+
+**Downloader**
+- Download videos with yt-dlp (auto-updates weekly, or manually from the Download tab)
+- Quality settings: codec, resolution, audio-only (MP3)
+- aria2c acceleration, 3 downloads at a time, queue survives restarts
+- Playlists, download history, subtitles at download time
+- SponsorBlock cutting (sponsor / intro / outro / self-promo)
+- Files land in public `Downloads/MPx/` so other apps can see them
+- Sign in with cookies for sites that need it
+
+**Look and feel**
+- Material 3 Expressive, true-black dark theme + light theme
+- Translated into 9 languages (English, Arabic, German, Spanish, French, Hindi, Portuguese, Russian, Chinese)
+
+## Screenshots
+
+Real phone screenshots are coming — the ones in this repo's history were early desktop mockups, not the current app. See [`docs/screenshots/README.md`](docs/screenshots/README.md) for how to add them.
+
+If you try v0.3.5.2, a screenshot of the player, Library, or Download tab in [Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) would help a lot.
+
+## Community
+
+This is where the project lives — please use these, not DMs:
+
+- **Try it & give feedback:** [GitHub Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) — tell us what works, what's slow, what's confusing. Device + Android version + what you were playing helps more than "it doesn't work".
+- **Bugs & feature requests:** [Issues](https://github.com/mohammedbakri123/MPx-player/issues) — use the templates. Search first; a duplicate with a "+1" and your device info is still useful.
+- **Chat with other users:** Telegram group — link goes here once the group is created. Setup and rules are in [`docs/community/telegram.md`](docs/community/telegram.md).
+- **Contribute code:** see [CONTRIBUTING.md](CONTRIBUTING.md). Small fixes are welcome — check the [`good first issue`](https://github.com/mohammedbakri123/MPx-player/labels/good%20first%20issue) label.
+
+Please be kind. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## Build from source
+
+Requires JDK 17 and the Android SDK (platform 34, build-tools).
 
 ```sh
-# install JDK 17 + Android command-line tools, set ANDROID_HOME,
-# accept SDK licences, then open this project in Android Studio
-# and sync / build from there.
-# (No gradlew script is included in this skeleton yet.)
+git clone https://github.com/mohammedbakri123/MPx-player.git
+cd MPx-player
+./gradlew --no-daemon assembleDebug
 ```
 
-The project has not been compiled yet — that is the next
-step once the toolchain is installed.
+Notes from building on this project:
+
+- Gradle runs as root on some machines, so `mavenLocal()` resolves to `/root/.m2/repository`, not `~/.m2/repository`. Builds that need the mpv AAR must pass `-Dmaven.repo.local=$HOME/.m2/repository` (or set it in `gradle.properties`).
+- A fresh Gradle home cannot always fetch the mpv AAR — reuse a Gradle home that already has it cached.
+- Prefer `--no-daemon` builds; the Gradle daemon is blocked on some VMs.
+- The debug build does **not** run R8. Before a release, always build the minified release variant too and check its output — a green debug build is no proof the release build works (v0.3.5 crashed at launch for exactly this reason: R8 stripped a library the downloader loads by reflection).
+
+Full contributor guide: [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Roadmap
+
+- Smoother scrolling on Library / Music, less crowded Download page
+- MX-style rotation: videos stay portrait until you rotate
+- Better landscape player controls
+- More theme / accent colours
+- F-Droid listing (after the current fix round lands)
+
+See [open issues](https://github.com/mohammedbakri123/MPx-player/issues) for what's being worked on now. The current focus is fixing what's there before adding new features.
+
+## Acknowledgements
+
+- [mpv](https://mpv.io/) and [mpv-android](https://github.com/mpv-android/mpv-android) — the playback engine, under its licence
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — the downloader backend
+- [Seal](https://github.com/JunkFood02/Seal) — the downloader design MPx learned from in v0.3.5 (auto-update, per-download temp dirs, request hardening, queue, SponsorBlock fallback). Code adapted with attribution where noted.
+- MX Player — UI inspiration only. MPx copies layout ideas in its own code; it does not use MX's source, binaries, assets, strings, or branding, and never will.
+
+## License
+
+MPx Player is free software under the **GNU General Public License v3.0** — see [LICENSE](LICENSE). That means anyone can use, study, share, and improve it, as long as derived work stays under the same licence.
