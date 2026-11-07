@@ -168,6 +168,13 @@
     <string name="theme_surface_true_black">True Black</string>
     <string name="theme_surface_charcoal">Charcoal</string>
     <string name="theme_surface_graphite">Graphite</string>
+    <string name="theme_surface_midnight">Midnight</string>
+    <string name="theme_surface_forest">Forest</string>
+    <string name="theme_surface_plum">Plum</string>
+    <string name="theme_light_color_section_title">Light color</string>
+    <string name="theme_light_surface_white">White</string>
+    <string name="theme_light_surface_warm">Warm</string>
+    <string name="theme_light_surface_cool">Cool</string>
     <string name="theme_applied_snackbar">Theme applied: %s</string>
     <string name="palette_section_title">Accent color</string>
     <string name="palette_name_blue">Blue</string>
@@ -176,6 +183,12 @@
     <string name="palette_name_amber">Amber</string>
     <string name="palette_name_rose">Rose</string>
     <string name="palette_name_teal">Teal</string>
+    <string name="palette_name_sky">Sky</string>
+    <string name="palette_name_orange">Orange</string>
+    <string name="palette_name_pink">Pink</string>
+    <string name="palette_name_lime">Lime</string>
+    <string name="palette_name_indigo">Indigo</string>
+    <string name="palette_name_cyan">Cyan</string>
     <string name="palette_applied_snackbar">Accent color applied: %s</string>
 
     <string name="pip_not_supported">Note: Picture-in-Picture mode is not supported on this device/environment (requires Android 8.0+ with FEATURE_PICTURE_IN_PICTURE).</string>

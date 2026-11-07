@@ -168,6 +168,13 @@
     <string name="theme_surface_true_black">Echtes Schwarz</string>
     <string name="theme_surface_charcoal">Anthrazit</string>
     <string name="theme_surface_graphite">Graphit</string>
+    <string name="theme_surface_midnight">Mitternacht</string>
+    <string name="theme_surface_forest">Wald</string>
+    <string name="theme_surface_plum">Pflaume</string>
+    <string name="theme_light_color_section_title">Helle Farbe</string>
+    <string name="theme_light_surface_white">Weiß</string>
+    <string name="theme_light_surface_warm">Warm</string>
+    <string name="theme_light_surface_cool">Kühl</string>
     <string name="theme_applied_snackbar">Theme angewendet: %s</string>
     <string name="palette_section_title">Akzentfarbe</string>
     <string name="palette_name_blue">Blau</string>
@@ -176,6 +183,12 @@
     <string name="palette_name_amber">Bernstein</string>
     <string name="palette_name_rose">Rosa</string>
     <string name="palette_name_teal">Türkis</string>
+    <string name="palette_name_sky">Himmelblau</string>
+    <string name="palette_name_orange">Orange</string>
+    <string name="palette_name_pink">Pink</string>
+    <string name="palette_name_lime">Limette</string>
+    <string name="palette_name_indigo">Indigo</string>
+    <string name="palette_name_cyan">Cyan</string>
     <string name="palette_applied_snackbar">Akzentfarbe angewendet: %s</string>
 
     <string name="pip_not_supported">Hinweis: Der Bild-in-Bild-Modus wird auf diesem Gerät / in dieser Umgebung nicht unterstützt (erfordert Android 8.0+ mit FEATURE_PICTURE_IN_PICTURE).</string>

@@ -96,15 +96,21 @@ private fun mpxLightScheme(colors: MpxColors) = lightColorScheme(
 @Composable
 fun MpxTheme(
     theme: String = "System",
-    // Accent palette id (#147): "Blue" (default, identity blue),
-    // "Emerald", "Violet", "Amber", "Rose", "Teal". Unknown ids fall
+    // Accent palette id (#147, #366): "Blue" (default, identity blue),
+    // "Emerald", "Violet", "Amber", "Rose", "Teal", "Sky", "Orange",
+    // "Pink", "Lime", "Indigo", "Cyan". Unknown ids fall
     // back to Blue. Only primary / primaryHover / primaryVariant
     // change; the base theme's surfaces and text are untouched.
     palette: String = "Blue",
-    // Dark-surface preset id (#182): "TrueBlack" (default),
-    // "Charcoal", "Graphite". Applies only when the resolved theme is
-    // Dark; Light ignores it. Unknown ids fall back to True Black.
+    // Dark-surface preset id (#182, #366): "TrueBlack" (default),
+    // "Charcoal", "Graphite", "Midnight", "Forest", "Plum". Applies only
+    // when the resolved theme is Dark; Light ignores it. Unknown ids
+    // fall back to True Black.
     darkSurface: String = "TrueBlack",
+    // Light-surface preset id (#366): "White" (default), "Warm", "Cool".
+    // Applies only when the resolved theme is Light; Dark ignores it.
+    // Unknown ids fall back to White.
+    lightSurface: String = "White",
     content: @Composable () -> Unit,
 ) {
     val useDark = when (theme) {
@@ -112,7 +118,7 @@ fun MpxTheme(
         "Dark", "Midnight", "Classic" -> true
         else -> isSystemInDarkTheme()
     }
-    val base = if (useDark) mpxDarkColorsFor(darkSurface) else MpxLightColors
+    val base = if (useDark) mpxDarkColorsFor(darkSurface) else mpxLightColorsFor(lightSurface)
     val accent = mpxPaletteFor(palette)
     val colors = base.copy(
         primary = accent.primary,

@@ -168,6 +168,13 @@
     <string name="theme_surface_true_black">Чисто чёрный</string>
     <string name="theme_surface_charcoal">Угольный</string>
     <string name="theme_surface_graphite">Графитовый</string>
+    <string name="theme_surface_midnight">Полночь</string>
+    <string name="theme_surface_forest">Лес</string>
+    <string name="theme_surface_plum">Сливовый</string>
+    <string name="theme_light_color_section_title">Светлый цвет</string>
+    <string name="theme_light_surface_white">Белый</string>
+    <string name="theme_light_surface_warm">Тёплый</string>
+    <string name="theme_light_surface_cool">Холодный</string>
     <string name="theme_applied_snackbar">Тема применена: %s</string>
     <string name="palette_section_title">Акцентный цвет</string>
     <string name="palette_name_blue">Синий</string>
@@ -176,6 +183,12 @@
     <string name="palette_name_amber">Янтарный</string>
     <string name="palette_name_rose">Розовый</string>
     <string name="palette_name_teal">Бирюзовый</string>
+    <string name="palette_name_sky">Небесный</string>
+    <string name="palette_name_orange">Оранжевый</string>
+    <string name="palette_name_pink">Светло-розовый</string>
+    <string name="palette_name_lime">Лаймовый</string>
+    <string name="palette_name_indigo">Индиго</string>
+    <string name="palette_name_cyan">Голубой</string>
     <string name="palette_applied_snackbar">Акцентный цвет применён: %s</string>
 
     <string name="pip_not_supported">Примечание: режим «картинка в картинке» не поддерживается на этом устройстве/в этой среде (требуется Android 8.0+ с FEATURE_PICTURE_IN_PICTURE).</string>

@@ -104,11 +104,73 @@ val MpxGraphiteColors = MpxColors(
     borderSubtle = Color(0x3394A3B8),
 )
 
+// Midnight (#366): deep-navy dark surface — same scale shape as the
+// grey presets, tinted blue. Text, accent and error/success stay the
+// dark values.
+val MpxMidnightColors = MpxColors(
+    black = Color(0xFF0A0F1E),
+    surface = Color(0xFF0A0F1E),
+    surfaceRaised = Color(0xFF121A2E),
+    surfaceVariant = Color(0xFF182642),
+    surfaceElevated = Color(0xFF22304F),
+    primary = Color(0xFF3B82F6),
+    primaryHover = Color(0xFF2563EB),
+    primaryVariant = Color(0xFF1D4ED8),
+    textPrimary = Color(0xFFFFFFFF),
+    textSecondary = Color(0xFFCBD5E1),
+    textMuted = Color(0xFF94A3B8),
+    destructive = Color(0xFFEF4444),
+    success = Color(0xFF10B981),
+    border = Color(0xFF2A3A5C),
+    borderSubtle = Color(0x3394A3B8),
+)
+
+// Forest (#366): deep-green dark surface.
+val MpxForestColors = MpxColors(
+    black = Color(0xFF0C1510),
+    surface = Color(0xFF0C1510),
+    surfaceRaised = Color(0xFF14201A),
+    surfaceVariant = Color(0xFF1A2B21),
+    surfaceElevated = Color(0xFF24382C),
+    primary = Color(0xFF3B82F6),
+    primaryHover = Color(0xFF2563EB),
+    primaryVariant = Color(0xFF1D4ED8),
+    textPrimary = Color(0xFFFFFFFF),
+    textSecondary = Color(0xFFCBD5E1),
+    textMuted = Color(0xFF94A3B8),
+    destructive = Color(0xFFEF4444),
+    success = Color(0xFF10B981),
+    border = Color(0xFF2C4636),
+    borderSubtle = Color(0x3394A3B8),
+)
+
+// Plum (#366): deep-purple dark surface.
+val MpxPlumColors = MpxColors(
+    black = Color(0xFF16111F),
+    surface = Color(0xFF16111F),
+    surfaceRaised = Color(0xFF1E1829),
+    surfaceVariant = Color(0xFF262036),
+    surfaceElevated = Color(0xFF322A45),
+    primary = Color(0xFF3B82F6),
+    primaryHover = Color(0xFF2563EB),
+    primaryVariant = Color(0xFF1D4ED8),
+    textPrimary = Color(0xFFFFFFFF),
+    textSecondary = Color(0xFFCBD5E1),
+    textMuted = Color(0xFF94A3B8),
+    destructive = Color(0xFFEF4444),
+    success = Color(0xFF10B981),
+    border = Color(0xFF3A3250),
+    borderSubtle = Color(0x3394A3B8),
+)
+
 // Dark-surface preset resolver (#182). Unknown ids fall back to
 // True Black, so a stale stored value can never strand the theme.
 fun mpxDarkColorsFor(surface: String): MpxColors = when (surface) {
     "Charcoal" -> MpxCharcoalColors
     "Graphite" -> MpxGraphiteColors
+    "Midnight" -> MpxMidnightColors
+    "Forest" -> MpxForestColors
+    "Plum" -> MpxPlumColors
     else -> MpxDarkColors
 }
 
@@ -131,5 +193,51 @@ val MpxLightColors = MpxColors(
     border = Color(0xFFE0E0E0),
     borderSubtle = Color(0x1F000000),
 )
+
+// Warm (#366): warm-paper light surface — same scale shape as White.
+val MpxWarmLightColors = MpxColors(
+    black = Color(0xFFFAF7F2),
+    surface = Color(0xFFFAF7F2),
+    surfaceRaised = Color(0xFFF3EFE8),
+    surfaceVariant = Color(0xFFEAE4D9),
+    surfaceElevated = Color(0xFFE0D8C9),
+    primary = Color(0xFF3B82F6),
+    primaryHover = Color(0xFF2563EB),
+    primaryVariant = Color(0xFF1D4ED8),
+    textPrimary = Color(0xFF111111),
+    textSecondary = Color(0xFF475569),
+    textMuted = Color(0xFF64748B),
+    destructive = Color(0xFFDC2626),
+    success = Color(0xFF059669),
+    border = Color(0xFFD8D0C2),
+    borderSubtle = Color(0x1F000000),
+)
+
+// Cool (#366): cool-mist light surface.
+val MpxCoolLightColors = MpxColors(
+    black = Color(0xFFF4F7FA),
+    surface = Color(0xFFF4F7FA),
+    surfaceRaised = Color(0xFFEAF0F5),
+    surfaceVariant = Color(0xFFE0E8F0),
+    surfaceElevated = Color(0xFFD3DEE9),
+    primary = Color(0xFF3B82F6),
+    primaryHover = Color(0xFF2563EB),
+    primaryVariant = Color(0xFF1D4ED8),
+    textPrimary = Color(0xFF111111),
+    textSecondary = Color(0xFF475569),
+    textMuted = Color(0xFF64748B),
+    destructive = Color(0xFFDC2626),
+    success = Color(0xFF059669),
+    border = Color(0xFFC9D5E0),
+    borderSubtle = Color(0x1F000000),
+)
+
+// Light-surface preset resolver (#366). Unknown ids fall back to
+// White, so a stale stored value can never strand the theme.
+fun mpxLightColorsFor(surface: String): MpxColors = when (surface) {
+    "Warm" -> MpxWarmLightColors
+    "Cool" -> MpxCoolLightColors
+    else -> MpxLightColors
+}
 
 val LocalMpxColors = staticCompositionLocalOf { MpxDarkColors }
