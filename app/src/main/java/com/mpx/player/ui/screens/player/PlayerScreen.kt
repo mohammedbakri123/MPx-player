@@ -1883,6 +1883,10 @@ fun PlayerScreen(
                             onToggleBackgroundPlay = toggleBackgroundPlay,
                             onAddToPlaylist = { showAddToPlaylistDialog = true },
                             playbackManager = playbackManager,
+                            isLandscapeOrientation = isLandscapeOrientation,
+                            onToggleRotation = {
+                                rotationOverride = if (isLandscapeOrientation) "portrait" else "landscape"
+                            },
                         )
                     }
                 }
@@ -2305,6 +2309,8 @@ private fun PlayerActionStripe(
     onToggleBackgroundPlay: () -> Unit,
     onAddToPlaylist: () -> Unit,
     playbackManager: PlaybackManager,
+    isLandscapeOrientation: Boolean,
+    onToggleRotation: () -> Unit,
 ) {
     val context = LocalContext.current
     val layoutIds = remember(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds) {
@@ -2436,9 +2442,7 @@ private fun PlayerActionStripe(
                     ),
                     contentDescription = stringResource(R.string.playback_sheet_rotation),
                     active = isLandscapeOrientation,
-                    onClick = {
-                        rotationOverride = if (isLandscapeOrientation) "portrait" else "landscape"
-                    },
+                    onClick = onToggleRotation,
                 )
                 "sleep" -> PlayerActionStripeButton(
                     icon = Icons.Filled.Timer,
