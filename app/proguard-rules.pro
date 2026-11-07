@@ -18,6 +18,27 @@
 -keep class com.yausername.youtubedl_android.** { *; }
 -keep class com.fasterxml.jackson.databind.** { *; }
 -keep class com.fasterxml.jackson.core.** { *; }
+
+# commons-compress (issue #356): youtubedl-android unzips its python env
+# with org.apache.commons.compress (ZipUtils.unzip -> ZipFile). The zip
+# extra-field registry (ExtraFieldUtils.<clinit>) instantiates the known
+# extra-field classes (AsiExtraField, ...) reflectively via
+# Class.newInstance() — their no-arg constructors are never called from
+# code, so R8 stripped them and the minified build crashed at downloader
+# init with "AsiExtraField is not a concrete class". Keep the whole
+# library: it is small and the failure mode is a launch crash, not a
+# build error. youtubedl_common (ZipUtils itself) is kept too — same
+# reflective path, same stakes.
+-keep class org.apache.commons.compress.** { *; }
+-keep class com.yausername.youtubedl_common.** { *; }
+
+# commons-compress references its optional xz dependency
+# (org.tukaani.xz, used only by the 7z/XZ archivers) which is not shipped.
+# R8 fails the minified build on the missing classes — silence with the
+# wildcard form of the rules R8 itself generated (missing_rules.txt).
+# No keep needed: none of this code is reachable from the app (only
+# ZipFile is used, for unzipping the python env).
+-dontwarn org.tukaani.xz.**
 -keepattributes *Annotation*,Signature,EnclosingMethod
 
 # Jackson (issue #324, youtubedl-android) references three JDK classes Android
