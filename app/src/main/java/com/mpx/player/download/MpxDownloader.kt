@@ -714,7 +714,12 @@ class MpxDownloader private constructor(context: Context) {
                 // not a failed init, so the next attempt retries cleanly.
                 _initState.value = DownloaderInitState.IDLE
                 throw e
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                // Issue #356: init can fail with an Error too
+                // (ExceptionInInitializerError when R8 stripped a class
+                // the library inits reflectively). A failed init must
+                // degrade to FAILED, never escape and kill the app.
+                // CancellationException is still rethrown above.
                 _initState.value = DownloaderInitState.FAILED
                 false
             }
