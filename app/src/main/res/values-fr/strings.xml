@@ -168,6 +168,13 @@
     <string name="theme_surface_true_black">Noir pur</string>
     <string name="theme_surface_charcoal">Charbon</string>
     <string name="theme_surface_graphite">Graphite</string>
+    <string name="theme_surface_midnight">Minuit</string>
+    <string name="theme_surface_forest">Forêt</string>
+    <string name="theme_surface_plum">Prune</string>
+    <string name="theme_light_color_section_title">Couleur claire</string>
+    <string name="theme_light_surface_white">Blanc</string>
+    <string name="theme_light_surface_warm">Chaud</string>
+    <string name="theme_light_surface_cool">Froid</string>
     <string name="theme_applied_snackbar">Thème appliqué : %s</string>
     <string name="palette_section_title">Couleur d’accent</string>
     <string name="palette_name_blue">Bleu</string>
@@ -176,6 +183,12 @@
     <string name="palette_name_amber">Ambre</string>
     <string name="palette_name_rose">Rose</string>
     <string name="palette_name_teal">Sarcelle</string>
+    <string name="palette_name_sky">Ciel</string>
+    <string name="palette_name_orange">Orange</string>
+    <string name="palette_name_pink">Rose clair</string>
+    <string name="palette_name_lime">Citron vert</string>
+    <string name="palette_name_indigo">Indigo</string>
+    <string name="palette_name_cyan">Cyan</string>
     <string name="palette_applied_snackbar">Couleur d’accent appliquée : %s</string>
 
     <string name="pip_not_supported">Remarque : le mode image dans l’image n’est pas pris en charge sur cet appareil ou cet environnement (nécessite Android 8.0+ avec FEATURE_PICTURE_IN_PICTURE).</string>

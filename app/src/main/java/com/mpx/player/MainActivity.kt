@@ -135,6 +135,7 @@ class MainActivity : ComponentActivity() {
     private var currentTheme by mutableStateOf("System")
     private var currentPalette by mutableStateOf("Blue")
     private var currentDarkSurface by mutableStateOf("TrueBlack")
+    private var currentLightSurface by mutableStateOf("White")
     private var openPlayerOnStart by mutableStateOf(false)
     // Issue #343: same pattern for a download notification tap — the
     // Download tab opens when the activity starts from that intent.
@@ -192,6 +193,7 @@ class MainActivity : ComponentActivity() {
         currentTheme = initialSettings.appTheme
         currentPalette = initialSettings.colorPalette
         currentDarkSurface = initialSettings.darkSurface
+        currentLightSurface = initialSettings.lightSurface
 
         checkOpenPlayerIntent(intent)
 
@@ -230,7 +232,7 @@ class MainActivity : ComponentActivity() {
                 LocalConfiguration provides localizedConfig,
                 LocalLayoutDirection provides layoutDirection,
             ) {
-                MpxTheme(theme = currentTheme, palette = currentPalette, darkSurface = currentDarkSurface) {
+                MpxTheme(theme = currentTheme, palette = currentPalette, darkSurface = currentDarkSurface, lightSurface = currentLightSurface) {
                     MpxApp(
                         localPermissionLauncher = localPermissionLauncher,
                         localPermissionHandler = localPermissionHandler,
@@ -243,6 +245,7 @@ class MainActivity : ComponentActivity() {
                         currentLanguage = currentLanguage,
                         currentPalette = currentPalette,
                         currentDarkSurface = currentDarkSurface,
+                        currentLightSurface = currentLightSurface,
                         openPlayerRequested = openPlayerOnStart,
                         onResetOpenPlayer = { openPlayerOnStart = false },
                         openDownloadsRequested = openDownloadsOnStart,
@@ -256,6 +259,7 @@ class MainActivity : ComponentActivity() {
                         onThemeChanged = { currentTheme = it },
                         onPaletteChanged = { currentPalette = it },
                         onDarkSurfaceChanged = { currentDarkSurface = it },
+                        onLightSurfaceChanged = { currentLightSurface = it },
                         onDestinationChanged = { route ->
                             currentRoute = route
                             // Issue #225: leaving the Player route disarms
@@ -468,6 +472,7 @@ fun MpxApp(
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
     currentPalette: String = "Blue",
     currentDarkSurface: String = "TrueBlack",
+    currentLightSurface: String = "White",
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
     // Issue #343: same pattern for a download notification tap — the
@@ -478,6 +483,7 @@ fun MpxApp(
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
     onDarkSurfaceChanged: ((String) -> Unit)? = null,
+    onLightSurfaceChanged: ((String) -> Unit)? = null,
     // Issue #206: reports the NavHost's current route to the activity,
     // which gates Home-press PiP on the Player being visible.
     onDestinationChanged: ((String?) -> Unit)? = null,
@@ -731,6 +737,7 @@ fun MpxApp(
                     onThemeChanged = onThemeChanged,
                     onPaletteChanged = onPaletteChanged,
                     onDarkSurfaceChanged = onDarkSurfaceChanged,
+                    onLightSurfaceChanged = onLightSurfaceChanged,
                     playbackManager = playbackManager,
                 )
             }

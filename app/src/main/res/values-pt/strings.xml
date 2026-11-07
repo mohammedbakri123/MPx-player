@@ -168,6 +168,13 @@
     <string name="theme_surface_true_black">Preto puro</string>
     <string name="theme_surface_charcoal">Carvão</string>
     <string name="theme_surface_graphite">Grafite</string>
+    <string name="theme_surface_midnight">Meia-noite</string>
+    <string name="theme_surface_forest">Floresta</string>
+    <string name="theme_surface_plum">Ameixa</string>
+    <string name="theme_light_color_section_title">Cor clara</string>
+    <string name="theme_light_surface_white">Branco</string>
+    <string name="theme_light_surface_warm">Quente</string>
+    <string name="theme_light_surface_cool">Frio</string>
     <string name="theme_applied_snackbar">Tema aplicado: %s</string>
     <string name="palette_section_title">Cor de destaque</string>
     <string name="palette_name_blue">Azul</string>
@@ -176,6 +183,12 @@
     <string name="palette_name_amber">Âmbar</string>
     <string name="palette_name_rose">Rosa</string>
     <string name="palette_name_teal">Verde-água</string>
+    <string name="palette_name_sky">Céu</string>
+    <string name="palette_name_orange">Laranja</string>
+    <string name="palette_name_pink">Rosa claro</string>
+    <string name="palette_name_lime">Limão</string>
+    <string name="palette_name_indigo">Índigo</string>
+    <string name="palette_name_cyan">Ciano</string>
     <string name="palette_applied_snackbar">Cor de destaque aplicada: %s</string>
 
     <string name="pip_not_supported">Nota: o modo picture-in-picture não é suportado neste dispositivo/ambiente (requer Android 8.0+ com FEATURE_PICTURE_IN_PICTURE).</string>

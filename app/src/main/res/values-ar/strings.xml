@@ -168,6 +168,13 @@
     <string name="theme_surface_true_black">أسود حقيقي</string>
     <string name="theme_surface_charcoal">فحمي</string>
     <string name="theme_surface_graphite">غرافيتي</string>
+    <string name="theme_surface_midnight">منتصف الليل</string>
+    <string name="theme_surface_forest">غابة</string>
+    <string name="theme_surface_plum">برقوقي</string>
+    <string name="theme_light_color_section_title">لون فاتح</string>
+    <string name="theme_light_surface_white">أبيض</string>
+    <string name="theme_light_surface_warm">دافئ</string>
+    <string name="theme_light_surface_cool">بارد</string>
     <string name="theme_applied_snackbar">تم تطبيق المظهر: %s</string>
     <string name="palette_section_title">لون التمييز</string>
     <string name="palette_name_blue">أزرق</string>
@@ -176,6 +183,12 @@
     <string name="palette_name_amber">كهرماني</string>
     <string name="palette_name_rose">وردي</string>
     <string name="palette_name_teal">تركوازي</string>
+    <string name="palette_name_sky">سماوي</string>
+    <string name="palette_name_orange">برتقالي</string>
+    <string name="palette_name_pink">وردي فاتح</string>
+    <string name="palette_name_lime">ليموني</string>
+    <string name="palette_name_indigo">نيلي</string>
+    <string name="palette_name_cyan">سيان</string>
     <string name="palette_applied_snackbar">تم تطبيق لون التمييز: %s</string>
 
     <string name="pip_not_supported">ملاحظة: وضع صورة في صورة غير مدعوم على هذا الجهاز أو البيئة (يتطلب أندرويد 8.0 أو أحدث مع ميزة FEATURE_PICTURE_IN_PICTURE).</string>

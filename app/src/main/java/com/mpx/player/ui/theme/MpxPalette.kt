@@ -76,6 +76,49 @@ val MpxPalettes = listOf(
         primaryHover = Color(0xFF0D9488),
         primaryVariant = Color(0xFF0F766E),
     ),
+    // Issue #366: six more accents — same 3-shade shape, distinct hues.
+    MpxPalette(
+        id = "Sky",
+        nameRes = R.string.palette_name_sky,
+        primary = Color(0xFF0EA5E9),
+        primaryHover = Color(0xFF0284C7),
+        primaryVariant = Color(0xFF0369A1),
+    ),
+    MpxPalette(
+        id = "Orange",
+        nameRes = R.string.palette_name_orange,
+        primary = Color(0xFFF97316),
+        primaryHover = Color(0xFFEA580C),
+        primaryVariant = Color(0xFFC2410C),
+    ),
+    MpxPalette(
+        id = "Pink",
+        nameRes = R.string.palette_name_pink,
+        primary = Color(0xFFEC4899),
+        primaryHover = Color(0xFFDB2777),
+        primaryVariant = Color(0xFFBE185D),
+    ),
+    MpxPalette(
+        id = "Lime",
+        nameRes = R.string.palette_name_lime,
+        primary = Color(0xFF84CC16),
+        primaryHover = Color(0xFF65A30D),
+        primaryVariant = Color(0xFF4D7C0F),
+    ),
+    MpxPalette(
+        id = "Indigo",
+        nameRes = R.string.palette_name_indigo,
+        primary = Color(0xFF6366F1),
+        primaryHover = Color(0xFF4F46E5),
+        primaryVariant = Color(0xFF4338CA),
+    ),
+    MpxPalette(
+        id = "Cyan",
+        nameRes = R.string.palette_name_cyan,
+        primary = Color(0xFF06B6D4),
+        primaryHover = Color(0xFF0891B2),
+        primaryVariant = Color(0xFF0E7490),
+    ),
 )
 
 /** Unknown or blank stored ids fall back to the identity-blue default. */

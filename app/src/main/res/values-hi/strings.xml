@@ -168,6 +168,13 @@
     <string name="theme_surface_true_black">शुद्ध काला</string>
     <string name="theme_surface_charcoal">चारकोल</string>
     <string name="theme_surface_graphite">ग्रेफाइट</string>
+    <string name="theme_surface_midnight">मध्यरात्रि</string>
+    <string name="theme_surface_forest">जंगल</string>
+    <string name="theme_surface_plum">बेर</string>
+    <string name="theme_light_color_section_title">हल्का रंग</string>
+    <string name="theme_light_surface_white">सफ़ेद</string>
+    <string name="theme_light_surface_warm">गर्म</string>
+    <string name="theme_light_surface_cool">ठंडा</string>
     <string name="theme_applied_snackbar">थीम लागू हुई: %s</string>
     <string name="palette_section_title">एक्सेंट रंग</string>
     <string name="palette_name_blue">नीला</string>
@@ -176,6 +183,12 @@
     <string name="palette_name_amber">अंबर</string>
     <string name="palette_name_rose">गुलाबी</string>
     <string name="palette_name_teal">फिरोज़ी</string>
+    <string name="palette_name_sky">आसमानी</string>
+    <string name="palette_name_orange">नारंगी</string>
+    <string name="palette_name_pink">हल्का गुलाबी</string>
+    <string name="palette_name_lime">नींबू</string>
+    <string name="palette_name_indigo">नील</string>
+    <string name="palette_name_cyan">सियान</string>
     <string name="palette_applied_snackbar">एक्सेंट रंग लागू हुआ: %s</string>
 
     <string name="pip_not_supported">नोट: इस डिवाइस/वातावरण पर पिक्चर-इन-पिक्चर मोड समर्थित नहीं है (Android 8.0+ और FEATURE_PICTURE_IN_PICTURE आवश्यक है)।</string>

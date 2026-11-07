@@ -168,6 +168,13 @@
     <string name="theme_surface_true_black">纯黑</string>
     <string name="theme_surface_charcoal">炭黑</string>
     <string name="theme_surface_graphite">石墨灰</string>
+    <string name="theme_surface_midnight">午夜</string>
+    <string name="theme_surface_forest">森林</string>
+    <string name="theme_surface_plum">梅紫</string>
+    <string name="theme_light_color_section_title">浅色</string>
+    <string name="theme_light_surface_white">白色</string>
+    <string name="theme_light_surface_warm">暖色</string>
+    <string name="theme_light_surface_cool">冷色</string>
     <string name="theme_applied_snackbar">主题已应用：%s</string>
     <string name="palette_section_title">强调色</string>
     <string name="palette_name_blue">蓝色</string>
@@ -176,6 +183,12 @@
     <string name="palette_name_amber">琥珀色</string>
     <string name="palette_name_rose">玫瑰色</string>
     <string name="palette_name_teal">青色</string>
+    <string name="palette_name_sky">天蓝</string>
+    <string name="palette_name_orange">橙色</string>
+    <string name="palette_name_pink">粉色</string>
+    <string name="palette_name_lime">柠檬绿</string>
+    <string name="palette_name_indigo">靛蓝</string>
+    <string name="palette_name_cyan">青蓝</string>
     <string name="palette_applied_snackbar">已应用强调色：%s</string>
 
     <string name="pip_not_supported">注意：此设备/环境不支持画中画模式（需要 Android 8.0+ 并支持 FEATURE_PICTURE_IN_PICTURE）。</string>
