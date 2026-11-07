@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
-import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subtitles
@@ -89,7 +88,7 @@ import java.util.Locale
 /**
  * Playback sheet (issue #153): one MpxBottomSheet replacing the Player Menu
  * AlertDialog and the whole activeDialog chain (Sleep Timer / Audio Tracks /
- * Subtitles / Decoder / Screen Rotation). Design is inspired by both mpvEx
+ * Subtitles / Decoder). Design is inspired by both mpvEx
  * (one focused sheet per function, drilled into from a main sheet) and MX
  * Player (every row shows its CURRENT value on the right).
  *
@@ -118,7 +117,6 @@ enum class PlaybackSheetPage {
     SleepTimer,
     Decoder,
     AspectRatio,
-    Rotation,
     Zoom,
     AudioTracks,
     AudioDelay,
@@ -152,7 +150,6 @@ fun PlayerPlaybackSheet(
         PlaybackSheetPage.SleepTimer -> R.string.player_sleep_timer_dialog_title
         PlaybackSheetPage.Decoder -> R.string.player_dialog_decoder_selection
         PlaybackSheetPage.AspectRatio -> R.string.playback_sheet_aspect
-        PlaybackSheetPage.Rotation -> R.string.player_rotation_dialog_title
         PlaybackSheetPage.Zoom -> R.string.playback_sheet_zoom
         PlaybackSheetPage.AudioTracks -> R.string.player_dialog_audio_tracks
         PlaybackSheetPage.AudioDelay -> R.string.playback_sheet_audio_delay
@@ -233,11 +230,6 @@ fun PlayerPlaybackSheet(
                 PlaybackSheetPage.AspectRatio -> PlaybackSheetAspectPage(
                     state = state,
                     playbackManager = playbackManager,
-                    onDismiss = dismiss,
-                )
-                PlaybackSheetPage.Rotation -> PlaybackSheetRotationPage(
-                    currentSettings = currentSettings,
-                    onSettingsChanged = onSettingsChanged,
                     onDismiss = dismiss,
                 )
                 PlaybackSheetPage.Zoom -> PlaybackSheetZoomPage(
@@ -400,256 +392,6 @@ private fun formatMultiplier(value: Float): String {
 private fun formatDelaySeconds(delayMs: Int): String =
     if (delayMs == 0) "0.00s" else String.format(Locale.US, "%+.2fs", delayMs / 1000.0)
 
-private fun rotationLabel(settings: AppSettings): Int =
-    // Issue #249: "sensor" is a legacy persisted value the current UI
-    // never writes — PlayerScreen's targetOrientation treats it as Auto,
-    // so the label must too instead of falling through to Landscape.
-    // Exact ==, matching targetOrientation (not ignoreCase).
-    if (settings.autoScreenRotation || settings.screenOrientation == "auto" ||
-        settings.screenOrientation == "sensor") {
-        R.string.player_rotation_auto
-    } else if (settings.screenOrientation.equals("portrait", ignoreCase = true)) {
-        R.string.player_orientation_portrait
-    } else {
-        R.string.player_orientation_landscape
-    }
-
-@Composable
-private fun PlaybackSheetMainPage(
-    state: PlaybackState,
-    currentSettings: AppSettings,
-    onPageChange: (PlaybackSheetPage?) -> Unit,
-    playbackManager: PlaybackManager,
-    isFavourite: Boolean,
-    onToggleFavourite: () -> Unit,
-    onEnterPip: () -> Unit,
-    onToggleBackgroundPlay: () -> Unit,
-    onReplayTutorial: () -> Unit,
-    onAddToPlaylist: () -> Unit,
-) {
-    // Issue #160: the Main page used to hardcode its rows in fixed sections,
-    // so the persisted Player Layout order (Settings > Player Layout) had no
-    // effect here — parsePlayerMenuLayout was only read by the editor and the
-    // action stripe (#177). The 13 layout rows now render in the persisted
-    // order, using the same parse and the same remember keys as the stripe,
-    // so a reorder or hide in the editor shows up here too. It is live: an
-    // editor change recomposes with the new order, no restart needed. Each
-    // row is keyed by its id so a reorder keeps row identity across
-    // recomposition.
-    //
-    // Consequence, stated plainly: the fixed Video / Audio / Subtitles
-    // section titles are gone — they only make sense with fixed grouping,
-    // and an arbitrary layout order can put Decoder between Speed and Sleep.
-    // The "Playback" title stays as the page title and the "About this file"
-    // section stays at the end (info rows, not actions). The default layout
-    // (decoder,audio,subtitles,...) is the order the editor and the stripe
-    // already show, so the default sheet now follows that same order instead
-    // of the old hardcoded one — sheet, stripe and editor finally agree.
-    // Rows with no layout id (tutorial, zoom, audio delay, subtitle delay,
-    // subtitle settings) follow after the 13 in their current relative order.
-    val layoutIds = remember(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds) {
-        parsePlayerMenuLayout(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds)
-    }
-    PlaybackSheetSectionTitle(stringResource(R.string.playback_sheet_title))
-    layoutIds.forEach { id ->
-        key(id) {
-            when (id) {
-                "speed" -> PlaybackSheetRow(
-                    icon = Icons.Filled.Speed,
-                    title = stringResource(R.string.playback_sheet_speed_title),
-                    value = formatMultiplier(state.speed),
-                    onClick = { onPageChange(PlaybackSheetPage.Speed) },
-                    showChevron = true,
-                )
-                "sleep" -> PlaybackSheetRow(
-                    icon = Icons.Filled.Timer,
-                    title = stringResource(R.string.player_sleep_timer),
-                    value = state.sleepTimerRemainingSeconds?.let { formatTimeMs(it * 1000L) }
-                        ?: stringResource(R.string.player_sleep_timer_off),
-                    onClick = { onPageChange(PlaybackSheetPage.SleepTimer) },
-                    showChevron = true,
-                )
-                "repeat" -> PlaybackSheetRow(
-                    icon = if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
-                    title = stringResource(R.string.playback_sheet_repeat),
-                    value = when (state.repeatMode) {
-                        RepeatMode.ONE -> stringResource(R.string.player_cd_repeat_one)
-                        RepeatMode.ALL -> stringResource(R.string.player_cd_repeat_all)
-                        else -> stringResource(R.string.player_cd_repeat_off)
-                    },
-                    // Toggle rows stay open so the new value is visible immediately.
-                    onClick = { playbackManager.cycleRepeatMode() },
-                )
-                "shuffle" -> PlaybackSheetRow(
-                    icon = Icons.Filled.Shuffle,
-                    title = stringResource(R.string.player_cd_shuffle),
-                    value = stringResource(
-                        if (state.shuffleEnabled) R.string.player_state_on else R.string.player_state_off,
-                    ),
-                    onClick = { playbackManager.setShuffleEnabled(!state.shuffleEnabled) },
-                )
-                "favourite" -> PlaybackSheetRow(
-                    icon = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    title = if (isFavourite) {
-                        stringResource(R.string.player_cd_favourite_remove)
-                    } else {
-                        stringResource(R.string.player_cd_favourite_add)
-                    },
-                    value = null,
-                    onClick = onToggleFavourite,
-                )
-                // Issue #225: PiP is video-only — hide the row for audio
-                // items (the enterPip lambda also refuses them).
-                "pip" -> if (state.currentItem?.isVideo == true) PlaybackSheetRow(
-                    icon = Icons.Filled.PictureInPictureAlt,
-                    title = stringResource(R.string.player_menu_popup_play),
-                    value = null,
-                    onClick = {
-                        onPageChange(null)
-                        onEnterPip()
-                    },
-                )
-                "background" -> PlaybackSheetRow(
-                    icon = Icons.Filled.PlayArrow,
-                    title = stringResource(R.string.playback_sheet_background_play),
-                    value = stringResource(
-                        if (currentSettings.backgroundPlay) R.string.player_state_on else R.string.player_state_off,
-                    ),
-                    subtitle = if (state.currentItem?.isVideo == true) {
-                        stringResource(R.string.player_bg_desc_video)
-                    } else {
-                        stringResource(R.string.player_bg_desc_audio)
-                    },
-                    onClick = onToggleBackgroundPlay,
-                )
-                "playlist" -> PlaybackSheetRow(
-                    icon = Icons.AutoMirrored.Filled.PlaylistAdd,
-                    title = stringResource(R.string.player_menu_add_playlist),
-                    value = null,
-                    onClick = {
-                        onPageChange(null)
-                        onAddToPlaylist()
-                    },
-                )
-                "decoder" -> PlaybackSheetRow(
-                    icon = Icons.Filled.Memory,
-                    title = stringResource(R.string.playback_sheet_decoder),
-                    value = state.decoderMode.label,
-                    onClick = { onPageChange(PlaybackSheetPage.Decoder) },
-                    showChevron = true,
-                )
-                "aspect" -> PlaybackSheetRow(
-                    icon = Icons.Filled.AspectRatio,
-                    title = stringResource(R.string.playback_sheet_aspect),
-                    value = stringResource(state.aspectRatio.labelRes),
-                    onClick = { onPageChange(PlaybackSheetPage.AspectRatio) },
-                    showChevron = true,
-                )
-                "rotation" -> PlaybackSheetRow(
-                    icon = Icons.Filled.ScreenRotation,
-                    title = stringResource(R.string.playback_sheet_rotation),
-                    value = stringResource(rotationLabel(currentSettings)),
-                    onClick = { onPageChange(PlaybackSheetPage.Rotation) },
-                    showChevron = true,
-                )
-                "audio" -> PlaybackSheetRow(
-                    icon = Icons.Filled.Audiotrack,
-                    title = stringResource(R.string.playback_sheet_audio_track),
-                    // Issue #262: an empty list (still preparing, or no
-                    // discrete tracks) is not "audio off" — keep the
-                    // value null so nothing shows, as before. "Off" is
-                    // only for tracks present with none selected.
-                    value = if (state.audioTracks.isEmpty()) {
-                        null
-                    } else {
-                        state.audioTracks.firstOrNull { it.isSelected }?.label
-                            ?: stringResource(R.string.player_state_off)
-                    },
-                    onClick = { onPageChange(PlaybackSheetPage.AudioTracks) },
-                    showChevron = true,
-                )
-                "subtitles" -> PlaybackSheetRow(
-                    icon = Icons.Filled.Subtitles,
-                    title = stringResource(R.string.playback_sheet_subtitle_track),
-                    value = state.subtitleTracks.firstOrNull { it.isSelected }?.label
-                        ?: stringResource(R.string.player_state_off),
-                    onClick = { onPageChange(PlaybackSheetPage.SubtitleTracks) },
-                    showChevron = true,
-                )
-                else -> {
-                    // parsePlayerMenuLayout already drops unknown ids.
-                }
-            }
-        }
-    }
-    // Rows with no layout id, in their current relative order.
-    PlaybackSheetRow(
-        icon = Icons.Filled.Info,
-        title = stringResource(R.string.player_menu_tutorial),
-        value = null,
-        onClick = {
-            onPageChange(null)
-            onReplayTutorial()
-        },
-    )
-    PlaybackSheetRow(
-        icon = Icons.Filled.ZoomIn,
-        title = stringResource(R.string.playback_sheet_zoom),
-        value = formatMultiplier(currentSettings.videoZoom),
-        onClick = { onPageChange(PlaybackSheetPage.Zoom) },
-        showChevron = true,
-    )
-    PlaybackSheetRow(
-        icon = Icons.Filled.AvTimer,
-        title = stringResource(R.string.playback_sheet_audio_delay),
-        value = formatDelaySeconds(currentSettings.audioDelayMs),
-        onClick = { onPageChange(PlaybackSheetPage.AudioDelay) },
-        showChevron = true,
-    )
-    PlaybackSheetRow(
-        icon = Icons.Filled.AvTimer,
-        title = stringResource(R.string.subtitle_sync_header),
-        value = formatDelaySeconds(currentSettings.subtitleDelayMs),
-        onClick = { onPageChange(PlaybackSheetPage.SubtitleDelay) },
-        showChevron = true,
-    )
-    PlaybackSheetRow(
-        icon = Icons.Filled.Tune,
-        title = stringResource(R.string.playback_sheet_subtitle_settings),
-        value = null,
-        onClick = { onPageChange(PlaybackSheetPage.SubtitleSettings) },
-        showChevron = true,
-    )
-
-    PlaybackSheetSectionTitle(stringResource(R.string.playback_sheet_section_about))
-    PlaybackSheetRow(
-        icon = Icons.Filled.Info,
-        title = stringResource(R.string.playback_sheet_about_title),
-        value = state.currentItem?.title,
-        onClick = null,
-    )
-    PlaybackSheetRow(
-        icon = Icons.Filled.Timer,
-        title = stringResource(R.string.playback_sheet_about_duration),
-        value = formatTimeMs(
-            if (state.durationMs > 0) state.durationMs
-            else state.currentItem?.durationMs ?: 0L,
-        ),
-        onClick = null,
-    )
-    PlaybackSheetRow(
-        icon = Icons.Filled.Memory,
-        title = stringResource(R.string.playback_sheet_decoder),
-        value = state.decoderMode.label,
-        onClick = null,
-    )
-    PlaybackSheetRow(
-        icon = Icons.Filled.Subtitles,
-        title = stringResource(R.string.playback_sheet_about_codec),
-        value = state.activeDecoderName ?: stringResource(R.string.player_codec_initializing),
-        onClick = null,
-    )
-}
 
 @Composable
 private fun PlaybackSheetSpeedPage(
@@ -927,78 +669,6 @@ private fun PlaybackSheetAspectPage(
                 },
             )
         }
-    }
-}
-
-@Composable
-private fun PlaybackSheetRotationPage(
-    currentSettings: AppSettings,
-    onSettingsChanged: (AppSettings) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val context = LocalContext.current
-    // Issue #249: "sensor" is a legacy persisted value — it means Auto
-    // (PlayerScreen's targetOrientation), so the Auto radio must be
-    // selected; without this no radio was selected at all.
-    val isAuto = currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" ||
-        currentSettings.screenOrientation == "sensor"
-    val isLandscape = !currentSettings.autoScreenRotation &&
-        currentSettings.screenOrientation.equals("landscape", ignoreCase = true)
-    val isPortrait = !currentSettings.autoScreenRotation &&
-        currentSettings.screenOrientation.equals("portrait", ignoreCase = true)
-    Column {
-        PlaybackSheetRadioRow(
-            title = stringResource(R.string.player_rotation_auto),
-            subtitle = stringResource(R.string.player_rotation_auto_desc),
-            selected = isAuto,
-            onClick = {
-                // Issue #240: picking Auto must not overwrite the stored
-                // lock — autoScreenRotation=true already means "ignore the
-                // lock" to every consumer, so leaving screenOrientation
-                // alone lets a later lock-off restore it.
-                onSettingsChanged(
-                    currentSettings.copy(autoScreenRotation = true),
-                )
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.toast_rotation_auto),
-                    Toast.LENGTH_SHORT,
-                ).show()
-                onDismiss()
-            },
-        )
-        PlaybackSheetRadioRow(
-            title = stringResource(R.string.player_orientation_landscape),
-            subtitle = stringResource(R.string.player_orientation_landscape_desc),
-            selected = isLandscape,
-            onClick = {
-                onSettingsChanged(
-                    currentSettings.copy(autoScreenRotation = false, screenOrientation = "landscape"),
-                )
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.toast_rotation_landscape),
-                    Toast.LENGTH_SHORT,
-                ).show()
-                onDismiss()
-            },
-        )
-        PlaybackSheetRadioRow(
-            title = stringResource(R.string.player_orientation_portrait),
-            subtitle = stringResource(R.string.player_orientation_portrait_desc),
-            selected = isPortrait,
-            onClick = {
-                onSettingsChanged(
-                    currentSettings.copy(autoScreenRotation = false, screenOrientation = "portrait"),
-                )
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.toast_rotation_portrait),
-                    Toast.LENGTH_SHORT,
-                ).show()
-                onDismiss()
-            },
-        )
     }
 }
 

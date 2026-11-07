@@ -395,54 +395,35 @@ fun PlayerScreen(
         }
     }
 
-    // Issue #329: adaptive rotation — in Auto mode the video's aspect
-    // decides the orientation *family*, and the sensor still flips
-    // within that family: a landscape video plays SENSOR_LANDSCAPE
-    // (either way up), a portrait video SENSOR_PORTRAIT. Aspect unknown
-    // yet (0x0), a square video, or an audio item falls back to today's
-    // plain SENSOR (no forcing). An explicit Portrait/Landscape lock
-    // still wins — that is the point of a lock, and the escape hatch
-    // (e.g. watching a portrait video while lying down: lock Landscape).
-    // The dims reset to 0 on every item change (#260), so a plain
-    // remember on state.videoWidth/Height would flicker through SENSOR
-    // between items. lastKnownVideoSize bridges the 0x0 window: it only
-    // updates when real video dims arrive (SideEffect below, after
-    // composition), so the previous video's family holds until the new
-    // video's dims land — at most one flip per item change, and none at
-    // all when both videos share a family (the effect key is the
-    // orientation value, not the dims). Audio items never update the
-    // bridge and fall back to SENSOR, so a podcast doesn't inherit the
-    // previous video's family.
-    var lastKnownVideoSize by remember { mutableStateOf(0 to 0) }
-    SideEffect {
-        if (state.currentItem?.isVideo == true && state.videoWidth > 0 && state.videoHeight > 0) {
-            lastKnownVideoSize = state.videoWidth to state.videoHeight
-        }
-    }
+    // Issue #363: MX-style rotation — every video starts in portrait,
+    // and the stripe's rotation button toggles landscape directly, no
+    // menu. In Auto mode the target is SENSOR_PORTRAIT whatever the
+    // video's aspect (the old #329 aspect rule is gone: a wide video no
+    // longer flips the phone on load). The toggle is a per-video session
+    // override: keyed to the current item id, so the next video starts
+    // in portrait again. An explicit Portrait/Landscape lock in
+    // Settings still wins as the default the override starts from.
+    var rotationOverride by remember(state.currentItem?.id) { mutableStateOf<String?>(null) }
+    // The stripe toggle and caption read the effective orientation
+    // (override, else the persisted setting; Auto means portrait).
+    val isLandscapeOrientation = rotationOverride?.equals("landscape", ignoreCase = true) == true ||
+        (rotationOverride == null && !currentSettings.autoScreenRotation &&
+            currentSettings.screenOrientation.equals("landscape", ignoreCase = true))
     val targetOrientation = remember(
         currentSettings.autoScreenRotation, currentSettings.screenOrientation,
-        state.currentItem?.isVideo, state.videoWidth, state.videoHeight, lastKnownVideoSize,
+        rotationOverride,
     ) {
-        if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" || currentSettings.screenOrientation == "sensor") {
-            // #329: adaptive — aspect decides the family.
-            val (adaptiveWidth, adaptiveHeight) = if (state.currentItem?.isVideo == true) {
-                if (state.videoWidth > 0 && state.videoHeight > 0) {
-                    state.videoWidth to state.videoHeight
-                } else {
-                    lastKnownVideoSize
-                }
-            } else {
-                0 to 0
-            }
-            when {
-                adaptiveWidth > adaptiveHeight -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                adaptiveHeight > adaptiveWidth -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-                else -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
-            }
-        } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        } else {
-            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        when {
+            rotationOverride.equals("landscape", ignoreCase = true) ->
+                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            rotationOverride.equals("portrait", ignoreCase = true) ->
+                ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" ||
+                currentSettings.screenOrientation == "sensor" ->
+                ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            currentSettings.screenOrientation.equals("portrait", ignoreCase = true) ->
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            else -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
     }
 
@@ -2444,22 +2425,19 @@ private fun PlayerActionStripe(
                 )
                 "rotation" -> PlayerActionStripeButton(
                     icon = Icons.Filled.ScreenRotation,
-                    // Issue #249: "sensor" is a legacy persisted value
-                    // that means Auto (targetOrientation above) — without
-                    // it the stripe showed "Landscape" for an Auto player.
-                    // Issue #329: the caption reuses player_rotation_auto
-                    // ("Adaptive") so it matches the sheet's renamed mode.
-                    caption = if (currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" ||
-                        currentSettings.screenOrientation == "sensor") {
-                        stringResource(R.string.player_rotation_auto)
-                    } else if (currentSettings.screenOrientation.equals("portrait", ignoreCase = true)) {
-                        stringResource(R.string.player_orientation_portrait)
-                    } else {
-                        stringResource(R.string.player_orientation_landscape)
-                    },
+                    // Issue #363: MX-style — a direct toggle, no menu.
+                    // Caption is the current orientation; active while
+                    // landscape. The override resets with the next video
+                    // (see targetOrientation above).
+                    caption = stringResource(
+                        if (isLandscapeOrientation) R.string.player_orientation_landscape
+                        else R.string.player_orientation_portrait,
+                    ),
                     contentDescription = stringResource(R.string.playback_sheet_rotation),
-                    active = false,
-                    onClick = { onOpenSheet(PlaybackSheetPage.Rotation) },
+                    active = isLandscapeOrientation,
+                    onClick = {
+                        rotationOverride = if (isLandscapeOrientation) "portrait" else "landscape"
+                    },
                 )
                 "sleep" -> PlayerActionStripeButton(
                     icon = Icons.Filled.Timer,
