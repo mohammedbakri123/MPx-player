@@ -52,7 +52,7 @@ This is where the project lives — please use these, not DMs:
 
 - **Try it & give feedback:** [GitHub Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) — tell us what works, what's slow, what's confusing. Device + Android version + what you were playing helps more than "it doesn't work".
 - **Bugs & feature requests:** [Issues](https://github.com/mohammedbakri123/MPx-player/issues) — use the templates. Search first; a duplicate with a "+1" and your device info is still useful.
-- **Chat with other users:** Telegram group — link coming soon.
+- **Chat with other users:** [Telegram group](https://t.me/+lFc18fX5Im40MGE0)
 - **Contribute code:** see [CONTRIBUTING.md](CONTRIBUTING.md). Small fixes are welcome — check the [`good first issue`](https://github.com/mohammedbakri123/MPx-player/labels/good%20first%20issue) label.
 
 Please be kind. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
