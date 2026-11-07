@@ -500,7 +500,7 @@ class MediaStoreRepository(
         // (otherwise the path is unknown and behaviour is unchanged).
         val folderPath = cachedFolders?.third?.firstOrNull { it.id == bucketId }?.path.orEmpty()
 
-        fun queryVideos(parentPathFilter: String?): List<VideoFile> {
+        fun queryVideos(parentPathFilter: String?, recursive: Boolean = false): List<VideoFile> {
             val videos = mutableListOf<VideoFile>()
             val seenPaths = mutableSetOf<String>()
             for (uri in uris) {
@@ -527,10 +527,17 @@ class MediaStoreRepository(
                             if (path.isNotBlank() && !seenPaths.add(path)) continue
                             // Path pass only: an exact parent match, so
                             // videos in subfolders never leak in (a LIKE
-                            // on the path would include them).
+                            // on the path would include them). Recursive
+                            // (#358, synthetic tree folders only): the
+                            // video's parent is the folder itself or
+                            // any directory under it.
                             if (parentPathFilter != null) {
                                 val parent = if (path.isNotBlank()) File(path).parent else null
-                                if (parent != parentPathFilter) continue
+                                if (recursive) {
+                                    if (parent != parentPathFilter &&
+                                        !(parent?.startsWith("$parentPathFilter/") ?: false)
+                                    ) continue
+                                } else if (parent != parentPathFilter) continue
                             }
                             val file = if (path.isNotBlank()) File(path) else null
                             val rawTitle = if (titleCol >= 0) cursor.getString(titleCol) else null
@@ -583,6 +590,18 @@ class MediaStoreRepository(
                 }
             }
             return videos
+        }
+
+        // Issue #358: a synthetic tree folder ("tree:<path>", built by
+        // buildFolderTree for an intermediate parent the scan never
+        // listed) has no bucket id — resolve it by path, recursively:
+        // every video under that path, from all its subfolders. Real
+        // folder ids keep the bucket / exact-parent behaviour below.
+        if (bucketId.startsWith("tree:")) {
+            val treePath = bucketId.removePrefix("tree:")
+            if (treePath.isBlank()) return emptyList()
+            return queryVideos(treePath, recursive = true)
+                .sortedBy { it.title.lowercase(Locale.US) }
         }
 
         val byBucketId = queryVideos(null)

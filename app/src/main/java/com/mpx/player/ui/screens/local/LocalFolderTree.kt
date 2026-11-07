@@ -45,9 +45,12 @@ import java.util.Locale
  * finds nothing — otherwise a child whose path string mismatches its
  * parent strands as a root and the parent shows no children. A folder
  * whose parent directory holds no videos of its own never appears in
- * the scan, so it has no node — its subfolders show as roots instead.
- * Nothing is synthesized and no recursive scan runs; counts, sizes and
- * durations are the scanned values, exactly as in Folder mode.
+ * the scan, so its intermediate parents are SYNTHESIZED (#358): without
+ * a node for e.g. /Movies, its subfolders strand as roots and the tree
+ * has no second level. Synthesized nodes carry the sums of their
+ * subtree (counts, size, duration) and open those videos when tapped
+ * (their "tree:" id is resolved recursively in getVideosInFolder);
+ * no recursive scan runs, and real folders keep their scanned values.
  *
  * Tree mode applies to the folders LIST layout only; the GRID layout
  * renders the flat grid as before, and sort keeps working (children keep
@@ -100,6 +103,45 @@ private val storagePrefixAliases = listOf(
     "/storage/self/primary" to "/storage/emulated/0",
     "/mnt/user/0/primary" to "/storage/emulated/0",
 )
+
+/**
+ * Synthetic tree nodes (#358) carry ids of the form "tree:<path>".
+ * getVideosInFolder resolves them recursively (all videos under that
+ * path); real folders keep their bucket ids and direct-videos-only
+ * behaviour.
+ */
+private const val SYNTHETIC_TREE_ID_PREFIX = "tree:"
+
+/** One intermediate parent the scan never listed (it holds no videos directly). */
+private fun syntheticTreeFolder(path: String): MediaFolder {
+    val segments = normalizedTreePath(path).split('/').filter { it.isNotEmpty() }
+    return MediaFolder(
+        id = "$SYNTHETIC_TREE_ID_PREFIX$path",
+        name = segments.lastOrNull().orEmpty(),
+        path = path,
+        videoCount = 0,
+        totalSizeFormatted = "",
+        totalSizeBytes = 0L,
+        totalDurationMs = 0L,
+        lastModified = 0L,
+        isStorageRemovable = segments.size >= 2 && segments[0] == "storage" &&
+            segments[1] != "emulated",
+    )
+}
+
+/** Size formatting for synthesized rows (same bands as LocalScreen's formatSize). */
+private fun formatTreeSize(bytes: Long): String {
+    if (bytes <= 0L) return "0 B"
+    val kb = bytes / 1024.0
+    val mb = kb / 1024.0
+    val gb = mb / 1024.0
+    return when {
+        gb >= 1.0 -> String.format(Locale.US, "%.1f GB", gb)
+        mb >= 1.0 -> String.format(Locale.US, "%.1f MB", mb)
+        kb >= 1.0 -> String.format(Locale.US, "%.1f KB", kb)
+        else -> "$bytes B"
+    }
+}
 
 /**
  * Any storage volume root (/storage/emulated/0, /storage/<uuid>): the
@@ -163,10 +205,38 @@ fun buildFolderTree(folders: List<MediaFolder>, homeLabel: String? = null): List
     for (path in byPath.keys) {
         byLowerPath.putIfAbsent(path.lowercase(Locale.US), path)
     }
+    // Issue #358: synthesize the missing intermediate parents. The
+    // scan only lists directories that hold videos directly, so a
+    // parent like /Movies (no videos of its own) never appears — and
+    // without a node for it, its subfolders strand as roots and the
+    // tree has no second level. For each scanned folder, walk its
+    // ancestors up to (excluding) the storage root; any ancestor
+    // absent from byPath — exactly and case-insensitively — becomes a
+    // synthetic node, so the chain is complete down to the storage
+    // root. Synthetics join byPath/byLowerPath and the parent walk
+    // below, exactly like scanned folders.
+    val syntheticPaths = mutableSetOf<String>()
+    for (folder in deduped) {
+        var prefix = normalizedTreePath(folder.path).substringBeforeLast('/', "")
+        while (prefix.isNotEmpty() && !isStorageRootPath(prefix)) {
+            if (prefix !in byPath && prefix.lowercase(Locale.US) !in byLowerPath) {
+                syntheticPaths.add(prefix)
+            }
+            prefix = prefix.substringBeforeLast('/', "")
+        }
+    }
+    val syntheticFolders = syntheticPaths.map { syntheticTreeFolder(it) }
+    for (synthetic in syntheticFolders) {
+        byPath[normalizedTreePath(synthetic.path)] = synthetic
+        byLowerPath.putIfAbsent(
+            normalizedTreePath(synthetic.path).lowercase(Locale.US),
+            normalizedTreePath(synthetic.path),
+        )
+    }
     // Parent of each folder: the longest other path that is a strict prefix.
     val childrenOf = mutableMapOf<String, MutableList<MediaFolder>>()
     val roots = mutableListOf<MediaFolder>()
-    for (folder in deduped) {
+    for (folder in deduped + syntheticFolders) {
         val path = normalizedTreePath(folder.path)
         var parentPath: String? = null
         if (path.isNotBlank()) {
@@ -209,7 +279,26 @@ fun buildFolderTree(folders: List<MediaFolder>, homeLabel: String? = null): List
             }
         val children = childrenOf[normalizedTreePath(folder.path)]
             ?.map { toNode(it) } ?: emptyList()
-        return FolderTreeNode(displayFolder, children)
+        // Issue #358: a synthetic parent has no videos of its own —
+        // its row shows the sums of its subtree (children are already
+        // aggregated, so summing the immediate children is enough), and
+        // tapping it opens those videos via its "tree:" id. Real
+        // folders keep their scanned values and direct-videos-only
+        // behaviour.
+        val resolvedFolder =
+            if (folder.id.startsWith(SYNTHETIC_TREE_ID_PREFIX) && children.isNotEmpty()) {
+                val totalBytes = children.sumOf { it.folder.totalSizeBytes }
+                displayFolder.copy(
+                    videoCount = children.sumOf { it.folder.videoCount },
+                    totalSizeBytes = totalBytes,
+                    totalSizeFormatted = formatTreeSize(totalBytes),
+                    totalDurationMs = children.sumOf { it.folder.totalDurationMs },
+                    lastModified = children.maxOfOrNull { it.folder.lastModified } ?: 0L,
+                )
+            } else {
+                displayFolder
+            }
+        return FolderTreeNode(resolvedFolder, children)
     }
     return roots.map { toNode(it) }
 }
