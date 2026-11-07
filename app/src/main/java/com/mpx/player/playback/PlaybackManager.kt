@@ -996,7 +996,6 @@ class PlaybackManager private constructor(context: Context) {
         val updatedSubs = existingSubs + ext
         val updatedItem = currentItem.copy(externalSubtitles = updatedSubs)
 
-        val currentPos = engine.currentPosition
         val wasPlaying = engine.isPlaying
 
         // Replace current media item in engine timeline. The raw item is
@@ -1016,7 +1015,7 @@ class PlaybackManager private constructor(context: Context) {
                 // appears (or the timeout reports it never did).
                 pendingExternalSubtitleMediaId = currentItem.id
                 pendingExternalSubtitleDisplayName = displayName
-                commitSubtitleAdd(index, updatedItem, currentPos, wasPlaying, notification = null)
+                commitSubtitleAdd(index, updatedItem, wasPlaying, notification = null)
                 true
             }
             ReplaceMediaItemResult.ALREADY_ADDED -> {
@@ -1032,12 +1031,12 @@ class PlaybackManager private constructor(context: Context) {
                     pendingExternalSubtitleMediaId = null
                     pendingExternalSubtitleDisplayName = null
                     commitSubtitleAdd(
-                        index, updatedItem, currentPos, wasPlaying,
+                        index, updatedItem, wasPlaying,
                         notification = appContext.getString(R.string.player_toast_subtitle_loaded, displayName),
                     )
                     true
                 } else {
-                    commitSubtitleAdd(index, updatedItem, currentPos, wasPlaying, notification = null)
+                    commitSubtitleAdd(index, updatedItem, wasPlaying, notification = null)
                     _playbackState.update {
                         it.copy(userNotification = appContext.getString(R.string.player_subtitle_load_failed, displayName))
                     }
@@ -1051,7 +1050,7 @@ class PlaybackManager private constructor(context: Context) {
                 // updated item even though it added nothing — and report
                 // the failure instead of the old unconditional success.
                 engine.replaceMediaItem(index, currentItem)
-                restorePlaybackAfterSubtitleAdd(currentPos, wasPlaying)
+                restorePlaybackAfterSubtitleAdd(wasPlaying)
                 _playbackState.update {
                     it.copy(userNotification = appContext.getString(R.string.player_subtitle_load_failed, displayName))
                 }
@@ -1070,14 +1069,13 @@ class PlaybackManager private constructor(context: Context) {
     private fun commitSubtitleAdd(
         index: Int,
         updatedItem: PlayableMedia,
-        currentPos: Long,
         wasPlaying: Boolean,
         notification: String?,
     ) {
         val updatedQueue = currentQueue.toMutableList()
         updatedQueue[index] = updatedItem
         currentQueue = updatedQueue
-        restorePlaybackAfterSubtitleAdd(currentPos, wasPlaying)
+        restorePlaybackAfterSubtitleAdd(wasPlaying)
         _playbackState.update { state ->
             val withItem = state.copy(currentItem = updatedItem, queue = updatedQueue)
             if (notification != null) withItem.copy(userNotification = notification) else withItem
@@ -1090,11 +1088,21 @@ class PlaybackManager private constructor(context: Context) {
      * Issue #332: plain seek, NOT seekTo(index, pos): the mpv engine's
      * replaceMediaItem never reloads the file (sub-add only), so the
      * position is already where it was — no reload is needed at all.
+     *
+     * Issue #357: there is deliberately NO seek here at all any more.
+     * A seek makes mpv re-evaluate track selection, and with `sid`
+     * still at "auto" it falls back to the default-flagged embedded
+     * track — unselecting the external subtitle that was just sub-added
+     * (user's v0.3.1 log: sid=2 selected, sid=1 back two seconds
+     * later). The durable #192/#199 pin only pins a track that is
+     * currently selected AND external, so once the seek unselects it
+     * the pin can never land and the 5s confirmation reports failure.
+     * Commands reach mpv in order, so the sub-add lands before the
+     * seek's re-evaluation — deterministic, not a race. Without the
+     * seek the just-added track stays selected until the pin sets
+     * `sid` to it explicitly.
      */
-    private fun restorePlaybackAfterSubtitleAdd(currentPos: Long, wasPlaying: Boolean) {
-        if (currentPos > 0L) {
-            engine.seekTo(currentPos)
-        }
+    private fun restorePlaybackAfterSubtitleAdd(wasPlaying: Boolean) {
         if (wasPlaying && !engine.isPlaying) {
             engine.play()
         }
