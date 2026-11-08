@@ -282,7 +282,15 @@ fun DownloadScreen(
                             // Any info failure falls back to the plain
                             // single download, exactly as before.
                             val startSingleVideo: suspend (String) -> Unit = { videoUrl ->
-                                if (!downloadPrefs.downloadAudioOnly) {
+                                // Issue #384: with a custom command on,
+                                // the template IS the command — the
+                                // format sheet's choices would be
+                                // ignored, so the download starts
+                                // immediately instead of opening it.
+                                if (downloadPrefs.customCommandEnabled && downloadPrefs.customCommand.isNotBlank()) {
+                                    downloader.startDownload(videoUrl, audioOnly = downloadPrefs.downloadAudioOnly, subtitles = downloadPrefs.downloadSubtitles)
+                                    urlText = ""
+                                } else if (!downloadPrefs.downloadAudioOnly) {
                                     val info = downloader.fetchVideoInfoForFormat(videoUrl)
                                     if (info != null && info.formats.orEmpty().isNotEmpty()) {
                                         formatToPick = videoUrl to info

@@ -107,6 +107,9 @@
     <string name="download_clips_add">Добавить клип</string>
     <string name="download_clips_start">Начало</string>
     <string name="download_clips_end">Конец</string>
+    <string name="download_custom_command_title">Пользовательская команда</string>
+    <string name="download_custom_command_enabled">Использовать пользовательскую команду</string>
+    <string name="download_custom_command_hint">Одна строка опций yt-dlp. Заменяет опции формата, субтитров и глав для каждой загрузки.</string>
     <string name="download_split_by_chapter">Разделить по главам</string>
     <string name="download_clips_remove">Удалить клип</string>
     <string name="download_downloaded_title">Загруженные</string>

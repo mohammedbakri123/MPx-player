@@ -31,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
@@ -99,6 +100,7 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.download.MpxDownloader
 import com.mpx.player.download.YtDlpUpdateOutcome
 import com.mpx.player.download.YtDlpUpdateState
+import com.mpx.player.ui.screens.download.CustomCommandDialog
 import com.mpx.player.ui.screens.download.DownloadDirectoryDialog
 import com.mpx.player.ui.screens.download.DownloadOptionsDialog
 import com.mpx.player.ui.screens.download.DownloadQualityDialog
@@ -884,6 +886,7 @@ fun SettingsScreen(
                                 var showOptions by remember { mutableStateOf(false) }
                                 var showSponsorBlock by remember { mutableStateOf(false) }
                                 var showDirectory by remember { mutableStateOf(false) }
+                                var showCustomCommand by remember { mutableStateOf(false) }
                                 var showSubtitleLanguages by remember { mutableStateOf(false) }
                                 var showSubtitleConvert by remember { mutableStateOf(false) }
                                 val ytdlpUpdatedLabel = stringResource(R.string.download_ytdlp_updated)
@@ -921,6 +924,24 @@ fun SettingsScreen(
                                             color = MpxTheme.colors.primary,
                                         )
                                     },
+                                )
+
+                                // Issue #384: custom command — one line
+                                // of yt-dlp options that replaces the
+                                // format/subtitle/chapter options. The
+                                // switch is the quick on/off; the row
+                                // opens the editor (Seal's sample
+                                // pre-filled, off by default).
+                                ToggleRow(stringResource(R.string.download_custom_command_enabled), settings.customCommandEnabled) { update(settings.copy(customCommandEnabled = it)) }
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_custom_command_title),
+                                    subtitle = if (settings.customCommandEnabled) {
+                                        settings.customCommand.ifBlank { stringResource(R.string.player_state_off) }
+                                    } else {
+                                        stringResource(R.string.player_state_off)
+                                    },
+                                    icon = Icons.Filled.Code,
+                                    onClick = { showCustomCommand = true },
                                 )
 
                                 Spacer(Modifier.height(16.dp))
@@ -1021,6 +1042,15 @@ fun SettingsScreen(
                                         settingsRepository = settingsRepository,
                                         onDismiss = {
                                             showDirectory = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showCustomCommand) {
+                                    CustomCommandDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showCustomCommand = false
                                             settings = settingsRepository.load()
                                         },
                                     )
