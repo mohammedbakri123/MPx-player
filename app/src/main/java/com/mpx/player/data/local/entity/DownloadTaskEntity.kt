@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.mpx.player.download.ActiveDownload
 import com.mpx.player.download.DownloadStatus
+import com.mpx.player.download.VideoClip
 
 /**
  * Room entity for one persisted download task (issue #342): the queue
@@ -34,6 +35,13 @@ data class DownloadTaskEntity(
     val subtitles: Boolean = false,
     /** Issue #383: the per-video format selector ("137+140"), null when the global settings apply. */
     val formatId: String? = null,
+    /**
+     * Issue #386: the clips, encoded "start-end,start-end" in
+     * seconds (e.g. "83-296,600-720"), null when the whole video is
+     * downloaded. A plain string keeps the table flat — no second
+     * table for a per-download list.
+     */
+    val clips: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
 ) {
     fun toActiveDownload(): ActiveDownload = ActiveDownload(
@@ -46,6 +54,7 @@ data class DownloadTaskEntity(
         audioOnly = audioOnly,
         subtitles = subtitles,
         formatId = formatId,
+        clips = decodeClips(clips),
     )
 
     companion object {
@@ -61,7 +70,28 @@ data class DownloadTaskEntity(
             audioOnly = item.audioOnly,
             subtitles = item.subtitles,
             formatId = item.formatId,
+            clips = encodeClips(item.clips),
             createdAt = createdAt,
         )
+
+        /** "83-296,600-720", or null for no clips. */
+        internal fun encodeClips(clips: List<VideoClip>): String? =
+            clips.takeIf { it.isNotEmpty() }
+                ?.joinToString(",") { "${it.start}-${it.end}" }
+
+        /** The inverse — a bad stored value decodes to no clips, never a crash. */
+        internal fun decodeClips(encoded: String?): List<VideoClip> {
+            if (encoded.isNullOrBlank()) return emptyList()
+            return encoded.split(",").mapNotNull { part ->
+                val nums = part.split("-").mapNotNull { it.toIntOrNull() }
+                val start = nums.getOrNull(0)
+                val end = nums.getOrNull(1)
+                if (start != null && end != null && start >= 0 && end > start) {
+                    VideoClip(start, end)
+                } else {
+                    null
+                }
+            }
+        }
     }
 }

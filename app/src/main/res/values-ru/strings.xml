@@ -103,6 +103,11 @@
     <string name="download_format_best_detail">Использовать глобальные настройки качества</string>
     <string name="download_format_video">Видео</string>
     <string name="download_format_audio">Аудио</string>
+    <string name="download_clips_title">Клипы</string>
+    <string name="download_clips_add">Добавить клип</string>
+    <string name="download_clips_start">Начало</string>
+    <string name="download_clips_end">Конец</string>
+    <string name="download_clips_remove">Удалить клип</string>
     <string name="download_downloaded_title">Загруженные</string>
     <string name="download_downloaded_empty_message">Пока ничего не загружено. Завершённые загрузки появятся здесь.</string>
     <string name="download_settings_general">Общие</string>

@@ -103,6 +103,11 @@
     <string name="download_format_best_detail">Usar los ajustes globales de calidad</string>
     <string name="download_format_video">Vídeo</string>
     <string name="download_format_audio">Audio</string>
+    <string name="download_clips_title">Clips</string>
+    <string name="download_clips_add">Añadir clip</string>
+    <string name="download_clips_start">Inicio</string>
+    <string name="download_clips_end">Fin</string>
+    <string name="download_clips_remove">Quitar clip</string>
     <string name="download_downloaded_title">Descargados</string>
     <string name="download_downloaded_empty_message">Aún no hay descargas. Los archivos que descargues aparecerán aquí.</string>
     <string name="download_settings_general">General</string>
