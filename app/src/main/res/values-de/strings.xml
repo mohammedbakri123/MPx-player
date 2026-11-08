@@ -88,6 +88,13 @@
     <string name="download_metered_title">Über mobile Daten herunterladen?</string>
     <string name="download_metered_message">Du nutzt mobile Daten. Das Herunterladen von Videos kann viel Datenvolumen verbrauchen.</string>
     <string name="download_metered_always">Mobile Downloads immer erlauben</string>
+    <string name="download_subtitle_languages">Untertitelsprachen</string>
+    <string name="download_subtitle_languages_hint">Sprachen, z. B. en,ar</string>
+    <string name="download_auto_subtitles">Automatische Untertitel</string>
+    <string name="download_convert_subtitles">Untertitel konvertieren</string>
+    <string name="download_convert_subtitles_none">Keine</string>
+    <string name="download_embed_subtitles">Untertitel einbetten</string>
+    <string name="download_keep_subtitles">Untertiteldatei behalten</string>
     <string name="download_downloaded_title">Heruntergeladen</string>
     <string name="download_downloaded_empty_message">Noch nichts heruntergeladen. Fertige Downloads erscheinen hier.</string>
     <string name="download_settings_general">Allgemein</string>

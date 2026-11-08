@@ -89,6 +89,13 @@
     <string name="download_metered_title">Download over mobile data?</string>
     <string name="download_metered_message">You are on mobile data. Downloading video can use a lot of data.</string>
     <string name="download_metered_always">Always allow mobile data downloads</string>
+    <string name="download_subtitle_languages">Subtitle languages</string>
+    <string name="download_subtitle_languages_hint">Languages, e.g. en,ar</string>
+    <string name="download_auto_subtitles">Auto subtitles</string>
+    <string name="download_convert_subtitles">Convert subtitles</string>
+    <string name="download_convert_subtitles_none">None</string>
+    <string name="download_embed_subtitles">Embed subtitles</string>
+    <string name="download_keep_subtitles">Keep subtitle file</string>
     <string name="download_downloaded_title">Downloaded</string>
     <string name="download_downloaded_empty_message">Nothing downloaded yet. Files you finish downloading will show up here.</string>
     <string name="download_settings_general">General</string>

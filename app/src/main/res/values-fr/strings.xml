@@ -88,6 +88,13 @@
     <string name="download_metered_title">Télécharger sur données mobiles ?</string>
     <string name="download_metered_message">Vous êtes sur données mobiles. Télécharger une vidéo peut consommer beaucoup de données.</string>
     <string name="download_metered_always">Toujours autoriser les téléchargements mobiles</string>
+    <string name="download_subtitle_languages">Langues des sous-titres</string>
+    <string name="download_subtitle_languages_hint">Langues, p. ex. en,ar</string>
+    <string name="download_auto_subtitles">Sous-titres automatiques</string>
+    <string name="download_convert_subtitles">Convertir les sous-titres</string>
+    <string name="download_convert_subtitles_none">Aucun</string>
+    <string name="download_embed_subtitles">Intégrer les sous-titres</string>
+    <string name="download_keep_subtitles">Conserver le fichier de sous-titres</string>
     <string name="download_downloaded_title">Téléchargés</string>
     <string name="download_downloaded_empty_message">Rien de téléchargé pour l’instant. Les fichiers téléchargés apparaîtront ici.</string>
     <string name="download_settings_general">Général</string>

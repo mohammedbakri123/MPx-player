@@ -88,6 +88,13 @@
     <string name="download_metered_title">Скачать через мобильный интернет?</string>
     <string name="download_metered_message">Вы используете мобильный интернет. Скачивание видео может потратить много трафика.</string>
     <string name="download_metered_always">Всегда разрешать мобильные загрузки</string>
+    <string name="download_subtitle_languages">Языки субтитров</string>
+    <string name="download_subtitle_languages_hint">Языки, например en,ar</string>
+    <string name="download_auto_subtitles">Автосубтитры</string>
+    <string name="download_convert_subtitles">Конвертировать субтитры</string>
+    <string name="download_convert_subtitles_none">Нет</string>
+    <string name="download_embed_subtitles">Встраивать субтитры</string>
+    <string name="download_keep_subtitles">Сохранять файл субтитров</string>
     <string name="download_downloaded_title">Загруженные</string>
     <string name="download_downloaded_empty_message">Пока ничего не загружено. Завершённые загрузки появятся здесь.</string>
     <string name="download_settings_general">Общие</string>
