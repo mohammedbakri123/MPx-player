@@ -1736,6 +1736,14 @@ class MpxDownloader private constructor(context: Context) {
             addOption("-x")
             addOption("--audio-format", settings.downloadAudioFormat.ifBlank { "mp3" })
             addOption("--embed-metadata")
+            // Issue #391: embed the cover art into the audio file
+            // itself (Seal's EMBED_THUMBNAIL, audio branch
+            // DownloadUtil.kt:608 — it converts the thumb to jpg
+            // first, which mp3/m4a need). Needs ffmpeg (#336).
+            if (settings.downloadEmbedThumbnail) {
+                addOption("--embed-thumbnail")
+                addOption("--convert-thumbnails", "jpg")
+            }
         }
 
     /**
@@ -2079,6 +2087,15 @@ class MpxDownloader private constructor(context: Context) {
                     // Audio-only downloads already embed metadata.
                     addOption("--add-metadata")
                     addOption("--embed-chapters")
+                    // Issue #391: embed the cover art into the video
+                    // file itself (Seal's EMBED_THUMBNAIL, video
+                    // branch DownloadUtil.kt:481-482), so the cover
+                    // travels with the file instead of living only in
+                    // the png sidecar that #385 writes. Needs the
+                    // bundled ffmpeg (#336), like the flags above.
+                    if (settings.downloadEmbedThumbnail) {
+                        addOption("--embed-thumbnail")
+                    }
                     // Issue #385: Seal's advanced video flags
                     // (DownloadUtil.addOptionsForVideoDownloads,
                     // JunkFood02/Seal, GPL-3.0) — the settings-shaped

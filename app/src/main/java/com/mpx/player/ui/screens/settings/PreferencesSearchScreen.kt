@@ -73,6 +73,7 @@ fun buildSettingsSearchIndex(): List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(R.string.download_quality_title, null, "quality,resolution,codec,format,sorter", "downloader"),
     SettingsSearchEntry(R.string.download_directory_title, null, "folder,directory,downloads,location,storage", "downloader"),
     SettingsSearchEntry(R.string.download_audio_format_title, null, "audio,format,mp3,m4a,opus,flac", "downloader"),
+    SettingsSearchEntry(R.string.download_embed_thumbnail, null, "thumbnail,cover,embed,art", "downloader"),
     SettingsSearchEntry(R.string.download_group_playlists, null, "playlist,playlists,group,folder,folders", "downloader"),
     SettingsSearchEntry(R.string.download_sponsorblock_title, null, "sponsorblock,sponsor,skip,intro,outro", "downloader"),
     SettingsSearchEntry(R.string.download_custom_command_title, null, "custom,command,template,ytdlp,options", "downloader"),

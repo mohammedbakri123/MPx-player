@@ -246,6 +246,11 @@ data class AppSettings(
     val downloadMergeToMkv: Boolean = false,
     val downloadAudioMultistreams: Boolean = false,
     val downloadWriteThumbnail: Boolean = false,
+    // Issue #391: embed the cover art into the downloaded file
+    // itself (`--embed-thumbnail`, Seal's EMBED_THUMBNAIL), so it
+    // travels with the file instead of living only in the png
+    // sidecar that #385 writes. Needs the bundled ffmpeg (#336).
+    val downloadEmbedThumbnail: Boolean = false,
 ) {
     /**
      * Total number of currently visible music tabs.
