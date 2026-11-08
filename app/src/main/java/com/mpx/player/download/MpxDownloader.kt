@@ -1854,7 +1854,18 @@ class MpxDownloader private constructor(context: Context) {
                 // Seal's output template (DownloadUtil.BASENAME,
                 // JunkFood02/Seal, GPL-3.0): title truncated to 200 bytes
                 // so long titles cannot exceed filesystem filename limits.
-                addOption("-o", File(downloadsDir, "%(title).200B.%(ext)s").absolutePath)
+                // Issue #386 follow-up: with clips, Seal switches to
+                // its OUTPUT_TEMPLATE_CLIPS — "[start-end]" in the
+                // name — because the plain template gives every clip
+                // the same filename, so the second clip would
+                // overwrite (or be skipped as already downloaded).
+                // The section fields come from yt-dlp itself.
+                val outputTemplate = if (item.clips.isEmpty()) {
+                    "%(title).200B.%(ext)s"
+                } else {
+                    "%(title).200B [%(section_start)d-%(section_end)d].%(ext)s"
+                }
+                addOption("-o", File(downloadsDir, outputTemplate).absolutePath)
                 // Issue #334: partials go to this download's own temp dir
                 // (Seal's `-P temp:`); yt-dlp moves the finished file into
                 // downloadsDir on completion, so the Destination line in
