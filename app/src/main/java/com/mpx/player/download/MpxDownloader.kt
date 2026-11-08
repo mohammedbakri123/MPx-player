@@ -1781,6 +1781,17 @@ class MpxDownloader private constructor(context: Context) {
                         formatSorting = settings.downloadCustomSorter.isNotBlank(),
                         sortingFields = settings.downloadCustomSorter,
                     )
+                    // Issue #381: Seal's always-on video flags
+                    // (DownloadUtil.addOptionsForVideoDownloads,
+                    // JunkFood02/Seal, GPL-3.0): `--add-metadata` tags
+                    // the file with title/uploader, `--embed-chapters`
+                    // writes the video's chapters into it (the player
+                    // can only show chapters a file actually carries —
+                    // see #178). Both need the bundled ffmpeg (#336);
+                    // a video without chapters simply gets none.
+                    // Audio-only downloads already embed metadata.
+                    addOption("--add-metadata")
+                    addOption("--embed-chapters")
                     // Issue #341: subtitles for video downloads only —
                     // an mp3 has no use for a sidecar subtitle file.
                     if (item.subtitles) {
