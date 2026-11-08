@@ -36,8 +36,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
@@ -766,11 +768,13 @@ fun PlayerScreen(
     // away) and come back with the chrome. Scoped to the Player route
     // only: edge-to-edge stays off for the rest of the app (M2.5
     // decision). WindowInsetsControllerCompat needs no
-    // decorFitsSystemWindows change — hiding the bars lets the window
-    // expand to full screen, which resizes the SurfaceView (1080x2356
-    // <-> 1080x1934). That resize runs through surfaceChanged, where the
-    // #193 restore covers the vo side, so it cannot re-trigger the
-    // black-video bug. Not hidden in PiP: the PiP window has no system
+    // decorFitsSystemWindows change. Issue #377: the window is full
+    // screen on the player route now (the Scaffold padding is skipped
+    // there), so showing or hiding the bars no longer resizes the
+    // SurfaceView — the bars are pure overlays over the video,
+    // MX-style. The #193 restore still covers the remaining resize
+    // paths (rotation, PiP) through surfaceChanged, so they cannot
+    // re-trigger the black-video bug. Not hidden in PiP: the PiP window has no system
     // bars to hide. BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE lets the user
     // swipe the bars back temporarily; onDispose restores them, so
     // leaving the player always brings them back.
@@ -1770,6 +1774,12 @@ fun PlayerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)
+                        // Issue #377: only the chrome takes the
+                        // status-bar inset — the video behind it stays
+                        // full size. The gradient covers the inset too,
+                        // so the bar's light icons stay readable over
+                        // the video.
+                        .statusBarsPadding()
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(MpxTheme.colors.black.copy(alpha = 0.75f), Color.Transparent),
@@ -1898,6 +1908,10 @@ fun PlayerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
+                        // Issue #377: only the chrome takes the
+                        // navigation-bar inset — the video behind it
+                        // stays full size.
+                        .navigationBarsPadding()
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(Color.Transparent, MpxTheme.colors.black.copy(alpha = 0.8f)),
