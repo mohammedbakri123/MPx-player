@@ -594,13 +594,18 @@ class MediaStoreRepository(
 
         // Issue #358: a synthetic tree folder ("tree:<path>", built by
         // buildFolderTree for an intermediate parent the scan never
-        // listed) has no bucket id — resolve it by path, recursively:
-        // every video under that path, from all its subfolders. Real
+        // listed) has no bucket id — resolve it by path. Issue #375
+        // changed this from recursive to direct-videos-only: the folder
+        // view now lists the subfolders as rows (MX/mpvEx drill-in), so
+        // a recursive dump would show every descendant's videos twice
+        // — once here, once under its subfolder. A synthetic folder has
+        // no direct videos by definition (the scan lists every directory
+        // that holds videos), so its view is its subfolder rows; real
         // folder ids keep the bucket / exact-parent behaviour below.
         if (bucketId.startsWith("tree:")) {
             val treePath = bucketId.removePrefix("tree:")
             if (treePath.isBlank()) return emptyList()
-            return queryVideos(treePath, recursive = true)
+            return queryVideos(treePath, recursive = false)
                 .sortedBy { it.title.lowercase(Locale.US) }
         }
 

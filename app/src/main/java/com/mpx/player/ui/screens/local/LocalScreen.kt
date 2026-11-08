@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -428,17 +429,9 @@ fun LocalScreen(
         showSearchPage = false
     }
 
-    // Intercept back button when viewing a folder to navigate back to folder list
-    BackHandler(enabled = currentFolder != null) {
-        goToRoot()
-    }
-
-    // #144: back exits multi-select first — exactly one step — and only
-    // the next back leaves the folder. Registered after the folder
-    // handler so it wins while both are enabled.
-    BackHandler(enabled = isSelectionMode) {
-        clearSelection()
-    }
+    // #375: the folder + selection back handlers live after
+    // currentSubfolders (below) — goToParentFolder needs filteredFolders,
+    // and local functions are only visible after their declaration point.
 
     // #277: the single entry point for every folder-videos scan
     // (openFolder, refreshFolderVideos — hence the ON_RESUME refresh and
@@ -783,6 +776,36 @@ fun LocalScreen(
         else sortedFolderVideos.filter { it.title.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
     }
 
+    // #375: immediate subfolders of the open folder (MX/mpvEx drill-in):
+    // derived from the same scanned list through the tree's parent logic,
+    // so synthesized intermediates appear too. The folder view lists
+    // these above the folder's direct videos; tapping one drills in.
+    val currentSubfolders = remember(filteredFolders, currentFolder) {
+        currentFolder?.let { subfoldersOf(filteredFolders, it.path) } ?: emptyList()
+    }
+
+    // #375: back from a folder goes up exactly one level (MX/mpvEx),
+    // not straight to root — unless the folder is already a root, in
+    // which case there is no parent and it goes to the root list.
+    // Declared here (not next to openFolder) because it needs
+    // filteredFolders, declared just above.
+    fun goToParentFolder() {
+        val parent = currentFolder?.let { parentFolderOf(filteredFolders, it.path) }
+        if (parent != null) openFolder(parent) else goToRoot()
+    }
+
+    // Intercept back button when viewing a folder to navigate up one level
+    BackHandler(enabled = currentFolder != null) {
+        goToParentFolder()
+    }
+
+    // #144: back exits multi-select first — exactly one step — and only
+    // the next back leaves the folder. Registered after the folder
+    // handler so it wins while both are enabled.
+    BackHandler(enabled = isSelectionMode) {
+        clearSelection()
+    }
+
     // #144: multi-select actions for the action bar. They resolve the
     // current selection to videos: directly selected videos PLUS — for
     // selected folders — the videos inside them (#233: both halves are
@@ -1057,10 +1080,11 @@ fun LocalScreen(
                 TopAppBar(
                     navigationIcon = {
                         IconButton(onClick = {
-                            // Issue #276: go through goToRoot() (not the
-                            // inline clear) so leaving the folder also
-                            // clears the multi-select.
-                            goToRoot()
+                            // Issue #276: go through goToParentFolder()
+                            // (not the inline clear) so leaving the folder
+                            // also clears the multi-select. #375: up one
+                            // level, not straight to root.
+                            goToParentFolder()
                         }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -1436,7 +1460,7 @@ fun LocalScreen(
                         actionLabel = stringResource(R.string.empty_search_action),
                         onActionClick = { folderSearchQuery = "" },
                     )
-                } else if (filteredFolderVideos.isEmpty()) {
+                } else if (filteredFolderVideos.isEmpty() && currentSubfolders.isEmpty()) {
                     EmptyStateView(
                         title = stringResource(R.string.folder_view_empty_title),
                         message = stringResource(R.string.folder_view_empty_desc),
@@ -1466,6 +1490,31 @@ fun LocalScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(bottom = 80.dp),
                             ) {
+                                // #375: immediate subfolders first (MX/mpvEx
+                                // drill-in) — tapping one opens it; they are
+                                // navigation rows, not selectable here.
+                                items(
+                                    items = currentSubfolders,
+                                    key = { it.id.ifBlank { it.path } },
+                                    contentType = { "folder_subfolder_row" },
+                                ) { subfolder ->
+                                    FolderItemRow(
+                                        folder = subfolder,
+                                        showThumbnails = appSettings.showThumbnails,
+                                        showSize = appSettings.showFieldSize,
+                                        showDate = appSettings.showFieldDate,
+                                        isSelected = false,
+                                        onLongClick = {},
+                                        showCount = appSettings.showFieldCount,
+                                        showFullName = appSettings.showFullName,
+                                        onClick = { openFolder(subfolder) },
+                                    )
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 76.dp),
+                                        color = MpxTheme.colors.border,
+                                        thickness = MpxHairline,
+                                    )
+                                }
                                 itemsIndexed(
                                     items = filteredFolderVideos,
                                     key = { _, video -> video.id.ifBlank { video.path } },
@@ -1508,9 +1557,13 @@ fun LocalScreen(
                             }
                             FastScrollbar(
                                 listState = videoListState,
-                                itemCount = filteredFolderVideos.size,
+                                itemCount = currentSubfolders.size + filteredFolderVideos.size,
                                 getSectionText = { index ->
-                                    filteredFolderVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                                    if (index < currentSubfolders.size) {
+                                        currentSubfolders[index].name.take(1).uppercase(Locale.US)
+                                    } else {
+                                        filteredFolderVideos.getOrNull(index - currentSubfolders.size)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                                    }
                                 },
                                 modifier = Modifier.align(Alignment.CenterEnd),
                             )
@@ -1525,6 +1578,27 @@ fun LocalScreen(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
+                                // #375: immediate subfolders as full-width
+                                // rows above the video grid — same drill-in
+                                // as the list layout.
+                                items(
+                                    items = currentSubfolders,
+                                    key = { it.id.ifBlank { it.path } },
+                                    contentType = { "folder_subfolder_row" },
+                                    span = { GridItemSpan(maxLineSpan) },
+                                ) { subfolder ->
+                                    FolderItemRow(
+                                        folder = subfolder,
+                                        showThumbnails = appSettings.showThumbnails,
+                                        showSize = appSettings.showFieldSize,
+                                        showDate = appSettings.showFieldDate,
+                                        isSelected = false,
+                                        onLongClick = {},
+                                        showCount = appSettings.showFieldCount,
+                                        showFullName = appSettings.showFullName,
+                                        onClick = { openFolder(subfolder) },
+                                    )
+                                }
                                 itemsIndexed(
                                     items = filteredFolderVideos,
                                     key = { _, video -> video.id.ifBlank { video.path } },
@@ -1563,12 +1637,19 @@ fun LocalScreen(
                             }
                             GridFastScrollbar(
                                 gridState = videoGridState,
-                                itemCount = filteredFolderVideos.size,
+                                itemCount = currentSubfolders.size + filteredFolderVideos.size,
                                 // Issue #236: the grid's real column count —
                                 // the scrollbar's row math needs it.
                                 columns = appSettings.videoGridColumns.coerceIn(1, 4),
+                                // #375: the subfolder rows are full-span
+                                // headers in the scrollbar's row math.
+                                headerItems = currentSubfolders.size,
                                 getSectionText = { index ->
-                                    filteredFolderVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                                    if (index < currentSubfolders.size) {
+                                        currentSubfolders[index].name.take(1).uppercase(Locale.US)
+                                    } else {
+                                        filteredFolderVideos.getOrNull(index - currentSubfolders.size)?.title?.take(1)?.uppercase(Locale.US) ?: ""
+                                    }
                                 },
                                 modifier = Modifier.align(Alignment.CenterEnd),
                             )

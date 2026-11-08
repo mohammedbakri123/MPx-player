@@ -216,11 +216,23 @@ fun buildFolderTree(folders: List<MediaFolder>, homeLabel: String? = null): List
     // root. Synthetics join byPath/byLowerPath and the parent walk
     // below, exactly like scanned folders.
     val syntheticPaths = mutableSetOf<String>()
+    // #375: also dedupe the synthetics case-insensitively among
+    // themselves. The check above only looks at scanned folders, so
+    // children that disagree on the case of an intermediate segment
+    // (e.g. /Movies/Action vs /movies/Comedy) used to synthesize BOTH
+    // /Movies and /movies, splitting the tree into two roots — the
+    // parent walk's case fallback can't merge them because each child
+    // then finds an exact-case parent. First-seen case wins the node.
+    val syntheticLowerPaths = mutableSetOf<String>()
     for (folder in deduped) {
         var prefix = normalizedTreePath(folder.path).substringBeforeLast('/', "")
         while (prefix.isNotEmpty() && !isStorageRootPath(prefix)) {
-            if (prefix !in byPath && prefix.lowercase(Locale.US) !in byLowerPath) {
+            val lowerPrefix = prefix.lowercase(Locale.US)
+            if (prefix !in byPath && lowerPrefix !in byLowerPath &&
+                lowerPrefix !in syntheticLowerPaths
+            ) {
                 syntheticPaths.add(prefix)
+                syntheticLowerPaths.add(lowerPrefix)
             }
             prefix = prefix.substringBeforeLast('/', "")
         }
@@ -301,6 +313,48 @@ fun buildFolderTree(folders: List<MediaFolder>, homeLabel: String? = null): List
         return FolderTreeNode(resolvedFolder, children)
     }
     return roots.map { toNode(it) }
+}
+
+/**
+ * #375: the immediate subfolders of [parentPath], for the folder view's
+ * drill-in (MX/mpvEx model: opening a folder shows its subfolders above
+ * its videos). Built through [buildFolderTree], so synthesized
+ * intermediate parents work exactly like scanned ones — a child with no
+ * videos of its own still appears, with its aggregated counts, and
+ * opens via its "tree:" id. Empty when the folder has no children or
+ * isn't in the list.
+ */
+fun subfoldersOf(folders: List<MediaFolder>, parentPath: String): List<MediaFolder> {
+    val target = normalizedTreePath(parentPath)
+    if (target.isBlank()) return emptyList()
+    fun find(nodes: List<FolderTreeNode>): FolderTreeNode? {
+        for (node in nodes) {
+            if (normalizedTreePath(node.folder.path) == target) return node
+            find(node.children)?.let { return it }
+        }
+        return null
+    }
+    return find(buildFolderTree(folders))?.children?.map { it.folder } ?: emptyList()
+}
+
+/**
+ * #375: the parent folder of [folderPath] in the tree, for back-up-one-
+ * level. Null when the folder is a root (or isn't in the list) — the
+ * caller then goes to the root list instead. Synthesized intermediates
+ * count as parents, so back from Action lands on Movies even when
+ * Movies holds no videos of its own.
+ */
+fun parentFolderOf(folders: List<MediaFolder>, folderPath: String): MediaFolder? {
+    val target = normalizedTreePath(folderPath)
+    if (target.isBlank()) return null
+    fun find(nodes: List<FolderTreeNode>, parent: MediaFolder?): MediaFolder? {
+        for (node in nodes) {
+            if (normalizedTreePath(node.folder.path) == target) return parent
+            find(node.children, node.folder)?.let { return it }
+        }
+        return null
+    }
+    return find(buildFolderTree(folders), null)
 }
 
 /** Flattens the forest to the rows actually visible (collapsed subtrees hidden). */
