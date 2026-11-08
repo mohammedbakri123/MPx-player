@@ -171,10 +171,6 @@
     <string name="theme_surface_midnight">Meia-noite</string>
     <string name="theme_surface_forest">Floresta</string>
     <string name="theme_surface_plum">Ameixa</string>
-    <string name="theme_light_color_section_title">Cor clara</string>
-    <string name="theme_light_surface_white">Branco</string>
-    <string name="theme_light_surface_warm">Quente</string>
-    <string name="theme_light_surface_cool">Frio</string>
     <string name="theme_applied_snackbar">Tema aplicado: %s</string>
     <string name="palette_section_title">Cor de destaque</string>
     <string name="palette_name_blue">Azul</string>

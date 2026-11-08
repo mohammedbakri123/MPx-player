@@ -171,10 +171,6 @@
     <string name="theme_surface_midnight">Minuit</string>
     <string name="theme_surface_forest">Forêt</string>
     <string name="theme_surface_plum">Prune</string>
-    <string name="theme_light_color_section_title">Couleur claire</string>
-    <string name="theme_light_surface_white">Blanc</string>
-    <string name="theme_light_surface_warm">Chaud</string>
-    <string name="theme_light_surface_cool">Froid</string>
     <string name="theme_applied_snackbar">Thème appliqué : %s</string>
     <string name="palette_section_title">Couleur d’accent</string>
     <string name="palette_name_blue">Bleu</string>

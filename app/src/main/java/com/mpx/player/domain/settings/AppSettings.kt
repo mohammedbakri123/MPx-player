@@ -54,8 +54,7 @@ data class AppSettings(
     val videoZoom: Float = 1.0f, // 0.5..2.0 plain multiplier (1.0 = no zoom); the engine converts it to mpv's log2 video-zoom (#172)
     val appTheme: String = "System", // System, Dark, Light (legacy Midnight/Dark/Classic read as Dark)
     val colorPalette: String = "Blue", // Accent palette (#147, #366): Blue, Emerald, Violet, Amber, Rose, Teal, Sky, Orange, Pink, Lime, Indigo, Cyan — accent only, surfaces stay per-theme
-    val darkSurface: String = "TrueBlack", // Dark-surface preset (#182, #366): TrueBlack, Charcoal, Graphite, Midnight, Forest, Plum — Dark theme only, Light unchanged
-    val lightSurface: String = "White", // Light-surface preset (#366): White, Warm, Cool — Light theme only, Dark unchanged
+    val themeColor: String = "TrueBlack", // One theme color (#374): TrueBlack, Charcoal, Graphite, Midnight, Forest, Plum — shared by Dark and Light; the mode only picks which brightness of it renders. Accent stays colorPalette.
     val popupPlayEnabled: Boolean = true,
     val popupPlayControls: String = "PrevNext", // PrevNext, Seek10, PlayPauseOnly
     val popupPlaySize: String = "Medium", // Small, Medium, Large, Auto

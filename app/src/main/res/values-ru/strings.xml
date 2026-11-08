@@ -171,10 +171,6 @@
     <string name="theme_surface_midnight">Полночь</string>
     <string name="theme_surface_forest">Лес</string>
     <string name="theme_surface_plum">Сливовый</string>
-    <string name="theme_light_color_section_title">Светлый цвет</string>
-    <string name="theme_light_surface_white">Белый</string>
-    <string name="theme_light_surface_warm">Тёплый</string>
-    <string name="theme_light_surface_cool">Холодный</string>
     <string name="theme_applied_snackbar">Тема применена: %s</string>
     <string name="palette_section_title">Акцентный цвет</string>
     <string name="palette_name_blue">Синий</string>

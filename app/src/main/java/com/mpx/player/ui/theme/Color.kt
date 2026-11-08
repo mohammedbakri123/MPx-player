@@ -163,16 +163,69 @@ val MpxPlumColors = MpxColors(
     borderSubtle = Color(0x3394A3B8),
 )
 
-// Dark-surface preset resolver (#182). Unknown ids fall back to
-// True Black, so a stale stored value can never strand the theme.
-fun mpxDarkColorsFor(surface: String): MpxColors = when (surface) {
-    "Charcoal" -> MpxCharcoalColors
-    "Graphite" -> MpxGraphiteColors
-    "Midnight" -> MpxMidnightColors
-    "Forest" -> MpxForestColors
-    "Plum" -> MpxPlumColors
-    else -> MpxDarkColors
-}
+// Forest light (#374): pale green-tinted light surface — the light
+// scale of the Forest theme color.
+val MpxForestLightColors = MpxColors(
+    black = Color(0xFFF2F7F3),
+    surface = Color(0xFFF2F7F3),
+    surfaceRaised = Color(0xFFE8F0EA),
+    surfaceVariant = Color(0xFFDCE8DF),
+    surfaceElevated = Color(0xFFCBDACF),
+    primary = Color(0xFF3B82F6),
+    primaryHover = Color(0xFF2563EB),
+    primaryVariant = Color(0xFF1D4ED8),
+    textPrimary = Color(0xFF111111),
+    textSecondary = Color(0xFF475569),
+    textMuted = Color(0xFF64748B),
+    destructive = Color(0xFFDC2626),
+    success = Color(0xFF059669),
+    border = Color(0xFFB9CDBF),
+    borderSubtle = Color(0x1F000000),
+)
+
+// Plum light (#374): pale lavender light surface — the light scale
+// of the Plum theme color.
+val MpxPlumLightColors = MpxColors(
+    black = Color(0xFFF7F4FA),
+    surface = Color(0xFFF7F4FA),
+    surfaceRaised = Color(0xFFEFE9F5),
+    surfaceVariant = Color(0xFFE4DBEE),
+    surfaceElevated = Color(0xFFD5C9E3),
+    primary = Color(0xFF3B82F6),
+    primaryHover = Color(0xFF2563EB),
+    primaryVariant = Color(0xFF1D4ED8),
+    textPrimary = Color(0xFF111111),
+    textSecondary = Color(0xFF475569),
+    textMuted = Color(0xFF64748B),
+    destructive = Color(0xFFDC2626),
+    success = Color(0xFF059669),
+    border = Color(0xFFC3B5D6),
+    borderSubtle = Color(0x1F000000),
+)
+
+// One theme color, two brightnesses (#374). Each theme color is a
+// pair: a dark scale + a light scale of the same family. Dark mode
+// renders the dark scale, Light mode the light scale — flipping the
+// mode never changes the app's color identity. Unknown ids fall back
+// to True Black in Dark and White in Light, so a stale stored value
+// can never strand the theme.
+fun mpxThemeColorsFor(themeColor: String, useDark: Boolean): MpxColors =
+    if (useDark) when (themeColor) {
+        "Charcoal" -> MpxCharcoalColors
+        "Graphite" -> MpxGraphiteColors
+        "Midnight" -> MpxMidnightColors
+        "Forest" -> MpxForestColors
+        "Plum" -> MpxPlumColors
+        else -> MpxDarkColors
+    } else when (themeColor) {
+        "Charcoal" -> MpxWarmLightColors
+        "Midnight" -> MpxCoolLightColors
+        "Forest" -> MpxForestLightColors
+        "Plum" -> MpxPlumLightColors
+        else -> MpxLightColors
+    }
+
+val LocalMpxColors = staticCompositionLocalOf { MpxDarkColors }
 
 // Light: white-based mirror of the dark scale, same blue accent.
 // Text contrast vs #FFFFFF: primary ~16:1, secondary ~7.5:1, muted ~4.6:1.
@@ -232,12 +285,3 @@ val MpxCoolLightColors = MpxColors(
     borderSubtle = Color(0x1F000000),
 )
 
-// Light-surface preset resolver (#366). Unknown ids fall back to
-// White, so a stale stored value can never strand the theme.
-fun mpxLightColorsFor(surface: String): MpxColors = when (surface) {
-    "Warm" -> MpxWarmLightColors
-    "Cool" -> MpxCoolLightColors
-    else -> MpxLightColors
-}
-
-val LocalMpxColors = staticCompositionLocalOf { MpxDarkColors }

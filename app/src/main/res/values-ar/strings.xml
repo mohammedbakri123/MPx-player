@@ -171,10 +171,6 @@
     <string name="theme_surface_midnight">منتصف الليل</string>
     <string name="theme_surface_forest">غابة</string>
     <string name="theme_surface_plum">برقوقي</string>
-    <string name="theme_light_color_section_title">لون فاتح</string>
-    <string name="theme_light_surface_white">أبيض</string>
-    <string name="theme_light_surface_warm">دافئ</string>
-    <string name="theme_light_surface_cool">بارد</string>
     <string name="theme_applied_snackbar">تم تطبيق المظهر: %s</string>
     <string name="palette_section_title">لون التمييز</string>
     <string name="palette_name_blue">أزرق</string>

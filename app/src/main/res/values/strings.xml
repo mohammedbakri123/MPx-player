@@ -171,10 +171,6 @@
     <string name="theme_surface_midnight">Midnight</string>
     <string name="theme_surface_forest">Forest</string>
     <string name="theme_surface_plum">Plum</string>
-    <string name="theme_light_color_section_title">Light color</string>
-    <string name="theme_light_surface_white">White</string>
-    <string name="theme_light_surface_warm">Warm</string>
-    <string name="theme_light_surface_cool">Cool</string>
     <string name="theme_applied_snackbar">Theme applied: %s</string>
     <string name="palette_section_title">Accent color</string>
     <string name="palette_name_blue">Blue</string>
