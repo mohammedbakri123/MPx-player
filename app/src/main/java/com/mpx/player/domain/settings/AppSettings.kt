@@ -203,6 +203,13 @@ data class AppSettings(
      */
     val downloadGroupPlaylists: Boolean = false,
     /**
+     * Issue #392: private mode (Seal's PRIVATE_MODE). When on, a
+     * finished download skips the History row entirely — the file
+     * still downloads, still publishes to Downloads, and still shows
+     * in Downloaded; only the record is skipped. Off by default.
+     */
+    val downloadPrivateMode: Boolean = false,
+    /**
      * Issue #384: custom command (Seal's CommandTemplate, one line of
      * yt-dlp options). The text is pre-filled with Seal's sample
      * `--no-mtime -S "ext"`; the switch decides whether it runs.

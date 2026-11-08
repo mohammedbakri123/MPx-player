@@ -910,6 +910,11 @@ fun SettingsScreen(
                                 // Off by default — playlists land flat in
                                 // the download folder, as today.
                                 ToggleRow(stringResource(R.string.download_group_playlists), settings.downloadGroupPlaylists) { update(settings.copy(downloadGroupPlaylists = it)) }
+                                // Issue #392: private mode — downloads
+                                // skip the History record. The file
+                                // still downloads and still shows in
+                                // Downloaded.
+                                ToggleRow(stringResource(R.string.download_private_mode), settings.downloadPrivateMode) { update(settings.copy(downloadPrivateMode = it)) }
                                 PreferenceRow(
                                     title = if (ytdlpVersion.isNotBlank()) stringResource(R.string.download_ytdlp_version, ytdlpVersion) else "yt-dlp",
                                     subtitle = null,

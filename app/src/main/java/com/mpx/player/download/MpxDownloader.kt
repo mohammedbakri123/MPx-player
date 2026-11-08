@@ -568,6 +568,13 @@ class MpxDownloader private constructor(context: Context) {
         thumbnailUrl: String?,
         published: DownloadedFile,
     ) {
+        // Issue #392: private mode (Seal's PRIVATE_MODE,
+        // DownloadUtil.kt:848, 862) — onFinishDownloading skips the
+        // history insert entirely. The file still downloads and still
+        // publishes; only the record is skipped. Read fresh here so
+        // every DONE site (video, split chapters, HTTP fallback) is
+        // covered by this one gate.
+        if (settingsRepository.load().downloadPrivateMode) return
         scope.launch {
             try {
                 val title = _activeDownloads.value.firstOrNull { it.id == id }?.title
