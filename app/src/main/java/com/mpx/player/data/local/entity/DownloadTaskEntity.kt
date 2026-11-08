@@ -32,6 +32,8 @@ data class DownloadTaskEntity(
     val error: String? = null,
     val audioOnly: Boolean = false,
     val subtitles: Boolean = false,
+    /** Issue #383: the per-video format selector ("137+140"), null when the global settings apply. */
+    val formatId: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
 ) {
     fun toActiveDownload(): ActiveDownload = ActiveDownload(
@@ -43,6 +45,7 @@ data class DownloadTaskEntity(
         error = error,
         audioOnly = audioOnly,
         subtitles = subtitles,
+        formatId = formatId,
     )
 
     companion object {
@@ -57,6 +60,7 @@ data class DownloadTaskEntity(
             error = item.error,
             audioOnly = item.audioOnly,
             subtitles = item.subtitles,
+            formatId = item.formatId,
             createdAt = createdAt,
         )
     }

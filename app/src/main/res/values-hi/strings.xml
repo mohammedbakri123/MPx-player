@@ -98,6 +98,11 @@
     <string name="download_convert_subtitles_none">कोई नहीं</string>
     <string name="download_embed_subtitles">उपशीर्षक एम्बेड करें</string>
     <string name="download_keep_subtitles">उपशीर्षक फ़ाइल रखें</string>
+    <string name="download_format_title">फ़ॉर्मेट चुनें</string>
+    <string name="download_format_best">सर्वश्रेष्ठ</string>
+    <string name="download_format_best_detail">वैश्विक गुणवत्ता सेटिंग्स का उपयोग करें</string>
+    <string name="download_format_video">वीडियो</string>
+    <string name="download_format_audio">ऑडियो</string>
     <string name="download_downloaded_title">डाउनलोड किए गए</string>
     <string name="download_downloaded_empty_message">अभी तक कुछ डाउनलोड नहीं हुआ। आपके पूरे किए गए डाउनलोड यहाँ दिखेंगे।</string>
     <string name="download_settings_general">सामान्य</string>

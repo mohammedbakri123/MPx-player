@@ -98,6 +98,11 @@
     <string name="download_convert_subtitles_none">Ninguno</string>
     <string name="download_embed_subtitles">Incrustar subtítulos</string>
     <string name="download_keep_subtitles">Conservar el archivo de subtítulos</string>
+    <string name="download_format_title">Elegir formato</string>
+    <string name="download_format_best">La mejor</string>
+    <string name="download_format_best_detail">Usar los ajustes globales de calidad</string>
+    <string name="download_format_video">Vídeo</string>
+    <string name="download_format_audio">Audio</string>
     <string name="download_downloaded_title">Descargados</string>
     <string name="download_downloaded_empty_message">Aún no hay descargas. Los archivos que descargues aparecerán aquí.</string>
     <string name="download_settings_general">General</string>

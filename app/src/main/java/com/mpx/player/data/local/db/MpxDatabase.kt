@@ -39,7 +39,7 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
         DownloadTaskEntity::class,
         DownloadHistoryEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class MpxDatabase : RoomDatabase() {
@@ -100,6 +100,21 @@ abstract class MpxDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Issue #383: the per-video format selector on the
+         * download_tasks table. A nullable column — existing rows
+         * keep null (global settings), exactly the right default.
+         * Same rule as #342/#346: a proper migration, so the 3→4
+         * jump must NOT wipe the user's favourites, history and
+         * playlists through the pre-existing
+         * fallbackToDestructiveMigration() below.
+         */
+        val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `download_tasks` ADD COLUMN `formatId` TEXT")
+            }
+        }
+
         fun getInstance(context: Context): MpxDatabase {
             return instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -107,7 +122,7 @@ abstract class MpxDatabase : RoomDatabase() {
                     MpxDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }

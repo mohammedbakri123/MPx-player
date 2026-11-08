@@ -98,6 +98,11 @@
     <string name="download_convert_subtitles_none">Нет</string>
     <string name="download_embed_subtitles">Встраивать субтитры</string>
     <string name="download_keep_subtitles">Сохранять файл субтитров</string>
+    <string name="download_format_title">Выбрать формат</string>
+    <string name="download_format_best">Лучшее</string>
+    <string name="download_format_best_detail">Использовать глобальные настройки качества</string>
+    <string name="download_format_video">Видео</string>
+    <string name="download_format_audio">Аудио</string>
     <string name="download_downloaded_title">Загруженные</string>
     <string name="download_downloaded_empty_message">Пока ничего не загружено. Завершённые загрузки появятся здесь.</string>
     <string name="download_settings_general">Общие</string>

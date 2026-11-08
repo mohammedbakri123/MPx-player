@@ -24,6 +24,7 @@ import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
+import com.yausername.youtubedl_android.mapper.VideoInfo
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -105,6 +106,16 @@ data class ActiveDownload(
     val audioOnly: Boolean = false,
     /** Issue #341: also fetch subtitles (en,ar) at download time, embedded + sidecar. */
     val subtitles: Boolean = false,
+    /**
+     * Issue #383: the per-video format selector the user picked in the
+     * format sheet, e.g. "137+140" or "bestvideo+140" (Seal's
+     * `TaskFactory` shape: the chosen format ids joined with "+",
+     * "bestvideo"/"bestaudio" filling a side left on Best). Null means
+     * no per-video choice — the global format sorter applies instead.
+     * Only set on video downloads; the sheet never appears for
+     * audio-only or playlist downloads.
+     */
+    val formatId: String? = null,
 )
 
 /**
@@ -963,6 +974,44 @@ class MpxDownloader private constructor(context: Context) {
     }
 
     /**
+     * Fetches the full video info for the format sheet (issue #383):
+     * the same getInfo runDownload does, with the same fail-fast
+     * options (`-R 1` + `--socket-timeout 5`, user-agent, network
+     * flags) — but no cookies, because the sheet appears before any
+     * sign-in. The library mapper exposes the `formats` array
+     * (verified against the 0.18.1 AAR: VideoInfo.getFormats() →
+     * VideoFormat with formatId/ext/vcodec/acodec/width/height/fps/
+     * tbr/abr/fileSize), which is what the sheet lists. Null on any
+     * failure — the caller falls back to a plain download with the
+     * global settings, so a video that needs cookies (or any other
+     * info failure) still downloads exactly as before. Cancellation
+     * still propagates.
+     */
+    suspend fun fetchVideoInfoForFormat(rawUrl: String): VideoInfo? {
+        val url = rawUrl.trim()
+        if (url.isBlank()) return null
+        if (!ensureInitialized()) return null
+        val settings = settingsRepository.load()
+        val request = YoutubeDLRequest(url).apply {
+            addOption("-R", "1")
+            addOption("--socket-timeout", "5")
+            if (settings.downloadUserAgent.isNotBlank()) addOption("--user-agent", settings.downloadUserAgent)
+            addOptionsForNetworkFlags(settings)
+        }
+        return try {
+            withContext(Dispatchers.IO) { YoutubeDL.getInstance().getInfo(request) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: InterruptedException) {
+            throw e
+        } catch (e: YoutubeDL.CanceledException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
      * Parses a `--flat-playlist --dump-single-json` result (issue
      * #345): the `_type` field tells a playlist from a single video
      * (Seal's `PlaylistResult`/`VideoInfo` split, same idea, parsed
@@ -1040,6 +1089,7 @@ class MpxDownloader private constructor(context: Context) {
         cookiesFile: File? = null,
         audioOnly: Boolean = false,
         subtitles: Boolean = false,
+        formatId: String? = null,
     ) {
         val url = rawUrl.trim()
         if (url.isBlank()) return
@@ -1052,6 +1102,7 @@ class MpxDownloader private constructor(context: Context) {
             cookiesFile = cookiesFile,
             audioOnly = audioOnly,
             subtitles = subtitles,
+            formatId = formatId,
         )
         _activeDownloads.update { it + item }
         persistTask(item)
@@ -1809,7 +1860,16 @@ class MpxDownloader private constructor(context: Context) {
                     // non-blank custom sorter replaces the built sorter
                     // entirely. The sorter works without ffmpeg too (it
                     // still improves single-file picks).
-                    applyFormatSorter(
+                    // Issue #383: a per-video format choice replaces
+                    // the sorter entirely (Seal's
+                    // DownloadUtil.downloadVideo: a non-empty
+                    // formatIdString means `-f <ids>`, else the
+                    // sorter). The metadata/chapters/advanced flags
+                    // below still apply either way.
+                    if (!item.formatId.isNullOrBlank()) {
+                        addOption("-f", item.formatId)
+                    } else {
+                        applyFormatSorter(
                         formatSorter(
                             videoFormat = if (settings.downloadCodec == "H264") {
                                 FORMAT_COMPATIBILITY
@@ -1826,6 +1886,7 @@ class MpxDownloader private constructor(context: Context) {
                         formatSorting = settings.downloadCustomSorter.isNotBlank(),
                         sortingFields = settings.downloadCustomSorter,
                     )
+                    }
                     // Issue #381: Seal's always-on video flags
                     // (DownloadUtil.addOptionsForVideoDownloads,
                     // JunkFood02/Seal, GPL-3.0): `--add-metadata` tags
@@ -1842,10 +1903,11 @@ class MpxDownloader private constructor(context: Context) {
                     // JunkFood02/Seal, GPL-3.0) — the settings-shaped
                     // ones. Merge to MKV remuxes + merges to .mkv;
                     // audio multistreams keeps every audio track
-                    // (Seal gates it on a chosen format id, which MPx
-                    // has no UI for, so it applies whenever it is on);
-                    // write thumbnail saves the cover as a .png next
-                    // to the video. All three need ffmpeg (#336).
+                    // (Seal gates it on a chosen format id; #383
+                    // now has one, and the flag still applies
+                    // whenever it is on); write thumbnail saves the
+                    // cover as a .png next to the video. All three
+                    // need ffmpeg (#336).
                     if (settings.downloadMergeToMkv) {
                         addOption("--remux-video", "mkv")
                         addOption("--merge-output-format", "mkv")
