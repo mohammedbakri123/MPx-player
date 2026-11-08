@@ -970,6 +970,12 @@ fun SettingsScreen(
                                 // "soundcloud") under the download
                                 // folder, above any playlist folder.
                                 ToggleRow(stringResource(R.string.download_group_by_site), settings.downloadGroupBySite) { update(settings.copy(downloadGroupBySite = it)) }
+                                // Issue #397: private download folder —
+                                // finished files go to Download/.Seal/
+                                // (hidden from galleries) instead of
+                                // the video/audio folder. Distinct from
+                                // private mode (#392, History only).
+                                ToggleRow(stringResource(R.string.download_private_directory), settings.downloadPrivateDirectory) { update(settings.copy(downloadPrivateDirectory = it)) }
                                 // Issue #392: private mode — downloads
                                 // skip the History record. The file
                                 // still downloads and still shows in

@@ -222,6 +222,16 @@ data class AppSettings(
      */
     val downloadGroupBySite: Boolean = false,
     /**
+     * Issue #397: private download directory (Seal's
+     * PRIVATE_DIRECTORY) — when on, finished files publish into
+     * `Download/.Seal/` instead of the video/audio folder. The
+     * dot-prefixed folder is skipped by the media scanner, so
+     * downloads don't appear in galleries or other players.
+     * Distinct from #392's private mode (History only); the two
+     * compose. Off by default.
+     */
+    val downloadPrivateDirectory: Boolean = false,
+    /**
      * Issue #392: private mode (Seal's PRIVATE_MODE). When on, a
      * finished download skips the History row entirely — the file
      * still downloads, still publishes to Downloads, and still shows

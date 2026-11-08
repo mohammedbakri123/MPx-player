@@ -117,6 +117,7 @@
     <string name="download_sd_card_folder_title">مجلد بطاقة SD</string>
     <string name="download_sd_card_folder_none">اختر مجلدًا</string>
     <string name="download_private_mode">الوضع الخاص</string>
+    <string name="download_private_directory">مجلد تنزيل خاص</string>
     <string name="download_group_by_site">التجميع حسب الموقع</string>
     <string name="download_group_playlists">تجميع قوائم التشغيل في مجلدات</string>
     <string name="download_rename_title">إعادة التسمية</string>

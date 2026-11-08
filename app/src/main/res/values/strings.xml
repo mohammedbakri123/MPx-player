@@ -118,6 +118,7 @@
     <string name="download_sd_card_folder_title">SD card folder</string>
     <string name="download_sd_card_folder_none">Choose a folder</string>
     <string name="download_private_mode">Private mode</string>
+    <string name="download_private_directory">Private download folder</string>
     <string name="download_group_by_site">Group by site</string>
     <string name="download_group_playlists">Group playlists in folders</string>
     <string name="download_rename_title">Rename</string>
