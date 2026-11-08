@@ -443,8 +443,13 @@ class MpxDownloader private constructor(context: Context) {
      * audio folder = the video folder (today's behavior); a set
      * value is its own Downloads subfolder. Videos always use
      * [publicDownloadsRelativePath].
+     * Issue #397: the private directory wins over both — when on,
+     * the whole download tree moves under `Download/.Seal/`
+     * (Seal's PRIVATE_DIRECTORY_SUFFIX), so the video/audio
+     * folder settings don't apply.
      */
     private fun downloadRelativePath(audioOnly: Boolean): String {
+        if (settingsRepository.load().downloadPrivateDirectory) return "Download/.Seal"
         if (!audioOnly) return publicDownloadsRelativePath()
         val audio = sanitizeAudioFolderName(settingsRepository.load().downloadAudioDirectory)
         return if (audio.isBlank()) publicDownloadsRelativePath() else "Download/$audio"
@@ -1347,13 +1352,16 @@ class MpxDownloader private constructor(context: Context) {
         // publish there when it is set. OR never duplicates a row;
         // when both folders are the same the two patterns just
         // match the same rows.
+        // Issue #397: the private directory too — old `.Seal/`
+        // files stay visible after toggling off, the same way old
+        // audio-folder files do.
         val entries = mutableListOf<DownloadedFile>()
         try {
             appContext.contentResolver.query(
                 MediaStore.Downloads.EXTERNAL_CONTENT_URI,
                 projection,
-                "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? OR ${MediaStore.Downloads.RELATIVE_PATH} LIKE ?",
-                arrayOf("${publicDownloadsRelativePathSlash()}%", "${audioDownloadsRelativePathSlash()}%"),
+                "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? OR ${MediaStore.Downloads.RELATIVE_PATH} LIKE ? OR ${MediaStore.Downloads.RELATIVE_PATH} LIKE ?",
+                arrayOf("${publicDownloadsRelativePathSlash()}%", "${audioDownloadsRelativePathSlash()}%", "Download/.Seal/%"),
                 "${MediaStore.Downloads.DATE_MODIFIED} DESC",
             )?.use { cursor ->
                 val idCol = cursor.getColumnIndex(MediaStore.Downloads._ID)

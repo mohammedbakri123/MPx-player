@@ -117,6 +117,7 @@
     <string name="download_sd_card_folder_title">Папка на SD-карте</string>
     <string name="download_sd_card_folder_none">Выбрать папку</string>
     <string name="download_private_mode">Приватный режим</string>
+    <string name="download_private_directory">Скрытая папка загрузок</string>
     <string name="download_group_by_site">Группировать по сайту</string>
     <string name="download_group_playlists">Группировать плейлисты по папкам</string>
     <string name="download_rename_title">Переименовать</string>

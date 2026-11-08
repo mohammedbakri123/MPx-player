@@ -117,6 +117,7 @@
     <string name="download_sd_card_folder_title">Pasta do cartão SD</string>
     <string name="download_sd_card_folder_none">Escolher uma pasta</string>
     <string name="download_private_mode">Modo privado</string>
+    <string name="download_private_directory">Pasta de downloads privada</string>
     <string name="download_group_by_site">Agrupar por site</string>
     <string name="download_group_playlists">Agrupar playlists em pastas</string>
     <string name="download_rename_title">Renomear</string>
