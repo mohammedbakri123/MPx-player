@@ -1860,7 +1860,28 @@ class MpxDownloader private constructor(context: Context) {
             }
 
             val beforeNames = downloadsDir.listFiles()?.map { it.name }?.toSet() ?: emptySet()
+            // Issue #384: Seal's executeCommandInBackground writes the
+            // template text to a file and passes it as
+            // --config-locations — the template IS the command. The
+            // file is written fresh on every run; if the write fails,
+            // the custom command is ignored for this run (the normal
+            // options apply) rather than failing the download.
+            val customCommandFile = if (settings.customCommandEnabled && settings.customCommand.isNotBlank()) {
+                runCatching {
+                    File(appContext.filesDir, "custom-command.conf").apply { writeText(settings.customCommand) }
+                }.getOrNull()
+            } else {
+                null
+            }
+            val useCustomCommand = customCommandFile != null
             val request = YoutubeDLRequest(item.url).apply {
+                // Issue #384: --config-locations FIRST, so MPx's own
+                // -o/-P/archive below (added later) win over anything
+                // the template says about the same options — the files
+                // must land where the finish flow looks for them.
+                if (useCustomCommand) {
+                    addOption("--config-locations", customCommandFile.absolutePath)
+                }
                 // Seal's output template (DownloadUtil.BASENAME,
                 // JunkFood02/Seal, GPL-3.0): title truncated to 200 bytes
                 // so long titles cannot exceed filesystem filename limits.
@@ -1886,7 +1907,7 @@ class MpxDownloader private constructor(context: Context) {
                 // for the whole video when it has no chapters.
                 // Audio-only never splits (the sheet never offers
                 // it there), so the flag is video-only.
-                if (item.splitByChapter && !item.audioOnly) {
+                if (item.splitByChapter && !item.audioOnly && !useCustomCommand) {
                     addOption(
                         "-o",
                         "chapter:${File(downloadsDir, "%(title).200B/%(section_number)d - %(section_title).200B.%(ext)s").absolutePath}",
@@ -1900,9 +1921,14 @@ class MpxDownloader private constructor(context: Context) {
                 addOption("-P", "temp:${tempDirFor.absolutePath}")
                 // Issue #340: audio-only downloads extract best audio
                 // as mp3 instead of the video sorter below.
-                if (item.audioOnly) {
+                // Issue #384: with a custom command the template IS
+                // the command — this whole branch (format sorter/-f,
+                // clips, metadata/chapters, advanced flags,
+                // subtitles) is skipped; only the base options below
+                // apply.
+                if (item.audioOnly && !useCustomCommand) {
                     addOptionsForAudioDownloads()
-                } else {
+                } else if (!item.audioOnly && !useCustomCommand) {
                     // Issue #336 + #338: Seal's `-S` format sorter instead
                     // of a hardcoded `-f` — no `-f` means yt-dlp picks
                     // (and, with ffmpeg bundled, merges) the best
@@ -2005,7 +2031,9 @@ class MpxDownloader private constructor(context: Context) {
                 // Issue #348: SponsorBlock removal (Seal's
                 // DownloadUtil.kt:751-752, JunkFood02/Seal, GPL-3.0) —
                 // the segments are cut with the bundled ffmpeg (#336).
-                addOptionsForSponsorBlock(settings)
+                // Issue #384: skipped with a custom command — the
+                // template owns the options.
+                if (!useCustomCommand) addOptionsForSponsorBlock(settings)
                 addOption("--no-playlist")
                 addOption("--no-mtime")
                 // Issue #346: the download archive (Seal's

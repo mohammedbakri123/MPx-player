@@ -107,6 +107,9 @@
     <string name="download_clips_add">添加片段</string>
     <string name="download_clips_start">开始</string>
     <string name="download_clips_end">结束</string>
+    <string name="download_custom_command_title">自定义命令</string>
+    <string name="download_custom_command_enabled">使用自定义命令</string>
+    <string name="download_custom_command_hint">一行 yt-dlp 选项。会替换每次下载的格式、字幕和章节选项。</string>
     <string name="download_split_by_chapter">按章节拆分</string>
     <string name="download_clips_remove">删除片段</string>
     <string name="download_downloaded_title">已下载</string>

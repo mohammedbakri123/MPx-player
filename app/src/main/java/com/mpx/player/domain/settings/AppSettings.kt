@@ -189,6 +189,19 @@ data class AppSettings(
     // "MPx" is the old fixed folder, so existing installs keep their files.
     val downloadDirectory: String = "MPx",
     /**
+     * Issue #384: custom command (Seal's CommandTemplate, one line of
+     * yt-dlp options). The text is pre-filled with Seal's sample
+     * `--no-mtime -S "ext"`; the switch decides whether it runs.
+     * Off by default — a half-typed command must never break
+     * downloads. When on, the template IS the command: it replaces
+     * the format sorter/-f, subtitles, SponsorBlock, metadata/
+     * chapters, advanced flags, clips and split-by-chapter, while
+     * MPx keeps the output filename, temp folder, archive, cookies
+     * and network flags.
+     */
+    val customCommandEnabled: Boolean = false,
+    val customCommand: String = "--no-mtime -S \"ext\"",
+    /**
      * Issue #382: subtitle options, Seal's subtitle block
      * (DownloadUtil.kt:452-468, JunkFood02/Seal, GPL-3.0). Languages are
      * the `--sub-langs` value (default keeps MPx's "en,ar"); auto
