@@ -84,6 +84,9 @@
     <string name="download_directory_title">डाउनलोड फ़ोल्डर</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">फ़ोल्डर का नाम, जैसे MPx</string>
+    <string name="download_merge_to_mkv">MKV में मर्ज करें</string>
+    <string name="download_audio_multistreams">कई ऑडियो ट्रैक</string>
+    <string name="download_write_thumbnail">थंबनेल सहेजें</string>
     <string name="download_allow_metered">मोबाइल डेटा पर डाउनलोड की अनुमति दें</string>
     <string name="download_metered_title">मोबाइल डेटा पर डाउनलोड करें?</string>
     <string name="download_metered_message">आप मोबाइल डेटा पर हैं। वीडियो डाउनलोड करने में बहुत सारा डेटा लग सकता है।</string>

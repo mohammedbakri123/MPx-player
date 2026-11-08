@@ -959,6 +959,11 @@ fun SettingsScreen(
                                 )
                                 ToggleRow(stringResource(R.string.download_embed_subtitles), settings.downloadEmbedSubtitles) { update(settings.copy(downloadEmbedSubtitles = it)) }
                                 ToggleRow(stringResource(R.string.download_keep_subtitles), settings.downloadKeepSubtitles, enabled = settings.downloadEmbedSubtitles) { update(settings.copy(downloadKeepSubtitles = it)) }
+                                // Issue #385: advanced video flags — merge
+                                // to MKV, audio multistreams, thumbnail file.
+                                ToggleRow(stringResource(R.string.download_merge_to_mkv), settings.downloadMergeToMkv) { update(settings.copy(downloadMergeToMkv = it)) }
+                                ToggleRow(stringResource(R.string.download_audio_multistreams), settings.downloadAudioMultistreams) { update(settings.copy(downloadAudioMultistreams = it)) }
+                                ToggleRow(stringResource(R.string.download_write_thumbnail), settings.downloadWriteThumbnail) { update(settings.copy(downloadWriteThumbnail = it)) }
 
                                 Spacer(Modifier.height(16.dp))
                                 Text(stringResource(R.string.download_settings_network), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)
