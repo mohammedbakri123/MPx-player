@@ -88,6 +88,13 @@
     <string name="download_metered_title">使用移动数据下载？</string>
     <string name="download_metered_message">你正在使用移动数据。下载视频可能会消耗大量流量。</string>
     <string name="download_metered_always">始终允许移动数据下载</string>
+    <string name="download_subtitle_languages">字幕语言</string>
+    <string name="download_subtitle_languages_hint">语言，例如 en,ar</string>
+    <string name="download_auto_subtitles">自动字幕</string>
+    <string name="download_convert_subtitles">转换字幕</string>
+    <string name="download_convert_subtitles_none">无</string>
+    <string name="download_embed_subtitles">嵌入字幕</string>
+    <string name="download_keep_subtitles">保留字幕文件</string>
     <string name="download_downloaded_title">已下载</string>
     <string name="download_downloaded_empty_message">还没有下载内容。完成的下载将显示在这里。</string>
     <string name="download_settings_general">通用</string>

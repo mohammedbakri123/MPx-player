@@ -88,6 +88,13 @@
     <string name="download_metered_title">मोबाइल डेटा पर डाउनलोड करें?</string>
     <string name="download_metered_message">आप मोबाइल डेटा पर हैं। वीडियो डाउनलोड करने में बहुत सारा डेटा लग सकता है।</string>
     <string name="download_metered_always">मोबाइल डाउनलोड हमेशा अनुमति दें</string>
+    <string name="download_subtitle_languages">उपशीर्षक भाषाएँ</string>
+    <string name="download_subtitle_languages_hint">भाषाएँ, जैसे en,ar</string>
+    <string name="download_auto_subtitles">स्वचालित उपशीर्षक</string>
+    <string name="download_convert_subtitles">उपशीर्षक बदलें</string>
+    <string name="download_convert_subtitles_none">कोई नहीं</string>
+    <string name="download_embed_subtitles">उपशीर्षक एम्बेड करें</string>
+    <string name="download_keep_subtitles">उपशीर्षक फ़ाइल रखें</string>
     <string name="download_downloaded_title">डाउनलोड किए गए</string>
     <string name="download_downloaded_empty_message">अभी तक कुछ डाउनलोड नहीं हुआ। आपके पूरे किए गए डाउनलोड यहाँ दिखेंगे।</string>
     <string name="download_settings_general">सामान्य</string>

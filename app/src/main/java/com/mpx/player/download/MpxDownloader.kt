@@ -1579,23 +1579,37 @@ class MpxDownloader private constructor(context: Context) {
         }
 
     /**
-     * Issue #341: subtitle options, adapted from Seal's video-download
-     * subtitle block (DownloadUtil.kt:452-468, JunkFood02/Seal,
-     * GPL-3.0). Seal also has auto-subs, a language setting, an
-     * embed-vs-keep choice and `--convert-subs`; MPx keeps the fixed
-     * core: `--write-subs` keeps the sidecar file next to the video
-     * (the player picks it up as an external subtitle — see
-     * DownloadScreen.findSiblingSubtitles), `--embed-subs` muxes the
-     * subs into the video itself with the bundled ffmpeg (#336), and
-     * `--sub-langs en,ar` is the fixed default (English + Arabic,
-     * matching MPx's locales) — no language picker in this issue.
-     * `--write-subs` alone needs no ffmpeg.
+     * Issue #341 + #382: subtitle options, Seal's video-download subtitle
+     * block (DownloadUtil.kt:452-468, JunkFood02/Seal, GPL-3.0). #341 kept
+     * the fixed core; #382 adds the rest: `--sub-langs` from the language
+     * setting (blank falls back to "en,ar"); `--write-auto-subs` with
+     * translated subs skipped, like Seal's default; `--convert-subs`
+     * when a format is chosen; `--embed-subs` + `--write-subs` together
+     * is the default (exactly #341's behavior) — embed off leaves the
+     * sidecar only, keep off while embedding drops the sidecar.
+     * `--write-subs` alone needs no ffmpeg; embed/convert do (#336).
      */
-    private fun YoutubeDLRequest.addOptionsForSubtitles(): YoutubeDLRequest =
+    private fun YoutubeDLRequest.addOptionsForSubtitles(settings: AppSettings): YoutubeDLRequest =
         apply {
-            addOption("--write-subs")
-            addOption("--sub-langs", SUBTITLE_LANGS)
-            addOption("--embed-subs")
+            val langs = settings.downloadSubtitleLanguages.trim().ifBlank { SUBTITLE_LANGS }
+            if (settings.downloadAutoSubtitles) {
+                addOption("--write-auto-subs")
+                addOption("--extractor-args", "youtube:skip=translated_subs")
+            }
+            addOption("--sub-langs", langs)
+            if (settings.downloadEmbedSubtitles) {
+                addOption("--embed-subs")
+                if (settings.downloadKeepSubtitles) {
+                    addOption("--write-subs")
+                }
+            } else {
+                addOption("--write-subs")
+            }
+            when (settings.downloadConvertSubtitles) {
+                "srt" -> addOption("--convert-subs", "srt")
+                "vtt" -> addOption("--convert-subs", "vtt")
+                "ass" -> addOption("--convert-subs", "ass")
+            }
         }
 
     /**
@@ -1795,7 +1809,7 @@ class MpxDownloader private constructor(context: Context) {
                     // Issue #341: subtitles for video downloads only —
                     // an mp3 has no use for a sidecar subtitle file.
                     if (item.subtitles) {
-                        addOptionsForSubtitles()
+                        addOptionsForSubtitles(settings)
                     }
                 }
                 // Issue #339: faster downloads, Seal's shape

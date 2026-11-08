@@ -161,6 +161,11 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadSubtitles = prefs.getBoolean("download_subtitles", false),
             downloadAllowMetered = prefs.getBoolean("download_allow_metered", false),
             downloadDirectory = prefs.getString("download_directory", "MPx") ?: "MPx",
+            downloadSubtitleLanguages = prefs.getString("download_subtitle_languages", "en,ar") ?: "en,ar",
+            downloadAutoSubtitles = prefs.getBoolean("download_auto_subtitles", false),
+            downloadConvertSubtitles = prefs.getString("download_convert_subtitles", "none") ?: "none",
+            downloadEmbedSubtitles = prefs.getBoolean("download_embed_subtitles", true),
+            downloadKeepSubtitles = prefs.getBoolean("download_keep_subtitles", true),
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -287,6 +292,11 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("download_subtitles", settings.downloadSubtitles)
             .putBoolean("download_allow_metered", settings.downloadAllowMetered)
             .putString("download_directory", settings.downloadDirectory)
+            .putString("download_subtitle_languages", settings.downloadSubtitleLanguages)
+            .putBoolean("download_auto_subtitles", settings.downloadAutoSubtitles)
+            .putString("download_convert_subtitles", settings.downloadConvertSubtitles)
+            .putBoolean("download_embed_subtitles", settings.downloadEmbedSubtitles)
+            .putBoolean("download_keep_subtitles", settings.downloadKeepSubtitles)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

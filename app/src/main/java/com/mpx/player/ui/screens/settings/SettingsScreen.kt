@@ -103,6 +103,8 @@ import com.mpx.player.ui.screens.download.DownloadDirectoryDialog
 import com.mpx.player.ui.screens.download.DownloadOptionsDialog
 import com.mpx.player.ui.screens.download.DownloadQualityDialog
 import com.mpx.player.ui.screens.download.DownloadSponsorBlockDialog
+import com.mpx.player.ui.screens.download.SubtitleConvertDialog
+import com.mpx.player.ui.screens.download.SubtitleLanguagesDialog
 import com.mpx.player.ui.screens.download.downloadCodecLabel
 import com.mpx.player.ui.screens.download.downloadOptionsSummary
 import com.mpx.player.ui.screens.download.downloadResolutionLabel
@@ -882,6 +884,8 @@ fun SettingsScreen(
                                 var showOptions by remember { mutableStateOf(false) }
                                 var showSponsorBlock by remember { mutableStateOf(false) }
                                 var showDirectory by remember { mutableStateOf(false) }
+                                var showSubtitleLanguages by remember { mutableStateOf(false) }
+                                var showSubtitleConvert by remember { mutableStateOf(false) }
                                 val ytdlpUpdatedLabel = stringResource(R.string.download_ytdlp_updated)
                                 val ytdlpUpToDateLabel = stringResource(R.string.download_ytdlp_up_to_date)
                                 val ytdlpUpdateFailedLabel = stringResource(R.string.download_ytdlp_update_failed)
@@ -933,6 +937,28 @@ fun SettingsScreen(
                                 )
                                 ToggleRow(stringResource(R.string.download_audio_only), settings.downloadAudioOnly) { update(settings.copy(downloadAudioOnly = it)) }
                                 ToggleRow(stringResource(R.string.download_subtitles), settings.downloadSubtitles) { update(settings.copy(downloadSubtitles = it)) }
+                                // Issue #382: subtitle options — languages,
+                                // auto-subs, convert format, embed/keep.
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_subtitle_languages),
+                                    subtitle = settings.downloadSubtitleLanguages,
+                                    icon = Icons.Filled.Language,
+                                    onClick = { showSubtitleLanguages = true },
+                                )
+                                ToggleRow(stringResource(R.string.download_auto_subtitles), settings.downloadAutoSubtitles) { update(settings.copy(downloadAutoSubtitles = it)) }
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_convert_subtitles),
+                                    subtitle = when (settings.downloadConvertSubtitles) {
+                                        "srt" -> "SRT"
+                                        "vtt" -> "VTT"
+                                        "ass" -> "ASS"
+                                        else -> stringResource(R.string.download_convert_subtitles_none)
+                                    },
+                                    icon = Icons.Filled.Subtitles,
+                                    onClick = { showSubtitleConvert = true },
+                                )
+                                ToggleRow(stringResource(R.string.download_embed_subtitles), settings.downloadEmbedSubtitles) { update(settings.copy(downloadEmbedSubtitles = it)) }
+                                ToggleRow(stringResource(R.string.download_keep_subtitles), settings.downloadKeepSubtitles, enabled = settings.downloadEmbedSubtitles) { update(settings.copy(downloadKeepSubtitles = it)) }
 
                                 Spacer(Modifier.height(16.dp))
                                 Text(stringResource(R.string.download_settings_network), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)
@@ -990,6 +1016,24 @@ fun SettingsScreen(
                                         settingsRepository = settingsRepository,
                                         onDismiss = {
                                             showDirectory = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showSubtitleLanguages) {
+                                    SubtitleLanguagesDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showSubtitleLanguages = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showSubtitleConvert) {
+                                    SubtitleConvertDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showSubtitleConvert = false
                                             settings = settingsRepository.load()
                                         },
                                     )

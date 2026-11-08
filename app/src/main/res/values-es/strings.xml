@@ -88,6 +88,13 @@
     <string name="download_metered_title">¿Descargar con datos móviles?</string>
     <string name="download_metered_message">Estás usando datos móviles. Descargar vídeo puede consumir muchos datos.</string>
     <string name="download_metered_always">Permitir siempre las descargas móviles</string>
+    <string name="download_subtitle_languages">Idiomas de subtítulos</string>
+    <string name="download_subtitle_languages_hint">Idiomas, p. ej. en,ar</string>
+    <string name="download_auto_subtitles">Subtítulos automáticos</string>
+    <string name="download_convert_subtitles">Convertir subtítulos</string>
+    <string name="download_convert_subtitles_none">Ninguno</string>
+    <string name="download_embed_subtitles">Incrustar subtítulos</string>
+    <string name="download_keep_subtitles">Conservar el archivo de subtítulos</string>
     <string name="download_downloaded_title">Descargados</string>
     <string name="download_downloaded_empty_message">Aún no hay descargas. Los archivos que descargues aparecerán aquí.</string>
     <string name="download_settings_general">General</string>

@@ -88,6 +88,13 @@
     <string name="download_metered_title">تنزيل عبر بيانات الجوال؟</string>
     <string name="download_metered_message">أنت على بيانات الجوال. تنزيل الفيديو قد يستهلك الكثير من البيانات.</string>
     <string name="download_metered_always">السماح دائمًا بتنزيلات بيانات الجوال</string>
+    <string name="download_subtitle_languages">لغات الترجمة</string>
+    <string name="download_subtitle_languages_hint">لغات، مثال: en,ar</string>
+    <string name="download_auto_subtitles">ترجمة تلقائية</string>
+    <string name="download_convert_subtitles">تحويل الترجمة</string>
+    <string name="download_convert_subtitles_none">بدون</string>
+    <string name="download_embed_subtitles">تضمين الترجمة</string>
+    <string name="download_keep_subtitles">الاحتفاظ بملف الترجمة</string>
     <string name="download_downloaded_title">تم تنزيلها</string>
     <string name="download_downloaded_empty_message">لم يتم تنزيل أي شيء بعد. ستظهر الملفات التي تنزّلها هنا.</string>
     <string name="download_settings_general">عام</string>

@@ -188,6 +188,22 @@ data class AppSettings(
     // folder downloads land in (MediaStore RELATIVE_PATH "Download/<name>").
     // "MPx" is the old fixed folder, so existing installs keep their files.
     val downloadDirectory: String = "MPx",
+    /**
+     * Issue #382: subtitle options, Seal's subtitle block
+     * (DownloadUtil.kt:452-468, JunkFood02/Seal, GPL-3.0). Languages are
+     * the `--sub-langs` value (default keeps MPx's "en,ar"); auto
+     * subtitles add `--write-auto-subs` with translated subs skipped;
+     * convert is "none"/"srt"/"vtt"/"ass" (`--convert-subs`); embed +
+     * keep default to true, which is exactly #341's old behavior
+     * (`--embed-subs` + `--write-subs` together) — turning embed off
+     * leaves the sidecar only, and turning keep off while embedding
+     * drops the sidecar.
+     */
+    val downloadSubtitleLanguages: String = "en,ar",
+    val downloadAutoSubtitles: Boolean = false,
+    val downloadConvertSubtitles: String = "none",
+    val downloadEmbedSubtitles: Boolean = true,
+    val downloadKeepSubtitles: Boolean = true,
 ) {
     /**
      * Total number of currently visible music tabs.
