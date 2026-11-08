@@ -99,6 +99,11 @@
     <string name="download_convert_subtitles_none">None</string>
     <string name="download_embed_subtitles">Embed subtitles</string>
     <string name="download_keep_subtitles">Keep subtitle file</string>
+    <string name="download_format_title">Choose format</string>
+    <string name="download_format_best">Best</string>
+    <string name="download_format_best_detail">Use the global quality settings</string>
+    <string name="download_format_video">Video</string>
+    <string name="download_format_audio">Audio</string>
     <string name="download_downloaded_title">Downloaded</string>
     <string name="download_downloaded_empty_message">Nothing downloaded yet. Files you finish downloading will show up here.</string>
     <string name="download_settings_general">General</string>

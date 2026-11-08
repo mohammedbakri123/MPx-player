@@ -98,6 +98,11 @@
     <string name="download_convert_subtitles_none">Nenhum</string>
     <string name="download_embed_subtitles">Incorporar legendas</string>
     <string name="download_keep_subtitles">Manter o arquivo de legendas</string>
+    <string name="download_format_title">Escolher formato</string>
+    <string name="download_format_best">A melhor</string>
+    <string name="download_format_best_detail">Usar as configurações globais de qualidade</string>
+    <string name="download_format_video">Vídeo</string>
+    <string name="download_format_audio">Áudio</string>
     <string name="download_downloaded_title">Baixados</string>
     <string name="download_downloaded_empty_message">Nada baixado ainda. Os arquivos que você baixar aparecerão aqui.</string>
     <string name="download_settings_general">Geral</string>

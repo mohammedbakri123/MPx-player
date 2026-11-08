@@ -98,6 +98,11 @@
     <string name="download_convert_subtitles_none">بدون</string>
     <string name="download_embed_subtitles">تضمين الترجمة</string>
     <string name="download_keep_subtitles">الاحتفاظ بملف الترجمة</string>
+    <string name="download_format_title">اختر الصيغة</string>
+    <string name="download_format_best">الأفضل</string>
+    <string name="download_format_best_detail">استخدام إعدادات الجودة العامة</string>
+    <string name="download_format_video">فيديو</string>
+    <string name="download_format_audio">صوت</string>
     <string name="download_downloaded_title">تم تنزيلها</string>
     <string name="download_downloaded_empty_message">لم يتم تنزيل أي شيء بعد. ستظهر الملفات التي تنزّلها هنا.</string>
     <string name="download_settings_general">عام</string>

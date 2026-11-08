@@ -70,6 +70,7 @@ import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.yausername.youtubedl_android.mapper.VideoInfo
 import java.util.Locale
 import kotlinx.coroutines.launch
 
@@ -127,6 +128,10 @@ fun DownloadScreen(
     // picker is re-opened by tapping Download again.
     var fetchingPlaylist by remember { mutableStateOf(false) }
     var playlistToPick by remember { mutableStateOf<PlaylistInfo?>(null) }
+    // Issue #383: a single video whose format info was fetched — the
+    // sheet opens with the video URL (to start the download from) and
+    // its info (title + formats). Null while no sheet is open.
+    var formatToPick by remember { mutableStateOf<Pair<String, VideoInfo>?>(null) }
 
     // Issue #380: metered-network gate. Every download start goes through
     // guardMetered: on an unmetered network (or when the user allowed
@@ -268,21 +273,33 @@ fun DownloadScreen(
                         scope.launch {
                             fetchingPlaylist = true
                             val downloadPrefs = settingsRepository.load()
+                            // Issue #383: a single video opens the
+                            // format sheet instead of downloading
+                            // immediately — fetch its info (the formats
+                            // ride along) and show the sheet when it
+                            // has any. Audio-only downloads never open
+                            // the sheet (their path is `-x`, no `-f`).
+                            // Any info failure falls back to the plain
+                            // single download, exactly as before.
+                            val startSingleVideo: suspend (String) -> Unit = { videoUrl ->
+                                if (!downloadPrefs.downloadAudioOnly) {
+                                    val info = downloader.fetchVideoInfoForFormat(videoUrl)
+                                    if (info != null && info.formats.orEmpty().isNotEmpty()) {
+                                        formatToPick = videoUrl to info
+                                    } else {
+                                        downloader.startDownload(videoUrl, audioOnly = false, subtitles = downloadPrefs.downloadSubtitles)
+                                        urlText = ""
+                                    }
+                                } else {
+                                    downloader.startDownload(videoUrl, audioOnly = true, subtitles = downloadPrefs.downloadSubtitles)
+                                    urlText = ""
+                                }
+                            }
                             try {
                                 val playlist = downloader.fetchPlaylistInfo(url)
                                 when {
-                                    playlist == null -> {
-                                        downloader.startDownload(url, audioOnly = downloadPrefs.downloadAudioOnly, subtitles = downloadPrefs.downloadSubtitles)
-                                        urlText = ""
-                                    }
-                                    playlist.entries.size == 1 -> {
-                                        downloader.startDownload(
-                                            playlist.entries[0].url,
-                                            audioOnly = downloadPrefs.downloadAudioOnly,
-                                            subtitles = downloadPrefs.downloadSubtitles,
-                                        )
-                                        urlText = ""
-                                    }
+                                    playlist == null -> startSingleVideo(url)
+                                    playlist.entries.size == 1 -> startSingleVideo(playlist.entries[0].url)
                                     else -> playlistToPick = playlist
                                 }
                             } finally {
@@ -338,6 +355,27 @@ fun DownloadScreen(
                         )
                         urlText = ""
                         }
+                    },
+                )
+            }
+
+            // Issue #383: per-video format sheet. The chosen format
+            // id starts the download; the URL field clears only once
+            // it starts, so dismissing the sheet keeps the URL.
+            formatToPick?.let { (videoUrl, info) ->
+                FormatSelectionDialog(
+                    videoInfo = info,
+                    onDismiss = { formatToPick = null },
+                    onDownload = { formatId ->
+                        formatToPick = null
+                        val downloadPrefs = settingsRepository.load()
+                        downloader.startDownload(
+                            videoUrl,
+                            audioOnly = downloadPrefs.downloadAudioOnly,
+                            subtitles = downloadPrefs.downloadSubtitles,
+                            formatId = formatId,
+                        )
+                        urlText = ""
                     },
                 )
             }
