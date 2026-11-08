@@ -109,6 +109,7 @@
     <string name="download_clips_start">البداية</string>
     <string name="download_clips_end">النهاية</string>
     <string name="download_audio_format_title">تنسيق الصوت</string>
+    <string name="download_private_mode">الوضع الخاص</string>
     <string name="download_group_playlists">تجميع قوائم التشغيل في مجلدات</string>
     <string name="download_rename_title">إعادة التسمية</string>
     <string name="download_custom_command_title">أمر مخصص</string>
