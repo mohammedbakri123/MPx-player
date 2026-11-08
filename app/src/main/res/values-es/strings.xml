@@ -107,6 +107,7 @@
     <string name="download_clips_add">Añadir clip</string>
     <string name="download_clips_start">Inicio</string>
     <string name="download_clips_end">Fin</string>
+    <string name="download_rename_title">Renombrar</string>
     <string name="download_custom_command_title">Comando personalizado</string>
     <string name="download_custom_command_enabled">Usar comando personalizado</string>
     <string name="download_custom_command_hint">Una línea de opciones de yt-dlp. Reemplaza las opciones de formato, subtítulos y capítulos en cada descarga.</string>

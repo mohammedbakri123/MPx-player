@@ -39,7 +39,7 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
         DownloadTaskEntity::class,
         DownloadHistoryEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 abstract class MpxDatabase : RoomDatabase() {
@@ -144,6 +144,21 @@ abstract class MpxDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Issue #388: the rename column on the download_tasks table.
+         * Nullable — existing rows keep null (the video's own
+         * title), exactly the right default. Same rule as
+         * #342/#346/#383/#386/#387: a proper migration, so the 6→7
+         * jump must NOT wipe the user's favourites, history and
+         * playlists through the pre-existing
+         * fallbackToDestructiveMigration() below.
+         */
+        val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `download_tasks` ADD COLUMN `newTitle` TEXT")
+            }
+        }
+
         fun getInstance(context: Context): MpxDatabase {
             return instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -151,7 +166,7 @@ abstract class MpxDatabase : RoomDatabase() {
                     MpxDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }
