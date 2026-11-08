@@ -107,6 +107,7 @@
     <string name="download_clips_add">إضافة مقطع</string>
     <string name="download_clips_start">البداية</string>
     <string name="download_clips_end">النهاية</string>
+    <string name="download_rename_title">إعادة التسمية</string>
     <string name="download_custom_command_title">أمر مخصص</string>
     <string name="download_custom_command_enabled">استخدام الأمر المخصص</string>
     <string name="download_custom_command_hint">سطر واحد من خيارات yt-dlp. يحل محل خيارات التنسيق والترجمة والفصول لكل تنزيل.</string>

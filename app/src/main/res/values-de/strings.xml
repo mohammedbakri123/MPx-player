@@ -107,6 +107,7 @@
     <string name="download_clips_add">Clip hinzufügen</string>
     <string name="download_clips_start">Start</string>
     <string name="download_clips_end">Ende</string>
+    <string name="download_rename_title">Umbenennen</string>
     <string name="download_custom_command_title">Benutzerdefinierter Befehl</string>
     <string name="download_custom_command_enabled">Benutzerdefinierten Befehl verwenden</string>
     <string name="download_custom_command_hint">Eine Zeile yt-dlp-Optionen. Ersetzt die Format-, Untertitel- und Kapiteloptionen für jeden Download.</string>

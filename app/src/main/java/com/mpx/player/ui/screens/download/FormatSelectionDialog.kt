@@ -60,18 +60,21 @@ import kotlin.math.roundToInt
  * the video plus start/end time fields, an Add button, and the list
  * of added clips. Below that, a Split by chapter switch (issue
  * #387): one file per chapter, in a subfolder named after the
- * video. The confirm builds Seal's format-id string
- * (`TaskFactory` shape: the chosen format ids joined with "+",
- * "bestvideo"/"bestaudio" filling a side left on Best) — both Best
- * means null, i.e. no `-f`, the global format sorter applies — and
- * passes the clips and the split switch along. Single videos only:
- * the caller never opens this for playlists or audio-only downloads.
+ * video. At the top, a Rename field (issue #388): the video's
+ * title, editable — the file comes out with the new name. The
+ * confirm builds Seal's format-id string (`TaskFactory` shape: the
+ * chosen format ids joined with "+", "bestvideo"/"bestaudio"
+ * filling a side left on Best) — both Best means null, i.e. no
+ * `-f`, the global format sorter applies — and passes the clips,
+ * the split switch and the rename along (an unchanged or blank
+ * rename passes null). Single videos only: the caller never opens
+ * this for playlists or audio-only downloads.
  */
 @Composable
 fun FormatSelectionDialog(
     videoInfo: VideoInfo,
     onDismiss: () -> Unit,
-    onDownload: (formatId: String?, clips: List<VideoClip>, splitByChapter: Boolean) -> Unit,
+    onDownload: (formatId: String?, clips: List<VideoClip>, splitByChapter: Boolean, newTitle: String?) -> Unit,
 ) {
     val formats = videoInfo.formats.orEmpty()
     val videoFormats = remember(formats) {
@@ -97,6 +100,7 @@ fun FormatSelectionDialog(
     var selectedAudio by remember { mutableStateOf<VideoFormat?>(null) }
     var clips by remember { mutableStateOf<List<VideoClip>>(emptyList()) }
     var splitByChapter by remember { mutableStateOf(false) }
+    var newTitle by remember { mutableStateOf(videoInfo.title.orEmpty()) }
 
     MpxDialog(
         title = stringResource(R.string.download_format_title),
@@ -111,6 +115,7 @@ fun FormatSelectionDialog(
                 else "$videoPart+$audioPart",
                 clips,
                 splitByChapter,
+                newTitle.takeIf { it.isNotBlank() && it != videoInfo.title },
             )
         },
     ) {
@@ -137,6 +142,20 @@ fun FormatSelectionDialog(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                Spacer(Modifier.height(12.dp))
+            }
+            // Issue #388: rename — the video's title, editable.
+            // The file comes out with the new name (Seal's
+            // --replace-in-metadata); an unchanged or blank field
+            // passes no rename at all.
+            item {
+                OutlinedTextField(
+                    value = newTitle,
+                    onValueChange = { newTitle = it },
+                    label = { Text(stringResource(R.string.download_rename_title)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Spacer(Modifier.height(12.dp))
             }
             item {

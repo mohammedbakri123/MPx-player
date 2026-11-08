@@ -132,6 +132,13 @@ data class ActiveDownload(
      * downloads — a video without chapters downloads as one file.
      */
     val splitByChapter: Boolean = false,
+    /**
+     * Issue #388: rename before download (Seal's
+     * `DownloadPreferences.newTitle`). The new title from the
+     * rename field in the format sheet; null means no rename —
+     * the video keeps its own title. Only set on video downloads.
+     */
+    val newTitle: String? = null,
 )
 
 /**
@@ -1114,6 +1121,7 @@ class MpxDownloader private constructor(context: Context) {
         formatId: String? = null,
         clips: List<VideoClip> = emptyList(),
         splitByChapter: Boolean = false,
+        newTitle: String? = null,
     ) {
         val url = rawUrl.trim()
         if (url.isBlank()) return
@@ -1129,6 +1137,7 @@ class MpxDownloader private constructor(context: Context) {
             formatId = formatId,
             clips = clips,
             splitByChapter = splitByChapter,
+            newTitle = newTitle,
         )
         _activeDownloads.update { it + item }
         persistTask(item)
@@ -1848,7 +1857,11 @@ class MpxDownloader private constructor(context: Context) {
             val extractorKey = info.extractorKey?.takeIf { it.isNotBlank() }
             uploader = info.uploader?.takeIf { it.isNotBlank() }
             thumbnailUrl = info.thumbnail?.takeIf { it.isNotBlank() }
-            updateItem(id) { it.copy(title = title) }
+            // Issue #388: the row shows the new title when the user
+            // renamed the download, so it matches the file that
+            // comes out.
+            val displayTitle = item.newTitle?.takeIf { it.isNotBlank() } ?: title
+            updateItem(id) { it.copy(title = displayTitle) }
 
             // Issue #346: already in the download archive — skip the
             // yt-dlp run entirely. Never FAILED: the row completes
@@ -1929,6 +1942,18 @@ class MpxDownloader private constructor(context: Context) {
                 if (item.audioOnly && !useCustomCommand) {
                     addOptionsForAudioDownloads()
                 } else if (!item.audioOnly && !useCustomCommand) {
+                    // Issue #388: rename before download (Seal's
+                    // DownloadUtil.downloadVideo, JunkFood02/Seal,
+                    // GPL-3.0): --replace-in-metadata swaps the
+                    // video's title everywhere, so the filename
+                    // follows and the clips/split templates keep
+                    // working (they all read the title). addOption
+                    // takes one value only (verified against the
+                    // 0.18.1 AAR), so the three-value option goes
+                    // through addCommands, like Seal.
+                    item.newTitle?.takeIf { it.isNotBlank() }?.let { renamed ->
+                        addCommands(listOf("--replace-in-metadata", "title", ".+", renamed))
+                    }
                     // Issue #336 + #338: Seal's `-S` format sorter instead
                     // of a hardcoded `-f` — no `-f` means yt-dlp picks
                     // (and, with ffmpeg bundled, merges) the best

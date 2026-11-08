@@ -374,7 +374,7 @@ fun DownloadScreen(
                 FormatSelectionDialog(
                     videoInfo = info,
                     onDismiss = { formatToPick = null },
-                    onDownload = { formatId, clips, splitByChapter ->
+                    onDownload = { formatId, clips, splitByChapter, newTitle ->
                         formatToPick = null
                         val downloadPrefs = settingsRepository.load()
                         downloader.startDownload(
@@ -384,6 +384,7 @@ fun DownloadScreen(
                             formatId = formatId,
                             clips = clips,
                             splitByChapter = splitByChapter,
+                            newTitle = newTitle,
                         )
                         urlText = ""
                     },
