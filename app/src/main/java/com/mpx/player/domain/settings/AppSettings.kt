@@ -186,6 +186,17 @@ data class AppSettings(
      */
     val downloadAudioFormat: String = "mp3",
     /**
+     * Issue #395: keep the original audio format — no conversion.
+     * Seal's USE_CUSTOM_AUDIO_PRESET + AUDIO_FORMAT + AUDIO_QUALITY.
+     * Off by default (today's convert behavior unchanged). When on,
+     * the audio branch passes -S <audioFormatSorter(...)> instead of
+     * --audio-format; "any" format + "best" quality = no constraint
+     * at all, just the original best audio.
+     */
+    val downloadUseCustomAudioPreset: Boolean = false,
+    val downloadAudioPresetFormat: String = "any",
+    val downloadAudioPresetQuality: String = "best",
+    /**
      * Issue #380: allow downloads on a metered network (mobile data or a
      * metered WiFi). Off by default, like Seal's `CELLULAR_DOWNLOAD` —
      * starting a download on a metered network asks first (see
