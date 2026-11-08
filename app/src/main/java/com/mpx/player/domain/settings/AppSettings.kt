@@ -178,6 +178,14 @@ data class AppSettings(
     val downloadAudioOnly: Boolean = false,
     val downloadSubtitles: Boolean = false,
     /**
+     * Issue #390: audio format for audio-only downloads (Seal's
+     * `AUDIO_CONVERT_FORMAT`). "mp3" is today's behavior, so
+     * existing installs keep it. The downloader passes it as
+     * `--audio-format`; conversion needs the bundled ffmpeg,
+     * same as mp3 does today.
+     */
+    val downloadAudioFormat: String = "mp3",
+    /**
      * Issue #380: allow downloads on a metered network (mobile data or a
      * metered WiFi). Off by default, like Seal's `CELLULAR_DOWNLOAD` —
      * starting a download on a metered network asks first (see

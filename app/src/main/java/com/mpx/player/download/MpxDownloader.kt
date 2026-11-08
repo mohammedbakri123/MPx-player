@@ -1725,10 +1725,16 @@ class MpxDownloader private constructor(context: Context) {
      * No `-f` and no video sorter: with `-x`, yt-dlp's default format
      * selection already picks the best audio stream.
      */
-    private fun YoutubeDLRequest.addOptionsForAudioDownloads(): YoutubeDLRequest =
+    /**
+     * Issue #340 + #390: audio-only downloads extract best audio as
+     * the chosen format instead of the video sorter below (Seal's
+     * `addOptionsForAudioDownloads`). The format comes from the
+     * setting, default mp3 — the old hardcoded value.
+     */
+    private fun YoutubeDLRequest.addOptionsForAudioDownloads(settings: AppSettings): YoutubeDLRequest =
         apply {
             addOption("-x")
-            addOption("--audio-format", "mp3")
+            addOption("--audio-format", settings.downloadAudioFormat.ifBlank { "mp3" })
             addOption("--embed-metadata")
         }
 
@@ -2002,7 +2008,7 @@ class MpxDownloader private constructor(context: Context) {
                 // subtitles) is skipped; only the base options below
                 // apply.
                 if (item.audioOnly && !useCustomCommand) {
-                    addOptionsForAudioDownloads()
+                    addOptionsForAudioDownloads(settings)
                 } else if (!item.audioOnly && !useCustomCommand) {
                     // Issue #388: rename before download (Seal's
                     // DownloadUtil.downloadVideo, JunkFood02/Seal,

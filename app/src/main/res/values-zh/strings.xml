@@ -107,6 +107,7 @@
     <string name="download_clips_add">添加片段</string>
     <string name="download_clips_start">开始</string>
     <string name="download_clips_end">结束</string>
+    <string name="download_audio_format_title">音频格式</string>
     <string name="download_group_playlists">按文件夹分组播放列表</string>
     <string name="download_rename_title">重命名</string>
     <string name="download_custom_command_title">自定义命令</string>

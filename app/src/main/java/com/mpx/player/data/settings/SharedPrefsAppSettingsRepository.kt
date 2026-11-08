@@ -159,6 +159,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             // switches on the Download page) + download folder.
             downloadAudioOnly = prefs.getBoolean("download_audio_only", false),
             downloadSubtitles = prefs.getBoolean("download_subtitles", false),
+            downloadAudioFormat = prefs.getString("download_audio_format", "mp3") ?: "mp3",
             downloadAllowMetered = prefs.getBoolean("download_allow_metered", false),
             downloadDirectory = prefs.getString("download_directory", "MPx") ?: "MPx",
             downloadGroupPlaylists = prefs.getBoolean("download_group_playlists", false),
@@ -296,6 +297,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("download_sponsorblock_categories", settings.downloadSponsorBlockCategories)
             .putBoolean("download_audio_only", settings.downloadAudioOnly)
             .putBoolean("download_subtitles", settings.downloadSubtitles)
+            .putString("download_audio_format", settings.downloadAudioFormat)
             .putBoolean("download_allow_metered", settings.downloadAllowMetered)
             .putString("download_directory", settings.downloadDirectory)
             .putBoolean("download_group_playlists", settings.downloadGroupPlaylists)
