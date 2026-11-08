@@ -109,6 +109,9 @@
     <string name="download_clips_add">Añadir clip</string>
     <string name="download_clips_start">Inicio</string>
     <string name="download_clips_end">Fin</string>
+    <string name="download_audio_preset_title">Conservar el formato de audio original</string>
+    <string name="download_audio_preset_format_title">Formato de audio preferido</string>
+    <string name="download_audio_preset_quality_title">Calidad de audio preferida</string>
     <string name="download_audio_format_title">Formato de audio</string>
     <string name="download_to_sd_card">Descargar a la tarjeta SD</string>
     <string name="download_sd_card_folder_title">Carpeta de la tarjeta SD</string>

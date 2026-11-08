@@ -2048,11 +2048,36 @@ class MpxDownloader private constructor(context: Context) {
      * the chosen format instead of the video sorter below (Seal's
      * `addOptionsForAudioDownloads`). The format comes from the
      * setting, default mp3 — the old hardcoded value.
+     * Issue #395: when the custom audio preset is on, there is no
+     * `--audio-format` conversion at all — `-S` picks the preferred
+     * codec/bitrate instead (Seal's USE_CUSTOM_AUDIO_PRESET +
+     * `toAudioFormatSorter`). The sorter already existed in
+     * FormatSorter.kt but was dead: the video path never passes the
+     * preset args. No constraint set (any + best) means no `-S`
+     * either — just the original best audio.
      */
     private fun YoutubeDLRequest.addOptionsForAudioDownloads(settings: AppSettings): YoutubeDLRequest =
         apply {
             addOption("-x")
-            addOption("--audio-format", settings.downloadAudioFormat.ifBlank { "mp3" })
+            if (settings.downloadUseCustomAudioPreset) {
+                val sorter = audioFormatSorter(
+                    useCustomAudioPreset = true,
+                    audioFormat = when (settings.downloadAudioPresetFormat) {
+                        "m4a" -> AUDIO_FORMAT_M4A
+                        "opus" -> AUDIO_FORMAT_OPUS
+                        else -> FORMAT_NOT_SPECIFIED
+                    },
+                    audioQuality = when (settings.downloadAudioPresetQuality) {
+                        "192" -> AUDIO_QUALITY_HIGH
+                        "128" -> AUDIO_QUALITY_MEDIUM
+                        "64" -> AUDIO_QUALITY_LOW
+                        else -> FORMAT_NOT_SPECIFIED
+                    },
+                )
+                if (sorter.isNotBlank()) addOption("-S", sorter)
+            } else {
+                addOption("--audio-format", settings.downloadAudioFormat.ifBlank { "mp3" })
+            }
             addOption("--embed-metadata")
             // Issue #391: embed the cover art into the audio file
             // itself (Seal's EMBED_THUMBNAIL, audio branch

@@ -108,6 +108,10 @@ import com.mpx.player.download.YtDlpUpdateState
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.screens.download.AudioDirectoryDialog
 import com.mpx.player.ui.screens.download.AudioFormatDialog
+import com.mpx.player.ui.screens.download.AudioPresetFormatDialog
+import com.mpx.player.ui.screens.download.AudioPresetQualityDialog
+import com.mpx.player.ui.screens.download.audioPresetFormatLabel
+import com.mpx.player.ui.screens.download.audioPresetQualityLabel
 import com.mpx.player.ui.screens.download.CustomCommandDialog
 import com.mpx.player.ui.screens.download.DownloadDirectoryDialog
 import com.mpx.player.ui.screens.download.DownloadOptionsDialog
@@ -927,6 +931,8 @@ fun SettingsScreen(
                                 var showSubtitleLanguages by remember { mutableStateOf(false) }
                                 var showSubtitleConvert by remember { mutableStateOf(false) }
                                 var showAudioFormat by remember { mutableStateOf(false) }
+                                var showAudioPresetFormat by remember { mutableStateOf(false) }
+                                var showAudioPresetQuality by remember { mutableStateOf(false) }
                                 val ytdlpUpdatedLabel = stringResource(R.string.download_ytdlp_updated)
                                 val ytdlpUpToDateLabel = stringResource(R.string.download_ytdlp_up_to_date)
                                 val ytdlpUpdateFailedLabel = stringResource(R.string.download_ytdlp_update_failed)
@@ -1048,6 +1054,27 @@ fun SettingsScreen(
                                     icon = Icons.Filled.MusicNote,
                                     onClick = { showAudioFormat = true },
                                 )
+                                // Issue #395: keep the original audio
+                                // format — no conversion. When on, the
+                                // audio branch passes -S with the
+                                // preset codec/bitrate instead of
+                                // --audio-format; the two rows below
+                                // only show while it is on.
+                                ToggleRow(stringResource(R.string.download_audio_preset_title), settings.downloadUseCustomAudioPreset) { update(settings.copy(downloadUseCustomAudioPreset = it)) }
+                                if (settings.downloadUseCustomAudioPreset) {
+                                    PreferenceRow(
+                                        title = stringResource(R.string.download_audio_preset_format_title),
+                                        subtitle = audioPresetFormatLabel(settings.downloadAudioPresetFormat),
+                                        icon = Icons.Filled.MusicNote,
+                                        onClick = { showAudioPresetFormat = true },
+                                    )
+                                    PreferenceRow(
+                                        title = stringResource(R.string.download_audio_preset_quality_title),
+                                        subtitle = audioPresetQualityLabel(settings.downloadAudioPresetQuality),
+                                        icon = Icons.Filled.MusicNote,
+                                        onClick = { showAudioPresetQuality = true },
+                                    )
+                                }
                                 ToggleRow(stringResource(R.string.download_subtitles), settings.downloadSubtitles) { update(settings.copy(downloadSubtitles = it)) }
                                 // Issue #382: subtitle options — languages,
                                 // auto-subs, convert format, embed/keep.
@@ -1183,6 +1210,24 @@ fun SettingsScreen(
                                         settingsRepository = settingsRepository,
                                         onDismiss = {
                                             showAudioFormat = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showAudioPresetFormat) {
+                                    AudioPresetFormatDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showAudioPresetFormat = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showAudioPresetQuality) {
+                                    AudioPresetQualityDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showAudioPresetQuality = false
                                             settings = settingsRepository.load()
                                         },
                                     )
