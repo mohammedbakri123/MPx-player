@@ -171,10 +171,6 @@
     <string name="theme_surface_midnight">Medianoche</string>
     <string name="theme_surface_forest">Bosque</string>
     <string name="theme_surface_plum">Ciruela</string>
-    <string name="theme_light_color_section_title">Color claro</string>
-    <string name="theme_light_surface_white">Blanco</string>
-    <string name="theme_light_surface_warm">Cálido</string>
-    <string name="theme_light_surface_cool">Frío</string>
     <string name="theme_applied_snackbar">Tema aplicado: %s</string>
     <string name="palette_section_title">Color de acento</string>
     <string name="palette_name_blue">Azul</string>

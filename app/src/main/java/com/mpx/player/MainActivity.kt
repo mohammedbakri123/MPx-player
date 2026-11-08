@@ -139,8 +139,7 @@ class MainActivity : ComponentActivity() {
     private var currentLanguage by mutableStateOf(LocaleHelper.LANGUAGE_SYSTEM)
     private var currentTheme by mutableStateOf("System")
     private var currentPalette by mutableStateOf("Blue")
-    private var currentDarkSurface by mutableStateOf("TrueBlack")
-    private var currentLightSurface by mutableStateOf("White")
+    private var currentThemeColor by mutableStateOf("TrueBlack")
     private var openPlayerOnStart by mutableStateOf(false)
     // Issue #343: same pattern for a download notification tap — the
     // Download tab opens when the activity starts from that intent.
@@ -197,8 +196,7 @@ class MainActivity : ComponentActivity() {
         currentLanguage = initialSettings.appLanguage
         currentTheme = initialSettings.appTheme
         currentPalette = initialSettings.colorPalette
-        currentDarkSurface = initialSettings.darkSurface
-        currentLightSurface = initialSettings.lightSurface
+        currentThemeColor = initialSettings.themeColor
 
         checkOpenPlayerIntent(intent)
 
@@ -267,7 +265,7 @@ class MainActivity : ComponentActivity() {
                 LocalConfiguration provides localizedConfig,
                 LocalLayoutDirection provides layoutDirection,
             ) {
-                MpxTheme(theme = currentTheme, palette = currentPalette, darkSurface = currentDarkSurface, lightSurface = currentLightSurface) {
+                MpxTheme(theme = currentTheme, palette = currentPalette, themeColor = currentThemeColor) {
                     MpxApp(
                         localPermissionLauncher = localPermissionLauncher,
                         localPermissionHandler = localPermissionHandler,
@@ -279,8 +277,7 @@ class MainActivity : ComponentActivity() {
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
                         currentPalette = currentPalette,
-                        currentDarkSurface = currentDarkSurface,
-                        currentLightSurface = currentLightSurface,
+                        currentThemeColor = currentThemeColor,
                         openPlayerRequested = openPlayerOnStart,
                         onResetOpenPlayer = { openPlayerOnStart = false },
                         openDownloadsRequested = openDownloadsOnStart,
@@ -293,8 +290,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onThemeChanged = { currentTheme = it },
                         onPaletteChanged = { currentPalette = it },
-                        onDarkSurfaceChanged = { currentDarkSurface = it },
-                        onLightSurfaceChanged = { currentLightSurface = it },
+                        onThemeColorChanged = { currentThemeColor = it },
                         onDestinationChanged = { route ->
                             currentRoute = route
                             // Issue #225: leaving the Player route disarms
@@ -506,8 +502,7 @@ fun MpxApp(
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
     currentPalette: String = "Blue",
-    currentDarkSurface: String = "TrueBlack",
-    currentLightSurface: String = "White",
+    currentThemeColor: String = "TrueBlack",
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
     // Issue #343: same pattern for a download notification tap — the
@@ -517,8 +512,7 @@ fun MpxApp(
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
-    onDarkSurfaceChanged: ((String) -> Unit)? = null,
-    onLightSurfaceChanged: ((String) -> Unit)? = null,
+    onThemeColorChanged: ((String) -> Unit)? = null,
     // Issue #206: reports the NavHost's current route to the activity,
     // which gates Home-press PiP on the Player being visible.
     onDestinationChanged: ((String?) -> Unit)? = null,
@@ -771,8 +765,7 @@ fun MpxApp(
                     onLanguageChanged = onLanguageChanged,
                     onThemeChanged = onThemeChanged,
                     onPaletteChanged = onPaletteChanged,
-                    onDarkSurfaceChanged = onDarkSurfaceChanged,
-                    onLightSurfaceChanged = onLightSurfaceChanged,
+                    onThemeColorChanged = onThemeColorChanged,
                     playbackManager = playbackManager,
                 )
             }
@@ -797,7 +790,7 @@ fun MpxApp(
                 // #168: pass the current palette too — without it the
                 // player (slider, accents) always stayed default Blue
                 // whatever palette the user picked on Appearance.
-                MpxTheme(theme = "Dark", palette = currentPalette, darkSurface = currentDarkSurface) {
+                MpxTheme(theme = "Dark", palette = currentPalette, themeColor = currentThemeColor) {
                     PlayerScreen(
                         subtitleLauncher = subtitleLauncher,
                         subtitleResultHandler = subtitleHandler,

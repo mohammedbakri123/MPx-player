@@ -65,8 +65,12 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             else -> "System"
         },
         colorPalette = prefs.getString("color_palette", "Blue") ?: "Blue",
-        darkSurface = prefs.getString("dark_surface", "TrueBlack") ?: "TrueBlack",
-        lightSurface = prefs.getString("light_surface", "White") ?: "White",
+        // #374: one theme color. New installs read "theme_color";
+        // existing installs fall back to the legacy "dark_surface"
+        // key, so the user's color survives the update. The old
+        // "light_surface" key is ignored from here on.
+        themeColor = prefs.getString("theme_color", null)
+            ?: prefs.getString("dark_surface", "TrueBlack") ?: "TrueBlack",
         popupPlayEnabled = prefs.getBoolean("popup_play_enabled", true),
         popupPlayControls = prefs.getString("popup_play_controls", "PrevNext") ?: "PrevNext",
         popupPlaySize = prefs.getString("popup_play_size", "Medium") ?: "Medium",
@@ -212,8 +216,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putFloat("video_zoom", settings.videoZoom)
             .putString("app_theme", settings.appTheme)
             .putString("color_palette", settings.colorPalette)
-            .putString("dark_surface", settings.darkSurface)
-            .putString("light_surface", settings.lightSurface)
+            .putString("theme_color", settings.themeColor)
             .putBoolean("popup_play_enabled", settings.popupPlayEnabled)
             .putString("popup_play_controls", settings.popupPlayControls)
             .putString("popup_play_size", settings.popupPlaySize)

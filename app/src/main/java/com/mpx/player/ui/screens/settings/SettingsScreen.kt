@@ -130,8 +130,7 @@ fun SettingsScreen(
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
-    onDarkSurfaceChanged: ((String) -> Unit)? = null,
-    onLightSurfaceChanged: ((String) -> Unit)? = null,
+    onThemeColorChanged: ((String) -> Unit)? = null,
     playbackManager: PlaybackManager? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -203,8 +202,7 @@ fun SettingsScreen(
         val oldLanguage = settings.appLanguage
         val oldTheme = settings.appTheme
         val oldPalette = settings.colorPalette
-        val oldDarkSurface = settings.darkSurface
-        val oldLightSurface = settings.lightSurface
+        val oldThemeColor = settings.themeColor
         val oldDecoder = settings.decoderMode
         settings = next
         settingsRepository.save(next, commit = commit)
@@ -217,11 +215,8 @@ fun SettingsScreen(
         if (next.colorPalette != oldPalette) {
             onPaletteChanged?.invoke(next.colorPalette)
         }
-        if (next.darkSurface != oldDarkSurface) {
-            onDarkSurfaceChanged?.invoke(next.darkSurface)
-        }
-        if (next.lightSurface != oldLightSurface) {
-            onLightSurfaceChanged?.invoke(next.lightSurface)
+        if (next.themeColor != oldThemeColor) {
+            onThemeColorChanged?.invoke(next.themeColor)
         }
         if (next.decoderMode != oldDecoder) {
             val decMode = com.mpx.player.playback.DecoderMode.values().find { it.label == next.decoderMode } ?: com.mpx.player.playback.DecoderMode.HW
@@ -447,12 +442,11 @@ fun SettingsScreen(
                                         }
                                     }
                                 }
-                                // #182: dark-surface presets — the Dark
-                                // theme's own colour. Applies whenever the
-                                // resolved theme is Dark (Dark choice, or
-                                // System on a dark system); Light ignores
-                                // it. The whole surface scale shifts
-                                // together, accent and text untouched.
+                                // #374: one theme color, shared by Dark
+                                // and Light — the mode only picks which
+                                // brightness of it renders. The whole
+                                // surface scale shifts together, accent
+                                // and text untouched.
                                 Spacer(Modifier.height(16.dp))
                                 HorizontalDivider(color = MpxTheme.colors.border.copy(alpha = 0.5f), thickness = MpxHairline)
                                 Spacer(Modifier.height(12.dp))
@@ -471,36 +465,8 @@ fun SettingsScreen(
                                     "Plum" to stringResource(R.string.theme_surface_plum),
                                 )
                                 surfaceOptions.forEach { (surfaceCode, surfaceLabel) ->
-                                    ChoiceRow(surfaceLabel, settings.darkSurface == surfaceCode) {
-                                        update(settings.copy(darkSurface = surfaceCode))
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                context.getString(R.string.theme_applied_snackbar, surfaceLabel)
-                                            )
-                                        }
-                                    }
-                                }
-                                // #366: light-surface presets — the Light
-                                // theme's own colour, mirroring the dark
-                                // surfaces above. Applies whenever the
-                                // resolved theme is Light; Dark ignores it.
-                                Spacer(Modifier.height(16.dp))
-                                HorizontalDivider(color = MpxTheme.colors.border.copy(alpha = 0.5f), thickness = MpxHairline)
-                                Spacer(Modifier.height(12.dp))
-                                Text(
-                                    stringResource(R.string.theme_light_color_section_title),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MpxTheme.colors.textPrimary,
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                val lightSurfaceOptions = listOf(
-                                    "White" to stringResource(R.string.theme_light_surface_white),
-                                    "Warm" to stringResource(R.string.theme_light_surface_warm),
-                                    "Cool" to stringResource(R.string.theme_light_surface_cool),
-                                )
-                                lightSurfaceOptions.forEach { (surfaceCode, surfaceLabel) ->
-                                    ChoiceRow(surfaceLabel, settings.lightSurface == surfaceCode) {
-                                        update(settings.copy(lightSurface = surfaceCode))
+                                    ChoiceRow(surfaceLabel, settings.themeColor == surfaceCode) {
+                                        update(settings.copy(themeColor = surfaceCode))
                                         scope.launch {
                                             snackbarHostState.showSnackbar(
                                                 context.getString(R.string.theme_applied_snackbar, surfaceLabel)

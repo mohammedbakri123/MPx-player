@@ -171,10 +171,6 @@
     <string name="theme_surface_midnight">मध्यरात्रि</string>
     <string name="theme_surface_forest">जंगल</string>
     <string name="theme_surface_plum">बेर</string>
-    <string name="theme_light_color_section_title">हल्का रंग</string>
-    <string name="theme_light_surface_white">सफ़ेद</string>
-    <string name="theme_light_surface_warm">गर्म</string>
-    <string name="theme_light_surface_cool">ठंडा</string>
     <string name="theme_applied_snackbar">थीम लागू हुई: %s</string>
     <string name="palette_section_title">एक्सेंट रंग</string>
     <string name="palette_name_blue">नीला</string>
