@@ -108,6 +108,7 @@ import com.mpx.player.download.YtDlpUpdateState
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.screens.download.AudioDirectoryDialog
 import com.mpx.player.ui.screens.download.AudioFormatDialog
+import com.mpx.player.ui.screens.download.OutputTemplateDialog
 import com.mpx.player.ui.screens.download.AudioPresetFormatDialog
 import com.mpx.player.ui.screens.download.AudioPresetQualityDialog
 import com.mpx.player.ui.screens.download.audioPresetFormatLabel
@@ -927,6 +928,7 @@ fun SettingsScreen(
                                 var showSponsorBlock by remember { mutableStateOf(false) }
                                 var showDirectory by remember { mutableStateOf(false) }
                                 var showAudioDirectory by remember { mutableStateOf(false) }
+                                var showOutputTemplate by remember { mutableStateOf(false) }
                                 var showCustomCommand by remember { mutableStateOf(false) }
                                 var showSubtitleLanguages by remember { mutableStateOf(false) }
                                 var showSubtitleConvert by remember { mutableStateOf(false) }
@@ -959,6 +961,16 @@ fun SettingsScreen(
                                     ),
                                     icon = Icons.Filled.Folder,
                                     onClick = { showAudioDirectory = true },
+                                )
+                                // Issue #398: custom output filename
+                                // template — the -o template for plain
+                                // downloads. The subtitle shows the
+                                // template in use (blank = default).
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_output_template_title),
+                                    subtitle = settings.downloadOutputTemplate.trim().ifBlank { "%(title).200B.%(ext)s" },
+                                    icon = Icons.Filled.Folder,
+                                    onClick = { showOutputTemplate = true },
                                 )
                                 // Issue #389: group playlist downloads in
                                 // a folder named after the playlist.
@@ -1185,6 +1197,15 @@ fun SettingsScreen(
                                         settingsRepository = settingsRepository,
                                         onDismiss = {
                                             showAudioDirectory = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showOutputTemplate) {
+                                    OutputTemplateDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showOutputTemplate = false
                                             settings = settingsRepository.load()
                                         },
                                     )
