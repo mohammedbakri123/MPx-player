@@ -214,6 +214,14 @@ data class AppSettings(
      */
     val downloadGroupPlaylists: Boolean = false,
     /**
+     * Issue #396: group downloads by site (Seal's
+     * SUBDIRECTORY_EXTRACTOR) — when on, finished files publish into
+     * a subfolder named after the extractor ("youtube",
+     * "soundcloud"), under the download folder and above any
+     * playlist folder. Off by default.
+     */
+    val downloadGroupBySite: Boolean = false,
+    /**
      * Issue #392: private mode (Seal's PRIVATE_MODE). When on, a
      * finished download skips the History row entirely — the file
      * still downloads, still publishes to Downloads, and still shows

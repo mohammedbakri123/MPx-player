@@ -117,6 +117,7 @@
     <string name="download_sd_card_folder_title">SD कार्ड फ़ोल्डर</string>
     <string name="download_sd_card_folder_none">फ़ोल्डर चुनें</string>
     <string name="download_private_mode">निजी मोड</string>
+    <string name="download_group_by_site">साइट के अनुसार समूह बनाएं</string>
     <string name="download_group_playlists">प्लेलिस्ट को फ़ोल्डर में समूहित करें</string>
     <string name="download_rename_title">नाम बदलें</string>
     <string name="download_custom_command_title">कस्टम कमांड</string>

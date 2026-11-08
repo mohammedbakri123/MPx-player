@@ -965,6 +965,11 @@ fun SettingsScreen(
                                 // Off by default — playlists land flat in
                                 // the download folder, as today.
                                 ToggleRow(stringResource(R.string.download_group_playlists), settings.downloadGroupPlaylists) { update(settings.copy(downloadGroupPlaylists = it)) }
+                                // Issue #396: group downloads by site —
+                                // a subfolder per extractor ("youtube",
+                                // "soundcloud") under the download
+                                // folder, above any playlist folder.
+                                ToggleRow(stringResource(R.string.download_group_by_site), settings.downloadGroupBySite) { update(settings.copy(downloadGroupBySite = it)) }
                                 // Issue #392: private mode — downloads
                                 // skip the History record. The file
                                 // still downloads and still shows in

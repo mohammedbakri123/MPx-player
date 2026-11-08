@@ -117,6 +117,7 @@
     <string name="download_sd_card_folder_title">SD 卡文件夹</string>
     <string name="download_sd_card_folder_none">选择文件夹</string>
     <string name="download_private_mode">隐私模式</string>
+    <string name="download_group_by_site">按网站分组</string>
     <string name="download_group_playlists">按文件夹分组播放列表</string>
     <string name="download_rename_title">重命名</string>
     <string name="download_custom_command_title">自定义命令</string>
