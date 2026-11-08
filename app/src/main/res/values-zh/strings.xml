@@ -109,6 +109,9 @@
     <string name="download_clips_start">开始</string>
     <string name="download_clips_end">结束</string>
     <string name="download_audio_format_title">音频格式</string>
+    <string name="download_to_sd_card">下载到 SD 卡</string>
+    <string name="download_sd_card_folder_title">SD 卡文件夹</string>
+    <string name="download_sd_card_folder_none">选择文件夹</string>
     <string name="download_private_mode">隐私模式</string>
     <string name="download_group_playlists">按文件夹分组播放列表</string>
     <string name="download_rename_title">重命名</string>

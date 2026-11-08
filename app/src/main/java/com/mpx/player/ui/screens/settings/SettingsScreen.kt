@@ -6,9 +6,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
 import android.text.format.Formatter
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.FileProvider
 import com.mpx.player.BuildConfig
 import androidx.compose.foundation.background
@@ -74,6 +77,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -101,6 +105,7 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.download.MpxDownloader
 import com.mpx.player.download.YtDlpUpdateOutcome
 import com.mpx.player.download.YtDlpUpdateState
+import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.screens.download.AudioFormatDialog
 import com.mpx.player.ui.screens.download.CustomCommandDialog
 import com.mpx.player.ui.screens.download.DownloadDirectoryDialog
@@ -154,6 +159,11 @@ fun SettingsScreen(
     onPaletteChanged: ((String) -> Unit)? = null,
     onThemeColorChanged: ((String) -> Unit)? = null,
     playbackManager: PlaybackManager? = null,
+    // Issue #393: the SD-card folder picker — the launcher lives on
+    // the Activity (see MainActivity), this screen only supplies the
+    // callback. Null in previews, which never open the picker.
+    sdCardFolderLauncher: ActivityResultLauncher<Uri?>? = null,
+    sdCardFolderHandler: ActivityResultHandler<Uri?>? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -243,6 +253,28 @@ fun SettingsScreen(
         if (next.decoderMode != oldDecoder) {
             val decMode = com.mpx.player.playback.DecoderMode.values().find { it.label == next.decoderMode } ?: com.mpx.player.playback.DecoderMode.HW
             actualPlaybackManager.setDecoderMode(decMode)
+        }
+    }
+
+    // Issue #393: the SD-card folder picker result — same handler
+    // pattern as the subtitle picker (the launcher lives on the
+    // Activity; this screen only supplies the callback). A picked
+    // folder takes the persistable read/write permission, saves the
+    // tree URI, and turns the toggle on. A cancelled pick (null)
+    // changes nothing. Placed after update() — local functions are
+    // only visible after their declaration.
+    SideEffect {
+        sdCardFolderHandler?.callback = { uri: Uri? ->
+            if (uri != null) {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                    )
+                } catch (_: Exception) {
+                }
+                update(settings.copy(downloadSdCardUri = uri.toString(), downloadToSdCard = true))
+            }
         }
     }
 
@@ -915,6 +947,25 @@ fun SettingsScreen(
                                 // still downloads and still shows in
                                 // Downloaded.
                                 ToggleRow(stringResource(R.string.download_private_mode), settings.downloadPrivateMode) { update(settings.copy(downloadPrivateMode = it)) }
+                                // Issue #393: SD-card downloads — the
+                                // toggle flips the mode; flipping it
+                                // ON with no folder picked opens the
+                                // system folder picker instead, and
+                                // picking a folder turns it on.
+                                ToggleRow(stringResource(R.string.download_to_sd_card), settings.downloadToSdCard) {
+                                    if (it && settings.downloadSdCardUri.isBlank()) {
+                                        sdCardFolderLauncher?.launch(null)
+                                    } else {
+                                        update(settings.copy(downloadToSdCard = it))
+                                    }
+                                }
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_sd_card_folder_title),
+                                    subtitle = sdCardFolderDisplayName(context, settings.downloadSdCardUri)
+                                        ?: stringResource(R.string.download_sd_card_folder_none),
+                                    icon = Icons.Filled.Folder,
+                                    onClick = { sdCardFolderLauncher?.launch(null) },
+                                )
                                 PreferenceRow(
                                     title = if (ytdlpVersion.isNotBlank()) stringResource(R.string.download_ytdlp_version, ytdlpVersion) else "yt-dlp",
                                     subtitle = null,
@@ -1933,4 +1984,32 @@ private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = w
         playlistsCount = playlists,
         lastScannedTime = timeFormat.format(Date()),
     )
+}
+
+/**
+ * Issue #393: the picked SD-card folder's display name, for the
+ * folder row's subtitle — the tree document's own name, not the
+ * raw tree URI. Null when no folder is picked or the URI can no
+ * longer be read (permission revoked).
+ */
+private fun sdCardFolderDisplayName(context: Context, treeUriString: String): String? {
+    if (treeUriString.isBlank()) return null
+    return try {
+        val treeUri = Uri.parse(treeUriString)
+        val docUri = DocumentsContract.buildDocumentUriUsingTree(
+            treeUri,
+            DocumentsContract.getTreeDocumentId(treeUri),
+        )
+        context.contentResolver.query(
+            docUri,
+            arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+            null, null, null,
+        )?.use { cursor ->
+            if (!cursor.moveToFirst()) return null
+            val col = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+            if (col < 0) null else cursor.getString(col)?.takeIf { it.isNotBlank() }
+        }
+    } catch (_: Exception) {
+        null
+    }
 }

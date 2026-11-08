@@ -39,7 +39,7 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
         DownloadTaskEntity::class,
         DownloadHistoryEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = false,
 )
 abstract class MpxDatabase : RoomDatabase() {
@@ -95,6 +95,7 @@ abstract class MpxDatabase : RoomDatabase() {
                         "`uploader` TEXT, `thumbnailUrl` TEXT, " +
                         "`fileUri` TEXT NOT NULL, `fileName` TEXT NOT NULL, " +
                         "`fileSize` INTEGER NOT NULL, `isPublic` INTEGER NOT NULL, " +
+                        "`isSdCard` INTEGER NOT NULL, " +
                         "`completedAt` INTEGER NOT NULL)",
                 )
             }
@@ -174,6 +175,21 @@ abstract class MpxDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Issue #393: the SD-card flag on the download_history table.
+         * NOT NULL DEFAULT 0 — existing rows are public-Downloads
+         * files, exactly the right default. Same rule as
+         * #342/#346/#383/#386/#387/#388/#389: a proper migration, so
+         * the 8→9 jump must NOT wipe the user's favourites, history
+         * and playlists through the pre-existing
+         * fallbackToDestructiveMigration() below.
+         */
+        val MIGRATION_8_9: Migration = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `download_history` ADD COLUMN `isSdCard` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getInstance(context: Context): MpxDatabase {
             return instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -181,7 +197,7 @@ abstract class MpxDatabase : RoomDatabase() {
                     MpxDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }
