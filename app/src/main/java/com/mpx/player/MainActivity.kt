@@ -217,16 +217,25 @@ class MainActivity : ComponentActivity() {
             // does not move. The player manages its own bars during
             // playback (WindowInsetsControllerCompat there) and this
             // only sets the default state for the main screens.
+            // Issue #373: the Player page is a video surface, not an
+            // app page — it always renders dark, so the bars there
+            // always get the dark treatment (transparent, light
+            // icons), never the app theme. In Light theme the old
+            // code drew dark icons over a black video. currentRoute
+            // is activity state, so a route change recomposes this
+            // and the SideEffect below re-runs with the right style.
             val isDarkTheme = when (currentTheme) {
                 "Light" -> false
                 "Dark", "Midnight", "Classic" -> true
                 else -> isSystemInDarkTheme()
             }
+            val isPlayerRoute = currentRoute == Screen.Player.route
+            val useDarkBars = isPlayerRoute || isDarkTheme
             SideEffect {
                 enableEdgeToEdge(
-                    statusBarStyle = if (isDarkTheme) SystemBarStyle.dark(Color.TRANSPARENT)
+                    statusBarStyle = if (useDarkBars) SystemBarStyle.dark(Color.TRANSPARENT)
                     else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
-                    navigationBarStyle = if (isDarkTheme) SystemBarStyle.dark(Color.TRANSPARENT)
+                    navigationBarStyle = if (useDarkBars) SystemBarStyle.dark(Color.TRANSPARENT)
                     else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
                 )
             }
