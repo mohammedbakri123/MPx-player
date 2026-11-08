@@ -2185,6 +2185,14 @@ class MpxDownloader private constructor(context: Context) {
         // catch block below publishes the HTTP/audio fallbacks too —
         // a val inside the try would not be visible there.
         var playlistFolder: String? = null
+        // Issue #396: the combined publish subfolder — site folder
+        // above the playlist folder ("youtube/<playlist>"), or either
+        // alone, or null for flat. Same declaration rule as
+        // playlistFolder: the catch block publishes the HTTP/audio
+        // fallbacks too. The playlist part is known before the info
+        // fetch; the site part only after getInfo (the extractor key
+        // lives on the info), so this is assigned twice.
+        var downloadSubfolder: String? = null
         var outputPrefix = ""
         try {
             if (!ensureInitialized()) {
@@ -2220,7 +2228,12 @@ class MpxDownloader private constructor(context: Context) {
             } else {
                 null
             }
-            outputPrefix = playlistFolder?.let { "$it/" } ?: ""
+            // Issue #396: first half of the combined subfolder — the
+            // playlist part only. The site part joins it after
+            // getInfo, below; until then the -o prefix and the
+            // fallback publish use the playlist folder alone.
+            downloadSubfolder = playlistFolder
+            outputPrefix = downloadSubfolder?.let { "$it/" } ?: ""
 
             // Title first, so the row shows something real while the bytes
             // move. getInfo is a full yt-dlp run of its own. Seal's info
@@ -2260,7 +2273,7 @@ class MpxDownloader private constructor(context: Context) {
                 // path below) is still the right next step for it. Any
                 // other URL fails here with the real cause.
                 if (isDirectMediaUrl(item.url)) {
-                    runHttpFallback(item, tempDirFor, playlistFolder)
+                    runHttpFallback(item, tempDirFor, downloadSubfolder)
                 } else {
                     updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
                 }
@@ -2270,6 +2283,18 @@ class MpxDownloader private constructor(context: Context) {
             videoId = info.id?.takeIf { it.isNotBlank() }
             extractor = info.extractor?.takeIf { it.isNotBlank() }
             val extractorKey = info.extractorKey?.takeIf { it.isNotBlank() }
+            // Issue #396: second half of the combined subfolder — the
+            // site folder, from the extractor key (Seal's
+            // SUBDIRECTORY_EXTRACTOR appends `/${extractorKey}`).
+            // Site first, playlist second. The -o prefix is
+            // recomputed here too, so the yt-dlp output path and the
+            // publish path agree; both are built after this point.
+            if (settings.downloadGroupBySite) {
+                val siteFolder = extractorKey?.let { sanitizeDownloadFolderName(it) }
+                downloadSubfolder = listOfNotNull(siteFolder, playlistFolder)
+                    .joinToString("/").ifBlank { null }
+                outputPrefix = downloadSubfolder?.let { "$it/" } ?: ""
+            }
             uploader = info.uploader?.takeIf { it.isNotBlank() }
             thumbnailUrl = info.thumbnail?.takeIf { it.isNotBlank() }
             // Issue #388: the row shows the new title when the user
@@ -2588,7 +2613,7 @@ class MpxDownloader private constructor(context: Context) {
                     // file, unchanged.
                     val chapters = findSplitOutputFiles(response.out, beforeNames)
                     if (chapters.isNotEmpty()) {
-                        val published = chapters.map { publishFinishedFile(it, subfolder = playlistFolder, audioOnly = item.audioOnly) }
+                        val published = chapters.map { publishFinishedFile(it, subfolder = downloadSubfolder, audioOnly = item.audioOnly) }
                         val first = published.first()
                         updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = first) }
                         recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, first)
@@ -2601,7 +2626,7 @@ class MpxDownloader private constructor(context: Context) {
                     // Issue #344: the finished file moves to the public
                     // Downloads/MPx/ folder before the row completes, so
                     // the completed list picks it up from MediaStore.
-                    val published = publishFinishedFile(file, subfolder = playlistFolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(file, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     // Issue #346: record the finished download.
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
@@ -2627,7 +2652,7 @@ class MpxDownloader private constructor(context: Context) {
             if (item.audioOnly) {
                 val fallback = findAudioFallbackFile(beforeNames, tempDirFor)
                 if (fallback != null) {
-                    val published = publishFinishedFile(fallback, subfolder = playlistFolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(fallback, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2646,7 +2671,7 @@ class MpxDownloader private constructor(context: Context) {
             if (item.subtitles) {
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
-                    val published = publishFinishedFile(file, subfolder = playlistFolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(file, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2670,7 +2695,7 @@ class MpxDownloader private constructor(context: Context) {
             ) {
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
-                    val published = publishFinishedFile(file, subfolder = playlistFolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(file, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2694,7 +2719,7 @@ class MpxDownloader private constructor(context: Context) {
             // have its raw audio on disk (conversion failed after the
             // download); anything else is a real failure.
             if (isDirectMediaUrl(item.url)) {
-                runHttpFallback(item, tempDirFor, playlistFolder)
+                runHttpFallback(item, tempDirFor, downloadSubfolder)
             } else if (item.audioOnly) {
                 // beforeNames is not in scope here (it is declared after
                 // the getInfo phase), so only the temp dir is searched.
@@ -2703,7 +2728,7 @@ class MpxDownloader private constructor(context: Context) {
                 // its id/extractor/uploader.
                 val fallback = findAudioFallbackFile(null, tempDirFor)
                 if (fallback != null) {
-                    val published = publishFinishedFile(fallback, subfolder = playlistFolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(fallback, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2748,13 +2773,13 @@ class MpxDownloader private constructor(context: Context) {
      * #342 startup wipe deletes — and `refreshFiles()` excludes `.part`
      * files anyway, so the completed list can never see one.
      */
-    private suspend fun runHttpFallback(item: ActiveDownload, tempDirFor: File, playlistFolder: String? = null) {
+    private suspend fun runHttpFallback(item: ActiveDownload, tempDirFor: File, downloadSubfolder: String? = null) {
         val id = item.id
         val fileName = fileNameFromUrl(item.url)
         val partFile = File(tempDirFor, "$fileName.part")
         // Issue #389: a direct-link fallback for a grouped playlist
         // entry lands in the playlist folder, like the yt-dlp path.
-        val outFile = File(downloadsDir, playlistFolder?.let { "$it/$fileName" } ?: fileName)
+        val outFile = File(downloadsDir, downloadSubfolder?.let { "$it/$fileName" } ?: fileName)
         // Issue #350: bytes are about to move again (the yt-dlp run
         // failed) — the phase goes back to DOWNLOADING even if the
         // failed run had reached merging.
@@ -2829,7 +2854,7 @@ class MpxDownloader private constructor(context: Context) {
                 partFile.delete()
             }
             // Issue #344: same public move as the yt-dlp path.
-            val published = publishFinishedFile(outFile, subfolder = playlistFolder, audioOnly = item.audioOnly)
+            val published = publishFinishedFile(outFile, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
             updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
             // Issue #346: record the finished download. A direct link
             // has no video id/extractor/uploader/thumbnail — the
