@@ -1003,6 +1003,11 @@ fun SettingsScreen(
                                 ToggleRow(stringResource(R.string.download_merge_to_mkv), settings.downloadMergeToMkv) { update(settings.copy(downloadMergeToMkv = it)) }
                                 ToggleRow(stringResource(R.string.download_audio_multistreams), settings.downloadAudioMultistreams) { update(settings.copy(downloadAudioMultistreams = it)) }
                                 ToggleRow(stringResource(R.string.download_write_thumbnail), settings.downloadWriteThumbnail) { update(settings.copy(downloadWriteThumbnail = it)) }
+                                // Issue #391: embed the cover art into
+                                // the file itself. Lives next to "Save
+                                // thumbnail file" — one embeds, one
+                                // keeps the sidecar.
+                                ToggleRow(stringResource(R.string.download_embed_thumbnail), settings.downloadEmbedThumbnail) { update(settings.copy(downloadEmbedThumbnail = it)) }
 
                                 Spacer(Modifier.height(16.dp))
                                 Text(stringResource(R.string.download_settings_network), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)

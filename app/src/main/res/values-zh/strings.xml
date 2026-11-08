@@ -86,6 +86,7 @@
     <string name="download_directory_hint">文件夹名称，例如 MPx</string>
     <string name="download_merge_to_mkv">合并为 MKV</string>
     <string name="download_audio_multistreams">多音轨</string>
+    <string name="download_embed_thumbnail">嵌入封面</string>
     <string name="download_write_thumbnail">保存缩略图</string>
     <string name="download_allow_metered">允许使用移动数据下载</string>
     <string name="download_metered_title">使用移动数据下载？</string>

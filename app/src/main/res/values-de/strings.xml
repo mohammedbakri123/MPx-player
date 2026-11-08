@@ -86,6 +86,7 @@
     <string name="download_directory_hint">Ordnername, z. B. MPx</string>
     <string name="download_merge_to_mkv">Zu MKV zusammenführen</string>
     <string name="download_audio_multistreams">Mehrere Audiospuren</string>
+    <string name="download_embed_thumbnail">Cover einbetten</string>
     <string name="download_write_thumbnail">Vorschaubild speichern</string>
     <string name="download_allow_metered">Downloads über mobile Daten erlauben</string>
     <string name="download_metered_title">Über mobile Daten herunterladen?</string>
