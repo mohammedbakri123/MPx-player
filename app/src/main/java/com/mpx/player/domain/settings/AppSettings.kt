@@ -177,6 +177,13 @@ data class AppSettings(
     // settings, like Seal's download defaults.
     val downloadAudioOnly: Boolean = false,
     val downloadSubtitles: Boolean = false,
+    /**
+     * Issue #380: allow downloads on a metered network (mobile data or a
+     * metered WiFi). Off by default, like Seal's `CELLULAR_DOWNLOAD` —
+     * starting a download on a metered network asks first (see
+     * MeteredDownloadDialog) instead of silently burning mobile data.
+     */
+    val downloadAllowMetered: Boolean = false,
     // Issue #379: download folder — the subfolder of the public Downloads
     // folder downloads land in (MediaStore RELATIVE_PATH "Download/<name>").
     // "MPx" is the old fixed folder, so existing installs keep their files.

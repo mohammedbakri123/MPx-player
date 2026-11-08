@@ -942,6 +942,9 @@ fun SettingsScreen(
                                     icon = Icons.Filled.Tune,
                                     onClick = { showOptions = true },
                                 )
+                                // Issue #380: metered gate — off by
+                                // default, like Seal's CELLULAR_DOWNLOAD.
+                                ToggleRow(stringResource(R.string.download_allow_metered), settings.downloadAllowMetered) { update(settings.copy(downloadAllowMetered = it)) }
 
                                 Spacer(Modifier.height(16.dp))
                                 PreferenceRow(
