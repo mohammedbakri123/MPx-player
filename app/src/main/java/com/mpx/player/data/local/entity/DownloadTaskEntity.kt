@@ -46,6 +46,8 @@ data class DownloadTaskEntity(
     val splitByChapter: Boolean = false,
     /** Issue #388: the rename from the format sheet, null when the video keeps its own title. */
     val newTitle: String? = null,
+    /** Issue #389: the playlist this download came from, null for single videos. */
+    val playlistTitle: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
 ) {
     fun toActiveDownload(): ActiveDownload = ActiveDownload(
@@ -61,6 +63,7 @@ data class DownloadTaskEntity(
         clips = decodeClips(clips),
         splitByChapter = splitByChapter,
         newTitle = newTitle,
+        playlistTitle = playlistTitle,
     )
 
     companion object {
@@ -79,6 +82,7 @@ data class DownloadTaskEntity(
             clips = encodeClips(item.clips),
             splitByChapter = item.splitByChapter,
             newTitle = item.newTitle,
+            playlistTitle = item.playlistTitle,
             createdAt = createdAt,
         )
 

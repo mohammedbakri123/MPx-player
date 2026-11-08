@@ -189,6 +189,12 @@ data class AppSettings(
     // "MPx" is the old fixed folder, so existing installs keep their files.
     val downloadDirectory: String = "MPx",
     /**
+     * Issue #389: group playlist downloads in a folder named after
+     * the playlist (Seal's `SUBDIRECTORY_PLAYLIST_TITLE`). Off by
+     * default — playlists land flat in the download folder, as today.
+     */
+    val downloadGroupPlaylists: Boolean = false,
+    /**
      * Issue #384: custom command (Seal's CommandTemplate, one line of
      * yt-dlp options). The text is pre-filled with Seal's sample
      * `--no-mtime -S "ext"`; the switch decides whether it runs.

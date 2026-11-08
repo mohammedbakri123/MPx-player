@@ -139,6 +139,16 @@ data class ActiveDownload(
      * the video keeps its own title. Only set on video downloads.
      */
     val newTitle: String? = null,
+    /**
+     * Issue #389: the playlist this download came from (the
+     * playlist title from the picker). Null for single videos.
+     * Used as the folder name when the group-playlists setting
+     * is on — Seal's `%(playlist)s/` prefix cannot work here,
+     * because MPx downloads each playlist entry as its own
+     * yt-dlp run with a single video URL, so yt-dlp never sees
+     * playlist context.
+     */
+    val playlistTitle: String? = null,
 )
 
 /**
@@ -1101,9 +1111,10 @@ class MpxDownloader private constructor(context: Context) {
         urls: List<String>,
         audioOnly: Boolean = false,
         subtitles: Boolean = false,
+        playlistTitle: String? = null,
     ) {
         for (url in urls) {
-            startDownload(url, audioOnly = audioOnly, subtitles = subtitles)
+            startDownload(url, audioOnly = audioOnly, subtitles = subtitles, playlistTitle = playlistTitle)
         }
     }
 
@@ -1122,6 +1133,7 @@ class MpxDownloader private constructor(context: Context) {
         clips: List<VideoClip> = emptyList(),
         splitByChapter: Boolean = false,
         newTitle: String? = null,
+        playlistTitle: String? = null,
     ) {
         val url = rawUrl.trim()
         if (url.isBlank()) return
@@ -1138,6 +1150,7 @@ class MpxDownloader private constructor(context: Context) {
             clips = clips,
             splitByChapter = splitByChapter,
             newTitle = newTitle,
+            playlistTitle = playlistTitle,
         )
         _activeDownloads.update { it + item }
         persistTask(item)
@@ -1277,13 +1290,19 @@ class MpxDownloader private constructor(context: Context) {
             MediaStore.Downloads.SIZE,
             MediaStore.Downloads.DATE_MODIFIED,
         )
+        // Issue #389: the listing matches the download folder AND
+        // everything under it — playlist files live in
+        // Download/MPx/<playlist>/, so an exact `=` would hide
+        // them. LIKE with a trailing `%` matches the folder itself
+        // too (`%` matches the empty string), and the trailing
+        // slash in the prefix keeps Download/MPx2/ out.
         val entries = mutableListOf<DownloadedFile>()
         try {
             appContext.contentResolver.query(
                 MediaStore.Downloads.EXTERNAL_CONTENT_URI,
                 projection,
-                "${MediaStore.Downloads.RELATIVE_PATH} = ?",
-                arrayOf(publicDownloadsRelativePathSlash()),
+                "${MediaStore.Downloads.RELATIVE_PATH} LIKE ?",
+                arrayOf("${publicDownloadsRelativePathSlash()}%"),
                 "${MediaStore.Downloads.DATE_MODIFIED} DESC",
             )?.use { cursor ->
                 val idCol = cursor.getColumnIndex(MediaStore.Downloads._ID)
@@ -1374,11 +1393,15 @@ class MpxDownloader private constructor(context: Context) {
      * not exist — the private file is kept and returned as the
      * fallback, so a failed publish never loses a download.
      */
-    private fun publishFinishedFile(privateFile: File): DownloadedFile {
-        val published = publishToPublicDownloads(privateFile)
+    // Issue #389: the subfolder is the playlist folder when the
+    // download came from a grouped playlist, null otherwise —
+    // the file (and its sidecars) land in
+    // Downloads/MPx/<playlist>/ instead of flat in Downloads/MPx/.
+    private fun publishFinishedFile(privateFile: File, subfolder: String? = null): DownloadedFile {
+        val published = publishToPublicDownloads(privateFile, subfolder = subfolder)
         if (published.isPublic) {
-            publishSiblingSubtitles(privateFile)
-            publishSiblingThumbnail(privateFile)
+            publishSiblingSubtitles(privateFile, subfolder)
+            publishSiblingThumbnail(privateFile, subfolder)
         }
         return published
     }
@@ -1399,6 +1422,7 @@ class MpxDownloader private constructor(context: Context) {
     private fun publishToPublicDownloads(
         privateFile: File,
         scanIntoLibrary: Boolean = true,
+        subfolder: String? = null,
     ): DownloadedFile {
         val private = DownloadedFile(
             uri = privateFile.absolutePath,
@@ -1409,10 +1433,13 @@ class MpxDownloader private constructor(context: Context) {
         )
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return private
         val mimeType = mimeTypeFor(privateFile.name)
+        // Issue #389: a playlist download publishes into its
+        // playlist subfolder; anything else keeps the flat path.
+        val relativePath = publicDownloadsRelativePath() + (subfolder?.let { "/$it" } ?: "")
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, privateFile.name)
             put(MediaStore.Downloads.MIME_TYPE, mimeType)
-            put(MediaStore.Downloads.RELATIVE_PATH, publicDownloadsRelativePath())
+            put(MediaStore.Downloads.RELATIVE_PATH, relativePath)
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
         val uri = try {
@@ -1480,7 +1507,7 @@ class MpxDownloader private constructor(context: Context) {
         // 5. Scan, so galleries / file managers / other players see
         // the file (a Downloads-collection entry alone is not in the
         // Video/Audio collections). Best-effort.
-        if (scanIntoLibrary) scanPublicFile(actualName, mimeType)
+        if (scanIntoLibrary) scanPublicFile(actualName, mimeType, subfolder)
         return DownloadedFile(
             uri = uri.toString(),
             name = actualName,
@@ -1499,18 +1526,22 @@ class MpxDownloader private constructor(context: Context) {
      * it is deleted rather than stranded. Never scanned (see
      * [scanPublicFile] — subtitles are not media).
      */
-    private fun publishSiblingSubtitles(video: File) {
+    private fun publishSiblingSubtitles(video: File, subfolder: String? = null) {
         val base = video.nameWithoutExtension
         val prefix = "$base."
+        // Issue #389: the sidecars sit next to the video — in the
+        // playlist folder when grouped, in the download folder
+        // otherwise — so look in the video's own directory.
+        val dir = video.parentFile ?: downloadsDir
         val sidecars = try {
-            downloadsDir.listFiles()
+            dir.listFiles()
                 ?.filter { it.isFile && it.name.startsWith(prefix) && it.extension.lowercase() in SUBTITLE_EXTENSIONS }
                 ?: emptyList()
         } catch (_: Exception) {
             return
         }
         for (sidecar in sidecars) {
-            val published = publishToPublicDownloads(sidecar, scanIntoLibrary = false)
+            val published = publishToPublicDownloads(sidecar, scanIntoLibrary = false, subfolder = subfolder)
             if (!published.isPublic) {
                 try {
                     sidecar.delete()
@@ -1529,18 +1560,21 @@ class MpxDownloader private constructor(context: Context) {
      * (a cover file is not library media). Without the toggle there
      * is no png, so this finds nothing and does nothing.
      */
-    private fun publishSiblingThumbnail(video: File) {
+    private fun publishSiblingThumbnail(video: File, subfolder: String? = null) {
         val base = video.nameWithoutExtension
         val prefix = "$base."
+        // Issue #389: same as the subtitle sidecars — the thumbnail
+        // sits next to the video, in the playlist folder when grouped.
+        val dir = video.parentFile ?: downloadsDir
         val thumbnails = try {
-            downloadsDir.listFiles()
+            dir.listFiles()
                 ?.filter { it.isFile && it.name.startsWith(prefix) && it.extension.lowercase() == "png" }
                 ?: emptyList()
         } catch (_: Exception) {
             return
         }
         for (thumbnail in thumbnails) {
-            val published = publishToPublicDownloads(thumbnail, scanIntoLibrary = false)
+            val published = publishToPublicDownloads(thumbnail, scanIntoLibrary = false, subfolder = subfolder)
             if (!published.isPublic) {
                 try {
                     thumbnail.delete()
@@ -1563,11 +1597,14 @@ class MpxDownloader private constructor(context: Context) {
      * sidecars are never scanned (Seal drops them from its scan list
      * too — they are not media).
      */
-    private fun scanPublicFile(publicName: String, mimeType: String) {
+    private fun scanPublicFile(publicName: String, mimeType: String, subfolder: String? = null) {
         try {
+            // Issue #389: the scan path follows the publish path —
+            // into the playlist subfolder when grouped.
+            val relative = publicDownloadsRelativePath() + (subfolder?.let { "/$it" } ?: "")
             val publicPath = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "${publicDownloadsRelativePath()}/$publicName",
+                "$relative/$publicName",
             ).absolutePath
             MediaScannerConnection.scanFile(appContext, arrayOf(publicPath), arrayOf(mimeType), null)
         } catch (_: Exception) {
@@ -1786,6 +1823,12 @@ class MpxDownloader private constructor(context: Context) {
         var extractor: String? = null
         var uploader: String? = null
         var thumbnailUrl: String? = null
+        // Issue #389: the playlist folder, assigned once the settings
+        // load below. Declared here (not inside the try) because the
+        // catch block below publishes the HTTP/audio fallbacks too —
+        // a val inside the try would not be visible there.
+        var playlistFolder: String? = null
+        var outputPrefix = ""
         try {
             if (!ensureInitialized()) {
                 updateItem(id) {
@@ -1806,6 +1849,21 @@ class MpxDownloader private constructor(context: Context) {
             val settings = settingsRepository.load()
             val userAgent = settings.downloadUserAgent
             val cookiesFile = item.cookiesFile?.takeIf { it.isFile }
+            // Issue #389: the playlist folder. Seal does this with
+            // the `%(playlist)s/` template prefix, but that cannot
+            // work here — each playlist entry runs yt-dlp on its own
+            // single video URL, so yt-dlp never sees playlist
+            // context. Instead the playlist title rides down from
+            // the picker on the item, and the folder is a literal
+            // sanitized name (same sanitizer as the download folder
+            // setting — a slash in a playlist title cannot escape
+            // the folder). Null means flat, as today.
+            playlistFolder = if (settings.downloadGroupPlaylists) {
+                item.playlistTitle?.takeIf { it.isNotBlank() }?.let { sanitizeDownloadFolderName(it) }
+            } else {
+                null
+            }
+            outputPrefix = playlistFolder?.let { "$it/" } ?: ""
 
             // Title first, so the row shows something real while the bytes
             // move. getInfo is a full yt-dlp run of its own. Seal's info
@@ -1845,7 +1903,7 @@ class MpxDownloader private constructor(context: Context) {
                 // path below) is still the right next step for it. Any
                 // other URL fails here with the real cause.
                 if (isDirectMediaUrl(item.url)) {
-                    runHttpFallback(item, tempDirFor)
+                    runHttpFallback(item, tempDirFor, playlistFolder)
                 } else {
                     updateItem(id) { it.copy(status = DownloadStatus.FAILED, error = shortError(e)) }
                 }
@@ -1904,10 +1962,14 @@ class MpxDownloader private constructor(context: Context) {
                 // the same filename, so the second clip would
                 // overwrite (or be skipped as already downloaded).
                 // The section fields come from yt-dlp itself.
+                // Issue #389: the playlist folder prefixes the
+                // template, so playlist videos land in a folder
+                // named after the playlist inside the download
+                // folder. yt-dlp creates the folder.
                 val outputTemplate = if (item.clips.isEmpty()) {
-                    "%(title).200B.%(ext)s"
+                    "${outputPrefix}%(title).200B.%(ext)s"
                 } else {
-                    "%(title).200B [%(section_start)d-%(section_end)d].%(ext)s"
+                    "${outputPrefix}%(title).200B [%(section_start)d-%(section_end)d].%(ext)s"
                 }
                 addOption("-o", File(downloadsDir, outputTemplate).absolutePath)
                 // Issue #387: split by chapter (Seal's
@@ -1923,7 +1985,7 @@ class MpxDownloader private constructor(context: Context) {
                 if (item.splitByChapter && !item.audioOnly && !useCustomCommand) {
                     addOption(
                         "-o",
-                        "chapter:${File(downloadsDir, "%(title).200B/%(section_number)d - %(section_title).200B.%(ext)s").absolutePath}",
+                        "chapter:${File(downloadsDir, "${outputPrefix}%(title).200B/%(section_number)d - %(section_title).200B.%(ext)s").absolutePath}",
                     )
                     addOption("--split-chapters")
                 }
@@ -2160,7 +2222,7 @@ class MpxDownloader private constructor(context: Context) {
                     // file, unchanged.
                     val chapters = findSplitOutputFiles(response.out, beforeNames)
                     if (chapters.isNotEmpty()) {
-                        val published = chapters.map { publishFinishedFile(it) }
+                        val published = chapters.map { publishFinishedFile(it, subfolder = playlistFolder) }
                         val first = published.first()
                         updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = first) }
                         recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, first)
@@ -2173,7 +2235,7 @@ class MpxDownloader private constructor(context: Context) {
                     // Issue #344: the finished file moves to the public
                     // Downloads/MPx/ folder before the row completes, so
                     // the completed list picks it up from MediaStore.
-                    val published = publishFinishedFile(file)
+                    val published = publishFinishedFile(file, subfolder = playlistFolder)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     // Issue #346: record the finished download.
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
@@ -2199,7 +2261,7 @@ class MpxDownloader private constructor(context: Context) {
             if (item.audioOnly) {
                 val fallback = findAudioFallbackFile(beforeNames, tempDirFor)
                 if (fallback != null) {
-                    val published = publishFinishedFile(fallback)
+                    val published = publishFinishedFile(fallback, subfolder = playlistFolder)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2218,7 +2280,7 @@ class MpxDownloader private constructor(context: Context) {
             if (item.subtitles) {
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
-                    val published = publishFinishedFile(file)
+                    val published = publishFinishedFile(file, subfolder = playlistFolder)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2242,7 +2304,7 @@ class MpxDownloader private constructor(context: Context) {
             ) {
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
-                    val published = publishFinishedFile(file)
+                    val published = publishFinishedFile(file, subfolder = playlistFolder)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2266,7 +2328,7 @@ class MpxDownloader private constructor(context: Context) {
             // have its raw audio on disk (conversion failed after the
             // download); anything else is a real failure.
             if (isDirectMediaUrl(item.url)) {
-                runHttpFallback(item, tempDirFor)
+                runHttpFallback(item, tempDirFor, playlistFolder)
             } else if (item.audioOnly) {
                 // beforeNames is not in scope here (it is declared after
                 // the getInfo phase), so only the temp dir is searched.
@@ -2275,7 +2337,7 @@ class MpxDownloader private constructor(context: Context) {
                 // its id/extractor/uploader.
                 val fallback = findAudioFallbackFile(null, tempDirFor)
                 if (fallback != null) {
-                    val published = publishFinishedFile(fallback)
+                    val published = publishFinishedFile(fallback, subfolder = playlistFolder)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2320,11 +2382,13 @@ class MpxDownloader private constructor(context: Context) {
      * #342 startup wipe deletes — and `refreshFiles()` excludes `.part`
      * files anyway, so the completed list can never see one.
      */
-    private suspend fun runHttpFallback(item: ActiveDownload, tempDirFor: File) {
+    private suspend fun runHttpFallback(item: ActiveDownload, tempDirFor: File, playlistFolder: String? = null) {
         val id = item.id
         val fileName = fileNameFromUrl(item.url)
         val partFile = File(tempDirFor, "$fileName.part")
-        val outFile = File(downloadsDir, fileName)
+        // Issue #389: a direct-link fallback for a grouped playlist
+        // entry lands in the playlist folder, like the yt-dlp path.
+        val outFile = File(downloadsDir, playlistFolder?.let { "$it/$fileName" } ?: fileName)
         // Issue #350: bytes are about to move again (the yt-dlp run
         // failed) — the phase goes back to DOWNLOADING even if the
         // failed run had reached merging.
@@ -2399,7 +2463,7 @@ class MpxDownloader private constructor(context: Context) {
                 partFile.delete()
             }
             // Issue #344: same public move as the yt-dlp path.
-            val published = publishFinishedFile(outFile)
+            val published = publishFinishedFile(outFile, subfolder = playlistFolder)
             updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
             // Issue #346: record the finished download. A direct link
             // has no video id/extractor/uploader/thumbnail — the
@@ -2483,9 +2547,17 @@ class MpxDownloader private constructor(context: Context) {
             ?.let { File(it) }
             ?.takeIf { it.isFile && isMediaFile(it) }
         if (destination != null) return destination
-        return downloadsDir.listFiles()
-            ?.filter { it.isFile && it.name !in beforeNames && isMediaFile(it) && !it.name.endsWith(".part") }
-            ?.maxByOrNull { it.lastModified() }
+        // Issue #389: the fallback descends into new directories,
+        // like findSplitOutputFiles — a grouped playlist file sits
+        // in a new subfolder, not at the top level.
+        return downloadsDir.listFiles().orEmpty()
+            .filter { it.name !in beforeNames }
+            .flatMap { entry ->
+                if (entry.isDirectory) entry.walkTopDown().filter { it.isFile }.toList()
+                else listOf(entry)
+            }
+            .filter { it.isFile && isMediaFile(it) && !it.name.endsWith(".part") }
+            .maxByOrNull { it.lastModified() }
     }
 
     private fun shortError(e: Exception): String {
