@@ -42,6 +42,8 @@ data class DownloadTaskEntity(
      * table for a per-download list.
      */
     val clips: String? = null,
+    /** Issue #387: split this download by chapter, false for existing rows (one file). */
+    val splitByChapter: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
 ) {
     fun toActiveDownload(): ActiveDownload = ActiveDownload(
@@ -55,6 +57,7 @@ data class DownloadTaskEntity(
         subtitles = subtitles,
         formatId = formatId,
         clips = decodeClips(clips),
+        splitByChapter = splitByChapter,
     )
 
     companion object {
@@ -71,6 +74,7 @@ data class DownloadTaskEntity(
             subtitles = item.subtitles,
             formatId = item.formatId,
             clips = encodeClips(item.clips),
+            splitByChapter = item.splitByChapter,
             createdAt = createdAt,
         )
 

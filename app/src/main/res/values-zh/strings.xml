@@ -107,6 +107,7 @@
     <string name="download_clips_add">添加片段</string>
     <string name="download_clips_start">开始</string>
     <string name="download_clips_end">结束</string>
+    <string name="download_split_by_chapter">按章节拆分</string>
     <string name="download_clips_remove">删除片段</string>
     <string name="download_downloaded_title">已下载</string>
     <string name="download_downloaded_empty_message">还没有下载内容。完成的下载将显示在这里。</string>

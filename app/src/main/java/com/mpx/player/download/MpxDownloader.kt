@@ -124,6 +124,14 @@ data class ActiveDownload(
      * own file.
      */
     val clips: List<VideoClip> = emptyList(),
+    /**
+     * Issue #387: split this download by chapter (Seal's
+     * `FormatConfig.splitByChapter`). Set from the switch in the
+     * format sheet; each chapter becomes `--split-chapters` output
+     * in a subfolder named after the video. Only set on video
+     * downloads — a video without chapters downloads as one file.
+     */
+    val splitByChapter: Boolean = false,
 )
 
 /**
@@ -1105,6 +1113,7 @@ class MpxDownloader private constructor(context: Context) {
         subtitles: Boolean = false,
         formatId: String? = null,
         clips: List<VideoClip> = emptyList(),
+        splitByChapter: Boolean = false,
     ) {
         val url = rawUrl.trim()
         if (url.isBlank()) return
@@ -1119,6 +1128,7 @@ class MpxDownloader private constructor(context: Context) {
             subtitles = subtitles,
             formatId = formatId,
             clips = clips,
+            splitByChapter = splitByChapter,
         )
         _activeDownloads.update { it + item }
         persistTask(item)
@@ -1866,6 +1876,23 @@ class MpxDownloader private constructor(context: Context) {
                     "%(title).200B [%(section_start)d-%(section_end)d].%(ext)s"
                 }
                 addOption("-o", File(downloadsDir, outputTemplate).absolutePath)
+                // Issue #387: split by chapter (Seal's
+                // FormatConfig.splitByChapter, DownloadUtil
+                // OUTPUT_TEMPLATE_CHAPTERS + --split-chapters): the
+                // chapter template (the `chapter:` prefix makes it
+                // apply to chapters only) sends each chapter into a
+                // subfolder named after the video, "01 - Chapter
+                // title.ext"; the -o above stays the final template
+                // for the whole video when it has no chapters.
+                // Audio-only never splits (the sheet never offers
+                // it there), so the flag is video-only.
+                if (item.splitByChapter && !item.audioOnly) {
+                    addOption(
+                        "-o",
+                        "chapter:${File(downloadsDir, "%(title).200B/%(section_number)d - %(section_title).200B.%(ext)s").absolutePath}",
+                    )
+                    addOption("--split-chapters")
+                }
                 // Issue #334: partials go to this download's own temp dir
                 // (Seal's `-P temp:`); yt-dlp moves the finished file into
                 // downloadsDir on completion, so the Destination line in
@@ -2063,6 +2090,31 @@ class MpxDownloader private constructor(context: Context) {
                 }
             }
             if (response.exitCode == 0) {
+                if (item.splitByChapter) {
+                    // Issue #387: a split download produces one file
+                    // per chapter in a subfolder — the single-file
+                    // finish below would only publish the last
+                    // chapter (findOutputFile takes the last
+                    // Destination line) and the rest would sit
+                    // invisible in the private dir. Publish every
+                    // chapter flat into Downloads/MPx/ so each shows
+                    // as its own row in Downloaded; the row itself
+                    // completes with the first chapter, so tapping it
+                    // plays chapter 1. No chapters found (a
+                    // chapter-less video, or the Destination lines
+                    // were lost) falls through to the single-file
+                    // path — a chapter-less video downloads as one
+                    // file, unchanged.
+                    val chapters = findSplitOutputFiles(response.out, beforeNames)
+                    if (chapters.isNotEmpty()) {
+                        val published = chapters.map { publishFinishedFile(it) }
+                        val first = published.first()
+                        updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = first) }
+                        recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, first)
+                        refreshFiles()
+                        return
+                    }
+                }
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
                     // Issue #344: the finished file moves to the public
@@ -2342,6 +2394,34 @@ class MpxDownloader private constructor(context: Context) {
     }
 
     /** Finds the file yt-dlp just wrote: the Destination line first, else the newest new file. */
+    /**
+     * Issue #387: every file one split download produced. The
+     * `[download] Destination:` lines tie the chapters to this yt-dlp
+     * run exactly (one per chapter, in chapter order), so a
+     * concurrent download cannot leak in. Falls back to a scan of the
+     * new entries in downloadsDir — new top-level names only,
+     * descending into a new subfolder (a re-download of the same
+     * video reuses the old title folder, so its old chapters must
+     * not be picked up) — newest first, when the Destination lines
+     * are lost.
+     */
+    private fun findSplitOutputFiles(stdout: String, beforeNames: Set<String>): List<File> {
+        val destinations = stdout.lineSequence()
+            .filter { it.contains("[download] Destination: ") }
+            .map { File(it.substringAfter("[download] Destination: ").trim()) }
+            .filter { it.isFile && isMediaFile(it) }
+            .toList()
+        if (destinations.isNotEmpty()) return destinations
+        return downloadsDir.listFiles().orEmpty()
+            .filter { it.name !in beforeNames }
+            .flatMap { entry ->
+                if (entry.isDirectory) entry.walkTopDown().filter { it.isFile }.toList()
+                else listOf(entry)
+            }
+            .filter { isMediaFile(it) && !it.name.endsWith(".part") }
+            .sortedBy { it.lastModified() }
+    }
+
     private fun findOutputFile(stdout: String, beforeNames: Set<String>): File? {
         val destination = stdout.lineSequence()
             .filter { it.contains("[download] Destination: ") }

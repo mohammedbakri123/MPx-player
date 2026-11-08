@@ -39,7 +39,7 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
         DownloadTaskEntity::class,
         DownloadHistoryEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class MpxDatabase : RoomDatabase() {
@@ -129,6 +129,21 @@ abstract class MpxDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Issue #387: the split-by-chapter column on the
+         * download_tasks table. NOT NULL DEFAULT 0 — existing rows
+         * keep one file, exactly the right default. Same rule as
+         * #342/#346/#383/#386: a proper migration, so the 5→6 jump
+         * must NOT wipe the user's favourites, history and
+         * playlists through the pre-existing
+         * fallbackToDestructiveMigration() below.
+         */
+        val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `download_tasks` ADD COLUMN `splitByChapter` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getInstance(context: Context): MpxDatabase {
             return instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -136,7 +151,7 @@ abstract class MpxDatabase : RoomDatabase() {
                     MpxDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }
