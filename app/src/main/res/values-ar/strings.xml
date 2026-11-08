@@ -81,6 +81,7 @@
     <string name="download_history_file_missing">الملف غير متوفر</string>
     <string name="settings_category_downloader">التنزيلات</string>
     <string name="settings_category_downloader_sub">الجودة والتنسيق والمجلد وSponsorBlock</string>
+    <string name="download_output_template_title">قالب اسم ملف الإخراج</string>
     <string name="download_audio_directory_title">مجلد الصوت</string>
     <string name="download_directory_title">مجلد التنزيل</string>
     <string name="download_directory_summary">Downloads/%1$s</string>

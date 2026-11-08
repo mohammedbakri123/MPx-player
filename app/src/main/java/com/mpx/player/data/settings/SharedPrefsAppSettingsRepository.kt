@@ -168,6 +168,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadGroupPlaylists = prefs.getBoolean("download_group_playlists", false),
             downloadGroupBySite = prefs.getBoolean("download_group_by_site", false),
             downloadPrivateDirectory = prefs.getBoolean("download_private_directory", false),
+            downloadOutputTemplate = prefs.getString("download_output_template", "%(title).200B.%(ext)s") ?: "%(title).200B.%(ext)s",
             downloadPrivateMode = prefs.getBoolean("download_private_mode", false),
             downloadToSdCard = prefs.getBoolean("download_to_sd_card", false),
             downloadSdCardUri = prefs.getString("download_sd_card_uri", "") ?: "",
@@ -316,6 +317,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("download_group_playlists", settings.downloadGroupPlaylists)
             .putBoolean("download_group_by_site", settings.downloadGroupBySite)
             .putBoolean("download_private_directory", settings.downloadPrivateDirectory)
+            .putString("download_output_template", settings.downloadOutputTemplate)
             .putBoolean("download_private_mode", settings.downloadPrivateMode)
             .putBoolean("download_to_sd_card", settings.downloadToSdCard)
             .putString("download_sd_card_uri", settings.downloadSdCardUri)

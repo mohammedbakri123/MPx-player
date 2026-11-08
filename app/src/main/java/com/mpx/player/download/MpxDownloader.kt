@@ -2356,10 +2356,27 @@ class MpxDownloader private constructor(context: Context) {
                 // template, so playlist videos land in a folder
                 // named after the playlist inside the download
                 // folder. yt-dlp creates the folder.
+                // Issue #398: the output template comes from the
+                // setting (default = today's template). The clips
+                // variant inserts the section marker before the
+                // template's %(ext)s, so clips keep distinct names;
+                // a template without %(ext)s gets the marker + the
+                // extension appended (yt-dlp appends the extension
+                // itself when it is missing). The chapter template
+                // below keeps its own structure — a user template
+                // cannot express chapters.
+                val baseTemplate = settings.downloadOutputTemplate.trim()
+                    .ifBlank { "%(title).200B.%(ext)s" }
                 val outputTemplate = if (item.clips.isEmpty()) {
-                    "${outputPrefix}%(title).200B.%(ext)s"
+                    "$outputPrefix$baseTemplate"
                 } else {
-                    "${outputPrefix}%(title).200B [%(section_start)d-%(section_end)d].%(ext)s"
+                    val marker = " [%(section_start)d-%(section_end)d]"
+                    val clipsTemplate = if (baseTemplate.contains("%(ext)s")) {
+                        baseTemplate.replaceFirst("%(ext)s", "$marker.%(ext)s")
+                    } else {
+                        "$baseTemplate$marker.%(ext)s"
+                    }
+                    "$outputPrefix$clipsTemplate"
                 }
                 addOption("-o", File(downloadsDir, outputTemplate).absolutePath)
                 // Issue #387: split by chapter (Seal's

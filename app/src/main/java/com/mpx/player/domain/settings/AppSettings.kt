@@ -232,6 +232,14 @@ data class AppSettings(
      */
     val downloadPrivateDirectory: Boolean = false,
     /**
+     * Issue #398: custom output filename template (Seal's
+     * OUTPUT_TEMPLATE / CUSTOM_OUTPUT_TEMPLATE) — the yt-dlp `-o`
+     * template for plain downloads. Default is today's template;
+     * blank falls back to it too. Seal's default adds `[%(id)s]`
+     * to disambiguate same-title videos.
+     */
+    val downloadOutputTemplate: String = "%(title).200B.%(ext)s",
+    /**
      * Issue #392: private mode (Seal's PRIVATE_MODE). When on, a
      * finished download skips the History row entirely — the file
      * still downloads, still publishes to Downloads, and still shows
