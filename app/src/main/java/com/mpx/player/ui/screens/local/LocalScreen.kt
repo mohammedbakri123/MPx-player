@@ -89,6 +89,7 @@ import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.MediaFolder
+import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.settings.AppSettingsRepository
@@ -481,10 +482,10 @@ fun LocalScreen(
         loadFolderVideos(folderId)
     }
 
-    // #169: randomStart plays a random video from the folder instead of
-    // its first one (quick-play FAB). Defaults to false — every other
-    // caller (tile taps, Play all) keeps the old from-the-start behaviour.
-    fun playFolder(folder: MediaFolder, randomStart: Boolean = false) {
+    // #378: startEntry resumes a specific video from the folder (quick-play
+    // FAB) instead of starting at its first one. Defaults to null — every
+    // other caller (tile taps, Play all) keeps the from-the-start behaviour.
+    fun playFolder(folder: MediaFolder, startEntry: PlaybackHistoryItem? = null) {
         scope.launch(Dispatchers.IO) {
             val videos = repository.getVideosInFolder(folder.id)
             withContext(Dispatchers.Main) {
@@ -495,7 +496,13 @@ fun LocalScreen(
                         )
                     }
                 } else {
-                    val startIndex = if (randomStart) videos.indices.random() else 0
+                    // #378: randomStart is gone — the FAB was its only
+                    // caller and it never rolls dice anymore. startEntry
+                    // resumes a specific video: the queue starts there,
+                    // or at 0 when that video is gone.
+                    val startIndex = startEntry?.let { entry ->
+                        videos.indexOfFirst { it.id == entry.mediaId || it.path == entry.mediaUri }
+                    }?.takeIf { it >= 0 } ?: 0
                     playbackManager?.playVideoFiles(videos, startIndex)
                     onOpenPlayer()
                 }
@@ -529,6 +536,23 @@ fun LocalScreen(
     // favourites list per row on every composition while scrolling.
     val favouriteUris = remember(favourites) { favourites.map { it.mediaUri }.toSet() }
     val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
+    // Issue #378: playback history powers the quick-play FAB — it resumes
+    // the last played video instead of rolling dice. Same observe pattern
+    // as favourites above; newest first.
+    val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
+
+    // Issue #378: the last played video in a list. History is newest
+    // first, so the first entry that matches a video in the list is the
+    // most recent one. Matches on the MediaStore id first, the path as a
+    // fallback — both are recorded by PlaybackManager.
+    fun lastPlayedIn(videos: List<VideoFile>): VideoFile? {
+        for (entry in history) {
+            if (!entry.isVideo) continue
+            val match = videos.firstOrNull { it.id == entry.mediaId || it.path == entry.mediaUri }
+            if (match != null) return match
+        }
+        return null
+    }
 
 
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
@@ -1256,28 +1280,46 @@ fun LocalScreen(
             if (!isSelectionMode && !showSearchPage) {
                 FloatingActionButton(
                     onClick = {
-                        // #169: quick-play opens a RANDOM video from the
-                        // current scope, not the first one. The queue stays
-                        // the full list, starting at the random video.
+                        // #378: quick-play is RESUME-or-first, like
+                        // mpvEx's "Play recently played or first video"
+                        // — never random. MX has no play FAB on the
+                        // local list at all. The queue stays the full
+                        // list, starting at the resumed (or first)
+                        // video, so Next still walks the folder in order.
                         val played = if (currentFolder != null) {
                             if (filteredFolderVideos.isNotEmpty()) {
+                                val target = lastPlayedIn(filteredFolderVideos)
+                                    ?: filteredFolderVideos.first()
                                 playbackManager?.playVideoFiles(
                                     filteredFolderVideos,
-                                    startIndex = filteredFolderVideos.indices.random(),
+                                    startIndex = filteredFolderVideos.indexOf(target),
                                 )
                                 onOpenPlayer()
                                 true
                             } else false
                         } else if (appSettings.fileView) {
-                            val random = filteredVideos.randomOrNull()
-                            if (random != null) {
-                                playVideoWithFolder(random)
+                            val target = lastPlayedIn(filteredVideos)
+                                ?: filteredVideos.firstOrNull()
+                            if (target != null) {
+                                playVideoWithFolder(target)
                                 true
                             } else false
                         } else {
-                            val random = filteredFolders.randomOrNull()
-                            if (random != null) {
-                                playFolder(random, randomStart = true)
+                            // Folder view: resume the last played video
+                            // overall — its folder is found by the file's
+                            // parent directory — else the first video of
+                            // the first folder.
+                            val entry = history.firstOrNull { it.isVideo }
+                            val folder = entry?.let {
+                                File(it.mediaUri).parent?.let { parent ->
+                                    filteredFolders.firstOrNull { folder -> folder.path == parent }
+                                }
+                            }
+                            if (folder != null) {
+                                playFolder(folder, startEntry = entry)
+                                true
+                            } else if (filteredFolders.isNotEmpty()) {
+                                playFolder(filteredFolders.first())
                                 true
                             } else false
                         }
