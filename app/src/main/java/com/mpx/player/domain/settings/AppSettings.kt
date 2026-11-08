@@ -210,6 +210,16 @@ data class AppSettings(
      */
     val downloadPrivateMode: Boolean = false,
     /**
+     * Issue #393: download to the SD card (Seal's SDCARD_DOWNLOAD +
+     * SDCARD_URI). When on, finished files are moved into the folder
+     * the user picked through the system folder picker, instead of
+     * the public Downloads folder. The folder is the SAF tree URI
+     * string below; empty means no folder picked yet. Off by default
+     * — the picker flow must complete before anything changes.
+     */
+    val downloadToSdCard: Boolean = false,
+    val downloadSdCardUri: String = "",
+    /**
      * Issue #384: custom command (Seal's CommandTemplate, one line of
      * yt-dlp options). The text is pre-filled with Seal's sample
      * `--no-mtime -S "ext"`; the switch decides whether it runs.

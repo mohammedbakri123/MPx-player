@@ -109,6 +109,9 @@
     <string name="download_clips_start">Début</string>
     <string name="download_clips_end">Fin</string>
     <string name="download_audio_format_title">Format audio</string>
+    <string name="download_to_sd_card">Télécharger sur la carte SD</string>
+    <string name="download_sd_card_folder_title">Dossier de la carte SD</string>
+    <string name="download_sd_card_folder_none">Choisir un dossier</string>
     <string name="download_private_mode">Mode privé</string>
     <string name="download_group_playlists">Grouper les playlists par dossier</string>
     <string name="download_rename_title">Renommer</string>

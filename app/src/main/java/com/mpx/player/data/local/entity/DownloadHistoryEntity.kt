@@ -40,6 +40,10 @@ data class DownloadHistoryEntity(
     val fileName: String,
     val fileSize: Long = 0,
     val isPublic: Boolean = true,
+    // Issue #393: the file lives on the SD card (SAF tree), not in
+    // the public Downloads folder. NOT NULL DEFAULT 0 in the 8→9
+    // migration — existing rows are public-Downloads files.
+    val isSdCard: Boolean = false,
     val completedAt: Long = System.currentTimeMillis(),
 ) {
     /** The finished file, for playback. */
@@ -49,5 +53,6 @@ data class DownloadHistoryEntity(
         size = fileSize,
         lastModified = completedAt,
         isPublic = isPublic,
+        isSdCard = isSdCard,
     )
 }

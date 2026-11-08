@@ -178,6 +178,13 @@ class MainActivity : ComponentActivity() {
     val subtitleLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri -> subtitleHandler.invoke(uri) }
+    // Issue #393: the SD-card folder picker — same pattern as the
+    // subtitle picker above (launchers live on the Activity, the
+    // destination only supplies the callback).
+    val sdCardFolderHandler = ActivityResultHandler<android.net.Uri?>()
+    val sdCardFolderLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri -> sdCardFolderHandler.invoke(uri) }
 
     override fun attachBaseContext(newBase: Context) {
         val lang = LocaleHelper.getPersistedLanguage(newBase)
@@ -279,6 +286,8 @@ class MainActivity : ComponentActivity() {
                         musicPermissionHandler = musicPermissionHandler,
                         subtitleLauncher = subtitleLauncher,
                         subtitleHandler = subtitleHandler,
+                        sdCardFolderLauncher = sdCardFolderLauncher,
+                        sdCardFolderHandler = sdCardFolderHandler,
                         isInPipMode = isInPipMode,
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
@@ -504,6 +513,9 @@ fun MpxApp(
     musicPermissionHandler: ActivityResultHandler<Boolean>,
     subtitleLauncher: ActivityResultLauncher<Array<String>>,
     subtitleHandler: ActivityResultHandler<android.net.Uri?>,
+    // Issue #393: the SD-card folder picker, threaded to Settings.
+    sdCardFolderLauncher: ActivityResultLauncher<android.net.Uri?>,
+    sdCardFolderHandler: ActivityResultHandler<android.net.Uri?>,
     isInPipMode: Boolean = false,
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
@@ -781,6 +793,8 @@ fun MpxApp(
                     onOpenOverlaySettings = { navController.navigate(Screen.OverlaySettings.route) },
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
                     settingsRepository = realSettingsRepo,
+                    sdCardFolderLauncher = sdCardFolderLauncher,
+                    sdCardFolderHandler = sdCardFolderHandler,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                     onThemeChanged = onThemeChanged,

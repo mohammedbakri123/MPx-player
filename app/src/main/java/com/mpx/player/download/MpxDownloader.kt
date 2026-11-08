@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.os.SystemClock
+import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import com.mpx.player.R
@@ -174,6 +175,11 @@ data class DownloadedFile(
     val size: Long,
     val lastModified: Long,
     val isPublic: Boolean,
+    // Issue #393: the file lives on the SD card (SAF tree URI), not
+    // in the public Downloads folder and not as a plain file path.
+    // Playback, delete and sibling lookup branch on this, not on
+    // the URI scheme — a MediaStore URI is content:// too.
+    val isSdCard: Boolean = false,
 ) {
     /** Extension without the dot, lowercase; "" when the name has none. */
     val extension: String
@@ -591,6 +597,7 @@ class MpxDownloader private constructor(context: Context) {
                         fileName = published.name,
                         fileSize = published.size,
                         isPublic = published.isPublic,
+                        isSdCard = published.isSdCard,
                         completedAt = System.currentTimeMillis(),
                     ),
                 )
@@ -625,7 +632,14 @@ class MpxDownloader private constructor(context: Context) {
     fun historyFileIfExists(entry: DownloadHistoryEntity): DownloadedFile? {
         val file = entry.toDownloadedFile()
         val exists = try {
-            if (entry.isPublic) {
+            if (entry.isSdCard) {
+                // Issue #393: an SD-card file is a SAF document URI —
+                // a plain File() check would never find it. A document
+                // URI opens through the ContentResolver exactly like a
+                // MediaStore one.
+                appContext.contentResolver.openFileDescriptor(Uri.parse(entry.fileUri), "r")
+                    ?.use { true } ?: false
+            } else if (entry.isPublic) {
                 appContext.contentResolver.openFileDescriptor(Uri.parse(entry.fileUri), "r")
                     ?.use { true } ?: false
             } else {
@@ -1241,7 +1255,12 @@ class MpxDownloader private constructor(context: Context) {
     fun deleteFile(file: DownloadedFile) {
         scope.launch {
             try {
-                if (file.isPublic) {
+                if (file.isSdCard) {
+                    // Issue #393: an SAF document is deleted through
+                    // the provider, not the ContentResolver row delete
+                    // (MediaStore) or File.delete (private path).
+                    DocumentsContract.deleteDocument(appContext.contentResolver, Uri.parse(file.uri))
+                } else if (file.isPublic) {
                     appContext.contentResolver.delete(Uri.parse(file.uri), null, null)
                 } else {
                     File(file.uri).delete()
@@ -1264,6 +1283,12 @@ class MpxDownloader private constructor(context: Context) {
         val files = queryPublicDownloadEntries()
             .filter { isMediaFileName(it.name) }
             .toMutableList()
+        // Issue #393: when a folder was picked for SD-card
+        // downloads, its files list here too — the folder is the
+        // download location, not just Downloads/MPx/. Listed even
+        // when the toggle is off now: files downloaded earlier are
+        // still there.
+        files += querySdCardEntries().filter { isMediaFileName(it.name) }
         downloadsDir.listFiles()
             ?.filter { it.isFile && isMediaFile(it) && !it.name.endsWith(".part") }
             ?.map {
@@ -1340,6 +1365,88 @@ class MpxDownloader private constructor(context: Context) {
     }
 
     /**
+     * Every media file in the picked SD-card folder (issue #393):
+     * one child-documents query on the stored SAF tree URI. The
+     * folder is enumerated even when the toggle is off — files
+     * downloaded earlier are still there. An empty list on any
+     * failure (no folder picked, permission revoked), never null.
+     * Media files and subtitle sidecars alike — callers filter by
+     * name, like [queryPublicDownloadEntries].
+     */
+    private fun querySdCardEntries(): List<DownloadedFile> =
+        listSdCardChildren().map {
+            DownloadedFile(
+                uri = it.uri.toString(),
+                name = it.name,
+                size = it.size,
+                lastModified = it.lastModified,
+                isPublic = false,
+                isSdCard = true,
+            )
+        }
+
+    /** One child of the picked SD-card folder, for the listing and the sibling lookup. */
+    private data class SdCardChild(
+        val name: String,
+        val uri: Uri,
+        val size: Long,
+        val lastModified: Long,
+    )
+
+    private fun listSdCardChildren(): List<SdCardChild> {
+        val treeUriString = settingsRepository.load().downloadSdCardUri
+        if (treeUriString.isBlank()) return emptyList()
+        val treeUri = try {
+            Uri.parse(treeUriString)
+        } catch (_: Exception) {
+            return emptyList()
+        }
+        val childrenUri = try {
+            DocumentsContract.buildChildDocumentsUriUsingTree(
+                treeUri,
+                DocumentsContract.getTreeDocumentId(treeUri),
+            )
+        } catch (_: Exception) {
+            return emptyList()
+        }
+        val out = mutableListOf<SdCardChild>()
+        try {
+            appContext.contentResolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_SIZE,
+                    DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                ),
+                null, null, null,
+            )?.use { cursor ->
+                val nameCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                val idCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                val sizeCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_SIZE)
+                val dateCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                while (cursor.moveToNext()) {
+                    if (nameCol < 0 || idCol < 0) continue
+                    val name = cursor.getString(nameCol).orEmpty()
+                    val docId = cursor.getString(idCol).orEmpty()
+                    if (name.isBlank() || docId.isBlank()) continue
+                    val docUri = try {
+                        DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
+                    } catch (_: Exception) {
+                        continue
+                    }
+                    val size = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
+                    val modified = if (dateCol >= 0) cursor.getLong(dateCol).coerceAtLeast(0L) else 0L
+                    out += SdCardChild(name, docUri, size, modified)
+                }
+            }
+        } catch (_: Exception) {
+            return emptyList()
+        }
+        return out
+    }
+
+    /**
      * Sidecar subtitles for [file] (issue #341, moved here from
      * DownloadScreen in #344 so both storage locations are covered):
      * a public video's sidecars are MediaStore entries in the same
@@ -1359,6 +1466,22 @@ class MpxDownloader private constructor(context: Context) {
         val siblings: List<DownloadedFile> = if (file.isPublic) {
             queryPublicDownloadEntries()
                 .filter { it.name.startsWith(prefix) && it.extension in SUBTITLE_EXTENSIONS }
+        } else if (file.isSdCard) {
+            // Issue #393: the sidecars sit in the same SAF tree as
+            // the video — enumerate the tree's children, same as the
+            // Downloaded listing does.
+            listSdCardChildren()
+                .filter { it.name.startsWith(prefix) && it.name.substringAfterLast('.', "").lowercase() in SUBTITLE_EXTENSIONS }
+                .map {
+                    DownloadedFile(
+                        uri = it.uri.toString(),
+                        name = it.name,
+                        size = it.size,
+                        lastModified = it.lastModified,
+                        isPublic = false,
+                        isSdCard = true,
+                    )
+                }
         } else {
             val dir = File(file.uri).parentFile ?: return emptyList()
             try {
@@ -1405,12 +1528,95 @@ class MpxDownloader private constructor(context: Context) {
     // the file (and its sidecars) land in
     // Downloads/MPx/<playlist>/ instead of flat in Downloads/MPx/.
     private fun publishFinishedFile(privateFile: File, subfolder: String? = null): DownloadedFile {
+        // Issue #393: SD-card mode — the file goes into the picked
+        // SAF tree instead of the public Downloads folder. Every
+        // finish site funnels through here (video, split chapters,
+        // HTTP fallback), so this one gate covers them all.
+        if (settingsRepository.load().downloadToSdCard) {
+            val published = publishToSdCard(privateFile, subfolder)
+            if (published.isSdCard) {
+                publishSiblingSubtitlesToSdCard(privateFile)
+                publishSiblingThumbnailToSdCard(privateFile)
+            } else if (published.isPublic) {
+                // The SD copy failed and publishToSdCard fell back
+                // to the public publish — the sidecars follow it.
+                publishSiblingSubtitles(privateFile, subfolder)
+                publishSiblingThumbnail(privateFile, subfolder)
+            }
+            return published
+        }
         val published = publishToPublicDownloads(privateFile, subfolder = subfolder)
         if (published.isPublic) {
             publishSiblingSubtitles(privateFile, subfolder)
             publishSiblingThumbnail(privateFile, subfolder)
         }
         return published
+    }
+
+    /**
+     * One finished file into the picked SD-card folder (issue #393):
+     * a single `DocumentsContract.createDocument` + byte copy into
+     * the stored SAF tree, mirroring Seal's `moveFilesToSdcard`
+     * (FileUtil.kt:130-166 — it walks a whole temp dir; MPx
+     * finishes one file at a time). The private copy is deleted
+     * only after the bytes are safely in the tree. On ANY failure —
+     * no folder picked, permission revoked, create/copy error — it
+     * falls back to the public Downloads publish, so a file is
+     * never lost. Playlist subfolders stay flat on the SD card,
+     * like Seal: the tree root is the folder. Never throws.
+     */
+    private fun publishToSdCard(privateFile: File, subfolder: String? = null): DownloadedFile {
+        val size = privateFile.length()
+        val modified = privateFile.lastModified()
+        val treeUriString = settingsRepository.load().downloadSdCardUri
+        val docUri = if (treeUriString.isNotBlank()) {
+            copyFileToSdCard(privateFile, treeUriString)
+        } else {
+            null
+        } ?: return publishToPublicDownloads(privateFile, subfolder = subfolder)
+        try {
+            privateFile.delete()
+        } catch (_: Exception) {
+        }
+        return DownloadedFile(
+            uri = docUri.toString(),
+            name = privateFile.name,
+            size = size,
+            lastModified = modified,
+            isPublic = false,
+            isSdCard = true,
+        )
+    }
+
+    /** Copies one file into the SAF tree; the created document's URI, or null on any failure. */
+    private fun copyFileToSdCard(file: File, treeUriString: String): Uri? {
+        return try {
+            val treeUri = Uri.parse(treeUriString)
+            val destDir = DocumentsContract.buildDocumentUriUsingTree(
+                treeUri,
+                DocumentsContract.getTreeDocumentId(treeUri),
+            )
+            val docUri = DocumentsContract.createDocument(
+                appContext.contentResolver,
+                destDir,
+                mimeTypeFor(file.name),
+                file.name,
+            ) ?: return null
+            try {
+                appContext.contentResolver.openOutputStream(docUri, "w")?.use { output ->
+                    FileInputStream(file).use { input -> input.copyTo(output) }
+                } ?: throw IllegalStateException("no output stream")
+            } catch (_: Exception) {
+                try {
+                    DocumentsContract.deleteDocument(appContext.contentResolver, docUri)
+                } catch (_: Exception) {
+                }
+                return null
+            }
+            docUri
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**
@@ -1587,6 +1793,66 @@ class MpxDownloader private constructor(context: Context) {
                     thumbnail.delete()
                 } catch (_: Exception) {
                 }
+            }
+        }
+    }
+
+    /**
+     * Issue #393: the subtitle sidecars, SD-card edition — same
+     * rule as [publishSiblingSubtitles], but into the picked SAF
+     * tree next to the video instead of the public folder, so
+     * [findSiblingSubtitles] still finds them. A sidecar that
+     * fails to copy is deleted rather than stranded (its video is
+     * gone from the private dir). Never scanned.
+     */
+    private fun publishSiblingSubtitlesToSdCard(video: File) {
+        val treeUriString = settingsRepository.load().downloadSdCardUri
+        if (treeUriString.isBlank()) return
+        val base = video.nameWithoutExtension
+        val prefix = "$base."
+        val dir = video.parentFile ?: downloadsDir
+        val sidecars = try {
+            dir.listFiles()
+                ?.filter { it.isFile && it.name.startsWith(prefix) && it.extension.lowercase() in SUBTITLE_EXTENSIONS }
+                ?: emptyList()
+        } catch (_: Exception) {
+            return
+        }
+        for (sidecar in sidecars) {
+            // Moved or failed — either way the private copy goes:
+            // on success it now lives in the tree, on failure it
+            // would be stranded next to nothing (same rule as the
+            // public edition).
+            copyFileToSdCard(sidecar, treeUriString)
+            try {
+                sidecar.delete()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    /**
+     * Issue #393: the thumbnail sidecar, SD-card edition — same
+     * rule as [publishSiblingThumbnail], into the picked SAF tree.
+     */
+    private fun publishSiblingThumbnailToSdCard(video: File) {
+        val treeUriString = settingsRepository.load().downloadSdCardUri
+        if (treeUriString.isBlank()) return
+        val base = video.nameWithoutExtension
+        val prefix = "$base."
+        val dir = video.parentFile ?: downloadsDir
+        val thumbnails = try {
+            dir.listFiles()
+                ?.filter { it.isFile && it.name.startsWith(prefix) && it.extension.lowercase() == "png" }
+                ?: emptyList()
+        } catch (_: Exception) {
+            return
+        }
+        for (thumbnail in thumbnails) {
+            copyFileToSdCard(thumbnail, treeUriString)
+            try {
+                thumbnail.delete()
+            } catch (_: Exception) {
             }
         }
     }
