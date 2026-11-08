@@ -79,6 +79,16 @@
     <string name="download_history">السجل</string>
     <string name="download_already_downloaded">تم تنزيله مسبقًا</string>
     <string name="download_history_file_missing">الملف غير متوفر</string>
+    <string name="settings_category_downloader">التنزيلات</string>
+    <string name="settings_category_downloader_sub">الجودة والتنسيق والمجلد وSponsorBlock</string>
+    <string name="download_directory_title">مجلد التنزيل</string>
+    <string name="download_directory_summary">Downloads/%1$s</string>
+    <string name="download_directory_hint">اسم المجلد، مثال: MPx</string>
+    <string name="download_downloaded_title">تم تنزيلها</string>
+    <string name="download_downloaded_empty_message">لم يتم تنزيل أي شيء بعد. ستظهر الملفات التي تنزّلها هنا.</string>
+    <string name="download_settings_general">عام</string>
+    <string name="download_settings_format">التنسيق</string>
+    <string name="download_settings_network">الشبكة</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">فيديو</string>

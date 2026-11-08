@@ -367,6 +367,20 @@ class MpxDownloader private constructor(context: Context) {
     // Same pattern as PlaybackManager: read the shared settings blob
     // directly (channel, auto-update flag, interval, last-update time).
     private val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
+
+    /**
+     * Issue #379: the public folder for finished downloads, from the
+     * downloadDirectory setting (MediaStore RELATIVE_PATH form — no leading
+     * slash, no trailing slash; the query form gains one). "MPx" is the old
+     * fixed folder, so existing installs keep their files. Read fresh on
+     * every use, like the other settings above — a folder change applies
+     * to the next download and the next listing refresh.
+     */
+    private fun publicDownloadsRelativePath(): String =
+        "Download/${sanitizeDownloadFolderName(settingsRepository.load().downloadDirectory)}"
+
+    private fun publicDownloadsRelativePathSlash(): String =
+        "${publicDownloadsRelativePath()}/"
     // Issue #342: the persisted queue (same MpxDatabase every other
     // feature uses — no second database). Building the Room object
     // does no I/O; every DAO call below runs on the IO scope.
@@ -1169,7 +1183,7 @@ class MpxDownloader private constructor(context: Context) {
                 MediaStore.Downloads.EXTERNAL_CONTENT_URI,
                 projection,
                 "${MediaStore.Downloads.RELATIVE_PATH} = ?",
-                arrayOf(PUBLIC_DOWNLOADS_RELATIVE_PATH_SLASH),
+                arrayOf(publicDownloadsRelativePathSlash()),
                 "${MediaStore.Downloads.DATE_MODIFIED} DESC",
             )?.use { cursor ->
                 val idCol = cursor.getColumnIndex(MediaStore.Downloads._ID)
@@ -1297,7 +1311,7 @@ class MpxDownloader private constructor(context: Context) {
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, privateFile.name)
             put(MediaStore.Downloads.MIME_TYPE, mimeType)
-            put(MediaStore.Downloads.RELATIVE_PATH, PUBLIC_DOWNLOADS_RELATIVE_PATH)
+            put(MediaStore.Downloads.RELATIVE_PATH, publicDownloadsRelativePath())
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
         val uri = try {
@@ -1422,7 +1436,7 @@ class MpxDownloader private constructor(context: Context) {
         try {
             val publicPath = File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "$PUBLIC_DOWNLOADS_RELATIVE_PATH/$publicName",
+                "${publicDownloadsRelativePath()}/$publicName",
             ).absolutePath
             MediaScannerConnection.scanFile(appContext, arrayOf(publicPath), arrayOf(mimeType), null)
         } catch (_: Exception) {
@@ -2219,13 +2233,15 @@ class MpxDownloader private constructor(context: Context) {
         )
 
         /**
-         * Public folder for finished downloads (issue #344):
-         * `Downloads/MPx/` via MediaStore, RELATIVE_PATH form (no
-         * leading slash, no trailing slash — the stored value gains
-         * one; see [PUBLIC_DOWNLOADS_RELATIVE_PATH_SLASH]).
+         * Issue #379: one download-folder name — trims, takes the first
+         * segment, falls back to "MPx". Shared with the Settings row so
+         * the stored value and the folder the downloader uses can never
+         * disagree.
          */
-        private const val PUBLIC_DOWNLOADS_RELATIVE_PATH = "Download/MPx"
-        private const val PUBLIC_DOWNLOADS_RELATIVE_PATH_SLASH = "Download/MPx/"
+        internal fun sanitizeDownloadFolderName(raw: String): String {
+            val first = raw.trim().trim('/').substringBefore('/').trim()
+            return first.ifBlank { "MPx" }
+        }
 
         /** Subtitle sidecar extensions (issue #341, moved here in #344). */
         private val SUBTITLE_EXTENSIONS = setOf("srt", "vtt", "webvtt", "ass", "ssa")

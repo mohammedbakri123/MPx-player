@@ -79,6 +79,16 @@
     <string name="download_history">历史记录</string>
     <string name="download_already_downloaded">已下载过</string>
     <string name="download_history_file_missing">文件已不存在</string>
+    <string name="settings_category_downloader">下载</string>
+    <string name="settings_category_downloader_sub">质量、格式、文件夹和 SponsorBlock</string>
+    <string name="download_directory_title">下载文件夹</string>
+    <string name="download_directory_summary">Downloads/%1$s</string>
+    <string name="download_directory_hint">文件夹名称，例如 MPx</string>
+    <string name="download_downloaded_title">已下载</string>
+    <string name="download_downloaded_empty_message">还没有下载内容。完成的下载将显示在这里。</string>
+    <string name="download_settings_general">通用</string>
+    <string name="download_settings_format">格式</string>
+    <string name="download_settings_network">网络</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">视频</string>

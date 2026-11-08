@@ -79,6 +79,16 @@
     <string name="download_history">Verlauf</string>
     <string name="download_already_downloaded">Bereits heruntergeladen</string>
     <string name="download_history_file_missing">Datei nicht mehr verfügbar</string>
+    <string name="settings_category_downloader">Downloader</string>
+    <string name="settings_category_downloader_sub">Qualität, Format, Ordner und SponsorBlock</string>
+    <string name="download_directory_title">Download-Ordner</string>
+    <string name="download_directory_summary">Downloads/%1$s</string>
+    <string name="download_directory_hint">Ordnername, z. B. MPx</string>
+    <string name="download_downloaded_title">Heruntergeladen</string>
+    <string name="download_downloaded_empty_message">Noch nichts heruntergeladen. Fertige Downloads erscheinen hier.</string>
+    <string name="download_settings_general">Allgemein</string>
+    <string name="download_settings_format">Format</string>
+    <string name="download_settings_network">Netzwerk</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Video</string>

@@ -79,6 +79,17 @@
     <string name="download_history">History</string>
     <string name="download_already_downloaded">Already downloaded</string>
     <string name="download_history_file_missing">File no longer available</string>
+    <!-- Issue #379: Downloader settings (Settings page) + Downloaded screen -->
+    <string name="settings_category_downloader">Downloader</string>
+    <string name="settings_category_downloader_sub">Quality, format, folder and SponsorBlock</string>
+    <string name="download_directory_title">Download folder</string>
+    <string name="download_directory_summary">Downloads/%1$s</string>
+    <string name="download_directory_hint">Folder name, e.g. MPx</string>
+    <string name="download_downloaded_title">Downloaded</string>
+    <string name="download_downloaded_empty_message">Nothing downloaded yet. Files you finish downloading will show up here.</string>
+    <string name="download_settings_general">General</string>
+    <string name="download_settings_format">Format</string>
+    <string name="download_settings_network">Network</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Video</string>

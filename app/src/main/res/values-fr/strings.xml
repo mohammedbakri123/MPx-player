@@ -79,6 +79,16 @@
     <string name="download_history">Historique</string>
     <string name="download_already_downloaded">Déjà téléchargé</string>
     <string name="download_history_file_missing">Fichier non disponible</string>
+    <string name="settings_category_downloader">Téléchargement</string>
+    <string name="settings_category_downloader_sub">Qualité, format, dossier et SponsorBlock</string>
+    <string name="download_directory_title">Dossier de téléchargement</string>
+    <string name="download_directory_summary">Downloads/%1$s</string>
+    <string name="download_directory_hint">Nom du dossier, p. ex. MPx</string>
+    <string name="download_downloaded_title">Téléchargés</string>
+    <string name="download_downloaded_empty_message">Rien de téléchargé pour l’instant. Les fichiers téléchargés apparaîtront ici.</string>
+    <string name="download_settings_general">Général</string>
+    <string name="download_settings_format">Format</string>
+    <string name="download_settings_network">Réseau</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vidéo</string>

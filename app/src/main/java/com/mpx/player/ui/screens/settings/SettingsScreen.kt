@@ -33,9 +33,12 @@ import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.DashboardCustomize
 import androidx.compose.material.icons.filled.DeveloperMode
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
@@ -47,6 +50,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -91,6 +96,16 @@ import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.download.MpxDownloader
+import com.mpx.player.download.YtDlpUpdateOutcome
+import com.mpx.player.download.YtDlpUpdateState
+import com.mpx.player.ui.screens.download.DownloadDirectoryDialog
+import com.mpx.player.ui.screens.download.DownloadOptionsDialog
+import com.mpx.player.ui.screens.download.DownloadQualityDialog
+import com.mpx.player.ui.screens.download.DownloadSponsorBlockDialog
+import com.mpx.player.ui.screens.download.downloadCodecLabel
+import com.mpx.player.ui.screens.download.downloadOptionsSummary
+import com.mpx.player.ui.screens.download.downloadResolutionLabel
 import com.mpx.player.ui.components.StepperRow
 import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlaybackManager
@@ -279,6 +294,7 @@ fun SettingsScreen(
         SettingCategory("list", stringResource(R.string.settings_category_list), stringResource(R.string.settings_category_list_sub), Icons.AutoMirrored.Filled.FormatListBulleted),
         SettingCategory("decoder", stringResource(R.string.settings_category_decoder), stringResource(R.string.settings_category_decoder_sub), Icons.Filled.Memory),
         SettingCategory("subtitle", stringResource(R.string.settings_category_subtitle), stringResource(R.string.settings_category_subtitle_sub), Icons.Filled.Subtitles),
+        SettingCategory("downloader", stringResource(R.string.settings_category_downloader), stringResource(R.string.settings_category_downloader_sub), Icons.Filled.Download),
         SettingCategory("advanced", stringResource(R.string.pref_advanced_title), stringResource(R.string.settings_category_development_sub), Icons.Filled.DeveloperMode),
         SettingCategory("about", stringResource(R.string.settings_category_about), stringResource(R.string.settings_category_about_sub), Icons.Filled.Info),
     )
@@ -370,7 +386,7 @@ fun SettingsScreen(
                 item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_media)) }
                 item {
                     PreferenceCategoryCard(
-                        categories = listOf("decoder", "subtitle").mapNotNull { id -> categories.find { it.id == id } },
+                        categories = listOf("decoder", "subtitle", "downloader").mapNotNull { id -> categories.find { it.id == id } },
                         onSelect = { selectedId = it },
                     )
                 }
@@ -849,6 +865,132 @@ fun SettingsScreen(
                                         { update(settings.copy(subtitleSpeed = 1.0f)) }
                                     } else null,
                                 )
+                            }
+                            // Issue #379: downloader settings, grouped like
+                            // Seal's settings page — General, Format,
+                            // Network, SponsorBlock. These rows moved here
+                            // from the Download page; the dialogs are the
+                            // same ones, so a change here and a change
+                            // there were never two code paths. Summaries
+                            // re-read on dismiss (the dialogs save through
+                            // the repo).
+                            "downloader" -> {
+                                val downloader = remember(context) { MpxDownloader.getInstance(context) }
+                                val updateState by downloader.updateState.collectAsState()
+                                val ytdlpVersion by downloader.ytdlpVersion.collectAsState()
+                                var showQuality by remember { mutableStateOf(false) }
+                                var showOptions by remember { mutableStateOf(false) }
+                                var showSponsorBlock by remember { mutableStateOf(false) }
+                                var showDirectory by remember { mutableStateOf(false) }
+                                val ytdlpUpdatedLabel = stringResource(R.string.download_ytdlp_updated)
+                                val ytdlpUpToDateLabel = stringResource(R.string.download_ytdlp_up_to_date)
+                                val ytdlpUpdateFailedLabel = stringResource(R.string.download_ytdlp_update_failed)
+                                val ytdlpUpdateBusyLabel = stringResource(R.string.download_ytdlp_update_busy)
+
+                                Text(stringResource(R.string.download_settings_general), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_directory_title),
+                                    subtitle = stringResource(R.string.download_directory_summary, MpxDownloader.sanitizeDownloadFolderName(settings.downloadDirectory)),
+                                    icon = Icons.Filled.Folder,
+                                    onClick = { showDirectory = true },
+                                )
+                                PreferenceRow(
+                                    title = if (ytdlpVersion.isNotBlank()) stringResource(R.string.download_ytdlp_version, ytdlpVersion) else "yt-dlp",
+                                    subtitle = null,
+                                    icon = Icons.Filled.Update,
+                                    onClick = {
+                                        scope.launch {
+                                            val message = when (downloader.updateYtDlpNow()) {
+                                                YtDlpUpdateOutcome.UPDATED -> ytdlpUpdatedLabel
+                                                YtDlpUpdateOutcome.UP_TO_DATE -> ytdlpUpToDateLabel
+                                                YtDlpUpdateOutcome.FAILED -> ytdlpUpdateFailedLabel
+                                                YtDlpUpdateOutcome.BUSY -> ytdlpUpdateBusyLabel
+                                            }
+                                            snackbarHostState.showSnackbar(message)
+                                        }
+                                    },
+                                    trailing = {
+                                        Text(
+                                            text = if (updateState == YtDlpUpdateState.UPDATING) stringResource(R.string.download_updating_ytdlp) else stringResource(R.string.download_update_ytdlp),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MpxTheme.colors.primary,
+                                        )
+                                    },
+                                )
+
+                                Spacer(Modifier.height(16.dp))
+                                Text(stringResource(R.string.download_settings_format), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_quality_title),
+                                    subtitle = if (settings.downloadCustomSorter.isNotBlank()) {
+                                        settings.downloadCustomSorter
+                                    } else {
+                                        "${downloadResolutionLabel(settings.downloadResolution)} · ${downloadCodecLabel(settings.downloadCodec)}"
+                                    },
+                                    icon = Icons.Filled.HighQuality,
+                                    onClick = { showQuality = true },
+                                )
+                                ToggleRow(stringResource(R.string.download_audio_only), settings.downloadAudioOnly) { update(settings.copy(downloadAudioOnly = it)) }
+                                ToggleRow(stringResource(R.string.download_subtitles), settings.downloadSubtitles) { update(settings.copy(downloadSubtitles = it)) }
+
+                                Spacer(Modifier.height(16.dp))
+                                Text(stringResource(R.string.download_settings_network), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_options_title),
+                                    subtitle = downloadOptionsSummary(settings),
+                                    icon = Icons.Filled.Tune,
+                                    onClick = { showOptions = true },
+                                )
+
+                                Spacer(Modifier.height(16.dp))
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_sponsorblock_title),
+                                    subtitle = if (settings.downloadSponsorBlock && settings.downloadSponsorBlockCategories.isNotBlank()) {
+                                        settings.downloadSponsorBlockCategories
+                                    } else {
+                                        stringResource(R.string.player_state_off)
+                                    },
+                                    icon = Icons.Filled.ContentCut,
+                                    onClick = { showSponsorBlock = true },
+                                )
+
+                                if (showQuality) {
+                                    DownloadQualityDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showQuality = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showOptions) {
+                                    DownloadOptionsDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showOptions = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showSponsorBlock) {
+                                    DownloadSponsorBlockDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showSponsorBlock = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showDirectory) {
+                                    DownloadDirectoryDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showDirectory = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
                             }
                             // #158: Advanced = the old Development section
                             // plus the reset button from the old General
