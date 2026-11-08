@@ -2316,12 +2316,28 @@ private fun PlayerActionStripe(
     val layoutIds = remember(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds) {
         parsePlayerMenuLayout(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds)
     }
-    LazyRow(
-        state = listState,
+    // #376: the stripe took the whole screen width in landscape (all 12
+    // buttons fit, edge to edge). Same 560dp cap as the sheets (#362),
+    // centered, still scrollable — in portrait the screen is narrower
+    // than the cap so nothing changes. The dark pill behind the row
+    // keeps the captions legible over bright video (white text over a
+    // bright logo vanished); mpvEx does the same with a translucent
+    // surface behind its title pill.
+    Box(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        contentPadding = PaddingValues(horizontal = 4.dp),
+        contentAlignment = Alignment.Center,
     ) {
+        LazyRow(
+            state = listState,
+            modifier = Modifier
+                .widthIn(max = 560.dp)
+                .background(
+                    MpxTheme.colors.black.copy(alpha = 0.45f),
+                    MpxShapes.small,
+                ),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp),
+        ) {
         items(layoutIds, key = { it }) { id ->
             when (id) {
                 "decoder" -> PlayerActionStripeButton(
@@ -2464,6 +2480,7 @@ private fun PlayerActionStripe(
                 }
             }
         }
+    }
     }
 }
 
