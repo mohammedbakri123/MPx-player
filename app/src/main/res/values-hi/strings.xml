@@ -107,6 +107,7 @@
     <string name="download_clips_add">क्लिप जोड़ें</string>
     <string name="download_clips_start">शुरुआत</string>
     <string name="download_clips_end">अंत</string>
+    <string name="download_group_playlists">प्लेलिस्ट को फ़ोल्डर में समूहित करें</string>
     <string name="download_rename_title">नाम बदलें</string>
     <string name="download_custom_command_title">कस्टम कमांड</string>
     <string name="download_custom_command_enabled">कस्टम कमांड उपयोग करें</string>

@@ -360,6 +360,10 @@ fun DownloadScreen(
                             entries.map { it.url },
                             audioOnly = downloadPrefs.downloadAudioOnly,
                             subtitles = downloadPrefs.downloadSubtitles,
+                            // Issue #389: the playlist title rides down
+                            // with the entries, so grouped downloads
+                            // land in a folder named after it.
+                            playlistTitle = playlist.title,
                         )
                         urlText = ""
                         }

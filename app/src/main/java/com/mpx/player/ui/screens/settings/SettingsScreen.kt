@@ -901,6 +901,11 @@ fun SettingsScreen(
                                     icon = Icons.Filled.Folder,
                                     onClick = { showDirectory = true },
                                 )
+                                // Issue #389: group playlist downloads in
+                                // a folder named after the playlist.
+                                // Off by default — playlists land flat in
+                                // the download folder, as today.
+                                ToggleRow(stringResource(R.string.download_group_playlists), settings.downloadGroupPlaylists) { update(settings.copy(downloadGroupPlaylists = it)) }
                                 PreferenceRow(
                                     title = if (ytdlpVersion.isNotBlank()) stringResource(R.string.download_ytdlp_version, ytdlpVersion) else "yt-dlp",
                                     subtitle = null,

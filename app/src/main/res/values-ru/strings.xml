@@ -107,6 +107,7 @@
     <string name="download_clips_add">Добавить клип</string>
     <string name="download_clips_start">Начало</string>
     <string name="download_clips_end">Конец</string>
+    <string name="download_group_playlists">Группировать плейлисты по папкам</string>
     <string name="download_rename_title">Переименовать</string>
     <string name="download_custom_command_title">Пользовательская команда</string>
     <string name="download_custom_command_enabled">Использовать пользовательскую команду</string>

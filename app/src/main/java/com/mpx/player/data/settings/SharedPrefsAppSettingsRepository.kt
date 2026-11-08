@@ -161,6 +161,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadSubtitles = prefs.getBoolean("download_subtitles", false),
             downloadAllowMetered = prefs.getBoolean("download_allow_metered", false),
             downloadDirectory = prefs.getString("download_directory", "MPx") ?: "MPx",
+            downloadGroupPlaylists = prefs.getBoolean("download_group_playlists", false),
             customCommandEnabled = prefs.getBoolean("custom_command_enabled", false),
             customCommand = prefs.getString("custom_command", "--no-mtime -S \"ext\"") ?: "--no-mtime -S \"ext\"",
             downloadSubtitleLanguages = prefs.getString("download_subtitle_languages", "en,ar") ?: "en,ar",
@@ -297,6 +298,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("download_subtitles", settings.downloadSubtitles)
             .putBoolean("download_allow_metered", settings.downloadAllowMetered)
             .putString("download_directory", settings.downloadDirectory)
+            .putBoolean("download_group_playlists", settings.downloadGroupPlaylists)
             .putBoolean("custom_command_enabled", settings.customCommandEnabled)
             .putString("custom_command", settings.customCommand)
             .putString("download_subtitle_languages", settings.downloadSubtitleLanguages)
