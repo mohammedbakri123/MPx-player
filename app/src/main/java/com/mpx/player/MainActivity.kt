@@ -18,6 +18,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
@@ -215,6 +216,10 @@ class MainActivity : ComponentActivity() {
             // does not move. The player manages its own bars during
             // playback (WindowInsetsControllerCompat there) and this
             // only sets the default state for the main screens.
+            // Issue #377: the Player route skips the Scaffold's padding
+            // (zero in the NavHost Box below) so the video never resizes
+            // when the bars show or hide; PlayerScreen pads only its own
+            // chrome instead.
             // Issue #373: the Player page is a video surface, not an
             // app page — it always renders dark, so the bars there
             // always get the dark treatment (transparent, light
@@ -660,7 +665,14 @@ fun MpxApp(
         val swipeThresholdPx = with(density) { 100.dp.toPx() }
         Box(
             modifier = Modifier
-                .padding(padding)
+                // #377: the Player route skips the Scaffold's padding.
+                // That padding follows the system bars, so on the player
+                // it made the video shrink whenever the status bar
+                // appeared (1080x2356 <-> 1080x1934). MX draws the video
+                // full screen behind the bars and only pads the chrome,
+                // so the player does the same: zero padding here, and
+                // PlayerScreen pads its own top/bottom overlays.
+                .padding(if (currentDestination?.route == Screen.Player.route) PaddingValues(0.dp) else padding)
                 .fillMaxSize()
                 .pointerInput(tabOrder, currentDestination?.route, isLocalSearchOpen) {
                     var totalDrag = 0f
