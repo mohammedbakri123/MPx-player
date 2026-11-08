@@ -84,6 +84,10 @@
     <string name="download_directory_title">مجلد التنزيل</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">اسم المجلد، مثال: MPx</string>
+    <string name="download_allow_metered">السماح بالتنزيل عبر بيانات الجوال</string>
+    <string name="download_metered_title">تنزيل عبر بيانات الجوال؟</string>
+    <string name="download_metered_message">أنت على بيانات الجوال. تنزيل الفيديو قد يستهلك الكثير من البيانات.</string>
+    <string name="download_metered_always">السماح دائمًا بتنزيلات بيانات الجوال</string>
     <string name="download_downloaded_title">تم تنزيلها</string>
     <string name="download_downloaded_empty_message">لم يتم تنزيل أي شيء بعد. ستظهر الملفات التي تنزّلها هنا.</string>
     <string name="download_settings_general">عام</string>

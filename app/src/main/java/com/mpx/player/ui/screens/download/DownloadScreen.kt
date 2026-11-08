@@ -128,6 +128,24 @@ fun DownloadScreen(
     var fetchingPlaylist by remember { mutableStateOf(false) }
     var playlistToPick by remember { mutableStateOf<PlaylistInfo?>(null) }
 
+    // Issue #380: metered-network gate. Every download start goes through
+    // guardMetered: on an unmetered network (or when the user allowed
+    // metered downloads) the action runs at once; on a metered network
+    // with the setting off, the action waits for the dialog — Download
+    // runs it once, the "always allow" box saves the setting first, and
+    // Cancel drops it (the picker / sign-in dialog that opened it stays
+    // open, because the guarded action only runs after confirmation).
+    // Not saveable: a waiting download dies with the screen, and the user
+    // re-taps Download.
+    var pendingMeteredAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    fun guardMetered(action: () -> Unit) {
+        if (downloader.isActiveNetworkMetered() && !settingsRepository.load().downloadAllowMetered) {
+            pendingMeteredAction = action
+        } else {
+            action()
+        }
+    }
+
     // Warm up the engine (extracts Python + yt-dlp on first run) so the
     // Download button works the moment the user pastes a link.
     LaunchedEffect(Unit) {
@@ -234,6 +252,10 @@ fun DownloadScreen(
                 Spacer(Modifier.width(8.dp))
                 Button(
                     onClick = {
+                        // Issue #380: the metered gate runs first — the
+                        // probe itself costs data, so nothing starts (not
+                        // even the probe) before the user confirms.
+                        guardMetered {
                         // Issue #345: probe for a playlist first. A
                         // playlist with several entries opens the
                         // picker; a single entry downloads directly;
@@ -266,6 +288,7 @@ fun DownloadScreen(
                             } finally {
                                 fetchingPlaylist = false
                             }
+                        }
                         }
                     },
                     enabled = urlText.isNotBlank() && !fetchingPlaylist,
@@ -302,6 +325,10 @@ fun DownloadScreen(
                     playlist = playlist,
                     onDismiss = { playlistToPick = null },
                     onDownload = { entries ->
+                        // Issue #380: the whole pick waits on the gate —
+                        // if the user cancels the metered dialog, the
+                        // picker stays open and the URL stays.
+                        guardMetered {
                         playlistToPick = null
                         val downloadPrefs = settingsRepository.load()
                         downloader.startDownloads(
@@ -310,7 +337,18 @@ fun DownloadScreen(
                             subtitles = downloadPrefs.downloadSubtitles,
                         )
                         urlText = ""
+                        }
                     },
+                )
+            }
+
+            // Issue #380: the metered dialog, shown while an action waits
+            // for the user's answer.
+            pendingMeteredAction?.let { action ->
+                MeteredDownloadDialog(
+                    settingsRepository = settingsRepository,
+                    onDismiss = { pendingMeteredAction = null },
+                    onDownload = { action() },
                 )
             }
 
@@ -393,6 +431,9 @@ fun DownloadScreen(
                     userAgent = signInUserAgent,
                     onDismiss = { showSignIn = false },
                     onUseCookies = {
+                        // Issue #380: the whole sign-in handoff waits on
+                        // the gate — cancel keeps the WebView open.
+                        guardMetered {
                         showSignIn = false
                         scope.launch {
                             when (downloader.importCookiesAndStart(urlText, audioOnly = settingsRepository.load().downloadAudioOnly, subtitles = settingsRepository.load().downloadSubtitles)) {
@@ -402,6 +443,7 @@ fun DownloadScreen(
                                 CookieImportOutcome.FAILED ->
                                     snackbarHostState.showSnackbar(cookiesFailedLabel)
                             }
+                        }
                         }
                     },
                 )
@@ -424,12 +466,14 @@ fun DownloadScreen(
                             item = item,
                             onCancel = { downloader.cancelDownload(item.id) },
                             onRetry = {
-                                val downloadPrefs = settingsRepository.load()
-                                downloader.startDownload(
-                                    item.url,
-                                    audioOnly = downloadPrefs.downloadAudioOnly,
-                                    subtitles = downloadPrefs.downloadSubtitles,
-                                )
+                                guardMetered {
+                                    val downloadPrefs = settingsRepository.load()
+                                    downloader.startDownload(
+                                        item.url,
+                                        audioOnly = downloadPrefs.downloadAudioOnly,
+                                        subtitles = downloadPrefs.downloadSubtitles,
+                                    )
+                                }
                             },
                         )
                     }

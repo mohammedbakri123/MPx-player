@@ -84,6 +84,10 @@
     <string name="download_directory_title">Pasta de downloads</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">Nome da pasta, ex.: MPx</string>
+    <string name="download_allow_metered">Permitir downloads com dados móveis</string>
+    <string name="download_metered_title">Baixar com dados móveis?</string>
+    <string name="download_metered_message">Você está usando dados móveis. Baixar vídeo pode consumir muitos dados.</string>
+    <string name="download_metered_always">Sempre permitir downloads móveis</string>
     <string name="download_downloaded_title">Baixados</string>
     <string name="download_downloaded_empty_message">Nada baixado ainda. Os arquivos que você baixar aparecerão aqui.</string>
     <string name="download_settings_general">Geral</string>

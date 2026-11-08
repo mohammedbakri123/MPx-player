@@ -84,6 +84,10 @@
     <string name="download_directory_title">Dossier de téléchargement</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">Nom du dossier, p. ex. MPx</string>
+    <string name="download_allow_metered">Autoriser les téléchargements sur données mobiles</string>
+    <string name="download_metered_title">Télécharger sur données mobiles ?</string>
+    <string name="download_metered_message">Vous êtes sur données mobiles. Télécharger une vidéo peut consommer beaucoup de données.</string>
+    <string name="download_metered_always">Toujours autoriser les téléchargements mobiles</string>
     <string name="download_downloaded_title">Téléchargés</string>
     <string name="download_downloaded_empty_message">Rien de téléchargé pour l’instant. Les fichiers téléchargés apparaîtront ici.</string>
     <string name="download_settings_general">Général</string>

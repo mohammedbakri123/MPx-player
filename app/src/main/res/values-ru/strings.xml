@@ -84,6 +84,10 @@
     <string name="download_directory_title">Папка загрузок</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">Имя папки, например MPx</string>
+    <string name="download_allow_metered">Разрешить загрузку через мобильный интернет</string>
+    <string name="download_metered_title">Скачать через мобильный интернет?</string>
+    <string name="download_metered_message">Вы используете мобильный интернет. Скачивание видео может потратить много трафика.</string>
+    <string name="download_metered_always">Всегда разрешать мобильные загрузки</string>
     <string name="download_downloaded_title">Загруженные</string>
     <string name="download_downloaded_empty_message">Пока ничего не загружено. Завершённые загрузки появятся здесь.</string>
     <string name="download_settings_general">Общие</string>

@@ -159,6 +159,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             // switches on the Download page) + download folder.
             downloadAudioOnly = prefs.getBoolean("download_audio_only", false),
             downloadSubtitles = prefs.getBoolean("download_subtitles", false),
+            downloadAllowMetered = prefs.getBoolean("download_allow_metered", false),
             downloadDirectory = prefs.getString("download_directory", "MPx") ?: "MPx",
         )
 
@@ -284,6 +285,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("download_sponsorblock_categories", settings.downloadSponsorBlockCategories)
             .putBoolean("download_audio_only", settings.downloadAudioOnly)
             .putBoolean("download_subtitles", settings.downloadSubtitles)
+            .putBoolean("download_allow_metered", settings.downloadAllowMetered)
             .putString("download_directory", settings.downloadDirectory)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk

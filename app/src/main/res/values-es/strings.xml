@@ -84,6 +84,10 @@
     <string name="download_directory_title">Carpeta de descargas</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">Nombre de la carpeta, p. ej. MPx</string>
+    <string name="download_allow_metered">Permitir descargas con datos móviles</string>
+    <string name="download_metered_title">¿Descargar con datos móviles?</string>
+    <string name="download_metered_message">Estás usando datos móviles. Descargar vídeo puede consumir muchos datos.</string>
+    <string name="download_metered_always">Permitir siempre las descargas móviles</string>
     <string name="download_downloaded_title">Descargados</string>
     <string name="download_downloaded_empty_message">Aún no hay descargas. Los archivos que descargues aparecerán aquí.</string>
     <string name="download_settings_general">General</string>

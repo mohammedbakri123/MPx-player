@@ -84,6 +84,10 @@
     <string name="download_directory_title">Download-Ordner</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">Ordnername, z. B. MPx</string>
+    <string name="download_allow_metered">Downloads über mobile Daten erlauben</string>
+    <string name="download_metered_title">Über mobile Daten herunterladen?</string>
+    <string name="download_metered_message">Du nutzt mobile Daten. Das Herunterladen von Videos kann viel Datenvolumen verbrauchen.</string>
+    <string name="download_metered_always">Mobile Downloads immer erlauben</string>
     <string name="download_downloaded_title">Heruntergeladen</string>
     <string name="download_downloaded_empty_message">Noch nichts heruntergeladen. Fertige Downloads erscheinen hier.</string>
     <string name="download_settings_general">Allgemein</string>

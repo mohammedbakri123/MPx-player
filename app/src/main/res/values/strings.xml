@@ -85,6 +85,10 @@
     <string name="download_directory_title">Download folder</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">Folder name, e.g. MPx</string>
+    <string name="download_allow_metered">Allow mobile data downloads</string>
+    <string name="download_metered_title">Download over mobile data?</string>
+    <string name="download_metered_message">You are on mobile data. Downloading video can use a lot of data.</string>
+    <string name="download_metered_always">Always allow mobile data downloads</string>
     <string name="download_downloaded_title">Downloaded</string>
     <string name="download_downloaded_empty_message">Nothing downloaded yet. Files you finish downloading will show up here.</string>
     <string name="download_settings_general">General</string>

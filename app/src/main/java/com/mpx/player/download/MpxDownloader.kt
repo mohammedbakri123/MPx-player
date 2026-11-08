@@ -853,6 +853,20 @@ class MpxDownloader private constructor(context: Context) {
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
+    /**
+     * Issue #380: whether the active network is metered (mobile data or a
+     * metered WiFi) — Seal's `CELLULAR_DOWNLOAD` gate uses the same
+     * `ConnectivityManager.isActiveNetworkMetered`. False when there is no
+     * connectivity manager (nothing to gate — the download fails on no
+     * network anyway).
+     */
+    fun isActiveNetworkMetered(): Boolean {
+        val connectivity =
+            appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                ?: return false
+        return connectivity.isActiveNetworkMetered
+    }
+
     private fun saveYtDlpVersion(version: String) {
         _ytdlpVersion.value = version
         val settings = settingsRepository.load()
