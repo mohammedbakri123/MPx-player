@@ -172,6 +172,15 @@ data class AppSettings(
     // categories with the switch on passes no flag.
     val downloadSponsorBlock: Boolean = false,
     val downloadSponsorBlockCategories: String = "sponsor,intro,outro,selfpromo",
+    // Issue #379: downloader defaults that used to be per-download switches
+    // on the Download page — now persisted settings under Downloader
+    // settings, like Seal's download defaults.
+    val downloadAudioOnly: Boolean = false,
+    val downloadSubtitles: Boolean = false,
+    // Issue #379: download folder — the subfolder of the public Downloads
+    // folder downloads land in (MediaStore RELATIVE_PATH "Download/<name>").
+    // "MPx" is the old fixed folder, so existing installs keep their files.
+    val downloadDirectory: String = "MPx",
 ) {
     /**
      * Total number of currently visible music tabs.

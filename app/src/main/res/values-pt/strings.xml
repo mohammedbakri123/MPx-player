@@ -79,6 +79,16 @@
     <string name="download_history">Histórico</string>
     <string name="download_already_downloaded">Já baixado</string>
     <string name="download_history_file_missing">Arquivo não disponível</string>
+    <string name="settings_category_downloader">Downloads</string>
+    <string name="settings_category_downloader_sub">Qualidade, formato, pasta e SponsorBlock</string>
+    <string name="download_directory_title">Pasta de downloads</string>
+    <string name="download_directory_summary">Downloads/%1$s</string>
+    <string name="download_directory_hint">Nome da pasta, ex.: MPx</string>
+    <string name="download_downloaded_title">Baixados</string>
+    <string name="download_downloaded_empty_message">Nada baixado ainda. Os arquivos que você baixar aparecerão aqui.</string>
+    <string name="download_settings_general">Geral</string>
+    <string name="download_settings_format">Formato</string>
+    <string name="download_settings_network">Rede</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Vídeo</string>

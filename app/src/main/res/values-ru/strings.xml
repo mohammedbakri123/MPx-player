@@ -79,6 +79,16 @@
     <string name="download_history">История</string>
     <string name="download_already_downloaded">Уже загружено</string>
     <string name="download_history_file_missing">Файл больше недоступен</string>
+    <string name="settings_category_downloader">Загрузки</string>
+    <string name="settings_category_downloader_sub">Качество, формат, папка и SponsorBlock</string>
+    <string name="download_directory_title">Папка загрузок</string>
+    <string name="download_directory_summary">Downloads/%1$s</string>
+    <string name="download_directory_hint">Имя папки, например MPx</string>
+    <string name="download_downloaded_title">Загруженные</string>
+    <string name="download_downloaded_empty_message">Пока ничего не загружено. Завершённые загрузки появятся здесь.</string>
+    <string name="download_settings_general">Общие</string>
+    <string name="download_settings_format">Формат</string>
+    <string name="download_settings_network">Сеть</string>
 
     <!-- Mini Player -->
     <string name="mini_player_video">Видео</string>

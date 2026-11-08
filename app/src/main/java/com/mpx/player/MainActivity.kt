@@ -75,6 +75,7 @@ import com.mpx.player.ui.navigation.navigationTabs
 import com.mpx.player.ui.screens.about.AboutBetaScreen
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.screens.download.DownloadScreen
+import com.mpx.player.ui.screens.download.DownloadedScreen
 import com.mpx.player.ui.screens.local.LocalScreen
 import com.mpx.player.ui.screens.me.HistoryScreen
 import com.mpx.player.ui.screens.me.MeScreen
@@ -593,6 +594,7 @@ fun MpxApp(
                 Screen.AboutBeta.route,
                 Screen.History.route,
                 Screen.Playlists.route,
+                Screen.Downloaded.route,
             )
             AnimatedVisibility(
                 visible = showDock,
@@ -730,8 +732,7 @@ fun MpxApp(
             }
             composable(Screen.Download.route) {
                 DownloadScreen(
-                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
-                    playbackManager = playbackManager,
+                    onOpenDownloaded = { navController.navigate(Screen.Downloaded.route) },
                 )
             }
             composable(Screen.Me.route) {
@@ -762,6 +763,13 @@ fun MpxApp(
             }
             composable(Screen.Playlists.route) {
                 PlaylistsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                    playbackManager = playbackManager,
+                )
+            }
+            composable(Screen.Downloaded.route) {
+                DownloadedScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     playbackManager = playbackManager,

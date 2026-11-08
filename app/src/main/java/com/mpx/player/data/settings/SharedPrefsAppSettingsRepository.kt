@@ -155,6 +155,11 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
                 "download_sponsorblock_categories",
                 "sponsor,intro,outro,selfpromo",
             ) ?: "sponsor,intro,outro,selfpromo",
+            // Issue #379: persisted downloader defaults (were per-download
+            // switches on the Download page) + download folder.
+            downloadAudioOnly = prefs.getBoolean("download_audio_only", false),
+            downloadSubtitles = prefs.getBoolean("download_subtitles", false),
+            downloadDirectory = prefs.getString("download_directory", "MPx") ?: "MPx",
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -277,6 +282,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("download_restrict_filenames", settings.downloadRestrictFilenames)
             .putBoolean("download_sponsorblock", settings.downloadSponsorBlock)
             .putString("download_sponsorblock_categories", settings.downloadSponsorBlockCategories)
+            .putBoolean("download_audio_only", settings.downloadAudioOnly)
+            .putBoolean("download_subtitles", settings.downloadSubtitles)
+            .putString("download_directory", settings.downloadDirectory)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

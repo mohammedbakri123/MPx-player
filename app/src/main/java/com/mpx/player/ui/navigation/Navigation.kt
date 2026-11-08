@@ -18,6 +18,9 @@ sealed class Screen(val route: String) {
     data object Music : Screen("music")
     // Issue #324: Download tab in Transfer's old slot (Music ↔ Me).
     data object Download : Screen("download")
+    // Issue #379: Downloaded videos view, opened from the Download page's
+    // Downloaded button (Seal's task-list page model).
+    data object Downloaded : Screen("downloaded")
     data object Me : Screen("me")
     data object History : Screen("history")
     data object Playlists : Screen("playlists")
