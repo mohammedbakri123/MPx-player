@@ -107,6 +107,7 @@
     <string name="download_clips_add">إضافة مقطع</string>
     <string name="download_clips_start">البداية</string>
     <string name="download_clips_end">النهاية</string>
+    <string name="download_split_by_chapter">التقسيم حسب الفصول</string>
     <string name="download_clips_remove">إزالة المقطع</string>
     <string name="download_downloaded_title">تم تنزيلها</string>
     <string name="download_downloaded_empty_message">لم يتم تنزيل أي شيء بعد. ستظهر الملفات التي تنزّلها هنا.</string>

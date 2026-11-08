@@ -107,6 +107,7 @@
     <string name="download_clips_add">Добавить клип</string>
     <string name="download_clips_start">Начало</string>
     <string name="download_clips_end">Конец</string>
+    <string name="download_split_by_chapter">Разделить по главам</string>
     <string name="download_clips_remove">Удалить клип</string>
     <string name="download_downloaded_title">Загруженные</string>
     <string name="download_downloaded_empty_message">Пока ничего не загружено. Завершённые загрузки появятся здесь.</string>

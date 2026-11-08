@@ -21,6 +21,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,18 +58,20 @@ import kotlin.math.roundToInt
  * first), each with a "Best" row that means the global settings.
  * Below those, a Clips section (issue #386): a range slider across
  * the video plus start/end time fields, an Add button, and the list
- * of added clips. The confirm builds Seal's format-id string
+ * of added clips. Below that, a Split by chapter switch (issue
+ * #387): one file per chapter, in a subfolder named after the
+ * video. The confirm builds Seal's format-id string
  * (`TaskFactory` shape: the chosen format ids joined with "+",
  * "bestvideo"/"bestaudio" filling a side left on Best) — both Best
  * means null, i.e. no `-f`, the global format sorter applies — and
- * passes the clips along. Single videos only: the caller never
- * opens this for playlists or audio-only downloads.
+ * passes the clips and the split switch along. Single videos only:
+ * the caller never opens this for playlists or audio-only downloads.
  */
 @Composable
 fun FormatSelectionDialog(
     videoInfo: VideoInfo,
     onDismiss: () -> Unit,
-    onDownload: (formatId: String?, clips: List<VideoClip>) -> Unit,
+    onDownload: (formatId: String?, clips: List<VideoClip>, splitByChapter: Boolean) -> Unit,
 ) {
     val formats = videoInfo.formats.orEmpty()
     val videoFormats = remember(formats) {
@@ -92,6 +96,7 @@ fun FormatSelectionDialog(
     var selectedVideo by remember { mutableStateOf<VideoFormat?>(null) }
     var selectedAudio by remember { mutableStateOf<VideoFormat?>(null) }
     var clips by remember { mutableStateOf<List<VideoClip>>(emptyList()) }
+    var splitByChapter by remember { mutableStateOf(false) }
 
     MpxDialog(
         title = stringResource(R.string.download_format_title),
@@ -105,6 +110,7 @@ fun FormatSelectionDialog(
                 if (selectedVideo == null && selectedAudio == null) null
                 else "$videoPart+$audioPart",
                 clips,
+                splitByChapter,
             )
         },
     ) {
@@ -225,6 +231,34 @@ fun FormatSelectionDialog(
                             )
                         }
                     }
+                }
+            }
+            // Issue #387: split by chapter — a switch for this
+            // download only, below the clips. Shown even when the
+            // duration is unknown: splitting needs no range, and a
+            // video without chapters simply downloads as one file.
+            item {
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .clickable { splitByChapter = !splitByChapter }
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        stringResource(R.string.download_split_by_chapter),
+                        color = MpxTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = splitByChapter,
+                        onCheckedChange = { splitByChapter = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MpxTheme.colors.primary,
+                            checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.5f),
+                        ),
+                    )
                 }
             }
         }

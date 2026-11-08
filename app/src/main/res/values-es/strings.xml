@@ -107,6 +107,7 @@
     <string name="download_clips_add">Añadir clip</string>
     <string name="download_clips_start">Inicio</string>
     <string name="download_clips_end">Fin</string>
+    <string name="download_split_by_chapter">Dividir por capítulos</string>
     <string name="download_clips_remove">Quitar clip</string>
     <string name="download_downloaded_title">Descargados</string>
     <string name="download_downloaded_empty_message">Aún no hay descargas. Los archivos que descargues aparecerán aquí.</string>
