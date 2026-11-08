@@ -10,10 +10,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,15 +32,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.download.VideoClip
 import com.mpx.player.ui.components.MpxDialog
 import com.mpx.player.ui.theme.MpxTheme
 import com.yausername.youtubedl_android.mapper.VideoFormat
 import com.yausername.youtubedl_android.mapper.VideoInfo
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * Per-video format sheet (issue #383): Seal's format-selection page
@@ -42,17 +54,20 @@ import java.util.Locale
  * formats from yt-dlp info: video formats (best per resolution,
  * highest first) and audio formats (best per codec, highest bitrate
  * first), each with a "Best" row that means the global settings.
- * The confirm builds Seal's format-id string (`TaskFactory` shape:
- * the chosen format ids joined with "+", "bestvideo"/"bestaudio"
- * filling a side left on Best) — both Best means null, i.e. no
- * `-f`, the global format sorter applies. Single videos only: the
- * caller never opens this for playlists or audio-only downloads.
+ * Below those, a Clips section (issue #386): a range slider across
+ * the video plus start/end time fields, an Add button, and the list
+ * of added clips. The confirm builds Seal's format-id string
+ * (`TaskFactory` shape: the chosen format ids joined with "+",
+ * "bestvideo"/"bestaudio" filling a side left on Best) — both Best
+ * means null, i.e. no `-f`, the global format sorter applies — and
+ * passes the clips along. Single videos only: the caller never
+ * opens this for playlists or audio-only downloads.
  */
 @Composable
 fun FormatSelectionDialog(
     videoInfo: VideoInfo,
     onDismiss: () -> Unit,
-    onDownload: (formatId: String?) -> Unit,
+    onDownload: (formatId: String?, clips: List<VideoClip>) -> Unit,
 ) {
     val formats = videoInfo.formats.orEmpty()
     val videoFormats = remember(formats) {
@@ -76,6 +91,7 @@ fun FormatSelectionDialog(
     }
     var selectedVideo by remember { mutableStateOf<VideoFormat?>(null) }
     var selectedAudio by remember { mutableStateOf<VideoFormat?>(null) }
+    var clips by remember { mutableStateOf<List<VideoClip>>(emptyList()) }
 
     MpxDialog(
         title = stringResource(R.string.download_format_title),
@@ -88,6 +104,7 @@ fun FormatSelectionDialog(
             onDownload(
                 if (selectedVideo == null && selectedAudio == null) null
                 else "$videoPart+$audioPart",
+                clips,
             )
         },
     ) {
@@ -167,6 +184,49 @@ fun FormatSelectionDialog(
                     onClick = { selectedAudio = format },
                 )
             }
+            // Issue #386: clips — a range slider across the video
+            // plus start/end fields for exact times, an Add button,
+            // and the list of added clips. Hidden when the duration
+            // is unknown: the slider needs a range. Seal's shape
+            // (VideoSelectionSlider + VideoClipDialog) in one
+            // section instead of two screens.
+            val duration = videoInfo.duration
+            if (duration > 0) {
+                item {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        stringResource(R.string.download_clips_title),
+                        color = MpxTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    ClipEditor(
+                        durationSeconds = duration,
+                        onAddClip = { clip -> clips = clips + clip },
+                    )
+                }
+                items(clips, key = { "${it.start}-${it.end}" }) { clip ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "${formatVideoDuration(clip.start.toLong())} – ${formatVideoDuration(clip.end.toLong())}",
+                            color = MpxTheme.colors.textPrimary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { clips = clips - clip }) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.download_clips_remove),
+                                tint = MpxTheme.colors.textSecondary,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -210,9 +270,108 @@ private fun FormatRow(
     }
 }
 
+/**
+ * The clip editor (issue #386): a range slider across the video plus
+ * start/end time fields, Seal's VideoSelectionSlider + VideoClipDialog
+ * in one section. The slider is the source of truth while dragging
+ * (the fields follow it); typing in a field takes effect on Done or
+ * on Add, when the fields are parsed and clamped. Add validates
+ * start < end, then resets the range to the full video for the next
+ * clip.
+ */
+@Composable
+private fun ClipEditor(
+    durationSeconds: Int,
+    onAddClip: (VideoClip) -> Unit,
+) {
+    val duration = durationSeconds.toFloat()
+    var rangeStart by remember { mutableStateOf(0f) }
+    var rangeEnd by remember { mutableStateOf(duration) }
+    var startText by remember { mutableStateOf(formatVideoDuration(0)) }
+    var endText by remember { mutableStateOf(formatVideoDuration(durationSeconds.toLong())) }
+
+    fun syncFieldsToSlider() {
+        val start = parseClipTime(startText)?.coerceIn(0, durationSeconds)
+            ?: rangeStart.roundToInt()
+        val end = parseClipTime(endText)?.coerceIn(0, durationSeconds)
+            ?: rangeEnd.roundToInt()
+        rangeStart = minOf(start, end).toFloat()
+        rangeEnd = maxOf(start, end).toFloat()
+        startText = formatVideoDuration(rangeStart.roundToInt().toLong())
+        endText = formatVideoDuration(rangeEnd.roundToInt().toLong())
+    }
+
+    Column {
+        RangeSlider(
+            value = rangeStart..rangeEnd,
+            onValueChange = { range ->
+                rangeStart = range.start
+                rangeEnd = range.endInclusive
+                startText = formatVideoDuration(rangeStart.roundToInt().toLong())
+                endText = formatVideoDuration(rangeEnd.roundToInt().toLong())
+            },
+            valueRange = 0f..duration,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = startText,
+                onValueChange = { startText = it },
+                label = { Text(stringResource(R.string.download_clips_start)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { syncFieldsToSlider() }),
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(8.dp))
+            OutlinedTextField(
+                value = endText,
+                onValueChange = { endText = it },
+                label = { Text(stringResource(R.string.download_clips_end)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { syncFieldsToSlider() }),
+                modifier = Modifier.weight(1f),
+            )
+        }
+        TextButton(
+            onClick = {
+                syncFieldsToSlider()
+                val start = rangeStart.roundToInt()
+                val end = rangeEnd.roundToInt()
+                if (start < end) {
+                    onAddClip(VideoClip(start, end))
+                    rangeStart = 0f
+                    rangeEnd = duration
+                    startText = formatVideoDuration(0)
+                    endText = formatVideoDuration(durationSeconds.toLong())
+                }
+            },
+            modifier = Modifier.align(Alignment.End),
+        ) {
+            Text(stringResource(R.string.download_clips_add))
+        }
+    }
+}
+
+/**
+ * Parses "m:ss", "h:mm:ss", or plain seconds into seconds. Lenient
+ * about the parts (1:90 is 150s); null when it does not parse at all.
+ */
+private fun parseClipTime(text: String): Int? {
+    val parts = text.trim().split(":")
+    val numbers = parts.map { it.toIntOrNull() ?: return null }
+    if (numbers.any { it < 0 }) return null
+    return when (numbers.size) {
+        1 -> numbers[0]
+        2 -> numbers[0] * 60 + numbers[1]
+        3 -> numbers[0] * 3600 + numbers[1] * 60 + numbers[2]
+        else -> null
+    }
+}
+
 /** "1080p" for video, the codec name for audio. */
-private fun formatLabel(format: VideoFormat): String {
-    val height = format.height ?: 0
+private fun formatLabel(format: VideoFormat): String {    val height = format.height ?: 0
     return if (height > 0) {
         "${height}p"
     } else {

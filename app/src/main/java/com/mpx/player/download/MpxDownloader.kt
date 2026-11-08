@@ -116,7 +116,21 @@ data class ActiveDownload(
      * audio-only or playlist downloads.
      */
     val formatId: String? = null,
+    /**
+     * Issue #386: the clips the user added in the format sheet, in
+     * seconds (Seal's `VideoClip` shape). Empty means the whole
+     * video. Only set on video downloads; each clip becomes
+     * `--download-sections "*<start>-<end>"` and comes out as its
+     * own file.
+     */
+    val clips: List<VideoClip> = emptyList(),
 )
+
+/**
+ * One video clip (issue #386): start and end in seconds, same shape
+ * as Seal's `VideoClip` (JunkFood02/Seal, GPL-3.0).
+ */
+data class VideoClip(val start: Int = 0, val end: Int = 0)
 
 /**
  * One finished file in the completed list (issue #344).
@@ -1090,6 +1104,7 @@ class MpxDownloader private constructor(context: Context) {
         audioOnly: Boolean = false,
         subtitles: Boolean = false,
         formatId: String? = null,
+        clips: List<VideoClip> = emptyList(),
     ) {
         val url = rawUrl.trim()
         if (url.isBlank()) return
@@ -1103,6 +1118,7 @@ class MpxDownloader private constructor(context: Context) {
             audioOnly = audioOnly,
             subtitles = subtitles,
             formatId = formatId,
+            clips = clips,
         )
         _activeDownloads.update { it + item }
         persistTask(item)
@@ -1886,6 +1902,14 @@ class MpxDownloader private constructor(context: Context) {
                         formatSorting = settings.downloadCustomSorter.isNotBlank(),
                         sortingFields = settings.downloadCustomSorter,
                     )
+                    }
+                    // Issue #386: Seal's per-clip sections
+                    // (DownloadUtil.downloadVideo, JunkFood02/Seal,
+                    // GPL-3.0): one `--download-sections "*start-end"`
+                    // per clip, times in seconds. Each clip comes out
+                    // as its own file. No clips means the whole video.
+                    item.clips.forEach { clip ->
+                        addOption("--download-sections", "*${clip.start}-${clip.end}")
                     }
                     // Issue #381: Seal's always-on video flags
                     // (DownloadUtil.addOptionsForVideoDownloads,
