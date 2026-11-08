@@ -1094,13 +1094,11 @@ class PlaybackManager private constructor(context: Context) {
      * still at "auto" it falls back to the default-flagged embedded
      * track — unselecting the external subtitle that was just sub-added
      * (user's v0.3.1 log: sid=2 selected, sid=1 back two seconds
-     * later). The durable #192/#199 pin only pins a track that is
-     * currently selected AND external, so once the seek unselects it
-     * the pin can never land and the 5s confirmation reports failure.
-     * Commands reach mpv in order, so the sub-add lands before the
-     * seek's re-evaluation — deterministic, not a race. Without the
-     * seek the just-added track stays selected until the pin sets
-     * `sid` to it explicitly.
+     * later). Issue #372 fixed the deeper half of that: the engine now
+     * remembers the picked external subtitle by identity and re-applies
+     * `sid` to it on every track-list refresh, so a re-evaluation can no
+     * longer strand the pick — but the seek is still gone, because
+     * there is nothing for it to do here at all.
      */
     private fun restorePlaybackAfterSubtitleAdd(wasPlaying: Boolean) {
         if (wasPlaying && !engine.isPlaying) {
