@@ -106,6 +106,7 @@ import com.mpx.player.download.MpxDownloader
 import com.mpx.player.download.YtDlpUpdateOutcome
 import com.mpx.player.download.YtDlpUpdateState
 import com.mpx.player.ui.ActivityResultHandler
+import com.mpx.player.ui.screens.download.AudioDirectoryDialog
 import com.mpx.player.ui.screens.download.AudioFormatDialog
 import com.mpx.player.ui.screens.download.CustomCommandDialog
 import com.mpx.player.ui.screens.download.DownloadDirectoryDialog
@@ -921,6 +922,7 @@ fun SettingsScreen(
                                 var showOptions by remember { mutableStateOf(false) }
                                 var showSponsorBlock by remember { mutableStateOf(false) }
                                 var showDirectory by remember { mutableStateOf(false) }
+                                var showAudioDirectory by remember { mutableStateOf(false) }
                                 var showCustomCommand by remember { mutableStateOf(false) }
                                 var showSubtitleLanguages by remember { mutableStateOf(false) }
                                 var showSubtitleConvert by remember { mutableStateOf(false) }
@@ -936,6 +938,21 @@ fun SettingsScreen(
                                     subtitle = stringResource(R.string.download_directory_summary, MpxDownloader.sanitizeDownloadFolderName(settings.downloadDirectory)),
                                     icon = Icons.Filled.Folder,
                                     onClick = { showDirectory = true },
+                                )
+                                // Issue #394: a separate folder for
+                                // audio-only downloads. Blank means
+                                // the video folder above, so the
+                                // subtitle shows the effective folder.
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_audio_directory_title),
+                                    subtitle = stringResource(
+                                        R.string.download_directory_summary,
+                                        MpxDownloader.sanitizeAudioFolderName(settings.downloadAudioDirectory).ifBlank {
+                                            MpxDownloader.sanitizeDownloadFolderName(settings.downloadDirectory)
+                                        },
+                                    ),
+                                    icon = Icons.Filled.Folder,
+                                    onClick = { showAudioDirectory = true },
                                 )
                                 // Issue #389: group playlist downloads in
                                 // a folder named after the playlist.
@@ -1121,6 +1138,15 @@ fun SettingsScreen(
                                         settingsRepository = settingsRepository,
                                         onDismiss = {
                                             showDirectory = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showAudioDirectory) {
+                                    AudioDirectoryDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showAudioDirectory = false
                                             settings = settingsRepository.load()
                                         },
                                     )

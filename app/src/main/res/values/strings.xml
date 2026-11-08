@@ -82,6 +82,7 @@
     <!-- Issue #379: Downloader settings (Settings page) + Downloaded screen -->
     <string name="settings_category_downloader">Downloader</string>
     <string name="settings_category_downloader_sub">Quality, format, folder and SponsorBlock</string>
+    <string name="download_audio_directory_title">Audio folder</string>
     <string name="download_directory_title">Download folder</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">Folder name, e.g. MPx</string>

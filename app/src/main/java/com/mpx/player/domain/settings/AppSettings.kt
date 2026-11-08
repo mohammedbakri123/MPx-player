@@ -220,6 +220,14 @@ data class AppSettings(
     val downloadToSdCard: Boolean = false,
     val downloadSdCardUri: String = "",
     /**
+     * Issue #394: a separate download folder for audio-only
+     * downloads (Seal's AUDIO_DIRECTORY). Blank by default —
+     * blank means the video folder, so today's behavior is
+     * unchanged unless you set it. A set value is one folder
+     * name, sanitized the same way as the video folder.
+     */
+    val downloadAudioDirectory: String = "",
+    /**
      * Issue #384: custom command (Seal's CommandTemplate, one line of
      * yt-dlp options). The text is pre-filled with Seal's sample
      * `--no-mtime -S "ext"`; the switch decides whether it runs.
