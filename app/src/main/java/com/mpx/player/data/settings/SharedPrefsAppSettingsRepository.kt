@@ -166,6 +166,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadConvertSubtitles = prefs.getString("download_convert_subtitles", "none") ?: "none",
             downloadEmbedSubtitles = prefs.getBoolean("download_embed_subtitles", true),
             downloadKeepSubtitles = prefs.getBoolean("download_keep_subtitles", true),
+            downloadMergeToMkv = prefs.getBoolean("download_merge_to_mkv", false),
+            downloadAudioMultistreams = prefs.getBoolean("download_audio_multistreams", false),
+            downloadWriteThumbnail = prefs.getBoolean("download_write_thumbnail", false),
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -297,6 +300,9 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("download_convert_subtitles", settings.downloadConvertSubtitles)
             .putBoolean("download_embed_subtitles", settings.downloadEmbedSubtitles)
             .putBoolean("download_keep_subtitles", settings.downloadKeepSubtitles)
+            .putBoolean("download_merge_to_mkv", settings.downloadMergeToMkv)
+            .putBoolean("download_audio_multistreams", settings.downloadAudioMultistreams)
+            .putBoolean("download_write_thumbnail", settings.downloadWriteThumbnail)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

@@ -1292,6 +1292,7 @@ class MpxDownloader private constructor(context: Context) {
         val published = publishToPublicDownloads(privateFile)
         if (published.isPublic) {
             publishSiblingSubtitles(privateFile)
+            publishSiblingThumbnail(privateFile)
         }
         return published
     }
@@ -1427,6 +1428,36 @@ class MpxDownloader private constructor(context: Context) {
             if (!published.isPublic) {
                 try {
                     sidecar.delete()
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+    /**
+     * Issue #385: the thumbnail sidecar. `--write-thumbnail` +
+     * `--convert-thumbnails png` (Seal's createThumbnail) writes
+     * `<title>.png` next to the video in the private downloads dir;
+     * it rides to the public folder with the video, exactly like a
+     * subtitle sidecar — same basename match, same no-scan publish
+     * (a cover file is not library media). Without the toggle there
+     * is no png, so this finds nothing and does nothing.
+     */
+    private fun publishSiblingThumbnail(video: File) {
+        val base = video.nameWithoutExtension
+        val prefix = "$base."
+        val thumbnails = try {
+            downloadsDir.listFiles()
+                ?.filter { it.isFile && it.name.startsWith(prefix) && it.extension.lowercase() == "png" }
+                ?: emptyList()
+        } catch (_: Exception) {
+            return
+        }
+        for (thumbnail in thumbnails) {
+            val published = publishToPublicDownloads(thumbnail, scanIntoLibrary = false)
+            if (!published.isPublic) {
+                try {
+                    thumbnail.delete()
                 } catch (_: Exception) {
                 }
             }
@@ -1806,6 +1837,26 @@ class MpxDownloader private constructor(context: Context) {
                     // Audio-only downloads already embed metadata.
                     addOption("--add-metadata")
                     addOption("--embed-chapters")
+                    // Issue #385: Seal's advanced video flags
+                    // (DownloadUtil.addOptionsForVideoDownloads,
+                    // JunkFood02/Seal, GPL-3.0) — the settings-shaped
+                    // ones. Merge to MKV remuxes + merges to .mkv;
+                    // audio multistreams keeps every audio track
+                    // (Seal gates it on a chosen format id, which MPx
+                    // has no UI for, so it applies whenever it is on);
+                    // write thumbnail saves the cover as a .png next
+                    // to the video. All three need ffmpeg (#336).
+                    if (settings.downloadMergeToMkv) {
+                        addOption("--remux-video", "mkv")
+                        addOption("--merge-output-format", "mkv")
+                    }
+                    if (settings.downloadAudioMultistreams) {
+                        addOption("--audio-multistreams")
+                    }
+                    if (settings.downloadWriteThumbnail) {
+                        addOption("--write-thumbnail")
+                        addOption("--convert-thumbnails", "png")
+                    }
                     // Issue #341: subtitles for video downloads only —
                     // an mp3 has no use for a sidecar subtitle file.
                     if (item.subtitles) {

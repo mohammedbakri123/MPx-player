@@ -84,6 +84,9 @@
     <string name="download_directory_title">مجلد التنزيل</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">اسم المجلد، مثال: MPx</string>
+    <string name="download_merge_to_mkv">الدمج بصيغة MKV</string>
+    <string name="download_audio_multistreams">مسارات صوتية متعددة</string>
+    <string name="download_write_thumbnail">حفظ صورة الغلاف</string>
     <string name="download_allow_metered">السماح بالتنزيل عبر بيانات الجوال</string>
     <string name="download_metered_title">تنزيل عبر بيانات الجوال؟</string>
     <string name="download_metered_message">أنت على بيانات الجوال. تنزيل الفيديو قد يستهلك الكثير من البيانات.</string>

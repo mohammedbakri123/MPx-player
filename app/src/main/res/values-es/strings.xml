@@ -84,6 +84,9 @@
     <string name="download_directory_title">Carpeta de descargas</string>
     <string name="download_directory_summary">Downloads/%1$s</string>
     <string name="download_directory_hint">Nombre de la carpeta, p. ej. MPx</string>
+    <string name="download_merge_to_mkv">Fusionar a MKV</string>
+    <string name="download_audio_multistreams">Múltiples pistas de audio</string>
+    <string name="download_write_thumbnail">Guardar miniatura</string>
     <string name="download_allow_metered">Permitir descargas con datos móviles</string>
     <string name="download_metered_title">¿Descargar con datos móviles?</string>
     <string name="download_metered_message">Estás usando datos móviles. Descargar vídeo puede consumir muchos datos.</string>

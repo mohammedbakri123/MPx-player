@@ -204,6 +204,21 @@ data class AppSettings(
     val downloadConvertSubtitles: String = "none",
     val downloadEmbedSubtitles: Boolean = true,
     val downloadKeepSubtitles: Boolean = true,
+    /**
+     * Issue #385: Seal's advanced video flags (DownloadUtil.kt,
+     * JunkFood02/Seal, GPL-3.0) — the settings-shaped ones. Merge to
+     * MKV remuxes + merges to .mkv; audio multistreams keeps every
+     * audio track instead of the best one (Seal gates it on a chosen
+     * format id, which MPx has no UI for, so it applies whenever it
+     * is on); write thumbnail saves the cover as a .png next to the
+     * video (published with it, see publishSiblingThumbnail). All
+     * three need the bundled ffmpeg (#336) for the mux/convert step.
+     * Clips, split-by-chapter and rename are per-download features,
+     * not settings — they stay open in #385 for their own issues.
+     */
+    val downloadMergeToMkv: Boolean = false,
+    val downloadAudioMultistreams: Boolean = false,
+    val downloadWriteThumbnail: Boolean = false,
 ) {
     /**
      * Total number of currently visible music tabs.
