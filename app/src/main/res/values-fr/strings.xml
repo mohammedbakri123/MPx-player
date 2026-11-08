@@ -107,6 +107,7 @@
     <string name="download_clips_add">Ajouter un extrait</string>
     <string name="download_clips_start">Début</string>
     <string name="download_clips_end">Fin</string>
+    <string name="download_audio_format_title">Format audio</string>
     <string name="download_group_playlists">Grouper les playlists par dossier</string>
     <string name="download_rename_title">Renommer</string>
     <string name="download_custom_command_title">Commande personnalisée</string>

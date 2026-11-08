@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Refresh
@@ -100,6 +101,7 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.download.MpxDownloader
 import com.mpx.player.download.YtDlpUpdateOutcome
 import com.mpx.player.download.YtDlpUpdateState
+import com.mpx.player.ui.screens.download.AudioFormatDialog
 import com.mpx.player.ui.screens.download.CustomCommandDialog
 import com.mpx.player.ui.screens.download.DownloadDirectoryDialog
 import com.mpx.player.ui.screens.download.DownloadOptionsDialog
@@ -107,6 +109,7 @@ import com.mpx.player.ui.screens.download.DownloadQualityDialog
 import com.mpx.player.ui.screens.download.DownloadSponsorBlockDialog
 import com.mpx.player.ui.screens.download.SubtitleConvertDialog
 import com.mpx.player.ui.screens.download.SubtitleLanguagesDialog
+import com.mpx.player.ui.screens.download.audioFormatLabel
 import com.mpx.player.ui.screens.download.downloadCodecLabel
 import com.mpx.player.ui.screens.download.downloadOptionsSummary
 import com.mpx.player.ui.screens.download.downloadResolutionLabel
@@ -889,6 +892,7 @@ fun SettingsScreen(
                                 var showCustomCommand by remember { mutableStateOf(false) }
                                 var showSubtitleLanguages by remember { mutableStateOf(false) }
                                 var showSubtitleConvert by remember { mutableStateOf(false) }
+                                var showAudioFormat by remember { mutableStateOf(false) }
                                 val ytdlpUpdatedLabel = stringResource(R.string.download_ytdlp_updated)
                                 val ytdlpUpToDateLabel = stringResource(R.string.download_ytdlp_up_to_date)
                                 val ytdlpUpdateFailedLabel = stringResource(R.string.download_ytdlp_update_failed)
@@ -962,6 +966,15 @@ fun SettingsScreen(
                                     onClick = { showQuality = true },
                                 )
                                 ToggleRow(stringResource(R.string.download_audio_only), settings.downloadAudioOnly) { update(settings.copy(downloadAudioOnly = it)) }
+                                // Issue #390: audio format for audio-only
+                                // downloads — mp3 by default, the old
+                                // hardcoded value.
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_audio_format_title),
+                                    subtitle = audioFormatLabel(settings.downloadAudioFormat),
+                                    icon = Icons.Filled.MusicNote,
+                                    onClick = { showAudioFormat = true },
+                                )
                                 ToggleRow(stringResource(R.string.download_subtitles), settings.downloadSubtitles) { update(settings.copy(downloadSubtitles = it)) }
                                 // Issue #382: subtitle options — languages,
                                 // auto-subs, convert format, embed/keep.
@@ -1074,6 +1087,15 @@ fun SettingsScreen(
                                         settingsRepository = settingsRepository,
                                         onDismiss = {
                                             showSubtitleConvert = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showAudioFormat) {
+                                    AudioFormatDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showAudioFormat = false
                                             settings = settingsRepository.load()
                                         },
                                     )
