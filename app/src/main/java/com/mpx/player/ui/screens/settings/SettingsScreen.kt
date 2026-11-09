@@ -108,6 +108,10 @@ import com.mpx.player.download.YtDlpUpdateState
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.screens.download.AudioDirectoryDialog
 import com.mpx.player.ui.screens.download.AudioFormatDialog
+import com.mpx.player.ui.screens.download.YtDlpUpdateChannelDialog
+import com.mpx.player.ui.screens.download.YtDlpUpdateIntervalDialog
+import com.mpx.player.ui.screens.download.ytdlpUpdateChannelLabel
+import com.mpx.player.ui.screens.download.ytdlpUpdateIntervalLabel
 import com.mpx.player.ui.screens.download.OutputTemplateDialog
 import com.mpx.player.ui.screens.download.AudioPresetFormatDialog
 import com.mpx.player.ui.screens.download.AudioPresetQualityDialog
@@ -933,6 +937,8 @@ fun SettingsScreen(
                                 var showSubtitleLanguages by remember { mutableStateOf(false) }
                                 var showSubtitleConvert by remember { mutableStateOf(false) }
                                 var showAudioFormat by remember { mutableStateOf(false) }
+                                var showYtDlpChannel by remember { mutableStateOf(false) }
+                                var showYtDlpInterval by remember { mutableStateOf(false) }
                                 var showAudioPresetFormat by remember { mutableStateOf(false) }
                                 var showAudioPresetQuality by remember { mutableStateOf(false) }
                                 val ytdlpUpdatedLabel = stringResource(R.string.download_ytdlp_updated)
@@ -1156,6 +1162,23 @@ fun SettingsScreen(
                                 // on by default; off leaves only the
                                 // static foreground notification.
                                 ToggleRow(stringResource(R.string.download_notifications_title), settings.downloadNotifications) { update(settings.copy(downloadNotifications = it)) }
+                                // Issue #405: yt-dlp update channel +
+                                // check interval — the settings existed
+                                // from #333 but had no UI. The channel
+                                // is read by updateYtDlp(); the interval
+                                // gates maybeAutoUpdateYtDlp().
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_update_channel_title),
+                                    subtitle = ytdlpUpdateChannelLabel(settings.ytdlpUpdateChannel),
+                                    icon = Icons.Filled.Refresh,
+                                    onClick = { showYtDlpChannel = true },
+                                )
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_update_interval_title),
+                                    subtitle = ytdlpUpdateIntervalLabel(settings),
+                                    icon = Icons.Filled.Refresh,
+                                    onClick = { showYtDlpInterval = true },
+                                )
 
                                 Spacer(Modifier.height(16.dp))
                                 PreferenceRow(
@@ -1255,6 +1278,24 @@ fun SettingsScreen(
                                         settingsRepository = settingsRepository,
                                         onDismiss = {
                                             showAudioFormat = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showYtDlpChannel) {
+                                    YtDlpUpdateChannelDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showYtDlpChannel = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showYtDlpInterval) {
+                                    YtDlpUpdateIntervalDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showYtDlpInterval = false
                                             settings = settingsRepository.load()
                                         },
                                     )

@@ -91,6 +91,8 @@
     <string name="download_crop_artwork_title">Cortar a capa em quadrado</string>
     <string name="download_embed_thumbnail">Incorporar capa</string>
     <string name="download_write_thumbnail">Salvar miniatura</string>
+    <string name="download_update_channel_title">Canal de atualização</string>
+    <string name="download_update_interval_title">Verificar atualizações</string>
     <string name="download_notifications_title">Notificações de download</string>
     <string name="download_verbose_logging_title">Registro de depuração detalhado</string>
     <string name="download_allow_metered">Permitir downloads com dados móveis</string>
