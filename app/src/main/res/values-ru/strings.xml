@@ -268,6 +268,7 @@
     <string name="settings_category_general_sub">Сбросить все настройки к значениям по умолчанию</string>
     <string name="settings_category_development">Разработка</string>
     <string name="settings_category_development_sub">Диагностика, состояние базы данных, метрики сканирования и движок воспроизведения</string>
+    <string name="app_update_auto_check">Проверять обновления автоматически</string>
     <string name="app_update_check_title">Проверить обновления</string>
     <string name="app_update_current_version">Версия %1$s</string>
     <string name="app_update_checking">Проверка обновлений…</string>

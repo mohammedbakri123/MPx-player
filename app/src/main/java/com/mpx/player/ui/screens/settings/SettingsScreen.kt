@@ -1650,6 +1650,12 @@ fun SettingsScreen(
                                         )
                                     }
                                 }
+                                // Issue #418: automatic update check on
+                                // launch — off by default, like Seal.
+                                // The check itself is silent; an
+                                // available release opens the same
+                                // dialog as the manual check above.
+                                ToggleRow(stringResource(R.string.app_update_auto_check), settings.downloadAutoUpdateCheck) { update(settings.copy(downloadAutoUpdateCheck = it)) }
                             }
                         }
                     }

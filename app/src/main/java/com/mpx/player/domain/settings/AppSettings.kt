@@ -316,6 +316,12 @@ data class AppSettings(
      */
     val customCommandDirectory: String = "",
     /**
+     * Issue #418: check for app updates automatically on launch
+     * (Seal's AUTO_UPDATE, default off). The manual check (#414)
+     * only works if the user remembers to tap it.
+     */
+    val downloadAutoUpdateCheck: Boolean = false,
+    /**
      * Issue #382: subtitle options, Seal's subtitle block
      * (DownloadUtil.kt:452-468, JunkFood02/Seal, GPL-3.0). Languages are
      * the `--sub-langs` value (default keeps MPx's "en,ar"); auto
