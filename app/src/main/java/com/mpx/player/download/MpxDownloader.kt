@@ -718,6 +718,33 @@ class MpxDownloader private constructor(context: Context) {
      * library exposes both (`VideoInfo.extractor` / `extractorKey`).
      * A null id (direct links) never matches.
      */
+    /**
+     * Issue #419: how many videos the download archive remembers —
+     * one `"<extractor> <id>"` line per finished download. 0 when
+     * the file is missing or unreadable; the file stays tiny (one
+     * line per download), so a direct read is fine.
+     */
+    fun archiveEntryCount(): Int {
+        return try {
+            archiveFile.takeIf { it.isFile }?.readLines()?.count { it.isNotBlank() } ?: 0
+        } catch (_: Exception) {
+            0
+        }
+    }
+
+    /**
+     * Issue #419: forget the archive — delete the file. [isArchived]
+     * already treats a missing file as empty, so the next download
+     * of a previously-archived video runs for real instead of
+     * skipping as already downloaded. Never throws.
+     */
+    fun clearArchive() {
+        try {
+            archiveFile.delete()
+        } catch (_: Exception) {
+        }
+    }
+
     private fun isArchived(extractor: String?, extractorKey: String?, videoId: String?): Boolean {
         if (videoId.isNullOrBlank()) return false
         val archive = try {

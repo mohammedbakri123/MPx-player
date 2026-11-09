@@ -163,6 +163,13 @@
     <string name="download_link_copied">Link copied</string>
     <string name="download_open_link_failed">No app can open this link</string>
     <string name="download_history_redownload_started">Download started</string>
+    <string name="download_archive_title">Download archive</string>
+    <string name="download_archive_count">%1$d videos</string>
+    <string name="download_archive_empty">Empty</string>
+    <string name="download_archive_clear_title">Clear download archive?</string>
+    <string name="download_archive_clear_body">This forgets which videos were already downloaded. Downloading one again will download it for real instead of skipping it as already downloaded.</string>
+    <string name="download_archive_clear">Clear</string>
+    <string name="download_archive_cleared">Download archive cleared</string>
     <string name="download_custom_command_title">Custom command</string>
     <string name="download_custom_command_enabled">Use custom command</string>
     <string name="download_custom_command_hint">One line of yt-dlp options. Replaces the format, subtitle and chapter options for every download.</string>

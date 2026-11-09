@@ -162,6 +162,13 @@
     <string name="download_link_copied">Enlace copiado</string>
     <string name="download_open_link_failed">Ninguna app puede abrir este enlace</string>
     <string name="download_history_redownload_started">Descarga iniciada</string>
+    <string name="download_archive_title">Archivo de descargas</string>
+    <string name="download_archive_count">%1$d videos</string>
+    <string name="download_archive_empty">Vacío</string>
+    <string name="download_archive_clear_title">¿Vaciar el archivo de descargas?</string>
+    <string name="download_archive_clear_body">Esto olvida qué videos ya se descargaron. Volver a descargar uno lo descargará de verdad en lugar de omitirlo por ya descargado.</string>
+    <string name="download_archive_clear">Vaciar</string>
+    <string name="download_archive_cleared">Archivo de descargas vaciado</string>
     <string name="download_custom_command_title">Comando personalizado</string>
     <string name="download_custom_command_enabled">Usar comando personalizado</string>
     <string name="download_custom_command_hint">Una línea de opciones de yt-dlp. Reemplaza las opciones de formato, subtítulos y capítulos en cada descarga.</string>

@@ -162,6 +162,13 @@
     <string name="download_link_copied">Link kopiert</string>
     <string name="download_open_link_failed">Keine App kann diesen Link öffnen</string>
     <string name="download_history_redownload_started">Download gestartet</string>
+    <string name="download_archive_title">Download-Archiv</string>
+    <string name="download_archive_count">%1$d Videos</string>
+    <string name="download_archive_empty">Leer</string>
+    <string name="download_archive_clear_title">Download-Archiv leeren?</string>
+    <string name="download_archive_clear_body">Damit wird vergessen, welche Videos bereits heruntergeladen wurden. Ein erneuter Download lädt das Video wirklich herunter, statt es als bereits heruntergeladen zu überspringen.</string>
+    <string name="download_archive_clear">Leeren</string>
+    <string name="download_archive_cleared">Download-Archiv geleert</string>
     <string name="download_custom_command_title">Benutzerdefinierter Befehl</string>
     <string name="download_custom_command_enabled">Benutzerdefinierten Befehl verwenden</string>
     <string name="download_custom_command_hint">Eine Zeile yt-dlp-Optionen. Ersetzt die Format-, Untertitel- und Kapiteloptionen für jeden Download.</string>
