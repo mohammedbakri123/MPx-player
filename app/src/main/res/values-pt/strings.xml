@@ -119,6 +119,9 @@
     <string name="download_format_title">Escolher formato</string>
     <string name="download_format_best">A melhor</string>
     <string name="download_format_best_detail">Usar as configurações globais de qualidade</string>
+    <string name="download_format_type_title">Baixar como</string>
+    <string name="download_format_as_video_detail">Vídeo completo com som</string>
+    <string name="download_format_as_audio_detail">Somente áudio, sem vídeo</string>
     <string name="download_format_video">Vídeo</string>
     <string name="download_format_audio">Áudio</string>
     <string name="download_clips_title">Clipes</string>

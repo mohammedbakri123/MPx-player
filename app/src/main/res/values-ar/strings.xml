@@ -119,6 +119,9 @@
     <string name="download_format_title">اختر الصيغة</string>
     <string name="download_format_best">الأفضل</string>
     <string name="download_format_best_detail">استخدام إعدادات الجودة العامة</string>
+    <string name="download_format_type_title">تنزيل كـ</string>
+    <string name="download_format_as_video_detail">فيديو كامل مع الصوت</string>
+    <string name="download_format_as_audio_detail">صوت فقط بدون فيديو</string>
     <string name="download_format_video">فيديو</string>
     <string name="download_format_audio">صوت</string>
     <string name="download_clips_title">مقاطع</string>

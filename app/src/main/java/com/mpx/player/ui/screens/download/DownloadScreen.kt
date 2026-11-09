@@ -498,16 +498,21 @@ fun DownloadScreen(
             // id starts the download; the URL field clears only once
             // it starts, so dismissing the sheet keeps the URL.
             formatToPick?.let { (videoUrl, info) ->
+                val downloadPrefs = settingsRepository.load()
                 FormatSelectionDialog(
                     videoInfo = info,
                     onDismiss = { formatToPick = null },
-                    onDownload = { formatId, clips, splitByChapter, newTitle ->
+                    // Issue #420: the sheet's type + subtitles are
+                    // this download's only — the globals never change
+                    // from here.
+                    audioOnly = downloadPrefs.downloadAudioOnly,
+                    subtitles = downloadPrefs.downloadSubtitles,
+                    onDownload = { formatId, clips, splitByChapter, newTitle, audioOnly, subtitles ->
                         formatToPick = null
-                        val downloadPrefs = settingsRepository.load()
                         downloader.startDownload(
                             videoUrl,
-                            audioOnly = downloadPrefs.downloadAudioOnly,
-                            subtitles = downloadPrefs.downloadSubtitles,
+                            audioOnly = audioOnly,
+                            subtitles = subtitles,
                             formatId = formatId,
                             clips = clips,
                             splitByChapter = splitByChapter,

@@ -119,6 +119,9 @@
     <string name="download_format_title">选择格式</string>
     <string name="download_format_best">最佳</string>
     <string name="download_format_best_detail">使用全局质量设置</string>
+    <string name="download_format_type_title">下载为</string>
+    <string name="download_format_as_video_detail">完整视频（含声音）</string>
+    <string name="download_format_as_audio_detail">仅音频，无视频</string>
     <string name="download_format_video">视频</string>
     <string name="download_format_audio">音频</string>
     <string name="download_clips_title">片段</string>

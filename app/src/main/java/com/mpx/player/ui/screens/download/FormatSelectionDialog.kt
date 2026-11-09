@@ -74,7 +74,12 @@ import kotlin.math.roundToInt
 fun FormatSelectionDialog(
     videoInfo: VideoInfo,
     onDismiss: () -> Unit,
-    onDownload: (formatId: String?, clips: List<VideoClip>, splitByChapter: Boolean, newTitle: String?) -> Unit,
+    onDownload: (formatId: String?, clips: List<VideoClip>, splitByChapter: Boolean, newTitle: String?, audioOnly: Boolean, subtitles: Boolean) -> Unit,
+    // Issue #420: per-download type + subtitles, initialized from
+    // the global defaults — the sheet is the per-download place,
+    // the globals never change from here.
+    audioOnly: Boolean = false,
+    subtitles: Boolean = false,
 ) {
     val formats = videoInfo.formats.orEmpty()
     val videoFormats = remember(formats) {
@@ -101,6 +106,12 @@ fun FormatSelectionDialog(
     var clips by remember { mutableStateOf<List<VideoClip>>(emptyList()) }
     var splitByChapter by remember { mutableStateOf(false) }
     var newTitle by remember { mutableStateOf(videoInfo.title.orEmpty()) }
+    // Issue #420: this download's type + subtitles. Audio mode hides
+    // the format lists, clips and split-by-chapter below — they are
+    // video choices; the audio path is `-x` with `--audio-format`,
+    // no `-f`, so a formatId would be meaningless there.
+    var downloadAsAudio by remember { mutableStateOf(audioOnly) }
+    var downloadSubtitles by remember { mutableStateOf(subtitles) }
 
     MpxDialog(
         title = stringResource(R.string.download_format_title),
@@ -108,15 +119,28 @@ fun FormatSelectionDialog(
         dismissText = stringResource(R.string.action_cancel),
         confirmText = stringResource(R.string.download_button),
         onConfirm = {
-            val videoPart = selectedVideo?.formatId?.takeIf { it.isNotBlank() } ?: "bestvideo"
-            val audioPart = selectedAudio?.formatId?.takeIf { it.isNotBlank() } ?: "bestaudio"
-            onDownload(
-                if (selectedVideo == null && selectedAudio == null) null
-                else "$videoPart+$audioPart",
-                clips,
-                splitByChapter,
-                newTitle.takeIf { it.isNotBlank() && it != videoInfo.title },
-            )
+            if (downloadAsAudio) {
+                onDownload(
+                    null,
+                    emptyList(),
+                    false,
+                    newTitle.takeIf { it.isNotBlank() && it != videoInfo.title },
+                    true,
+                    downloadSubtitles,
+                )
+            } else {
+                val videoPart = selectedVideo?.formatId?.takeIf { it.isNotBlank() } ?: "bestvideo"
+                val audioPart = selectedAudio?.formatId?.takeIf { it.isNotBlank() } ?: "bestaudio"
+                onDownload(
+                    if (selectedVideo == null && selectedAudio == null) null
+                    else "$videoPart+$audioPart",
+                    clips,
+                    splitByChapter,
+                    newTitle.takeIf { it.isNotBlank() && it != videoInfo.title },
+                    false,
+                    downloadSubtitles,
+                )
+            }
         },
     ) {
         LazyColumn {
@@ -158,9 +182,15 @@ fun FormatSelectionDialog(
                 )
                 Spacer(Modifier.height(12.dp))
             }
+            // Issue #420: per-download type + subtitles — Video /
+            // Audio only radio rows (the sheet's own FormatRow) plus
+            // a Subtitles switch, both initialized from the global
+            // defaults above and threaded through onDownload. The
+            // globals never change from here.
             item {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    stringResource(R.string.download_format_video),
+                    stringResource(R.string.download_format_type_title),
                     color = MpxTheme.colors.textPrimary,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
@@ -169,115 +199,166 @@ fun FormatSelectionDialog(
             }
             item {
                 FormatRow(
-                    label = stringResource(R.string.download_format_best),
-                    detail = stringResource(R.string.download_format_best_detail),
-                    selected = selectedVideo == null,
-                    onClick = { selectedVideo = null },
-                )
-            }
-            items(videoFormats, key = { it.formatId ?: "${it.height}" }) { format ->
-                FormatRow(
-                    label = formatLabel(format),
-                    detail = formatDetail(format),
-                    selected = selectedVideo == format,
-                    onClick = { selectedVideo = format },
+                    label = stringResource(R.string.download_format_video),
+                    detail = stringResource(R.string.download_format_as_video_detail),
+                    selected = !downloadAsAudio,
+                    onClick = { downloadAsAudio = false },
                 )
             }
             item {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    stringResource(R.string.download_format_audio),
-                    color = MpxTheme.colors.textPrimary,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(Modifier.height(4.dp))
-            }
-            item {
                 FormatRow(
-                    label = stringResource(R.string.download_format_best),
-                    detail = stringResource(R.string.download_format_best_detail),
-                    selected = selectedAudio == null,
-                    onClick = { selectedAudio = null },
+                    label = stringResource(R.string.download_audio_only),
+                    detail = stringResource(R.string.download_format_as_audio_detail),
+                    selected = downloadAsAudio,
+                    onClick = { downloadAsAudio = true },
                 )
             }
-            items(audioFormats, key = { it.formatId ?: "${it.acodec}" }) { format ->
-                FormatRow(
-                    label = formatLabel(format),
-                    detail = formatDetail(format),
-                    selected = selectedAudio == format,
-                    onClick = { selectedAudio = format },
-                )
-            }
-            // Issue #386: clips — a range slider across the video
-            // plus start/end fields for exact times, an Add button,
-            // and the list of added clips. Hidden when the duration
-            // is unknown: the slider needs a range. Seal's shape
-            // (VideoSelectionSlider + VideoClipDialog) in one
-            // section instead of two screens.
-            val duration = videoInfo.duration
-            if (duration > 0) {
-                item {
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        stringResource(R.string.download_clips_title),
-                        color = MpxTheme.colors.textPrimary,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    ClipEditor(
-                        durationSeconds = duration,
-                        onAddClip = { clip -> clips = clips + clip },
-                    )
-                }
-                items(clips, key = { "${it.start}-${it.end}" }) { clip ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "${formatVideoDuration(clip.start.toLong())} – ${formatVideoDuration(clip.end.toLong())}",
-                            color = MpxTheme.colors.textPrimary,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(onClick = { clips = clips - clip }) {
-                            Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = stringResource(R.string.download_clips_remove),
-                                tint = MpxTheme.colors.textSecondary,
-                            )
-                        }
-                    }
-                }
-            }
-            // Issue #387: split by chapter — a switch for this
-            // download only, below the clips. Shown even when the
-            // duration is unknown: splitting needs no range, and a
-            // video without chapters simply downloads as one file.
             item {
                 Spacer(Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth()
-                        .clickable { splitByChapter = !splitByChapter }
+                        .clickable { downloadSubtitles = !downloadSubtitles }
                         .padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        stringResource(R.string.download_split_by_chapter),
+                        stringResource(R.string.download_subtitles),
                         color = MpxTheme.colors.textPrimary,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                     )
                     Switch(
-                        checked = splitByChapter,
-                        onCheckedChange = { splitByChapter = it },
+                        checked = downloadSubtitles,
+                        onCheckedChange = { downloadSubtitles = it },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = MpxTheme.colors.primary,
                             checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.5f),
                         ),
                     )
+                }
+            }
+            if (!downloadAsAudio) {
+                item {
+                    Text(
+                        stringResource(R.string.download_format_video),
+                        color = MpxTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
+                item {
+                    FormatRow(
+                        label = stringResource(R.string.download_format_best),
+                        detail = stringResource(R.string.download_format_best_detail),
+                        selected = selectedVideo == null,
+                        onClick = { selectedVideo = null },
+                    )
+                }
+                items(videoFormats, key = { it.formatId ?: "${it.height}" }) { format ->
+                    FormatRow(
+                        label = formatLabel(format),
+                        detail = formatDetail(format),
+                        selected = selectedVideo == format,
+                        onClick = { selectedVideo = format },
+                    )
+                }
+                item {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        stringResource(R.string.download_format_audio),
+                        color = MpxTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
+                item {
+                    FormatRow(
+                        label = stringResource(R.string.download_format_best),
+                        detail = stringResource(R.string.download_format_best_detail),
+                        selected = selectedAudio == null,
+                        onClick = { selectedAudio = null },
+                    )
+                }
+                items(audioFormats, key = { it.formatId ?: "${it.acodec}" }) { format ->
+                    FormatRow(
+                        label = formatLabel(format),
+                        detail = formatDetail(format),
+                        selected = selectedAudio == format,
+                        onClick = { selectedAudio = format },
+                    )
+                }
+                // Issue #386: clips — a range slider across the video
+                // plus start/end fields for exact times, an Add button,
+                // and the list of added clips. Hidden when the duration
+                // is unknown: the slider needs a range. Seal's shape
+                // (VideoSelectionSlider + VideoClipDialog) in one
+                // section instead of two screens.
+                val duration = videoInfo.duration
+                if (duration > 0) {
+                    item {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            stringResource(R.string.download_clips_title),
+                            color = MpxTheme.colors.textPrimary,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        ClipEditor(
+                            durationSeconds = duration,
+                            onAddClip = { clip -> clips = clips + clip },
+                        )
+                    }
+                    items(clips, key = { "${it.start}-${it.end}" }) { clip ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "${formatVideoDuration(clip.start.toLong())} – ${formatVideoDuration(clip.end.toLong())}",
+                                color = MpxTheme.colors.textPrimary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconButton(onClick = { clips = clips - clip }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = stringResource(R.string.download_clips_remove),
+                                    tint = MpxTheme.colors.textSecondary,
+                                )
+                            }
+                        }
+                    }
+                }
+                // Issue #387: split by chapter — a switch for this
+                // download only, below the clips. Shown even when the
+                // duration is unknown: splitting needs no range, and a
+                // video without chapters simply downloads as one file.
+                item {
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .clickable { splitByChapter = !splitByChapter }
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            stringResource(R.string.download_split_by_chapter),
+                            color = MpxTheme.colors.textPrimary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(
+                            checked = splitByChapter,
+                            onCheckedChange = { splitByChapter = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MpxTheme.colors.primary,
+                                checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.5f),
+                            ),
+                        )
+                    }
                 }
             }
         }
