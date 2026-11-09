@@ -151,6 +151,17 @@
     <string name="download_custom_command_directory_summary">التنزيلات/%1$s</string>
     <string name="download_custom_command_directory_default">مجلد الفيديو</string>
     <string name="share_no_link">لم يتم العثور على رابط في النص المشارك</string>
+    <string name="download_history_details">التفاصيل</string>
+    <string name="download_history_copy_link">نسخ الرابط</string>
+    <string name="download_history_open_link">فتح الرابط</string>
+    <string name="download_history_redownload">تنزيل مجددًا</string>
+    <string name="download_history_delete">حذف من السجل</string>
+    <string name="download_history_delete_file_too">احذف الملف أيضًا</string>
+    <string name="download_history_delete_title">حذف من السجل؟</string>
+    <string name="download_history_delete_body">حذف “%1$s” من السجل؟</string>
+    <string name="download_link_copied">تم نسخ الرابط</string>
+    <string name="download_open_link_failed">لا يوجد تطبيق يمكنه فتح هذا الرابط</string>
+    <string name="download_history_redownload_started">بدأ التنزيل</string>
     <string name="download_custom_command_title">أمر مخصص</string>
     <string name="download_custom_command_enabled">استخدام الأمر المخصص</string>
     <string name="download_custom_command_hint">سطر واحد من خيارات yt-dlp. يحل محل خيارات التنسيق والترجمة والفصول لكل تنزيل.</string>

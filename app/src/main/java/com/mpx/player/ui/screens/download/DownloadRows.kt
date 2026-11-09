@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.OpenInNew
@@ -153,6 +154,9 @@ internal fun DownloadHistoryRow(
     // Issue #412: same as DownloadedFileRow above.
     onShare: (() -> Unit)? = null,
     onOpen: (() -> Unit)? = null,
+    // Issue #417: opens the detail sheet (copy/open link,
+    // re-download, delete with the file). The row tap stays Play.
+    onMore: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -212,6 +216,15 @@ internal fun DownloadHistoryRow(
                 Icon(
                     imageVector = Icons.Filled.OpenInNew,
                     contentDescription = stringResource(R.string.download_open_with),
+                    tint = MpxTheme.colors.textSecondary,
+                )
+            }
+        }
+        if (onMore != null) {
+            IconButton(onClick = onMore) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = stringResource(R.string.download_history_details),
                     tint = MpxTheme.colors.textSecondary,
                 )
             }

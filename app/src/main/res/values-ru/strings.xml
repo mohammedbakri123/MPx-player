@@ -151,6 +151,17 @@
     <string name="download_custom_command_directory_summary">Загрузки/%1$s</string>
     <string name="download_custom_command_directory_default">Папка видео</string>
     <string name="share_no_link">В переданном тексте нет ссылки</string>
+    <string name="download_history_details">Подробнее</string>
+    <string name="download_history_copy_link">Копировать ссылку</string>
+    <string name="download_history_open_link">Открыть ссылку</string>
+    <string name="download_history_redownload">Скачать ещё раз</string>
+    <string name="download_history_delete">Удалить из истории</string>
+    <string name="download_history_delete_file_too">Удалить и файл</string>
+    <string name="download_history_delete_title">Удалить из истории?</string>
+    <string name="download_history_delete_body">Удалить «%1$s» из истории?</string>
+    <string name="download_link_copied">Ссылка скопирована</string>
+    <string name="download_open_link_failed">Нет приложения для открытия этой ссылки</string>
+    <string name="download_history_redownload_started">Загрузка началась</string>
     <string name="download_custom_command_title">Пользовательская команда</string>
     <string name="download_custom_command_enabled">Использовать пользовательскую команду</string>
     <string name="download_custom_command_hint">Одна строка опций yt-dlp. Заменяет опции формата, субтитров и глав для каждой загрузки.</string>

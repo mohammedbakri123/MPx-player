@@ -151,6 +151,17 @@
     <string name="download_custom_command_directory_summary">Descargas/%1$s</string>
     <string name="download_custom_command_directory_default">Carpeta de videos</string>
     <string name="share_no_link">No se encontró ningún enlace en el texto compartido</string>
+    <string name="download_history_details">Detalles</string>
+    <string name="download_history_copy_link">Copiar enlace</string>
+    <string name="download_history_open_link">Abrir enlace</string>
+    <string name="download_history_redownload">Descargar de nuevo</string>
+    <string name="download_history_delete">Eliminar del historial</string>
+    <string name="download_history_delete_file_too">Eliminar también el archivo</string>
+    <string name="download_history_delete_title">¿Eliminar del historial?</string>
+    <string name="download_history_delete_body">¿Eliminar “%1$s” del historial?</string>
+    <string name="download_link_copied">Enlace copiado</string>
+    <string name="download_open_link_failed">Ninguna app puede abrir este enlace</string>
+    <string name="download_history_redownload_started">Descarga iniciada</string>
     <string name="download_custom_command_title">Comando personalizado</string>
     <string name="download_custom_command_enabled">Usar comando personalizado</string>
     <string name="download_custom_command_hint">Una línea de opciones de yt-dlp. Reemplaza las opciones de formato, subtítulos y capítulos en cada descarga.</string>
