@@ -45,6 +45,7 @@
     <string name="download_sign_in">Entre para baixar</string>
     <string name="download_no_cookies">Nenhum cookie encontrado — entre na sua conta na janela primeiro e toque em «Concluído»</string>
     <string name="download_cookies_failed">Falha ao importar os cookies</string>
+    <string name="download_format_selection_title">Seleção de formato</string>
     <string name="download_quality_title">Qualidade do download</string>
     <string name="download_quality_resolution">Limite de resolução</string>
     <string name="download_quality_resolution_none">Sem limite</string>

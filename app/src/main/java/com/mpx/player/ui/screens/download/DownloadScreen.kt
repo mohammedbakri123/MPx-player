@@ -314,6 +314,16 @@ fun DownloadScreen(
                                 if (downloadPrefs.customCommandEnabled && downloadPrefs.customCommand.isNotBlank()) {
                                     downloader.startDownload(videoUrl, audioOnly = downloadPrefs.downloadAudioOnly, subtitles = downloadPrefs.downloadSubtitles)
                                     urlText = ""
+                                } else if (downloadPrefs.downloadFormatSelection == "auto") {
+                                    // Issue #408: Auto format selection
+                                    // skips the sheet (and the info
+                                    // fetch that feeds it) and starts
+                                    // immediately — runDownload applies
+                                    // the global codec/resolution/sorter
+                                    // when no formatId is set, so the
+                                    // preset above is what downloads.
+                                    downloader.startDownload(videoUrl, audioOnly = false, subtitles = downloadPrefs.downloadSubtitles)
+                                    urlText = ""
                                 } else if (!downloadPrefs.downloadAudioOnly) {
                                     val info = downloader.fetchVideoInfoForFormat(videoUrl)
                                     if (info != null && info.formats.orEmpty().isNotEmpty()) {

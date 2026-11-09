@@ -108,6 +108,8 @@ import com.mpx.player.download.YtDlpUpdateState
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.screens.download.AudioDirectoryDialog
 import com.mpx.player.ui.screens.download.AudioFormatDialog
+import com.mpx.player.ui.screens.download.FormatSelectionModeDialog
+import com.mpx.player.ui.screens.download.formatSelectionLabel
 import com.mpx.player.ui.screens.download.YtDlpUpdateChannelDialog
 import com.mpx.player.ui.screens.download.YtDlpUpdateIntervalDialog
 import com.mpx.player.ui.screens.download.ytdlpUpdateChannelLabel
@@ -937,6 +939,7 @@ fun SettingsScreen(
                                 var showSubtitleLanguages by remember { mutableStateOf(false) }
                                 var showSubtitleConvert by remember { mutableStateOf(false) }
                                 var showAudioFormat by remember { mutableStateOf(false) }
+                                var showFormatSelection by remember { mutableStateOf(false) }
                                 var showYtDlpChannel by remember { mutableStateOf(false) }
                                 var showYtDlpInterval by remember { mutableStateOf(false) }
                                 var showAudioPresetFormat by remember { mutableStateOf(false) }
@@ -1072,6 +1075,17 @@ fun SettingsScreen(
                                     },
                                     icon = Icons.Filled.HighQuality,
                                     onClick = { showQuality = true },
+                                )
+                                // Issue #408: format selection — Auto
+                                // downloads immediately with the preset
+                                // above, Custom opens the per-video
+                                // format list for every video (today's
+                                // behavior, the default).
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_format_selection_title),
+                                    subtitle = formatSelectionLabel(settings.downloadFormatSelection),
+                                    icon = Icons.Filled.Tune,
+                                    onClick = { showFormatSelection = true },
                                 )
                                 ToggleRow(stringResource(R.string.download_audio_only), settings.downloadAudioOnly) { update(settings.copy(downloadAudioOnly = it)) }
                                 // Issue #390: audio format for audio-only
@@ -1278,6 +1292,15 @@ fun SettingsScreen(
                                         settingsRepository = settingsRepository,
                                         onDismiss = {
                                             showAudioFormat = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showFormatSelection) {
+                                    FormatSelectionModeDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showFormatSelection = false
                                             settings = settingsRepository.load()
                                         },
                                     )

@@ -45,6 +45,7 @@
     <string name="download_sign_in">Войдите, чтобы скачать</string>
     <string name="download_no_cookies">Cookies не найдены — сначала войдите в окне, затем нажмите «Готово»</string>
     <string name="download_cookies_failed">Не удалось импортировать cookies</string>
+    <string name="download_format_selection_title">Выбор формата</string>
     <string name="download_quality_title">Качество загрузки</string>
     <string name="download_quality_resolution">Ограничение разрешения</string>
     <string name="download_quality_resolution_none">Без ограничений</string>
