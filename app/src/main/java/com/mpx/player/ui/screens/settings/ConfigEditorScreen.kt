@@ -104,7 +104,7 @@ fun ConfigEditorScreen(
                     val saved = settingsRepository.load()
                     if (configType == MpvConfigType.MPV_CONF) saved.mpvConf else saved.inputConf
                 }
-        } ?: ""
+        }
         configText = initial
         loaded = true
     }
@@ -159,6 +159,8 @@ fun ConfigEditorScreen(
                 if (storageUri.isNotBlank()) {
                     MpvConfigSync.deleteConfigFile(context, storageUri, fileName)
                 }
+            }.onFailure { e ->
+                android.util.Log.w("ConfigEditor", "Failed to reset $fileName", e)
             }
             withContext(Dispatchers.Main) {
                 configText = ""
