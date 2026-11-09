@@ -252,8 +252,22 @@
     <string name="settings_category_general_sub">सभी प्राथमिकताएँ डिफ़ॉल्ट पर रीसेट करें</string>
     <string name="settings_category_development">डेवलपमेंट</string>
     <string name="settings_category_development_sub">डायग्नोस्टिक्स, डेटाबेस स्थिति, स्कैन मेट्रिक्स और प्लेबैक इंजन</string>
+    <string name="app_update_check_title">अपडेट जाँचें</string>
+    <string name="app_update_current_version">संस्करण %1$s</string>
+    <string name="app_update_checking">अपडेट जाँचे जा रहे हैं…</string>
+    <string name="app_update_up_to_date">आपका संस्करण नवीनतम है</string>
+    <string name="app_update_available">अपडेट उपलब्ध है: %1$s</string>
+    <string name="app_update_check_failed">अपडेट जाँचे नहीं जा सके</string>
+    <string name="app_update_dialog_title">अपडेट उपलब्ध है</string>
+    <string name="app_update_dialog_body">संस्करण %1$s\nप्रकाशित %2$s • %3$s</string>
+    <string name="app_update_download">डाउनलोड करें</string>
+    <string name="app_update_install">इंस्टॉल करें</string>
+    <string name="app_update_downloading">डाउनलोड हो रहा है…</string>
+    <string name="app_update_downloading_percent">डाउनलोड हो रहा है… %1$d%%</string>
+    <string name="app_update_download_failed">डाउनलोड विफल रहा</string>
+    <string name="app_update_install_failed">इंस्टॉलर खोला नहीं जा सका</string>
     <string name="settings_category_about">के बारे में</string>
-    <string name="settings_category_about_sub">संस्करण 0.1.0-beta • बीटा स्थिति और फ़ीडबैक</string>
+    <string name="settings_category_about_sub">संस्करण %1$s • बीटा स्थिति और फ़ीडबैक</string>
 
     <!-- Settings Category Options -->
     <string name="theme_midnight">Midnight OLED (शुद्ध काला)</string>

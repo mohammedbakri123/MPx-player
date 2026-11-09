@@ -160,8 +160,12 @@ import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.components.MpxDialog
 import com.mpx.player.ui.components.MpxPalettePicker
 import com.mpx.player.ui.theme.mpxPaletteFor
+import com.mpx.player.update.AppUpdateChecker
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.saveable.rememberSaveable
+
+/** Issue #414: the manual update check's row state. */
+private enum class UpdateCheckStatus { IDLE, CHECKING, UP_TO_DATE, AVAILABLE, FAILED }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -354,7 +358,7 @@ fun SettingsScreen(
         SettingCategory("subtitle", stringResource(R.string.settings_category_subtitle), stringResource(R.string.settings_category_subtitle_sub), Icons.Filled.Subtitles),
         SettingCategory("downloader", stringResource(R.string.settings_category_downloader), stringResource(R.string.settings_category_downloader_sub), Icons.Filled.Download),
         SettingCategory("advanced", stringResource(R.string.pref_advanced_title), stringResource(R.string.settings_category_development_sub), Icons.Filled.DeveloperMode),
-        SettingCategory("about", stringResource(R.string.settings_category_about), stringResource(R.string.settings_category_about_sub), Icons.Filled.Info),
+        SettingCategory("about", stringResource(R.string.settings_category_about), stringResource(R.string.settings_category_about_sub, BuildConfig.VERSION_NAME), Icons.Filled.Info),
     )
 
     val selectedCategory = categories.find { it.id == selectedId }
@@ -1555,6 +1559,68 @@ fun SettingsScreen(
                                             stringResource(R.string.about_beta_open_page_button),
                                             color = MpxTheme.colors.primary,
                                             fontWeight = FontWeight.SemiBold,
+                                        )
+                                    }
+                                }
+                                // Issue #414: manual in-app self-update
+                                // — the row shows the installed version
+                                // until a check runs; an available update
+                                // opens the download/install dialog.
+                                var updateStatus by remember { mutableStateOf(UpdateCheckStatus.IDLE) }
+                                var availableRelease by remember { mutableStateOf<AppUpdateChecker.Release?>(null) }
+                                var showUpdateDialog by remember { mutableStateOf(false) }
+                                Spacer(Modifier.height(16.dp))
+                                PreferenceRow(
+                                    title = stringResource(R.string.app_update_check_title),
+                                    subtitle = when (updateStatus) {
+                                        UpdateCheckStatus.IDLE -> stringResource(
+                                            R.string.app_update_current_version,
+                                            AppUpdateChecker.currentVersion(),
+                                        )
+                                        UpdateCheckStatus.CHECKING -> stringResource(R.string.app_update_checking)
+                                        UpdateCheckStatus.UP_TO_DATE -> stringResource(R.string.app_update_up_to_date)
+                                        UpdateCheckStatus.AVAILABLE -> stringResource(
+                                            R.string.app_update_available,
+                                            availableRelease?.tag.orEmpty(),
+                                        )
+                                        UpdateCheckStatus.FAILED -> stringResource(R.string.app_update_check_failed)
+                                    },
+                                    icon = Icons.Filled.Update,
+                                    onClick = {
+                                        if (updateStatus == UpdateCheckStatus.CHECKING) return@PreferenceRow
+                                        updateStatus = UpdateCheckStatus.CHECKING
+                                        scope.launch {
+                                            when (val result = AppUpdateChecker.checkForUpdate()) {
+                                                is AppUpdateChecker.CheckResult.UpToDate -> {
+                                                    updateStatus = UpdateCheckStatus.UP_TO_DATE
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.app_update_up_to_date),
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
+                                                }
+                                                is AppUpdateChecker.CheckResult.Available -> {
+                                                    availableRelease = result.release
+                                                    updateStatus = UpdateCheckStatus.AVAILABLE
+                                                    showUpdateDialog = true
+                                                }
+                                                AppUpdateChecker.CheckResult.Failed -> {
+                                                    updateStatus = UpdateCheckStatus.FAILED
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.app_update_check_failed),
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
+                                                }
+                                            }
+                                        }
+                                    },
+                                )
+                                if (showUpdateDialog) {
+                                    availableRelease?.let { release ->
+                                        AppUpdateDialog(
+                                            release = release,
+                                            onDismiss = { showUpdateDialog = false },
                                         )
                                     }
                                 }

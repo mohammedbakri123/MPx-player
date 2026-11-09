@@ -252,8 +252,22 @@
     <string name="settings_category_general_sub">Redefinir todas as preferências para os padrões</string>
     <string name="settings_category_development">Desenvolvimento</string>
     <string name="settings_category_development_sub">Diagnósticos, status do banco de dados, métricas de varredura e mecanismo de reprodução</string>
+    <string name="app_update_check_title">Verificar atualizações</string>
+    <string name="app_update_current_version">Versão %1$s</string>
+    <string name="app_update_checking">Verificando atualizações…</string>
+    <string name="app_update_up_to_date">Você está atualizado</string>
+    <string name="app_update_available">Atualização disponível: %1$s</string>
+    <string name="app_update_check_failed">Não foi possível verificar atualizações</string>
+    <string name="app_update_dialog_title">Atualização disponível</string>
+    <string name="app_update_dialog_body">Versão %1$s\nPublicada %2$s • %3$s</string>
+    <string name="app_update_download">Baixar</string>
+    <string name="app_update_install">Instalar</string>
+    <string name="app_update_downloading">Baixando…</string>
+    <string name="app_update_downloading_percent">Baixando… %1$d%%</string>
+    <string name="app_update_download_failed">Falha no download</string>
+    <string name="app_update_install_failed">Não foi possível abrir o instalador</string>
     <string name="settings_category_about">Sobre</string>
-    <string name="settings_category_about_sub">Versão 0.1.0-beta • Status beta e feedback</string>
+    <string name="settings_category_about_sub">Versão %1$s • Status beta e feedback</string>
 
     <!-- Settings Category Options -->
     <string name="theme_midnight">Midnight OLED (preto puro)</string>
