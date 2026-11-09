@@ -91,6 +91,7 @@
     <string name="download_crop_artwork_title">Recadrer la pochette en carré</string>
     <string name="download_embed_thumbnail">Intégrer la pochette</string>
     <string name="download_write_thumbnail">Enregistrer la miniature</string>
+    <string name="download_verbose_logging_title">Journal de débogage détaillé</string>
     <string name="download_allow_metered">Autoriser les téléchargements sur données mobiles</string>
     <string name="download_metered_title">Télécharger sur données mobiles ?</string>
     <string name="download_metered_message">Vous êtes sur données mobiles. Télécharger une vidéo peut consommer beaucoup de données.</string>

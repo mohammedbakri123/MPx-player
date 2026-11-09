@@ -1148,6 +1148,10 @@ fun SettingsScreen(
                                 // Issue #380: metered gate — off by
                                 // default, like Seal's CELLULAR_DOWNLOAD.
                                 ToggleRow(stringResource(R.string.download_allow_metered), settings.downloadAllowMetered) { update(settings.copy(downloadAllowMetered = it)) }
+                                // Issue #402: verbose debug logging — a
+                                // diagnostics knob, off by default; the
+                                // logs get very noisy when it is on.
+                                ToggleRow(stringResource(R.string.download_verbose_logging_title), settings.downloadVerboseLogging) { update(settings.copy(downloadVerboseLogging = it)) }
 
                                 Spacer(Modifier.height(16.dp))
                                 PreferenceRow(

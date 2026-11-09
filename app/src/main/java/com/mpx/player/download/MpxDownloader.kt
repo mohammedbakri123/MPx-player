@@ -1036,6 +1036,7 @@ class MpxDownloader private constructor(context: Context) {
             // Issue #347: same network flags as the info fetch — a
             // proxied / rate-limited network needs them on the probe too.
             addOptionsForNetworkFlags(settings)
+            applyVerboseLogging(settings)
         }
         val out = try {
             withContext(Dispatchers.IO) {
@@ -1077,6 +1078,7 @@ class MpxDownloader private constructor(context: Context) {
             addOption("--socket-timeout", "5")
             if (settings.downloadUserAgent.isNotBlank()) addOption("--user-agent", settings.downloadUserAgent)
             addOptionsForNetworkFlags(settings)
+            applyVerboseLogging(settings)
         }
         return try {
             withContext(Dispatchers.IO) { YoutubeDL.getInstance().getInfo(request) }
@@ -2184,6 +2186,19 @@ class MpxDownloader private constructor(context: Context) {
      * the call site): it changes the output filename, which info and
      * probe requests never produce.
      */
+    /**
+     * Issue #402: verbose debug logging — one helper applies `-v` to
+     * every YoutubeDLRequest in this class (playlist probe, format
+     * probe, per-download info fetch, and the download itself), so a
+     * failing probe logs verbosely too. The setting is read fresh
+     * each time, like the other downloader settings. The yt-dlp
+     * update check cannot take it — the library's updateYoutubeDL
+     * builds its own command internally and takes no options
+     * (verified against the 0.18.1 AAR).
+     */
+    private fun YoutubeDLRequest.applyVerboseLogging(settings: AppSettings): YoutubeDLRequest =
+        apply { if (settings.downloadVerboseLogging) addOption("-v") }
+
     private fun YoutubeDLRequest.addOptionsForNetworkFlags(settings: AppSettings): YoutubeDLRequest =
         apply {
             val rateLimit = settings.downloadRateLimit.trim()
@@ -2303,6 +2318,7 @@ class MpxDownloader private constructor(context: Context) {
                 // fetch too — a slow or proxied network fails here the
                 // same way it fails the download.
                 addOptionsForNetworkFlags(settings)
+                applyVerboseLogging(settings)
             }
             // Issue #346: keep the whole VideoInfo, not just the title —
             // the id/extractor feed the download-archive pre-check and
@@ -2386,6 +2402,9 @@ class MpxDownloader private constructor(context: Context) {
                 if (useCustomCommand) {
                     addOption("--config-locations", customCommandFile.absolutePath)
                 }
+                // Issue #402: verbose debug logging on the download
+                // itself, like on every other request in this class.
+                applyVerboseLogging(settings)
                 // Seal's output template (DownloadUtil.BASENAME,
                 // JunkFood02/Seal, GPL-3.0): title truncated to 200 bytes
                 // so long titles cannot exceed filesystem filename limits.
