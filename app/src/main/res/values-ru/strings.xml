@@ -137,6 +137,15 @@
     <string name="download_group_by_site">Группировать по сайту</string>
     <string name="download_group_playlists">Группировать плейлисты по папкам</string>
     <string name="download_rename_title">Переименовать</string>
+    <string name="download_command_templates_title">Шаблоны команд</string>
+    <string name="download_command_templates_sub">Сохранённые пользовательские команды</string>
+    <string name="download_command_templates_none">Шаблонов пока нет — сохраните свои команды здесь</string>
+    <string name="download_template_name">Имя шаблона</string>
+    <string name="download_template_new_title">Новый шаблон</string>
+    <string name="download_template_edit_title">Изменить шаблон</string>
+    <string name="download_template_duplicate">Дублировать шаблон</string>
+    <string name="download_template_delete">Удалить шаблон</string>
+    <string name="download_save_as_template">Сохранить как шаблон</string>
     <string name="download_custom_command_title">Пользовательская команда</string>
     <string name="download_custom_command_enabled">Использовать пользовательскую команду</string>
     <string name="download_custom_command_hint">Одна строка опций yt-dlp. Заменяет опции формата, субтитров и глав для каждой загрузки.</string>

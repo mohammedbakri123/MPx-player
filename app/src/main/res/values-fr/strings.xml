@@ -137,6 +137,15 @@
     <string name="download_group_by_site">Grouper par site</string>
     <string name="download_group_playlists">Grouper les playlists par dossier</string>
     <string name="download_rename_title">Renommer</string>
+    <string name="download_command_templates_title">Modèles de commandes</string>
+    <string name="download_command_templates_sub">Commandes personnalisées enregistrées</string>
+    <string name="download_command_templates_none">Aucun modèle pour l’instant — enregistrez vos commandes personnalisées ici</string>
+    <string name="download_template_name">Nom du modèle</string>
+    <string name="download_template_new_title">Nouveau modèle</string>
+    <string name="download_template_edit_title">Modifier le modèle</string>
+    <string name="download_template_duplicate">Dupliquer le modèle</string>
+    <string name="download_template_delete">Supprimer le modèle</string>
+    <string name="download_save_as_template">Enregistrer comme modèle</string>
     <string name="download_custom_command_title">Commande personnalisée</string>
     <string name="download_custom_command_enabled">Utiliser la commande personnalisée</string>
     <string name="download_custom_command_hint">Une ligne d’options yt-dlp. Remplace les options de format, de sous-titres et de chapitres pour chaque téléchargement.</string>

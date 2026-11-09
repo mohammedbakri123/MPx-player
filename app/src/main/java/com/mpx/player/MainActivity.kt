@@ -76,6 +76,7 @@ import com.mpx.player.ui.screens.about.AboutBetaScreen
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.screens.download.DownloadScreen
 import com.mpx.player.ui.screens.download.DownloadedScreen
+import com.mpx.player.ui.screens.download.CommandTemplatesScreen
 import com.mpx.player.ui.screens.download.CookieProfilesScreen
 import com.mpx.player.ui.screens.local.LocalScreen
 import com.mpx.player.ui.screens.me.HistoryScreen
@@ -609,6 +610,7 @@ fun MpxApp(
                 Screen.Playlists.route,
                 Screen.Downloaded.route,
                 Screen.CookieProfiles.route,
+                Screen.CommandTemplates.route,
             )
             AnimatedVisibility(
                 visible = showDock,
@@ -794,11 +796,17 @@ fun MpxApp(
                     onNavigateBack = { navController.popBackStack() },
                 )
             }
+            composable(Screen.CommandTemplates.route) {
+                CommandTemplatesScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onOpenOverlaySettings = { navController.navigate(Screen.OverlaySettings.route) },
                     onOpenCookieProfiles = { navController.navigate(Screen.CookieProfiles.route) },
+                    onOpenCommandTemplates = { navController.navigate(Screen.CommandTemplates.route) },
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
                     settingsRepository = realSettingsRepo,
                     sdCardFolderLauncher = sdCardFolderLauncher,

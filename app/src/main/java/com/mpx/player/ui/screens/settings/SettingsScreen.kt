@@ -165,6 +165,7 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onOpenOverlaySettings: (() -> Unit)? = null,
     onOpenCookieProfiles: (() -> Unit)? = null,
+    onOpenCommandTemplates: (() -> Unit)? = null,
     settingsRepository: AppSettingsRepository,
     onOpenAboutBeta: (() -> Unit)? = null,
     currentLanguage: String = "system",
@@ -1065,6 +1066,18 @@ fun SettingsScreen(
                                     icon = Icons.Filled.Code,
                                     onClick = { showCustomCommand = true },
                                 )
+                                // Issue #410: saved command templates —
+                                // named custom commands, managed on
+                                // their own page. Picking one fills the
+                                // single command slot above.
+                                if (onOpenCommandTemplates != null) {
+                                    PreferenceRow(
+                                        title = stringResource(R.string.download_command_templates_title),
+                                        subtitle = stringResource(R.string.download_command_templates_sub),
+                                        icon = Icons.Filled.Code,
+                                        onClick = onOpenCommandTemplates,
+                                    )
+                                }
 
                                 Spacer(Modifier.height(16.dp))
                                 Text(stringResource(R.string.download_settings_format), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)

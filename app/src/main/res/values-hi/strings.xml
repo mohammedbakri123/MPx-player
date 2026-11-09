@@ -137,6 +137,15 @@
     <string name="download_group_by_site">साइट के अनुसार समूह बनाएं</string>
     <string name="download_group_playlists">प्लेलिस्ट को फ़ोल्डर में समूहित करें</string>
     <string name="download_rename_title">नाम बदलें</string>
+    <string name="download_command_templates_title">कमांड टेम्पलेट</string>
+    <string name="download_command_templates_sub">सहेजे गए कस्टम कमांड</string>
+    <string name="download_command_templates_none">अभी तक कोई टेम्पलेट नहीं है — अपने कस्टम कमांड यहाँ सहेजें</string>
+    <string name="download_template_name">टेम्पलेट का नाम</string>
+    <string name="download_template_new_title">नया टेम्पलेट</string>
+    <string name="download_template_edit_title">टेम्पलेट संपादित करें</string>
+    <string name="download_template_duplicate">टेम्पलेट की प्रतिलिपि बनाएँ</string>
+    <string name="download_template_delete">टेम्पलेट हटाएँ</string>
+    <string name="download_save_as_template">टेम्पलेट के रूप में सहेजें</string>
     <string name="download_custom_command_title">कस्टम कमांड</string>
     <string name="download_custom_command_enabled">कस्टम कमांड उपयोग करें</string>
     <string name="download_custom_command_hint">yt-dlp विकल्पों की एक पंक्ति। हर डाउनलोड के लिए प्रारूप, उपशीर्षक और अध्याय विकल्पों को बदल देती है।</string>

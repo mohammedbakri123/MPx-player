@@ -138,6 +138,15 @@
     <string name="download_group_by_site">Group by site</string>
     <string name="download_group_playlists">Group playlists in folders</string>
     <string name="download_rename_title">Rename</string>
+    <string name="download_command_templates_title">Command templates</string>
+    <string name="download_command_templates_sub">Saved custom commands</string>
+    <string name="download_command_templates_none">No templates yet — save your custom commands here</string>
+    <string name="download_template_name">Template name</string>
+    <string name="download_template_new_title">New template</string>
+    <string name="download_template_edit_title">Edit template</string>
+    <string name="download_template_duplicate">Duplicate template</string>
+    <string name="download_template_delete">Delete template</string>
+    <string name="download_save_as_template">Save as template</string>
     <string name="download_custom_command_title">Custom command</string>
     <string name="download_custom_command_enabled">Use custom command</string>
     <string name="download_custom_command_hint">One line of yt-dlp options. Replaces the format, subtitle and chapter options for every download.</string>
