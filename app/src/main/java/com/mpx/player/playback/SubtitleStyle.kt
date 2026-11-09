@@ -113,5 +113,6 @@ fun subtitleMpvOptions(settings: AppSettings): Map<String, String> {
     // by the same PlayerScreen push path as the other sub-* options.
     options["sub-delay"] = (subtitleDelayMsClamped(settings) / 1000.0).toString()
     options["sub-speed"] = subtitleSpeedClamped(settings).toString()
+    options["sub-visibility"] = "yes"
     return options
 }
