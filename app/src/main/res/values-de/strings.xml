@@ -137,6 +137,15 @@
     <string name="download_group_by_site">Nach Website gruppieren</string>
     <string name="download_group_playlists">Playlists in Ordner gruppieren</string>
     <string name="download_rename_title">Umbenennen</string>
+    <string name="download_command_templates_title">Befehlsvorlagen</string>
+    <string name="download_command_templates_sub">Gespeicherte benutzerdefinierte Befehle</string>
+    <string name="download_command_templates_none">Noch keine Vorlagen — speichere deine benutzerdefinierten Befehle hier</string>
+    <string name="download_template_name">Vorlagenname</string>
+    <string name="download_template_new_title">Neue Vorlage</string>
+    <string name="download_template_edit_title">Vorlage bearbeiten</string>
+    <string name="download_template_duplicate">Vorlage duplizieren</string>
+    <string name="download_template_delete">Vorlage löschen</string>
+    <string name="download_save_as_template">Als Vorlage speichern</string>
     <string name="download_custom_command_title">Benutzerdefinierter Befehl</string>
     <string name="download_custom_command_enabled">Benutzerdefinierten Befehl verwenden</string>
     <string name="download_custom_command_hint">Eine Zeile yt-dlp-Optionen. Ersetzt die Format-, Untertitel- und Kapiteloptionen für jeden Download.</string>

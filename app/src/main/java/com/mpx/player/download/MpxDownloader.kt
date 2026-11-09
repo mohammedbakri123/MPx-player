@@ -15,6 +15,7 @@ import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
+import com.mpx.player.data.local.entity.CommandTemplateEntity
 import com.mpx.player.data.local.entity.CookieProfileEntity
 import com.mpx.player.data.local.entity.DownloadHistoryEntity
 import com.mpx.player.data.local.entity.DownloadTaskEntity
@@ -470,6 +471,10 @@ class MpxDownloader private constructor(context: Context) {
     // owns the DAO — it writes the profile at save time and stages
     // the cookies file each time a profile is used.
     private val cookieProfileDao = MpxDatabase.getInstance(appContext).cookieProfileDao()
+    // Issue #410: saved custom-command templates, same database. The
+    // downloader owns the DAO — the templates page and the
+    // custom-command editor both go through it.
+    private val commandTemplateDao = MpxDatabase.getInstance(appContext).commandTemplateDao()
     // Issue #409: the last successful sign-in import — the staging
     // file + the URL it belongs to. Kept so the user can save those
     // cookies as a profile after the download starts; the profile
@@ -1060,6 +1065,55 @@ class MpxDownloader private constructor(context: Context) {
     /** Issue #409: deletes a saved profile. The cookies text goes with it. */
     suspend fun deleteCookieProfile(id: String) {
         cookieProfileDao.deleteById(id)
+    }
+
+    /**
+     * Issue #410: saved custom-command templates — Seal's
+     * `CommandTemplate` (id, name, template). All templates, newest
+     * first, observed by the templates page and the custom-command
+     * editor's picker.
+     */
+    fun getCommandTemplates(): Flow<List<CommandTemplateEntity>> = commandTemplateDao.getAll()
+
+    /**
+     * Issue #410: saves a template — creates it when [id] is null,
+     * updates it otherwise (same id, fresh timestamp). Returns
+     * false when the name or the template is blank; nothing is
+     * saved then.
+     */
+    suspend fun saveCommandTemplate(id: String?, rawName: String, rawTemplate: String): Boolean {
+        val name = rawName.trim()
+        val template = rawTemplate.trim()
+        if (name.isBlank() || template.isBlank()) return false
+        commandTemplateDao.insert(
+            CommandTemplateEntity(
+                id = id ?: UUID.randomUUID().toString(),
+                name = name,
+                template = template,
+            ),
+        )
+        return true
+    }
+
+    /** Issue #410: deletes a saved template. */
+    suspend fun deleteCommandTemplate(id: String) {
+        commandTemplateDao.deleteById(id)
+    }
+
+    /**
+     * Issue #410: duplicates a template — a copy with " (copy)"
+     * after the name and a fresh id, so the user can vary a working
+     * command without retyping it. No-op when the id is unknown.
+     */
+    suspend fun duplicateCommandTemplate(id: String) {
+        val original = commandTemplateDao.getById(id) ?: return
+        commandTemplateDao.insert(
+            original.copy(
+                id = UUID.randomUUID().toString(),
+                name = "${original.name} (copy)",
+                createdAt = System.currentTimeMillis(),
+            ),
+        )
     }
 
     /**

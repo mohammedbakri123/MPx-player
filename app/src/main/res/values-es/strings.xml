@@ -137,6 +137,15 @@
     <string name="download_group_by_site">Agrupar por sitio</string>
     <string name="download_group_playlists">Agrupar listas en carpetas</string>
     <string name="download_rename_title">Renombrar</string>
+    <string name="download_command_templates_title">Plantillas de comandos</string>
+    <string name="download_command_templates_sub">Comandos personalizados guardados</string>
+    <string name="download_command_templates_none">Aún no hay plantillas — guarda tus comandos personalizados aquí</string>
+    <string name="download_template_name">Nombre de la plantilla</string>
+    <string name="download_template_new_title">Nueva plantilla</string>
+    <string name="download_template_edit_title">Editar plantilla</string>
+    <string name="download_template_duplicate">Duplicar plantilla</string>
+    <string name="download_template_delete">Eliminar plantilla</string>
+    <string name="download_save_as_template">Guardar como plantilla</string>
     <string name="download_custom_command_title">Comando personalizado</string>
     <string name="download_custom_command_enabled">Usar comando personalizado</string>
     <string name="download_custom_command_hint">Una línea de opciones de yt-dlp. Reemplaza las opciones de formato, subtítulos y capítulos en cada descarga.</string>

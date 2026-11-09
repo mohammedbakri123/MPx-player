@@ -137,6 +137,15 @@
     <string name="download_group_by_site">التجميع حسب الموقع</string>
     <string name="download_group_playlists">تجميع قوائم التشغيل في مجلدات</string>
     <string name="download_rename_title">إعادة التسمية</string>
+    <string name="download_command_templates_title">قوالب الأوامر</string>
+    <string name="download_command_templates_sub">أوامر مخصصة محفوظة</string>
+    <string name="download_command_templates_none">لا توجد قوالب بعد — احفظ أوامرك المخصصة هنا</string>
+    <string name="download_template_name">اسم القالب</string>
+    <string name="download_template_new_title">قالب جديد</string>
+    <string name="download_template_edit_title">تعديل القالب</string>
+    <string name="download_template_duplicate">تكرار القالب</string>
+    <string name="download_template_delete">حذف القالب</string>
+    <string name="download_save_as_template">حفظ كقالب</string>
     <string name="download_custom_command_title">أمر مخصص</string>
     <string name="download_custom_command_enabled">استخدام الأمر المخصص</string>
     <string name="download_custom_command_hint">سطر واحد من خيارات yt-dlp. يحل محل خيارات التنسيق والترجمة والفصول لكل تنزيل.</string>
