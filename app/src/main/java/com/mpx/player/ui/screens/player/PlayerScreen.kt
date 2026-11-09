@@ -1963,8 +1963,10 @@ fun PlayerScreen(
 
                         Spacer(Modifier.height(4.dp))
 
-                        // Controls Row: Lock, Prev, 10s Replay, Play/Pause Hero,
-                        // 10s Forward, Next — MX's subnavibar transport set.
+                        // Controls Row: Lock, Prev, Rotation, Play/Pause Hero,
+                        // Next — MX's subnavibar transport set. The 10s
+                        // Replay/Forward buttons were removed; rotation
+                        // lives here now, same toggle as the stripe.
                         // Speed lives in the Playback sheet now (aspect is in
                         // the action stripe at the top); shuffle and
                         // repeat moved to the stripe too.
@@ -2004,16 +2006,21 @@ fun PlayerScreen(
                                 )
                             }
 
-                            // Replay 10s
+                            // Rotation — same direct toggle as the stripe's
+                            // rotation button (issue #363): portrait <->
+                            // landscape override, reset with the next video.
+                            // Tinted primary while landscape, like the stripe.
                             IconButton(
-                                onClick = { playbackManager.skipBackward(10_000L) },
+                                onClick = {
+                                    rotationOverride = if (isLandscapeOrientation) "portrait" else "landscape"
+                                },
                                 modifier = Modifier
                                     .size(50.dp),
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.Replay10,
-                                    contentDescription = stringResource(R.string.player_cd_seek_back),
-                                    tint = MpxTheme.colors.textPrimary,
+                                    imageVector = Icons.Filled.ScreenRotation,
+                                    contentDescription = stringResource(R.string.playback_sheet_rotation),
+                                    tint = if (isLandscapeOrientation) MpxTheme.colors.primary else MpxTheme.colors.textPrimary,
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -2031,20 +2038,6 @@ fun PlayerScreen(
                                     contentDescription = if (state.isPlaying) stringResource(R.string.player_cd_pause) else stringResource(R.string.player_cd_play),
                                     tint = MpxTheme.colors.textPrimary,
                                     modifier = Modifier.size(34.dp),
-                                )
-                            }
-
-                            // Forward 10s
-                            IconButton(
-                                onClick = { playbackManager.skipForward(10_000L) },
-                                modifier = Modifier
-                                    .size(50.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Forward10,
-                                    contentDescription = stringResource(R.string.player_cd_seek_forward),
-                                    tint = MpxTheme.colors.textPrimary,
-                                    modifier = Modifier.size(28.dp),
                                 )
                             }
 
