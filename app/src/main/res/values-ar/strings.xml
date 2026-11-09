@@ -91,6 +91,8 @@
     <string name="download_crop_artwork_title">قصّ غلاف الصورة إلى مربع</string>
     <string name="download_embed_thumbnail">تضمين صورة الغلاف</string>
     <string name="download_write_thumbnail">حفظ صورة الغلاف</string>
+    <string name="download_update_channel_title">قناة التحديث</string>
+    <string name="download_update_interval_title">التحقق من وجود تحديثات</string>
     <string name="download_notifications_title">إشعارات التنزيل</string>
     <string name="download_verbose_logging_title">تسجيل تصحيح مفصّل</string>
     <string name="download_allow_metered">السماح بالتنزيل عبر بيانات الجوال</string>
