@@ -1162,6 +1162,48 @@ class MpxDownloader private constructor(context: Context) {
     }
 
     /**
+     * Issue #406: recent download links — the Download tab's
+     * one-tap reuse list. Newest first, capped at 10, deduped;
+     * stored newline-separated in settings (no Room table — a
+     * short list is enough for 10 URLs). The screen reads the list
+     * and refreshes it when a download starts; the downloader
+     * records every directly entered URL, and the playlist picker
+     * records the playlist URL itself.
+     */
+    fun loadRecentUrls(): List<String> =
+        settingsRepository.load().downloadRecentUrls
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .take(MAX_RECENT_URLS)
+            .toList()
+
+    fun recordRecentUrl(rawUrl: String) {
+        val url = rawUrl.trim()
+        if (url.isBlank()) return
+        val settings = settingsRepository.load()
+        val kept = (listOf(url) + loadRecentUrls())
+            .distinct()
+            .take(MAX_RECENT_URLS)
+            .joinToString("\n")
+        if (kept != settings.downloadRecentUrls) {
+            settingsRepository.save(settings.copy(downloadRecentUrls = kept))
+        }
+    }
+
+    fun removeRecentUrl(rawUrl: String) {
+        val url = rawUrl.trim()
+        if (url.isBlank()) return
+        val settings = settingsRepository.load()
+        val kept = loadRecentUrls()
+            .filter { it != url }
+            .joinToString("\n")
+        if (kept != settings.downloadRecentUrls) {
+            settingsRepository.save(settings.copy(downloadRecentUrls = kept))
+        }
+    }
+
+    /**
      * Enqueues a download (issue #342). No-op for a blank URL. The row
      * starts QUEUED and is persisted immediately, then [doYourWork]
      * starts it as soon as a slot is free — at most
@@ -1180,6 +1222,12 @@ class MpxDownloader private constructor(context: Context) {
     ) {
         val url = rawUrl.trim()
         if (url.isBlank()) return
+        // Issue #406: record the URL for the recent-links list —
+        // but only for directly entered URLs. Playlist entries ride
+        // through here with a playlistTitle; recording each one
+        // would flood the 10-slot list with a single playlist, so
+        // the playlist URL itself is recorded by the picker instead.
+        if (playlistTitle == null) recordRecentUrl(url)
         val id = UUID.randomUUID().toString()
         val item = ActiveDownload(
             id = id,
@@ -3063,6 +3111,9 @@ class MpxDownloader private constructor(context: Context) {
          */
         private const val CROP_ARTWORK_COMMAND =
             """--ppa "ffmpeg: -c:v mjpeg -vf crop=\"'if(gt(ih,iw),iw,ih)':'if(gt(iw,ih),ih,iw)'\"""""
+
+        /** Issue #406: recent download links cap (see recordRecentUrl). */
+        const val MAX_RECENT_URLS = 10
 
         /**
          * Concurrent downloads (issue #342): Seal's `MAX_CONCURRENCY`
