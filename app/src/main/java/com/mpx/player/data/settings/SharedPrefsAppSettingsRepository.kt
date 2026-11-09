@@ -11,8 +11,13 @@ import com.mpx.player.domain.settings.DEFAULT_PLAYER_MENU_LAYOUT
  * database dependency, so it does not conflict with the Room worktree.
  */
 class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository {
+    companion object {
+        /** SharedPreferences file name — SettingsBackup (#433) reads/writes the same file. */
+        const val PREFS_NAME = "mpx_settings"
+    }
+
     private val prefs = context.applicationContext
-        .getSharedPreferences("mpx_settings", Context.MODE_PRIVATE)
+        .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     override fun load(): AppSettings {
         var tracks = prefs.getBoolean("show_music_tracks_tab", true)
@@ -193,6 +198,11 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadWriteThumbnail = prefs.getBoolean("download_write_thumbnail", false),
             downloadEmbedThumbnail = prefs.getBoolean("download_embed_thumbnail", false),
             downloadCropArtwork = prefs.getBoolean("download_crop_artwork", false),
+            // Issue #430-433: Advanced settings (mpvEx parity).
+            mpvConfStorageUri = prefs.getString("mpv_conf_storage_uri", "") ?: "",
+            mpvConf = prefs.getString("mpv_conf", "") ?: "",
+            inputConf = prefs.getString("input_conf", "") ?: "",
+            enableLuaScripts = prefs.getBoolean("enable_lua_scripts", true),
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -350,6 +360,11 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("download_write_thumbnail", settings.downloadWriteThumbnail)
             .putBoolean("download_embed_thumbnail", settings.downloadEmbedThumbnail)
             .putBoolean("download_crop_artwork", settings.downloadCropArtwork)
+            // Issue #430-433: Advanced settings (mpvEx parity).
+            .putString("mpv_conf_storage_uri", settings.mpvConfStorageUri)
+            .putString("mpv_conf", settings.mpvConf)
+            .putString("input_conf", settings.inputConf)
+            .putBoolean("enable_lua_scripts", settings.enableLuaScripts)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

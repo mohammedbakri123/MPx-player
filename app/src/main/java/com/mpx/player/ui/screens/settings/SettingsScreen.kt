@@ -172,6 +172,7 @@ private enum class UpdateCheckStatus { IDLE, CHECKING, UP_TO_DATE, AVAILABLE, FA
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onOpenOverlaySettings: (() -> Unit)? = null,
+    onOpenAdvancedSettings: (() -> Unit)? = null,
     onOpenCookieProfiles: (() -> Unit)? = null,
     onOpenCommandTemplates: (() -> Unit)? = null,
     settingsRepository: AppSettingsRepository,
@@ -405,7 +406,10 @@ fun SettingsScreen(
                     onQueryChange = { settingsSearchQuery = it },
                     onOpenCategory = { id ->
                         isSearching = false
-                        selectedId = id
+                        // Issue #431: the Advanced settings screen is a
+                        // separate destination, not a drill-down category.
+                        if (id == "advanced_settings") onOpenAdvancedSettings?.invoke()
+                        else selectedId = id
                     },
                 )
             }
@@ -1588,6 +1592,19 @@ fun SettingsScreen(
                             // plus the reset button from the old General
                             // category (its only real setting).
                             "advanced" -> {
+                                // Issue #431: the Advanced settings screen
+                                // (mpv.conf / input.conf editor, config
+                                // folder, Lua toggle, XML backup) is a
+                                // separate destination, opened from here.
+                                if (onOpenAdvancedSettings != null) {
+                                    PreferenceRow(
+                                        title = stringResource(R.string.adv_open_title),
+                                        subtitle = stringResource(R.string.adv_open_summary),
+                                        icon = Icons.Filled.Tune,
+                                        onClick = onOpenAdvancedSettings,
+                                    )
+                                    Spacer(Modifier.height(16.dp))
+                                }
                                 OutlinedButton(onClick = { showResetDialog = true }) {
                                     Text(stringResource(R.string.general_reset_button), color = MpxTheme.colors.primary)
                                 }

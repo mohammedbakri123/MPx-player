@@ -31,6 +31,9 @@ sealed class Screen(val route: String) {
     data object Player : Screen("player")
     data object Settings : Screen("settings")
     data object OverlaySettings : Screen("overlay_settings")
+    // Issue #431: the Advanced settings screen (mpv.conf / input.conf
+    // editor, config folder picker, Lua toggle, XML backup/restore).
+    data object AdvancedSettings : Screen("advanced_settings")
     data object AboutBeta : Screen("about_beta")
 }
 
