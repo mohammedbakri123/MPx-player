@@ -163,6 +163,16 @@
     <string name="download_open_with">Abrir com</string>
     <string name="download_share_failed">Não foi possível compartilhar este arquivo</string>
     <string name="download_open_failed">Nenhum aplicativo pode abrir este arquivo</string>
+    <string name="download_backup_export_title">Exportar backup</string>
+    <string name="download_backup_export_sub">Salvar histórico, links recentes e modelos como arquivo JSON</string>
+    <string name="download_backup_import_title">Importar backup</string>
+    <string name="download_backup_import_sub">Restaurar a partir de um arquivo de backup</string>
+    <string name="download_backup_exported">Backup exportado</string>
+    <string name="download_backup_export_failed">Não foi possível exportar o backup</string>
+    <string name="download_backup_imported">%1$d entradas do histórico, %2$d modelos importados</string>
+    <string name="download_backup_import_failed">Não foi possível ler o arquivo de backup</string>
+    <string name="download_backup_import_confirm_title">Importar backup</string>
+    <string name="download_backup_import_confirm_body">Isto substitui o comando personalizado e os links recentes pelos do backup e adiciona suas entradas do histórico e modelos.</string>
     <string name="download_downloaded_title">Baixados</string>
     <string name="download_downloaded_empty_message">Nada baixado ainda. Os arquivos que você baixar aparecerão aqui.</string>
     <string name="download_settings_general">Geral</string>

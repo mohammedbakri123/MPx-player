@@ -661,6 +661,25 @@ class MpxDownloader private constructor(context: Context) {
     }
 
     /**
+     * Issue #413: the two raw history operations the backup import
+     * needs. [recordHistory] cannot serve here — it is the private-mode
+     * choke point (it drops the entry when private mode is on) and it
+     * derives the row from a live download, not from a file. Import
+     * inserts the entry as a NEW row (id reset to 0: backup ids come
+     * from another install and could collide with rows here) and
+     * refreshes the flow, like [deleteHistoryEntry] does.
+     */
+    suspend fun importHistoryEntry(entry: DownloadHistoryEntity): Long {
+        val id = downloadHistoryDao.insert(entry.copy(id = 0))
+        refreshHistory()
+        return id
+    }
+
+    /** Latest history row for a URL — the import dedup check. */
+    suspend fun findHistoryByUrl(url: String): DownloadHistoryEntity? =
+        downloadHistoryDao.getLatestByUrl(url)
+
+    /**
      * Issue #346: the finished file of a history entry, or null when it
      * is gone (deleted outside the app, or the MediaStore entry was
      * removed). A public file is checked through the ContentResolver —

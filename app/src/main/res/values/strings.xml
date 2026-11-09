@@ -164,6 +164,16 @@
     <string name="download_open_with">Open with</string>
     <string name="download_share_failed">Couldn’t share this file</string>
     <string name="download_open_failed">No app can open this file</string>
+    <string name="download_backup_export_title">Export backup</string>
+    <string name="download_backup_export_sub">Save history, recent links and templates as a JSON file</string>
+    <string name="download_backup_import_title">Import backup</string>
+    <string name="download_backup_import_sub">Restore from a backup file</string>
+    <string name="download_backup_exported">Backup exported</string>
+    <string name="download_backup_export_failed">Couldn’t export backup</string>
+    <string name="download_backup_imported">%1$d history entries, %2$d templates imported</string>
+    <string name="download_backup_import_failed">Couldn’t read backup file</string>
+    <string name="download_backup_import_confirm_title">Import backup</string>
+    <string name="download_backup_import_confirm_body">This replaces the custom command and recent links with the backup’s, and adds its history entries and templates.</string>
     <string name="download_downloaded_title">Downloaded</string>
     <string name="download_downloaded_empty_message">Nothing downloaded yet. Files you finish downloading will show up here.</string>
     <string name="download_settings_general">General</string>

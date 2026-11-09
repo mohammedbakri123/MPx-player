@@ -163,6 +163,16 @@
     <string name="download_open_with">فتح باستخدام</string>
     <string name="download_share_failed">تعذّرت مشاركة هذا الملف</string>
     <string name="download_open_failed">لا يوجد تطبيق يمكنه فتح هذا الملف</string>
+    <string name="download_backup_export_title">تصدير نسخة احتياطية</string>
+    <string name="download_backup_export_sub">احفظ السجل والروابط الأخيرة والقوالب كملف JSON</string>
+    <string name="download_backup_import_title">استيراد نسخة احتياطية</string>
+    <string name="download_backup_import_sub">استعد من ملف نسخة احتياطية</string>
+    <string name="download_backup_exported">تم تصدير النسخة الاحتياطية</string>
+    <string name="download_backup_export_failed">تعذّر تصدير النسخة الاحتياطية</string>
+    <string name="download_backup_imported">تم استيراد %1$d من السجل و%2$d من القوالب</string>
+    <string name="download_backup_import_failed">تعذّرت قراءة ملف النسخة الاحتياطية</string>
+    <string name="download_backup_import_confirm_title">استيراد نسخة احتياطية</string>
+    <string name="download_backup_import_confirm_body">سيؤدي هذا إلى استبدال الأمر المخصص والروابط الأخيرة بما في النسخة الاحتياطية، وإضافة سجلاتها وقوالبها.</string>
     <string name="download_downloaded_title">تم تنزيلها</string>
     <string name="download_downloaded_empty_message">لم يتم تنزيل أي شيء بعد. ستظهر الملفات التي تنزّلها هنا.</string>
     <string name="download_settings_general">عام</string>

@@ -163,6 +163,16 @@
     <string name="download_open_with">Öffnen mit</string>
     <string name="download_share_failed">Diese Datei konnte nicht geteilt werden</string>
     <string name="download_open_failed">Keine App kann diese Datei öffnen</string>
+    <string name="download_backup_export_title">Backup exportieren</string>
+    <string name="download_backup_export_sub">Verlauf, letzte Links und Vorlagen als JSON-Datei speichern</string>
+    <string name="download_backup_import_title">Backup importieren</string>
+    <string name="download_backup_import_sub">Aus einer Backup-Datei wiederherstellen</string>
+    <string name="download_backup_exported">Backup exportiert</string>
+    <string name="download_backup_export_failed">Backup konnte nicht exportiert werden</string>
+    <string name="download_backup_imported">%1$d Verlaufseinträge, %2$d Vorlagen importiert</string>
+    <string name="download_backup_import_failed">Backup-Datei konnte nicht gelesen werden</string>
+    <string name="download_backup_import_confirm_title">Backup importieren</string>
+    <string name="download_backup_import_confirm_body">Dies ersetzt den benutzerdefinierten Befehl und die letzten Links durch die des Backups und fügt dessen Verlaufseinträge und Vorlagen hinzu.</string>
     <string name="download_downloaded_title">Heruntergeladen</string>
     <string name="download_downloaded_empty_message">Noch nichts heruntergeladen. Fertige Downloads erscheinen hier.</string>
     <string name="download_settings_general">Allgemein</string>

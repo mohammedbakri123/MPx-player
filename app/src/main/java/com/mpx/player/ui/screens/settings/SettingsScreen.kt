@@ -11,6 +11,8 @@ import android.os.Build
 import android.provider.DocumentsContract
 import android.text.format.Formatter
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.FileProvider
 import com.mpx.player.BuildConfig
@@ -58,6 +60,7 @@ import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -103,6 +106,7 @@ import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.download.DownloadBackup
 import com.mpx.player.download.MpxDownloader
 import com.mpx.player.download.YtDlpUpdateOutcome
 import com.mpx.player.download.YtDlpUpdateState
@@ -939,6 +943,39 @@ fun SettingsScreen(
                                 var showAudioDirectory by remember { mutableStateOf(false) }
                                 var showOutputTemplate by remember { mutableStateOf(false) }
                                 var showCustomCommand by remember { mutableStateOf(false) }
+                                // Issue #413: backup / restore — the
+                                // export picker writes straight away;
+                                // the import picker only stages the
+                                // URI, the confirm dialog below asks
+                                // first (import replaces the custom
+                                // command + recent links).
+                                var showImportConfirm by remember { mutableStateOf(false) }
+                                var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+                                val exportLauncher = rememberLauncherForActivityResult(
+                                    ActivityResultContracts.CreateDocument("application/json"),
+                                ) { uri ->
+                                    if (uri == null) return@rememberLauncherForActivityResult
+                                    scope.launch {
+                                        val ok = DownloadBackup.writeBackup(
+                                            context, uri, downloader, settingsRepository,
+                                        )
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(
+                                                if (ok) R.string.download_backup_exported
+                                                else R.string.download_backup_export_failed,
+                                            ),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                }
+                                val importLauncher = rememberLauncherForActivityResult(
+                                    ActivityResultContracts.OpenDocument(),
+                                ) { uri ->
+                                    if (uri == null) return@rememberLauncherForActivityResult
+                                    pendingImportUri = uri
+                                    showImportConfirm = true
+                                }
                                 var showSubtitleLanguages by remember { mutableStateOf(false) }
                                 var showSubtitleConvert by remember { mutableStateOf(false) }
                                 var showAudioFormat by remember { mutableStateOf(false) }
@@ -1078,6 +1115,25 @@ fun SettingsScreen(
                                         onClick = onOpenCommandTemplates,
                                     )
                                 }
+                                // Issue #413: backup / restore of the
+                                // downloader's data (history, recent
+                                // links, custom command, templates) as
+                                // one JSON file through the SAF pickers.
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_backup_export_title),
+                                    subtitle = stringResource(R.string.download_backup_export_sub),
+                                    icon = Icons.Filled.Download,
+                                    onClick = {
+                                        val stamp = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                                        exportLauncher.launch("mpx-backup-$stamp.json")
+                                    },
+                                )
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_backup_import_title),
+                                    subtitle = stringResource(R.string.download_backup_import_sub),
+                                    icon = Icons.Filled.Upload,
+                                    onClick = { importLauncher.launch(arrayOf("application/json")) },
+                                )
 
                                 Spacer(Modifier.height(16.dp))
                                 Text(stringResource(R.string.download_settings_format), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)
@@ -1296,6 +1352,55 @@ fun SettingsScreen(
                                             settings = settingsRepository.load()
                                         },
                                     )
+                                }
+                                if (showImportConfirm) {
+                                    MpxDialog(
+                                        title = stringResource(R.string.download_backup_import_confirm_title),
+                                        onDismiss = {
+                                            showImportConfirm = false
+                                            pendingImportUri = null
+                                        },
+                                        confirmText = stringResource(R.string.download_backup_import_title),
+                                        onConfirm = {
+                                            val uri = pendingImportUri
+                                            showImportConfirm = false
+                                            pendingImportUri = null
+                                            if (uri != null) {
+                                                scope.launch {
+                                                    when (val result = DownloadBackup.readBackup(
+                                                        context, uri, downloader, settingsRepository,
+                                                    )) {
+                                                        is DownloadBackup.ImportResult.Success -> {
+                                                            settings = settingsRepository.load()
+                                                            Toast.makeText(
+                                                                context,
+                                                                context.getString(
+                                                                    R.string.download_backup_imported,
+                                                                    result.historyImported,
+                                                                    result.templatesImported,
+                                                                ),
+                                                                Toast.LENGTH_SHORT,
+                                                            ).show()
+                                                        }
+                                                        DownloadBackup.ImportResult.InvalidFile -> {
+                                                            Toast.makeText(
+                                                                context,
+                                                                context.getString(R.string.download_backup_import_failed),
+                                                                Toast.LENGTH_SHORT,
+                                                            ).show()
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        dismissText = stringResource(R.string.action_cancel),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.download_backup_import_confirm_body),
+                                            color = MpxTheme.colors.textSecondary,
+                                            fontSize = 13.sp,
+                                        )
+                                    }
                                 }
                                 if (showSubtitleLanguages) {
                                     SubtitleLanguagesDialog(
