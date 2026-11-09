@@ -45,6 +45,7 @@
     <string name="download_sign_in">登录以下载</string>
     <string name="download_no_cookies">未找到 Cookie — 请先在窗口中登录，然后点“完成”</string>
     <string name="download_cookies_failed">Cookie 导入失败</string>
+    <string name="download_format_selection_title">格式选择</string>
     <string name="download_quality_title">下载画质</string>
     <string name="download_quality_resolution">分辨率上限</string>
     <string name="download_quality_resolution_none">无限制</string>

@@ -45,6 +45,7 @@
     <string name="download_sign_in">डाउनलोड करने के लिए साइन इन करें</string>
     <string name="download_no_cookies">कोई कुकी नहीं मिली — पहले विंडो में साइन इन करें, फिर «हो गया» दबाएं</string>
     <string name="download_cookies_failed">कुकी आयात विफल रहा</string>
+    <string name="download_format_selection_title">फ़ॉर्मैट चयन</string>
     <string name="download_quality_title">डाउनलोड गुणवत्ता</string>
     <string name="download_quality_resolution">रिज़ॉल्यूशन सीमा</string>
     <string name="download_quality_resolution_none">कोई सीमा नहीं</string>

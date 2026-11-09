@@ -153,6 +153,14 @@ data class AppSettings(
     val downloadCodec: String = "Auto",
     val downloadResolution: Int = 0,
     val downloadCustomSorter: String = "",
+    /**
+     * Issue #408: format selection — "auto" downloads immediately
+     * with the saved quality/codec/sorter preset (Seal's
+     * FORMAT_SELECTION=false), "custom" opens the per-video format
+     * list for every video (Seal's FORMAT_SELECTION=true, today's
+     * behavior, the default).
+     */
+    val downloadFormatSelection: String = "custom",
     // Small network/filename flags (issue #347, Seal's downloadVideo,
     // DownloadUtil.kt:~700-730, JunkFood02/Seal, GPL-3.0): rate limit,
     // proxy, force IPv4, restrict filenames. Rate limit is the raw

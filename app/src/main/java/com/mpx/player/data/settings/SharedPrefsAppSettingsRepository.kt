@@ -141,6 +141,8 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadResolution = prefs.getInt("download_resolution", 0)
                 .takeIf { it in 0..6 } ?: 0,
             downloadCustomSorter = prefs.getString("download_custom_sorter", "") ?: "",
+            downloadFormatSelection = prefs.getString("download_format_selection", "custom")
+                ?.takeIf { it in setOf("auto", "custom") } ?: "custom",
             // Issue #347: small network/filename flags. Stored raw —
             // a blank rate limit / proxy means "off", and the downloader
             // normalises a bare rate number to KB/s at request time.
@@ -304,6 +306,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("download_codec", settings.downloadCodec)
             .putInt("download_resolution", settings.downloadResolution)
             .putString("download_custom_sorter", settings.downloadCustomSorter)
+            .putString("download_format_selection", settings.downloadFormatSelection)
             .putString("download_rate_limit", settings.downloadRateLimit)
             .putString("download_proxy", settings.downloadProxy)
             .putBoolean("download_force_ipv4", settings.downloadForceIpv4)

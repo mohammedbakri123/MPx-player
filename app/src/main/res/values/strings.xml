@@ -45,6 +45,7 @@
     <string name="download_sign_in">Sign in to download</string>
     <string name="download_no_cookies">No cookies found — sign in in the window first, then tap Done</string>
     <string name="download_cookies_failed">Cookie import failed</string>
+    <string name="download_format_selection_title">Format selection</string>
     <string name="download_quality_title">Download quality</string>
     <string name="download_quality_resolution">Resolution cap</string>
     <string name="download_quality_resolution_none">No limit</string>
