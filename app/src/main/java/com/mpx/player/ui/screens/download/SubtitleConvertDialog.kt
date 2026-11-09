@@ -52,6 +52,9 @@ fun SubtitleConvertDialog(
         "srt" to "SRT",
         "vtt" to "VTT",
         "ass" to "ASS",
+        // Issue #401: LRC — the label is a literal, like SRT/VTT/ASS,
+        // so no new string is needed.
+        "lrc" to "LRC",
     )
 
     MpxDialog(
