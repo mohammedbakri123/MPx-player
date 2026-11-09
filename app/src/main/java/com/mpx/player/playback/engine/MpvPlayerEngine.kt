@@ -45,7 +45,7 @@ class MpvPlaybackException(
  * - Progressive decoder fallback chain:
  *   mediacodec (HW) -> mediacodec-copy (HW+) -> hwdec=no (SW) -> hard failure reported as a real error
  * - Active decoder reporting via hwdec-current and video-codec properties
- * - Arabic-first subtitles pointing fontconfig at Android system fonts (/system/fonts) without bundled subfont.ttf
+ * - Subtitle rendering with bundled subfont.ttf fallback font for libass and configurable styling overrides
  */
 class MpvPlayerEngine(
     private val context: Context,
@@ -555,8 +555,8 @@ class MpvPlayerEngine(
         val configDir = File(appContext.filesDir, "mpv").apply { mkdirs() }
         val cacheDir = File(appContext.cacheDir, "mpv_cache").apply { mkdirs() }
 
-        // Configure fontconfig and clean up bundled subfont.ttf (Arabic subtitles support)
-        setupArabicSubtitlesAndFontconfig(appContext, configDir)
+        // Configure bundled subfont.ttf and network certificates
+        setupSubtitleFontAndCertificates(appContext, configDir)
 
         mpv.create(appContext)
 
@@ -599,17 +599,17 @@ class MpvPlayerEngine(
         // the core could already quit).
         setOption("idle", "yes")
 
-        // Subtitle configuration: use system fonts via fontconfig.
-        // The font itself comes from saved settings so the first frame already
-        // matches; the full option set is applied post-init below.
-        setOption("sub-font-provider", "fontconfig")
-        setOption("sub-fonts-dir", "/system/fonts")
+        // Subtitle configuration: use bundled subfont.ttf fallback font.
+        // mpv on Android has no fontconfig; libass uses subfont.ttf from config-dir.
+        setOption("sub-font-provider", "auto")
         setOption("sub-font", subtitleMpvOptions(loadSavedSubtitleSettings())["sub-font"] ?: "sans-serif")
+        setOption("sub-visibility", "yes")
         setOption("sub-fix-timing", "yes")
         setOption("sub-auto", "fuzzy")
 
-        val cacertFile = File(appContext.filesDir, "cacert.pem")
-        if (cacertFile.exists()) {
+        val cacertFile = File(configDir, "cacert.pem").takeIf { it.exists() }
+            ?: File(appContext.filesDir, "cacert.pem").takeIf { it.exists() }
+        if (cacertFile != null) {
             setOption("tls-ca-file", cacertFile.absolutePath)
         }
 
@@ -693,9 +693,16 @@ class MpvPlayerEngine(
     fun applySubtitleSettings(settings: AppSettings) {
         if (!mpvInitialized || isReleased) return
         try {
-            subtitleMpvOptions(settings).forEach { (key, value) ->
+            val options = subtitleMpvOptions(settings)
+            options.forEach { (key, value) ->
                 setRuntimeProperty(key, value)
             }
+            Log.d(TAG, "Applied subtitle settings: sub-visibility=${options["sub-visibility"]}, " +
+                "sub-font=${options["sub-font"]}, sub-font-size=${options["sub-font-size"]}, " +
+                "sub-color=${options["sub-color"]}, sub-border-color=${options["sub-border-color"]}, " +
+                "sub-border-size=${options["sub-border-size"]}, sub-back-color=${options["sub-back-color"]}, " +
+                "sub-ass-override=${options["sub-ass-override"] ?: "default"}, " +
+                "sub-delay=${options["sub-delay"]}, sub-speed=${options["sub-speed"]}")
         } catch (e: Exception) {
             Log.w(TAG, "Failed applying subtitle settings to mpv", e)
         }
@@ -763,63 +770,46 @@ class MpvPlayerEngine(
     }
 
     /**
-     * Arabic subtitles configuration:
-     * MPx is Arabic-first: prevents collision with the library's bundled subfont.ttf (known Shadda
-     * diacritic collision bug) by explicitly deleting it if present and configuring fontconfig
-     * to resolve system Arabic fonts (Noto Sans Arabic, Noto Naskh Arabic).
+     * Subtitle fallback font and TLS certificates configuration:
+     * mpv's libass on Android is compiled without Fontconfig. libass relies on the bundled
+     * fallback font `subfont.ttf` (Droid Sans Fallback, covering Latin, Arabic, CJK, Cyrillic,
+     * Greek, Hebrew, etc.) placed in mpv's config directory (configDir) and filesDir.
+     * Without subfont.ttf, any unmatched font query (such as "sans-serif") fails with
+     * `fontselect: failed to find any fallback with glyph 0x0`, rendering subtitles invisible.
+     * We ensure subfont.ttf and cacert.pem are copied from assets to configDir and filesDir.
      */
-    private fun setupArabicSubtitlesAndFontconfig(context: Context, configDir: File) {
-        // 1. Delete bundled subfont.ttf if copied anywhere
-        val subfontFilesDir = File(context.filesDir, "subfont.ttf")
-        if (subfontFilesDir.exists()) {
-            subfontFilesDir.delete()
-        }
-        val subfontConfigDir = File(configDir, "subfont.ttf")
-        if (subfontConfigDir.exists()) {
-            subfontConfigDir.delete()
+    private fun setupSubtitleFontAndCertificates(context: Context, configDir: File) {
+        copyAssetIfDifferent(context, "subfont.ttf", File(configDir, "subfont.ttf"))
+        copyAssetIfDifferent(context, "subfont.ttf", File(context.filesDir, "subfont.ttf"))
+
+        copyAssetIfDifferent(context, "cacert.pem", File(configDir, "cacert.pem"))
+        copyAssetIfDifferent(context, "cacert.pem", File(context.filesDir, "cacert.pem"))
+
+        // Clean up any stale fonts.conf from earlier broken fontconfig attempts
+        val fontsConf = File(configDir, "fonts.conf")
+        if (fontsConf.exists()) {
+            fontsConf.delete()
         }
 
-        // 2. Copy network certificate bundle only (skip subfont.ttf)
-        val cacertFile = File(context.filesDir, "cacert.pem")
-        if (!cacertFile.exists() || cacertFile.length() == 0L) {
-            try {
-                context.assets.open("cacert.pem").use { input ->
-                    FileOutputStream(cacertFile).use { output ->
+        val subfontConfig = File(configDir, "subfont.ttf")
+        Log.i(TAG, "Subtitle assets verified: subfont.ttf exists=${subfontConfig.exists()} " +
+                "(${subfontConfig.length()} bytes) at ${subfontConfig.absolutePath}")
+    }
+
+    private fun copyAssetIfDifferent(context: Context, assetName: String, destFile: File) {
+        try {
+            destFile.parentFile?.mkdirs()
+            val assetLength = context.assets.open(assetName).use { it.available().toLong() }
+            if (!destFile.exists() || destFile.length() == 0L || (assetLength > 0L && destFile.length() != assetLength)) {
+                context.assets.open(assetName).use { input ->
+                    FileOutputStream(destFile).use { output ->
                         input.copyTo(output)
                     }
                 }
-            } catch (e: Exception) {
-                Log.w(TAG, "cacert.pem asset not copied", e)
+                Log.d(TAG, "Copied asset $assetName to ${destFile.absolutePath} (${destFile.length()} bytes)")
             }
-        }
-
-        // 3. Point fontconfig at Android system fonts
-        val fontsConf = File(configDir, "fonts.conf")
-        val fontsXml = """
-            <?xml version="1.0"?>
-            <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-            <fontconfig>
-                <dir>/system/fonts</dir>
-                <dir>/system/font</dir>
-                <dir>/data/fonts</dir>
-                <match target="pattern">
-                    <test qual="any" name="family">
-                        <string>sans-serif</string>
-                    </test>
-                    <edit name="family" mode="prepend" binding="strong">
-                        <string>Noto Sans Arabic</string>
-                        <string>Noto Naskh Arabic</string>
-                    </edit>
-                </match>
-            </fontconfig>
-        """.trimIndent()
-
-        try {
-            fontsConf.writeText(fontsXml)
-            Os.setenv("FONTCONFIG_FILE", fontsConf.absolutePath, true)
-            Os.setenv("FONTCONFIG_PATH", configDir.absolutePath, true)
-        } catch (e: Throwable) {
-            Log.w(TAG, "Failed to export fontconfig env", e)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed copying asset $assetName to ${destFile.absolutePath}", e)
         }
     }
 
