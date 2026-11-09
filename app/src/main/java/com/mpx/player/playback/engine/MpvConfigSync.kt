@@ -135,8 +135,8 @@ object MpvConfigSync {
     }
 
     /**
-     * Player-start sync (#432): copy mpv.conf, input.conf, fonts/*,
-     * scripts/* and script-opts/* from the picked folder into
+     * Player-start sync (#432): copy mpv.conf, input.conf, and the
+     * fonts, scripts and script-opts subfolders from the picked folder into
      * [configDir]. A missing file leaves the current local one alone;
      * nothing is ever deleted. Fonts already present are skipped
      * (they are large); scripts and script-opts are overwritten (small
