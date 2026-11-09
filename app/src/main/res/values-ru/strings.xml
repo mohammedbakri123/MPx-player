@@ -163,6 +163,16 @@
     <string name="download_open_with">Открыть с помощью</string>
     <string name="download_share_failed">Не удалось поделиться этим файлом</string>
     <string name="download_open_failed">Нет приложения, которое может открыть этот файл</string>
+    <string name="download_backup_export_title">Экспорт резервной копии</string>
+    <string name="download_backup_export_sub">Сохранить историю, недавние ссылки и шаблоны в JSON-файл</string>
+    <string name="download_backup_import_title">Импорт резервной копии</string>
+    <string name="download_backup_import_sub">Восстановить из файла резервной копии</string>
+    <string name="download_backup_exported">Резервная копия экспортирована</string>
+    <string name="download_backup_export_failed">Не удалось экспортировать резервную копию</string>
+    <string name="download_backup_imported">Импортировано записей истории: %1$d, шаблонов: %2$d</string>
+    <string name="download_backup_import_failed">Не удалось прочитать файл резервной копии</string>
+    <string name="download_backup_import_confirm_title">Импорт резервной копии</string>
+    <string name="download_backup_import_confirm_body">Это заменит пользовательскую команду и недавние ссылки на те, что в резервной копии, и добавит её записи истории и шаблоны.</string>
     <string name="download_downloaded_title">Загруженные</string>
     <string name="download_downloaded_empty_message">Пока ничего не загружено. Завершённые загрузки появятся здесь.</string>
     <string name="download_settings_general">Общие</string>

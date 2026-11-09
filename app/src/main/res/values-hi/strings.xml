@@ -163,6 +163,16 @@
     <string name="download_open_with">इससे खोलें</string>
     <string name="download_share_failed">यह फ़ाइल साझा नहीं की जा सकी</string>
     <string name="download_open_failed">कोई ऐप इस फ़ाइल को नहीं खोल सकता</string>
+    <string name="download_backup_export_title">बैकअप निर्यात करें</string>
+    <string name="download_backup_export_sub">इतिहास, हाल के लिंक और टेम्पलेट JSON फ़ाइल के रूप में सहेजें</string>
+    <string name="download_backup_import_title">बैकअप आयात करें</string>
+    <string name="download_backup_import_sub">बैकअप फ़ाइल से पुनर्स्थापित करें</string>
+    <string name="download_backup_exported">बैकअप निर्यात किया गया</string>
+    <string name="download_backup_export_failed">बैकअप निर्यात नहीं किया जा सका</string>
+    <string name="download_backup_imported">%1$d इतिहास प्रविष्टियाँ, %2$d टेम्पलेट आयात किए गए</string>
+    <string name="download_backup_import_failed">बैकअप फ़ाइल पढ़ी नहीं जा सकी</string>
+    <string name="download_backup_import_confirm_title">बैकअप आयात करें</string>
+    <string name="download_backup_import_confirm_body">इससे कस्टम कमांड और हाल के लिंक बैकअप वालों से बदल जाएँगे, और इसके इतिहास की प्रविष्टियाँ और टेम्पलेट जुड़ जाएँगे।</string>
     <string name="download_downloaded_title">डाउनलोड किए गए</string>
     <string name="download_downloaded_empty_message">अभी तक कुछ डाउनलोड नहीं हुआ। आपके पूरे किए गए डाउनलोड यहाँ दिखेंगे।</string>
     <string name="download_settings_general">सामान्य</string>

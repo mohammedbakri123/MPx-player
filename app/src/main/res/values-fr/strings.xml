@@ -163,6 +163,16 @@
     <string name="download_open_with">Ouvrir avec</string>
     <string name="download_share_failed">Impossible de partager ce fichier</string>
     <string name="download_open_failed">Aucune application ne peut ouvrir ce fichier</string>
+    <string name="download_backup_export_title">Exporter une sauvegarde</string>
+    <string name="download_backup_export_sub">Enregistrer l’historique, les liens récents et les modèles dans un fichier JSON</string>
+    <string name="download_backup_import_title">Importer une sauvegarde</string>
+    <string name="download_backup_import_sub">Restaurer depuis un fichier de sauvegarde</string>
+    <string name="download_backup_exported">Sauvegarde exportée</string>
+    <string name="download_backup_export_failed">Impossible d’exporter la sauvegarde</string>
+    <string name="download_backup_imported">%1$d entrées d’historique, %2$d modèles importés</string>
+    <string name="download_backup_import_failed">Impossible de lire le fichier de sauvegarde</string>
+    <string name="download_backup_import_confirm_title">Importer une sauvegarde</string>
+    <string name="download_backup_import_confirm_body">Ceci remplace la commande personnalisée et les liens récents par ceux de la sauvegarde, et ajoute ses entrées d’historique et ses modèles.</string>
     <string name="download_downloaded_title">Téléchargés</string>
     <string name="download_downloaded_empty_message">Rien de téléchargé pour l’instant. Les fichiers téléchargés apparaîtront ici.</string>
     <string name="download_settings_general">Général</string>
