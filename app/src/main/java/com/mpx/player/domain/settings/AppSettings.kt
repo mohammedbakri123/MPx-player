@@ -372,6 +372,13 @@ data class AppSettings(
      * it is embedded, so square art lands in the audio file.
      */
     val downloadCropArtwork: Boolean = false,
+    // Issue #430-433: Advanced settings (mpvEx parity) — the picked
+    // mpv config folder URI, the cached mpv.conf/input.conf editor
+    // text, and the Lua scripts toggle (on = mpv default).
+    val mpvConfStorageUri: String = "",
+    val mpvConf: String = "",
+    val inputConf: String = "",
+    val enableLuaScripts: Boolean = true,
 ) {
     /**
      * Total number of currently visible music tabs.

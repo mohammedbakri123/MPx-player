@@ -88,6 +88,7 @@ import com.mpx.player.ui.screens.music.MusicScreen
 import com.mpx.player.ui.screens.player.PlayerScreen
 import com.mpx.player.ui.screens.settings.SettingsScreen
 import com.mpx.player.ui.screens.settings.OverlaySettingsScreen
+import com.mpx.player.ui.screens.settings.AdvancedSettingsScreen
 import com.mpx.player.ui.screens.settings.AppUpdateDialog
 import com.mpx.player.update.AppUpdateChecker
 import com.mpx.player.util.LocaleHelper
@@ -683,6 +684,7 @@ fun MpxApp(
                 Screen.Player.route,
                 Screen.Settings.route,
                 Screen.OverlaySettings.route,
+                Screen.AdvancedSettings.route,
                 Screen.AboutBeta.route,
                 Screen.History.route,
                 Screen.Playlists.route,
@@ -885,6 +887,7 @@ fun MpxApp(
                 SettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onOpenOverlaySettings = { navController.navigate(Screen.OverlaySettings.route) },
+                    onOpenAdvancedSettings = { navController.navigate(Screen.AdvancedSettings.route) },
                     onOpenCookieProfiles = { navController.navigate(Screen.CookieProfiles.route) },
                     onOpenCommandTemplates = { navController.navigate(Screen.CommandTemplates.route) },
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
@@ -905,6 +908,12 @@ fun MpxApp(
             }
             composable(Screen.OverlaySettings.route) {
                 OverlaySettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    settingsRepository = realSettingsRepo,
+                )
+            }
+            composable(Screen.AdvancedSettings.route) {
+                AdvancedSettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     settingsRepository = realSettingsRepo,
                 )
