@@ -2166,6 +2166,11 @@ class MpxDownloader private constructor(context: Context) {
                 "srt" -> addOption("--convert-subs", "srt")
                 "vtt" -> addOption("--convert-subs", "vtt")
                 "ass" -> addOption("--convert-subs", "ass")
+                // Issue #401: LRC — Seal's --convert-subs with the
+                // chosen format; same input rule as the others (the
+                // sub-langs must include a timed-text language for
+                // conversion to have an input).
+                "lrc" -> addOption("--convert-subs", "lrc")
             }
         }
 
