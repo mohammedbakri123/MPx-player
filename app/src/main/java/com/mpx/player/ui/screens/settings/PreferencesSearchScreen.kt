@@ -100,6 +100,7 @@ fun buildSettingsSearchIndex(): List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(R.string.adv_open_title, R.string.adv_open_summary, "advanced,settings,mpv,conf,config,lua,scripts,backup,export,import", "advanced_settings"),
     SettingsSearchEntry(R.string.adv_edit_mpv_conf, R.string.adv_editor_hint_mpv, "mpv,conf,config,options", "advanced_settings"),
     SettingsSearchEntry(R.string.adv_edit_input_conf, R.string.adv_editor_hint_input, "input,conf,key,keys,bindings,shortcut", "advanced_settings"),
+    SettingsSearchEntry(R.string.adv_lua_title, R.string.adv_lua_summary, "lua,scripts,script", "advanced_settings"),
     SettingsSearchEntry(R.string.general_reset_button, null, "reset,defaults,clear", "advanced"),
     SettingsSearchEntry(R.string.settings_category_about, R.string.settings_category_about_sub, "about,version,beta,feedback", "about"),
 )

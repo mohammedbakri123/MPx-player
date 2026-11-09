@@ -570,6 +570,11 @@ class MpvPlayerEngine(
 
         // Set configuration options before init()
         setOption("config", "yes")
+        // Issue #430: Lua scripts (mpv default is on). OFF sets
+        // load-scripts=no pre-init so scripts in config-dir/scripts/
+        // never load; ON sets nothing — zero behaviour change for
+        // existing users.
+        if (!savedSettings.enableLuaScripts) setOption("load-scripts", "no")
         setOption("config-dir", configDir.absolutePath)
         setOption("gpu-shader-cache-dir", cacheDir.absolutePath)
         setOption("icc-cache-dir", cacheDir.absolutePath)

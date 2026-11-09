@@ -5,7 +5,10 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.result.ActivityResultLauncher
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -21,6 +24,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -48,6 +53,8 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.engine.MpvConfigSync
 import com.mpx.player.ui.ActivityResultHandler
+import com.mpx.player.ui.theme.MpxSpaceL
+import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -229,6 +236,56 @@ fun AdvancedSettingsScreen(
                     modifier = Modifier.padding(horizontal = 32.dp),
                 )
             }
+            // Issue #430: Lua scripts toggle — scripts in
+            // filesDir/mpv/scripts/ (populated by #432's sync) load at
+            // player start unless the toggle is off.
+            item { PreferenceSectionHeader(text = stringResource(R.string.adv_section_scripts)) }
+            item {
+                PreferenceCard {
+                    AdvancedToggleRow(
+                        title = stringResource(R.string.adv_lua_title),
+                        summary = stringResource(R.string.adv_lua_summary),
+                        checked = settings.enableLuaScripts,
+                        onChange = { update(settings.copy(enableLuaScripts = it)) },
+                    )
+                }
+            }
         }
+    }
+}
+
+/** A switch row with a title + summary, same shape as SettingsScreen's ToggleRow. */
+@Composable
+private fun AdvancedToggleRow(
+    title: String,
+    summary: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onChange(!checked) }.padding(horizontal = MpxSpaceL, vertical = MpxSpaceM),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MpxTheme.colors.textPrimary,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MpxTheme.colors.textMuted,
+            )
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MpxTheme.colors.primary,
+                checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),
+            ),
+        )
     }
 }
