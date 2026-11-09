@@ -2064,7 +2064,10 @@ class MpxDownloader private constructor(context: Context) {
      * preset args. No constraint set (any + best) means no `-S`
      * either — just the original best audio.
      */
-    private fun YoutubeDLRequest.addOptionsForAudioDownloads(settings: AppSettings): YoutubeDLRequest =
+    private fun YoutubeDLRequest.addOptionsForAudioDownloads(
+        settings: AppSettings,
+        item: ActiveDownload,
+    ): YoutubeDLRequest =
         apply {
             addOption("-x")
             if (settings.downloadUseCustomAudioPreset) {
@@ -2087,6 +2090,23 @@ class MpxDownloader private constructor(context: Context) {
                 addOption("--audio-format", settings.downloadAudioFormat.ifBlank { "mp3" })
             }
             addOption("--embed-metadata")
+            // Issue #399: audio metadata tagging — Seal's exact
+            // --parse-metadata lines from the audio branch
+            // (DownloadUtil.kt:617-624). The date always lands
+            // (release_year/upload_date come from the video info);
+            // the album lands via the title fallback. The track
+            // number is a no-op for MPx's per-entry runs — yt-dlp
+            // never sees playlist context there (same lesson as
+            // #389), so playlist_index is empty; the line stays
+            // because it is exactly what Seal passes and costs
+            // nothing when a field is empty.
+            addOption("--parse-metadata", "%(release_year,upload_date)s:%(meta_date)s")
+            if (!item.playlistTitle.isNullOrBlank()) {
+                addOption("--parse-metadata", "%(album,playlist,title)s:%(meta_album)s")
+                addOption("--parse-metadata", "%(track_number,playlist_index)d:%(meta_track)s")
+            } else {
+                addOption("--parse-metadata", "%(album,title)s:%(meta_album)s")
+            }
             // Issue #391: embed the cover art into the audio file
             // itself (Seal's EMBED_THUMBNAIL, audio branch
             // DownloadUtil.kt:608 — it converts the thumb to jpg
@@ -2409,7 +2429,7 @@ class MpxDownloader private constructor(context: Context) {
                 // subtitles) is skipped; only the base options below
                 // apply.
                 if (item.audioOnly && !useCustomCommand) {
-                    addOptionsForAudioDownloads(settings)
+                    addOptionsForAudioDownloads(settings, item)
                 } else if (!item.audioOnly && !useCustomCommand) {
                     // Issue #388: rename before download (Seal's
                     // DownloadUtil.downloadVideo, JunkFood02/Seal,
