@@ -1118,7 +1118,10 @@ fun MusicScreen(
                 id = track.id,
                 title = track.title,
                 subtitle = "${track.artist} • ${track.album}",
-                uri = track.path,
+                // Local playback fix: play via the MediaStore content:// URI
+                // (MpvFdOpener turns it into fd:// at load time). The raw
+                // DATA path is denied to native code under scoped storage.
+                uri = track.contentUri.ifBlank { track.path },
                 isVideo = false,
                 durationMs = track.durationMs,
             )

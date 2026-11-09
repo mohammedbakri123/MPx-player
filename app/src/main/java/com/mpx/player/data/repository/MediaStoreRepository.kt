@@ -552,6 +552,12 @@ class MediaStoreRepository(
                                     ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
                                 } else ""
                             }
+                            // Local playback fix: always carry the content:// URI for
+                            // this row, even when DATA is non-blank — mpv must be
+                            // handed it (via MpvFdOpener -> fd://), never the raw path.
+                            val contentUri = if (idCol >= 0) {
+                                ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
+                            } else ""
                             val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
                             val sizeBytes = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
                             val widthPx = if (widthCol >= 0) cursor.getInt(widthCol).coerceAtLeast(0) else 0
@@ -567,6 +573,7 @@ class MediaStoreRepository(
                                     id = id,
                                     title = title,
                                     path = effectivePath,
+                                    contentUri = contentUri,
                                     durationMs = durationMs,
                                     sizeBytes = sizeBytes,
                                     sizeFormatted = formatSize(sizeBytes),
@@ -688,6 +695,12 @@ class MediaStoreRepository(
                                 ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
                             } else ""
                         }
+                        // Local playback fix: always carry the content:// URI for
+                        // this row, even when DATA is non-blank — mpv must be
+                        // handed it (via MpvFdOpener -> fd://), never the raw path.
+                        val contentUri = if (idCol >= 0) {
+                            ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
+                        } else ""
                         val durationMs = if (durationCol >= 0) cursor.getLong(durationCol).coerceAtLeast(0L) else 0L
                         val size = if (sizeCol >= 0) cursor.getLong(sizeCol).coerceAtLeast(0L) else 0L
                         val widthPx = if (widthCol >= 0) cursor.getInt(widthCol).coerceAtLeast(0) else 0
@@ -717,6 +730,7 @@ class MediaStoreRepository(
                                 id = id,
                                 title = title,
                                 path = effectivePath,
+                                contentUri = contentUri,
                                 durationMs = durationMs,
                                 sizeBytes = size,
                                 dateModified = dateModified,
@@ -833,6 +847,12 @@ class MediaStoreRepository(
                                 ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
                             } else ""
                         }
+                        // Local playback fix: always carry the content:// URI for
+                        // this row, even when DATA is non-blank — mpv must be
+                        // handed it (via MpvFdOpener -> fd://), never the raw path.
+                        val contentUri = if (idCol >= 0) {
+                            ContentUris.withAppendedId(uri, cursor.getLong(idCol)).toString()
+                        } else ""
 
                         tracks.add(
                             AudioTrack(
@@ -843,6 +863,7 @@ class MediaStoreRepository(
                                 durationFormatted = formatDuration(durationMs),
                                 durationMs = durationMs,
                                 path = effectivePath,
+                                contentUri = contentUri,
                                 dateModified = dateModified,
                                 bucketId = bucketId,
                             )

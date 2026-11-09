@@ -1,7 +1,10 @@
 package com.mpx.player.playback
 
+import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.util.Log
 
 /**
@@ -37,6 +40,14 @@ import android.util.Log
  * queue always keeps the original `content://` URIs. There is
  * deliberately no resolve-all helper any more: resolving N items to
  * load one leaked N-1 descriptors every queue load.
+ *
+ * Raw-path safety net (local playback fix): rows stored BEFORE local
+ * playback moved to `content://` URIs — history, favourites, custom
+ * playlists, the persisted queue and resume rows — still hold the old
+ * raw DATA path (`/storage/emulated/0/...`). A raw path handed to mpv
+ * is denied under scoped storage, so [resolveUri] first looks the path
+ * up in MediaStore and opens the row's fd instead. Rows that cannot be
+ * found keep the raw path and mpv fails honestly, exactly as before.
  */
 class MpvFdOpener(context: Context) {
 
@@ -111,9 +122,20 @@ class MpvFdOpener(context: Context) {
     }
 
     private fun resolveUri(uri: String): String {
-        if (!uri.startsWith("content://")) return uri
+        // A content:// URI opens straight to an fd (issue #150). A raw
+        // filesystem path is a row stored before local playback moved to
+        // content:// URIs (history / favourites / playlists / persisted
+        // queue) — resolve it to its MediaStore row first; if the row
+        // cannot be found, the path is returned unchanged and mpv fails
+        // honestly. Anything else (http(s), fd://, smb proxy URLs)
+        // passes through untouched.
+        val contentUri = when {
+            uri.startsWith("content://") -> uri
+            uri.startsWith("/") -> resolveRawPathToContentUri(uri) ?: return uri
+            else -> return uri
+        }
         return try {
-            val pfd = appContext.contentResolver.openFileDescriptor(Uri.parse(uri), "r")
+            val pfd = appContext.contentResolver.openFileDescriptor(Uri.parse(contentUri), "r")
                 ?: return uri
             // detachFd() transfers ownership of the raw fd out of the
             // ParcelFileDescriptor: the fd stays open, libmpv closes it
@@ -124,5 +146,67 @@ class MpvFdOpener(context: Context) {
             Log.w("MpvFdOpener", "Could not open fd for $uri; leaving it for mpv to fail honestly", e)
             uri
         }
+    }
+
+    /**
+     * Resolves a raw MediaStore DATA path (e.g. `/storage/emulated/0/1DMP/...`)
+     * to its MediaStore `content://` URI by looking the row up on every
+     * known volume — video rows first, then audio; a path can only be one
+     * of them. Returns null when no row matches. The lookup runs once per
+     * load (lazy resolution, issues #213/#219), never up front for a whole
+     * queue. Sibling subtitle files are NOT MediaStore rows, so they never
+     * resolve here — they keep their raw path, as before.
+     */
+    private fun resolveRawPathToContentUri(path: String): String? {
+        val projection = arrayOf(MediaStore.MediaColumns._ID)
+        val selection = "${MediaStore.MediaColumns.DATA} = ?"
+        val args = arrayOf(path)
+        for (base in mediaCollectionUris()) {
+            try {
+                appContext.contentResolver.query(base, projection, selection, args, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val idCol = cursor.getColumnIndex(MediaStore.MediaColumns._ID)
+                        if (idCol >= 0) {
+                            return ContentUris.withAppendedId(base, cursor.getLong(idCol)).toString()
+                        }
+                    }
+                }
+            } catch (_: Exception) {
+                // That volume cannot be queried (removed SD card, early
+                // boot) — try the next one.
+            }
+        }
+        return null
+    }
+
+    /**
+     * Video + audio collection URIs for every known external volume, same
+     * discovery as MediaStoreRepository's getVideoContentUris /
+     * getAudioContentUris. Falls back to the primary-volume URIs below
+     * API 29 or when volume discovery returns nothing.
+     */
+    private fun mediaCollectionUris(): List<Uri> {
+        val uris = mutableListOf<Uri>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                for (name in MediaStore.getExternalVolumeNames(appContext)) {
+                    try {
+                        uris.add(MediaStore.Video.Media.getContentUri(name))
+                    } catch (_: Exception) {
+                    }
+                    try {
+                        uris.add(MediaStore.Audio.Media.getContentUri(name))
+                    } catch (_: Exception) {
+                    }
+                }
+            } catch (_: Exception) {
+                // MediaStore provider may throw on early boot or restricted sandbox.
+            }
+        }
+        if (uris.isEmpty()) {
+            uris.add(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            uris.add(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+        }
+        return uris
     }
 }
