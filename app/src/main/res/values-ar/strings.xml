@@ -162,6 +162,13 @@
     <string name="download_link_copied">تم نسخ الرابط</string>
     <string name="download_open_link_failed">لا يوجد تطبيق يمكنه فتح هذا الرابط</string>
     <string name="download_history_redownload_started">بدأ التنزيل</string>
+    <string name="download_archive_title">أرشيف التنزيلات</string>
+    <string name="download_archive_count">%1$d فيديو</string>
+    <string name="download_archive_empty">فارغ</string>
+    <string name="download_archive_clear_title">مسح أرشيف التنزيلات؟</string>
+    <string name="download_archive_clear_body">سينسى هذا مقاطع الفيديو التي تم تنزيلها بالفعل. تنزيل أحدها مجددًا سينزّله فعليًا بدلًا من تخطيه باعتباره منزّلًا.</string>
+    <string name="download_archive_clear">مسح</string>
+    <string name="download_archive_cleared">تم مسح أرشيف التنزيلات</string>
     <string name="download_custom_command_title">أمر مخصص</string>
     <string name="download_custom_command_enabled">استخدام الأمر المخصص</string>
     <string name="download_custom_command_hint">سطر واحد من خيارات yt-dlp. يحل محل خيارات التنسيق والترجمة والفصول لكل تنزيل.</string>

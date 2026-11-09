@@ -162,6 +162,13 @@
     <string name="download_link_copied">लिंक कॉपी हो गया</string>
     <string name="download_open_link_failed">कोई ऐप यह लिंक नहीं खोल सकता</string>
     <string name="download_history_redownload_started">डाउनलोड शुरू हुआ</string>
+    <string name="download_archive_title">डाउनलोड संग्रह</string>
+    <string name="download_archive_count">%1$d वीडियो</string>
+    <string name="download_archive_empty">खाली</string>
+    <string name="download_archive_clear_title">डाउनलोड संग्रह साफ़ करें?</string>
+    <string name="download_archive_clear_body">इससे भूल जाएगा कि कौन-से वीडियो पहले ही डाउनलोड हो चुके हैं। किसी एक को फिर से डाउनलोड करने पर वह वास्तव में डाउनलोड होगा, पहले से डाउनलोड होने के कारण छोड़ा नहीं जाएगा।</string>
+    <string name="download_archive_clear">साफ़ करें</string>
+    <string name="download_archive_cleared">डाउनलोड संग्रह साफ़ हो गया</string>
     <string name="download_custom_command_title">कस्टम कमांड</string>
     <string name="download_custom_command_enabled">कस्टम कमांड उपयोग करें</string>
     <string name="download_custom_command_hint">yt-dlp विकल्पों की एक पंक्ति। हर डाउनलोड के लिए प्रारूप, उपशीर्षक और अध्याय विकल्पों को बदल देती है।</string>

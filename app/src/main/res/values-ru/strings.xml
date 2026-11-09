@@ -162,6 +162,13 @@
     <string name="download_link_copied">Ссылка скопирована</string>
     <string name="download_open_link_failed">Нет приложения для открытия этой ссылки</string>
     <string name="download_history_redownload_started">Загрузка началась</string>
+    <string name="download_archive_title">Архив загрузок</string>
+    <string name="download_archive_count">%1$d видео</string>
+    <string name="download_archive_empty">Пусто</string>
+    <string name="download_archive_clear_title">Очистить архив загрузок?</string>
+    <string name="download_archive_clear_body">Будет забыто, какие видео уже скачаны. Повторное скачивание скачает видео по-настоящему, а не пропустит его как уже скачанное.</string>
+    <string name="download_archive_clear">Очистить</string>
+    <string name="download_archive_cleared">Архив загрузок очищен</string>
     <string name="download_custom_command_title">Пользовательская команда</string>
     <string name="download_custom_command_enabled">Использовать пользовательскую команду</string>
     <string name="download_custom_command_hint">Одна строка опций yt-dlp. Заменяет опции формата, субтитров и глав для каждой загрузки.</string>

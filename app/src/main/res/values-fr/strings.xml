@@ -162,6 +162,13 @@
     <string name="download_link_copied">Lien copié</string>
     <string name="download_open_link_failed">Aucune app ne peut ouvrir ce lien</string>
     <string name="download_history_redownload_started">Téléchargement lancé</string>
+    <string name="download_archive_title">Archive des téléchargements</string>
+    <string name="download_archive_count">%1$d vidéos</string>
+    <string name="download_archive_empty">Vide</string>
+    <string name="download_archive_clear_title">Vider l’archive des téléchargements ?</string>
+    <string name="download_archive_clear_body">Ceci oublie quelles vidéos ont déjà été téléchargées. Télécharger à nouveau l’une d’elles la téléchargera vraiment au lieu de l’ignorer comme déjà téléchargée.</string>
+    <string name="download_archive_clear">Vider</string>
+    <string name="download_archive_cleared">Archive des téléchargements vidée</string>
     <string name="download_custom_command_title">Commande personnalisée</string>
     <string name="download_custom_command_enabled">Utiliser la commande personnalisée</string>
     <string name="download_custom_command_hint">Une ligne d’options yt-dlp. Remplace les options de format, de sous-titres et de chapitres pour chaque téléchargement.</string>

@@ -36,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.ContentCopy
@@ -949,6 +950,16 @@ fun SettingsScreen(
                                 var showOutputTemplate by remember { mutableStateOf(false) }
                                 var showCustomCommand by remember { mutableStateOf(false) }
                                 var showCustomCommandDirectory by remember { mutableStateOf(false) }
+                                // Issue #419: the download archive — the
+                                // count loads once off the main thread
+                                // and refreshes after clearing.
+                                var showClearArchive by remember { mutableStateOf(false) }
+                                var archiveCount by remember { mutableStateOf(0) }
+                                LaunchedEffect(Unit) {
+                                    archiveCount = withContext(Dispatchers.IO) {
+                                        downloader.archiveEntryCount()
+                                    }
+                                }
                                 // Issue #413: backup / restore — the
                                 // export picker writes straight away;
                                 // the import picker only stages the
@@ -1154,6 +1165,31 @@ fun SettingsScreen(
                                     subtitle = stringResource(R.string.download_backup_import_sub),
                                     icon = Icons.Filled.Upload,
                                     onClick = { importLauncher.launch(arrayOf("application/json")) },
+                                )
+                                // Issue #419: the download archive — which
+                                // videos yt-dlp already recorded. Clearing
+                                // it forgets them, so the next download of
+                                // one runs for real instead of skipping as
+                                // already downloaded.
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_archive_title),
+                                    subtitle = if (archiveCount == 0) {
+                                        stringResource(R.string.download_archive_empty)
+                                    } else {
+                                        stringResource(R.string.download_archive_count, archiveCount)
+                                    },
+                                    icon = Icons.Filled.Archive,
+                                    onClick = {
+                                        if (archiveCount == 0) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    context.getString(R.string.download_archive_empty),
+                                                )
+                                            }
+                                        } else {
+                                            showClearArchive = true
+                                        }
+                                    },
                                 )
 
                                 Spacer(Modifier.height(16.dp))
@@ -1380,6 +1416,34 @@ fun SettingsScreen(
                                         onDismiss = {
                                             showCustomCommandDirectory = false
                                             settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showClearArchive) {
+                                    MpxDialog(
+                                        title = stringResource(R.string.download_archive_clear_title),
+                                        onDismiss = { showClearArchive = false },
+                                        confirmText = stringResource(R.string.download_archive_clear),
+                                        onConfirm = {
+                                            showClearArchive = false
+                                            scope.launch {
+                                                withContext(Dispatchers.IO) {
+                                                    downloader.clearArchive()
+                                                }
+                                                archiveCount = withContext(Dispatchers.IO) {
+                                                    downloader.archiveEntryCount()
+                                                }
+                                                snackbarHostState.showSnackbar(
+                                                    context.getString(R.string.download_archive_cleared),
+                                                )
+                                            }
+                                        },
+                                        dismissText = stringResource(R.string.action_cancel),
+                                        body = {
+                                            Text(
+                                                stringResource(R.string.download_archive_clear_body),
+                                                color = MpxTheme.colors.textSecondary,
+                                            )
                                         },
                                     )
                                 }
