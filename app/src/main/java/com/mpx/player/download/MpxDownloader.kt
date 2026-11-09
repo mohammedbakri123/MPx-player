@@ -972,7 +972,9 @@ class MpxDownloader private constructor(context: Context) {
         }
     }
 
-    private fun isNetworkAvailable(): Boolean {
+    // Issue #418: the launch-time app-update check (MpxApp) reuses
+    // the same gate as the yt-dlp auto-update above.
+    internal fun isNetworkAvailable(): Boolean {
         val connectivity =
             appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
                 ?: return false

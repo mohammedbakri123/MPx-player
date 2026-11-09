@@ -268,6 +268,7 @@
     <string name="settings_category_general_sub">Restablecer todas las preferencias a los valores predeterminados</string>
     <string name="settings_category_development">Desarrollo</string>
     <string name="settings_category_development_sub">Diagnósticos, estado de la base de datos, métricas de escaneo y motor de reproducción</string>
+    <string name="app_update_auto_check">Buscar actualizaciones automáticamente</string>
     <string name="app_update_check_title">Buscar actualizaciones</string>
     <string name="app_update_current_version">Versión %1$s</string>
     <string name="app_update_checking">Buscando actualizaciones…</string>

@@ -88,6 +88,8 @@ import com.mpx.player.ui.screens.music.MusicScreen
 import com.mpx.player.ui.screens.player.PlayerScreen
 import com.mpx.player.ui.screens.settings.SettingsScreen
 import com.mpx.player.ui.screens.settings.OverlaySettingsScreen
+import com.mpx.player.ui.screens.settings.AppUpdateDialog
+import com.mpx.player.update.AppUpdateChecker
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import java.util.Locale
@@ -633,6 +635,22 @@ fun MpxApp(
         downloader.maybeAutoUpdateYtDlp()
     }
 
+    // Issue #418: automatic app-update check on launch (Seal's
+    // AppUpdater) — once per launch, only when the setting is on
+    // and the network is available. An available release opens the
+    // same dialog as the manual check; up to date / failed stays
+    // silent. The dialog renders below, above whatever tab is
+    // showing.
+    var pendingUpdate by remember { mutableStateOf<AppUpdateChecker.Release?>(null) }
+    LaunchedEffect(Unit) {
+        if (realSettingsRepo.load().downloadAutoUpdateCheck && downloader.isNetworkAvailable()) {
+            when (val result = AppUpdateChecker.checkForUpdate()) {
+                is AppUpdateChecker.CheckResult.Available -> pendingUpdate = result.release
+                else -> { /* Up to date or failed: stay silent. */ }
+            }
+        }
+    }
+
     Scaffold(
         bottomBar = {
             // Hide bottom navigation in PiP mode or on full-screen routes
@@ -892,5 +910,13 @@ fun MpxApp(
             }
         }
         } // closes the #176 swipe Box around the NavHost
+    }
+
+    // Issue #418: the automatic update dialog, above the Scaffold.
+    pendingUpdate?.let { release ->
+        AppUpdateDialog(
+            release = release,
+            onDismiss = { pendingUpdate = null },
+        )
     }
 }

@@ -268,6 +268,7 @@
     <string name="settings_category_general_sub">सभी प्राथमिकताएँ डिफ़ॉल्ट पर रीसेट करें</string>
     <string name="settings_category_development">डेवलपमेंट</string>
     <string name="settings_category_development_sub">डायग्नोस्टिक्स, डेटाबेस स्थिति, स्कैन मेट्रिक्स और प्लेबैक इंजन</string>
+    <string name="app_update_auto_check">अपडेट स्वचालित रूप से जाँचें</string>
     <string name="app_update_check_title">अपडेट जाँचें</string>
     <string name="app_update_current_version">संस्करण %1$s</string>
     <string name="app_update_checking">अपडेट जाँचे जा रहे हैं…</string>

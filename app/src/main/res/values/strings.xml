@@ -269,6 +269,7 @@
     <string name="settings_category_general_sub">Reset all preferences to defaults</string>
     <string name="settings_category_development">Development</string>
     <string name="settings_category_development_sub">Diagnostics, database status, scan metrics &amp; playback engine</string>
+    <string name="app_update_auto_check">Check for updates automatically</string>
     <string name="app_update_check_title">Check for updates</string>
     <string name="app_update_current_version">Version %1$s</string>
     <string name="app_update_checking">Checking for updates…</string>

@@ -268,6 +268,7 @@
     <string name="settings_category_general_sub">将所有偏好设置恢复为默认值</string>
     <string name="settings_category_development">开发</string>
     <string name="settings_category_development_sub">诊断、数据库状态、扫描指标和播放引擎</string>
+    <string name="app_update_auto_check">自动检查更新</string>
     <string name="app_update_check_title">检查更新</string>
     <string name="app_update_current_version">版本 %1$s</string>
     <string name="app_update_checking">正在检查更新…</string>
