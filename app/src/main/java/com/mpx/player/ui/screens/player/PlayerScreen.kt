@@ -1912,8 +1912,14 @@ fun PlayerScreen(
                 // bottom chrome — 96dp clears the status bar + title
                 // row, 128dp clears the seek row + transport. Same
                 // actions in the same order, top to bottom, scrolling
-                // inside that band; hides with the chrome.
-                if (isLandscapeOrientation) {
+                // inside that band; hides with the chrome. It also
+                // hides while a brightness/volume HUD is up: the
+                // brightness HUD sits at CenterEnd (issue #166), exactly
+                // where this strip is, and the stripe draws above it —
+                // leaving both up would bury the HUD behind the pill.
+                // The HUD is the focus during a drag, so the strip steps
+                // aside and comes back when the drag ends.
+                if (isLandscapeOrientation && !showBrightnessIndicator && !showVolumeIndicator) {
                     PlayerActionStripe(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
