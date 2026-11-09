@@ -13,6 +13,7 @@
 
     <!-- Downloads (issue #324) -->
     <string name="download_screen_title">डाउनलोड</string>
+    <string name="download_recent_links_title">हाल के लिंक</string>
     <string name="download_url_placeholder">वीडियो लिंक पेस्ट करें…</string>
     <string name="download_paste">पेस्ट करें</string>
     <string name="download_button">डाउनलोड करें</string>

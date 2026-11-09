@@ -13,6 +13,7 @@
 
     <!-- Downloads (issue #324) -->
     <string name="download_screen_title">التنزيلات</string>
+    <string name="download_recent_links_title">روابط حديثة</string>
     <string name="download_url_placeholder">الصق رابط فيديو…</string>
     <string name="download_paste">لصق</string>
     <string name="download_button">تنزيل</string>

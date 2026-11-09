@@ -13,6 +13,7 @@
 
     <!-- Downloads (issue #324) -->
     <string name="download_screen_title">下载</string>
+    <string name="download_recent_links_title">最近的链接</string>
     <string name="download_url_placeholder">粘贴视频链接…</string>
     <string name="download_paste">粘贴</string>
     <string name="download_button">下载</string>

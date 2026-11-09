@@ -110,16 +110,26 @@ fun DownloadScreen(
             it.status == DownloadStatus.FAILED
     }
 
-    var urlText by rememberSaveable { mutableStateOf("") }
+    // Issue #379: the download defaults (audio-only, subtitles) live in
+    // Settings > Downloader settings now — read fresh from the repo at
+    // each download start, so a change there applies immediately.
+    val settingsRepository = remember(context) { SharedPrefsAppSettingsRepository(context) }
+    // Issue #406: the field pre-fills from the most recent download
+    // link, so re-downloading a channel or a series is one tap. The
+    // list below refreshes whenever a download starts (or one is
+    // removed) — the downloader records every start.
+    var urlText by rememberSaveable {
+        mutableStateOf(downloader.loadRecentUrls().firstOrNull().orEmpty())
+    }
+    var recentUrls by remember { mutableStateOf(downloader.loadRecentUrls()) }
+    LaunchedEffect(activeDownloads.map { it.id to it.status }) {
+        recentUrls = downloader.loadRecentUrls()
+    }
     // Issue #337: the in-app sign-in WebView, opened from the button
     // below. The User-Agent is read once — there is no settings UI for
     // it, so it cannot change while this screen is alive.
     var showSignIn by rememberSaveable { mutableStateOf(false) }
     val signInUserAgent = remember { downloader.loadUserAgent() }
-    // Issue #379: the download defaults (audio-only, subtitles) live in
-    // Settings > Downloader settings now — read fresh from the repo at
-    // each download start, so a change there applies immediately.
-    val settingsRepository = remember(context) { SharedPrefsAppSettingsRepository(context) }
     // Issue #345: playlist probe state. The Download button first
     // asks the engine whether the URL resolves to a playlist; a
     // playlist with several entries opens the picker below, a single
@@ -342,6 +352,46 @@ fun DownloadScreen(
                 }
             }
 
+            // Issue #406: recent links — tap one to fill the field,
+            // X removes it. Shown under the URL row whenever the list
+            // is non-empty.
+            if (recentUrls.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.download_recent_links_title),
+                    color = MpxTheme.colors.textSecondary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 2.dp, bottom = 4.dp),
+                )
+                recentUrls.forEach { recent ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { urlText = recent },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = recent,
+                            color = MpxTheme.colors.textPrimary,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = {
+                            downloader.removeRecentUrl(recent)
+                            recentUrls = downloader.loadRecentUrls()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.action_close),
+                                tint = MpxTheme.colors.textSecondary,
+                            )
+                        }
+                    }
+                }
+            }
+
             // Issue #345: playlist entry picker. The selected entries
             // enqueue as their own rows (the #342 queue cap applies);
             // the URL field clears only once the downloads start.
@@ -356,6 +406,11 @@ fun DownloadScreen(
                         guardMetered {
                         playlistToPick = null
                         val downloadPrefs = settingsRepository.load()
+                        // Issue #406: record the playlist URL itself —
+                        // the entries ride through startDownload with a
+                        // playlistTitle and are not recorded there, or
+                        // one playlist would flood the recent list.
+                        downloader.recordRecentUrl(urlText)
                         downloader.startDownloads(
                             entries.map { it.url },
                             audioOnly = downloadPrefs.downloadAudioOnly,

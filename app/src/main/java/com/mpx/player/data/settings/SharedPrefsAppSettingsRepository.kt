@@ -166,6 +166,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadAllowMetered = prefs.getBoolean("download_allow_metered", false),
             downloadVerboseLogging = prefs.getBoolean("download_verbose_logging", false),
             downloadNotifications = prefs.getBoolean("download_notifications", true),
+            downloadRecentUrls = prefs.getString("download_recent_urls", "") ?: "",
             downloadDirectory = prefs.getString("download_directory", "MPx") ?: "MPx",
             downloadGroupPlaylists = prefs.getBoolean("download_group_playlists", false),
             downloadGroupBySite = prefs.getBoolean("download_group_by_site", false),
@@ -318,6 +319,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("download_allow_metered", settings.downloadAllowMetered)
             .putBoolean("download_verbose_logging", settings.downloadVerboseLogging)
             .putBoolean("download_notifications", settings.downloadNotifications)
+            .putString("download_recent_urls", settings.downloadRecentUrls)
             .putString("download_directory", settings.downloadDirectory)
             .putBoolean("download_group_playlists", settings.downloadGroupPlaylists)
             .putBoolean("download_group_by_site", settings.downloadGroupBySite)

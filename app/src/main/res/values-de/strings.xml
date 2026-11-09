@@ -13,6 +13,7 @@
 
     <!-- Downloads (issue #324) -->
     <string name="download_screen_title">Downloads</string>
+    <string name="download_recent_links_title">Letzte Links</string>
     <string name="download_url_placeholder">Videolink einfügen…</string>
     <string name="download_paste">Einfügen</string>
     <string name="download_button">Herunterladen</string>

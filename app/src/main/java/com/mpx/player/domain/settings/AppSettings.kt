@@ -218,6 +218,14 @@ data class AppSettings(
      * keeps showing everything.
      */
     val downloadNotifications: Boolean = true,
+    /**
+     * Issue #406: recent download links — newline-separated URLs,
+     * newest first, capped at 10, deduped. The Download tab
+     * pre-fills its field from the first one and lists the rest
+     * under it for one-tap reuse. Local-only; nothing leaves the
+     * device.
+     */
+    val downloadRecentUrls: String = "",
     // Issue #379: download folder — the subfolder of the public Downloads
     // folder downloads land in (MediaStore RELATIVE_PATH "Download/<name>").
     // "MPx" is the old fixed folder, so existing installs keep their files.

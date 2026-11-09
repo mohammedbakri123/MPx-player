@@ -13,6 +13,7 @@
 
     <!-- Downloads (issue #324) -->
     <string name="download_screen_title">Загрузки</string>
+    <string name="download_recent_links_title">Недавние ссылки</string>
     <string name="download_url_placeholder">Вставьте ссылку на видео…</string>
     <string name="download_paste">Вставить</string>
     <string name="download_button">Скачать</string>
