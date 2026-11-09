@@ -88,6 +88,7 @@
     <string name="download_directory_hint">फ़ोल्डर का नाम, जैसे MPx</string>
     <string name="download_merge_to_mkv">MKV में मर्ज करें</string>
     <string name="download_audio_multistreams">कई ऑडियो ट्रैक</string>
+    <string name="download_crop_artwork_title">कवर आर्ट को वर्गाकार में काटें</string>
     <string name="download_embed_thumbnail">कवर आर्ट एम्बेड करें</string>
     <string name="download_write_thumbnail">थंबनेल सहेजें</string>
     <string name="download_allow_metered">मोबाइल डेटा पर डाउनलोड की अनुमति दें</string>

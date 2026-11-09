@@ -88,6 +88,7 @@
     <string name="download_directory_hint">Nombre de la carpeta, p. ej. MPx</string>
     <string name="download_merge_to_mkv">Fusionar a MKV</string>
     <string name="download_audio_multistreams">Múltiples pistas de audio</string>
+    <string name="download_crop_artwork_title">Recortar la portada a un cuadrado</string>
     <string name="download_embed_thumbnail">Insertar portada</string>
     <string name="download_write_thumbnail">Guardar miniatura</string>
     <string name="download_allow_metered">Permitir descargas con datos móviles</string>

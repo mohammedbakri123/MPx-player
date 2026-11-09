@@ -88,6 +88,7 @@
     <string name="download_directory_hint">Имя папки, например MPx</string>
     <string name="download_merge_to_mkv">Объединить в MKV</string>
     <string name="download_audio_multistreams">Несколько аудиодорожек</string>
+    <string name="download_crop_artwork_title">Обрезать обложку до квадрата</string>
     <string name="download_embed_thumbnail">Встроить обложку</string>
     <string name="download_write_thumbnail">Сохранять миниатюру</string>
     <string name="download_allow_metered">Разрешить загрузку через мобильный интернет</string>

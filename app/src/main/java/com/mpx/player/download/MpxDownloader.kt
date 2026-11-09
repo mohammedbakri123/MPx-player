@@ -2114,6 +2114,24 @@ class MpxDownloader private constructor(context: Context) {
             if (settings.downloadEmbedThumbnail) {
                 addOption("--embed-thumbnail")
                 addOption("--convert-thumbnails", "jpg")
+                // Issue #400: crop the cover art to a square before
+                // it is embedded — Seal's exact CROP_ARTWORK_COMMAND
+                // (DownloadUtil.kt:83-84), written to a per-download
+                // config file and pointed to with --config
+                // (DownloadUtil.kt:610-614). Per-download file, like
+                // Seal's config<id>.txt — up to 3 downloads run
+                // concurrently, so a shared file would race. A write
+                // failure skips the crop for that run instead of
+                // failing the download (the #384 pattern).
+                if (settings.downloadCropArtwork) {
+                    runCatching {
+                        File(appContext.filesDir, "crop-artwork-${item.id}.conf").apply {
+                            writeText(CROP_ARTWORK_COMMAND)
+                        }
+                    }.getOrNull()?.let { configFile ->
+                        addOption("--config", configFile.absolutePath)
+                    }
+                }
             }
         }
 
@@ -3012,6 +3030,15 @@ class MpxDownloader private constructor(context: Context) {
                 instance ?: MpxDownloader(context.applicationContext).also { instance = it }
             }
         }
+
+        /**
+         * Issue #400: Seal's exact crop command (DownloadUtil.kt:83-84,
+         * JunkFood02/Seal, GPL-3.0) — crops the thumbnail to the largest
+         * centered square via ffmpeg's crop filter, written to a
+         * per-download config file and pointed to with --config.
+         */
+        private const val CROP_ARTWORK_COMMAND =
+            """--ppa "ffmpeg: -c:v mjpeg -vf crop=\"'if(gt(ih,iw),iw,ih)':'if(gt(iw,ih),ih,iw)'\"""""
 
         /**
          * Concurrent downloads (issue #342): Seal's `MAX_CONCURRENCY`
