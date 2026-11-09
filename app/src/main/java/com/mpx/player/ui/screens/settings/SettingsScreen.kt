@@ -11,8 +11,6 @@ import android.os.Build
 import android.provider.DocumentsContract
 import android.text.format.Formatter
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.FileProvider
 import com.mpx.player.BuildConfig
@@ -189,6 +187,13 @@ fun SettingsScreen(
     // callback. Null in previews, which never open the picker.
     sdCardFolderLauncher: ActivityResultLauncher<Uri?>? = null,
     sdCardFolderHandler: ActivityResultHandler<Uri?>? = null,
+    // Issue #428: the backup export/import pickers — the launchers
+    // live on the Activity (MainActivity), this screen only
+    // supplies the callbacks, same as the SD-card picker above.
+    backupExportLauncher: ActivityResultLauncher<String>? = null,
+    backupExportHandler: ActivityResultHandler<Uri?>? = null,
+    backupImportLauncher: ActivityResultLauncher<Array<String>>? = null,
+    backupImportHandler: ActivityResultHandler<Uri?>? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -960,38 +965,42 @@ fun SettingsScreen(
                                         downloader.archiveEntryCount()
                                     }
                                 }
-                                // Issue #413: backup / restore — the
-                                // export picker writes straight away;
-                                // the import picker only stages the
-                                // URI, the confirm dialog below asks
-                                // first (import replaces the custom
-                                // command + recent links).
                                 var showImportConfirm by remember { mutableStateOf(false) }
                                 var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
-                                val exportLauncher = rememberLauncherForActivityResult(
-                                    ActivityResultContracts.CreateDocument("application/json"),
-                                ) { uri ->
-                                    if (uri == null) return@rememberLauncherForActivityResult
-                                    scope.launch {
-                                        val ok = DownloadBackup.writeBackup(
-                                            context, uri, downloader, settingsRepository,
-                                        )
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(
-                                                if (ok) R.string.download_backup_exported
-                                                else R.string.download_backup_export_failed,
-                                            ),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
+                                // Issue #428: backup / restore — the
+                                // launchers live on the Activity (the
+                                // #413 rememberLauncherForActivityResult
+                                // calls here crashed on first
+                                // composition); this screen only
+                                // supplies the callbacks. The export
+                                // writes straight away; the import only
+                                // stages the URI, the confirm dialog
+                                // below asks first (import replaces the
+                                // custom command + recent links).
+                                SideEffect {
+                                    backupExportHandler?.callback = { uri ->
+                                        if (uri != null) {
+                                            scope.launch {
+                                                val ok = DownloadBackup.writeBackup(
+                                                    context, uri, downloader, settingsRepository,
+                                                )
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(
+                                                        if (ok) R.string.download_backup_exported
+                                                        else R.string.download_backup_export_failed,
+                                                    ),
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
+                                            }
+                                        }
                                     }
-                                }
-                                val importLauncher = rememberLauncherForActivityResult(
-                                    ActivityResultContracts.OpenDocument(),
-                                ) { uri ->
-                                    if (uri == null) return@rememberLauncherForActivityResult
-                                    pendingImportUri = uri
-                                    showImportConfirm = true
+                                    backupImportHandler?.callback = { uri ->
+                                        if (uri != null) {
+                                            pendingImportUri = uri
+                                            showImportConfirm = true
+                                        }
+                                    }
                                 }
                                 var showSubtitleLanguages by remember { mutableStateOf(false) }
                                 var showSubtitleConvert by remember { mutableStateOf(false) }
@@ -1157,14 +1166,14 @@ fun SettingsScreen(
                                     icon = Icons.Filled.Download,
                                     onClick = {
                                         val stamp = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-                                        exportLauncher.launch("mpx-backup-$stamp.json")
+                                        backupExportLauncher?.launch("mpx-backup-$stamp.json")
                                     },
                                 )
                                 PreferenceRow(
                                     title = stringResource(R.string.download_backup_import_title),
                                     subtitle = stringResource(R.string.download_backup_import_sub),
                                     icon = Icons.Filled.Upload,
-                                    onClick = { importLauncher.launch(arrayOf("application/json")) },
+                                    onClick = { backupImportLauncher?.launch(arrayOf("application/json")) },
                                 )
                                 // Issue #419: the download archive — which
                                 // videos yt-dlp already recorded. Clearing
