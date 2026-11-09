@@ -151,6 +151,14 @@
     <string name="download_custom_command_hint">yt-dlp विकल्पों की एक पंक्ति। हर डाउनलोड के लिए प्रारूप, उपशीर्षक और अध्याय विकल्पों को बदल देती है।</string>
     <string name="download_split_by_chapter">अध्याय के अनुसार विभाजित करें</string>
     <string name="download_clips_remove">क्लिप हटाएँ</string>
+    <string name="download_search_hint">डाउनलोड खोजें</string>
+    <string name="download_filter_all">सभी</string>
+    <string name="download_filter_video">वीडियो</string>
+    <string name="download_filter_audio">ऑडियो</string>
+    <string name="download_selected_count">%1$d चयनित</string>
+    <string name="download_delete_selected">चयनित हटाएँ</string>
+    <string name="download_deleted_selected">चयनित डाउनलोड हटाए गए</string>
+    <string name="download_no_results">आपकी खोज से कोई डाउनलोड मेल नहीं खाता</string>
     <string name="download_downloaded_title">डाउनलोड किए गए</string>
     <string name="download_downloaded_empty_message">अभी तक कुछ डाउनलोड नहीं हुआ। आपके पूरे किए गए डाउनलोड यहाँ दिखेंगे।</string>
     <string name="download_settings_general">सामान्य</string>

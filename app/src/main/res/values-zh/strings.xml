@@ -151,6 +151,14 @@
     <string name="download_custom_command_hint">一行 yt-dlp 选项。会替换每次下载的格式、字幕和章节选项。</string>
     <string name="download_split_by_chapter">按章节拆分</string>
     <string name="download_clips_remove">删除片段</string>
+    <string name="download_search_hint">搜索下载</string>
+    <string name="download_filter_all">全部</string>
+    <string name="download_filter_video">视频</string>
+    <string name="download_filter_audio">音频</string>
+    <string name="download_selected_count">已选 %1$d 项</string>
+    <string name="download_delete_selected">删除所选</string>
+    <string name="download_deleted_selected">已删除所选下载</string>
+    <string name="download_no_results">没有与您的搜索匹配的下载</string>
     <string name="download_downloaded_title">已下载</string>
     <string name="download_downloaded_empty_message">还没有下载内容。完成的下载将显示在这里。</string>
     <string name="download_settings_general">通用</string>
