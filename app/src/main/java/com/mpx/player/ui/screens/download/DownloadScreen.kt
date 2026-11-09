@@ -118,6 +118,15 @@ fun DownloadScreen(
     // link, so re-downloading a channel or a series is one tap. The
     // list below refreshes whenever a download starts (or one is
     // removed) — the downloader records every start.
+    // Issue #407: when a custom command is on, the field accepts
+    // several URLs (one per line or space-separated), so it must
+    // stay multi-line — a single-line field strips newlines from
+    // pasted text, and a pasted list would glue into one URL.
+    // Read fresh on every composition (a cheap in-memory read), so
+    // toggling the command in Settings applies when coming back.
+    val customCommandOn = settingsRepository.load().let {
+        it.customCommandEnabled && it.customCommand.isNotBlank()
+    }
     var urlText by rememberSaveable {
         mutableStateOf(downloader.loadRecentUrls().firstOrNull().orEmpty())
     }
@@ -253,7 +262,12 @@ fun DownloadScreen(
                             )
                         }
                     },
-                    singleLine = true,
+                    singleLine = !customCommandOn,
+                    // Issue #407: multi-line only while a custom
+                    // command is on (up to 4 lines for a pasted list);
+                    // singleLine above forces 1 line otherwise.
+                    minLines = 1,
+                    maxLines = 4,
                     shape = MpxShapes.extraLarge,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MpxTheme.colors.surfaceVariant,
@@ -314,11 +328,31 @@ fun DownloadScreen(
                                 }
                             }
                             try {
-                                val playlist = downloader.fetchPlaylistInfo(url)
-                                when {
-                                    playlist == null -> startSingleVideo(url)
-                                    playlist.entries.size == 1 -> startSingleVideo(playlist.entries[0].url)
-                                    else -> playlistToPick = playlist
+                                // Issue #407: with a custom command on,
+                                // the field accepts several URLs
+                                // (newline- or space-separated — Seal's
+                                // executeCustomCommandTask splits on
+                                // [\n ]): one row per URL, same template,
+                                // no playlist probe — the probe is
+                                // meaningless for several links at once.
+                                // A single URL takes today's path below.
+                                val customUrls = if (downloadPrefs.customCommandEnabled && downloadPrefs.customCommand.isNotBlank()) {
+                                    url.split(Regex("[\\n ]")).map { it.trim() }.filter { it.isNotBlank() }
+                                } else {
+                                    emptyList()
+                                }
+                                if (customUrls.size > 1) {
+                                    customUrls.forEach {
+                                        downloader.startDownload(it, audioOnly = downloadPrefs.downloadAudioOnly, subtitles = downloadPrefs.downloadSubtitles)
+                                    }
+                                    urlText = ""
+                                } else {
+                                    val playlist = downloader.fetchPlaylistInfo(url)
+                                    when {
+                                        playlist == null -> startSingleVideo(url)
+                                        playlist.entries.size == 1 -> startSingleVideo(playlist.entries[0].url)
+                                        else -> playlistToPick = playlist
+                                    }
                                 }
                             } finally {
                                 fetchingPlaylist = false

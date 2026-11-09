@@ -2449,6 +2449,13 @@ class MpxDownloader private constructor(context: Context) {
                 // must land where the finish flow looks for them.
                 if (useCustomCommand) {
                     addOption("--config-locations", customCommandFile.absolutePath)
+                    // Issue #407: Seal's executeCustomCommandTask also
+                    // passes --newline, so progress comes line by line.
+                    // MPx reads progress through the library's line
+                    // callbacks and the [download] Destination: lines
+                    // are full lines either way — the flag changes the
+                    // progress format, not what MPx reads from it.
+                    addOption("--newline")
                 }
                 // Issue #402: verbose debug logging on the download
                 // itself, like on every other request in this class.
