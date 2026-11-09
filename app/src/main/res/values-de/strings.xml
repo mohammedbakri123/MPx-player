@@ -159,6 +159,10 @@
     <string name="download_delete_selected">Auswahl löschen</string>
     <string name="download_deleted_selected">Ausgewählte Downloads gelöscht</string>
     <string name="download_no_results">Keine Downloads für diese Suche</string>
+    <string name="download_share">Teilen</string>
+    <string name="download_open_with">Öffnen mit</string>
+    <string name="download_share_failed">Diese Datei konnte nicht geteilt werden</string>
+    <string name="download_open_failed">Keine App kann diese Datei öffnen</string>
     <string name="download_downloaded_title">Heruntergeladen</string>
     <string name="download_downloaded_empty_message">Noch nichts heruntergeladen. Fertige Downloads erscheinen hier.</string>
     <string name="download_settings_general">Allgemein</string>

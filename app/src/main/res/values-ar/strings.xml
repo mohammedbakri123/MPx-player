@@ -159,6 +159,10 @@
     <string name="download_delete_selected">حذف المحدد</string>
     <string name="download_deleted_selected">تم حذف التنزيلات المحددة</string>
     <string name="download_no_results">لا توجد تنزيلات تطابق بحثك</string>
+    <string name="download_share">مشاركة</string>
+    <string name="download_open_with">فتح باستخدام</string>
+    <string name="download_share_failed">تعذّرت مشاركة هذا الملف</string>
+    <string name="download_open_failed">لا يوجد تطبيق يمكنه فتح هذا الملف</string>
     <string name="download_downloaded_title">تم تنزيلها</string>
     <string name="download_downloaded_empty_message">لم يتم تنزيل أي شيء بعد. ستظهر الملفات التي تنزّلها هنا.</string>
     <string name="download_settings_general">عام</string>

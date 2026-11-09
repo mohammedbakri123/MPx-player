@@ -160,6 +160,10 @@
     <string name="download_delete_selected">Delete selected</string>
     <string name="download_deleted_selected">Selected downloads deleted</string>
     <string name="download_no_results">No downloads match your search</string>
+    <string name="download_share">Share</string>
+    <string name="download_open_with">Open with</string>
+    <string name="download_share_failed">Couldn’t share this file</string>
+    <string name="download_open_failed">No app can open this file</string>
     <string name="download_downloaded_title">Downloaded</string>
     <string name="download_downloaded_empty_message">Nothing downloaded yet. Files you finish downloading will show up here.</string>
     <string name="download_settings_general">General</string>

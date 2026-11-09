@@ -1,5 +1,6 @@
 package com.mpx.player.ui.screens.download
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.download.DownloadShare
 import com.mpx.player.download.MpxDownloader
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
@@ -316,6 +318,28 @@ fun DownloadedScreen(
                                         )
                                     }
                                 },
+                                // Issue #412: share / open-with — the
+                                // helper returns false instead of
+                                // throwing, so the toast is the only
+                                // failure path.
+                                onShare = {
+                                    if (!DownloadShare.shareFile(context, file)) {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.download_share_failed),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                },
+                                onOpen = {
+                                    if (!DownloadShare.openFile(context, file)) {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.download_open_failed),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                },
                                 selected = file.uri in selectedFiles,
                                 selectionMode = selectionMode,
                                 onLongClick = { selectedFiles = selectedFiles + file.uri },
@@ -367,6 +391,50 @@ fun DownloadedScreen(
                                         }
                                     },
                                     onDelete = { downloader.deleteHistoryEntry(entry.id) },
+                                    // Issue #412: history rows resolve
+                                    // the file first, like Play does —
+                                    // a missing file shows the same
+                                    // message instead of sharing nothing.
+                                    onShare = {
+                                        scope.launch {
+                                            val file = withContext(Dispatchers.IO) {
+                                                downloader.historyFileIfExists(entry)
+                                            }
+                                            if (file != null) {
+                                                if (!DownloadShare.shareFile(context, file)) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.download_share_failed),
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
+                                                }
+                                            } else {
+                                                snackbarHostState.showSnackbar(
+                                                    context.getString(R.string.download_history_file_missing),
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onOpen = {
+                                        scope.launch {
+                                            val file = withContext(Dispatchers.IO) {
+                                                downloader.historyFileIfExists(entry)
+                                            }
+                                            if (file != null) {
+                                                if (!DownloadShare.openFile(context, file)) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.download_open_failed),
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
+                                                }
+                                            } else {
+                                                snackbarHostState.showSnackbar(
+                                                    context.getString(R.string.download_history_file_missing),
+                                                )
+                                            }
+                                        }
+                                    },
                                     selected = entry.id in selectedHistory,
                                     selectionMode = selectionMode,
                                     onLongClick = { selectedHistory = selectedHistory + entry.id },

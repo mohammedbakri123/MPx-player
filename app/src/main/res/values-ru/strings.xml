@@ -159,6 +159,10 @@
     <string name="download_delete_selected">Удалить выбранное</string>
     <string name="download_deleted_selected">Выбранные загрузки удалены</string>
     <string name="download_no_results">По вашему запросу ничего не найдено</string>
+    <string name="download_share">Поделиться</string>
+    <string name="download_open_with">Открыть с помощью</string>
+    <string name="download_share_failed">Не удалось поделиться этим файлом</string>
+    <string name="download_open_failed">Нет приложения, которое может открыть этот файл</string>
     <string name="download_downloaded_title">Загруженные</string>
     <string name="download_downloaded_empty_message">Пока ничего не загружено. Завершённые загрузки появятся здесь.</string>
     <string name="download_settings_general">Общие</string>
