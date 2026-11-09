@@ -34,6 +34,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:enableOnBackInvokedCallback="true"
             android:supportsPictureInPicture="true"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|locale|layoutDirection|uiMode|fontScale|density"
@@ -41,6 +42,25 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Issue #416: receive shared links — a video link shared
+                 from YouTube or a browser opens MPx with the URL
+                 pre-filled on the Download tab (Seal's
+                 AndroidManifest.xml:54-69). singleTop above so a
+                 share while the app is alive lands in onNewIntent
+                 on the existing activity instead of stacking a
+                 second one. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
             </intent-filter>
         </activity>
 

@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -67,6 +68,7 @@ import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.download.DownloadService
 import com.mpx.player.download.MpxDownloader
+import com.mpx.player.download.SharedLink
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.ui.components.player.MiniPlayer
@@ -148,6 +150,11 @@ class MainActivity : ComponentActivity() {
     // Issue #343: same pattern for a download notification tap — the
     // Download tab opens when the activity starts from that intent.
     private var openDownloadsOnStart by mutableStateOf(false)
+    // Issue #416: a link shared to the app — the URL pre-fills the
+    // Download tab's field. Same pattern as the notification tap
+    // above: set from the intent (onCreate and onNewIntent), read
+    // by MpxApp, cleared once the Download screen consumes it.
+    private var sharedDownloadUrlOnStart by mutableStateOf<String?>(null)
     // Issue #248: bumps on every handled configuration change (see
     // onConfigurationChanged below). The setContent remembers for the
     // localized context/config are keyed on it, so a dark-mode toggle,
@@ -299,6 +306,8 @@ class MainActivity : ComponentActivity() {
                         onResetOpenPlayer = { openPlayerOnStart = false },
                         openDownloadsRequested = openDownloadsOnStart,
                         onResetOpenDownloads = { openDownloadsOnStart = false },
+                        sharedDownloadUrl = sharedDownloadUrlOnStart,
+                        onSharedDownloadUrlConsumed = { sharedDownloadUrlOnStart = null },
                         onLanguageChanged = { newLang ->
                             currentLanguage = newLang
                             val s = settingsRepository.load()
@@ -348,6 +357,18 @@ class MainActivity : ComponentActivity() {
             intent?.action == DownloadService.ACTION_OPEN_DOWNLOADS
         ) {
             openDownloadsOnStart = true
+        }
+        // Issue #416: a link shared to the app (ACTION_SEND text or
+        // ACTION_VIEW http/https). No link in the shared text -> the
+        // app just opens normally, with a toast saying so (Seal's
+        // share-fail toast).
+        if (intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_VIEW) {
+            val sharedUrl = SharedLink.urlFromIntent(intent)
+            if (sharedUrl != null) {
+                sharedDownloadUrlOnStart = sharedUrl
+            } else {
+                Toast.makeText(this, getString(R.string.share_no_link), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -529,6 +550,13 @@ fun MpxApp(
     // Download tab opens when the activity starts from that intent.
     openDownloadsRequested: Boolean = false,
     onResetOpenDownloads: (() -> Unit)? = null,
+    // Issue #416: a link shared to the app — the Download tab opens
+    // with the URL pre-filled. The consume callback runs in the
+    // Download screen, not here: clearing the URL in the navigation
+    // effect below could clear it before the screen composes and
+    // sees it.
+    sharedDownloadUrl: String? = null,
+    onSharedDownloadUrlConsumed: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
@@ -584,6 +612,15 @@ fun MpxApp(
         if (openDownloadsRequested) {
             navigateToTab(Screen.Download.route)
             onResetOpenDownloads?.invoke()
+        }
+    }
+
+    // Issue #416: a link shared to the app — same pattern again,
+    // the Download dock tab, with the URL riding along to the
+    // screen below. The URL itself is consumed there, not here.
+    LaunchedEffect(sharedDownloadUrl) {
+        if (sharedDownloadUrl != null) {
+            navigateToTab(Screen.Download.route)
         }
     }
 
@@ -749,6 +786,8 @@ fun MpxApp(
             composable(Screen.Download.route) {
                 DownloadScreen(
                     onOpenDownloaded = { navController.navigate(Screen.Downloaded.route) },
+                    sharedUrl = sharedDownloadUrl,
+                    onSharedUrlConsumed = onSharedDownloadUrlConsumed,
                 )
             }
             composable(Screen.Me.route) {

@@ -150,6 +150,7 @@
     <string name="download_custom_command_directory_hint">Nombre de carpeta en Descargas, p. ej., MyClips</string>
     <string name="download_custom_command_directory_summary">Descargas/%1$s</string>
     <string name="download_custom_command_directory_default">Carpeta de videos</string>
+    <string name="share_no_link">No se encontró ningún enlace en el texto compartido</string>
     <string name="download_custom_command_title">Comando personalizado</string>
     <string name="download_custom_command_enabled">Usar comando personalizado</string>
     <string name="download_custom_command_hint">Una línea de opciones de yt-dlp. Reemplaza las opciones de formato, subtítulos y capítulos en cada descarga.</string>
