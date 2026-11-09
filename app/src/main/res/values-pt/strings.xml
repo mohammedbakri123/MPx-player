@@ -88,6 +88,7 @@
     <string name="download_directory_hint">Nome da pasta, ex.: MPx</string>
     <string name="download_merge_to_mkv">Mesclar para MKV</string>
     <string name="download_audio_multistreams">Múltiplas faixas de áudio</string>
+    <string name="download_crop_artwork_title">Cortar a capa em quadrado</string>
     <string name="download_embed_thumbnail">Incorporar capa</string>
     <string name="download_write_thumbnail">Salvar miniatura</string>
     <string name="download_allow_metered">Permitir downloads com dados móveis</string>

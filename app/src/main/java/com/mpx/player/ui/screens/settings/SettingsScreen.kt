@@ -1131,6 +1131,11 @@ fun SettingsScreen(
                                 // thumbnail file" — one embeds, one
                                 // keeps the sidecar.
                                 ToggleRow(stringResource(R.string.download_embed_thumbnail), settings.downloadEmbedThumbnail) { update(settings.copy(downloadEmbedThumbnail = it)) }
+                                // Issue #400: crop the embedded cover
+                                // art to a square (Seal's CROP_ARTWORK).
+                                // Only meaningful with embed-thumbnail
+                                // on — the toggle is disabled otherwise.
+                                ToggleRow(stringResource(R.string.download_crop_artwork_title), settings.downloadCropArtwork, enabled = settings.downloadEmbedThumbnail) { update(settings.copy(downloadCropArtwork = it)) }
 
                                 Spacer(Modifier.height(16.dp))
                                 Text(stringResource(R.string.download_settings_network), style = MaterialTheme.typography.labelMedium, color = MpxTheme.colors.textPrimary)

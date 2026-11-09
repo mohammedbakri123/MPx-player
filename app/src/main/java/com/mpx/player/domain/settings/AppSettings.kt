@@ -313,6 +313,13 @@ data class AppSettings(
     // travels with the file instead of living only in the png
     // sidecar that #385 writes. Needs the bundled ffmpeg (#336).
     val downloadEmbedThumbnail: Boolean = false,
+    /**
+     * Issue #400: crop the embedded cover art to a square (Seal's
+     * CROP_ARTWORK, PreferenceUtil.kt:93). Only meaningful with
+     * embed-thumbnail on — the crop runs on the thumbnail before
+     * it is embedded, so square art lands in the audio file.
+     */
+    val downloadCropArtwork: Boolean = false,
 ) {
     /**
      * Total number of currently visible music tabs.

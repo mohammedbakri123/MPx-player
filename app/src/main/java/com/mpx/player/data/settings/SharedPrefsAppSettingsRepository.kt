@@ -184,6 +184,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadAudioMultistreams = prefs.getBoolean("download_audio_multistreams", false),
             downloadWriteThumbnail = prefs.getBoolean("download_write_thumbnail", false),
             downloadEmbedThumbnail = prefs.getBoolean("download_embed_thumbnail", false),
+            downloadCropArtwork = prefs.getBoolean("download_crop_artwork", false),
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -333,6 +334,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("download_audio_multistreams", settings.downloadAudioMultistreams)
             .putBoolean("download_write_thumbnail", settings.downloadWriteThumbnail)
             .putBoolean("download_embed_thumbnail", settings.downloadEmbedThumbnail)
+            .putBoolean("download_crop_artwork", settings.downloadCropArtwork)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

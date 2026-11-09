@@ -88,6 +88,7 @@
     <string name="download_directory_hint">Nom du dossier, p. ex. MPx</string>
     <string name="download_merge_to_mkv">Fusionner en MKV</string>
     <string name="download_audio_multistreams">Pistes audio multiples</string>
+    <string name="download_crop_artwork_title">Recadrer la pochette en carré</string>
     <string name="download_embed_thumbnail">Intégrer la pochette</string>
     <string name="download_write_thumbnail">Enregistrer la miniature</string>
     <string name="download_allow_metered">Autoriser les téléchargements sur données mobiles</string>
