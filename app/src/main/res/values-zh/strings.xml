@@ -131,6 +131,7 @@
     <string name="download_audio_preset_title">保留原始音频格式</string>
     <string name="download_audio_preset_format_title">首选音频格式</string>
     <string name="download_audio_preset_quality_title">首选音频质量</string>
+    <string name="download_convert_audio">转换音频</string>
     <string name="download_audio_format_title">音频格式</string>
     <string name="download_to_sd_card">下载到 SD 卡</string>
     <string name="download_sd_card_folder_title">SD 卡文件夹</string>

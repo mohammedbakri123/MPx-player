@@ -2336,7 +2336,11 @@ class MpxDownloader private constructor(context: Context) {
                     },
                 )
                 if (sorter.isNotBlank()) addOption("-S", sorter)
-            } else {
+            } else if (settings.downloadConvertAudio) {
+                // Issue #421: convert the extracted audio to the
+                // chosen format — the old always-on behavior, now
+                // behind the toggle. Off keeps the original audio
+                // as-is (no --audio-format, no re-encode).
                 addOption("--audio-format", settings.downloadAudioFormat.ifBlank { "mp3" })
             }
             addOption("--embed-metadata")

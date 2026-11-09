@@ -162,6 +162,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadAudioOnly = prefs.getBoolean("download_audio_only", false),
             downloadSubtitles = prefs.getBoolean("download_subtitles", false),
             downloadAudioFormat = prefs.getString("download_audio_format", "mp3") ?: "mp3",
+            downloadConvertAudio = prefs.getBoolean("download_convert_audio", false),
             downloadUseCustomAudioPreset = prefs.getBoolean("download_use_custom_audio_preset", false),
             downloadAudioPresetFormat = prefs.getString("download_audio_preset_format", "any") ?: "any",
             downloadAudioPresetQuality = prefs.getString("download_audio_preset_quality", "best") ?: "best",
@@ -318,6 +319,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putBoolean("download_audio_only", settings.downloadAudioOnly)
             .putBoolean("download_subtitles", settings.downloadSubtitles)
             .putString("download_audio_format", settings.downloadAudioFormat)
+            .putBoolean("download_convert_audio", settings.downloadConvertAudio)
             .putBoolean("download_use_custom_audio_preset", settings.downloadUseCustomAudioPreset)
             .putString("download_audio_preset_format", settings.downloadAudioPresetFormat)
             .putString("download_audio_preset_quality", settings.downloadAudioPresetQuality)
