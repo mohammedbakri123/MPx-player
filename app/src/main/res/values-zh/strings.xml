@@ -159,6 +159,10 @@
     <string name="download_delete_selected">删除所选</string>
     <string name="download_deleted_selected">已删除所选下载</string>
     <string name="download_no_results">没有与您的搜索匹配的下载</string>
+    <string name="download_share">分享</string>
+    <string name="download_open_with">打开方式</string>
+    <string name="download_share_failed">无法分享此文件</string>
+    <string name="download_open_failed">没有应用可以打开此文件</string>
     <string name="download_downloaded_title">已下载</string>
     <string name="download_downloaded_empty_message">还没有下载内容。完成的下载将显示在这里。</string>
     <string name="download_settings_general">通用</string>

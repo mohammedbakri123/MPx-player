@@ -13,6 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,6 +57,10 @@ internal fun DownloadedFileRow(
     selectionMode: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     onToggleSelect: (() -> Unit)? = null,
+    // Issue #412: share the file with another app / open it in an
+    // external viewer. Null keeps the row as play + delete only.
+    onShare: (() -> Unit)? = null,
+    onOpen: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -100,6 +106,24 @@ internal fun DownloadedFileRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+        if (onShare != null) {
+            IconButton(onClick = onShare) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = stringResource(R.string.download_share),
+                    tint = MpxTheme.colors.textSecondary,
+                )
+            }
+        }
+        if (onOpen != null) {
+            IconButton(onClick = onOpen) {
+                Icon(
+                    imageVector = Icons.Filled.OpenInNew,
+                    contentDescription = stringResource(R.string.download_open_with),
+                    tint = MpxTheme.colors.textSecondary,
+                )
+            }
+        }
         IconButton(onClick = onDelete) {
             Icon(
                 imageVector = Icons.Filled.Delete,
@@ -126,6 +150,9 @@ internal fun DownloadHistoryRow(
     selectionMode: Boolean = false,
     onLongClick: (() -> Unit)? = null,
     onToggleSelect: (() -> Unit)? = null,
+    // Issue #412: same as DownloadedFileRow above.
+    onShare: (() -> Unit)? = null,
+    onOpen: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -170,6 +197,24 @@ internal fun DownloadHistoryRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+        if (onShare != null) {
+            IconButton(onClick = onShare) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = stringResource(R.string.download_share),
+                    tint = MpxTheme.colors.textSecondary,
+                )
+            }
+        }
+        if (onOpen != null) {
+            IconButton(onClick = onOpen) {
+                Icon(
+                    imageVector = Icons.Filled.OpenInNew,
+                    contentDescription = stringResource(R.string.download_open_with),
+                    tint = MpxTheme.colors.textSecondary,
+                )
+            }
         }
         IconButton(onClick = onDelete) {
             Icon(

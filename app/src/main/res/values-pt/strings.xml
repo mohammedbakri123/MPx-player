@@ -159,6 +159,10 @@
     <string name="download_delete_selected">Excluir selecionados</string>
     <string name="download_deleted_selected">Downloads selecionados excluídos</string>
     <string name="download_no_results">Nenhum download corresponde à sua pesquisa</string>
+    <string name="download_share">Compartilhar</string>
+    <string name="download_open_with">Abrir com</string>
+    <string name="download_share_failed">Não foi possível compartilhar este arquivo</string>
+    <string name="download_open_failed">Nenhum aplicativo pode abrir este arquivo</string>
     <string name="download_downloaded_title">Baixados</string>
     <string name="download_downloaded_empty_message">Nada baixado ainda. Os arquivos que você baixar aparecerão aqui.</string>
     <string name="download_settings_general">Geral</string>

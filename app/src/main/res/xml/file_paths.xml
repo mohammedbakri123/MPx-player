@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- FileProvider paths for diagnostics sharing: only the diagnostics
      subfolder of the app cache directory is ever shared. -->
+<!-- Issue #412: the app-private download folders, so a downloaded
+     file that is not already a content:// URI (public MediaStore
+     files and SD-card SAF files are) can be shared or opened in
+     another app. Only MPx's own MPx folders are exposed — nothing
+     else in internal or external storage. -->
 <paths>
     <cache-path name="diagnostics" path="diagnostics/" />
+    <external-files-path name="mpx-downloads" path="Download/MPx/" />
+    <files-path name="mpx-downloads-internal" path="downloads/MPx/" />
 </paths>
