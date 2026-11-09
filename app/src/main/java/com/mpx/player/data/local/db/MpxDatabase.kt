@@ -6,12 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mpx.player.data.local.dao.CookieProfileDao
 import com.mpx.player.data.local.dao.DownloadHistoryDao
 import com.mpx.player.data.local.dao.DownloadTaskDao
 import com.mpx.player.data.local.dao.FavouriteDao
 import com.mpx.player.data.local.dao.PlaybackHistoryDao
 import com.mpx.player.data.local.dao.PlaybackResumeDao
 import com.mpx.player.data.local.dao.PlaylistDao
+import com.mpx.player.data.local.entity.CookieProfileEntity
 import com.mpx.player.data.local.entity.CustomPlaylistEntity
 import com.mpx.player.data.local.entity.DownloadHistoryEntity
 import com.mpx.player.data.local.entity.DownloadTaskEntity
@@ -38,8 +40,9 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
         PlaybackResumeEntity::class,
         DownloadTaskEntity::class,
         DownloadHistoryEntity::class,
+        CookieProfileEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 abstract class MpxDatabase : RoomDatabase() {
@@ -50,6 +53,7 @@ abstract class MpxDatabase : RoomDatabase() {
     abstract fun playbackResumeDao(): PlaybackResumeDao
     abstract fun downloadTaskDao(): DownloadTaskDao
     abstract fun downloadHistoryDao(): DownloadHistoryDao
+    abstract fun cookieProfileDao(): CookieProfileDao
 
     companion object {
         private const val DATABASE_NAME = "mpx_player.db"
@@ -190,6 +194,26 @@ abstract class MpxDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Issue #409: the cookie_profiles table. A new table — no
+         * existing rows to preserve — so the migration only creates
+         * it. Column order/types match the entity exactly, as Room
+         * validates. Same rule as #342/#346/#383/#386/#387/#388/#389/
+         * #393: a proper migration, so the 9→10 jump must NOT wipe
+         * the user's favourites, history and playlists through the
+         * pre-existing fallbackToDestructiveMigration() below.
+         */
+        val MIGRATION_9_10: Migration = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `cookie_profiles` (" +
+                        "`id` TEXT NOT NULL, `name` TEXT NOT NULL, " +
+                        "`url` TEXT NOT NULL, `content` TEXT NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+                )
+            }
+        }
+
         fun getInstance(context: Context): MpxDatabase {
             return instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -197,7 +221,7 @@ abstract class MpxDatabase : RoomDatabase() {
                     MpxDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }

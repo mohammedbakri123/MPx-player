@@ -21,6 +21,8 @@ sealed class Screen(val route: String) {
     // Issue #379: Downloaded videos view, opened from the Download page's
     // Downloaded button (Seal's task-list page model).
     data object Downloaded : Screen("downloaded")
+    // Issue #409: saved cookie profiles, opened from Downloader settings.
+    data object CookieProfiles : Screen("cookie_profiles")
     data object Me : Screen("me")
     data object History : Screen("history")
     data object Playlists : Screen("playlists")

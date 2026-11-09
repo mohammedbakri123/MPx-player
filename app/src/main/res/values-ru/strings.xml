@@ -42,6 +42,14 @@
     <string name="download_ytdlp_update_failed">Не удалось обновить yt-dlp</string>
     <string name="download_ytdlp_update_busy">Идёт загрузка — попробуйте обновить после её завершения</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_cookie_profiles_title">Профили cookie</string>
+    <string name="download_cookie_profiles_sub">Сохранённые входы для видео с ограничениями</string>
+    <string name="download_cookie_profiles_none">Пока нет сохранённых cookie — войдите на вкладке загрузок и сохраните их</string>
+    <string name="download_save_cookies_title">Сохранить эти cookie?</string>
+    <string name="download_cookie_profile_name">Имя профиля</string>
+    <string name="download_cookie_profile_saved">Cookie сохранены</string>
+    <string name="download_use_saved_cookies">Использовать сохранённые cookie</string>
+    <string name="download_cookie_profile_delete">Удалить профиль</string>
     <string name="download_sign_in">Войдите, чтобы скачать</string>
     <string name="download_no_cookies">Cookies не найдены — сначала войдите в окне, затем нажмите «Готово»</string>
     <string name="download_cookies_failed">Не удалось импортировать cookies</string>

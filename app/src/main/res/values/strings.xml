@@ -42,6 +42,14 @@
     <string name="download_ytdlp_update_failed">yt-dlp update failed</string>
     <string name="download_ytdlp_update_busy">A download is running — try updating after it finishes</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_cookie_profiles_title">Cookie profiles</string>
+    <string name="download_cookie_profiles_sub">Saved logins for restricted videos</string>
+    <string name="download_cookie_profiles_none">No saved cookies yet — sign in on the Download tab and save them</string>
+    <string name="download_save_cookies_title">Save these cookies?</string>
+    <string name="download_cookie_profile_name">Profile name</string>
+    <string name="download_cookie_profile_saved">Cookies saved</string>
+    <string name="download_use_saved_cookies">Use saved cookies</string>
+    <string name="download_cookie_profile_delete">Delete profile</string>
     <string name="download_sign_in">Sign in to download</string>
     <string name="download_no_cookies">No cookies found — sign in in the window first, then tap Done</string>
     <string name="download_cookies_failed">Cookie import failed</string>

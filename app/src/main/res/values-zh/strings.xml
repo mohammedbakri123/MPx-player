@@ -42,6 +42,14 @@
     <string name="download_ytdlp_update_failed">yt-dlp 更新失败</string>
     <string name="download_ytdlp_update_busy">有下载正在进行——完成后重试</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_cookie_profiles_title">Cookie 配置文件</string>
+    <string name="download_cookie_profiles_sub">为受限视频保存的登录信息</string>
+    <string name="download_cookie_profiles_none">尚未保存任何 Cookie — 请在下载标签页中登录并保存</string>
+    <string name="download_save_cookies_title">保存这些 Cookie？</string>
+    <string name="download_cookie_profile_name">配置文件名称</string>
+    <string name="download_cookie_profile_saved">Cookie 已保存</string>
+    <string name="download_use_saved_cookies">使用已保存的 Cookie</string>
+    <string name="download_cookie_profile_delete">删除配置文件</string>
     <string name="download_sign_in">登录以下载</string>
     <string name="download_no_cookies">未找到 Cookie — 请先在窗口中登录，然后点“完成”</string>
     <string name="download_cookies_failed">Cookie 导入失败</string>

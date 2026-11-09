@@ -187,6 +187,13 @@ fun DownloadScreen(
     // Issue #337: cookie import outcome labels.
     val noCookiesLabel = stringResource(R.string.download_no_cookies)
     val cookiesFailedLabel = stringResource(R.string.download_cookies_failed)
+    // Issue #409: saved cookie profiles, observed for the picker
+    // button below. The list is tiny (one row per saved site).
+    val cookieProfiles by downloader.getCookieProfiles().collectAsState(initial = emptyList())
+    var showCookiePicker by remember { mutableStateOf(false) }
+    var showSaveCookies by remember { mutableStateOf(false) }
+    var pendingCookiesUrl by remember { mutableStateOf("") }
+    val cookiesSavedLabel = stringResource(R.string.download_cookie_profile_saved)
     LaunchedEffect(activeDownloads) {
         activeDownloads.forEach { item ->
             if (item.id !in announcedIds && (item.status == DownloadStatus.DONE || item.status == DownloadStatus.FAILED)) {
@@ -570,6 +577,22 @@ fun DownloadScreen(
                             fontSize = 13.sp,
                         )
                     }
+                    // Issue #409: use a saved profile instead of
+                    // signing in again — only when profiles exist.
+                    if (cookieProfiles.isNotEmpty()) {
+                        TextButton(
+                            onClick = { showCookiePicker = true },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.download_use_saved_cookies),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MpxTheme.colors.primary,
+                                fontSize = 13.sp,
+                            )
+                        }
+                    }
                 }
             }
 
@@ -589,7 +612,15 @@ fun DownloadScreen(
                         showSignIn = false
                         scope.launch {
                             when (downloader.importCookiesAndStart(urlText, audioOnly = settingsRepository.load().downloadAudioOnly, subtitles = settingsRepository.load().downloadSubtitles)) {
-                                CookieImportOutcome.IMPORTED -> urlText = ""
+                                // Issue #409: offer to save these
+                                // cookies as a named profile, so the
+                                // next restricted download from this
+                                // site does not need another sign-in.
+                                CookieImportOutcome.IMPORTED -> {
+                                    pendingCookiesUrl = urlText
+                                    urlText = ""
+                                    showSaveCookies = true
+                                }
                                 CookieImportOutcome.NO_COOKIES ->
                                     snackbarHostState.showSnackbar(noCookiesLabel)
                                 CookieImportOutcome.FAILED ->
@@ -598,6 +629,44 @@ fun DownloadScreen(
                         }
                         }
                     },
+                )
+            }
+
+            // Issue #409: save the just-imported cookies as a named
+            // profile (default name: the site's host). Dismissing
+            // keeps the one-shot download — nothing is lost.
+            if (showSaveCookies) {
+                SaveCookieProfileDialog(
+                    defaultName = runCatching { java.net.URL(pendingCookiesUrl).host }.getOrNull()?.takeIf { it.isNotBlank() } ?: pendingCookiesUrl,
+                    onSave = { name ->
+                        showSaveCookies = false
+                        scope.launch {
+                            if (downloader.saveCookieProfile(name)) {
+                                snackbarHostState.showSnackbar(cookiesSavedLabel)
+                            }
+                        }
+                    },
+                    onDismiss = { showSaveCookies = false },
+                )
+            }
+
+            // Issue #409: pick a saved profile for the URL in the
+            // field. The pick starts the download with the profile's
+            // cookies — the metered gate waits first, like every
+            // other start on this tab.
+            if (showCookiePicker) {
+                CookieProfilePickerDialog(
+                    profiles = cookieProfiles,
+                    onPick = { profile ->
+                        showCookiePicker = false
+                        guardMetered {
+                            scope.launch {
+                                downloader.startDownloadWithCookieProfile(urlText, profile.id, audioOnly = settingsRepository.load().downloadAudioOnly, subtitles = settingsRepository.load().downloadSubtitles)
+                                urlText = ""
+                            }
+                        }
+                    },
+                    onDismiss = { showCookiePicker = false },
                 )
             }
 

@@ -42,6 +42,14 @@
     <string name="download_ytdlp_update_failed">فشل تحديث yt-dlp</string>
     <string name="download_ytdlp_update_busy">هناك تنزيل جارٍ — حاول التحديث بعد انتهائه</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_cookie_profiles_title">ملفات تعريف الارتباط المحفوظة</string>
+    <string name="download_cookie_profiles_sub">عمليات تسجيل دخول محفوظة للفيديوهات المقيدة</string>
+    <string name="download_cookie_profiles_none">لا توجد ملفات تعريف ارتباط محفوظة بعد — سجّل الدخول من تبويب التنزيل واحفظها</string>
+    <string name="download_save_cookies_title">حفظ ملفات تعريف الارتباط هذه؟</string>
+    <string name="download_cookie_profile_name">اسم الملف</string>
+    <string name="download_cookie_profile_saved">تم حفظ ملفات تعريف الارتباط</string>
+    <string name="download_use_saved_cookies">استخدام ملفات محفوظة</string>
+    <string name="download_cookie_profile_delete">حذف الملف</string>
     <string name="download_sign_in">سجّل الدخول للتنزيل</string>
     <string name="download_no_cookies">لم يتم العثور على ملفات تعريف ارتباط — سجّل الدخول في النافذة أولاً ثم اضغط «تم»</string>
     <string name="download_cookies_failed">تعذّر استيراد ملفات تعريف الارتباط</string>

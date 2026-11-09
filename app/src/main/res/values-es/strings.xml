@@ -42,6 +42,14 @@
     <string name="download_ytdlp_update_failed">Error al actualizar yt-dlp</string>
     <string name="download_ytdlp_update_busy">Hay una descarga en curso: inténtalo cuando termine</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_cookie_profiles_title">Perfiles de cookies</string>
+    <string name="download_cookie_profiles_sub">Inicios de sesión guardados para videos restringidos</string>
+    <string name="download_cookie_profiles_none">Aún no hay cookies guardadas — inicia sesión en la pestaña de descargas y guárdalas</string>
+    <string name="download_save_cookies_title">¿Guardar estas cookies?</string>
+    <string name="download_cookie_profile_name">Nombre del perfil</string>
+    <string name="download_cookie_profile_saved">Cookies guardadas</string>
+    <string name="download_use_saved_cookies">Usar cookies guardadas</string>
+    <string name="download_cookie_profile_delete">Eliminar perfil</string>
     <string name="download_sign_in">Inicia sesión para descargar</string>
     <string name="download_no_cookies">No se encontraron cookies — inicia sesión en la ventana primero y luego toca «Hecho»</string>
     <string name="download_cookies_failed">No se pudieron importar las cookies</string>
