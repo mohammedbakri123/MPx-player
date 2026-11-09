@@ -132,6 +132,7 @@
     <string name="download_audio_preset_title">Keep original audio format</string>
     <string name="download_audio_preset_format_title">Audio preset format</string>
     <string name="download_audio_preset_quality_title">Audio preset quality</string>
+    <string name="download_convert_audio">Convert audio</string>
     <string name="download_audio_format_title">Audio format</string>
     <string name="download_to_sd_card">Download to SD card</string>
     <string name="download_sd_card_folder_title">SD card folder</string>

@@ -131,6 +131,7 @@
     <string name="download_audio_preset_title">मूल ऑडियो फ़ॉर्मेट रखें</string>
     <string name="download_audio_preset_format_title">पसंदीदा ऑडियो फ़ॉर्मेट</string>
     <string name="download_audio_preset_quality_title">पसंदीदा ऑडियो गुणवत्ता</string>
+    <string name="download_convert_audio">ऑडियो कन्वर्ट करें</string>
     <string name="download_audio_format_title">ऑडियो प्रारूप</string>
     <string name="download_to_sd_card">SD कार्ड पर डाउनलोड करें</string>
     <string name="download_sd_card_folder_title">SD कार्ड फ़ोल्डर</string>

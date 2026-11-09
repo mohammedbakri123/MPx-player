@@ -131,6 +131,7 @@
     <string name="download_audio_preset_title">الاحتفاظ بصيغة الصوت الأصلية</string>
     <string name="download_audio_preset_format_title">صيغة الصوت المفضلة</string>
     <string name="download_audio_preset_quality_title">جودة الصوت المفضلة</string>
+    <string name="download_convert_audio">تحويل الصوت</string>
     <string name="download_audio_format_title">تنسيق الصوت</string>
     <string name="download_to_sd_card">التنزيل إلى بطاقة SD</string>
     <string name="download_sd_card_folder_title">مجلد بطاقة SD</string>

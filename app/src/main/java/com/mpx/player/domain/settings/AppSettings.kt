@@ -194,6 +194,14 @@ data class AppSettings(
      */
     val downloadAudioFormat: String = "mp3",
     /**
+     * Issue #421: convert the extracted audio to [downloadAudioFormat]
+     * (Seal's AUDIO_CONVERT). Off — the default — keeps the original
+     * audio as-is: no `--audio-format`, no re-encode, no quality
+     * loss. The #395 preset keeps its own behavior (on → `-S`
+     * sorter, no conversion) and is untouched by this toggle.
+     */
+    val downloadConvertAudio: Boolean = false,
+    /**
      * Issue #395: keep the original audio format — no conversion.
      * Seal's USE_CUSTOM_AUDIO_PRESET + AUDIO_FORMAT + AUDIO_QUALITY.
      * Off by default (today's convert behavior unchanged). When on,

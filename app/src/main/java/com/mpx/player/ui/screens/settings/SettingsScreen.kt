@@ -1225,6 +1225,12 @@ fun SettingsScreen(
                                     icon = Icons.Filled.MusicNote,
                                     onClick = { showAudioFormat = true },
                                 )
+                                // Issue #421: convert the extracted audio
+                                // to the format above (Seal's
+                                // AUDIO_CONVERT, default off). Off keeps
+                                // the original audio as-is — no
+                                // re-encode, no quality loss.
+                                ToggleRow(stringResource(R.string.download_convert_audio), settings.downloadConvertAudio) { update(settings.copy(downloadConvertAudio = it)) }
                                 // Issue #395: keep the original audio
                                 // format — no conversion. When on, the
                                 // audio branch passes -S with the
