@@ -86,6 +86,7 @@ fun buildSettingsSearchIndex(): List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(R.string.download_to_sd_card, null, "sd,card,external,storage", "downloader"),
     SettingsSearchEntry(R.string.download_sponsorblock_title, null, "sponsorblock,sponsor,skip,intro,outro", "downloader"),
     SettingsSearchEntry(R.string.download_custom_command_title, null, "custom,command,template,ytdlp,options", "downloader"),
+    SettingsSearchEntry(R.string.download_custom_command_directory_title, null, "custom,command,folder,directory,location", "downloader"),
     SettingsSearchEntry(R.string.download_command_templates_title, null, "command,templates,template,saved,custom,preset", "downloader"),
     SettingsSearchEntry(R.string.download_backup_export_title, null, "backup,export,import,restore,json,history", "downloader"),
     SettingsSearchEntry(R.string.download_verbose_logging_title, null, "verbose,debug,logging,log", "downloader"),

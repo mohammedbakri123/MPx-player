@@ -146,6 +146,10 @@
     <string name="download_template_duplicate">تكرار القالب</string>
     <string name="download_template_delete">حذف القالب</string>
     <string name="download_save_as_template">حفظ كقالب</string>
+    <string name="download_custom_command_directory_title">مجلد الأمر المخصص</string>
+    <string name="download_custom_command_directory_hint">اسم مجلد داخل التنزيلات، مثل MyClips</string>
+    <string name="download_custom_command_directory_summary">التنزيلات/%1$s</string>
+    <string name="download_custom_command_directory_default">مجلد الفيديو</string>
     <string name="download_custom_command_title">أمر مخصص</string>
     <string name="download_custom_command_enabled">استخدام الأمر المخصص</string>
     <string name="download_custom_command_hint">سطر واحد من خيارات yt-dlp. يحل محل خيارات التنسيق والترجمة والفصول لكل تنزيل.</string>

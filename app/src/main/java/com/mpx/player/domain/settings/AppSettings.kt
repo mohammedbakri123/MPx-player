@@ -309,6 +309,13 @@ data class AppSettings(
     val customCommandEnabled: Boolean = false,
     val customCommand: String = "--no-mtime -S \"ext\"",
     /**
+     * Issue #415: the folder custom-command runs publish into.
+     * Blank = the video folder (today's behavior, and Seal's
+     * `COMMAND_DIRECTORY` default). A name is a single segment
+     * under the public Downloads folder, like the audio folder.
+     */
+    val customCommandDirectory: String = "",
+    /**
      * Issue #382: subtitle options, Seal's subtitle block
      * (DownloadUtil.kt:452-468, JunkFood02/Seal, GPL-3.0). Languages are
      * the `--sub-langs` value (default keeps MPx's "en,ar"); auto

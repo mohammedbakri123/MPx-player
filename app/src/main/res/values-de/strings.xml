@@ -146,6 +146,10 @@
     <string name="download_template_duplicate">Vorlage duplizieren</string>
     <string name="download_template_delete">Vorlage löschen</string>
     <string name="download_save_as_template">Als Vorlage speichern</string>
+    <string name="download_custom_command_directory_title">Ordner für benutzerdefinierte Befehle</string>
+    <string name="download_custom_command_directory_hint">Ordnername in Downloads, z. B. MyClips</string>
+    <string name="download_custom_command_directory_summary">Downloads/%1$s</string>
+    <string name="download_custom_command_directory_default">Videoordner</string>
     <string name="download_custom_command_title">Benutzerdefinierter Befehl</string>
     <string name="download_custom_command_enabled">Benutzerdefinierten Befehl verwenden</string>
     <string name="download_custom_command_hint">Eine Zeile yt-dlp-Optionen. Ersetzt die Format-, Untertitel- und Kapiteloptionen für jeden Download.</string>

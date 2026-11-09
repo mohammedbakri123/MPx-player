@@ -147,6 +147,10 @@
     <string name="download_template_duplicate">Duplicate template</string>
     <string name="download_template_delete">Delete template</string>
     <string name="download_save_as_template">Save as template</string>
+    <string name="download_custom_command_directory_title">Custom command folder</string>
+    <string name="download_custom_command_directory_hint">Folder name in Downloads, e.g. MyClips</string>
+    <string name="download_custom_command_directory_summary">Downloads/%1$s</string>
+    <string name="download_custom_command_directory_default">Video folder</string>
     <string name="download_custom_command_title">Custom command</string>
     <string name="download_custom_command_enabled">Use custom command</string>
     <string name="download_custom_command_hint">One line of yt-dlp options. Replaces the format, subtitle and chapter options for every download.</string>
