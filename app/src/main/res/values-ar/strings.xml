@@ -151,6 +151,14 @@
     <string name="download_custom_command_hint">سطر واحد من خيارات yt-dlp. يحل محل خيارات التنسيق والترجمة والفصول لكل تنزيل.</string>
     <string name="download_split_by_chapter">التقسيم حسب الفصول</string>
     <string name="download_clips_remove">إزالة المقطع</string>
+    <string name="download_search_hint">ابحث في التنزيلات</string>
+    <string name="download_filter_all">الكل</string>
+    <string name="download_filter_video">فيديو</string>
+    <string name="download_filter_audio">صوتي</string>
+    <string name="download_selected_count">تم تحديد %1$d</string>
+    <string name="download_delete_selected">حذف المحدد</string>
+    <string name="download_deleted_selected">تم حذف التنزيلات المحددة</string>
+    <string name="download_no_results">لا توجد تنزيلات تطابق بحثك</string>
     <string name="download_downloaded_title">تم تنزيلها</string>
     <string name="download_downloaded_empty_message">لم يتم تنزيل أي شيء بعد. ستظهر الملفات التي تنزّلها هنا.</string>
     <string name="download_settings_general">عام</string>

@@ -151,6 +151,14 @@
     <string name="download_custom_command_hint">Одна строка опций yt-dlp. Заменяет опции формата, субтитров и глав для каждой загрузки.</string>
     <string name="download_split_by_chapter">Разделить по главам</string>
     <string name="download_clips_remove">Удалить клип</string>
+    <string name="download_search_hint">Поиск по загрузкам</string>
+    <string name="download_filter_all">Все</string>
+    <string name="download_filter_video">Видео</string>
+    <string name="download_filter_audio">Аудио</string>
+    <string name="download_selected_count">Выбрано: %1$d</string>
+    <string name="download_delete_selected">Удалить выбранное</string>
+    <string name="download_deleted_selected">Выбранные загрузки удалены</string>
+    <string name="download_no_results">По вашему запросу ничего не найдено</string>
     <string name="download_downloaded_title">Загруженные</string>
     <string name="download_downloaded_empty_message">Пока ничего не загружено. Завершённые загрузки появятся здесь.</string>
     <string name="download_settings_general">Общие</string>

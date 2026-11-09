@@ -1,6 +1,6 @@
 package com.mpx.player.ui.screens.download
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -37,27 +38,49 @@ import java.util.Locale
  * Download page used to list inline.
  */
 
+/**
+ * Issue #411: selection support — in selection mode the type icon
+ * becomes a checkbox, tap toggles the row instead of playing it,
+ * and long-press enters selection mode (the app's own
+ * combinedClickable pattern from FolderItemRow). Defaults keep
+ * every other caller unchanged.
+ */
 @Composable
 internal fun DownloadedFileRow(
     file: DownloadedFile,
     dateText: String,
     onPlay: () -> Unit,
     onDelete: () -> Unit,
+    selected: Boolean = false,
+    selectionMode: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
+    onToggleSelect: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onPlay)
+            .combinedClickable(
+                onClick = { if (selectionMode) onToggleSelect?.invoke() else onPlay() },
+                onLongClick = { onLongClick?.invoke() },
+            )
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val isAudio = file.extension in AUDIO_EXTENSIONS
-        Icon(
-            imageVector = if (isAudio) Icons.Filled.MusicNote else Icons.Filled.Movie,
-            contentDescription = null,
-            tint = MpxTheme.colors.textSecondary,
-            modifier = Modifier.size(24.dp),
-        )
+        if (selectionMode) {
+            Checkbox(
+                checked = selected,
+                onCheckedChange = { onToggleSelect?.invoke() },
+            )
+            Spacer(Modifier.width(4.dp))
+        } else {
+            Icon(
+                imageVector = if (isAudio) Icons.Filled.MusicNote else Icons.Filled.Movie,
+                contentDescription = null,
+                tint = MpxTheme.colors.textSecondary,
+                modifier = Modifier.size(24.dp),
+            )
+        }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -99,21 +122,36 @@ internal fun DownloadHistoryRow(
     dateText: String,
     onPlay: () -> Unit,
     onDelete: () -> Unit,
+    selected: Boolean = false,
+    selectionMode: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
+    onToggleSelect: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onPlay)
+            .combinedClickable(
+                onClick = { if (selectionMode) onToggleSelect?.invoke() else onPlay() },
+                onLongClick = { onLongClick?.invoke() },
+            )
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val isAudio = entry.fileName.substringAfterLast('.', "").lowercase() in AUDIO_EXTENSIONS
-        Icon(
-            imageVector = if (isAudio) Icons.Filled.MusicNote else Icons.Filled.Movie,
-            contentDescription = null,
-            tint = MpxTheme.colors.textSecondary,
-            modifier = Modifier.size(24.dp),
-        )
+        if (selectionMode) {
+            Checkbox(
+                checked = selected,
+                onCheckedChange = { onToggleSelect?.invoke() },
+            )
+            Spacer(Modifier.width(4.dp))
+        } else {
+            Icon(
+                imageVector = if (isAudio) Icons.Filled.MusicNote else Icons.Filled.Movie,
+                contentDescription = null,
+                tint = MpxTheme.colors.textSecondary,
+                modifier = Modifier.size(24.dp),
+            )
+        }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(

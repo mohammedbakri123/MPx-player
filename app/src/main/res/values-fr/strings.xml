@@ -151,6 +151,14 @@
     <string name="download_custom_command_hint">Une ligne d’options yt-dlp. Remplace les options de format, de sous-titres et de chapitres pour chaque téléchargement.</string>
     <string name="download_split_by_chapter">Diviser par chapitres</string>
     <string name="download_clips_remove">Retirer l’extrait</string>
+    <string name="download_search_hint">Rechercher dans les téléchargements</string>
+    <string name="download_filter_all">Tous</string>
+    <string name="download_filter_video">Vidéo</string>
+    <string name="download_filter_audio">Audio</string>
+    <string name="download_selected_count">%1$d sélectionnés</string>
+    <string name="download_delete_selected">Supprimer la sélection</string>
+    <string name="download_deleted_selected">Téléchargements sélectionnés supprimés</string>
+    <string name="download_no_results">Aucun téléchargement ne correspond à votre recherche</string>
     <string name="download_downloaded_title">Téléchargés</string>
     <string name="download_downloaded_empty_message">Rien de téléchargé pour l’instant. Les fichiers téléchargés apparaîtront ici.</string>
     <string name="download_settings_general">Général</string>
