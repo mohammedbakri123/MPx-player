@@ -11,6 +11,13 @@ data class AudioTrack(
     val durationFormatted: String,
     val durationMs: Long = 0L,
     val path: String = "",
+    // Local playback fix: same as VideoFile.contentUri — the MediaStore
+    // content:// URI for this row (content://media/<volume>/audio/media/<id>),
+    // the URI mpv must be handed via MpvFdOpener. The raw DATA path in
+    // [path] is denied to native code under scoped storage (Android 11+).
+    // [path] stays as the filesystem path for folder grouping, thumbnails
+    // and favourite identity. Blank when the row has no _ID.
+    val contentUri: String = "",
     // Issue #317: MediaStore BUCKET_ID for the track (same scheme as
     // VideoFile.bucketId, #253: the real BUCKET_ID, else the hash of
     // the lower-cased parent path, else "unknown"). Lets the blacklist
