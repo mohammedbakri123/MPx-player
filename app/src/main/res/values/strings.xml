@@ -253,8 +253,22 @@
     <string name="settings_category_general_sub">Reset all preferences to defaults</string>
     <string name="settings_category_development">Development</string>
     <string name="settings_category_development_sub">Diagnostics, database status, scan metrics &amp; playback engine</string>
+    <string name="app_update_check_title">Check for updates</string>
+    <string name="app_update_current_version">Version %1$s</string>
+    <string name="app_update_checking">Checking for updates…</string>
+    <string name="app_update_up_to_date">You’re up to date</string>
+    <string name="app_update_available">Update available: %1$s</string>
+    <string name="app_update_check_failed">Couldn’t check for updates</string>
+    <string name="app_update_dialog_title">Update available</string>
+    <string name="app_update_dialog_body">Version %1$s\nPublished %2$s • %3$s</string>
+    <string name="app_update_download">Download</string>
+    <string name="app_update_install">Install</string>
+    <string name="app_update_downloading">Downloading…</string>
+    <string name="app_update_downloading_percent">Downloading… %1$d%%</string>
+    <string name="app_update_download_failed">Download failed</string>
+    <string name="app_update_install_failed">Couldn’t open the installer</string>
     <string name="settings_category_about">About</string>
-    <string name="settings_category_about_sub">Version 0.1.0-beta • Beta Status &amp; Feedback</string>
+    <string name="settings_category_about_sub">Version %1$s • Beta Status &amp; Feedback</string>
 
     <!-- Settings Category Options -->
     <string name="theme_midnight">Midnight OLED (Pure Black)</string>

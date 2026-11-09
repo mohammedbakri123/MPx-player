@@ -18,6 +18,40 @@ val gitBranch: String = try {
     "unknown"
 }
 
+// Issue #414: the release tag at build time ("v0.4.34"), so the APK
+// knows its own release — the in-app update check compares the
+// latest GitHub release tag against the installed version, and
+// versionName "0.1.0-beta" on every build would make every check say
+// an update is available. Falls back to the pre-#414 values when git
+// is unavailable or there is no tag yet. The release flow tags
+// BEFORE the minified build, so a release APK stamps its own tag,
+// not the previous one; worktree/merged debug builds stamp the
+// latest reachable tag, which is harmless (they are never the
+// installed release).
+val releaseTag: String = try {
+    providers.exec {
+        commandLine("git", "describe", "--tags", "--abbrev=0")
+    }.standardOutput.asText.get().trim().removePrefix("v")
+        .takeIf { it.isNotEmpty() } ?: "0.1.0-beta"
+} catch (_: Exception) {
+    "0.1.0-beta"
+}
+
+// versionCode from the tag (major*10000 + minor*100 + patch):
+// v0.4.34 -> 434, always increasing from the old constant 2, so the
+// package installer treats each release as an upgrade. Non-tag
+// builds keep 2.
+val releaseVersionCode: Int = try {
+    val parts = releaseTag.split(".")
+    if (parts.size == 3) {
+        parts[0].toInt() * 10000 + parts[1].toInt() * 100 + parts[2].toInt()
+    } else {
+        2
+    }
+} catch (_: Exception) {
+    2
+}
+
 android {
     namespace = "com.mpx.player"
     compileSdk = 36
@@ -28,8 +62,8 @@ android {
         applicationId = "com.mpx.player"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.1.0-beta"
+        versionCode = releaseVersionCode
+        versionName = releaseTag
 
         buildConfigField("String", "GIT_BRANCH", "\"$gitBranch\"")
 

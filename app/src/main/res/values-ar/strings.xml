@@ -252,8 +252,22 @@
     <string name="settings_category_general_sub">إعادة تعيين كافة التفضيلات إلى الإعدادات الافتراضية</string>
     <string name="settings_category_development">التطوير</string>
     <string name="settings_category_development_sub">التشخيصات، حالة قاعدة البيانات، مقاييس المسح ومحرك التشغيل</string>
+    <string name="app_update_check_title">التحقق من وجود تحديثات</string>
+    <string name="app_update_current_version">الإصدار %1$s</string>
+    <string name="app_update_checking">جارٍ التحقق من وجود تحديثات…</string>
+    <string name="app_update_up_to_date">إصدارك هو الأحدث</string>
+    <string name="app_update_available">يتوفر تحديث: %1$s</string>
+    <string name="app_update_check_failed">تعذّر التحقق من وجود تحديثات</string>
+    <string name="app_update_dialog_title">يتوفر تحديث</string>
+    <string name="app_update_dialog_body">الإصدار %1$s\nتاريخ النشر %2$s • %3$s</string>
+    <string name="app_update_download">تنزيل</string>
+    <string name="app_update_install">تثبيت</string>
+    <string name="app_update_downloading">جارٍ التنزيل…</string>
+    <string name="app_update_downloading_percent">جارٍ التنزيل… %1$d%%</string>
+    <string name="app_update_download_failed">فشل التنزيل</string>
+    <string name="app_update_install_failed">تعذّر فتح برنامج التثبيت</string>
     <string name="settings_category_about">حول</string>
-    <string name="settings_category_about_sub">الإصدار 0.1.0-beta • حالة النسخة التجريبية والملاحظات</string>
+    <string name="settings_category_about_sub">الإصدار %1$s • حالة النسخة التجريبية والملاحظات</string>
 
     <!-- Settings Category Options -->
     <string name="theme_midnight">شاشات أوليد الليلية (أسود نقي)</string>

@@ -8,6 +8,8 @@
      else in internal or external storage. -->
 <paths>
     <cache-path name="diagnostics" path="diagnostics/" />
+    <!-- Issue #414: downloaded update APKs live here until installed. -->
+    <cache-path name="updates" path="updates/" />
     <external-files-path name="mpx-downloads" path="Download/MPx/" />
     <files-path name="mpx-downloads-internal" path="downloads/MPx/" />
 </paths>

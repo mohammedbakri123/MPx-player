@@ -252,8 +252,22 @@
     <string name="settings_category_general_sub">将所有偏好设置恢复为默认值</string>
     <string name="settings_category_development">开发</string>
     <string name="settings_category_development_sub">诊断、数据库状态、扫描指标和播放引擎</string>
+    <string name="app_update_check_title">检查更新</string>
+    <string name="app_update_current_version">版本 %1$s</string>
+    <string name="app_update_checking">正在检查更新…</string>
+    <string name="app_update_up_to_date">已是最新版本</string>
+    <string name="app_update_available">有可用更新：%1$s</string>
+    <string name="app_update_check_failed">无法检查更新</string>
+    <string name="app_update_dialog_title">有可用更新</string>
+    <string name="app_update_dialog_body">版本 %1$s\n发布于 %2$s • %3$s</string>
+    <string name="app_update_download">下载</string>
+    <string name="app_update_install">安装</string>
+    <string name="app_update_downloading">正在下载…</string>
+    <string name="app_update_downloading_percent">正在下载… %1$d%%</string>
+    <string name="app_update_download_failed">下载失败</string>
+    <string name="app_update_install_failed">无法打开安装程序</string>
     <string name="settings_category_about">关于</string>
-    <string name="settings_category_about_sub">版本 0.1.0-beta • Beta 状态与反馈</string>
+    <string name="settings_category_about_sub">版本 %1$s • Beta 状态与反馈</string>
 
     <!-- Settings Category Options -->
     <string name="theme_midnight">Midnight OLED（纯黑）</string>

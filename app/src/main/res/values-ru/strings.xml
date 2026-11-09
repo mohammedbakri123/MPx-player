@@ -252,8 +252,22 @@
     <string name="settings_category_general_sub">Сбросить все настройки к значениям по умолчанию</string>
     <string name="settings_category_development">Разработка</string>
     <string name="settings_category_development_sub">Диагностика, состояние базы данных, метрики сканирования и движок воспроизведения</string>
+    <string name="app_update_check_title">Проверить обновления</string>
+    <string name="app_update_current_version">Версия %1$s</string>
+    <string name="app_update_checking">Проверка обновлений…</string>
+    <string name="app_update_up_to_date">У вас последняя версия</string>
+    <string name="app_update_available">Доступно обновление: %1$s</string>
+    <string name="app_update_check_failed">Не удалось проверить обновления</string>
+    <string name="app_update_dialog_title">Доступно обновление</string>
+    <string name="app_update_dialog_body">Версия %1$s\nОпубликовано %2$s • %3$s</string>
+    <string name="app_update_download">Скачать</string>
+    <string name="app_update_install">Установить</string>
+    <string name="app_update_downloading">Загрузка…</string>
+    <string name="app_update_downloading_percent">Загрузка… %1$d%%</string>
+    <string name="app_update_download_failed">Ошибка загрузки</string>
+    <string name="app_update_install_failed">Не удалось открыть установщик</string>
     <string name="settings_category_about">О программе</string>
-    <string name="settings_category_about_sub">Версия 0.1.0-beta • Статус бета-версии и отзывы</string>
+    <string name="settings_category_about_sub">Версия %1$s • Статус бета-версии и отзывы</string>
 
     <!-- Settings Category Options -->
     <string name="theme_midnight">Midnight OLED (чисто чёрный)</string>

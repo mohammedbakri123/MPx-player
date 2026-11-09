@@ -252,8 +252,22 @@
     <string name="settings_category_general_sub">Réinitialiser toutes les préférences aux valeurs par défaut</string>
     <string name="settings_category_development">Développement</string>
     <string name="settings_category_development_sub">Diagnostics, état de la base de données, mesures d’analyse et moteur de lecture</string>
+    <string name="app_update_check_title">Vérifier les mises à jour</string>
+    <string name="app_update_current_version">Version %1$s</string>
+    <string name="app_update_checking">Vérification des mises à jour…</string>
+    <string name="app_update_up_to_date">Vous êtes à jour</string>
+    <string name="app_update_available">Mise à jour disponible : %1$s</string>
+    <string name="app_update_check_failed">Impossible de vérifier les mises à jour</string>
+    <string name="app_update_dialog_title">Mise à jour disponible</string>
+    <string name="app_update_dialog_body">Version %1$s\nPubliée le %2$s • %3$s</string>
+    <string name="app_update_download">Télécharger</string>
+    <string name="app_update_install">Installer</string>
+    <string name="app_update_downloading">Téléchargement…</string>
+    <string name="app_update_downloading_percent">Téléchargement… %1$d%%</string>
+    <string name="app_update_download_failed">Échec du téléchargement</string>
+    <string name="app_update_install_failed">Impossible d’ouvrir le programme d’installation</string>
     <string name="settings_category_about">À propos</string>
-    <string name="settings_category_about_sub">Version 0.1.0-beta • Statut bêta et retours</string>
+    <string name="settings_category_about_sub">Version %1$s • Statut bêta et retours</string>
 
     <!-- Settings Category Options -->
     <string name="theme_midnight">Midnight OLED (noir pur)</string>
