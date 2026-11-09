@@ -1556,13 +1556,22 @@ class MpxDownloader private constructor(context: Context) {
         // Issue #397: the private directory too — old `.Seal/`
         // files stay visible after toggling off, the same way old
         // audio-folder files do.
+        // Issue #415: the custom-command folder too — its files
+        // list while the directory is set.
+        val patterns = mutableListOf(
+            "${publicDownloadsRelativePathSlash()}%",
+            "${audioDownloadsRelativePathSlash()}%",
+            "Download/.Seal/%",
+        )
+        sanitizeCustomCommandDirectoryName(settingsRepository.load().customCommandDirectory)
+            .takeIf { it.isNotBlank() }?.let { patterns += "Download/$it/%" }
         val entries = mutableListOf<DownloadedFile>()
         try {
             appContext.contentResolver.query(
                 MediaStore.Downloads.EXTERNAL_CONTENT_URI,
                 projection,
-                "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? OR ${MediaStore.Downloads.RELATIVE_PATH} LIKE ? OR ${MediaStore.Downloads.RELATIVE_PATH} LIKE ?",
-                arrayOf("${publicDownloadsRelativePathSlash()}%", "${audioDownloadsRelativePathSlash()}%", "Download/.Seal/%"),
+                patterns.joinToString(" OR ") { "${MediaStore.Downloads.RELATIVE_PATH} LIKE ?" },
+                patterns.toTypedArray(),
                 "${MediaStore.Downloads.DATE_MODIFIED} DESC",
             )?.use { cursor ->
                 val idCol = cursor.getColumnIndex(MediaStore.Downloads._ID)
@@ -1759,6 +1768,11 @@ class MpxDownloader private constructor(context: Context) {
         privateFile: File,
         subfolder: String? = null,
         audioOnly: Boolean = false,
+        // Issue #415: a custom-command run's own folder, as a full
+        // relative path ("Download/<dir>") or null for the normal
+        // video/audio folder. SD-card mode ignores it (the gate
+        // below), the same as the private directory.
+        customDirectory: String? = null,
     ): DownloadedFile {
         // Issue #393: SD-card mode — the file goes into the picked
         // SAF tree instead of the public Downloads folder. Every
@@ -1777,10 +1791,10 @@ class MpxDownloader private constructor(context: Context) {
             }
             return published
         }
-        val published = publishToPublicDownloads(privateFile, subfolder = subfolder, audioOnly = audioOnly)
+        val published = publishToPublicDownloads(privateFile, subfolder = subfolder, audioOnly = audioOnly, customDirectory = customDirectory)
         if (published.isPublic) {
-            publishSiblingSubtitles(privateFile, subfolder, audioOnly)
-            publishSiblingThumbnail(privateFile, subfolder, audioOnly)
+            publishSiblingSubtitles(privateFile, subfolder, audioOnly, customDirectory)
+            publishSiblingThumbnail(privateFile, subfolder, audioOnly, customDirectory)
         }
         return published
     }
@@ -1873,6 +1887,7 @@ class MpxDownloader private constructor(context: Context) {
         scanIntoLibrary: Boolean = true,
         subfolder: String? = null,
         audioOnly: Boolean = false,
+        customDirectory: String? = null,
     ): DownloadedFile {
         val private = DownloadedFile(
             uri = privateFile.absolutePath,
@@ -1887,7 +1902,10 @@ class MpxDownloader private constructor(context: Context) {
         // playlist subfolder; anything else keeps the flat path.
         // Issue #394: audio-only downloads publish into the audio
         // folder when it is set (downloadRelativePath).
-        val relativePath = downloadRelativePath(audioOnly) + (subfolder?.let { "/$it" } ?: "")
+        // Issue #415: a custom-command run publishes into its own
+        // folder instead — the explicit choice for these runs wins
+        // over the private directory and the audio folder.
+        val relativePath = (customDirectory ?: downloadRelativePath(audioOnly)) + (subfolder?.let { "/$it" } ?: "")
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, privateFile.name)
             put(MediaStore.Downloads.MIME_TYPE, mimeType)
@@ -1982,6 +2000,7 @@ class MpxDownloader private constructor(context: Context) {
         video: File,
         subfolder: String? = null,
         audioOnly: Boolean = false,
+        customDirectory: String? = null,
     ) {
         val base = video.nameWithoutExtension
         val prefix = "$base."
@@ -1997,7 +2016,7 @@ class MpxDownloader private constructor(context: Context) {
             return
         }
         for (sidecar in sidecars) {
-            val published = publishToPublicDownloads(sidecar, scanIntoLibrary = false, subfolder = subfolder, audioOnly = audioOnly)
+            val published = publishToPublicDownloads(sidecar, scanIntoLibrary = false, subfolder = subfolder, audioOnly = audioOnly, customDirectory = customDirectory)
             if (!published.isPublic) {
                 try {
                     sidecar.delete()
@@ -2020,6 +2039,7 @@ class MpxDownloader private constructor(context: Context) {
         video: File,
         subfolder: String? = null,
         audioOnly: Boolean = false,
+        customDirectory: String? = null,
     ) {
         val base = video.nameWithoutExtension
         val prefix = "$base."
@@ -2034,7 +2054,7 @@ class MpxDownloader private constructor(context: Context) {
             return
         }
         for (thumbnail in thumbnails) {
-            val published = publishToPublicDownloads(thumbnail, scanIntoLibrary = false, subfolder = subfolder, audioOnly = audioOnly)
+            val published = publishToPublicDownloads(thumbnail, scanIntoLibrary = false, subfolder = subfolder, audioOnly = audioOnly, customDirectory = customDirectory)
             if (!published.isPublic) {
                 try {
                     thumbnail.delete()
@@ -2459,6 +2479,12 @@ class MpxDownloader private constructor(context: Context) {
         // lives on the info), so this is assigned twice.
         var downloadSubfolder: String? = null
         var outputPrefix = ""
+        // Issue #415: the custom-command run's publish folder, as a
+        // full relative path ("Download/<dir>") or null for the
+        // normal folder. Declared here (not inside the try) because
+        // the catch block below publishes the fallbacks too — a val
+        // inside the try would not be visible there.
+        var customCommandDirectory: String? = null
         try {
             if (!ensureInitialized()) {
                 updateItem(id) {
@@ -2499,6 +2525,20 @@ class MpxDownloader private constructor(context: Context) {
             // fallback publish use the playlist folder alone.
             downloadSubfolder = playlistFolder
             outputPrefix = downloadSubfolder?.let { "$it/" } ?: ""
+            // Issue #415: the custom-command output folder. The
+            // custom command is on and a directory is set -> this
+            // run publishes into Download/<dir>/ instead of the
+            // video/audio folder. Computed from the settings, not
+            // from useCustomCommand (which only exists after the
+            // info fetch): if the template file write then fails,
+            // the run still publishes here — the toggle is on, so
+            // this is the folder the user chose for these runs.
+            customCommandDirectory = if (settings.customCommandEnabled && settings.customCommand.isNotBlank()) {
+                sanitizeCustomCommandDirectoryName(settings.customCommandDirectory)
+                    .takeIf { it.isNotBlank() }?.let { "Download/$it" }
+            } else {
+                null
+            }
 
             // Title first, so the row shows something real while the bytes
             // move. getInfo is a full yt-dlp run of its own. Seal's info
@@ -2906,7 +2946,7 @@ class MpxDownloader private constructor(context: Context) {
                     // file, unchanged.
                     val chapters = findSplitOutputFiles(response.out, beforeNames)
                     if (chapters.isNotEmpty()) {
-                        val published = chapters.map { publishFinishedFile(it, subfolder = downloadSubfolder, audioOnly = item.audioOnly) }
+                        val published = chapters.map { publishFinishedFile(it, subfolder = downloadSubfolder, audioOnly = item.audioOnly, customDirectory = customCommandDirectory) }
                         val first = published.first()
                         updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = first) }
                         recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, first)
@@ -2919,7 +2959,7 @@ class MpxDownloader private constructor(context: Context) {
                     // Issue #344: the finished file moves to the public
                     // Downloads/MPx/ folder before the row completes, so
                     // the completed list picks it up from MediaStore.
-                    val published = publishFinishedFile(file, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(file, subfolder = downloadSubfolder, audioOnly = item.audioOnly, customDirectory = customCommandDirectory)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     // Issue #346: record the finished download.
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
@@ -2945,7 +2985,7 @@ class MpxDownloader private constructor(context: Context) {
             if (item.audioOnly) {
                 val fallback = findAudioFallbackFile(beforeNames, tempDirFor)
                 if (fallback != null) {
-                    val published = publishFinishedFile(fallback, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(fallback, subfolder = downloadSubfolder, audioOnly = item.audioOnly, customDirectory = customCommandDirectory)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2964,7 +3004,7 @@ class MpxDownloader private constructor(context: Context) {
             if (item.subtitles) {
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
-                    val published = publishFinishedFile(file, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(file, subfolder = downloadSubfolder, audioOnly = item.audioOnly, customDirectory = customCommandDirectory)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -2988,7 +3028,7 @@ class MpxDownloader private constructor(context: Context) {
             ) {
                 val file = findOutputFile(response.out, beforeNames)
                 if (file != null) {
-                    val published = publishFinishedFile(file, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(file, subfolder = downloadSubfolder, audioOnly = item.audioOnly, customDirectory = customCommandDirectory)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -3021,7 +3061,7 @@ class MpxDownloader private constructor(context: Context) {
                 // its id/extractor/uploader.
                 val fallback = findAudioFallbackFile(null, tempDirFor)
                 if (fallback != null) {
-                    val published = publishFinishedFile(fallback, subfolder = downloadSubfolder, audioOnly = item.audioOnly)
+                    val published = publishFinishedFile(fallback, subfolder = downloadSubfolder, audioOnly = item.audioOnly, customDirectory = customCommandDirectory)
                     updateItem(id) { it.copy(status = DownloadStatus.DONE, progress = 100f, file = published) }
                     recordHistory(id, item.url, videoId, extractor, uploader, thumbnailUrl, published)
                     refreshFiles()
@@ -3337,6 +3377,14 @@ class MpxDownloader private constructor(context: Context) {
          * (blank means "same as the video folder").
          */
         internal fun sanitizeAudioFolderName(raw: String): String =
+            raw.trim().trim('/').substringBefore('/').trim()
+
+        /**
+         * Issue #415: the custom-command folder name — first segment
+         * only, like [sanitizeAudioFolderName], blank stays blank
+         * (blank means "the video folder").
+         */
+        internal fun sanitizeCustomCommandDirectoryName(raw: String): String =
             raw.trim().trim('/').substringBefore('/').trim()
 
         /** Subtitle sidecar extensions (issue #341, moved here in #344). */

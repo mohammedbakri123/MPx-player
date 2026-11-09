@@ -146,6 +146,10 @@
     <string name="download_template_duplicate">Дублировать шаблон</string>
     <string name="download_template_delete">Удалить шаблон</string>
     <string name="download_save_as_template">Сохранить как шаблон</string>
+    <string name="download_custom_command_directory_title">Папка пользовательских команд</string>
+    <string name="download_custom_command_directory_hint">Имя папки в Загрузках, например MyClips</string>
+    <string name="download_custom_command_directory_summary">Загрузки/%1$s</string>
+    <string name="download_custom_command_directory_default">Папка видео</string>
     <string name="download_custom_command_title">Пользовательская команда</string>
     <string name="download_custom_command_enabled">Использовать пользовательскую команду</string>
     <string name="download_custom_command_hint">Одна строка опций yt-dlp. Заменяет опции формата, субтитров и глав для каждой загрузки.</string>

@@ -146,6 +146,10 @@
     <string name="download_template_duplicate">Dupliquer le modèle</string>
     <string name="download_template_delete">Supprimer le modèle</string>
     <string name="download_save_as_template">Enregistrer comme modèle</string>
+    <string name="download_custom_command_directory_title">Dossier des commandes personnalisées</string>
+    <string name="download_custom_command_directory_hint">Nom de dossier dans Téléchargements, p. ex. MyClips</string>
+    <string name="download_custom_command_directory_summary">Téléchargements/%1$s</string>
+    <string name="download_custom_command_directory_default">Dossier vidéo</string>
     <string name="download_custom_command_title">Commande personnalisée</string>
     <string name="download_custom_command_enabled">Utiliser la commande personnalisée</string>
     <string name="download_custom_command_hint">Une ligne d’options yt-dlp. Remplace les options de format, de sous-titres et de chapitres pour chaque téléchargement.</string>

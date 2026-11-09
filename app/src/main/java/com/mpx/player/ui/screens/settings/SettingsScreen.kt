@@ -125,6 +125,7 @@ import com.mpx.player.ui.screens.download.AudioPresetQualityDialog
 import com.mpx.player.ui.screens.download.audioPresetFormatLabel
 import com.mpx.player.ui.screens.download.audioPresetQualityLabel
 import com.mpx.player.ui.screens.download.CustomCommandDialog
+import com.mpx.player.ui.screens.download.CustomCommandDirectoryDialog
 import com.mpx.player.ui.screens.download.DownloadDirectoryDialog
 import com.mpx.player.ui.screens.download.DownloadOptionsDialog
 import com.mpx.player.ui.screens.download.DownloadQualityDialog
@@ -947,6 +948,7 @@ fun SettingsScreen(
                                 var showAudioDirectory by remember { mutableStateOf(false) }
                                 var showOutputTemplate by remember { mutableStateOf(false) }
                                 var showCustomCommand by remember { mutableStateOf(false) }
+                                var showCustomCommandDirectory by remember { mutableStateOf(false) }
                                 // Issue #413: backup / restore — the
                                 // export picker writes straight away;
                                 // the import picker only stages the
@@ -1106,6 +1108,21 @@ fun SettingsScreen(
                                     },
                                     icon = Icons.Filled.Code,
                                     onClick = { showCustomCommand = true },
+                                )
+                                // Issue #415: the custom-command output
+                                // folder — blank means the video folder.
+                                // Shown even when the command is off, so
+                                // the folder can be picked before the
+                                // command is turned on.
+                                PreferenceRow(
+                                    title = stringResource(R.string.download_custom_command_directory_title),
+                                    subtitle = if (settings.customCommandDirectory.isBlank()) {
+                                        stringResource(R.string.download_custom_command_directory_default)
+                                    } else {
+                                        stringResource(R.string.download_custom_command_directory_summary, settings.customCommandDirectory)
+                                    },
+                                    icon = Icons.Filled.Folder,
+                                    onClick = { showCustomCommandDirectory = true },
                                 )
                                 // Issue #410: saved command templates —
                                 // named custom commands, managed on
@@ -1353,6 +1370,15 @@ fun SettingsScreen(
                                         settingsRepository = settingsRepository,
                                         onDismiss = {
                                             showCustomCommand = false
+                                            settings = settingsRepository.load()
+                                        },
+                                    )
+                                }
+                                if (showCustomCommandDirectory) {
+                                    CustomCommandDirectoryDialog(
+                                        settingsRepository = settingsRepository,
+                                        onDismiss = {
+                                            showCustomCommandDirectory = false
                                             settings = settingsRepository.load()
                                         },
                                     )

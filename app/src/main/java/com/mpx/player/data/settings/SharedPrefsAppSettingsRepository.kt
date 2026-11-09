@@ -180,6 +180,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadAudioDirectory = prefs.getString("download_audio_directory", "") ?: "",
             customCommandEnabled = prefs.getBoolean("custom_command_enabled", false),
             customCommand = prefs.getString("custom_command", "--no-mtime -S \"ext\"") ?: "--no-mtime -S \"ext\"",
+            customCommandDirectory = prefs.getString("custom_command_directory", "") ?: "",
             downloadSubtitleLanguages = prefs.getString("download_subtitle_languages", "en,ar") ?: "en,ar",
             downloadAutoSubtitles = prefs.getBoolean("download_auto_subtitles", false),
             downloadConvertSubtitles = prefs.getString("download_convert_subtitles", "none") ?: "none",
@@ -334,6 +335,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("download_audio_directory", settings.downloadAudioDirectory)
             .putBoolean("custom_command_enabled", settings.customCommandEnabled)
             .putString("custom_command", settings.customCommand)
+            .putString("custom_command_directory", settings.customCommandDirectory)
             .putString("download_subtitle_languages", settings.downloadSubtitleLanguages)
             .putBoolean("download_auto_subtitles", settings.downloadAutoSubtitles)
             .putString("download_convert_subtitles", settings.downloadConvertSubtitles)
