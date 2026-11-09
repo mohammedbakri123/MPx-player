@@ -92,6 +92,7 @@
     <string name="download_crop_artwork_title">Crop cover art to square</string>
     <string name="download_embed_thumbnail">Embed cover art</string>
     <string name="download_write_thumbnail">Save thumbnail file</string>
+    <string name="download_notifications_title">Download notifications</string>
     <string name="download_verbose_logging_title">Verbose debug logging</string>
     <string name="download_allow_metered">Allow mobile data downloads</string>
     <string name="download_metered_title">Download over mobile data?</string>

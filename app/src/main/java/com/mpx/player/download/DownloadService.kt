@@ -9,6 +9,8 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import com.mpx.player.R
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import com.mpx.player.domain.settings.AppSettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -49,6 +51,7 @@ class DownloadService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
 
     private lateinit var downloader: MpxDownloader
+    private lateinit var settingsRepository: AppSettingsRepository
     private var isForegroundActive = false
 
     // Issue #284 pattern: the values the notification actually
@@ -65,6 +68,7 @@ class DownloadService : Service() {
     override fun onCreate() {
         super.onCreate()
         downloader = MpxDownloader.getInstance(applicationContext)
+        settingsRepository = SharedPrefsAppSettingsRepository(applicationContext)
         DownloadNotificationUtil.createNotificationChannel(this)
         serviceScope.launch {
             downloader.activeDownloads.collectLatest { items ->
@@ -79,8 +83,12 @@ class DownloadService : Service() {
                 // Go foreground immediately — the observer refines the
                 // notification a moment later, but startForeground must
                 // not wait for a flow emission.
+                // Issue #404: with notifications off, the foreground
+                // notification is the static one — Android requires a
+                // notification for the service to run, so it cannot be
+                // removed entirely; it just never shows progress.
                 val snapshot = progressSnapshot(downloader.activeDownloads.value)
-                val notification = if (snapshot != null) {
+                val notification = if (snapshot != null && notificationsEnabled()) {
                     lastSnapshot = snapshot
                     DownloadNotificationUtil.buildProgressNotification(
                         this,
@@ -111,13 +119,21 @@ class DownloadService : Service() {
         return START_NOT_STICKY
     }
 
+    /**
+     * Issue #404: read fresh — the toggle takes effect without
+     * restarting a download.
+     */
+    private fun notificationsEnabled(): Boolean =
+        settingsRepository.load().downloadNotifications
+
     private fun onDownloadsChanged(items: List<ActiveDownload>) {
+        val notificationsOn = notificationsEnabled()
         // Terminal transitions since the last emission. The first
         // emission is the baseline — restored FAILED rows (issue #342,
         // "interrupted" after a kill) must not re-notify on restart.
         if (!baselineTaken) {
             baselineTaken = true
-        } else {
+        } else if (notificationsOn) {
             for (item in items) {
                 val prev = previousStatuses[item.id]
                 if (prev != null && prev != item.status) {
@@ -146,6 +162,11 @@ class DownloadService : Service() {
             }
             return
         }
+        // Issue #404: with notifications off, the static foreground
+        // notification stays as-is and nothing else is posted — but
+        // the empty-queue stop above still runs, so the service does
+        // not linger after the queue drains.
+        if (!notificationsOn) return
         if (snapshot == lastSnapshot) return
         lastSnapshot = snapshot
         val notification = DownloadNotificationUtil.buildProgressNotification(
