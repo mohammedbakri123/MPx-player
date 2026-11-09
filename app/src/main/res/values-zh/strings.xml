@@ -151,6 +151,17 @@
     <string name="download_custom_command_directory_summary">下载/%1$s</string>
     <string name="download_custom_command_directory_default">视频文件夹</string>
     <string name="share_no_link">分享的文本中没有找到链接</string>
+    <string name="download_history_details">详情</string>
+    <string name="download_history_copy_link">复制链接</string>
+    <string name="download_history_open_link">打开链接</string>
+    <string name="download_history_redownload">重新下载</string>
+    <string name="download_history_delete">从历史记录中删除</string>
+    <string name="download_history_delete_file_too">同时删除文件</string>
+    <string name="download_history_delete_title">从历史记录中删除？</string>
+    <string name="download_history_delete_body">从历史记录中删除“%1$s”？</string>
+    <string name="download_link_copied">链接已复制</string>
+    <string name="download_open_link_failed">没有应用可以打开此链接</string>
+    <string name="download_history_redownload_started">已开始下载</string>
     <string name="download_custom_command_title">自定义命令</string>
     <string name="download_custom_command_enabled">使用自定义命令</string>
     <string name="download_custom_command_hint">一行 yt-dlp 选项。会替换每次下载的格式、字幕和章节选项。</string>

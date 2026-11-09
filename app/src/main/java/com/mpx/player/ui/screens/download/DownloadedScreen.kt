@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.data.local.entity.DownloadHistoryEntity
 import com.mpx.player.download.DownloadShare
 import com.mpx.player.download.MpxDownloader
 import com.mpx.player.playback.PlayableMedia
@@ -113,6 +114,9 @@ fun DownloadedScreen(
     var filter by rememberSaveable { mutableStateOf(DownloadFilter.ALL) }
     var selectedFiles by remember { mutableStateOf(setOf<String>()) }
     var selectedHistory by remember { mutableStateOf(setOf<Long>()) }
+    // Issue #417: the history entry whose detail sheet is open, or
+    // null when no sheet is showing.
+    var detailEntry by remember { mutableStateOf<DownloadHistoryEntity?>(null) }
     val selectionMode = selectedFiles.isNotEmpty() || selectedHistory.isNotEmpty()
     val selectedCount = selectedFiles.size + selectedHistory.size
 
@@ -445,6 +449,7 @@ fun DownloadedScreen(
                                             selectedHistory + entry.id
                                         }
                                     },
+                                    onMore = { detailEntry = entry },
                                 )
                             }
                         }
@@ -452,5 +457,67 @@ fun DownloadedScreen(
                 }
             }
         }
+    }
+
+    // Issue #417: the history detail sheet — copy/open link,
+    // re-download when the file is gone, delete with the file.
+    // Play loads the file and opens the player; re-download starts
+    // the download and reports it, progress lives on the Download
+    // tab and in the notification as usual.
+    detailEntry?.let { entry ->
+        HistoryDetailSheet(
+            entry = entry,
+            dateText = dateFormat.format(Date(entry.completedAt)),
+            downloader = downloader,
+            onDismiss = { detailEntry = null },
+            onPlay = { file ->
+                val isAudio = file.extension in AUDIO_EXTENSIONS
+                realPlaybackManager.load(
+                    PlayableMedia(
+                        id = file.uri,
+                        title = file.nameWithoutExtension,
+                        uri = file.uri,
+                        isVideo = !isAudio,
+                        externalSubtitles = downloader.findSiblingSubtitles(file),
+                    ),
+                )
+                detailEntry = null
+                onOpenPlayer()
+            },
+            onRedownload = {
+                downloader.startDownload(entry.url)
+                detailEntry = null
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.download_history_redownload_started),
+                    )
+                }
+            },
+            onShare = { file ->
+                if (!DownloadShare.shareFile(context, file)) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.download_share_failed),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            },
+            onOpen = { file ->
+                if (!DownloadShare.openFile(context, file)) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.download_open_failed),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            },
+            onDelete = { file, deleteFile ->
+                if (deleteFile && file != null) {
+                    downloader.deleteFile(file)
+                }
+                downloader.deleteHistoryEntry(entry.id)
+                detailEntry = null
+            },
+        )
     }
 }

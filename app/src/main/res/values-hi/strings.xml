@@ -151,6 +151,17 @@
     <string name="download_custom_command_directory_summary">डाउनलोड/%1$s</string>
     <string name="download_custom_command_directory_default">वीडियो फ़ोल्डर</string>
     <string name="share_no_link">साझा किए गए टेक्स्ट में कोई लिंक नहीं मिला</string>
+    <string name="download_history_details">विवरण</string>
+    <string name="download_history_copy_link">लिंक कॉपी करें</string>
+    <string name="download_history_open_link">लिंक खोलें</string>
+    <string name="download_history_redownload">फिर से डाउनलोड करें</string>
+    <string name="download_history_delete">इतिहास से हटाएँ</string>
+    <string name="download_history_delete_file_too">फ़ाइल भी हटाएँ</string>
+    <string name="download_history_delete_title">इतिहास से हटाएँ?</string>
+    <string name="download_history_delete_body">“%1$s” को इतिहास से हटाएँ?</string>
+    <string name="download_link_copied">लिंक कॉपी हो गया</string>
+    <string name="download_open_link_failed">कोई ऐप यह लिंक नहीं खोल सकता</string>
+    <string name="download_history_redownload_started">डाउनलोड शुरू हुआ</string>
     <string name="download_custom_command_title">कस्टम कमांड</string>
     <string name="download_custom_command_enabled">कस्टम कमांड उपयोग करें</string>
     <string name="download_custom_command_hint">yt-dlp विकल्पों की एक पंक्ति। हर डाउनलोड के लिए प्रारूप, उपशीर्षक और अध्याय विकल्पों को बदल देती है।</string>
