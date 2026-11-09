@@ -209,6 +209,15 @@ data class AppSettings(
      * download, since the logs get very noisy.
      */
     val downloadVerboseLogging: Boolean = false,
+    /**
+     * Issue #404: download notifications — Seal's notifications
+     * toggle. Default ON (behavior unchanged). When off, the service
+     * shows only its static foreground notification (Android requires
+     * one for the service to run) and posts no progress updates and
+     * no completion/failure notifications; the in-app Download screen
+     * keeps showing everything.
+     */
+    val downloadNotifications: Boolean = true,
     // Issue #379: download folder — the subfolder of the public Downloads
     // folder downloads land in (MediaStore RELATIVE_PATH "Download/<name>").
     // "MPx" is the old fixed folder, so existing installs keep their files.

@@ -1152,6 +1152,10 @@ fun SettingsScreen(
                                 // diagnostics knob, off by default; the
                                 // logs get very noisy when it is on.
                                 ToggleRow(stringResource(R.string.download_verbose_logging_title), settings.downloadVerboseLogging) { update(settings.copy(downloadVerboseLogging = it)) }
+                                // Issue #404: download notifications —
+                                // on by default; off leaves only the
+                                // static foreground notification.
+                                ToggleRow(stringResource(R.string.download_notifications_title), settings.downloadNotifications) { update(settings.copy(downloadNotifications = it)) }
 
                                 Spacer(Modifier.height(16.dp))
                                 PreferenceRow(

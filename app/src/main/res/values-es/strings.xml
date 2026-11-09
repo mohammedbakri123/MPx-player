@@ -91,6 +91,7 @@
     <string name="download_crop_artwork_title">Recortar la portada a un cuadrado</string>
     <string name="download_embed_thumbnail">Insertar portada</string>
     <string name="download_write_thumbnail">Guardar miniatura</string>
+    <string name="download_notifications_title">Notificaciones de descarga</string>
     <string name="download_verbose_logging_title">Registro de depuración detallado</string>
     <string name="download_allow_metered">Permitir descargas con datos móviles</string>
     <string name="download_metered_title">¿Descargar con datos móviles?</string>

@@ -165,6 +165,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             downloadAudioPresetQuality = prefs.getString("download_audio_preset_quality", "best") ?: "best",
             downloadAllowMetered = prefs.getBoolean("download_allow_metered", false),
             downloadVerboseLogging = prefs.getBoolean("download_verbose_logging", false),
+            downloadNotifications = prefs.getBoolean("download_notifications", true),
             downloadDirectory = prefs.getString("download_directory", "MPx") ?: "MPx",
             downloadGroupPlaylists = prefs.getBoolean("download_group_playlists", false),
             downloadGroupBySite = prefs.getBoolean("download_group_by_site", false),
@@ -316,6 +317,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("download_audio_preset_quality", settings.downloadAudioPresetQuality)
             .putBoolean("download_allow_metered", settings.downloadAllowMetered)
             .putBoolean("download_verbose_logging", settings.downloadVerboseLogging)
+            .putBoolean("download_notifications", settings.downloadNotifications)
             .putString("download_directory", settings.downloadDirectory)
             .putBoolean("download_group_playlists", settings.downloadGroupPlaylists)
             .putBoolean("download_group_by_site", settings.downloadGroupBySite)

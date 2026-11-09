@@ -91,6 +91,7 @@
     <string name="download_crop_artwork_title">Обрезать обложку до квадрата</string>
     <string name="download_embed_thumbnail">Встроить обложку</string>
     <string name="download_write_thumbnail">Сохранять миниатюру</string>
+    <string name="download_notifications_title">Уведомления о загрузках</string>
     <string name="download_verbose_logging_title">Подробное ведение журнала</string>
     <string name="download_allow_metered">Разрешить загрузку через мобильный интернет</string>
     <string name="download_metered_title">Скачать через мобильный интернет?</string>

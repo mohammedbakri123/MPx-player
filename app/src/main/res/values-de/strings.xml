@@ -91,6 +91,7 @@
     <string name="download_crop_artwork_title">Cover quadratisch zuschneiden</string>
     <string name="download_embed_thumbnail">Cover einbetten</string>
     <string name="download_write_thumbnail">Vorschaubild speichern</string>
+    <string name="download_notifications_title">Download-Benachrichtigungen</string>
     <string name="download_verbose_logging_title">Ausführliche Debug-Protokolle</string>
     <string name="download_allow_metered">Downloads über mobile Daten erlauben</string>
     <string name="download_metered_title">Über mobile Daten herunterladen?</string>
