@@ -89,6 +89,13 @@ import kotlinx.coroutines.launch
 fun DownloadScreen(
     onOpenDownloaded: () -> Unit,
     modifier: Modifier = Modifier,
+    // Issue #416: a link shared to the app — pre-fills the URL field.
+    // Consumed here, not in MpxApp: the field is filled first, then
+    // the callback clears the activity's copy, so the URL can never
+    // be cleared before this screen sees it. The link is NOT
+    // recorded as a recent URL until the user actually downloads it.
+    sharedUrl: String? = null,
+    onSharedUrlConsumed: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -129,6 +136,16 @@ fun DownloadScreen(
     }
     var urlText by rememberSaveable {
         mutableStateOf(downloader.loadRecentUrls().firstOrNull().orEmpty())
+    }
+    // Issue #416: a shared link lands in the field when it arrives
+    // (cold start or a share while the app is alive). The effect
+    // keys on the URL itself, so a second share fills the field
+    // again even while this screen is already showing.
+    LaunchedEffect(sharedUrl) {
+        if (!sharedUrl.isNullOrBlank()) {
+            urlText = sharedUrl
+            onSharedUrlConsumed?.invoke()
+        }
     }
     var recentUrls by remember { mutableStateOf(downloader.loadRecentUrls()) }
     LaunchedEffect(activeDownloads.map { it.id to it.status }) {

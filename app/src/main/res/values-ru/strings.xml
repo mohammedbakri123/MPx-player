@@ -150,6 +150,7 @@
     <string name="download_custom_command_directory_hint">Имя папки в Загрузках, например MyClips</string>
     <string name="download_custom_command_directory_summary">Загрузки/%1$s</string>
     <string name="download_custom_command_directory_default">Папка видео</string>
+    <string name="share_no_link">В переданном тексте нет ссылки</string>
     <string name="download_custom_command_title">Пользовательская команда</string>
     <string name="download_custom_command_enabled">Использовать пользовательскую команду</string>
     <string name="download_custom_command_hint">Одна строка опций yt-dlp. Заменяет опции формата, субтитров и глав для каждой загрузки.</string>

@@ -150,6 +150,7 @@
     <string name="download_custom_command_directory_hint">Ordnername in Downloads, z. B. MyClips</string>
     <string name="download_custom_command_directory_summary">Downloads/%1$s</string>
     <string name="download_custom_command_directory_default">Videoordner</string>
+    <string name="share_no_link">Kein Link im geteilten Text gefunden</string>
     <string name="download_custom_command_title">Benutzerdefinierter Befehl</string>
     <string name="download_custom_command_enabled">Benutzerdefinierten Befehl verwenden</string>
     <string name="download_custom_command_hint">Eine Zeile yt-dlp-Optionen. Ersetzt die Format-, Untertitel- und Kapiteloptionen für jeden Download.</string>

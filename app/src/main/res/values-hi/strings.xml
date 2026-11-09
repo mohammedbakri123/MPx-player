@@ -150,6 +150,7 @@
     <string name="download_custom_command_directory_hint">डाउनलोड में फ़ोल्डर का नाम, जैसे MyClips</string>
     <string name="download_custom_command_directory_summary">डाउनलोड/%1$s</string>
     <string name="download_custom_command_directory_default">वीडियो फ़ोल्डर</string>
+    <string name="share_no_link">साझा किए गए टेक्स्ट में कोई लिंक नहीं मिला</string>
     <string name="download_custom_command_title">कस्टम कमांड</string>
     <string name="download_custom_command_enabled">कस्टम कमांड उपयोग करें</string>
     <string name="download_custom_command_hint">yt-dlp विकल्पों की एक पंक्ति। हर डाउनलोड के लिए प्रारूप, उपशीर्षक और अध्याय विकल्पों को बदल देती है।</string>
