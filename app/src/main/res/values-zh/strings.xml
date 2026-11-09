@@ -91,6 +91,7 @@
     <string name="download_crop_artwork_title">将封面裁剪为正方形</string>
     <string name="download_embed_thumbnail">嵌入封面</string>
     <string name="download_write_thumbnail">保存缩略图</string>
+    <string name="download_verbose_logging_title">详细调试日志</string>
     <string name="download_allow_metered">允许使用移动数据下载</string>
     <string name="download_metered_title">使用移动数据下载？</string>
     <string name="download_metered_message">你正在使用移动数据。下载视频可能会消耗大量流量。</string>

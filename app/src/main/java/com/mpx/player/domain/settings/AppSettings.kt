@@ -203,6 +203,12 @@ data class AppSettings(
      * MeteredDownloadDialog) instead of silently burning mobile data.
      */
     val downloadAllowMetered: Boolean = false,
+    /**
+     * Issue #402: verbose debug logging — passes `-v` to yt-dlp on
+     * every request. Off by default; only for debugging a failing
+     * download, since the logs get very noisy.
+     */
+    val downloadVerboseLogging: Boolean = false,
     // Issue #379: download folder — the subfolder of the public Downloads
     // folder downloads land in (MediaStore RELATIVE_PATH "Download/<name>").
     // "MPx" is the old fixed folder, so existing installs keep their files.
