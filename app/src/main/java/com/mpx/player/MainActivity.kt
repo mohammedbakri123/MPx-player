@@ -211,6 +211,14 @@ class MainActivity : ComponentActivity() {
     val backupImportLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri -> backupImportHandler.invoke(uri) }
+    // Issue #432: the mpv config folder picker — same pattern as the
+    // SD-card picker above (launcher on the Activity, the Advanced
+    // screen only supplies the callback). NEVER
+    // rememberLauncherForActivityResult inside a NavHost destination.
+    val mpvConfigFolderHandler = ActivityResultHandler<android.net.Uri?>()
+    val mpvConfigFolderLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri -> mpvConfigFolderHandler.invoke(uri) }
 
     override fun attachBaseContext(newBase: Context) {
         val lang = LocaleHelper.getPersistedLanguage(newBase)
@@ -318,6 +326,8 @@ class MainActivity : ComponentActivity() {
                         backupExportHandler = backupExportHandler,
                         backupImportLauncher = backupImportLauncher,
                         backupImportHandler = backupImportHandler,
+                        mpvConfigFolderLauncher = mpvConfigFolderLauncher,
+                        mpvConfigFolderHandler = mpvConfigFolderHandler,
                         isInPipMode = isInPipMode,
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
@@ -565,6 +575,9 @@ fun MpxApp(
     backupExportHandler: ActivityResultHandler<android.net.Uri?>,
     backupImportLauncher: ActivityResultLauncher<Array<String>>,
     backupImportHandler: ActivityResultHandler<android.net.Uri?>,
+    // Issue #432: the mpv config folder picker, threaded to Advanced.
+    mpvConfigFolderLauncher: ActivityResultLauncher<android.net.Uri?>,
+    mpvConfigFolderHandler: ActivityResultHandler<android.net.Uri?>,
     isInPipMode: Boolean = false,
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
@@ -916,6 +929,8 @@ fun MpxApp(
                 AdvancedSettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     settingsRepository = realSettingsRepo,
+                    mpvConfigFolderLauncher = mpvConfigFolderLauncher,
+                    mpvConfigFolderHandler = mpvConfigFolderHandler,
                 )
             }
             composable(Screen.AboutBeta.route) {

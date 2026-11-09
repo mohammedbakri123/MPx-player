@@ -558,6 +558,14 @@ class MpvPlayerEngine(
         // Configure bundled subfont.ttf and network certificates
         setupSubtitleFontAndCertificates(appContext, configDir)
 
+        // Issue #432: sync the picked mpv config folder before mpv
+        // reads its config — mpv.conf / input.conf / fonts / scripts
+        // from the user's folder land in configDir. A missing file
+        // leaves the current local one alone, and the sync never
+        // deletes, so subfont.ttf / cacert.pem above are untouched.
+        val savedSettings = loadSavedSubtitleSettings()
+        MpvConfigSync.sync(appContext, configDir, savedSettings.mpvConfStorageUri)
+
         mpv.create(appContext)
 
         // Set configuration options before init()
@@ -602,7 +610,7 @@ class MpvPlayerEngine(
         // Subtitle configuration: use bundled subfont.ttf fallback font.
         // mpv on Android has no fontconfig; libass uses subfont.ttf from config-dir.
         setOption("sub-font-provider", "auto")
-        setOption("sub-font", subtitleMpvOptions(loadSavedSubtitleSettings())["sub-font"] ?: "sans-serif")
+        setOption("sub-font", subtitleMpvOptions(savedSettings)["sub-font"] ?: "sans-serif")
         setOption("sub-visibility", "yes")
         setOption("sub-fix-timing", "yes")
         setOption("sub-auto", "fuzzy")

@@ -105,6 +105,36 @@ object MpvConfigSync {
     }
 
     /**
+     * Prepare a freshly picked folder (#432, mpvEx shape): create the
+     * standard mpv subfolders (fonts, script-opts, scripts, shaders)
+     * and an empty mpv.conf if missing. False when no folder is picked
+     * or the preparation fails.
+     */
+    fun prepareConfigFolder(context: Context, treeUriString: String): Boolean {
+        if (treeUriString.isBlank()) return false
+        return try {
+            val treeUri = Uri.parse(treeUriString)
+            for (name in listOf("fonts", "script-opts", "scripts", "shaders")) {
+                if (findChildUri(context, treeUri, name) == null) {
+                    DocumentsContract.createDocument(
+                        context.contentResolver, treeUri,
+                        DocumentsContract.Document.MIME_TYPE_DIR, name,
+                    )
+                }
+            }
+            if (findChildUri(context, treeUri, MPV_CONF) == null) {
+                DocumentsContract.createDocument(
+                    context.contentResolver, treeUri, "text/plain", MPV_CONF,
+                )
+            }
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "prepareConfigFolder failed", e)
+            false
+        }
+    }
+
+    /**
      * Player-start sync (#432): copy mpv.conf, input.conf, fonts/*,
      * scripts/* and script-opts/* from the picked folder into
      * [configDir]. A missing file leaves the current local one alone;
