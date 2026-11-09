@@ -219,6 +219,16 @@ class MainActivity : ComponentActivity() {
     val mpvConfigFolderLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree(),
     ) { uri -> mpvConfigFolderHandler.invoke(uri) }
+    // Issue #433: the full-settings XML export/import pickers — same
+    // pattern as the #413 backup launchers above.
+    val settingsExportHandler = ActivityResultHandler<android.net.Uri?>()
+    val settingsImportHandler = ActivityResultHandler<android.net.Uri?>()
+    val settingsExportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("text/xml"),
+    ) { uri -> settingsExportHandler.invoke(uri) }
+    val settingsImportLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri -> settingsImportHandler.invoke(uri) }
 
     override fun attachBaseContext(newBase: Context) {
         val lang = LocaleHelper.getPersistedLanguage(newBase)
@@ -328,6 +338,10 @@ class MainActivity : ComponentActivity() {
                         backupImportHandler = backupImportHandler,
                         mpvConfigFolderLauncher = mpvConfigFolderLauncher,
                         mpvConfigFolderHandler = mpvConfigFolderHandler,
+                        settingsExportLauncher = settingsExportLauncher,
+                        settingsExportHandler = settingsExportHandler,
+                        settingsImportLauncher = settingsImportLauncher,
+                        settingsImportHandler = settingsImportHandler,
                         isInPipMode = isInPipMode,
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
@@ -578,6 +592,11 @@ fun MpxApp(
     // Issue #432: the mpv config folder picker, threaded to Advanced.
     mpvConfigFolderLauncher: ActivityResultLauncher<android.net.Uri?>,
     mpvConfigFolderHandler: ActivityResultHandler<android.net.Uri?>,
+    // Issue #433: the full-settings XML export/import pickers, same.
+    settingsExportLauncher: ActivityResultLauncher<String>,
+    settingsExportHandler: ActivityResultHandler<android.net.Uri?>,
+    settingsImportLauncher: ActivityResultLauncher<Array<String>>,
+    settingsImportHandler: ActivityResultHandler<android.net.Uri?>,
     isInPipMode: Boolean = false,
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
@@ -931,6 +950,10 @@ fun MpxApp(
                     settingsRepository = realSettingsRepo,
                     mpvConfigFolderLauncher = mpvConfigFolderLauncher,
                     mpvConfigFolderHandler = mpvConfigFolderHandler,
+                    settingsExportLauncher = settingsExportLauncher,
+                    settingsExportHandler = settingsExportHandler,
+                    settingsImportLauncher = settingsImportLauncher,
+                    settingsImportHandler = settingsImportHandler,
                 )
             }
             composable(Screen.AboutBeta.route) {

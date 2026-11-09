@@ -18,7 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,8 +53,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.download.SettingsBackup
 import com.mpx.player.playback.engine.MpvConfigSync
 import com.mpx.player.ui.ActivityResultHandler
+import com.mpx.player.ui.components.MpxDialog
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxTheme
@@ -82,11 +86,25 @@ fun AdvancedSettingsScreen(
     // callback, same as the SD-card picker in SettingsScreen.
     mpvConfigFolderLauncher: ActivityResultLauncher<Uri?>? = null,
     mpvConfigFolderHandler: ActivityResultHandler<Uri?>? = null,
+    // Issue #433: the full-settings XML export/import pickers — same
+    // pattern (launchers on the Activity, callbacks here).
+    settingsExportLauncher: ActivityResultLauncher<String>? = null,
+    settingsExportHandler: ActivityResultHandler<Uri?>? = null,
+    settingsImportLauncher: ActivityResultLauncher<Array<String>>? = null,
+    settingsImportHandler: ActivityResultHandler<Uri?>? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var settings by remember { mutableStateOf(settingsRepository.load()) }
+
+    // Issue #433: import stages the URI (the confirm dialog asks
+    // first — import replaces all current settings); the result
+    // dialogs report the counts.
+    var showImportConfirm by remember { mutableStateOf(false) }
+    var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+    var exportStats by remember { mutableStateOf<SettingsBackup.ExportStats?>(null) }
+    var importStats by remember { mutableStateOf<SettingsBackup.ImportStats?>(null) }
 
     fun update(next: AppSettings) {
         settings = next
@@ -118,6 +136,34 @@ fun AdvancedSettingsScreen(
                         ).show()
                     }
                 }
+            }
+        }
+    }
+
+    SideEffect {
+        settingsExportHandler?.callback = { uri ->
+            if (uri != null) {
+                scope.launch {
+                    val result = SettingsBackup.exportSettings(context, uri)
+                    withContext(Dispatchers.Main) {
+                        result.fold(
+                            onSuccess = { stats -> exportStats = stats },
+                            onFailure = {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.adv_export_failed),
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            },
+                        )
+                    }
+                }
+            }
+        }
+        settingsImportHandler?.callback = { uri ->
+            if (uri != null) {
+                pendingImportUri = uri
+                showImportConfirm = true
             }
         }
     }
@@ -184,6 +230,27 @@ fun AdvancedSettingsScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 32.dp),
         ) {
+            // Issue #433: full-settings XML export / import — the whole
+            // app's settings in one file, separate from #413's
+            // downloader-only JSON backup.
+            item { PreferenceSectionHeader(text = stringResource(R.string.adv_section_backup_restore)) }
+            item {
+                PreferenceCard {
+                    PreferenceRow(
+                        title = stringResource(R.string.adv_export_settings),
+                        subtitle = stringResource(R.string.adv_export_settings_summary),
+                        icon = Icons.Filled.Upload,
+                        onClick = { settingsExportLauncher?.launch(SettingsBackup.defaultExportFilename()) },
+                    )
+                    PreferenceDivider()
+                    PreferenceRow(
+                        title = stringResource(R.string.adv_import_settings),
+                        subtitle = stringResource(R.string.adv_import_settings_summary),
+                        icon = Icons.Filled.Download,
+                        onClick = { settingsImportLauncher?.launch(arrayOf("text/xml", "application/xml", "*/*")) },
+                    )
+                }
+            }
             item { PreferenceSectionHeader(text = stringResource(R.string.adv_section_mpv_config)) }
             item {
                 PreferenceCard {
@@ -250,6 +317,90 @@ fun AdvancedSettingsScreen(
                     )
                 }
             }
+        }
+    }
+
+    // Issue #433: import asks first (it replaces all current
+    // settings); the result dialogs report the counts, and the import
+    // one says a restart is needed — the running app keeps its
+    // in-memory copy until then.
+    if (showImportConfirm) {
+        MpxDialog(
+            title = stringResource(R.string.adv_import_confirm_title),
+            onDismiss = { showImportConfirm = false },
+            confirmText = stringResource(R.string.adv_import_settings),
+            onConfirm = {
+                val uri = pendingImportUri
+                showImportConfirm = false
+                if (uri != null) {
+                    scope.launch {
+                        val result = SettingsBackup.importSettings(context, uri)
+                        withContext(Dispatchers.Main) {
+                            result.fold(
+                                onSuccess = { importResult ->
+                                    when (importResult) {
+                                        is SettingsBackup.ImportResult.Success -> {
+                                            importStats = importResult.stats
+                                            settings = settingsRepository.load()
+                                        }
+                                        SettingsBackup.ImportResult.InvalidFile -> {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.adv_import_invalid),
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        }
+                                    }
+                                },
+                                onFailure = {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.adv_import_failed),
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                },
+                            )
+                        }
+                    }
+                }
+            },
+            dismissText = stringResource(R.string.action_cancel),
+        ) {
+            Text(
+                text = stringResource(R.string.adv_import_confirm_message),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MpxTheme.colors.textSecondary,
+            )
+        }
+    }
+
+    exportStats?.let { stats ->
+        MpxDialog(
+            title = stringResource(R.string.adv_export_complete_title),
+            onDismiss = { exportStats = null },
+            confirmText = stringResource(R.string.action_ok),
+            onConfirm = { exportStats = null },
+        ) {
+            Text(
+                text = stringResource(R.string.adv_exported_message, stats.totalExported),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MpxTheme.colors.textSecondary,
+            )
+        }
+    }
+
+    importStats?.let { stats ->
+        MpxDialog(
+            title = stringResource(R.string.adv_import_complete_title),
+            onDismiss = { importStats = null },
+            confirmText = stringResource(R.string.action_ok),
+            onConfirm = { importStats = null },
+        ) {
+            Text(
+                text = stringResource(R.string.adv_import_result, stats.imported, stats.failed),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MpxTheme.colors.textSecondary,
+            )
         }
     }
 }
