@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.DashboardCustomize
 import androidx.compose.material.icons.filled.DeveloperMode
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.HighQuality
@@ -163,6 +164,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onOpenOverlaySettings: (() -> Unit)? = null,
+    onOpenCookieProfiles: (() -> Unit)? = null,
     settingsRepository: AppSettingsRepository,
     onOpenAboutBeta: (() -> Unit)? = null,
     currentLanguage: String = "system",
@@ -1176,6 +1178,19 @@ fun SettingsScreen(
                                 // on by default; off leaves only the
                                 // static foreground notification.
                                 ToggleRow(stringResource(R.string.download_notifications_title), settings.downloadNotifications) { update(settings.copy(downloadNotifications = it)) }
+                                // Issue #409: saved cookie profiles — the
+                                // sign-ins kept for restricted videos.
+                                // Opens the profiles page (newest first,
+                                // delete per row); profiles are created
+                                // from the Download tab after a sign-in.
+                                if (onOpenCookieProfiles != null) {
+                                    PreferenceRow(
+                                        title = stringResource(R.string.download_cookie_profiles_title),
+                                        subtitle = stringResource(R.string.download_cookie_profiles_sub),
+                                        icon = Icons.Filled.Key,
+                                        onClick = onOpenCookieProfiles,
+                                    )
+                                }
                                 // Issue #405: yt-dlp update channel +
                                 // check interval — the settings existed
                                 // from #333 but had no UI. The channel

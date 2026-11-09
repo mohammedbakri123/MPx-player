@@ -42,6 +42,14 @@
     <string name="download_ytdlp_update_failed">Falha ao atualizar yt-dlp</string>
     <string name="download_ytdlp_update_busy">Há um download em andamento — tente atualizar após terminar</string>
     <string name="download_ytdlp_version">yt-dlp %1$s</string>
+    <string name="download_cookie_profiles_title">Perfis de cookies</string>
+    <string name="download_cookie_profiles_sub">Logins salvos para vídeos restritos</string>
+    <string name="download_cookie_profiles_none">Ainda não há cookies salvos — faça login na aba de downloads e salve-os</string>
+    <string name="download_save_cookies_title">Salvar estes cookies?</string>
+    <string name="download_cookie_profile_name">Nome do perfil</string>
+    <string name="download_cookie_profile_saved">Cookies salvos</string>
+    <string name="download_use_saved_cookies">Usar cookies salvos</string>
+    <string name="download_cookie_profile_delete">Excluir perfil</string>
     <string name="download_sign_in">Entre para baixar</string>
     <string name="download_no_cookies">Nenhum cookie encontrado — entre na sua conta na janela primeiro e toque em «Concluído»</string>
     <string name="download_cookies_failed">Falha ao importar os cookies</string>

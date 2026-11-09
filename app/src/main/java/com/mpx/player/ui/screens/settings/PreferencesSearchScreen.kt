@@ -88,6 +88,7 @@ fun buildSettingsSearchIndex(): List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(R.string.download_custom_command_title, null, "custom,command,template,ytdlp,options", "downloader"),
     SettingsSearchEntry(R.string.download_verbose_logging_title, null, "verbose,debug,logging,log", "downloader"),
     SettingsSearchEntry(R.string.download_notifications_title, null, "notifications,notify,progress,complete,silent", "downloader"),
+    SettingsSearchEntry(R.string.download_cookie_profiles_title, null, "cookies,cookie,profile,profiles,login,signin,restricted,age", "downloader"),
     SettingsSearchEntry(R.string.download_update_channel_title, null, "ytdlp,update,channel,stable,nightly", "downloader"),
     SettingsSearchEntry(R.string.download_update_interval_title, null, "ytdlp,update,check,interval,never,daily,weekly,auto", "downloader"),
     SettingsSearchEntry(R.string.pref_advanced_title, R.string.settings_category_development_sub, "advanced,development,diagnostics,database,reset,logs", "advanced"),

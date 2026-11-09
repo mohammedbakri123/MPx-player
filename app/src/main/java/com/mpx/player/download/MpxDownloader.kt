@@ -15,6 +15,7 @@ import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
+import com.mpx.player.data.local.entity.CookieProfileEntity
 import com.mpx.player.data.local.entity.DownloadHistoryEntity
 import com.mpx.player.data.local.entity.DownloadTaskEntity
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
@@ -39,6 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -464,6 +466,17 @@ class MpxDownloader private constructor(context: Context) {
     // Issue #346: the download history, same database. One row per
     // finished download; the History section observes the flow below.
     private val downloadHistoryDao = MpxDatabase.getInstance(appContext).downloadHistoryDao()
+    // Issue #409: saved cookie profiles, same database. The downloader
+    // owns the DAO — it writes the profile at save time and stages
+    // the cookies file each time a profile is used.
+    private val cookieProfileDao = MpxDatabase.getInstance(appContext).cookieProfileDao()
+    // Issue #409: the last successful sign-in import — the staging
+    // file + the URL it belongs to. Kept so the user can save those
+    // cookies as a profile after the download starts; the profile
+    // content is copied into Room at save time, so the staging
+    // file's later deletion at download finish is harmless.
+    private var lastImportedCookiesFile: File? = null
+    private var lastImportedCookiesUrl: String? = null
 
     /**
      * Issue #346: yt-dlp's `--download-archive` file (Seal's
@@ -998,6 +1011,10 @@ class MpxDownloader private constructor(context: Context) {
                 stagingFile.delete()
                 CookieImportOutcome.NO_COOKIES
             } else {
+                // Issue #409: remember this import so the user can
+                // save it as a profile (see saveCookieProfile).
+                lastImportedCookiesFile = stagingFile
+                lastImportedCookiesUrl = url
                 startDownload(url, cookiesFile = stagingFile, audioOnly = audioOnly, subtitles = subtitles)
                 CookieImportOutcome.IMPORTED
             }
@@ -1005,6 +1022,67 @@ class MpxDownloader private constructor(context: Context) {
             stagingFile.delete()
             CookieImportOutcome.FAILED
         }
+    }
+
+    /**
+     * Issue #409: saved cookie profiles — Seal's `CookieProfile`
+     * (id, url, content). All profiles, newest first, observed by
+     * the Download tab's picker and the profiles page.
+     */
+    fun getCookieProfiles(): Flow<List<CookieProfileEntity>> = cookieProfileDao.getAll()
+
+    /**
+     * Issue #409: saves the last successful sign-in import as a
+     * named profile. Returns false when there is nothing to save
+     * (no import yet, or the staging file is already gone). The
+     * name falls back to the site's host when blank. Re-saving the
+     * same site replaces the old profile — cookies go stale, and
+     * the newest login is the one that works.
+     */
+    suspend fun saveCookieProfile(rawName: String): Boolean {
+        val file = lastImportedCookiesFile?.takeIf { it.isFile } ?: return false
+        val url = lastImportedCookiesUrl ?: return false
+        val content = runCatching { file.readText() }.getOrNull()?.takeIf { it.isNotBlank() } ?: return false
+        val host = runCatching { URL(url).host }.getOrNull()?.takeIf { it.isNotBlank() } ?: url
+        val name = rawName.trim().ifBlank { host }
+        cookieProfileDao.deleteByUrl(url)
+        cookieProfileDao.insert(
+            CookieProfileEntity(
+                id = UUID.randomUUID().toString(),
+                name = name,
+                url = url,
+                content = content,
+            ),
+        )
+        return true
+    }
+
+    /** Issue #409: deletes a saved profile. The cookies text goes with it. */
+    suspend fun deleteCookieProfile(id: String) {
+        cookieProfileDao.deleteById(id)
+    }
+
+    /**
+     * Issue #409: starts a download with a saved profile's cookies.
+     * Writes the profile's Netscape text to a fresh staging file
+     * and starts the download with it — the same path the sign-in
+     * import takes, so the finish flow deletes the staging file
+     * while the profile itself stays in Room for next time. A
+     * mismatched profile is harmless: yt-dlp ignores cookies for
+     * other hosts, so the download proceeds as if there were none.
+     */
+    suspend fun startDownloadWithCookieProfile(
+        rawUrl: String,
+        profileId: String,
+        audioOnly: Boolean = false,
+        subtitles: Boolean = false,
+    ) {
+        val url = rawUrl.trim()
+        if (url.isBlank()) return
+        val profile = cookieProfileDao.getById(profileId) ?: return
+        val stagingFile = File(tempDir, "cookies-profile-${profile.id}.txt")
+        runCatching { stagingFile.writeText(profile.content) }.onFailure { return }
+        startDownload(url, cookiesFile = stagingFile, audioOnly = audioOnly, subtitles = subtitles)
     }
 
     /**
