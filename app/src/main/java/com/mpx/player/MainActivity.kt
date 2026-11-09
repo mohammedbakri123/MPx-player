@@ -196,6 +196,20 @@ class MainActivity : ComponentActivity() {
     val sdCardFolderLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree(),
     ) { uri -> sdCardFolderHandler.invoke(uri) }
+    // Issue #428: the backup export/import pickers — the #413
+    // launchers used rememberLauncherForActivityResult directly in
+    // SettingsScreen and crashed on first composition ("No
+    // ActivityResultRegistryOwner was provided"). Same pattern as
+    // the SD-card picker above: the launchers live on the Activity,
+    // the destination only supplies the callback.
+    val backupExportHandler = ActivityResultHandler<android.net.Uri?>()
+    val backupImportHandler = ActivityResultHandler<android.net.Uri?>()
+    val backupExportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri -> backupExportHandler.invoke(uri) }
+    val backupImportLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri -> backupImportHandler.invoke(uri) }
 
     override fun attachBaseContext(newBase: Context) {
         val lang = LocaleHelper.getPersistedLanguage(newBase)
@@ -299,6 +313,10 @@ class MainActivity : ComponentActivity() {
                         subtitleHandler = subtitleHandler,
                         sdCardFolderLauncher = sdCardFolderLauncher,
                         sdCardFolderHandler = sdCardFolderHandler,
+                        backupExportLauncher = backupExportLauncher,
+                        backupExportHandler = backupExportHandler,
+                        backupImportLauncher = backupImportLauncher,
+                        backupImportHandler = backupImportHandler,
                         isInPipMode = isInPipMode,
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
@@ -541,6 +559,11 @@ fun MpxApp(
     // Issue #393: the SD-card folder picker, threaded to Settings.
     sdCardFolderLauncher: ActivityResultLauncher<android.net.Uri?>,
     sdCardFolderHandler: ActivityResultHandler<android.net.Uri?>,
+    // Issue #428: the backup export/import pickers, same pattern.
+    backupExportLauncher: ActivityResultLauncher<String>,
+    backupExportHandler: ActivityResultHandler<android.net.Uri?>,
+    backupImportLauncher: ActivityResultLauncher<Array<String>>,
+    backupImportHandler: ActivityResultHandler<android.net.Uri?>,
     isInPipMode: Boolean = false,
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
@@ -868,6 +891,10 @@ fun MpxApp(
                     settingsRepository = realSettingsRepo,
                     sdCardFolderLauncher = sdCardFolderLauncher,
                     sdCardFolderHandler = sdCardFolderHandler,
+                    backupExportLauncher = backupExportLauncher,
+                    backupExportHandler = backupExportHandler,
+                    backupImportLauncher = backupImportLauncher,
+                    backupImportHandler = backupImportHandler,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                     onThemeChanged = onThemeChanged,
