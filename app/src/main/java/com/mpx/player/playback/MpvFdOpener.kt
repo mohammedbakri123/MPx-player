@@ -122,6 +122,18 @@ class MpvFdOpener(context: Context) {
     }
 
     private fun resolveUri(uri: String): String {
+        // Issue #439: a `file://` URI built by Uri.fromFile(...).toString()
+        // percent-encodes the path (spaces become %20), so the file the
+        // engine would check for — and hand to mpv — is literally named
+        // with "%20" and does not exist. Hand the engine the decoded
+        // filesystem path instead: File.exists() sees the real name, and
+        // mpv opens a plain path with no URL decoding involved. This is
+        // the auto-detect / in-app subtitle browser path (v0.4.51); the
+        // system picker returns content:// and never comes here. A
+        // malformed URI keeps its original form and fails honestly.
+        if (uri.startsWith("file://")) {
+            return Uri.parse(uri).path ?: uri
+        }
         // A content:// URI opens straight to an fd (issue #150). A raw
         // filesystem path is a row stored before local playback moved to
         // content:// URIs (history / favourites / playlists / persisted
