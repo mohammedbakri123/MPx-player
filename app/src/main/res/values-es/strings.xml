@@ -8,6 +8,7 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Inicio</string>
     <string name="nav_music">Música</string>
+    <string name="nav_network">Red</string>
     <string name="nav_me">Yo</string>
 
     <!-- Downloads (issue #324) -->
@@ -1133,4 +1134,5 @@
     <string name="pref_gesture_note">Toca dos veces a la izquierda o derecha para saltar, arrastra horizontalmente para buscar, a la izquierda para brillo y a la derecha para volumen.</string>
     <string name="pref_folders_select_all">Seleccionar todo</string>
     <string name="pref_folders_deselect_all">Deseleccionar todo</string>
+    <string name="share_no_link">No se encontró ningún enlace en el texto compartido</string>
 </resources>

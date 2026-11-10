@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -76,8 +77,10 @@ import com.mpx.player.ui.screens.local.LocalScreen
 import com.mpx.player.ui.screens.me.HistoryScreen
 import com.mpx.player.ui.screens.me.MeScreen
 import com.mpx.player.ui.screens.me.PlaylistsScreen
+import com.mpx.player.network.SharedLink
 import com.mpx.player.ui.screens.music.MusicScreen
 import com.mpx.player.ui.screens.player.PlayerScreen
+import com.mpx.player.ui.screens.network.NetworkScreen
 import com.mpx.player.ui.screens.settings.SettingsScreen
 import com.mpx.player.ui.screens.settings.OverlaySettingsScreen
 import com.mpx.player.ui.screens.settings.AdvancedSettingsScreen
@@ -142,6 +145,11 @@ class MainActivity : ComponentActivity() {
     private var currentPalette by mutableStateOf("Blue")
     private var currentThemeColor by mutableStateOf("TrueBlack")
     private var openPlayerOnStart by mutableStateOf(false)
+    // Issue #416: a link shared to the app — the URL pre-fills the
+    // Network tab's field. Same pattern as the player-open flag
+    // above: set from the intent (onCreate and onNewIntent), read
+    // by MpxApp, cleared once the Network screen consumes it.
+    private var sharedNetworkUrlOnStart by mutableStateOf<String?>(null)
     // Issue #248: bumps on every handled configuration change (see
     // onConfigurationChanged below). The setContent remembers for the
     // localized context/config are keyed on it, so a dark-mode toggle,
@@ -307,6 +315,8 @@ class MainActivity : ComponentActivity() {
                         currentThemeColor = currentThemeColor,
                         openPlayerRequested = openPlayerOnStart,
                         onResetOpenPlayer = { openPlayerOnStart = false },
+                        sharedNetworkUrl = sharedNetworkUrlOnStart,
+                        onSharedNetworkUrlConsumed = { sharedNetworkUrlOnStart = null },
                         onLanguageChanged = { newLang ->
                             currentLanguage = newLang
                             val s = settingsRepository.load()
@@ -349,6 +359,18 @@ class MainActivity : ComponentActivity() {
             intent?.action == PlaybackService.ACTION_OPEN_PLAYER
         ) {
             openPlayerOnStart = true
+        }
+        // Issue #416: a link shared to the app (ACTION_SEND text or
+        // ACTION_VIEW http/https). No link in the shared text -> the
+        // app just opens normally, with a toast saying so (Seal's
+        // share-fail toast). The Network tab takes the URL (#435).
+        if (intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_VIEW) {
+            val sharedUrl = SharedLink.urlFromIntent(intent)
+            if (sharedUrl != null) {
+                sharedNetworkUrlOnStart = sharedUrl
+            } else {
+                Toast.makeText(this, getString(R.string.share_no_link), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -531,6 +553,13 @@ fun MpxApp(
     currentThemeColor: String = "TrueBlack",
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
+    // Issue #416: a link shared to the app — the Network tab opens
+    // with the URL pre-filled. The consume callback runs in the
+    // Network screen, not here: clearing the URL in the navigation
+    // effect below could clear it before the screen composes and
+    // sees it.
+    sharedNetworkUrl: String? = null,
+    onSharedNetworkUrlConsumed: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
@@ -577,6 +606,15 @@ fun MpxApp(
                 launchSingleTop = true
             }
             onResetOpenPlayer?.invoke()
+        }
+    }
+
+    // Issue #416: a link shared to the app — same pattern again,
+    // the Network dock tab, with the URL riding along to the
+    // screen below. The URL itself is consumed there, not here.
+    LaunchedEffect(sharedNetworkUrl) {
+        if (sharedNetworkUrl != null) {
+            navigateToTab(Screen.Network.route)
         }
     }
 
@@ -744,6 +782,15 @@ fun MpxApp(
                     settingsRepository = realSettingsRepo,
                 )
             }
+            composable(Screen.Network.route) {
+                NetworkScreen(
+                    playbackManager = playbackManager,
+                    settingsRepository = realSettingsRepo,
+                    sharedUrl = sharedNetworkUrl,
+                    onSharedUrlConsumed = onSharedNetworkUrlConsumed,
+                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                )
+            }
             composable(Screen.Me.route) {
                 MeScreen(
                     // Issue #251: route tab shortcuts through
@@ -757,6 +804,7 @@ fun MpxApp(
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
                     onOpenHistory = { navController.navigate(Screen.History.route) },
                     onOpenPlaylists = { navController.navigate(Screen.Playlists.route) },
+                    onOpenNetwork = { navigateToTab(Screen.Network.route) },
                     playbackManager = playbackManager,
                     settingsRepository = realSettingsRepo,
                     currentLanguage = currentLanguage,
