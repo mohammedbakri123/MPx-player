@@ -1,0 +1,41 @@
+# CI — debug build + unit tests on every pull request.
+#
+# Runs on GitHub-hosted runners, which have normal internet access, so the
+# mpv AAR and Gradle plugins resolve directly (unlike the maintainer's
+# local setup — see CONTRIBUTING.md for the offline / local-Maven notes).
+# The minified build is NOT run here: it is slow, and it is the release
+# step, verified from the downloaded file before any release is cut.
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # NOTE: do not list the obsolete `tools` package here — the
+          # action's default package list includes it and sdkmanager
+          # fails the run with "Failed to find package 'tools'".
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+
+      - name: Build debug + run unit tests
+        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest
