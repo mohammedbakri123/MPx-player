@@ -99,12 +99,13 @@ Data (Room, MediaStore, SharedPreferences)  ←  Domain (models + interfaces)
 Objects are built where they are needed, and singletons are reached through
 hidden `getInstance` calls. A reader cannot see a screen's dependencies
 from its signature, and a screen cannot be tested with fake repositories.
-`getInstance` call sites today include `MainActivity` (7 calls),
-`PlaybackService`, `PlayerScreen`, `LocalScreen`, `MusicScreen`,
+`getInstance` call sites today include `PlaybackService`, `PlayerScreen`, `LocalScreen`, `MusicScreen`,
 `NetworkScreen`, `MeScreen`, `HistoryScreen`, `PlaylistsScreen`,
 `SettingsScreen`, and `OverlaySettingsScreen`; `MpxDatabase.getInstance`
 is called from `PlaybackManager` and from screens that build a
-`RoomMediaPersistenceRepository` by hand.
+`RoomMediaPersistenceRepository` by hand. `MainActivity` no longer
+calls `getInstance` — since Phase 1 it receives its `PlaybackManager`
+and settings repository from Koin (`di/AppModule`, `di/PlaybackModule`).
 
 **Two files are very large.** `PlaybackManager` is 1,443 lines and
 `MpvPlayerEngine` is 2,674 lines; `PlayerScreen` (2,684), `LocalScreen`
@@ -172,7 +173,13 @@ A finished screen follows one pattern, every time:
 ## Migration status
 
 - Phase 0 (this document + CONTRIBUTING.md build notes): done.
-- Phase 1 (Koin foundation): not started.
+- Phase 1 (Koin foundation): done. `di/AppModule` (database, MediaStore
+  + Room repositories, settings repository), `di/PlaybackModule`
+  (`PlaybackManager` as a `single`), and `MainActivity` on Koin.
+  Remaining `getInstance` sites: the screens listed above (Phase 2)
+  and `PlaybackService` (Phase 3). The mpv engine has no Koin
+  registration — `PlaybackManager` still builds it internally; that
+  moves in Phase 3.
 - Phase 2 (one ViewModel per screen, player first): not started.
 - Phase 3 (break up `PlaybackManager`): not started.
 - Phase 4 (split `MpvPlayerEngine` by concern): not started.
