@@ -103,6 +103,15 @@ fun subtitleMpvOptions(settings: AppSettings): Map<String, String> {
         "150" -> "1.5"
         else -> "1.0"
     }
+    // Issue #440: pin subtitle size AND position to the video, not the
+    // window. Without this, mpv sizes the font against the window
+    // height: in landscape the window and the video are the same height
+    // so it looks right, but in portrait the window is ~4x taller than
+    // the letterboxed video strip and the text balloons to fill half
+    // the screen, sitting at the bottom of the screen over the player
+    // controls instead of just under the picture. MX Player sizes
+    // subtitles to the video the same way.
+    options["sub-scale-with-window"] = "no"
     when (settings.subtitleAssOverride.lowercase()) {
         "scale" -> options["sub-ass-override"] = "scale"
         "force" -> options["sub-ass-override"] = "force"
