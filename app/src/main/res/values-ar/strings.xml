@@ -270,20 +270,6 @@
     <string name="tool_local_network_title">الشبكة المحلية</string>
     <string name="tool_local_network_desc">تصفح مشاركات SMB</string>
     <string name="local_network_dialog_body">تصفح المجلدات المشتركة على شبكتك المحلية (SMB) وشغّل الوسائط منها. تصفح SMB غير مبني بعد، لذا لا يتم فحص أي مشاركات ولا تُعرض أي قائمة مشاركات هنا.</string>
-    <string name="smb_dialog_desc">أدخل عنوان خادم الشبكة المحلية لتصفح المجلدات المشتركة (SMB) وتشغيل الوسائط منها. لن يتم عرض أي مشاركات وهمية.</string>
-    <string name="smb_host_label">الخادم</string>
-    <string name="smb_share_label">اسم المشاركة (اختياري)</string>
-    <string name="smb_share_hint">اتركه فارغًا لعرض المشاركات</string>
-    <string name="smb_username_label">اسم المستخدم (اختياري)</string>
-    <string name="smb_password_label">كلمة المرور (اختياري)</string>
-    <string name="smb_domain_label">النطاق (اختياري)</string>
-    <string name="smb_credentials_note">يُحفظ المضيف فقط؛ كلمة المرور تبقى لهذه الجلسة ولا تُحفظ أبدًا.</string>
-    <string name="smb_connect">اتصال</string>
-    <string name="smb_connecting">جارٍ الاتصال…</string>
-    <string name="smb_shares_title">المشاركات على %1$s</string>
-    <string name="smb_empty_folder">هذا المجلد فارغ.</string>
-    <string name="smb_error_unknown">حدث خطأ غير معروف.</string>
-    <string name="smb_open_failed">تعذّر فتح الملف.</string>
     <string name="tool_cloud_title">التخزين السحابي</string>
     <string name="tool_cloud_desc">سحابة عبر الإضافات</string>
     <string name="cloud_dialog_body">يعمل التخزين السحابي عبر الإضافات: تتم إضافة المزوّد بتثبيت إضافته. لا توجد إضافة مثبتة الآن، لذا لا يظهر أي حساب أو ملفات هنا.</string>
@@ -340,6 +326,7 @@
 
     <string name="dialog_network_title">بث شبكي</string>
     <string name="dialog_network_desc">أدخل أي رابط بث HTTP أو HTTPS أو HLS للتشغيل مباشرة:</string>
+    <string name="network_stream_page_link">هذه صفحة ويب وليست ملف فيديو. الصق رابط فيديو مباشراً بدلاً من ذلك.</string>
     <string name="dialog_network_samples">روابط بث عامة تجريبية:</string>
     <string name="dialog_network_play">تشغيل البث</string>
     <string name="dialog_network_invalid_url">أدخل رابط بث صحيح يبدأ بـ http:// أو https:// أو rtsp://</string>

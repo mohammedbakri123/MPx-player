@@ -6,7 +6,6 @@ import android.os.SystemClock
 import android.view.Surface
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
-import com.mpx.player.data.network.smb.SmbPlaybackSession
 import com.mpx.player.data.repository.RoomMediaPersistenceRepository
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioTrack
@@ -583,17 +582,6 @@ class PlaybackManager private constructor(context: Context) {
             unshuffledQueue = null
         }
         currentQueue = items
-        // Issue #229: the SMB session (loopback proxy + SMB connection)
-        // lives only while an SMB item is in the queue. A fresh queue with
-        // no SMB item — playing a local file, a restored local queue —
-        // ends it. (The SMB play itself keeps it: the dialog hands the
-        // session over before calling playQueue, and this queue contains
-        // the SMB item.) Pause never closes it — resume/seek and
-        // replay-after-EOF still need the proxy.
-        if (items.none { SmbPlaybackSession.isSmbId(it.id) }) {
-            SmbPlaybackSession.close()
-        }
-
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
         val targetItem = items[targetIndex]
         // Issue #149: persist the new session immediately, before the engine
@@ -1218,10 +1206,6 @@ class PlaybackManager private constructor(context: Context) {
         // deferred startPlayback is superseded like any other stale load.
         playQueueGeneration++
         queueStore.clear()
-        // Issue #229: a deliberate stop ends the session (the persisted
-        // queue is cleared just above, so it cannot be resurrected) — the
-        // SMB proxy + connection must not outlive it.
-        SmbPlaybackSession.close()
         // Issue #149: a deliberate stop ends the session, so the persisted
         // queue must not resurrect it later. This is also what makes the
         // stop-on-leave effect (PlayerScreen) safe: leaving via back clears
@@ -1252,8 +1236,6 @@ class PlaybackManager private constructor(context: Context) {
         engine.release()
         stopTicker()
         PlaybackService.stop(appContext)
-        // Issue #229: releasing the player ends any SMB session too.
-        SmbPlaybackSession.close()
     }
 
     fun setVideoBackgroundActive(active: Boolean) {

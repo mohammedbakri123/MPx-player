@@ -270,20 +270,6 @@
     <string name="tool_local_network_title">Réseau local</string>
     <string name="tool_local_network_desc">Explorer les partages SMB</string>
     <string name="local_network_dialog_body">Explorez les dossiers partagés de votre réseau local (SMB) et lisez les médias qu’ils contiennent. L’exploration SMB n’est pas encore implémentée : aucun partage n’est analysé et aucune liste n’est affichée ici.</string>
-    <string name="smb_dialog_desc">Saisis un serveur du réseau local pour parcourir ses dossiers partagés (SMB) et lire des médias depuis ceux-ci. Aucun partage fictif n’est jamais affiché.</string>
-    <string name="smb_host_label">Serveur</string>
-    <string name="smb_share_label">Nom du partage (facultatif)</string>
-    <string name="smb_share_hint">Laisser vide pour lister les partages</string>
-    <string name="smb_username_label">Nom d’utilisateur (facultatif)</string>
-    <string name="smb_password_label">Mot de passe (facultatif)</string>
-    <string name="smb_domain_label">Domaine (facultatif)</string>
-    <string name="smb_credentials_note">Seul le serveur est mémorisé. Le mot de passe ne dure que cette session et n’est jamais enregistré.</string>
-    <string name="smb_connect">Se connecter</string>
-    <string name="smb_connecting">Connexion…</string>
-    <string name="smb_shares_title">Partages sur %1$s</string>
-    <string name="smb_empty_folder">Ce dossier est vide.</string>
-    <string name="smb_error_unknown">Une erreur inconnue est survenue.</string>
-    <string name="smb_open_failed">Impossible d’ouvrir le fichier.</string>
     <string name="tool_cloud_title">Disque cloud</string>
     <string name="tool_cloud_desc">Cloud via extensions</string>
     <string name="cloud_dialog_body">Le stockage cloud fonctionne via des extensions : un fournisseur s’ajoute en installant son extension. Aucune extension n’est installée pour le moment, donc aucun compte ni fichier n’est affiché ici.</string>
@@ -340,6 +326,7 @@
 
     <string name="dialog_network_title">Flux réseau</string>
     <string name="dialog_network_desc">Saisissez n’importe quelle URL de flux HTTP, HTTPS ou HLS pour la lire directement :</string>
+    <string name="network_stream_page_link">Ceci est une page web, pas un fichier vidéo. Collez plutôt un lien vidéo direct.</string>
     <string name="dialog_network_samples">Exemples de flux publics :</string>
     <string name="dialog_network_play">Lire le flux</string>
     <string name="dialog_network_invalid_url">Saisissez une URL de flux valide commençant par http://, https:// ou rtsp://</string>

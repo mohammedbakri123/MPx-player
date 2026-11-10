@@ -789,7 +789,6 @@ fun MpxApp(
             composable(Screen.Network.route) {
                 NetworkScreen(
                     playbackManager = playbackManager,
-                    settingsRepository = realSettingsRepo,
                     sharedUrl = sharedNetworkUrl,
                     onSharedUrlConsumed = onSharedNetworkUrlConsumed,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
