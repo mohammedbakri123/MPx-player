@@ -106,6 +106,7 @@ import com.mpx.player.R
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.MeTool
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.network.isSupportedStreamUrl
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.persistence.FavouritesDialog
@@ -131,6 +132,7 @@ fun MeScreen(
     onOpenAboutBeta: (() -> Unit)? = null,
     onOpenHistory: () -> Unit,
     onOpenPlaylists: () -> Unit,
+    onOpenNetwork: (() -> Unit)? = null,
     playbackManager: PlaybackManager? = null,
     settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = "system",
@@ -186,7 +188,6 @@ fun MeScreen(
     var showLegalDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
-    var showLocalNetworkDialog by remember { mutableStateOf(false) }
     var showCloudDriveDialog by remember { mutableStateOf(false) }
 
     var issue32Tool by remember { mutableStateOf<MeTool?>(null) }
@@ -328,7 +329,7 @@ fun MeScreen(
                     equalizerMessage = context.getString(R.string.equalizer_dialog_msg)
                 }
             }
-            "local_network" -> showLocalNetworkDialog = true
+            "local_network" -> onOpenNetwork?.invoke()
             "cloud_drive" -> showCloudDriveDialog = true
             "status", "private", "manager", "bin" -> {
                 issue32Tool = tool
@@ -763,37 +764,6 @@ fun MeScreen(
         )
     }
 
-    // 12. Local Network SMB browser (issue #78): real share/folder browsing
-    // via smbj; tapping a media file plays it through PlaybackManager.
-    if (showLocalNetworkDialog) {
-        SmbBrowserDialog(
-            initialHost = appSettings.lastSmbHost,
-            onHostRemembered = { host ->
-                val updated = appSettings.copy(lastSmbHost = host)
-                appSettings = updated
-                realSettingsRepo.save(updated)
-            },
-            onPlayMedia = { title, proxyUrl, isVideo, smbId ->
-                showLocalNetworkDialog = false
-                realPlaybackManager.playQueue(
-                    listOf(
-                        PlayableMedia(
-                            id = smbId,
-                            title = title,
-                            subtitle = proxyUrl,
-                            uri = proxyUrl,
-                            isVideo = isVideo,
-                            durationMs = 0L,
-                        ),
-                    ),
-                    startIndex = 0,
-                    autoPlay = true,
-                )
-                onOpenPlayer()
-            },
-            onDismiss = { showLocalNetworkDialog = false },
-        )
-    }
 
     // 13. Cloud Drive Plugin Point (no plugin installed — no account or files shown)
     if (showCloudDriveDialog) {
@@ -1009,20 +979,6 @@ private fun PreferenceRow(
 }
 
 // --- DIALOG IMPLEMENTATIONS ---
-
-/**
- * Issue #297: the scheme rule for a network stream URL — the same rule
- * pasteClipboard() applies to clipboard text (http://, https://,
- * rtsp://). Typed text is trimmed first; paste checks the raw text and
- * trims on accept, so the two paths share the scheme list but keep
- * their own trimming behaviour.
- */
-private fun isSupportedStreamUrl(text: String): Boolean {
-    val trimmed = text.trim()
-    return trimmed.startsWith("http://", ignoreCase = true) ||
-        trimmed.startsWith("https://", ignoreCase = true) ||
-        trimmed.startsWith("rtsp://", ignoreCase = true)
-}
 
 /**
  * Real Network Stream player dialog allowing direct stream input.

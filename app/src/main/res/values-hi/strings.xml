@@ -8,6 +8,7 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">होम</string>
     <string name="nav_music">संगीत</string>
+    <string name="nav_network">नेटवर्क</string>
     <string name="nav_me">मैं</string>
 
     <!-- Downloads (issue #324) -->
@@ -1133,4 +1134,5 @@
     <string name="pref_gesture_note">सीक करने के लिए बाएँ या दाएँ डबल-टैप करें, क्षैतिज रूप से ड्रैग करके सीक करें, बाईं ओर ब्राइटनेस और दाईं ओर वॉल्यूम के लिए ड्रैग करें।</string>
     <string name="pref_folders_select_all">सभी चुनें</string>
     <string name="pref_folders_deselect_all">सभी का चयन हटाएँ</string>
+    <string name="share_no_link">साझा किए गए टेक्स्ट में कोई लिंक नहीं मिला</string>
 </resources>

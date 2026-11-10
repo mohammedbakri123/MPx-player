@@ -8,6 +8,7 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">首页</string>
     <string name="nav_music">音乐</string>
+    <string name="nav_network">网络</string>
     <string name="nav_me">我的</string>
 
     <!-- Downloads (issue #324) -->
@@ -1133,4 +1134,5 @@
     <string name="pref_gesture_note">双击左侧或右侧快进/快退，水平拖动进度，拖动左侧调亮度、右侧调音量。</string>
     <string name="pref_folders_select_all">全选</string>
     <string name="pref_folders_deselect_all">取消全选</string>
+    <string name="share_no_link">分享的文本中未找到链接</string>
 </resources>

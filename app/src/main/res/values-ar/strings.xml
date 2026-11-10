@@ -8,6 +8,7 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">الرئيسية</string>
     <string name="nav_music">موسيقى</string>
+    <string name="nav_network">الشبكة</string>
     <string name="nav_me">أنا</string>
 
     <!-- Downloads (issue #324) -->
@@ -1133,4 +1134,5 @@
     <string name="pref_gesture_note">انقر مرتين على اليسار أو اليمين للتقديم، واسحب أفقيًا للتقديم، واسحب الجانب الأيسر للسطوع والجانب الأيمن لمستوى الصوت.</string>
     <string name="pref_folders_select_all">تحديد الكل</string>
     <string name="pref_folders_deselect_all">إلغاء تحديد الكل</string>
+    <string name="share_no_link">لم يتم العثور على رابط في النص المشارك</string>
 </resources>

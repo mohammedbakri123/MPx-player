@@ -8,6 +8,7 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Главная</string>
     <string name="nav_music">Музыка</string>
+    <string name="nav_network">Сеть</string>
     <string name="nav_me">Я</string>
 
     <!-- Downloads (issue #324) -->
@@ -1133,4 +1134,5 @@
     <string name="pref_gesture_note">Двойное касание слева или справа — перемотка; горизонтальное перетаскивание — поиск; слева — яркость, справа — громкость.</string>
     <string name="pref_folders_select_all">Выбрать все</string>
     <string name="pref_folders_deselect_all">Снять выбор</string>
+    <string name="share_no_link">В переданном тексте ссылка не найдена</string>
 </resources>

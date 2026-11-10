@@ -8,6 +8,7 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Home</string>
     <string name="nav_music">Music</string>
+    <string name="nav_network">Network</string>
     <string name="nav_me">Me</string>
 
     <!-- Downloads (issue #324) -->
@@ -1134,4 +1135,5 @@
     <string name="pref_gesture_note">Double-tap left or right to seek, drag horizontally to seek, drag the left side for brightness and the right side for volume.</string>
     <string name="pref_folders_select_all">Select all</string>
     <string name="pref_folders_deselect_all">Deselect all</string>
+    <string name="share_no_link">No link found in the shared text</string>
 </resources>

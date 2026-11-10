@@ -8,6 +8,7 @@
     <!-- Navigation Tabs -->
     <string name="nav_local">Accueil</string>
     <string name="nav_music">Musique</string>
+    <string name="nav_network">Réseau</string>
     <string name="nav_me">Moi</string>
 
     <!-- Downloads (issue #324) -->
@@ -1133,4 +1134,5 @@
     <string name="pref_gesture_note">Double appui à gauche ou à droite pour sauter, glisser horizontal pour naviguer, côté gauche pour la luminosité et côté droit pour le volume.</string>
     <string name="pref_folders_select_all">Tout sélectionner</string>
     <string name="pref_folders_deselect_all">Tout désélectionner</string>
+    <string name="share_no_link">Aucun lien trouvé dans le texte partagé</string>
 </resources>
