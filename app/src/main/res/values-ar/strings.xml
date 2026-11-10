@@ -915,6 +915,14 @@
     <string name="player_track_language">اللغة: %1$s</string>
     <string name="player_dialog_subtitle_selection">اختيار الترجمة</string>
     <string name="player_subtitle_open_file">فتح ملف ترجمة (SRT / VTT)...</string>
+    <string name="player_subtitle_browse_title">اختيار ترجمة</string>
+    <string name="player_subtitle_browse_loading">جارٍ التحميل…</string>
+    <string name="player_subtitle_browse_unavailable">تعذّر عرض محتويات هذا المجلد.</string>
+    <string name="player_subtitle_browse_empty">لا توجد ملفات ترجمة في هذا المجلد</string>
+    <string name="player_subtitle_browse_system_picker">تصفح مجلدات أخرى</string>
+    <string name="player_subtitle_all_files_title">العثور على الترجمة تلقائيًا</string>
+    <string name="player_subtitle_all_files_body">يحتاج MPx إلى إذن الوصول إلى جميع الملفات لرؤية ملفات الترجمة بجانب مقاطع الفيديو.</string>
+    <string name="player_subtitle_all_files_allow">السماح بالوصول</string>
     <string name="player_subtitle_available_tracks">المسارات المتاحة</string>
     <string name="player_subtitle_off">إيقاف (تعطيل الترجمات)</string>
     <string name="player_subtitle_no_tracks">لم يتم العثور على مسارات ترجمة في الوسائط. استخدم \'فتح ملف ترجمة\' أعلاه لتحميل .srt أو .vtt.</string>

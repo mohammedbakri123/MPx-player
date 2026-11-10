@@ -916,6 +916,14 @@
     <string name="player_track_language">Language: %1$s</string>
     <string name="player_dialog_subtitle_selection">Subtitle Selection</string>
     <string name="player_subtitle_open_file">Open Subtitle File (SRT / VTT)...</string>
+    <string name="player_subtitle_browse_title">Select subtitle</string>
+    <string name="player_subtitle_browse_loading">Loading…</string>
+    <string name="player_subtitle_browse_unavailable">Cannot list this folder.</string>
+    <string name="player_subtitle_browse_empty">No subtitle files in this folder</string>
+    <string name="player_subtitle_browse_system_picker">Browse other folders</string>
+    <string name="player_subtitle_all_files_title">Find subtitles automatically</string>
+    <string name="player_subtitle_all_files_body">MPx needs All files access to see subtitle files next to your videos.</string>
+    <string name="player_subtitle_all_files_allow">Allow access</string>
     <string name="player_subtitle_available_tracks">Available Tracks</string>
     <string name="player_subtitle_off">Off (Disable subtitles)</string>
     <string name="player_subtitle_no_tracks">No subtitle tracks found in media. Use \'Open Subtitle File\' above to load .srt or .vtt.</string>

@@ -56,6 +56,7 @@ class PlaybackQueueStore(context: Context) {
                 obj.put(FIELD_IS_VIDEO, item.isVideo)
                 obj.put(FIELD_DURATION_MS, item.durationMs)
                 item.subtitleUri?.let { obj.put(FIELD_SUBTITLE_URI, it) }
+                item.filePath?.takeIf { it.isNotBlank() }?.let { obj.put(FIELD_FILE_PATH, it) }
                 val subs = JSONArray()
                 for (ext in item.externalSubtitles) {
                     val sub = JSONObject()
@@ -113,6 +114,7 @@ class PlaybackQueueStore(context: Context) {
                         durationMs = obj.optLong(FIELD_DURATION_MS, 0L),
                         subtitleUri = obj.optString(FIELD_SUBTITLE_URI, "").ifBlank { null },
                         externalSubtitles = subs,
+                        filePath = obj.optString(FIELD_FILE_PATH, "").ifBlank { null },
                     )
                 )
             }
@@ -140,6 +142,7 @@ class PlaybackQueueStore(context: Context) {
         private const val FIELD_IS_VIDEO = "isVideo"
         private const val FIELD_DURATION_MS = "durationMs"
         private const val FIELD_SUBTITLE_URI = "subtitleUri"
+        private const val FIELD_FILE_PATH = "filePath"
         private const val FIELD_EXTERNAL_SUBTITLES = "externalSubtitles"
         private const val FIELD_NAME = "name"
         private const val FIELD_MIME_TYPE = "mimeType"

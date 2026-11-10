@@ -62,6 +62,15 @@ data class PlayableMedia(
     val durationMs: Long = 0L,
     val subtitleUri: String? = null,
     val externalSubtitles: List<ExternalSubtitle> = emptyList(),
+    /** Raw filesystem path for local files (VideoFile.path), used for
+     * subtitle-sibling lookup: the app finds same-name subtitle files
+     * in the video's folder and opens the in-app subtitle browser
+     * there. Null for network streams and for items built without a
+     * local file (playlists, history) — those keep the manual SAF
+     * picker only. Never handed to mpv: native code cannot open it
+     * under scoped storage (issue #444), the content:// [uri] is the
+     * playback source. */
+    val filePath: String? = null,
 )
 
 data class AudioTrackInfo(

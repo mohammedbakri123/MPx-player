@@ -18,6 +18,9 @@ import com.mpx.player.playback.engine.MpvPlayerEngine
 import com.mpx.player.playback.engine.PlayerEngine
 import com.mpx.player.playback.engine.ReplaceMediaItemResult
 import com.mpx.player.playback.engine.TrackType
+import com.mpx.player.util.SubtitleSiblingFinder
+import com.mpx.player.util.SubtitleUtils
+import com.mpx.player.util.SubtitleValidationResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,6 +31,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Central controller for playback orchestration in MPx Player.
@@ -117,6 +121,18 @@ class PlaybackManager private constructor(context: Context) {
      * banner can name it. Always set and cleared together with the id.
      */
     private var pendingExternalSubtitleDisplayName: String? = null
+    /**
+     * Subtitle auto-detect: media ids already scanned for same-name
+     * subtitle files this session. A scan is attempted once per item
+     * (a folder scan that finds nothing stays attempted — re-scanning
+     * on every READY re-fire would be pure disk churn). Cleared on a
+     * new session (playQueue) and on stop(), so playing the video
+     * again later re-scans — a subtitle added to the folder since is
+     * then found. The item's own externalSubtitles list is the second
+     * guard: an item that already has external subtitles (manual pick,
+     * restore, or an earlier auto-detect) is never scanned again.
+     */
+    private val autoDetectAttemptedIds = mutableSetOf<String>()
     /** Pre-shuffle queue order, restored when shuffle is turned off (issue #76). */
     private var unshuffledQueue: List<PlayableMedia>? = null
 
@@ -192,6 +208,9 @@ class PlaybackManager private constructor(context: Context) {
             }
             updatePosition()
             updateTracksState()
+            if (playbackState == PlayerEngine.STATE_READY) {
+                maybeAutoDetectSubtitles()
+            }
             if (playbackState == PlayerEngine.STATE_ENDED) {
                 // Issue #211: mpv reports STATE_ENDED at the end of EVERY
                 // item — the engine holds only the current item
@@ -574,6 +593,9 @@ class PlaybackManager private constructor(context: Context) {
         preserveShuffleState: Boolean = false,
     ) {
         if (items.isEmpty()) return
+        // Subtitle auto-detect: a new session re-scans — a subtitle
+        // added to the folder since the last play is then found.
+        autoDetectAttemptedIds.clear()
         // Issue #203: keep the shuffle state only when the queue being
         // played is the live one (same items, different start index).
         // A new queue is a new session: shuffle order does not carry over.
@@ -771,6 +793,12 @@ class PlaybackManager private constructor(context: Context) {
                 uri = video.contentUri.ifBlank { video.path },
                 isVideo = true,
                 durationMs = video.durationMs,
+                // Subtitle auto-detect + in-app browser: keep the raw
+                // filesystem path so the player can look for same-name
+                // subtitle files in the video's folder (see
+                // SubtitleSiblingFinder). The content:// uri above stays
+                // the playback source.
+                filePath = video.path,
             )
         }
         playQueue(items, startIndex, autoPlay = true)
@@ -1054,6 +1082,67 @@ class PlaybackManager private constructor(context: Context) {
     }
 
     /**
+     * Subtitle auto-detect (MX behaviour): when a local video's file
+     * has loaded, look in its folder for subtitle files with the same
+     * name (`movie.srt`, `movie.en.srt`, `movie.ar.srt`) and load them
+     * through the same [loadExternalSubtitle] path a manual pick uses
+     * — the engine sub-adds them and selects the last one added, and
+     * the #332 confirmation shows the usual "Loaded subtitle" banner
+     * for it. Matches are added worst-first so the best match (the
+     * exact stem) is added last and ends up selected.
+     *
+     * Runs only for local videos ([PlayableMedia.filePath] present)
+     * with no external subtitles yet. A manual pick made while the
+     * folder scan is running wins: the state is re-checked on Main
+     * before loading, and an item that gained external subtitles in
+     * the meantime is skipped. Network streams have no folder, so
+     * nothing is attempted for them. A folder the app cannot list
+     * (no All files access on Android 11+) simply yields no matches
+     * — the subtitle page explains that and offers the grant.
+     */
+    private fun maybeAutoDetectSubtitles() {
+        val item = _playbackState.value.currentItem ?: return
+        if (!item.isVideo) return
+        val videoPath = item.filePath?.takeIf { it.isNotBlank() } ?: return
+        if (item.externalSubtitles.isNotEmpty()) return
+        // Without All files access the folder scan cannot see subtitle
+        // files on Android 11+ and mpv cannot open a raw path either
+        // (issue #444) — attempting would only produce a "failed to
+        // load" banner for a file the user never asked for. Checked
+        // before marking the id attempted, so granting the permission
+        // later in the session still allows a scan on the next video.
+        if (!SubtitleSiblingFinder.hasAllFilesAccess(appContext)) return
+        if (!autoDetectAttemptedIds.add(item.id)) return
+        scope.launch(Dispatchers.IO) {
+            val siblings = SubtitleSiblingFinder.findSiblings(videoPath)
+            if (siblings.isEmpty()) return@launch
+            withContext(Dispatchers.Main) {
+                val current = _playbackState.value.currentItem ?: return@withContext
+                if (current.id != item.id) return@withContext
+                if (current.externalSubtitles.isNotEmpty()) return@withContext
+                // Worst-first: the engine selects the last sub-added
+                // track, so the best match must be added last.
+                for (file in siblings.asReversed()) {
+                    val uri = Uri.fromFile(file)
+                    when (val validation = SubtitleUtils.validateSubtitleFile(appContext, uri)) {
+                        is SubtitleValidationResult.Supported -> {
+                            loadExternalSubtitle(
+                                uri = validation.uri,
+                                displayName = validation.displayName,
+                                mimeType = validation.mimeType,
+                            )
+                        }
+                        is SubtitleValidationResult.Unsupported -> {
+                            // The finder already filters by extension;
+                            // unreachable in practice, skip silently.
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Issue #332: commits a subtitle add to the manager's queue and state
      * (issue #149: the queue item itself changed), restoring the playback
      * position/state afterwards. [notification] is shown only when
@@ -1192,6 +1281,7 @@ class PlaybackManager private constructor(context: Context) {
         stopTicker()
         PlaybackService.stop(appContext)
         unshuffledQueue = null
+        autoDetectAttemptedIds.clear()
         // Issue #258: a deliberate stop ends the session, so the live
         // queue goes too — otherwise the fallback reload's
         // onMediaItemTransition (or any other in-flight transition)
