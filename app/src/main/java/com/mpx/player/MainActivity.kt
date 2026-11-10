@@ -203,10 +203,14 @@ class MainActivity : ComponentActivity() {
     ) { uri -> settingsImportHandler.invoke(uri) }
 
     override fun attachBaseContext(newBase: Context) {
-        val lang = LocaleHelper.getPersistedLanguage(newBase)
+        // #437: apply the stored app theme's night mode first, so the
+        // launch (splash) theme and all night-qualified resources
+        // follow MPx's theme setting, not the phone's system theme.
+        val themed = applyAppThemeNightMode(newBase)
+        val lang = LocaleHelper.getPersistedLanguage(themed)
         val locale = LocaleHelper.getLocale(lang)
         Locale.setDefault(locale)
-        val localized = LocaleHelper.createLocalizedContext(newBase, locale)
+        val localized = LocaleHelper.createLocalizedContext(themed, locale)
         super.attachBaseContext(localized)
     }
 

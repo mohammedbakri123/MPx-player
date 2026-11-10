@@ -20,6 +20,7 @@
         android:maxSdkVersion="32" />
 
     <application
+        android:name=".MpxApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
