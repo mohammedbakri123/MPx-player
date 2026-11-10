@@ -155,9 +155,6 @@ dependencies {
     }
     // Haze 2.0 visual effects (M2.5 UI revolution)
     implementation("dev.chrisbanes.haze:haze:1.6.0")
-    // SMB client for Local Network browsing (issue #78): pure-Java SMB2/3,
-    // Apache 2.0, no native code, no MX code.
-    implementation("com.hierynomus:smbj:0.12.0")
     // Data layer dependency (Room persistence)
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("androidx.room:room-ktx:2.8.5")

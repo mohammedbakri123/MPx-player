@@ -271,20 +271,6 @@
     <string name="tool_local_network_title">Local Network</string>
     <string name="tool_local_network_desc">Browse SMB shares</string>
     <string name="local_network_dialog_body">Browse shared folders on your local network (SMB) and play media from them. SMB browsing is not built yet, so no shares are scanned and no share list is shown here.</string>
-    <string name="smb_dialog_desc">Enter a local network server to browse its shared folders (SMB) and play media from them. No fake shares are ever shown.</string>
-    <string name="smb_host_label">Server</string>
-    <string name="smb_share_label">Share name (optional)</string>
-    <string name="smb_share_hint">Leave empty to list shares</string>
-    <string name="smb_username_label">Username (optional)</string>
-    <string name="smb_password_label">Password (optional)</string>
-    <string name="smb_domain_label">Domain (optional)</string>
-    <string name="smb_credentials_note">Only the server is remembered. The password stays for this session only and is never saved.</string>
-    <string name="smb_connect">Connect</string>
-    <string name="smb_connecting">Connecting…</string>
-    <string name="smb_shares_title">Shares on %1$s</string>
-    <string name="smb_empty_folder">This folder is empty.</string>
-    <string name="smb_error_unknown">An unknown error occurred.</string>
-    <string name="smb_open_failed">Could not open the file.</string>
     <string name="tool_cloud_title">Cloud Drive</string>
     <string name="tool_cloud_desc">Cloud via plugins</string>
     <string name="cloud_dialog_body">Cloud storage works through plugins: a provider is added by installing its plugin. No plugin is installed right now, so no account or files are shown here.</string>
@@ -341,6 +327,7 @@
 
     <string name="dialog_network_title">Network Stream</string>
     <string name="dialog_network_desc">Enter any HTTP, HTTPS, or HLS stream URL to play directly:</string>
+    <string name="network_stream_page_link">This is a web page, not a video file. Paste a direct video link instead.</string>
     <string name="dialog_network_samples">Sample Public Streams:</string>
     <string name="dialog_network_play">Play Stream</string>
     <string name="dialog_network_invalid_url">Enter a valid stream URL starting with http://, https:// or rtsp://</string>

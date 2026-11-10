@@ -127,7 +127,7 @@ class MpvFdOpener(context: Context) {
         // content:// URIs (history / favourites / playlists / persisted
         // queue) — resolve it to its MediaStore row first; if the row
         // cannot be found, the path is returned unchanged and mpv fails
-        // honestly. Anything else (http(s), fd://, smb proxy URLs)
+        // honestly. Anything else (http(s), fd://)
         // passes through untouched.
         val contentUri = when {
             uri.startsWith("content://") -> uri

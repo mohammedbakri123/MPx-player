@@ -79,7 +79,6 @@ data class AppSettings(
     val fileView: Boolean = false, // false = folder view, true = individual files view
     val autoScreenRotation: Boolean = true, // true = follows sensor, false = locked orientation
     val screenOrientation: String = "auto", // auto (sensor), landscape, portrait
-    val lastSmbHost: String = "", // Last SMB server typed in Local Network; username/password are never persisted
 
     // Sort and View Fields (Issue 59)
     val primarySortField: String = "DATE",

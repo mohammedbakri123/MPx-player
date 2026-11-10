@@ -270,20 +270,6 @@
     <string name="tool_local_network_title">Rede local</string>
     <string name="tool_local_network_desc">Explorar partilhas SMB</string>
     <string name="local_network_dialog_body">Explore pastas partilhadas na sua rede local (SMB) e reproduza multimédia a partir delas. A exploração SMB ainda não foi implementada, por isso nenhuma partilha é analisada nem é mostrada aqui qualquer lista de partilhas.</string>
-    <string name="smb_dialog_desc">Digite um servidor da rede local para navegar pelas pastas compartilhadas (SMB) e reproduzir mídia a partir delas. Nenhum compartilhamento falso é exibido.</string>
-    <string name="smb_host_label">Servidor</string>
-    <string name="smb_share_label">Nome do compartilhamento (opcional)</string>
-    <string name="smb_share_hint">Deixe vazio para listar os compartilhamentos</string>
-    <string name="smb_username_label">Nome de usuário (opcional)</string>
-    <string name="smb_password_label">Senha (opcional)</string>
-    <string name="smb_domain_label">Domínio (opcional)</string>
-    <string name="smb_credentials_note">Somente o servidor é lembrado. A senha vale apenas para esta sessão e nunca é salva.</string>
-    <string name="smb_connect">Conectar</string>
-    <string name="smb_connecting">Conectando…</string>
-    <string name="smb_shares_title">Compartilhamentos em %1$s</string>
-    <string name="smb_empty_folder">Esta pasta está vazia.</string>
-    <string name="smb_error_unknown">Ocorreu um erro desconhecido.</string>
-    <string name="smb_open_failed">Não foi possível abrir o arquivo.</string>
     <string name="tool_cloud_title">Unidade na nuvem</string>
     <string name="tool_cloud_desc">Nuvem via plug-ins</string>
     <string name="cloud_dialog_body">O armazenamento na nuvem funciona através de plug-ins: um fornecedor é adicionado instalando o seu plug-in. Neste momento não há nenhum plug-in instalado, por isso não é mostrada aqui nenhuma conta nem ficheiros.</string>
@@ -340,6 +326,7 @@
 
     <string name="dialog_network_title">Transmissão de rede</string>
     <string name="dialog_network_desc">Insira qualquer URL de stream HTTP, HTTPS ou HLS para reproduzir diretamente:</string>
+    <string name="network_stream_page_link">Isto é uma página web, não um arquivo de vídeo. Cole um link de vídeo direto.</string>
     <string name="dialog_network_samples">Streams públicos de exemplo:</string>
     <string name="dialog_network_play">Reproduzir stream</string>
     <string name="dialog_network_invalid_url">Digite uma URL de transmissão válida começando com http://, https:// ou rtsp://</string>
