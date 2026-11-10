@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ColorLens
@@ -89,6 +90,7 @@ fun AboutBetaScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val issuesUrl = stringResource(R.string.about_beta_issues_url)
+    val telegramUrl = stringResource(R.string.about_beta_telegram_url)
     val copiedMsg = stringResource(R.string.about_beta_copied_snackbar)
     val browserErrorMsg = stringResource(R.string.about_beta_browser_error)
 
@@ -113,6 +115,36 @@ fun AboutBetaScreen(
 
     fun copyIssuesUrl() {
         clipboardManager.setText(AnnotatedString(issuesUrl))
+        scope.launch {
+            snackbarHostState.showSnackbar(copiedMsg)
+        }
+    }
+
+    // Telegram group (https://t.me/+lFc18fX5Im40MGE0): same open/copy
+    // pattern as the GitHub issues link above — open in Telegram (or the
+    // browser if Telegram is not installed), fall back to copying the
+    // link when no app can open it.
+    fun openTelegramGroup() {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(telegramUrl)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            clipboardManager.setText(AnnotatedString(telegramUrl))
+            scope.launch {
+                snackbarHostState.showSnackbar(browserErrorMsg)
+            }
+        } catch (_: Exception) {
+            clipboardManager.setText(AnnotatedString(telegramUrl))
+            scope.launch {
+                snackbarHostState.showSnackbar(copiedMsg)
+            }
+        }
+    }
+
+    fun copyTelegramUrl() {
+        clipboardManager.setText(AnnotatedString(telegramUrl))
         scope.launch {
             snackbarHostState.showSnackbar(copiedMsg)
         }
@@ -316,6 +348,47 @@ fun AboutBetaScreen(
                                 Icon(
                                     imageVector = Icons.Filled.ContentCopy,
                                     contentDescription = stringResource(R.string.about_beta_copy_github_url),
+                                    tint = MpxTheme.colors.textPrimary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Button(
+                                onClick = { openTelegramGroup() },
+                                modifier = Modifier.weight(1f),
+                                shape = MpxShapes.small,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MpxTheme.colors.primary,
+                                    contentColor = Color.White,
+                                ),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(R.string.about_beta_open_telegram),
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+
+                            OutlinedButton(
+                                onClick = { copyTelegramUrl() },
+                                shape = MpxShapes.small,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MpxTheme.colors.border),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ContentCopy,
+                                    contentDescription = stringResource(R.string.about_beta_copy_telegram_url),
                                     tint = MpxTheme.colors.textPrimary,
                                     modifier = Modifier.size(18.dp),
                                 )

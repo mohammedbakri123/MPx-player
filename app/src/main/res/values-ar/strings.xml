@@ -696,6 +696,9 @@
     <string name="about_beta_open_github">فتح مشكلات GitHub</string>
     <string name="about_beta_copy_github_url">نسخ رابط المشكلات</string>
     <string name="about_beta_issues_url">https://github.com/mohammedbakri123/MPx-player/issues</string>
+    <string name="about_beta_open_telegram">انضم إلى مجموعة تيليجرام</string>
+    <string name="about_beta_copy_telegram_url">نسخ رابط تيليجرام</string>
+    <string name="about_beta_telegram_url">https://t.me/+lFc18fX5Im40MGE0</string>
     <string name="about_beta_copied_snackbar">تم نسخ رابط مشكلات GitHub إلى الحافظة</string>
     <string name="about_beta_browser_error">تعذر فتح متصفح الويب. تم نسخ الرابط إلى الحافظة.</string>
     <string name="about_beta_open_page_button">عرض تفاصيل النسخة التجريبية والملاحظات</string>

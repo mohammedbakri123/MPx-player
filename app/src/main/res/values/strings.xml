@@ -697,6 +697,9 @@
     <string name="about_beta_open_github">Open GitHub Issues</string>
     <string name="about_beta_copy_github_url">Copy Issues Link</string>
     <string name="about_beta_issues_url">https://github.com/mohammedbakri123/MPx-player/issues</string>
+    <string name="about_beta_open_telegram">Join Telegram Group</string>
+    <string name="about_beta_copy_telegram_url">Copy Telegram Link</string>
+    <string name="about_beta_telegram_url">https://t.me/+lFc18fX5Im40MGE0</string>
     <string name="about_beta_copied_snackbar">GitHub issues URL copied to clipboard</string>
     <string name="about_beta_browser_error">Unable to open web browser. The URL has been copied to your clipboard.</string>
     <string name="about_beta_open_page_button">View Beta Details &amp; Feedback</string>
