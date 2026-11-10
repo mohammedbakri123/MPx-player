@@ -417,8 +417,8 @@ private fun PlaybackSheetMainPage(
     // Issue #160: the Main page used to hardcode its rows in fixed sections,
     // so the persisted Player Layout order (Settings > Player Layout) had no
     // effect here — parsePlayerMenuLayout was only read by the editor and the
-    // action stripe (#177). The 13 layout rows now render in the persisted
-    // order, using the same parse and the same remember keys as the stripe,
+    // top-bar actions (#177). The 13 layout rows now render in the persisted
+    // order, using the same parse and the same remember keys as the top bar,
     // so a reorder or hide in the editor shows up here too. It is live: an
     // editor change recomposes with the new order, no restart needed. Each
     // row is keyed by its id so a reorder keeps row identity across
@@ -429,9 +429,9 @@ private fun PlaybackSheetMainPage(
     // and an arbitrary layout order can put Decoder between Speed and Sleep.
     // The "Playback" title stays as the page title and the "About this file"
     // section stays at the end (info rows, not actions). The default layout
-    // (decoder,audio,subtitles,...) is the order the editor and the stripe
+    // (decoder,audio,subtitles,...) is the order the editor and the top bar
     // already show, so the default sheet now follows that same order instead
-    // of the old hardcoded one — sheet, stripe and editor finally agree.
+    // of the old hardcoded one — sheet, top bar and editor finally agree.
     // Rows with no layout id (tutorial, zoom, audio delay, subtitle delay,
     // subtitle settings) follow after the 13 in their current relative order.
     val layoutIds = remember(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds) {
@@ -766,7 +766,7 @@ private fun PlaybackSheetSleepPage(
     // `?: 30` fallback, so with no timer running it showed "30 min" while
     // the Off chip was selected — and the first + tap set a 35-minute timer
     // from that phantom base. With no timer the stepper now shows Off (the
-    // same string the Off chip and the stripe caption use); the first tap
+    // same string the Off chip and the sleep chip near the controls use); the first tap
     // in either direction starts a timer at the 30-minute default, and
     // only then does the value step ±5 from the running timer.
     // Issue #238: while a timer runs, the base is the REMAINING time
@@ -774,7 +774,7 @@ private fun PlaybackSheetSleepPage(
     // frozen at set time (the tick loop only updates
     // sleepTimerRemainingSeconds). A minute into a 30 min timer the
     // stepper shows "29 min" and + sets 34, matching the headline
-    // countdown and the stripe caption. Ceil, not floor: 29:59 remaining
+    // countdown and the sleep chip near the controls. Ceil, not floor: 29:59 remaining
     // is still "30 min" until it actually drops below 29 minutes.
     val timerMinutes: Int? = state.sleepTimerRemainingSeconds?.let { remaining ->
         ceil(remaining / 60.0).toInt()

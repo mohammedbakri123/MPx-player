@@ -1099,7 +1099,7 @@
     <string name="pref_folders_clear_confirm_title">Clear all blacklisted folders?</string>
     <string name="pref_folders_clear_confirm_message">All folders will appear in Local and Music again.</string>
     <string name="pref_folders_remove">Remove</string>
-    <string name="pref_layout_editor_desc">Choose which actions appear in the playback sheet and the action stripe, and in what order.</string>
+    <string name="pref_layout_editor_desc">Choose which actions appear in the playback sheet and the top bar, and in what order.</string>
     <string name="pref_layout_reset">Reset to default</string>
     <string name="pref_layout_visible_header">Shown in menu</string>
     <string name="pref_layout_hidden_header">Hidden</string>

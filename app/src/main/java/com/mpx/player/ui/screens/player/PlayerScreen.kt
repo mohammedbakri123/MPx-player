@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,10 +40,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -78,7 +75,6 @@ import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
@@ -152,7 +148,6 @@ import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.player.formatTimeMs
 import com.mpx.player.ui.screens.settings.parsePlayerMenuLayout
-import com.mpx.player.ui.screens.settings.playerMenuRowLabelRes
 import com.mpx.player.util.PipUtils
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
@@ -418,7 +413,7 @@ fun PlayerScreen(
     }
 
     // Issue #363: MX-style rotation — every video starts in portrait,
-    // and the stripe's rotation button toggles landscape directly, no
+    // and the transport row's rotation button toggles landscape directly, no
     // menu. In Auto mode the target is SENSOR_PORTRAIT whatever the
     // video's aspect (the old #329 aspect rule is gone: a wide video no
     // longer flips the phone on load). The toggle is a per-video session
@@ -426,7 +421,7 @@ fun PlayerScreen(
     // in portrait again. An explicit Portrait/Landscape lock in
     // Settings still wins as the default the override starts from.
     var rotationOverride by remember(state.currentItem?.id) { mutableStateOf<String?>(null) }
-    // The stripe toggle and caption read the effective orientation
+    // The transport toggle reads the effective orientation
     // (override, else the persisted setting; Auto means portrait).
     val isLandscapeOrientation = rotationOverride?.equals("landscape", ignoreCase = true) == true ||
         (rotationOverride == null && !currentSettings.autoScreenRotation &&
@@ -573,7 +568,7 @@ fun PlayerScreen(
 
     val scope = rememberCoroutineScope()
 
-    // Shared player actions (issue #177): the Action Stripe and the
+    // Shared player actions (issue #177): the top-bar actions and the
     // Playback sheet trigger the same favourite / PiP / background-play
     // actions, so they are defined once here and passed to both. The
     // lambdas read state/currentSettings when invoked, never when created,
@@ -760,21 +755,21 @@ fun PlayerScreen(
     var sideSeekDirection by remember { mutableStateOf<SideSeekDirection?>(null) }
     var hideSideSeekJob by remember { mutableStateOf<Job?>(null) }
 
-    // Issue #328: the stripe's scroll state, owned here so the auto-hide
+    // Issue #328: the top-bar actions' scroll state, owned here so the auto-hide
     // timer below can see it. LazyListState.isScrollInProgress is true
     // for the whole drag AND the fling until it settles, so keying the
     // timer on it keeps the chrome up for the entire scroll.
-    val stripeListState = rememberLazyListState()
+    val topBarActionsListState = rememberLazyListState()
 
     // MX-style auto-hide (issue #85): MX's bottom controller in screen.xml
     // is visibility=gone by default and only appears on interaction. Mirror
     // that here: while playing, hide the chrome a few seconds after it
     // appears, so the video is not permanently covered. Stay visible while
-    // paused, while scrubbing/dragging, while scrolling the action stripe
+    // paused, while scrubbing/dragging, while scrolling the top-bar actions
     // (#328), or while a dialog is open, so no interaction is ever cut off
     // mid-use. Tap the video to bring it back.
-    LaunchedEffect(controlsVisible, state.isPlaying, playbackSheetPage, isScrubbingSlider, isDraggingSeek, showBrightnessIndicator, showVolumeIndicator, showZoomIndicator, stripeListState.isScrollInProgress) {
-        if (controlsVisible && state.isPlaying && playbackSheetPage == null && !isScrubbingSlider && !isDraggingSeek && !showBrightnessIndicator && !showVolumeIndicator && !showZoomIndicator && !stripeListState.isScrollInProgress) {
+    LaunchedEffect(controlsVisible, state.isPlaying, playbackSheetPage, isScrubbingSlider, isDraggingSeek, showBrightnessIndicator, showVolumeIndicator, showZoomIndicator, topBarActionsListState.isScrollInProgress) {
+        if (controlsVisible && state.isPlaying && playbackSheetPage == null && !isScrubbingSlider && !isDraggingSeek && !showBrightnessIndicator && !showVolumeIndicator && !showZoomIndicator && !topBarActionsListState.isScrollInProgress) {
             delay(3000)
             controlsVisible = false
         }
@@ -1615,9 +1610,10 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    // Issue #327: banners start below the top chrome now
-                    // that the action stripe lives under the top bar
-                    // (top bar 64dp + 8dp gap + ~48dp stripe + 8dp gap).
+                    // Issue #327: banners start below the top chrome
+                    // (status bar + top bar ~64dp + scrim padding);
+                    // the stripe is gone — the actions live in the
+                    // top bar now, so there is no second row to clear.
                     .padding(top = 128.dp, start = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1835,6 +1831,30 @@ fun PlayerScreen(
 
                             Spacer(Modifier.width(8.dp))
 
+                            // MX top bar: the player's chosen actions
+                            // live IN this row (back, title, actions,
+                            // decoder pill, menu) — no separate strip
+                            // below the bar, no pill background, no
+                            // captions. Same layout ids, same order,
+                            // same editor; decoder and rotation are
+                            // skipped here because they already have
+                            // their own spots (the pill in this row,
+                            // the last transport button below).
+                            // Scrolls when the row is full.
+                            PlayerTopBarActions(
+                                modifier = Modifier.weight(1f, fill = false),
+                                listState = topBarActionsListState,
+                                state = state,
+                                currentSettings = currentSettings,
+                                isFavourite = isFavourite,
+                                onOpenSheet = { playbackSheetPage = it },
+                                onToggleFavourite = toggleFavourite,
+                                onEnterPip = enterPip,
+                                onToggleBackgroundPlay = toggleBackgroundPlay,
+                                onAddToPlaylist = { showAddToPlaylistDialog = true },
+                                playbackManager = playbackManager,
+                            )
+
                             // Decoder Pill Badge: configured mode + real active codec
                             // (e.g. "HW • H.264") once the engine reports a decoder name;
                             // falls back to the mode label alone while initializing.
@@ -1878,13 +1898,14 @@ fun PlayerScreen(
                                 )
                             }
 
-                            // (The aspect control moved to the Player Action Stripe
-                            // (#177) at the top of the screen — tap cycles, same as this
-                            // pill did; the full radio list stays in the sheet's
-                            // Aspect page. Favourite, audio tracks, subtitles, PiP
-                            // and rotation all live in the Playback sheet now,
-                            // MX-overflow style, so the top bar is back + title +
-                            // decoder pill + menu. See PlayerPlaybackSheet.)
+                            // (The aspect control moved to the top bar
+                            // (#177) — tap cycles, same as this pill did;
+                            // the full radio list stays in the sheet's
+                            // Aspect page. Favourite, audio tracks,
+                            // subtitles and PiP all live in the Playback
+                            // sheet now, MX-overflow style, so the top bar
+                            // is back + title + actions + decoder pill +
+                            // menu. See PlayerPlaybackSheet.)
                             IconButton(onClick = { playbackSheetPage = PlaybackSheetPage.Main }) {
                                 Icon(
                                     imageVector = Icons.Filled.MoreVert,
@@ -1894,71 +1915,9 @@ fun PlayerScreen(
                             }
                         }
 
-                        // Player Action Stripe (issue #177, moved to the
-                        // top in #327): the user's chosen actions from
-                        // the Player Layout editor, in their order. In
-                        // portrait a horizontally scrollable strip under
-                        // the top bar; in landscape it leaves the top
-                        // and stands vertically at the right edge (the
-                        // separate call below), so it stops crowding
-                        // the video. Hides with the chrome either way.
-                        if (!isLandscapeOrientation) {
-                            Spacer(Modifier.height(8.dp))
-                            PlayerActionStripe(
-                                modifier = Modifier.fillMaxWidth(),
-                                listState = stripeListState,
-                                state = state,
-                                currentSettings = currentSettings,
-                                isFavourite = isFavourite,
-                                onOpenSheet = { playbackSheetPage = it },
-                                onToggleFavourite = toggleFavourite,
-                                onEnterPip = enterPip,
-                                onToggleBackgroundPlay = toggleBackgroundPlay,
-                                onAddToPlaylist = { showAddToPlaylistDialog = true },
-                                playbackManager = playbackManager,
-                                isLandscapeOrientation = isLandscapeOrientation,
-                                onToggleRotation = {
-                                    rotationOverride = if (isLandscapeOrientation) "portrait" else "landscape"
-                                },
-                            )
-                        }
                     }
                 }
 
-                // Landscape: the stripe stands vertically at the right
-                // edge, in the free band between the top bar and the
-                // bottom chrome — 96dp clears the status bar + title
-                // row, 128dp clears the seek row + transport. Same
-                // actions in the same order, top to bottom, scrolling
-                // inside that band; hides with the chrome. It also
-                // hides while a brightness/volume HUD is up: the
-                // brightness HUD sits at CenterEnd (issue #166), exactly
-                // where this strip is, and the stripe draws above it —
-                // leaving both up would bury the HUD behind the pill.
-                // The HUD is the focus during a drag, so the strip steps
-                // aside and comes back when the drag ends.
-                if (isLandscapeOrientation && !showBrightnessIndicator && !showVolumeIndicator) {
-                    PlayerActionStripe(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .fillMaxHeight()
-                            .padding(top = 96.dp, bottom = 128.dp, end = 8.dp),
-                        listState = stripeListState,
-                        state = state,
-                        currentSettings = currentSettings,
-                        isFavourite = isFavourite,
-                        onOpenSheet = { playbackSheetPage = it },
-                        onToggleFavourite = toggleFavourite,
-                        onEnterPip = enterPip,
-                        onToggleBackgroundPlay = toggleBackgroundPlay,
-                        onAddToPlaylist = { showAddToPlaylistDialog = true },
-                        playbackManager = playbackManager,
-                        isLandscapeOrientation = isLandscapeOrientation,
-                        onToggleRotation = {
-                            rotationOverride = if (isLandscapeOrientation) "portrait" else "landscape"
-                        },
-                    )
-                }
 
                 // (Screen lock lives in the transport row now, like MX's
                 // subnavibar lock, instead of floating mid-video.)
@@ -2022,13 +1981,13 @@ fun PlayerScreen(
 
                         Spacer(Modifier.height(4.dp))
 
-                        // Controls Row: Lock, Prev, Rotation, Play/Pause Hero,
-                        // Next — MX's subnavibar transport set. The 10s
+                        // Controls Row: Lock, Prev, Play/Pause Hero, Next,
+                        // Rotation — MX's subnavibar transport set. The 10s
                         // Replay/Forward buttons were removed; rotation
-                        // lives here now, same toggle as the stripe.
+                        // lives here now, last on the right.
                         // Speed lives in the Playback sheet now (aspect is in
-                        // the action stripe at the top); shuffle and
-                        // repeat moved to the stripe too.
+                        // the top bar); shuffle and repeat moved to the
+                        // top bar too.
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -2065,25 +2024,6 @@ fun PlayerScreen(
                                 )
                             }
 
-                            // Rotation — same direct toggle as the stripe's
-                            // rotation button (issue #363): portrait <->
-                            // landscape override, reset with the next video.
-                            // Tinted primary while landscape, like the stripe.
-                            IconButton(
-                                onClick = {
-                                    rotationOverride = if (isLandscapeOrientation) "portrait" else "landscape"
-                                },
-                                modifier = Modifier
-                                    .size(50.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.ScreenRotation,
-                                    contentDescription = stringResource(R.string.playback_sheet_rotation),
-                                    tint = if (isLandscapeOrientation) MpxTheme.colors.primary else MpxTheme.colors.textPrimary,
-                                    modifier = Modifier.size(28.dp),
-                                )
-                            }
-
                             // Hero Play/Pause Button
                             // MX-faithful: transparent play/pause, larger white
                             // icon instead of a filled hero circle.
@@ -2111,6 +2051,25 @@ fun PlayerScreen(
                                     imageVector = Icons.Filled.SkipNext,
                                     contentDescription = stringResource(R.string.player_cd_next),
                                     tint = if (state.hasNext) MpxTheme.colors.textPrimary else MpxTheme.colors.textPrimary.copy(alpha = 0.3f),
+                                    modifier = Modifier.size(28.dp),
+                                )
+                            }
+
+                            // Rotation — direct toggle (issue #363):
+                            // portrait <-> landscape override, reset with
+                            // the next video. Tinted primary while
+                            // landscape. Last on the right, MX-style.
+                            IconButton(
+                                onClick = {
+                                    rotationOverride = if (isLandscapeOrientation) "portrait" else "landscape"
+                                },
+                                modifier = Modifier
+                                    .size(50.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ScreenRotation,
+                                    contentDescription = stringResource(R.string.playback_sheet_rotation),
+                                    tint = if (isLandscapeOrientation) MpxTheme.colors.primary else MpxTheme.colors.textPrimary,
                                     modifier = Modifier.size(28.dp),
                                 )
                             }
@@ -2346,25 +2305,26 @@ fun PlayerScreen(
 }
 
 /**
- * Player Action Stripe (issue #177, moved to the top of the screen
- * in #327): the user's chosen actions from the
- * Player Layout editor (#158), in their order, as a horizontally
- * scrollable strip of compact buttons under the top bar. Each button
- * shows its icon and its short current value where it has one (speed,
- * decoder, aspect, ...); actions without a value show their short label.
- * Tapping opens the matching sheet page or toggles directly, exactly as
- * the Playback sheet's Main page does — except the aspect button, which
- * cycles FIT -> FILL -> ZOOM -> 16:9 -> 4:3 -> 100% like the #167 pill
- * it replaces, instead of opening the sheet. Toggles tint with the
- * identity-blue accent while on. The sheet's own order is untouched
- * (issue #160 stays separate).
+ * MX top-bar actions (issue #177): the user's chosen actions from
+ * the Player Layout editor (#158), in their order, as icon-only
+ * buttons inside the top bar row — back, title, actions, decoder
+ * pill, menu. MX has no separate strip below the bar, so neither
+ * does MPx now: no strip, no pill background, no captions, no gap
+ * to close. Tapping opens the matching sheet page or toggles
+ * directly, exactly as the Playback sheet's Main page does — except
+ * the aspect button, which cycles FIT -> FILL -> ZOOM -> 16:9 ->
+ * 4:3 -> 100% like the #167 pill it replaces, instead of opening
+ * the sheet. Toggles tint with the identity-blue accent while on.
+ * The sheet's own order is untouched (issue #160 stays separate).
  *
- * No new strings: every caption reuses an existing one. The rotation
- * "Adaptive" caption reuses player_rotation_auto — same displayed word
- * as the sheet's renamed mode (#329).
+ * Decoder and rotation are not rendered here: decoder is the pill
+ * in this same row, rotation is the last transport button below.
+ * Their layout ids fall through to the else branch in the item
+ * function. State the captions used to show (track names, speed,
+ * sleep countdown) lives one tap away in the sheet, like MX.
  */
 @Composable
-private fun PlayerActionStripe(
+private fun PlayerTopBarActions(
     modifier: Modifier = Modifier,
     listState: LazyListState,
     state: PlaybackState,
@@ -2376,105 +2336,42 @@ private fun PlayerActionStripe(
     onToggleBackgroundPlay: () -> Unit,
     onAddToPlaylist: () -> Unit,
     playbackManager: PlaybackManager,
-    isLandscapeOrientation: Boolean,
-    onToggleRotation: () -> Unit,
 ) {
     val layoutIds = remember(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds) {
         parsePlayerMenuLayout(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds)
     }
-    // #376: the stripe took the whole screen width in landscape (all 12
-    // buttons fit, edge to edge). Same 560dp cap as the sheets (#362),
-    // centered, still scrollable — in portrait the screen is narrower
-    // than the cap so nothing changes. The dark pill behind the row
-    // keeps the captions legible over bright video (white text over a
-    // bright logo vanished); mpvEx does the same with a translucent
-    // surface behind its title pill.
-    if (isLandscapeOrientation) {
-        // Landscape: the same actions in the same order, standing
-        // vertically in a dark pill. The caller positions this Box
-        // at the right edge, in the free band between the top bar
-        // and the bottom chrome; the column scrolls inside it.
-        Box(
-            modifier = modifier,
-            contentAlignment = Alignment.TopCenter,
-        ) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .width(88.dp)
-                    .fillMaxHeight()
-                    .background(
-                        MpxTheme.colors.black.copy(alpha = 0.45f),
-                        MpxShapes.small,
-                    ),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-                contentPadding = PaddingValues(vertical = 4.dp),
-            ) {
-                items(layoutIds, key = { it }) { id ->
-                PlayerActionStripeItem(
-                    id = id,
-                    state = state,
-                    currentSettings = currentSettings,
-                    isFavourite = isFavourite,
-                    onOpenSheet = onOpenSheet,
-                    onToggleFavourite = onToggleFavourite,
-                    onEnterPip = onEnterPip,
-                    onToggleBackgroundPlay = onToggleBackgroundPlay,
-                    onAddToPlaylist = onAddToPlaylist,
-                    playbackManager = playbackManager,
-                    isLandscapeOrientation = isLandscapeOrientation,
-                    onToggleRotation = onToggleRotation,
-                    vertical = true,
-                )
-                }
-            }
-        }
-        return
-    }
-    Box(
+    LazyRow(
+        state = listState,
         modifier = modifier,
-        contentAlignment = Alignment.Center,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        contentPadding = PaddingValues(horizontal = 2.dp),
     ) {
-        LazyRow(
-            state = listState,
-            modifier = Modifier
-                .widthIn(max = 560.dp)
-                .background(
-                    MpxTheme.colors.black.copy(alpha = 0.45f),
-                    MpxShapes.small,
-                ),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            contentPadding = PaddingValues(horizontal = 4.dp),
-        ) {
-            items(layoutIds, key = { it }) { id ->
-                PlayerActionStripeItem(
-                    id = id,
-                    state = state,
-                    currentSettings = currentSettings,
-                    isFavourite = isFavourite,
-                    onOpenSheet = onOpenSheet,
-                    onToggleFavourite = onToggleFavourite,
-                    onEnterPip = onEnterPip,
-                    onToggleBackgroundPlay = onToggleBackgroundPlay,
-                    onAddToPlaylist = onAddToPlaylist,
-                    playbackManager = playbackManager,
-                    isLandscapeOrientation = isLandscapeOrientation,
-                    onToggleRotation = onToggleRotation,
-                    vertical = false,
-                )
-            }
+        items(layoutIds, key = { it }) { id ->
+            PlayerTopBarActionItem(
+                id = id,
+                state = state,
+                currentSettings = currentSettings,
+                isFavourite = isFavourite,
+                onOpenSheet = onOpenSheet,
+                onToggleFavourite = onToggleFavourite,
+                onEnterPip = onEnterPip,
+                onToggleBackgroundPlay = onToggleBackgroundPlay,
+                onAddToPlaylist = onAddToPlaylist,
+                playbackManager = playbackManager,
+            )
         }
     }
 }
 
 /**
- * One stripe item (issue #177): the when over the user's chosen
- * layout ids. Shared by the portrait row and the landscape column
- * so the two never drift apart; `vertical` only changes the button
- * shape (full-width, tighter padding).
+ * One top-bar action (issue #177): the when over the user's chosen
+ * layout ids. Decoder and rotation are not here — decoder is the
+ * pill in this same row, rotation is the last transport button.
+ * Icon-only, MX-style: the state each action used to show as a
+ * caption lives in the Playback sheet one tap away.
  */
 @Composable
-private fun PlayerActionStripeItem(
+private fun PlayerTopBarActionItem(
     id: String,
     state: PlaybackState,
     currentSettings: AppSettings,
@@ -2485,77 +2382,37 @@ private fun PlayerActionStripeItem(
     onToggleBackgroundPlay: () -> Unit,
     onAddToPlaylist: () -> Unit,
     playbackManager: PlaybackManager,
-    isLandscapeOrientation: Boolean,
-    onToggleRotation: () -> Unit,
-    vertical: Boolean,
 ) {
     val context = LocalContext.current
     when (id) {
-        "decoder" -> PlayerActionStripeButton(
-            vertical = vertical,
-            icon = Icons.Filled.Memory,
-            caption = state.decoderMode.label,
-            contentDescription = stringResource(R.string.playback_sheet_decoder),
-            active = false,
-            onClick = { onOpenSheet(PlaybackSheetPage.Decoder) },
-        )
-        "audio" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "audio" -> PlayerTopBarActionButton(
             icon = Icons.Filled.Audiotrack,
-            // Issue #262: an empty list (still preparing, or no
-            // discrete tracks) is not "audio off" — the video's
-            // audio is playing via the default output. Show no
-            // caption until a track list exists; "Off" is only
-            // for tracks present with none selected.
-            caption = if (state.audioTracks.isEmpty()) {
-                null
-            } else {
-                state.audioTracks.firstOrNull { it.isSelected }?.label
-                    ?: stringResource(R.string.player_state_off)
-            },
             contentDescription = stringResource(R.string.playback_sheet_audio_track),
             active = false,
             onClick = { onOpenSheet(PlaybackSheetPage.AudioTracks) },
         )
-        "subtitles" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "subtitles" -> PlayerTopBarActionButton(
             icon = Icons.Filled.Subtitles,
-            caption = state.subtitleTracks.firstOrNull { it.isSelected }?.label
-                ?: stringResource(R.string.player_state_off),
             contentDescription = stringResource(R.string.playback_sheet_subtitle_track),
             active = false,
             onClick = { onOpenSheet(PlaybackSheetPage.SubtitleTracks) },
         )
-        "favourite" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "favourite" -> PlayerTopBarActionButton(
             icon = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-            caption = stringResource(playerMenuRowLabelRes("favourite")),
             contentDescription = stringResource(
                 if (isFavourite) R.string.player_cd_favourite_remove else R.string.player_cd_favourite_add,
             ),
             active = isFavourite,
             onClick = onToggleFavourite,
         )
-        "shuffle" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "shuffle" -> PlayerTopBarActionButton(
             icon = Icons.Filled.Shuffle,
-            caption = stringResource(
-                if (state.shuffleEnabled) R.string.player_state_on else R.string.player_state_off,
-            ),
             contentDescription = stringResource(R.string.player_cd_shuffle),
             active = state.shuffleEnabled,
             onClick = { playbackManager.setShuffleEnabled(!state.shuffleEnabled) },
         )
-        "repeat" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "repeat" -> PlayerTopBarActionButton(
             icon = if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
-            caption = stringResource(
-                when (state.repeatMode) {
-                    RepeatMode.ONE -> R.string.player_cd_repeat_one
-                    RepeatMode.ALL -> R.string.player_cd_repeat_all
-                    else -> R.string.player_cd_repeat_off
-                },
-            ),
             contentDescription = stringResource(R.string.playback_sheet_repeat),
             active = state.repeatMode != RepeatMode.OFF,
             onClick = { playbackManager.cycleRepeatMode() },
@@ -2563,36 +2420,26 @@ private fun PlayerActionStripeItem(
         // Issue #225: PiP is video-only — hide the entry for audio
         // items (the enterPip lambda also refuses them, so an audio
         // item can never reach PiP from here or from the sheet).
-        "pip" -> if (state.currentItem?.isVideo == true) PlayerActionStripeButton(
-            vertical = vertical,
+        "pip" -> if (state.currentItem?.isVideo == true) PlayerTopBarActionButton(
             icon = Icons.Filled.PictureInPictureAlt,
-            caption = stringResource(playerMenuRowLabelRes("pip")),
             contentDescription = stringResource(R.string.player_menu_popup_play),
             active = false,
             onClick = onEnterPip,
         )
-        "background" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "background" -> PlayerTopBarActionButton(
             icon = Icons.Filled.Headphones,
-            caption = stringResource(
-                if (currentSettings.backgroundPlay) R.string.player_state_on else R.string.player_state_off,
-            ),
             contentDescription = stringResource(R.string.playback_sheet_background_play),
             active = currentSettings.backgroundPlay,
             onClick = onToggleBackgroundPlay,
         )
-        "speed" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "speed" -> PlayerTopBarActionButton(
             icon = Icons.Filled.Speed,
-            caption = formatMultiplier(state.speed),
             contentDescription = stringResource(R.string.playback_sheet_speed_title),
             active = false,
             onClick = { onOpenSheet(PlaybackSheetPage.Speed) },
         )
-        "aspect" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "aspect" -> PlayerTopBarActionButton(
             icon = Icons.Filled.AspectRatio,
-            caption = stringResource(state.aspectRatio.labelRes),
             contentDescription = stringResource(R.string.playback_sheet_aspect),
             active = false,
             onClick = {
@@ -2607,83 +2454,47 @@ private fun PlayerActionStripeItem(
                 ).show()
             },
         )
-        "rotation" -> PlayerActionStripeButton(
-            vertical = vertical,
-            icon = Icons.Filled.ScreenRotation,
-            // Issue #363: MX-style — a direct toggle, no menu.
-            // Caption is the current orientation; active while
-            // landscape. The override resets with the next video
-            // (see targetOrientation above).
-            caption = stringResource(
-                if (isLandscapeOrientation) R.string.player_orientation_landscape
-                else R.string.player_orientation_portrait,
-            ),
-            contentDescription = stringResource(R.string.playback_sheet_rotation),
-            active = isLandscapeOrientation,
-            onClick = onToggleRotation,
-        )
-        "sleep" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "sleep" -> PlayerTopBarActionButton(
             icon = Icons.Filled.Timer,
-            caption = state.sleepTimerRemainingSeconds?.let { formatTimeMs(it * 1000L) }
-                ?: stringResource(R.string.player_sleep_timer_off),
             contentDescription = stringResource(R.string.player_sleep_timer),
             active = state.sleepTimerRemainingSeconds != null,
             onClick = { onOpenSheet(PlaybackSheetPage.SleepTimer) },
         )
-        "playlist" -> PlayerActionStripeButton(
-            vertical = vertical,
+        "playlist" -> PlayerTopBarActionButton(
             icon = Icons.AutoMirrored.Filled.PlaylistAdd,
-            caption = stringResource(playerMenuRowLabelRes("playlist")),
             contentDescription = stringResource(R.string.player_menu_add_playlist),
             active = false,
             onClick = onAddToPlaylist,
         )
         else -> {
-            // parsePlayerMenuLayout already drops unknown ids.
+            // Decoder and rotation have their own spots (the pill in
+            // this row, the last transport button); anything
+            // parsePlayerMenuLayout did not drop renders nothing.
         }
     }
 }
 
-/** One compact stripe button: a 20dp icon over a 10sp caption. */
+/** One MX-style top-bar action: a 24dp icon, no caption, no background. */
 @Composable
-private fun PlayerActionStripeButton(
+private fun PlayerTopBarActionButton(
     icon: ImageVector,
-    caption: String?,
     contentDescription: String,
     active: Boolean,
     onClick: () -> Unit,
-    vertical: Boolean = false,
 ) {
-    Column(
-        modifier = (if (vertical) Modifier.fillMaxWidth() else Modifier)
+    Box(
+        modifier = Modifier
             .clip(MpxShapes.small)
             .clickable(onClick = onClick)
-            // Vertical: full-width so the column stays a uniform 88dp,
-            // tighter side padding so captions still fit.
-            .padding(horizontal = if (vertical) 6.dp else 10.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = 8.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = if (active) MpxTheme.colors.primary else MpxTheme.colors.textPrimary,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(24.dp),
         )
-        // Issue #262: a null caption (audio with no tracks known yet)
-        // renders icon-only instead of a wrong "Off".
-        if (caption != null) {
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = caption,
-                color = if (active) MpxTheme.colors.primary else MpxTheme.colors.textSecondary,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 76.dp),
-            )
-        }
     }
 }
 
