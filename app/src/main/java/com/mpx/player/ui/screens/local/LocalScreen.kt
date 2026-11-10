@@ -96,8 +96,6 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.MpxLoadingIndicator
-import com.mpx.player.ui.components.FastScrollbar
-import com.mpx.player.ui.components.GridFastScrollbar
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.util.MediaPermissions
@@ -1597,18 +1595,6 @@ fun LocalScreen(
                                     )
                                 }
                             }
-                            FastScrollbar(
-                                listState = videoListState,
-                                itemCount = currentSubfolders.size + filteredFolderVideos.size,
-                                getSectionText = { index ->
-                                    if (index < currentSubfolders.size) {
-                                        currentSubfolders[index].name.take(1).uppercase(Locale.US)
-                                    } else {
-                                        filteredFolderVideos.getOrNull(index - currentSubfolders.size)?.title?.take(1)?.uppercase(Locale.US) ?: ""
-                                    }
-                                },
-                                modifier = Modifier.align(Alignment.CenterEnd),
-                            )
                         }
                     } else {
                         Box(modifier = Modifier.fillMaxSize()) {
@@ -1677,24 +1663,6 @@ fun LocalScreen(
                                     )
                                 }
                             }
-                            GridFastScrollbar(
-                                gridState = videoGridState,
-                                itemCount = currentSubfolders.size + filteredFolderVideos.size,
-                                // Issue #236: the grid's real column count —
-                                // the scrollbar's row math needs it.
-                                columns = appSettings.videoGridColumns.coerceIn(1, 4),
-                                // #375: the subfolder rows are full-span
-                                // headers in the scrollbar's row math.
-                                headerItems = currentSubfolders.size,
-                                getSectionText = { index ->
-                                    if (index < currentSubfolders.size) {
-                                        currentSubfolders[index].name.take(1).uppercase(Locale.US)
-                                    } else {
-                                        filteredFolderVideos.getOrNull(index - currentSubfolders.size)?.title?.take(1)?.uppercase(Locale.US) ?: ""
-                                    }
-                                },
-                                modifier = Modifier.align(Alignment.CenterEnd),
-                            )
                         }
                     }
                 }
@@ -1810,14 +1778,6 @@ fun LocalScreen(
                                     )
                                 }
                             }
-                            FastScrollbar(
-                                listState = listState,
-                                itemCount = filteredVideos.size,
-                                getSectionText = { index ->
-                                    filteredVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
-                                },
-                                modifier = Modifier.align(Alignment.CenterEnd),
-                            )
                         }
                     } else {
                         Box(modifier = Modifier.fillMaxSize()) {
@@ -1861,16 +1821,6 @@ fun LocalScreen(
                                     )
                                 }
                             }
-                            GridFastScrollbar(
-                                gridState = gridState,
-                                itemCount = filteredVideos.size,
-                                // Issue #236: the grid's real column count.
-                                columns = appSettings.videoGridColumns.coerceIn(1, 4),
-                                getSectionText = { index ->
-                                    filteredVideos.getOrNull(index)?.title?.take(1)?.uppercase(Locale.US) ?: ""
-                                },
-                                modifier = Modifier.align(Alignment.CenterEnd),
-                            )
                         }
                     }
                 } else {
@@ -1956,14 +1906,6 @@ fun LocalScreen(
                                     )
                                 }
                             }
-                            FastScrollbar(
-                                listState = listState,
-                                itemCount = filteredFolders.size,
-                                getSectionText = { index ->
-                                    filteredFolders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
-                                },
-                                modifier = Modifier.align(Alignment.CenterEnd),
-                            )
                         }
                     } else {
                         Box(modifier = Modifier.fillMaxSize()) {
@@ -2000,16 +1942,6 @@ fun LocalScreen(
                                     )
                                 }
                             }
-                            GridFastScrollbar(
-                                gridState = gridState,
-                                itemCount = filteredFolders.size,
-                                // Issue #236: the grid's real column count.
-                                columns = appSettings.folderGridColumns.coerceIn(1, 4),
-                                getSectionText = { index ->
-                                    filteredFolders.getOrNull(index)?.name?.take(1)?.uppercase(Locale.US) ?: ""
-                                },
-                                modifier = Modifier.align(Alignment.CenterEnd),
-                            )
                         }
                     }
                 }
