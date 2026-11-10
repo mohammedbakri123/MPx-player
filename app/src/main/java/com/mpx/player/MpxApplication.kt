@@ -3,6 +3,9 @@ package com.mpx.player
 import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
+import com.mpx.player.di.appModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
 /**
  * Issue #437: the launch (splash) theme resolved its night qualifier
@@ -25,6 +28,18 @@ import android.content.res.Configuration
 class MpxApplication : Application() {
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(applyAppThemeNightMode(base))
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        // Migration Phase 1: Koin is the one place objects are built.
+        // Modules are added one per migration step; nothing reads from
+        // Koin yet except the modules themselves — MainActivity starts
+        // in step 1c.
+        startKoin {
+            androidContext(this@MpxApplication)
+            modules(appModule)
+        }
     }
 }
 
