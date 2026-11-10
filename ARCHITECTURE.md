@@ -176,8 +176,12 @@ A finished screen follows one pattern, every time:
 - Phase 2 (one ViewModel per screen, player first): not started.
 - Phase 3 (break up `PlaybackManager`): not started.
 - Phase 4 (split `MpvPlayerEngine` by concern): not started.
-- Phase 5 (contributor path: good first issues, PR template, CI): not
-  started.
+- Phase 5 (contributor path): in progress. The PR template asks what
+  changed, what did not change, and how it was verified; CI runs the
+  debug build and unit tests on every pull request. Still to do: the
+  worked end-to-end example in CONTRIBUTING.md (needs a real migrated
+  feature, so it waits for Phases 1–2) and honest `good first issue`
+  labels on genuinely small post-migration tasks.
 
 Until a phase is marked done here, assume the old pattern still applies
 to the files it covers.
