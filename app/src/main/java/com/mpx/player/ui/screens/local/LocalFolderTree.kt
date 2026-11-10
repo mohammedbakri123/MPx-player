@@ -27,7 +27,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mpx.player.R
 import com.mpx.player.domain.model.MediaFolder
-import com.mpx.player.ui.components.FastScrollbar
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxTheme
 import java.util.Locale
@@ -472,14 +471,5 @@ fun LocalFolderTree(
                 )
             }
         }
-        FastScrollbar(
-            listState = listState,
-            itemCount = visibleRows.size,
-            getSectionText = { index ->
-                visibleRows.getOrNull(index)?.folder?.name?.take(1)
-                    ?.uppercase(Locale.US) ?: ""
-            },
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
     }
 }
