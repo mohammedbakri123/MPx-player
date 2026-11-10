@@ -3,7 +3,6 @@ package com.mpx.player.data.settings
 import android.content.Context
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
-import com.mpx.player.domain.settings.DEFAULT_DOWNLOAD_USER_AGENT
 import com.mpx.player.domain.settings.DEFAULT_PLAYER_MENU_LAYOUT
 
 /**
@@ -126,83 +125,12 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             hiddenPlayerMenuIds = prefs.getString("player_menu_layout_hidden", "") ?: "",
             doubleTapSeekSeconds = prefs.getInt("double_tap_seek_seconds", 10),
             lastSmbHost = prefs.getString("last_smb_host", "") ?: "",
-            // Issue #333: yt-dlp update prefs. Channel is validated —
-            // a stale/corrupt value falls back to STABLE.
-            ytdlpAutoUpdate = prefs.getBoolean("ytdlp_auto_update", true),
-            ytdlpUpdateChannel = prefs.getString("ytdlp_update_channel", "STABLE")
-                ?.takeIf { it == "STABLE" || it == "NIGHTLY" } ?: "STABLE",
-            ytdlpUpdateIntervalMs = prefs.getLong("ytdlp_update_interval_ms", 7L * 24 * 60 * 60 * 1000),
-            ytdlpLastUpdateTimeMs = prefs.getLong("ytdlp_last_update_time_ms", 0L),
-            ytdlpVersion = prefs.getString("ytdlp_version", "") ?: "",
-            // Issue #337: download User-Agent; a stored blank stays blank
-            // (no header), a missing key takes the desktop-Chrome default.
-            downloadUserAgent = prefs.getString("download_user_agent", DEFAULT_DOWNLOAD_USER_AGENT)
-                ?: DEFAULT_DOWNLOAD_USER_AGENT,
-            // Issue #338: download quality. Codec and resolution are
-            // validated — a stale/corrupt value falls back to the
-            // defaults (Auto / no cap) instead of breaking the sorter.
-            downloadCodec = prefs.getString("download_codec", "Auto")
-                ?.takeIf { it in setOf("Auto", "VP9", "AV1", "H264") } ?: "Auto",
-            downloadResolution = prefs.getInt("download_resolution", 0)
-                .takeIf { it in 0..6 } ?: 0,
-            downloadCustomSorter = prefs.getString("download_custom_sorter", "") ?: "",
-            downloadFormatSelection = prefs.getString("download_format_selection", "custom")
-                ?.takeIf { it in setOf("auto", "custom") } ?: "custom",
-            // Issue #347: small network/filename flags. Stored raw —
-            // a blank rate limit / proxy means "off", and the downloader
-            // normalises a bare rate number to KB/s at request time.
-            downloadRateLimit = prefs.getString("download_rate_limit", "") ?: "",
-            downloadProxy = prefs.getString("download_proxy", "") ?: "",
-            downloadForceIpv4 = prefs.getBoolean("download_force_ipv4", false),
-            downloadRestrictFilenames = prefs.getBoolean("download_restrict_filenames", false),
-            // Issue #348: SponsorBlock. Stored raw — the categories
-            // string is passed to `--sponsorblock-remove` as-is.
-            downloadSponsorBlock = prefs.getBoolean("download_sponsorblock", false),
-            downloadSponsorBlockCategories = prefs.getString(
-                "download_sponsorblock_categories",
-                "sponsor,intro,outro,selfpromo",
-            ) ?: "sponsor,intro,outro,selfpromo",
-            // Issue #379: persisted downloader defaults (were per-download
-            // switches on the Download page) + download folder.
-            downloadAudioOnly = prefs.getBoolean("download_audio_only", false),
-            downloadSubtitles = prefs.getBoolean("download_subtitles", false),
-            downloadAudioFormat = prefs.getString("download_audio_format", "mp3") ?: "mp3",
-            downloadConvertAudio = prefs.getBoolean("download_convert_audio", false),
-            downloadUseCustomAudioPreset = prefs.getBoolean("download_use_custom_audio_preset", false),
-            downloadAudioPresetFormat = prefs.getString("download_audio_preset_format", "any") ?: "any",
-            downloadAudioPresetQuality = prefs.getString("download_audio_preset_quality", "best") ?: "best",
-            downloadAllowMetered = prefs.getBoolean("download_allow_metered", false),
-            downloadVerboseLogging = prefs.getBoolean("download_verbose_logging", false),
-            downloadNotifications = prefs.getBoolean("download_notifications", true),
-            downloadRecentUrls = prefs.getString("download_recent_urls", "") ?: "",
-            downloadDirectory = prefs.getString("download_directory", "MPx") ?: "MPx",
-            downloadGroupPlaylists = prefs.getBoolean("download_group_playlists", false),
-            downloadGroupBySite = prefs.getBoolean("download_group_by_site", false),
-            downloadPrivateDirectory = prefs.getBoolean("download_private_directory", false),
-            downloadOutputTemplate = prefs.getString("download_output_template", "%(title).200B.%(ext)s") ?: "%(title).200B.%(ext)s",
-            downloadPrivateMode = prefs.getBoolean("download_private_mode", false),
-            downloadToSdCard = prefs.getBoolean("download_to_sd_card", false),
-            downloadSdCardUri = prefs.getString("download_sd_card_uri", "") ?: "",
-            downloadAudioDirectory = prefs.getString("download_audio_directory", "") ?: "",
-            customCommandEnabled = prefs.getBoolean("custom_command_enabled", false),
-            customCommand = prefs.getString("custom_command", "--no-mtime -S \"ext\"") ?: "--no-mtime -S \"ext\"",
-            customCommandDirectory = prefs.getString("custom_command_directory", "") ?: "",
-            downloadAutoUpdateCheck = prefs.getBoolean("download_auto_update_check", false),
-            downloadSubtitleLanguages = prefs.getString("download_subtitle_languages", "en,ar") ?: "en,ar",
-            downloadAutoSubtitles = prefs.getBoolean("download_auto_subtitles", false),
-            downloadConvertSubtitles = prefs.getString("download_convert_subtitles", "none") ?: "none",
-            downloadEmbedSubtitles = prefs.getBoolean("download_embed_subtitles", true),
-            downloadKeepSubtitles = prefs.getBoolean("download_keep_subtitles", true),
-            downloadMergeToMkv = prefs.getBoolean("download_merge_to_mkv", false),
-            downloadAudioMultistreams = prefs.getBoolean("download_audio_multistreams", false),
-            downloadWriteThumbnail = prefs.getBoolean("download_write_thumbnail", false),
-            downloadEmbedThumbnail = prefs.getBoolean("download_embed_thumbnail", false),
-            downloadCropArtwork = prefs.getBoolean("download_crop_artwork", false),
             // Issue #430-433: Advanced settings (mpvEx parity).
             mpvConfStorageUri = prefs.getString("mpv_conf_storage_uri", "") ?: "",
             mpvConf = prefs.getString("mpv_conf", "") ?: "",
             inputConf = prefs.getString("input_conf", "") ?: "",
             enableLuaScripts = prefs.getBoolean("enable_lua_scripts", true),
+            appUpdateAutoCheck = prefs.getBoolean("app_update_auto_check", false),
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -310,61 +238,12 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("player_menu_layout", settings.playerMenuLayout)
             .putString("player_menu_layout_hidden", settings.hiddenPlayerMenuIds)
             .putInt("double_tap_seek_seconds", settings.doubleTapSeekSeconds)
-            .putBoolean("ytdlp_auto_update", settings.ytdlpAutoUpdate)
-            .putString("ytdlp_update_channel", settings.ytdlpUpdateChannel)
-            .putLong("ytdlp_update_interval_ms", settings.ytdlpUpdateIntervalMs)
-            .putLong("ytdlp_last_update_time_ms", settings.ytdlpLastUpdateTimeMs)
-            .putString("ytdlp_version", settings.ytdlpVersion)
-            .putString("download_user_agent", settings.downloadUserAgent)
-            .putString("download_codec", settings.downloadCodec)
-            .putInt("download_resolution", settings.downloadResolution)
-            .putString("download_custom_sorter", settings.downloadCustomSorter)
-            .putString("download_format_selection", settings.downloadFormatSelection)
-            .putString("download_rate_limit", settings.downloadRateLimit)
-            .putString("download_proxy", settings.downloadProxy)
-            .putBoolean("download_force_ipv4", settings.downloadForceIpv4)
-            .putBoolean("download_restrict_filenames", settings.downloadRestrictFilenames)
-            .putBoolean("download_sponsorblock", settings.downloadSponsorBlock)
-            .putString("download_sponsorblock_categories", settings.downloadSponsorBlockCategories)
-            .putBoolean("download_audio_only", settings.downloadAudioOnly)
-            .putBoolean("download_subtitles", settings.downloadSubtitles)
-            .putString("download_audio_format", settings.downloadAudioFormat)
-            .putBoolean("download_convert_audio", settings.downloadConvertAudio)
-            .putBoolean("download_use_custom_audio_preset", settings.downloadUseCustomAudioPreset)
-            .putString("download_audio_preset_format", settings.downloadAudioPresetFormat)
-            .putString("download_audio_preset_quality", settings.downloadAudioPresetQuality)
-            .putBoolean("download_allow_metered", settings.downloadAllowMetered)
-            .putBoolean("download_verbose_logging", settings.downloadVerboseLogging)
-            .putBoolean("download_notifications", settings.downloadNotifications)
-            .putString("download_recent_urls", settings.downloadRecentUrls)
-            .putString("download_directory", settings.downloadDirectory)
-            .putBoolean("download_group_playlists", settings.downloadGroupPlaylists)
-            .putBoolean("download_group_by_site", settings.downloadGroupBySite)
-            .putBoolean("download_private_directory", settings.downloadPrivateDirectory)
-            .putString("download_output_template", settings.downloadOutputTemplate)
-            .putBoolean("download_private_mode", settings.downloadPrivateMode)
-            .putBoolean("download_to_sd_card", settings.downloadToSdCard)
-            .putString("download_sd_card_uri", settings.downloadSdCardUri)
-            .putString("download_audio_directory", settings.downloadAudioDirectory)
-            .putBoolean("custom_command_enabled", settings.customCommandEnabled)
-            .putString("custom_command", settings.customCommand)
-            .putString("custom_command_directory", settings.customCommandDirectory)
-            .putBoolean("download_auto_update_check", settings.downloadAutoUpdateCheck)
-            .putString("download_subtitle_languages", settings.downloadSubtitleLanguages)
-            .putBoolean("download_auto_subtitles", settings.downloadAutoSubtitles)
-            .putString("download_convert_subtitles", settings.downloadConvertSubtitles)
-            .putBoolean("download_embed_subtitles", settings.downloadEmbedSubtitles)
-            .putBoolean("download_keep_subtitles", settings.downloadKeepSubtitles)
-            .putBoolean("download_merge_to_mkv", settings.downloadMergeToMkv)
-            .putBoolean("download_audio_multistreams", settings.downloadAudioMultistreams)
-            .putBoolean("download_write_thumbnail", settings.downloadWriteThumbnail)
-            .putBoolean("download_embed_thumbnail", settings.downloadEmbedThumbnail)
-            .putBoolean("download_crop_artwork", settings.downloadCropArtwork)
             // Issue #430-433: Advanced settings (mpvEx parity).
             .putString("mpv_conf_storage_uri", settings.mpvConfStorageUri)
             .putString("mpv_conf", settings.mpvConf)
             .putString("input_conf", settings.inputConf)
             .putBoolean("enable_lua_scripts", settings.enableLuaScripts)
+            .putBoolean("app_update_auto_check", settings.appUpdateAutoCheck)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

@@ -55,7 +55,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
-import com.mpx.player.download.SettingsBackup
+import com.mpx.player.data.settings.SettingsBackup
 import com.mpx.player.playback.engine.MpvConfigSync
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.components.MpxDialog
@@ -233,8 +233,7 @@ fun AdvancedSettingsScreen(
             contentPadding = PaddingValues(bottom = 32.dp),
         ) {
             // Issue #433: full-settings XML export / import — the whole
-            // app's settings in one file, separate from #413's
-            // downloader-only JSON backup.
+            // app's settings in one file.
             item { PreferenceSectionHeader(text = stringResource(R.string.adv_section_backup_restore)) }
             item {
                 PreferenceCard {

@@ -6,19 +6,11 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.mpx.player.data.local.dao.CommandTemplateDao
-import com.mpx.player.data.local.dao.CookieProfileDao
-import com.mpx.player.data.local.dao.DownloadHistoryDao
-import com.mpx.player.data.local.dao.DownloadTaskDao
 import com.mpx.player.data.local.dao.FavouriteDao
 import com.mpx.player.data.local.dao.PlaybackHistoryDao
 import com.mpx.player.data.local.dao.PlaybackResumeDao
 import com.mpx.player.data.local.dao.PlaylistDao
-import com.mpx.player.data.local.entity.CommandTemplateEntity
-import com.mpx.player.data.local.entity.CookieProfileEntity
 import com.mpx.player.data.local.entity.CustomPlaylistEntity
-import com.mpx.player.data.local.entity.DownloadHistoryEntity
-import com.mpx.player.data.local.entity.DownloadTaskEntity
 import com.mpx.player.data.local.entity.FavouriteEntity
 import com.mpx.player.data.local.entity.PlaybackHistoryEntity
 import com.mpx.player.data.local.entity.PlaybackResumeEntity
@@ -26,8 +18,8 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
 
 /**
  * Main Room SQLite database for MPx Player.
- * Persists favourites, playback history, custom playlists, media resume positions,
- * the download queue (#342) and the download history (#346).
+ * Persists favourites, playback history, custom playlists and media
+ * resume positions.
  *
  * Fresh-install strategy:
  * Starts with empty tables on fresh installs (no mock data).
@@ -40,12 +32,8 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
         CustomPlaylistEntity::class,
         PlaylistItemEntity::class,
         PlaybackResumeEntity::class,
-        DownloadTaskEntity::class,
-        DownloadHistoryEntity::class,
-        CookieProfileEntity::class,
-        CommandTemplateEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = false,
 )
 abstract class MpxDatabase : RoomDatabase() {
@@ -54,10 +42,6 @@ abstract class MpxDatabase : RoomDatabase() {
     abstract fun playbackHistoryDao(): PlaybackHistoryDao
     abstract fun playlistDao(): PlaylistDao
     abstract fun playbackResumeDao(): PlaybackResumeDao
-    abstract fun downloadTaskDao(): DownloadTaskDao
-    abstract fun downloadHistoryDao(): DownloadHistoryDao
-    abstract fun cookieProfileDao(): CookieProfileDao
-    abstract fun commandTemplateDao(): CommandTemplateDao
 
     companion object {
         private const val DATABASE_NAME = "mpx_player.db"
@@ -238,6 +222,24 @@ abstract class MpxDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Issue #434: the downloader is removed — drop its four tables.
+         * The data is downloader-only (queue, history, cookie profiles,
+         * command templates), so nothing the player needs is lost.
+         * Same rule as the earlier migrations: a proper migration, so
+         * the 11→12 jump must NOT wipe the user's favourites, history
+         * and playlists through the pre-existing
+         * fallbackToDestructiveMigration() below.
+         */
+        val MIGRATION_11_12: Migration = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS `download_tasks`")
+                db.execSQL("DROP TABLE IF EXISTS `download_history`")
+                db.execSQL("DROP TABLE IF EXISTS `cookie_profiles`")
+                db.execSQL("DROP TABLE IF EXISTS `command_templates`")
+            }
+        }
+
         fun getInstance(context: Context): MpxDatabase {
             return instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -245,7 +247,7 @@ abstract class MpxDatabase : RoomDatabase() {
                     MpxDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }

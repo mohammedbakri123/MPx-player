@@ -27,8 +27,7 @@ object SubtitleUtils {
 
     // MIME types for the three subtitle formats mpv accepts via sub-add
     // (issue #150: these used to come from androidx.media3.common.MimeTypes).
-    // Issue #352: .ass/.ssa added — mpv plays ASS natively and the downloader
-    // already downloads .ass sidecars (MpxDownloader SUBTITLE_EXTENSIONS) and
+    // Issue #352: .ass/.ssa added — mpv plays ASS natively and
     // sub-adds them, so the manual picker must stop rejecting them.
     private const val SUBRIP_MIME = "application/x-subrip"
     private const val VTT_MIME = "text/vtt"
@@ -87,8 +86,7 @@ object SubtitleUtils {
             )
         }
 
-        // 3. ASS/SSA extension check (issue #352) — same MIME the downloader
-        // maps "ass" to (MpxDownloader.kt), and mpv sub-adds it natively.
+        // 3. ASS/SSA extension check (issue #352) — mpv sub-adds it natively.
         if (lowerName.endsWith(".ass") || lowerName.endsWith(".ssa")) {
             return SubtitleValidationResult.Supported(
                 uri = uri,

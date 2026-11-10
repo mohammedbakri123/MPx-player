@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FolderSpecial
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Language
@@ -453,20 +452,6 @@ fun AboutBetaScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MpxTheme.colors.textSecondary,
                             modifier = Modifier.padding(bottom = 12.dp),
-                        )
-
-                        FeatureStatusRow(
-                            icon = Icons.Filled.Download,
-                            iconTint = MpxTheme.colors.textMuted,
-                            title = stringResource(R.string.about_beta_holder_downloader_title),
-                            description = stringResource(R.string.about_beta_holder_downloader_desc),
-                            isReady = false,
-                        )
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 10.dp),
-                            color = MpxTheme.colors.border.copy(alpha = 0.5f),
-                            thickness = MpxHairline,
                         )
 
                         FeatureStatusRow(

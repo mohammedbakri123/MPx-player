@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.ui.components.MpxDialog
-import com.mpx.player.ui.screens.download.formatSize
 import com.mpx.player.ui.theme.MpxTheme
 import com.mpx.player.update.AppUpdateChecker
 import java.io.File
@@ -152,5 +151,19 @@ fun AppUpdateDialog(
                 )
             }
         }
+    }
+}
+
+/** Human-readable byte size (moved here from the deleted DownloadRows in #434). */
+private fun formatSize(bytes: Long): String {
+    if (bytes <= 0L) return "0 B"
+    val kb = bytes / 1024.0
+    val mb = kb / 1024.0
+    val gb = mb / 1024.0
+    return when {
+        gb >= 1.0 -> String.format(Locale.US, "%.1f GB", gb)
+        mb >= 1.0 -> String.format(Locale.US, "%.1f MB", mb)
+        kb >= 1.0 -> String.format(Locale.US, "%.1f KB", kb)
+        else -> "$bytes B"
     }
 }
