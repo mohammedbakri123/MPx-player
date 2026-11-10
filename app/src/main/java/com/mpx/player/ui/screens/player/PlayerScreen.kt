@@ -386,6 +386,24 @@ fun PlayerScreen(
 
     val state by playbackManager.playbackState.collectAsState()
 
+    // Keep the screen awake while a video is playing: without this
+    // Android applies the system screen timeout mid-video and the
+    // screen goes dark (no keep-screen-on flag or wake lock existed
+    // anywhere in the app). View.keepScreenOn is the standard
+    // video-player mechanism (what ExoPlayer's PlayerView does):
+    // on while a video is playing or loading, off when paused,
+    // audio-only, or in PiP — and released when this screen leaves
+    // composition, so it can never leak onto the Home screen. The
+    // lock button does not change it: a locked player is still a
+    // video being watched.
+    val keepScreenOn = state.currentItem?.isVideo == true && !isInPipMode &&
+        (state.isPlaying || state.isPreparing)
+    val playerView = LocalView.current
+    DisposableEffect(keepScreenOn) {
+        playerView.keepScreenOn = keepScreenOn
+        onDispose { playerView.keepScreenOn = false }
+    }
+
     // Issue #149: after a process death in the background, Android restores
     // this destination but the PlaybackManager singleton is fresh with an
     // empty queue, which used to render the "No video queued" empty state.
