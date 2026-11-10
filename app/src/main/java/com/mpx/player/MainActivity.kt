@@ -8,7 +8,6 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -66,9 +65,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.settings.AppSettingsRepository
-import com.mpx.player.download.DownloadService
-import com.mpx.player.download.MpxDownloader
-import com.mpx.player.download.SharedLink
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.ui.components.player.MiniPlayer
@@ -76,10 +72,6 @@ import com.mpx.player.ui.navigation.Screen
 import com.mpx.player.ui.navigation.navigationTabs
 import com.mpx.player.ui.screens.about.AboutBetaScreen
 import com.mpx.player.ui.ActivityResultHandler
-import com.mpx.player.ui.screens.download.DownloadScreen
-import com.mpx.player.ui.screens.download.DownloadedScreen
-import com.mpx.player.ui.screens.download.CommandTemplatesScreen
-import com.mpx.player.ui.screens.download.CookieProfilesScreen
 import com.mpx.player.ui.screens.local.LocalScreen
 import com.mpx.player.ui.screens.me.HistoryScreen
 import com.mpx.player.ui.screens.me.MeScreen
@@ -150,14 +142,6 @@ class MainActivity : ComponentActivity() {
     private var currentPalette by mutableStateOf("Blue")
     private var currentThemeColor by mutableStateOf("TrueBlack")
     private var openPlayerOnStart by mutableStateOf(false)
-    // Issue #343: same pattern for a download notification tap — the
-    // Download tab opens when the activity starts from that intent.
-    private var openDownloadsOnStart by mutableStateOf(false)
-    // Issue #416: a link shared to the app — the URL pre-fills the
-    // Download tab's field. Same pattern as the notification tap
-    // above: set from the intent (onCreate and onNewIntent), read
-    // by MpxApp, cleared once the Download screen consumes it.
-    private var sharedDownloadUrlOnStart by mutableStateOf<String?>(null)
     // Issue #248: bumps on every handled configuration change (see
     // onConfigurationChanged below). The setContent remembers for the
     // localized context/config are keyed on it, so a dark-mode toggle,
@@ -190,27 +174,6 @@ class MainActivity : ComponentActivity() {
     val subtitleLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri -> subtitleHandler.invoke(uri) }
-    // Issue #393: the SD-card folder picker — same pattern as the
-    // subtitle picker above (launchers live on the Activity, the
-    // destination only supplies the callback).
-    val sdCardFolderHandler = ActivityResultHandler<android.net.Uri?>()
-    val sdCardFolderLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocumentTree(),
-    ) { uri -> sdCardFolderHandler.invoke(uri) }
-    // Issue #428: the backup export/import pickers — the #413
-    // launchers used rememberLauncherForActivityResult directly in
-    // SettingsScreen and crashed on first composition ("No
-    // ActivityResultRegistryOwner was provided"). Same pattern as
-    // the SD-card picker above: the launchers live on the Activity,
-    // the destination only supplies the callback.
-    val backupExportHandler = ActivityResultHandler<android.net.Uri?>()
-    val backupImportHandler = ActivityResultHandler<android.net.Uri?>()
-    val backupExportLauncher = registerForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json"),
-    ) { uri -> backupExportHandler.invoke(uri) }
-    val backupImportLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri -> backupImportHandler.invoke(uri) }
     // Issue #432: the mpv config folder picker — same pattern as the
     // SD-card picker above (launcher on the Activity, the Advanced
     // screen only supplies the callback). NEVER
@@ -220,7 +183,8 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.OpenDocumentTree(),
     ) { uri -> mpvConfigFolderHandler.invoke(uri) }
     // Issue #433: the full-settings XML export/import pickers — same
-    // pattern as the #413 backup launchers above.
+    // pattern as the subtitle picker above (launcher on the Activity,
+    // the destination only supplies the callback).
     val settingsExportHandler = ActivityResultHandler<android.net.Uri?>()
     val settingsImportHandler = ActivityResultHandler<android.net.Uri?>()
     val settingsExportLauncher = registerForActivityResult(
@@ -330,12 +294,6 @@ class MainActivity : ComponentActivity() {
                         musicPermissionHandler = musicPermissionHandler,
                         subtitleLauncher = subtitleLauncher,
                         subtitleHandler = subtitleHandler,
-                        sdCardFolderLauncher = sdCardFolderLauncher,
-                        sdCardFolderHandler = sdCardFolderHandler,
-                        backupExportLauncher = backupExportLauncher,
-                        backupExportHandler = backupExportHandler,
-                        backupImportLauncher = backupImportLauncher,
-                        backupImportHandler = backupImportHandler,
                         mpvConfigFolderLauncher = mpvConfigFolderLauncher,
                         mpvConfigFolderHandler = mpvConfigFolderHandler,
                         settingsExportLauncher = settingsExportLauncher,
@@ -349,10 +307,6 @@ class MainActivity : ComponentActivity() {
                         currentThemeColor = currentThemeColor,
                         openPlayerRequested = openPlayerOnStart,
                         onResetOpenPlayer = { openPlayerOnStart = false },
-                        openDownloadsRequested = openDownloadsOnStart,
-                        onResetOpenDownloads = { openDownloadsOnStart = false },
-                        sharedDownloadUrl = sharedDownloadUrlOnStart,
-                        onSharedDownloadUrlConsumed = { sharedDownloadUrlOnStart = null },
                         onLanguageChanged = { newLang ->
                             currentLanguage = newLang
                             val s = settingsRepository.load()
@@ -395,25 +349,6 @@ class MainActivity : ComponentActivity() {
             intent?.action == PlaybackService.ACTION_OPEN_PLAYER
         ) {
             openPlayerOnStart = true
-        }
-        // Issue #343: a download notification tap carries this action/
-        // extra instead — same handling, different destination.
-        if (intent?.getBooleanExtra(DownloadService.EXTRA_OPEN_DOWNLOADS, false) == true ||
-            intent?.action == DownloadService.ACTION_OPEN_DOWNLOADS
-        ) {
-            openDownloadsOnStart = true
-        }
-        // Issue #416: a link shared to the app (ACTION_SEND text or
-        // ACTION_VIEW http/https). No link in the shared text -> the
-        // app just opens normally, with a toast saying so (Seal's
-        // share-fail toast).
-        if (intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_VIEW) {
-            val sharedUrl = SharedLink.urlFromIntent(intent)
-            if (sharedUrl != null) {
-                sharedDownloadUrlOnStart = sharedUrl
-            } else {
-                Toast.makeText(this, getString(R.string.share_no_link), Toast.LENGTH_SHORT).show()
-            }
         }
     }
 
@@ -581,14 +516,6 @@ fun MpxApp(
     musicPermissionHandler: ActivityResultHandler<Boolean>,
     subtitleLauncher: ActivityResultLauncher<Array<String>>,
     subtitleHandler: ActivityResultHandler<android.net.Uri?>,
-    // Issue #393: the SD-card folder picker, threaded to Settings.
-    sdCardFolderLauncher: ActivityResultLauncher<android.net.Uri?>,
-    sdCardFolderHandler: ActivityResultHandler<android.net.Uri?>,
-    // Issue #428: the backup export/import pickers, same pattern.
-    backupExportLauncher: ActivityResultLauncher<String>,
-    backupExportHandler: ActivityResultHandler<android.net.Uri?>,
-    backupImportLauncher: ActivityResultLauncher<Array<String>>,
-    backupImportHandler: ActivityResultHandler<android.net.Uri?>,
     // Issue #432: the mpv config folder picker, threaded to Advanced.
     mpvConfigFolderLauncher: ActivityResultLauncher<android.net.Uri?>,
     mpvConfigFolderHandler: ActivityResultHandler<android.net.Uri?>,
@@ -604,17 +531,6 @@ fun MpxApp(
     currentThemeColor: String = "TrueBlack",
     openPlayerRequested: Boolean = false,
     onResetOpenPlayer: (() -> Unit)? = null,
-    // Issue #343: same pattern for a download notification tap — the
-    // Download tab opens when the activity starts from that intent.
-    openDownloadsRequested: Boolean = false,
-    onResetOpenDownloads: (() -> Unit)? = null,
-    // Issue #416: a link shared to the app — the Download tab opens
-    // with the URL pre-filled. The consume callback runs in the
-    // Download screen, not here: clearing the URL in the navigation
-    // effect below could clear it before the screen composes and
-    // sees it.
-    sharedDownloadUrl: String? = null,
-    onSharedDownloadUrlConsumed: (() -> Unit)? = null,
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
@@ -664,33 +580,6 @@ fun MpxApp(
         }
     }
 
-    // Issue #343: a download notification tap — same pattern, the
-    // Download dock tab instead of the Player.
-    LaunchedEffect(openDownloadsRequested) {
-        if (openDownloadsRequested) {
-            navigateToTab(Screen.Download.route)
-            onResetOpenDownloads?.invoke()
-        }
-    }
-
-    // Issue #416: a link shared to the app — same pattern again,
-    // the Download dock tab, with the URL riding along to the
-    // screen below. The URL itself is consumed there, not here.
-    LaunchedEffect(sharedDownloadUrl) {
-        if (sharedDownloadUrl != null) {
-            navigateToTab(Screen.Download.route)
-        }
-    }
-
-    // Issue #333: yt-dlp auto-update on launch (Seal YtdlpUpdater).
-    // The idle/network/interval gates live in the downloader; the
-    // check is silent when skipped, and it never blocks init or
-    // downloads.
-    val downloader = remember { MpxDownloader.getInstance(context) }
-    LaunchedEffect(Unit) {
-        downloader.maybeAutoUpdateYtDlp()
-    }
-
     // Issue #418: automatic app-update check on launch (Seal's
     // AppUpdater) — once per launch, only when the setting is on
     // and the network is available. An available release opens the
@@ -699,7 +588,7 @@ fun MpxApp(
     // showing.
     var pendingUpdate by remember { mutableStateOf<AppUpdateChecker.Release?>(null) }
     LaunchedEffect(Unit) {
-        if (realSettingsRepo.load().downloadAutoUpdateCheck && downloader.isNetworkAvailable()) {
+        if (realSettingsRepo.load().appUpdateAutoCheck) {
             when (val result = AppUpdateChecker.checkForUpdate()) {
                 is AppUpdateChecker.CheckResult.Available -> pendingUpdate = result.release
                 else -> { /* Up to date or failed: stay silent. */ }
@@ -720,9 +609,6 @@ fun MpxApp(
                 Screen.AboutBeta.route,
                 Screen.History.route,
                 Screen.Playlists.route,
-                Screen.Downloaded.route,
-                Screen.CookieProfiles.route,
-                Screen.CommandTemplates.route,
             )
             AnimatedVisibility(
                 visible = showDock,
@@ -858,13 +744,6 @@ fun MpxApp(
                     settingsRepository = realSettingsRepo,
                 )
             }
-            composable(Screen.Download.route) {
-                DownloadScreen(
-                    onOpenDownloaded = { navController.navigate(Screen.Downloaded.route) },
-                    sharedUrl = sharedDownloadUrl,
-                    onSharedUrlConsumed = onSharedDownloadUrlConsumed,
-                )
-            }
             composable(Screen.Me.route) {
                 MeScreen(
                     // Issue #251: route tab shortcuts through
@@ -898,38 +777,13 @@ fun MpxApp(
                     playbackManager = playbackManager,
                 )
             }
-            composable(Screen.Downloaded.route) {
-                DownloadedScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onOpenPlayer = { navController.navigate(Screen.Player.route) },
-                    playbackManager = playbackManager,
-                )
-            }
-            composable(Screen.CookieProfiles.route) {
-                CookieProfilesScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                )
-            }
-            composable(Screen.CommandTemplates.route) {
-                CommandTemplatesScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                )
-            }
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onOpenOverlaySettings = { navController.navigate(Screen.OverlaySettings.route) },
                     onOpenAdvancedSettings = { navController.navigate(Screen.AdvancedSettings.route) },
-                    onOpenCookieProfiles = { navController.navigate(Screen.CookieProfiles.route) },
-                    onOpenCommandTemplates = { navController.navigate(Screen.CommandTemplates.route) },
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
                     settingsRepository = realSettingsRepo,
-                    sdCardFolderLauncher = sdCardFolderLauncher,
-                    sdCardFolderHandler = sdCardFolderHandler,
-                    backupExportLauncher = backupExportLauncher,
-                    backupExportHandler = backupExportHandler,
-                    backupImportLauncher = backupImportLauncher,
-                    backupImportHandler = backupImportHandler,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                     onThemeChanged = onThemeChanged,

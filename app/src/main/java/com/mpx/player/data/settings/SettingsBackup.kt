@@ -1,4 +1,4 @@
-package com.mpx.player.download
+package com.mpx.player.data.settings
 
 import android.content.Context
 import android.net.Uri
@@ -15,8 +15,8 @@ import java.util.Locale
 /**
  * Issue #433: full-settings XML export / import (mpvEx SettingsManager
  * shape — root element, per-preference key/type/value, export date —
- * rebuilt for MPx's SharedPreferences; NOT the downloader-only JSON
- * backup from #413, which stays separate).
+ * rebuilt for MPx's SharedPreferences. Moved here from the download
+ * package in #434; the downloader's own JSON backup is gone with it.
  *
  * One XML file holds the ENTIRE app settings file. Values ride as
  * element text, not attributes: mpv.conf / input.conf are multi-line,

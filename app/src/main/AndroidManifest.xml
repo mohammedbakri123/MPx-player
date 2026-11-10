@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Media access + network. INTERNET is used by the downloader
-         (issue #324, yt-dlp) as well as playback. ACCESS_NETWORK_STATE
-         gates the yt-dlp auto-update check (issue #333). -->
+    <!-- Media access + network. INTERNET is used by playback (and the
+         Network tab); ACCESS_NETWORK_STATE gates the app-update
+         check (issue #414). -->
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <!-- API 34 companion to the DownloadService dataSync type below —
-         same pattern as FOREGROUND_SERVICE_MEDIA_PLAYBACK for the
-         playback service; without it startForeground throws. -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Issue #414: installing a downloaded APK through the package installer. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -44,10 +40,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!-- Issue #416: receive shared links — a video link shared
-                 from YouTube or a browser opens MPx with the URL
-                 pre-filled on the Download tab (Seal's
-                 AndroidManifest.xml:54-69). singleTop above so a
-                 share while the app is alive lands in onNewIntent
+                 from YouTube or a browser opens MPx. The Download tab
+                 it used to pre-fill is gone (#434); the Network tab
+                 takes shared URLs instead (#435). singleTop above so
+                 a share while the app is alive lands in onNewIntent
                  on the existing activity instead of stacking a
                  second one. -->
             <intent-filter>
@@ -75,15 +71,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
-        <!-- Download foreground service (issue #343): progress +
-             completion notifications while downloads run; dataSync is
-             the type for downloads. Started when a job launches, stops
-             itself when the queue empties. -->
-        <service
-            android:name=".download.DownloadService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
 
         <service
             android:name=".playback.PlaybackService"
