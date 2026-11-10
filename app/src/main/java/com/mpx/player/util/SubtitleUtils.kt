@@ -4,6 +4,11 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import java.nio.ByteBuffer
+import java.nio.charset.CharacterCodingException
+import java.nio.charset.Charset
+import java.nio.charset.CodingErrorAction
+import java.nio.charset.StandardCharsets
 
 sealed class SubtitleValidationResult {
     data class Supported(
@@ -165,5 +170,79 @@ object SubtitleUtils {
             fileName = fileName,
             reason = context.getString(com.mpx.player.R.string.subtitle_unsupported_format, extension),
         )
+    }
+
+    // Issue #441: mpv sub-codepage detection for external subtitle files.
+    // Arabic subtitles are commonly saved as Windows-1256, not UTF-8, and
+    // mpv's auto-detection reads them as UTF-8/Latin-1, so every Arabic
+    // letter renders as a wrong Latin letter (mojibake). The file loads
+    // fine — only the decoding is wrong, and mpv-android shows the same
+    // garbage, so it is mpv's detection failing, not an MPx-only bug.
+    private const val MAX_DETECT_BYTES = 64 * 1024
+    private const val MIN_ARABIC_LETTERS = 20
+    private val WINDOWS_1256: Charset = Charset.forName("windows-1256")
+
+    /**
+     * Issue #441: detect the mpv sub-codepage for an external subtitle
+     * file. Returns "cp1256" when the file is NOT valid UTF-8 and decodes
+     * as Windows-1256 with substantial Arabic content; null otherwise,
+     * which means "leave mpv's default alone". Any read/decode failure
+     * returns null too — detection must never break a subtitle load.
+     *
+     * Only Windows-1256 is detected: other legacy encodings (e.g. Cyrillic
+     * cp1251) are left to mpv's default, exactly as today — no file gets
+     * worse than it already is.
+     */
+    fun detectSubtitleCodepage(context: Context, uri: Uri): String? {
+        return try {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { stream ->
+                // A bounded sample is enough to decide the encoding, and
+                // keeps a huge subtitle file from being read in full.
+                val buf = ByteArray(MAX_DETECT_BYTES)
+                var read = 0
+                while (read < buf.size) {
+                    val n = stream.read(buf, read, buf.size - read)
+                    if (n < 0) break
+                    read += n
+                }
+                buf.copyOf(read)
+            } ?: return null
+            if (bytes.isEmpty()) return null
+            // Valid UTF-8 (with or without a BOM) — mpv handles it.
+            if (isValidUtf8(bytes)) return null
+            val text = try {
+                WINDOWS_1256.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE)
+                    .decode(ByteBuffer.wrap(bytes)).toString()
+            } catch (_: Exception) {
+                return null
+            }
+            val letters = text.count { it.isLetter() }
+            if (letters == 0) return null
+            val arabic = text.count {
+                it in '\u0600'..'\u06FF' || it in '\uFB50'..'\uFDFF' || it in '\uFE70'..'\uFEFF'
+            }
+            // Substantial Arabic content: at least 20 Arabic letters and
+            // at least 5% of the letters. The reported Hannibal file has
+            // 8807 Arabic characters; a mostly-English file with a few
+            // Arabic words also qualifies, which is correct — cp1256
+            // decodes ASCII identically to UTF-8.
+            if (arabic >= MIN_ARABIC_LETTERS && arabic * 20 >= letters) "cp1256" else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun isValidUtf8(bytes: ByteArray): Boolean {
+        return try {
+            StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+            true
+        } catch (_: CharacterCodingException) {
+            false
+        }
     }
 }

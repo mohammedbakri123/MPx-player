@@ -1011,6 +1011,10 @@ class PlaybackManager private constructor(context: Context) {
             uri = uri.toString(),
             name = displayName,
             mimeType = mimeType,
+            // Issue #441: detect a legacy Arabic encoding (Windows-1256)
+            // so the engine can tell mpv the right codepage before the
+            // sub-add. Null means mpv's default (valid UTF-8 files).
+            codepage = SubtitleUtils.detectSubtitleCodepage(appContext, uri),
         )
 
         // Avoid duplicate entry of the same URI

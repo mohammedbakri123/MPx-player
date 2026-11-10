@@ -63,6 +63,10 @@ class PlaybackQueueStore(context: Context) {
                     sub.put(FIELD_URI, ext.uri)
                     sub.put(FIELD_NAME, ext.name)
                     sub.put(FIELD_MIME_TYPE, ext.mimeType)
+                    // Issue #441: the detected codepage travels with the
+                    // subtitle so a restart keeps it; absent in queues
+                    // saved before this fix, which read back as null.
+                    ext.codepage?.let { sub.put(FIELD_CODEPAGE, it) }
                     subs.put(sub)
                 }
                 obj.put(FIELD_EXTERNAL_SUBTITLES, subs)
@@ -100,6 +104,7 @@ class PlaybackQueueStore(context: Context) {
                                 uri = subUri,
                                 name = sub.optString(FIELD_NAME, ""),
                                 mimeType = sub.optString(FIELD_MIME_TYPE, ""),
+                                codepage = sub.optString(FIELD_CODEPAGE, "").ifBlank { null },
                             )
                         )
                     }
@@ -146,5 +151,6 @@ class PlaybackQueueStore(context: Context) {
         private const val FIELD_EXTERNAL_SUBTITLES = "externalSubtitles"
         private const val FIELD_NAME = "name"
         private const val FIELD_MIME_TYPE = "mimeType"
+        private const val FIELD_CODEPAGE = "codepage"
     }
 }

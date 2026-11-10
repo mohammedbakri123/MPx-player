@@ -51,6 +51,14 @@ data class ExternalSubtitle(
     val uri: String,
     val name: String,
     val mimeType: String,
+    /**
+     * Issue #441: mpv sub-codepage detected for this file at pick time
+     * ("cp1256" for Windows-1256 Arabic subtitles). Null means "mpv
+     * default". Persisted with the queue so a restart keeps it, and
+     * carried through fd resolution by copy(), so the engine always
+     * sees it at sub-add time.
+     */
+    val codepage: String? = null,
 )
 
 data class PlayableMedia(

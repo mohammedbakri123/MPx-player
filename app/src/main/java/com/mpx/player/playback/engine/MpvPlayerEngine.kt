@@ -215,6 +215,10 @@ class MpvPlayerEngine(
         val uri: String,
         val flag: String,
         val title: String? = null,
+        // Issue #441: the detected mpv sub-codepage for this file
+        // ("cp1256" for Windows-1256 Arabic subtitles); null means
+        // mpv's default. Copied from the ExternalSubtitle it came from.
+        val codepage: String? = null,
     )
 
     private data class PendingSubtitles(
@@ -520,6 +524,21 @@ class MpvPlayerEngine(
         } catch (e: Exception) {
             Log.w(TAG, "setProperty $key failed", e)
         }
+    }
+
+    /**
+     * Issue #441: set mpv's subtitle decoding for the file about to be
+     * sub-added. A detected codepage ("cp1256" for Windows-1256 Arabic
+     * subtitles) is set explicitly; otherwise the codepage is reset to
+     * mpv's default ("auto") so a previous file's cp1256 cannot leak
+     * into the next file. Must run immediately before the sub-add —
+     * mpv decodes the file when it is loaded. If mpv rejects the set
+     * (sub-codepage is not runtime-changeable in this build), it fails
+     * silently through setRuntimeProperty and the file decodes exactly
+     * as today — the fix degrades to no-op, never to a crash.
+     */
+    private fun applySubtitleCodepage(codepage: String?) {
+        setRuntimeProperty("sub-codepage", codepage ?: "auto")
     }
 
     /**
@@ -1273,6 +1292,10 @@ class MpvPlayerEngine(
                                 continue
                             }
                             try {
+                                // Issue #441: decode this file with its
+                                // detected codepage, right before mpv
+                                // loads it.
+                                applySubtitleCodepage(sub.codepage)
                                 if (sub.title != null) {
                                     mpv.command("sub-add", sub.uri, sub.flag, sub.title)
                                 } else {
@@ -2297,6 +2320,9 @@ class MpvPlayerEngine(
                     continue
                 }
                 try {
+                    // Issue #441: decode this file with its detected
+                    // codepage, right before mpv loads it.
+                    applySubtitleCodepage(rawExt.codepage)
                     mpv.command("sub-add", resolvedExt.uri, "select", rawExt.name)
                     issuedAny = true
                     // Issue #372: each "select" sub-add selects that
@@ -2360,7 +2386,7 @@ class MpvPlayerEngine(
                 subs.add(PendingSubtitle(uri = subUri, flag = "select"))
             }
             resolved.externalSubtitles.forEach { ext ->
-                subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name))
+                subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name, codepage = ext.codepage))
             }
             // Issue #332: close the previous pending subtitles'
             // descriptors before overwriting — they were never
