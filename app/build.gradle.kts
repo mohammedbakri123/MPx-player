@@ -160,6 +160,14 @@ dependencies {
     implementation("androidx.room:room-ktx:2.8.5")
     ksp("androidx.room:room-compiler:2.8.5")
 
+    // Koin 4.2.2 dependency injection (migration Phase 1).
+    // koin-android: startKoin + androidContext + module DSL.
+    // koin-compose / koin-compose-viewmodel: koinInject / koinViewModel
+    // for the ViewModel phase (Phase 2); declared here so the
+    // dependency set is complete from the start.
+    implementation("io.insert-koin:koin-android:4.2.2")
+    implementation("io.insert-koin:koin-compose:4.2.2")
+    implementation("io.insert-koin:koin-compose-viewmodel:4.2.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
