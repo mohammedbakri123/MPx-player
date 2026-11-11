@@ -583,16 +583,16 @@ class PlaybackCoordinator(
      * `dwidth`/`dheight`), the PiP aspect-ratio source of truth. 0 when
      * no video is loaded.
      */
-    val videoWidth: Int
+    override val videoWidth: Int
         get() = engine.videoWidth
 
-    val videoHeight: Int
+    override val videoHeight: Int
         get() = engine.videoHeight
 
     /**
      * Attaches a native video surface to the active playback engine.
      */
-    fun attachSurface(surface: Surface) {
+    override fun attachSurface(surface: Surface) {
         activeSurface = surface
         engine.attachSurface(surface)
     }
@@ -601,14 +601,14 @@ class PlaybackCoordinator(
      * Forwards SurfaceView size changes to the engine (mpv reports them as
      * "android-surface-size").
      */
-    fun surfaceChanged(width: Int, height: Int) {
+    override fun surfaceChanged(width: Int, height: Int) {
         engine.onSurfaceChanged(width, height)
     }
 
     /**
      * Detaches the video surface from the active playback engine.
      */
-    fun detachSurface() {
+    override fun detachSurface() {
         activeSurface = null
         engine.detachSurface()
     }
@@ -618,7 +618,7 @@ class PlaybackCoordinator(
      * subtitles itself. Delegates to [subtitleManager]; behaviour is
      * unchanged.
      */
-    fun applySubtitleSettings(settings: AppSettings) {
+    override fun applySubtitleSettings(settings: AppSettings) {
         subtitleManager.applySubtitleSettings(settings)
     }
 
@@ -626,8 +626,8 @@ class PlaybackCoordinator(
      * Applies audio delay + video zoom to the active engine (issue #153).
      * mpv-only, mirroring [applySubtitleSettings].
      */
-    fun applyPlaybackTweaks(settings: AppSettings) {
-        (engine as? MpvPlayerEngine)?.applyPlaybackTweaks(settings)
+    override fun applyPlaybackTweaks(settings: AppSettings) {
+        engine.applyPlaybackTweaks(settings)
     }
 
     /**
@@ -635,8 +635,8 @@ class PlaybackCoordinator(
      * without persisting; the caller saves the final zoom to settings
      * when the gesture ends.
      */
-    fun setVideoZoom(zoom: Float) {
-        (engine as? MpvPlayerEngine)?.setVideoZoom(zoom)
+    override fun setVideoZoom(zoom: Float) {
+        engine.setVideoZoom(zoom)
     }
 
 
@@ -726,7 +726,7 @@ class PlaybackCoordinator(
         playbackQueue.playVideoFiles(videos, startIndex)
     }
 
-    fun play() {
+    override fun play() {
         val granted = audioFocusManager.requestAudioFocus()
         if (!granted) return
         pausedForTransientFocus = false
@@ -740,13 +740,13 @@ class PlaybackCoordinator(
         engine.play()
     }
 
-    fun pause() {
+    override fun pause() {
         pausedForTransientFocus = false
         audioFocusManager.abandonAudioFocus()
         engine.pause()
     }
 
-    fun togglePlayPause() {
+    override fun togglePlayPause() {
         if (engine.isPlaying) {
             pause()
         } else {
@@ -754,34 +754,34 @@ class PlaybackCoordinator(
         }
     }
 
-    fun seekTo(positionMs: Long) {
+    override fun seekTo(positionMs: Long) {
         engine.seekTo(positionMs)
         updatePosition()
     }
 
-    fun skipForward(deltaMs: Long = 10_000L) {
+    override fun skipForward(deltaMs: Long) {
         seekTo(engine.currentPosition + deltaMs)
     }
 
-    fun skipBackward(deltaMs: Long = 10_000L) {
+    override fun skipBackward(deltaMs: Long) {
         seekTo(engine.currentPosition - deltaMs)
     }
 
     /**
      * Delegates to [playbackQueue]; behaviour is unchanged.
      */
-    fun skipNext() {
+    override fun skipNext() {
         playbackQueue.skipNext()
     }
 
     /**
      * Delegates to [playbackQueue]; behaviour is unchanged.
      */
-    fun skipPrevious() {
+    override fun skipPrevious() {
         playbackQueue.skipPrevious()
     }
 
-    fun setSpeed(speed: Float) {
+    override fun setSpeed(speed: Float) {
         engine.setSpeed(speed)
         _playbackState.update { it.copy(speed = speed) }
     }
@@ -790,7 +790,7 @@ class PlaybackCoordinator(
      * Cycles OFF -> ALL -> ONE -> OFF. Delegates to [playbackQueue];
      * behaviour is unchanged.
      */
-    fun cycleRepeatMode() {
+    override fun cycleRepeatMode() {
         playbackQueue.cycleRepeatMode()
     }
 
@@ -798,13 +798,13 @@ class PlaybackCoordinator(
      * Toggles shuffle (issue #76). Delegates to [playbackQueue];
      * behaviour is unchanged.
      */
-    fun setShuffleEnabled(enabled: Boolean) {
+    override fun setShuffleEnabled(enabled: Boolean) {
         playbackQueue.setShuffleEnabled(enabled)
     }
 
-    fun setAspectRatio(mode: AspectRatioMode) {
+    override fun setAspectRatio(mode: AspectRatioMode) {
         _playbackState.update { it.copy(aspectRatio = mode) }
-        (engine as? MpvPlayerEngine)?.setAspectRatio(mode)
+        engine.setAspectRatio(mode)
     }
 
     /**
@@ -818,7 +818,7 @@ class PlaybackCoordinator(
      * real error banner; re-tapping the file replays it under the new mode
      * (playQueue re-opens a fresh fd). Path-based files are unaffected.
      */
-    fun setDecoderMode(mode: DecoderMode) {
+    override fun setDecoderMode(mode: DecoderMode) {
         if (_playbackState.value.decoderMode == mode) return
 
         engine.setDecoderMode(mode)
@@ -832,21 +832,21 @@ class PlaybackCoordinator(
         }
     }
 
-    fun setLocked(locked: Boolean) {
+    override fun setLocked(locked: Boolean) {
         _playbackState.update { it.copy(isLocked = locked) }
     }
 
-    fun selectTrack(type: TrackType, id: String?) {
+    override fun selectTrack(type: TrackType, id: String?) {
         engine.selectTrack(type, id)
         updateTracksState()
     }
 
-    fun selectAudioTrack(groupIndex: Int, trackIndex: Int) {
+    override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) {
         engine.selectAudioTrack(groupIndex, trackIndex)
         updateTracksState()
     }
 
-    fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {
+    override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {
         subtitleManager.selectSubtitleTrack(groupIndex, trackIndex)
     }
 
@@ -857,23 +857,23 @@ class PlaybackCoordinator(
      * ACCEPTED for loading, and the success/failure banner arrives
      * asynchronously). Behaviour is unchanged.
      */
-    fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean {
+    override fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean {
         return subtitleManager.loadExternalSubtitle(uri.toString(), displayName, mimeType)
     }
 
-    fun clearDecoderFallbackNote() {
+    override fun clearDecoderFallbackNote() {
         _playbackState.update { it.copy(decoderFallbackNote = null) }
     }
 
-    fun clearUserNotification() {
+    override fun clearUserNotification() {
         _playbackState.update { it.copy(userNotification = null) }
     }
 
-    fun setSleepTimer(minutes: Int) {
+    override fun setSleepTimer(minutes: Int) {
         sleepTimer.start(minutes)
     }
 
-    fun cancelSleepTimer() {
+    override fun cancelSleepTimer() {
         sleepTimer.cancel()
     }
 
@@ -920,7 +920,7 @@ class PlaybackCoordinator(
         return playbackQueue.restorePersistedQueueIfEmpty()
     }
 
-    fun stop() {
+    override fun stop() {
         pausedForTransientFocus = false
         audioFocusManager.abandonAudioFocus()
         cancelSleepTimer()
@@ -995,7 +995,7 @@ class PlaybackCoordinator(
         backgroundService.stop()
     }
 
-    fun setVideoBackgroundActive(active: Boolean) {
+    override fun setVideoBackgroundActive(active: Boolean) {
         _playbackState.update {
             it.copy(
                 isVideoBackgroundActive = active,
@@ -1007,11 +1007,11 @@ class PlaybackCoordinator(
         }
     }
 
-    fun setBackgroundPlaying(active: Boolean) {
+    override fun setBackgroundPlaying(active: Boolean) {
         _playbackState.update { it.copy(isBackgroundPlaying = active) }
     }
 
-    fun clearResumedNotification() {
+    override fun clearResumedNotification() {
         _playbackState.update { it.copy(resumedFromMs = null) }
     }
 

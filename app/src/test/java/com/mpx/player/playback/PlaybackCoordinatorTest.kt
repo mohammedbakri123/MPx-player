@@ -393,12 +393,32 @@ class PlaybackCoordinatorTest {
     }
 
     @Test
-    fun `setAspectRatio updates the state`() = runTest {
+    fun `setAspectRatio updates the state and delegates to engine`() = runTest {
         val f = createFixture(this)
 
         f.coordinator.setAspectRatio(AspectRatioMode.ZOOM)
 
         assertEquals(AspectRatioMode.ZOOM, f.coordinator.playbackState.value.aspectRatio)
+        assertEquals(listOf(AspectRatioMode.ZOOM), f.engine.aspectRatioCalls)
+    }
+
+    @Test
+    fun `applyPlaybackTweaks delegates to engine directly without casts`() = runTest {
+        val f = createFixture(this)
+        val settings = AppSettings(audioDelayMs = 250, videoZoom = 1.25f)
+
+        f.coordinator.applyPlaybackTweaks(settings)
+
+        assertEquals(listOf(settings), f.engine.appliedPlaybackTweaks)
+    }
+
+    @Test
+    fun `setVideoZoom delegates to engine directly without casts`() = runTest {
+        val f = createFixture(this)
+
+        f.coordinator.setVideoZoom(1.5f)
+
+        assertEquals(listOf(1.5f), f.engine.videoZoomCalls)
     }
 
     @Test

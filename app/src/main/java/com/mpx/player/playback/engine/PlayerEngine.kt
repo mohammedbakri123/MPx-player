@@ -2,6 +2,8 @@ package com.mpx.player.playback.engine
 
 import android.view.Surface
 import androidx.annotation.VisibleForTesting
+import com.mpx.player.domain.settings.AppSettings
+import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
@@ -294,4 +296,19 @@ interface PlayerEngine {
 
     fun getAudioTracks(): List<AudioTrackInfo>
     fun getSubtitleTracks(): List<SubtitleTrackInfo>
+
+    /**
+     * Applies audio delay and video zoom tweaks from settings (issue #153, R-3).
+     */
+    fun applyPlaybackTweaks(settings: AppSettings) = Unit
+
+    /**
+     * Live video-zoom for the pinch gesture (#172, R-3).
+     */
+    fun setVideoZoom(zoom: Float) = Unit
+
+    /**
+     * Sets aspect ratio mode (FIT, CROP, STRETCH, 16:9, 4:3, ORIGINAL, ZOOM) (R-3).
+     */
+    fun setAspectRatio(mode: AspectRatioMode) = Unit
 }
