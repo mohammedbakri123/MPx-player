@@ -218,10 +218,10 @@ fun LocalScreen(
     var popupFolderScope by remember { mutableStateOf(false) }
     var showFolderSortDialog by remember { mutableStateOf(false) }
     // #142: the search page replaces the old inline root search.
-    // Issue #318: rememberSaveable, not remember — the query now
-    // lives in the ViewModel, but the flag gating the page still
-    // needs to survive rotation, or the saved query would never be
-    // reached. (Same query + flag pair as Music's #255.)
+    // Issue #318: rememberSaveable, not remember — the query lives
+    // in the ViewModel's SavedStateHandle, but the flag gating the
+    // page still needs to survive rotation, or the saved query would
+    // never be reached. (Same query + flag pair as Music's #255.)
     var showSearchPage by rememberSaveable { mutableStateOf(false) }
     // Folder view mode state (drilled-down folder contents view).
     // Issue #175: rememberSaveable, not remember — Compose Navigation

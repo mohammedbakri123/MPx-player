@@ -1,5 +1,6 @@
 package com.mpx.player.ui.screens.local
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mpx.player.domain.model.CustomPlaylist
@@ -26,6 +27,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+// SavedStateHandle keys for the search states (see the Search section).
+// Namespaced (`local.*`) so they cannot collide with navigation
+// arguments carried in the same handle.
+private const val KEY_SEARCH_QUERY = "local.searchQuery"
+private const val KEY_FOLDER_SEARCH_QUERY = "local.folderSearchQuery"
+private const val KEY_FOLDER_SEARCHING = "local.isFolderSearching"
+
 /**
  * Migration Phase 2b: the Local tab's state, moved out of
  * [LocalScreen]'s Compose `remember` blocks so it has one owner
@@ -50,11 +58,19 @@ import kotlinx.coroutines.withContext
  * (`currentFolder`) and the search-page flag (`showSearchPage`).
  * Both are `rememberSaveable` in the screen — the folder round-trips
  * through the `MediaFolderSaver` so a process death restores the
- * drilled-in folder, and the search page restores with it — and a
- * ViewModel cannot preserve that saved state. The screen passes the
- * folder / page flag into the functions below that need them
- * ([selectedVideosInView], [toggleSelectionFavourite],
+ * drilled-in folder, and the search page restores with it. The screen
+ * passes the folder / page flag into the functions below that need
+ * them ([selectedVideosInView], [toggleSelectionFavourite],
  * [resolveSelectionVideos]).
+ *
+ * The search states below (whole-page query, in-folder query and
+ * in-folder open flag) DO live here, but backed by the
+ * [SavedStateHandle] — not plain `MutableStateFlow`s. The old code
+ * kept them in `rememberSaveable` (#318), so they survived rotation,
+ * dock-tab switches (this destination is popped with saveState, which
+ * clears this ViewModel) and process death; plain flows would lose
+ * them on the last two. Koin injects the handle from the
+ * NavBackStackEntry's CreationExtras (see ViewModelModule).
  *
  * Dependencies arrive through the constructor, on interfaces only
  * ([MediaRepository], [MediaPersistenceRepository],
@@ -68,6 +84,7 @@ class LocalViewModel(
     private val settingsRepository: AppSettingsRepository,
     hasPermission: Boolean,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     // -- Settings ---------------------------------------------------------
@@ -377,8 +394,7 @@ class LocalViewModel(
      */
     fun openFolder(folder: MediaFolder) {
         clearSelection()
-        _isFolderSearching.value = false
-        _folderSearchQuery.value = ""
+        resetFolderSearch()
         // #277: clear at once, so the previous folder's videos are
         // never shown under this folder's header while the scan runs
         // (same as the #269 playlist-dialog clear).
@@ -392,8 +408,7 @@ class LocalViewModel(
      * The screen nulls its own `currentFolder` alongside this.
      */
     fun clearFolderViewState() {
-        _isFolderSearching.value = false
-        _folderSearchQuery.value = ""
+        resetFolderSearch()
         clearSelection()
     }
 
@@ -422,9 +437,57 @@ class LocalViewModel(
         _videosForPlaylistAdd.value = emptyList()
         _showAddToPlaylistDialog.value = false
         _showCreatePlaylistDialog.value = false
-        _isFolderSearching.value = false
-        _folderSearchQuery.value = ""
+        resetFolderSearch()
         if (wasLoading) drainPendingRefresh()
+    }
+
+    // -- Search state ---------------------------------------------------------
+    //
+    // The three search states live in the SavedStateHandle, not in plain
+    // MutableStateFlows: the old code kept them in `rememberSaveable`
+    // (#318), so they survived rotation, dock-tab switches (this
+    // destination is popped with saveState, which clears this ViewModel)
+    // and process death. `getStateFlow` returns a flow that reads the
+    // handle; the setters and [resetFolderSearch] write the handle
+    // directly, so a later restore never resurrects a stale query.
+
+    private val _searchQuery: StateFlow<String> =
+        savedStateHandle.getStateFlow(KEY_SEARCH_QUERY, "")
+    /** Whole-page search query (#142). The screen passes it down to
+     * LocalSearchScreen as a plain parameter. */
+    val searchQuery: StateFlow<String> = _searchQuery
+
+    /** The whole-page search field's text. */
+    fun setSearchQuery(query: String) {
+        savedStateHandle[KEY_SEARCH_QUERY] = query
+    }
+
+    private val _folderSearchQuery: StateFlow<String> =
+        savedStateHandle.getStateFlow(KEY_FOLDER_SEARCH_QUERY, "")
+    /** In-folder search query (#318). */
+    val folderSearchQuery: StateFlow<String> = _folderSearchQuery
+
+    /** The in-folder search field's text. */
+    fun setFolderSearchQuery(query: String) {
+        savedStateHandle[KEY_FOLDER_SEARCH_QUERY] = query
+    }
+
+    private val _isFolderSearching: StateFlow<Boolean> =
+        savedStateHandle.getStateFlow(KEY_FOLDER_SEARCHING, false)
+    /** Whether the in-folder search field is open. */
+    val isFolderSearching: StateFlow<Boolean> = _isFolderSearching
+
+    /** Opens / closes the in-folder search field. */
+    fun setFolderSearching(searching: Boolean) {
+        savedStateHandle[KEY_FOLDER_SEARCHING] = searching
+    }
+
+    /** Resets the in-folder search state (openFolder / back-to-root /
+     * permission loss). Writes the handle, not a local flow, so a
+     * later restore does not resurrect the cleared query. */
+    private fun resetFolderSearch() {
+        savedStateHandle[KEY_FOLDER_SEARCHING] = false
+        savedStateHandle[KEY_FOLDER_SEARCH_QUERY] = ""
     }
 
     // -- Derived sorted / filtered lists ------------------------------------
@@ -477,8 +540,6 @@ class LocalViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private val _folderSearchQuery = MutableStateFlow("")
-
     /** Folder-contents videos, filtered by the in-folder search query. */
     val filteredFolderVideos: StateFlow<List<VideoFile>> =
         combine(sortedFolderVideos, _folderSearchQuery) { videos, query ->
@@ -489,37 +550,6 @@ class LocalViewModel(
                     it.path.contains(q, ignoreCase = true)
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    // -- Search state ---------------------------------------------------------
-
-    private val _searchQuery = MutableStateFlow("")
-    /** Whole-page search query (#142). Lives here — not in
-     * LocalSearchScreen's `rememberSaveable` (#318) — so rotation
-     * keeps it; the screen passes it down as a plain parameter. */
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    /** The whole-page search field's text. */
-    fun setSearchQuery(query: String) {
-        _searchQuery.value = query
-    }
-
-    /** In-folder search query (#318: survives rotation via the
-     * ViewModel instead of the screen's `rememberSaveable`). */
-    val folderSearchQuery: StateFlow<String> = _folderSearchQuery.asStateFlow()
-
-    /** The in-folder search field's text. */
-    fun setFolderSearchQuery(query: String) {
-        _folderSearchQuery.value = query
-    }
-
-    private val _isFolderSearching = MutableStateFlow(false)
-    /** Whether the in-folder search field is open. */
-    val isFolderSearching: StateFlow<Boolean> = _isFolderSearching.asStateFlow()
-
-    /** Opens / closes the in-folder search field. */
-    fun setFolderSearching(searching: Boolean) {
-        _isFolderSearching.value = searching
-    }
 
     // -- Tree view ------------------------------------------------------------
 

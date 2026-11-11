@@ -93,8 +93,9 @@ fun LocalSearchScreen(
     showFieldDate: Boolean = false,
     showFieldLocation: Boolean = true,
     showFullName: Boolean = false,
-    // Phase 2b: the query lives in LocalViewModel (#318: rotation
-    // keeps it via the ViewModel instead of this screen's
+    // Phase 2b: the query lives in LocalViewModel (#318: it survives
+    // rotation, dock-tab switches and process death through the
+    // ViewModel's SavedStateHandle, instead of this screen's
     // rememberSaveable); this screen renders it statelessly.
     query: String,
     onQueryChange: (String) -> Unit,

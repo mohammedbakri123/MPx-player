@@ -28,6 +28,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import androidx.lifecycle.SavedStateHandle
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -66,13 +67,17 @@ class LocalViewModelTest {
     private fun setTestMainDispatcher(): Unit =
         Dispatchers.setMain(UnconfinedTestDispatcher())
 
-    private fun TestScope.createViewModel(hasPermission: Boolean = true) =
+    private fun TestScope.createViewModel(
+        hasPermission: Boolean = true,
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    ) =
         LocalViewModel(
             media,
             persistence,
             settingsRepo,
             hasPermission,
             UnconfinedTestDispatcher(testScheduler),
+            savedStateHandle,
         )
 
     @Test
@@ -188,6 +193,38 @@ class LocalViewModelTest {
 
         viewModel.setFolderSearchQuery("")
         assertEquals(3, viewModel.filteredFolderVideos.value.size)
+    }
+
+    @Test
+    fun `search state restores from the SavedStateHandle`() = runTest {
+        setTestMainDispatcher()
+        // Keys must match the ViewModel's local.* constants — the
+        // test pins that contract: a renamed key would silently
+        // stop restoring.
+        val viewModel = createViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(
+                    "local.searchQuery" to "trailer",
+                    "local.folderSearchQuery" to "episode",
+                    "local.isFolderSearching" to true,
+                ),
+            ),
+        )
+
+        assertEquals("trailer", viewModel.searchQuery.value)
+        assertEquals("episode", viewModel.folderSearchQuery.value)
+        assertTrue(viewModel.isFolderSearching.value)
+
+        // Writes go back through the handle.
+        viewModel.setSearchQuery("clip")
+        assertEquals("clip", viewModel.searchQuery.value)
+
+        // Opening a folder resets the folder search — and the reset
+        // reaches the handle, so a later restore does not resurrect it.
+        media.folderVideos = mapOf("b1" to emptyList())
+        viewModel.openFolder(folder("b1", "/Movies"))
+        assertEquals("", viewModel.folderSearchQuery.value)
+        assertFalse(viewModel.isFolderSearching.value)
     }
 
     @Test
