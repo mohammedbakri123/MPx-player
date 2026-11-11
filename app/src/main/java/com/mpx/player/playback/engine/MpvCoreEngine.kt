@@ -6,7 +6,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
-import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
+import androidx.annotation.VisibleForTesting
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
@@ -81,6 +81,8 @@ internal class MpvCoreEngine(
         fun getCurrentQueue(): List<PlayableMedia> = emptyList()
         /** Live media index provider (D-1 single-source-of-truth). */
         fun getCurrentMediaIndex(): Int = -1
+        /** Fresh settings loader for subtitle and playback configuration (D-12). */
+        fun loadSettings(): AppSettings = AppSettings()
     }
 
     internal enum class DecoderStage { HW, HW_PLUS, SW }
@@ -534,7 +536,7 @@ internal class MpvCoreEngine(
 
     internal fun loadSavedSubtitleSettings(): AppSettings {
         return try {
-            SharedPrefsAppSettingsRepository(appContext).load()
+            host.loadSettings()
         } catch (e: Exception) {
             Log.w(TAG, "Failed loading saved subtitle settings, using defaults", e)
             AppSettings()
@@ -1584,6 +1586,13 @@ internal class MpvCoreEngine(
     }
 
 
+    /**
+     * Releases native mpv resources.
+     *
+     * **Test-only lifecycle method (D-11).**
+     * In production, the engine is intentionally process-lifetime.
+     */
+    @VisibleForTesting
     internal fun release() {
         pendingLoad = null
         pendingSeekMs = null

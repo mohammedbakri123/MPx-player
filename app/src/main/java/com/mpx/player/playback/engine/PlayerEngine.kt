@@ -1,6 +1,7 @@
 package com.mpx.player.playback.engine
 
 import android.view.Surface
+import androidx.annotation.VisibleForTesting
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
@@ -248,7 +249,15 @@ interface PlayerEngine {
 
     /**
      * Releases all player resources.
+     *
+     * **Test-only lifecycle method (D-11).**
+     *
+     * In production, the engine is intentionally process-lifetime and must **NOT**
+     * be wired to any Android component lifecycle (Activity or Service). Wiring
+     * release to component lifecycles destroys the native mpv instance while other
+     * components remain active. Retained exclusively for test fixtures.
      */
+    @VisibleForTesting
     fun release()
 
     /**

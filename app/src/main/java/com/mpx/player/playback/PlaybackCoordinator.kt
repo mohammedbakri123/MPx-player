@@ -5,10 +5,9 @@ import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
+import androidx.annotation.VisibleForTesting
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
-import com.mpx.player.data.repository.RoomMediaPersistenceRepository
-import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.repository.MediaPersistenceRepository
@@ -23,6 +22,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -109,7 +109,15 @@ interface BackgroundService {
  *   dispatcher so the fire-and-forget writes are observable.
  * - [scope] is the Main-scope the ticker, watchdog, sleep timer,
  *   and the pieces' deferred work run in (production:
- *   `CoroutineScope(Dispatchers.Main)`).
+ *   `CoroutineScope(SupervisorJob() + Dispatchers.Main)`).
+ *   Scope lifecycle note (D-2): in production, this scope intentionally has
+ *   no cancellation point because the coordinator is a process-lifetime
+ *   singleton. Neither MainActivity nor PlaybackService owns the scope;
+ *   cancelling it on Activity or Service destruction would break
+ *   transitions between background and foreground playback. Transient
+ *   and looping jobs launched on this scope (ticker, watchdog, sleep timer)
+ *   are individually tracked and cancelled per session. SupervisorJob
+ *   ensures child failures do not cancel sibling jobs.
  *
  * What unit tests cover: transport delegation to the engine, state
  * publishing (including the decoder-mode seed from settings), the
@@ -120,13 +128,17 @@ interface BackgroundService {
  * playback and event timing, the real watchdog against a stuck
  * load, the background service actually starting, and the localised
  * banner texts themselves (the fake strings return markers).
+ *
+ * Lifetime note (D-11): the coordinator and underlying engine are
+ * intentionally process-lifetime singles in production. They must NOT
+ * be wired to component lifecycles (MainActivity or PlaybackService).
  */
 class PlaybackCoordinator(
-    val database: MpxDatabase,
-    val persistenceRepository: MediaPersistenceRepository,
-    val resumeManager: PlaybackResumeManager,
-    val settingsRepository: AppSettingsRepository,
-    val engine: PlayerEngine,
+    private val database: MpxDatabase,
+    internal val persistenceRepository: MediaPersistenceRepository,
+    private val resumeManager: PlaybackResumeManager,
+    private val settingsRepository: AppSettingsRepository,
+    private val engine: PlayerEngine,
     private val queueStore: QueueStore,
     private val subtitleFileAccess: SubtitleManager.FileAccess,
     private val scope: CoroutineScope,
@@ -134,6 +146,7 @@ class PlaybackCoordinator(
     private val strings: CoordinatorStrings,
     private val backgroundService: BackgroundService,
     private val audioFocusManager: AudioFocusManager = AudioFocusManager.NoOp,
+    initialDecoderMode: DecoderMode = resolveInitialDecoderModeFrom(settingsRepository),
     private val errorLog: (message: String, error: Throwable?) -> Unit =
         { message, error -> Log.e("PlaybackManager", message, error) },
     private val clock: () -> Long = { SystemClock.elapsedRealtime() },
@@ -177,7 +190,6 @@ class PlaybackCoordinator(
             }
         }
     }
-    private val initialDecoderMode: DecoderMode = resolveInitialDecoderMode()
 
     private val _playbackState = MutableStateFlow(
         PlaybackState(decoderMode = initialDecoderMode)
@@ -195,7 +207,7 @@ class PlaybackCoordinator(
      * so the subtitle manager asks it to apply queue/state effects
      * instead of touching them directly.
      */
-    val subtitleManager = SubtitleManager(
+    internal val subtitleManager = SubtitleManager(
         engine = engine,
         host = this,
         scope = scope,
@@ -210,7 +222,7 @@ class PlaybackCoordinator(
      * engine lifecycle effects, so the queue asks it to apply
      * session/state effects instead of touching them directly.
      */
-    val playbackQueue = PlaybackQueue(
+    internal val playbackQueue = PlaybackQueue(
         engine = engine,
         queueStore = queueStore,
         resumeManager = resumeManager,
@@ -231,7 +243,7 @@ class PlaybackCoordinator(
      * queue, and the subtitle manager must all exist first, and no
      * load can fire an event before this construction finishes.
      */
-    val engineEventTranslator = EngineEventTranslator(
+    internal val engineEventTranslator = EngineEventTranslator(
         engine = engine,
         queue = playbackQueue,
         subtitleManager = subtitleManager,
@@ -567,10 +579,6 @@ class PlaybackCoordinator(
 
     val videoHeight: Int
         get() = engine.videoHeight
-
-    private fun resolveInitialDecoderMode(): DecoderMode {
-        return resolveInitialDecoderModeFrom(settingsRepository)
-    }
 
     /**
      * Attaches a native video surface to the active playback engine.
@@ -954,6 +962,25 @@ class PlaybackCoordinator(
         }
     }
 
+    /**
+     * Releases player and coordinator resources.
+     *
+     * **Test-only lifecycle method (D-11).**
+     *
+     * In production, the coordinator and underlying engine are intentionally
+     * process-lifetime singles. Do **NOT** wire this method to any Android component
+     * lifecycle:
+     * - [PlaybackService.onDestroy] can fire while [MainActivity] is active and visible
+     *   (e.g. background service stopped after playback pause).
+     * - [MainActivity.onDestroy] can fire during configuration changes or when
+     *   background playback continues in [PlaybackService].
+     *
+     * Wiring [release] to either component lifecycle destroys the native mpv instance while
+     * another component holds the coordinator, causing black video or native crashes.
+     * In production, the native mpv instance lives for the process lifetime and is reclaimed
+     * on process termination. This method exists exclusively for unit tests to tear down fixtures.
+     */
+    @VisibleForTesting
     fun release() {
         pausedForTransientFocus = false
         audioFocusManager.abandonAudioFocus()
@@ -1063,32 +1090,78 @@ class PlaybackCoordinator(
         }
     }
 
+    /**
+     * Clears all persisted and in-memory playback resume positions (issue #353).
+     */
+    fun clearResumePositions() {
+        resumeManager.clearAll()
+    }
+
+    /**
+     * Fresh background play setting for background service gating (D-3, D-12).
+     */
+    fun isBackgroundPlayEnabled(): Boolean =
+        settingsRepository.load().backgroundPlay
+
+    /**
+     * Fresh double-tap seek skip duration in milliseconds (issue #351, D-3).
+     */
+    fun getDoubleTapSeekDurationMs(): Long =
+        settingsRepository.load().doubleTapSeekSeconds * 1000L
+
+    /**
+     * Fresh resume playback preference for persistence dialogs (issue #266, D-3).
+     */
+    fun isResumePlaybackEnabled(): Boolean =
+        settingsRepository.load().resumePlayback
+
+    /**
+     * Handles task removal from the recents tray (issue #258, D-3).
+     * If background play is disabled or nothing is playing, pauses playback
+     * and clears background state, returning true if the background service should stop.
+     */
+    fun onTaskRemoved(): Boolean {
+        val state = _playbackState.value
+        val settings = settingsRepository.load()
+        return if (!settings.backgroundPlay || !state.isPlaying) {
+            pause()
+            setVideoBackgroundActive(false)
+            setBackgroundPlaying(false)
+            true
+        } else {
+            false
+        }
+    }
+
     companion object {
         /**
-         * Production wiring: builds the coordinator and everything it
-         * owns from a [Context], in exactly the order the old
-         * PlaybackManager built them (database, persistence, resume,
-         * settings, queue store, decoder mode, engine, scope). The
-         * engine is built with the decoder mode read from settings,
-         * and the state is seeded from the same read inside the
-         * constructor — two reads of the same SharedPreferences file
-         * during synchronous construction, so they always agree.
+         * Production wiring: builds the coordinator from injected Koin
+         * singles ([database], [persistenceRepository], [settingsRepository])
+         * and the given [Context] (D-10). The engine is built with the
+         * decoder mode read once from the injected settings repository,
+         * and passed directly into the constructor to seed [PlaybackState],
+         * ensuring the engine and published state strictly agree.
          *
          * This factory is the process-wide entry point: Koin
          * registers the coordinator built here as a `single`, and
          * [PlaybackService] injects that same instance.
          */
-        fun production(context: Context): PlaybackCoordinator {
+        fun production(
+            context: Context,
+            database: MpxDatabase,
+            persistenceRepository: MediaPersistenceRepository,
+            settingsRepository: AppSettingsRepository,
+        ): PlaybackCoordinator {
             val appContext = context.applicationContext
-            val database = MpxDatabase.getInstance(appContext)
-            val persistenceRepository: MediaPersistenceRepository =
-                RoomMediaPersistenceRepository(database, appContext)
             val resumeManager = PlaybackResumeManager(persistenceRepository)
-            val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
             val queueStore = PlaybackQueueStore(appContext)
             val initialDecoderMode = resolveInitialDecoderModeFrom(settingsRepository)
-            val engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode)
-            val scope = CoroutineScope(Dispatchers.Main)
+            val engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode, settingsRepository)
+            // D-2: Process-lifetime scope backed by SupervisorJob so individual child
+            // job failures do not cancel sibling coordinator or collaborator tasks.
+            // Intentionally uncancelled in production: the coordinator lives for the
+            // process lifetime and outlives individual Activity/Service lifecycles.
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
             return PlaybackCoordinator(
                 database = database,
                 persistenceRepository = persistenceRepository,
@@ -1101,6 +1174,7 @@ class PlaybackCoordinator(
                 strings = ProductionStrings(appContext),
                 backgroundService = ProductionBackgroundService(appContext),
                 audioFocusManager = ProductionAudioFocusManager(appContext),
+                initialDecoderMode = initialDecoderMode,
             )
         }
 

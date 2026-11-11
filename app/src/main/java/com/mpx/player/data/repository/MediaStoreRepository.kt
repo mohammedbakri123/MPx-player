@@ -17,6 +17,7 @@ import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.Playlist
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.repository.MediaRepository
+import com.mpx.player.domain.settings.AppSettingsRepository
 import java.io.File
 import java.util.Locale
 
@@ -31,6 +32,7 @@ import java.util.Locale
  */
 class MediaStoreRepository(
     private val context: Context,
+    private val settingsRepository: AppSettingsRepository = SharedPrefsAppSettingsRepository(context),
 ) : MediaRepository {
 
     companion object {
@@ -149,7 +151,7 @@ class MediaStoreRepository(
      * hidden files if settings cannot be read.
      */
     private fun showHiddenFiles(): Boolean = try {
-        SharedPrefsAppSettingsRepository(context).load().showHiddenFiles
+        settingsRepository.load().showHiddenFiles
     } catch (_: Exception) {
         false
     }

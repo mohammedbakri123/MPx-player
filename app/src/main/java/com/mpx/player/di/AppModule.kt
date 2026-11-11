@@ -28,7 +28,7 @@ import org.koin.dsl.module
 val appModule = module {
     single { MpxDatabase.getInstance(androidContext()) }
 
-    single<MediaRepository> { MediaStoreRepository(androidContext()) }
+    single<MediaRepository> { MediaStoreRepository(androidContext(), get()) }
 
     single<MediaPersistenceRepository> {
         RoomMediaPersistenceRepository(get(), androidContext())

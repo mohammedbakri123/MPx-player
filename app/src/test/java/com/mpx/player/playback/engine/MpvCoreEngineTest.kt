@@ -2,6 +2,7 @@ package com.mpx.player.playback.engine
 
 import android.graphics.SurfaceTexture
 import android.view.Surface
+import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.PlayableMedia
 import org.junit.Assert.assertEquals
@@ -69,6 +70,9 @@ class MpvCoreEngineTest {
         override fun getCurrentQueue(): List<PlayableMedia> = queue
 
         override fun getCurrentMediaIndex(): Int = mediaIndex
+
+        var settings: AppSettings = AppSettings()
+        override fun loadSettings(): AppSettings = settings
     }
 
     private class TestListener : PlayerEngine.Listener {
@@ -627,5 +631,16 @@ class MpvCoreEngineTest {
     fun `fd uri only matches itself`() {
         assertTrue(MpvCoreEngine.isPathMatch("fd://12", "fd://12"))
         assertFalse(MpvCoreEngine.isPathMatch("fd://12", "fd://13"))
+    }
+
+    @Test
+    fun `loadSavedSubtitleSettings delegates to host loadSettings fresh on each call`() {
+        val engine = createEngine()
+
+        fakeHost.settings = AppSettings(subtitleSize = "Large")
+        assertEquals("Large", engine.loadSavedSubtitleSettings().subtitleSize)
+
+        fakeHost.settings = AppSettings(subtitleSize = "Small")
+        assertEquals("Small", engine.loadSavedSubtitleSettings().subtitleSize)
     }
 }

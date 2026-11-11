@@ -699,7 +699,7 @@ fun MeScreen(
                 val pipState = playbackCoordinator.playbackState.value
                 val entered = PipUtils.enterPip(
                     activity,
-                    null,
+                    appSettings,
                     pipState.isPlaying,
                     playbackCoordinator.videoWidth,
                     playbackCoordinator.videoHeight,

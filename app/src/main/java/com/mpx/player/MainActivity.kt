@@ -447,6 +447,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        // Note (D-11): playbackCoordinator.release() is intentionally NOT called here.
+        // The coordinator and engine are process-lifetime singles; background playback
+        // can continue via PlaybackService after the Activity is destroyed.
         val settings = settingsRepository.load()
         // Issue #205: see onStop — isFinishing must not stop the
         // service. When background play is on, the foreground

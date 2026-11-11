@@ -847,4 +847,57 @@ class PlaybackCoordinatorTest {
         assertTrue(f.engine.capturedQueueProvider!!.invoke().isEmpty())
         assertEquals(-1, f.engine.capturedIndexProvider!!.invoke())
     }
+
+    @Test
+    fun `onTaskRemoved with backgroundPlay false pauses playback and returns true`() = runTest {
+        val f = createFixture(this, AppSettings(backgroundPlay = false))
+        f.coordinator.play()
+        f.coordinator.engineEventTranslator.onPlaybackStateChanged(PlayerEngine.STATE_READY)
+        f.coordinator.engineEventTranslator.onIsPlayingChanged(true)
+
+        val shouldStop = f.coordinator.onTaskRemoved()
+
+        assertTrue(shouldStop)
+        assertEquals(1, f.engine.pauseCalls)
+        assertFalse(f.coordinator.playbackState.value.isBackgroundPlaying)
+    }
+
+    @Test
+    fun `onTaskRemoved with backgroundPlay true and isPlaying true returns false without pausing`() = runTest {
+        val f = createFixture(this, AppSettings(backgroundPlay = true))
+        f.coordinator.play()
+        f.coordinator.engineEventTranslator.onPlaybackStateChanged(PlayerEngine.STATE_READY)
+        f.coordinator.engineEventTranslator.onIsPlayingChanged(true)
+
+        val shouldStop = f.coordinator.onTaskRemoved()
+
+        assertFalse(shouldStop)
+        assertEquals(0, f.engine.pauseCalls)
+    }
+
+    @Test
+    fun `narrow settings accessors return fresh values from settings repository`() = runTest {
+        val f = createFixture(
+            this,
+            AppSettings(
+                backgroundPlay = true,
+                doubleTapSeekSeconds = 15,
+                resumePlayback = true,
+            ),
+        )
+
+        assertTrue(f.coordinator.isBackgroundPlayEnabled())
+        assertEquals(15_000L, f.coordinator.getDoubleTapSeekDurationMs())
+        assertTrue(f.coordinator.isResumePlaybackEnabled())
+
+        f.settingsRepo.stored = f.settingsRepo.stored.copy(
+            backgroundPlay = false,
+            doubleTapSeekSeconds = 30,
+            resumePlayback = false,
+        )
+
+        assertFalse(f.coordinator.isBackgroundPlayEnabled())
+        assertEquals(30_000L, f.coordinator.getDoubleTapSeekDurationMs())
+        assertFalse(f.coordinator.isResumePlaybackEnabled())
+    }
 }

@@ -1715,7 +1715,7 @@ fun MusicScreen(
                     // the throttle state, and the Room table. With no
                     // manager in scope there is no in-memory state, so
                     // clear the Room table directly instead.
-                    playbackCoordinator?.resumeManager?.clearAll()
+                    playbackCoordinator?.clearResumePositions()
                         ?: viewModel.clearAllResumePositions()
                     snackbarHostState.showSnackbar(context.getString(R.string.music_cleared_history_msg))
                 }
