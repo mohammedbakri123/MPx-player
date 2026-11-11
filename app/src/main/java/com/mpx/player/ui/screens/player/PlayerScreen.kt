@@ -38,7 +38,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -761,33 +760,52 @@ fun PlayerScreen(
 
     // Issue #195: hide the system bars with the player chrome. The status
     // bar never disappeared during playback — the player hid its own chrome
-    // but never told the window to hide the bars. Tied to controlsVisible,
-    // so the bars hide when the chrome auto-hides (or the user taps it
-    // away) and come back with the chrome. Scoped to the Player route
-    // only: edge-to-edge stays off for the rest of the app (M2.5
-    // decision). WindowInsetsControllerCompat needs no
-    // decorFitsSystemWindows change. Issue #377: the window is full
-    // screen on the player route now (the Scaffold padding is skipped
-    // there), so showing or hiding the bars no longer resizes the
-    // SurfaceView — the bars are pure overlays over the video,
-    // MX-style. The #193 restore still covers the remaining resize
-    // paths (rotation, PiP) through surfaceChanged, so they cannot
-    // re-trigger the black-video bug. Not hidden in PiP: the PiP window has no system
-    // bars to hide. BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE lets the user
-    // swipe the bars back temporarily; onDispose restores them, so
-    // leaving the player always brings them back.
+    // but never told the window to hide the bars. The status bar is now
+    // hidden for the whole player session (mpvEx-style), NOT tied to
+    // controlsVisible — it never appears, even when the controls are up.
+    // The navigation bar still follows the controls (hidden with the
+    // chrome, shown with it). Scoped to the Player route only:
+    // edge-to-edge stays off for the rest of the app (M2.5 decision).
+    // WindowInsetsControllerCompat needs no decorFitsSystemWindows
+    // change. Issue #377: the window is full screen on the player route
+    // now (the Scaffold padding is skipped there), so showing or hiding
+    // the bars no longer resizes the SurfaceView — the bars are pure
+    // overlays over the video, MX-style. The #193 restore still covers
+    // the remaining resize paths (rotation, PiP) through surfaceChanged,
+    // so they cannot re-trigger the black-video bug. Not hidden in PiP:
+    // the PiP window has no system bars to hide.
+    // BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE lets the user swipe the bars
+    // back temporarily; onDispose restores them, so leaving the player
+    // always brings them back. The cutout mode is SHORT_EDGES (mpvEx)
+    // so the header can sit at the very top edge on notched /
+    // punch-hole phones; restored to DEFAULT on dispose.
     DisposableEffect(controlsVisible, isInPipMode, activity) {
         val window = activity?.window
-        if (window != null && !controlsVisible && !isInPipMode) {
+        if (window != null && !isInPipMode) {
             val controller = WindowInsetsControllerCompat(window, window.decorView)
             controller.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            controller.hide(WindowInsetsCompat.Type.systemBars())
+            // Status bar: hidden for the whole session, not tied to the
+            // controls. Navigation bar: follows the controls.
+            controller.hide(WindowInsetsCompat.Type.statusBars())
+            if (!controlsVisible) {
+                controller.hide(WindowInsetsCompat.Type.navigationBars())
+            } else {
+                controller.show(WindowInsetsCompat.Type.navigationBars())
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                window.attributes.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
         }
         onDispose {
             activity?.window?.let { w ->
                 WindowInsetsControllerCompat(w, w.decorView)
                     .show(WindowInsetsCompat.Type.systemBars())
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    w.attributes.layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+                }
             }
         }
     }
@@ -1773,18 +1791,17 @@ fun PlayerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.TopCenter)
-                        // Issue #377: only the chrome takes the
-                        // status-bar inset — the video behind it stays
-                        // full size. The gradient covers the inset too,
-                        // so the bar's light icons stay readable over
-                        // the video.
-                        .statusBarsPadding()
+                        // No status-bar inset any more (mpvEx-style): the
+                        // status bar never appears on the player, so the
+                        // header sits at the very top edge. The video
+                        // behind it stays full size; the gradient keeps
+                        // the header readable over the video.
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(MpxTheme.colors.black.copy(alpha = 0.75f), Color.Transparent),
                             ),
                         )
-                        .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 24.dp),
+                        .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 24.dp),
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
