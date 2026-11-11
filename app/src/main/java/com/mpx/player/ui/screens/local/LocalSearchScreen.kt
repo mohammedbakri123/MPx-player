@@ -30,11 +30,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -97,6 +93,11 @@ fun LocalSearchScreen(
     showFieldDate: Boolean = false,
     showFieldLocation: Boolean = true,
     showFullName: Boolean = false,
+    // Phase 2b: the query lives in LocalViewModel (#318: rotation
+    // keeps it via the ViewModel instead of this screen's
+    // rememberSaveable); this screen renders it statelessly.
+    query: String,
+    onQueryChange: (String) -> Unit,
     selectedFolderIds: Set<String> = emptySet(),
     selectedVideoIds: Set<String> = emptySet(),
     isSelectionMode: Boolean = false,
@@ -110,9 +111,8 @@ fun LocalSearchScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Issue #318: rememberSaveable, not remember — a plain remember
-    // dropped the typed query on rotation.
-    var query by rememberSaveable { mutableStateOf("") }
+    // Phase 2b: `query` arrives from LocalViewModel (see the
+    // parameter docs above) — no local state for it anymore.
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -152,7 +152,7 @@ fun LocalSearchScreen(
             }
             OutlinedTextField(
                 value = query,
-                onValueChange = { query = it },
+                onValueChange = onQueryChange,
                 modifier = Modifier
                     .weight(1f)
                     .focusRequester(focusRequester),
@@ -172,7 +172,7 @@ fun LocalSearchScreen(
                 },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
-                        IconButton(onClick = { query = "" }) {
+                        IconButton(onClick = { onQueryChange("") }) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = stringResource(R.string.cd_close_search),
@@ -219,7 +219,7 @@ fun LocalSearchScreen(
                     message = stringResource(R.string.empty_search_desc, query.trim()),
                     icon = Icons.Filled.Search,
                     actionLabel = stringResource(R.string.empty_search_action),
-                    onActionClick = { query = "" },
+                    onActionClick = { onQueryChange("") },
                 )
             }
             else -> {

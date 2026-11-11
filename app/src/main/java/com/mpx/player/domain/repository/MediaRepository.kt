@@ -21,6 +21,17 @@ interface MediaRepository {
     fun getAudioTracks(): List<AudioTrack>
     fun getPlaylists(): List<Playlist>
     /**
+     * Phase 2b: the process-lifetime cache of the last scan, keyed by
+     * the (show-all-folders, show-hidden-files) flags that shape the
+     * lists (#100). The default is no cache; [MediaStoreRepository]
+     * returns its last scan so a fresh LocalViewModel can render the
+     * previous content instantly instead of flashing an empty page
+     * while the rescan runs. It dies with the process, so a fresh
+     * launch always scans.
+     */
+    fun cachedFolders(showAllFolders: Boolean, showHiddenFiles: Boolean): List<MediaFolder>? = null
+    fun cachedVideos(showAll: Boolean, showHiddenFiles: Boolean): List<VideoFile>? = null
+    /**
      * Returns the library tracks that belong to a device (MediaStore) playlist,
      * in the playlist's own member order. Returns an empty list for an unknown
      * id or a playlist with no resolvable members. Custom (Room) playlists are
