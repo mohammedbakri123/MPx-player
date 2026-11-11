@@ -389,6 +389,9 @@ class PlaybackService : Service(), KoinComponent {
 
     override fun onDestroy() {
         super.onDestroy()
+        // Note (D-11): playbackCoordinator.release() is intentionally NOT called here.
+        // The coordinator and engine are process-lifetime singles; MainActivity may
+        // still be alive and active after the background playback service stops.
         serviceJob.cancel()
         mediaSession.isActive = false
         mediaSession.release()

@@ -6,6 +6,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
+import androidx.annotation.VisibleForTesting
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
@@ -1585,6 +1586,13 @@ internal class MpvCoreEngine(
     }
 
 
+    /**
+     * Releases native mpv resources.
+     *
+     * **Test-only lifecycle method (D-11).**
+     * In production, the engine is intentionally process-lifetime.
+     */
+    @VisibleForTesting
     internal fun release() {
         pendingLoad = null
         pendingSeekMs = null

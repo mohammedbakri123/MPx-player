@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
+import androidx.annotation.VisibleForTesting
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.domain.model.AudioTrack
@@ -118,6 +119,10 @@ interface BackgroundService {
  * playback and event timing, the real watchdog against a stuck
  * load, the background service actually starting, and the localised
  * banner texts themselves (the fake strings return markers).
+ *
+ * Lifetime note (D-11): the coordinator and underlying engine are
+ * intentionally process-lifetime singles in production. They must NOT
+ * be wired to component lifecycles (MainActivity or PlaybackService).
  */
 class PlaybackCoordinator(
     private val database: MpxDatabase,
@@ -948,6 +953,25 @@ class PlaybackCoordinator(
         }
     }
 
+    /**
+     * Releases player and coordinator resources.
+     *
+     * **Test-only lifecycle method (D-11).**
+     *
+     * In production, the coordinator and underlying engine are intentionally
+     * process-lifetime singles. Do **NOT** wire this method to any Android component
+     * lifecycle:
+     * - [PlaybackService.onDestroy] can fire while [MainActivity] is active and visible
+     *   (e.g. background service stopped after playback pause).
+     * - [MainActivity.onDestroy] can fire during configuration changes or when
+     *   background playback continues in [PlaybackService].
+     *
+     * Wiring [release] to either component lifecycle destroys the native mpv instance while
+     * another component holds the coordinator, causing black video or native crashes.
+     * In production, the native mpv instance lives for the process lifetime and is reclaimed
+     * on process termination. This method exists exclusively for unit tests to tear down fixtures.
+     */
+    @VisibleForTesting
     fun release() {
         pausedForTransientFocus = false
         audioFocusManager.abandonAudioFocus()
