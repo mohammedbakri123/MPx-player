@@ -41,4 +41,12 @@ interface MediaRepository {
     fun getAudioAlbums(): List<AudioAlbum>
     fun getAudioArtists(): List<AudioArtist>
     fun getAudioFolders(): List<AudioFolder>
+
+    /**
+     * Phase 2e: the external storage volume names (MediaStore +
+     * StorageManager), for the Development diagnostics section. The
+     * default is no volumes; [MediaStoreRepository] returns its
+     * scanned set.
+     */
+    fun getExternalVolumeNames(): Set<String> = emptySet()
 }

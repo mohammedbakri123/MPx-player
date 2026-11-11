@@ -322,6 +322,65 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `loadDiagnosticsMediaCounts reads volumes and counts, skips without permission`() = runTest {
+        mediaRepository.videoFolderList = listOf(
+            MediaFolder(id = "1", name = "Movies", path = "/sdcard/Movies", videoCount = 3, totalSizeFormatted = "1 GB"),
+            MediaFolder(id = "2", name = "Clips", path = "/sdcard/Clips", videoCount = 2, totalSizeFormatted = "5 MB"),
+        )
+        mediaRepository.audioTrackList = listOf(
+            AudioTrack(id = "t1", title = "Song", artist = "A", album = "B", durationFormatted = "1:00", durationMs = 1000L, path = "/sdcard/Music/s.mp3"),
+            AudioTrack(id = "t2", title = "Song 2", artist = "A", album = "B", durationFormatted = "2:00", durationMs = 2000L, path = "/sdcard/Music/s2.mp3"),
+        )
+        mediaRepository.audioFolderList = listOf(
+            AudioFolder(id = "a1", name = "Music", path = "/sdcard/Music", trackCount = 2),
+        )
+        mediaRepository.audioAlbumList = listOf(
+            AudioAlbum(id = "al1", title = "B", artist = "A", trackCount = 2),
+        )
+        mediaRepository.audioArtistList = listOf(
+            AudioArtist(id = "ar1", name = "A", trackCount = 2, albumCount = 1),
+        )
+        mediaRepository.playlistList = listOf(
+            Playlist(id = "p1", title = "Mix", itemCount = 2),
+        )
+        mediaRepository.volumeNames = setOf("primary", "1234-5678")
+        val viewModel = createViewModel()
+
+        val counts = viewModel.loadDiagnosticsMediaCounts(
+            hasVideoPermission = true,
+            hasAudioPermission = true,
+        )
+
+        assertEquals("primary, 1234-5678", counts.volumes)
+        assertEquals(2, counts.videoFolders)
+        assertEquals(5, counts.videoCount)
+        assertEquals(2, counts.audioTracks)
+        assertEquals(1, counts.audioFolders)
+        assertEquals(1, counts.audioAlbums)
+        assertEquals(1, counts.audioArtists)
+        assertEquals(1, counts.playlists)
+
+        // Without permission the MediaStore reads are skipped, not failed.
+        val denied = viewModel.loadDiagnosticsMediaCounts(
+            hasVideoPermission = false,
+            hasAudioPermission = false,
+        )
+        assertEquals(0, denied.videoFolders)
+        assertEquals(0, denied.audioTracks)
+        // The volumes string does not need the permission.
+        assertEquals("primary, 1234-5678", denied.volumes)
+
+        // A failing volumes read falls back to "primary (internal)",
+        // exactly as the screen's old inline scan did.
+        mediaRepository.volumeNamesThrow = true
+        val fallback = viewModel.loadDiagnosticsMediaCounts(
+            hasVideoPermission = true,
+            hasAudioPermission = true,
+        )
+        assertEquals("primary (internal)", fallback.volumes)
+    }
+
+    @Test
     fun `updatePopupPlayPosition remembers explicit picks for RememberLast`() = runTest {
         setTestMainDispatcher()
         val viewModel = createViewModel()
@@ -469,6 +528,12 @@ class SettingsViewModelTest {
         // name (both non-suspend).
         var videoFolderList: List<MediaFolder> = emptyList()
         var audioFolderList: List<AudioFolder> = emptyList()
+        var audioTrackList: List<AudioTrack> = emptyList()
+        var audioAlbumList: List<AudioAlbum> = emptyList()
+        var audioArtistList: List<AudioArtist> = emptyList()
+        var playlistList: List<Playlist> = emptyList()
+        var volumeNames: Set<String> = emptySet()
+        var volumeNamesThrow: Boolean = false
         var showAllFoldersRequested: Boolean = false
 
         override fun getMediaFolders(): List<MediaFolder> = videoFolderList
@@ -478,14 +543,19 @@ class SettingsViewModelTest {
             return videoFolderList
         }
 
-        override fun getAudioTracks(): List<AudioTrack> = emptyList()
+        override fun getAudioTracks(): List<AudioTrack> = audioTrackList
 
-        override fun getPlaylists(): List<Playlist> = emptyList()
+        override fun getPlaylists(): List<Playlist> = playlistList
 
-        override fun getAudioAlbums(): List<AudioAlbum> = emptyList()
+        override fun getAudioAlbums(): List<AudioAlbum> = audioAlbumList
 
-        override fun getAudioArtists(): List<AudioArtist> = emptyList()
+        override fun getAudioArtists(): List<AudioArtist> = audioArtistList
 
         override fun getAudioFolders(): List<AudioFolder> = audioFolderList
+
+        override fun getExternalVolumeNames(): Set<String> {
+            if (volumeNamesThrow) throw IllegalStateException("volumes failed")
+            return volumeNames
+        }
     }
 }

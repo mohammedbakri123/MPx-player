@@ -39,9 +39,11 @@ import kotlinx.coroutines.withContext
  *
  * Compose-only concerns stay in the screens: dialog visibility,
  * scroll position, the update-check flow (#414), the diagnostics
- * scan itself (MediaStore + file sizes, still loaded in the screen),
- * the config-folder / export / import launchers (#432, #433), the
- * config-file text editing (#431), and the PiP entry itself
+ * scan itself (file sizes, package info — still loaded in the
+ * screen; the MediaStore counts come from
+ * [loadDiagnosticsMediaCounts]), the config-folder / export /
+ * import launchers (#432, #433), the config-file text editing
+ * (#431), and the PiP entry itself
  * (`PipUtils.updatePipParams` / `enterPip`, which need the Activity).
  *
  * What this ViewModel deliberately does NOT own: the language /
@@ -370,6 +372,59 @@ class SettingsViewModel(
         persistence.getPlaylists().size,
         persistence.getAllResumePositions().size,
     )
+
+    // -- Diagnostics MediaStore counts --------------------------------------
+    //
+    // The Development section's MediaStore counts, read through the
+    // media interface instead of a hand-built MediaStoreRepository
+    // in the screen. Same reads, same per-call try/catch, same
+    // "primary (internal)" fallback for the volumes string.
+
+    /** MediaStore counts for the diagnostics section. */
+    suspend fun loadDiagnosticsMediaCounts(
+        hasVideoPermission: Boolean,
+        hasAudioPermission: Boolean,
+    ): DiagnosticsMediaCounts = withContext(Dispatchers.IO) {
+        val volumes = try {
+            val volNames = mediaRepository.getExternalVolumeNames()
+            if (volNames.isNotEmpty()) volNames.joinToString(", ") else "primary (internal)"
+        } catch (_: Exception) {
+            "primary (internal)"
+        }
+        var videoFolders = 0
+        var videoCount = 0
+        var audioTracks = 0
+        var audioFolders = 0
+        var audioAlbums = 0
+        var audioArtists = 0
+        var playlists = 0
+        if (hasVideoPermission) {
+            try {
+                val folders = mediaRepository.getMediaFolders(showAllFolders = true)
+                videoFolders = folders.size
+                videoCount = folders.sumOf { it.videoCount }
+            } catch (_: Exception) {}
+        }
+        if (hasAudioPermission) {
+            try {
+                audioTracks = mediaRepository.getAudioTracks().size
+                audioFolders = mediaRepository.getAudioFolders().size
+                audioAlbums = mediaRepository.getAudioAlbums().size
+                audioArtists = mediaRepository.getAudioArtists().size
+                playlists = mediaRepository.getPlaylists().size
+            } catch (_: Exception) {}
+        }
+        DiagnosticsMediaCounts(
+            volumes = volumes,
+            videoFolders = videoFolders,
+            videoCount = videoCount,
+            audioTracks = audioTracks,
+            audioFolders = audioFolders,
+            audioAlbums = audioAlbums,
+            audioArtists = audioArtists,
+            playlists = playlists,
+        )
+    }
 }
 
 // Issue #300: the blacklist hides audio too, so a folder with only songs
@@ -380,4 +435,16 @@ class SettingsViewModel(
 data class BlacklistFolderOption(
     val path: String,
     val name: String,
+)
+
+/** MediaStore counts for the Development diagnostics section. */
+data class DiagnosticsMediaCounts(
+    val volumes: String,
+    val videoFolders: Int,
+    val videoCount: Int,
+    val audioTracks: Int,
+    val audioFolders: Int,
+    val audioAlbums: Int,
+    val audioArtists: Int,
+    val playlists: Int,
 )

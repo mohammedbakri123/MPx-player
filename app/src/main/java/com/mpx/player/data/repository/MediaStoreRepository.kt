@@ -63,7 +63,7 @@ class MediaStoreRepository(
      * On Android 11+ (API 30+), also inspects [StorageManager.getStorageVolumes]
      * to guarantee all mounted volumes known to the system are covered.
      */
-    fun getExternalVolumeNames(): Set<String> {
+    override fun getExternalVolumeNames(): Set<String> {
         val volumeNames = LinkedHashSet<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {

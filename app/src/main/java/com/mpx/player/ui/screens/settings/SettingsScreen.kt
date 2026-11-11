@@ -98,7 +98,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
-import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.domain.settings.AppSettings
 import org.koin.compose.viewmodel.koinViewModel
@@ -1243,7 +1242,7 @@ private fun DevelopmentSettingsSection(
             // the rest of the diagnostics still loads.
             val recordCounts = runCatching { viewModel.loadRecordCounts() }
                 .getOrElse { listOf(0, 0, 0, 0) }
-            val stats = loadDevDiagnostics(context, recordCounts)
+            val stats = loadDevDiagnostics(context, recordCounts, viewModel)
             onDiagnosticsLoaded(stats)
             isRefreshing = false
         }
@@ -1666,6 +1665,9 @@ private suspend fun loadDevDiagnostics(
     // Record counts from SettingsViewModel.loadRecordCounts() — the
     // persistence repository, not MpxDatabase.getInstance.
     recordCounts: List<Int>,
+    // The ViewModel supplies the MediaStore counts, so this function
+    // never builds a MediaStoreRepository itself.
+    viewModel: SettingsViewModel,
 ): DevDiagnosticsData = withContext(Dispatchers.IO) {
     val pInfo = try {
         context.packageManager.getPackageInfo(context.packageName, 0)
@@ -1721,40 +1723,17 @@ private suspend fun loadDevDiagnostics(
 
     val hasVideoPerm = MediaPermissions.hasVideoPermission(context)
     val hasAudioPerm = MediaPermissions.hasAudioPermission(context)
-    val mediaRepo = MediaStoreRepository(context)
-
-    val volumes = try {
-        val volNames = mediaRepo.getExternalVolumeNames()
-        if (volNames.isNotEmpty()) volNames.joinToString(", ") else "primary (internal)"
-    } catch (_: Exception) {
-        "primary (internal)"
-    }
-
-    var videoFolders = 0
-    var videoCount = 0
-    var audioTracks = 0
-    var audioFolders = 0
-    var audioAlbums = 0
-    var audioArtists = 0
-    var playlists = 0
-
-    if (hasVideoPerm) {
-        try {
-            val folders = mediaRepo.getMediaFolders(showAllFolders = true)
-            videoFolders = folders.size
-            videoCount = folders.sumOf { it.videoCount }
-        } catch (_: Exception) {}
-    }
-
-    if (hasAudioPerm) {
-        try {
-            audioTracks = mediaRepo.getAudioTracks().size
-            audioFolders = mediaRepo.getAudioFolders().size
-            audioAlbums = mediaRepo.getAudioAlbums().size
-            audioArtists = mediaRepo.getAudioArtists().size
-            playlists = mediaRepo.getPlaylists().size
-        } catch (_: Exception) {}
-    }
+    // The MediaStore counts come from the ViewModel (MediaRepository
+    // single) — the screen no longer builds a repository by hand.
+    val mediaCounts = viewModel.loadDiagnosticsMediaCounts(hasVideoPerm, hasAudioPerm)
+    val volumes = mediaCounts.volumes
+    val videoFolders = mediaCounts.videoFolders
+    val videoCount = mediaCounts.videoCount
+    val audioTracks = mediaCounts.audioTracks
+    val audioFolders = mediaCounts.audioFolders
+    val audioAlbums = mediaCounts.audioAlbums
+    val audioArtists = mediaCounts.audioArtists
+    val playlists = mediaCounts.playlists
 
     val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
