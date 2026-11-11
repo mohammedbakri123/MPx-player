@@ -1,7 +1,6 @@
 package com.mpx.player.playback.engine
 
 import android.content.Context
-import android.os.Handler
 import android.util.Log
 import android.view.Surface
 import com.mpx.player.domain.settings.AppSettings
@@ -9,14 +8,10 @@ import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
-import com.mpx.player.playback.ExternalSubtitle
-import com.mpx.player.playback.MpvFdOpener
 import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
-import com.mpx.player.playback.subtitleMpvOptions
 import `is`.xyz.mpv.MPV
-import java.io.File
 import kotlin.math.log2
 
 /**
@@ -34,14 +29,13 @@ class MpvPlaybackException(
  * Phase 4 step 1: this class is now a thin facade over [MpvCoreEngine],
  * which owns the mpv lifecycle, the load/play commands, position/state
  * observation and the decoder fallback chain. Phase 4 step 2 adds
- * [MpvTrackSelection], which owns track listing/switching. What stays
- * here until its own step moves it: subtitle rendering/confirmation
- * (step 3) and settings-to-mpv configuration (step 4) — plus
- * [replaceMediaItem], which straddles the core and the subtitle concern
- * (its body is sub-add + #332 confirmation) and so stays here until
- * step 3. The [MpvCoreEngine.Host] implementation below is the seam:
- * the core calls back into it at exactly the points the old monolith
- * ran that code.
+ * [MpvTrackSelection], which owns track listing/switching. Phase 4
+ * step 3 adds [MpvSubtitleRenderer], which owns subtitle rendering/
+ * confirmation (including [replaceMediaItem], whose body is sub-add +
+ * #332 confirmation). What stays here until its own step moves it is
+ * settings-to-mpv configuration (step 4). The [MpvCoreEngine.Host]
+ * implementation below is the seam: the core calls back into it at
+ * exactly the points the old monolith ran that code.
  *
  * Implements the contract defined in [PlayerEngine]:
  * - Synchronous surface detach barrier (vo=null and detachSurface before surfaceDestroyed returns)
@@ -59,19 +53,6 @@ class MpvPlayerEngine(
 
     companion object {
         private const val TAG = "MpvPlayerEngine"
-
-        /**
-         * Issue #332: how long to wait for a sub-added external subtitle
-         * track to appear in track-list before reporting the add as
-         * failed. Local .srt/.vtt files appear in well under a second;
-         * 5s leaves room for slow storage. Issue #372: the timeout also
-         * clears the armed pin state, so a track that lands after it
-         * still shows (sub-add "select" selected it) but is no longer
-         * remembered — the next re-evaluation can lose it, and the
-         * failure banner stands as the honest verdict for a 5s-late
-         * track.
-         */
-        private const val SUBTITLE_CONFIRMATION_TIMEOUT_MS = 5_000L
     }
 
 
@@ -135,164 +116,24 @@ class MpvPlayerEngine(
             }
 
             override fun applyPostInitSettings(core: MpvCoreEngine) {
-                applySubtitleSettingsTo(core, core.loadSavedSubtitleSettings())
+                MpvSubtitleRenderer.applySubtitleSettingsTo(core, core.loadSavedSubtitleSettings())
                 applyPlaybackTweaksTo(core, core.loadSavedSubtitleSettings())
             }
 
             override fun onLoadStarted() {
-                pendingExternalPin = false
+                if (this@MpvPlayerEngine::subtitles.isInitialized) subtitles.onLoadStarted()
             }
 
             override fun onLoadTargetResolved(mediaId: String) {
-                if (rememberedExternalPick?.mediaId != mediaId) {
-                    rememberedExternalPick = null
-                }
+                if (this@MpvPlayerEngine::subtitles.isInitialized) subtitles.onLoadTargetResolved(mediaId)
             }
 
             override fun onTrackListChanged() {
-                // Issue #372: re-apply the remembered external pick on
-                // every track-list refresh — sub-add is async, so the pin
-                // right after sub-add usually runs before the new track
-                // is in track-list, and a later seek, VO switch or
-                // decoder re-init can unselect the track again (user's
-                // 2026-11-08 01:15 log). The re-apply matches by title,
-                // not by isSelected, so it lands the moment the track
-                // appears and re-lands it after any re-evaluation.
-                // Issue #332: a pin landing is the only proof the sub-add
-                // actually worked, so it resolves an armed confirmation.
-                // Only a pin that WAS pending and just landed counts.
-                val hadPendingPin = pendingExternalPin
-                val result = reapplyRememberedPick()
-                if (hadPendingPin && result.confirms) {
-                    pendingExternalPin = false
-                    confirmPendingSubtitle(true)
-                }
-                mainHandler.post {
-                    engineListener?.onTracksChanged()
-                }
+                if (this@MpvPlayerEngine::subtitles.isInitialized) subtitles.onTrackListChanged()
             }
 
             override fun onFileLoaded() {
-                // Issue #102: Dispatch queued external subtitles for the current item now that file context is active
-                val pending = pendingSubtitles
-                pendingSubtitles = null
-                if (pending != null) {
-                    // Issue #213/#219: the match also accepts the raw URI
-                    // of the current queue item. Subtitles queued while the
-                    // load was still deferred for lack of surface carry the
-                    // raw URI, and the fresh fd opened when the load flushed
-                    // can never equal it — without this the subtitles queued
-                    // in replaceMediaItem would be dropped as stale.
-                    val matches = activeMediaUri == null ||
-                        isPathMatch(pending.mediaUri, activeMediaUri) ||
-                        pending.mediaUri == currentQueue.getOrNull(currentMediaIndex)?.uri
-                    if (matches) {
-                        var issuedAny = false
-                        var lastIssuedExternal: PendingSubtitle? = null
-                        val subs = pending.subtitles
-                        for ((i, sub) in subs.withIndex()) {
-                            // Issue #332: skip a URI mpv provably cannot
-                            // open — a content:// URI whose fd resolution
-                            // failed, or a file deleted since it was
-                            // queued — instead of sub-adding it and
-                            // letting mpv fail silently. mpv.command()
-                            // never throws for a rejected file, so without
-                            // this the caller could never know it failed.
-                            if (!isUsableSubtitleUri(sub.uri)) {
-                                Log.w(TAG, "Skipping unusable pending subtitle ${sub.uri}")
-                                continue
-                            }
-                            try {
-                                // Issue #441: decode this file with its
-                                // detected codepage, right before mpv
-                                // loads it.
-                                applySubtitleCodepage(sub.codepage)
-                                if (sub.title != null) {
-                                    mpv.command("sub-add", sub.uri, sub.flag, sub.title)
-                                } else {
-                                    mpv.command("sub-add", sub.uri, sub.flag)
-                                }
-                                issuedAny = true
-                                // Issue #372: remember the last external
-                                // subtitle issued — each "select" sub-add
-                                // selects that track, so the last one is
-                                // the pick. The legacy subtitleUri (title
-                                // null) has no identity to remember.
-                                if (sub.title != null) lastIssuedExternal = sub
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed adding pending subtitle ${sub.uri}", e)
-                                // Issue #332: the remaining queued entries
-                                // were never handed to mpv, so their
-                                // descriptors are still ours — close them.
-                                // The failed entry's descriptor is NOT
-                                // closed: mpv.command is synchronous, so
-                                // by the time it throws libmpv has already
-                                // run the open attempt and owns (and
-                                // closes) it; closing here would
-                                // double-close.
-                                fdOpener.closeFds(subs.drop(i + 1).map { it.uri })
-                                break
-                            }
-                        }
-                        // Issue #372: remember the picked external
-                        // subtitle and pin sid to it — sub-add "select"
-                        // alone does not stick. Arm the remembered pick
-                        // first: sub-add is async, so the immediate
-                        // attempt usually runs before the new track is in
-                        // track-list, and the track-list handler
-                        // re-applies it until it lands — and again after
-                        // any later re-evaluation unselects it. A failed
-                        // add (issuedAny false) never arms anything.
-                        if (issuedAny) {
-                            val lastExternal = lastIssuedExternal
-                            if (lastExternal != null && lastExternal.title != null) {
-                                rememberedExternalPick = RememberedExternalPick(
-                                    pending.mediaId, lastExternal.title, lastExternal.uri,
-                                )
-                            }
-                            pendingExternalPin = true
-                            // Issue #332: arm the outcome confirmation
-                            // BEFORE the immediate pin attempt — the
-                            // track may already be in track-list, and a
-                            // synchronous pin landing must resolve it.
-                            armSubtitleConfirmation(pending.mediaId)
-                            if (reapplyRememberedPick().confirms) {
-                                pendingExternalPin = false
-                                confirmPendingSubtitle(true)
-                            }
-                        }
-                    } else {
-                        Log.w(TAG, "Dropping stale pending subtitles for ${pending.mediaUri} (active: $activeMediaUri)")
-                        // Issue #332: the dropped subtitles were never
-                        // handed to mpv, so their descriptors are still
-                        // ours — close them instead of leaking one fd per
-                        // dropped subtitle until the process dies.
-                        fdOpener.closeFds(pending.subtitles.map { it.uri })
-                    }
-                } else {
-                    // Issue #189: auto-select an embedded subtitle track
-                    // when none is selected. MPx never sets mpv's 'slang'
-                    // and never sets 'sid' at load, so mpv's default
-                    // sid=auto had no language to match against and
-                    // embedded subtitles never appeared unless the user
-                    // picked one by hand every time. Prefer the
-                    // default-flagged track, else the first embedded track.
-                    // Skipped when external subtitles were just added with
-                    // 'select' above (they become the selected track), and
-                    // when mpv already selected a track itself.
-                    try {
-                        val tracks = getSubtitleTracks()
-                        if (tracks.none { it.isSelected }) {
-                            val candidate = tracks.firstOrNull { it.isDefault && !it.isExternal }
-                                ?: tracks.firstOrNull { !it.isExternal }
-                            if (candidate != null) {
-                                selectSubtitleTrack(candidate.groupIndex, candidate.trackIndex)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed auto-selecting a subtitle track", e)
-                    }
-                }
+                if (this@MpvPlayerEngine::subtitles.isInitialized) subtitles.onFileLoaded()
             }
         },
     )
@@ -300,21 +141,41 @@ class MpvPlayerEngine(
 
     /**
      * Phase 4 step 2 seam: track listing/switching, with the host
-     * callback for the subtitle state that stays here until step 3.
-     * The callback runs at exactly the points the old monolith
-     * cleared that state. The host only ever runs after construction
-     * (a track pick is a user action), so reading the facade's
-     * subtitle fields here is safe.
+     * callback for the subtitle state that now lives in
+     * [MpvSubtitleRenderer] (step 3). The callback runs at exactly
+     * the points the old monolith cleared that state; the seam stays
+     * because the track class is built before the subtitle class,
+     * so it reaches it through the facade. The host only ever runs
+     * after construction (a track pick is a user action), so the
+     * `::subtitles.isInitialized` guard never fires in practice.
      */
     private val tracks: MpvTrackSelection = MpvTrackSelection(
         core,
         host = object : MpvTrackSelection.Host {
             override fun clearRememberedExternalPick() {
-                rememberedExternalPick = null
-                pendingExternalPin = false
+                if (this@MpvPlayerEngine::subtitles.isInitialized) subtitles.clearRememberedExternalPick()
             }
         },
     )
+
+
+    /**
+     * Phase 4 step 3: subtitle rendering. Built after the core
+     * and the track class (it needs both). `lateinit` on purpose:
+     * the core's init runs while this property is still being
+     * assigned, so the Host callbacks above guard every call with
+     * `::subtitles.isInitialized` — they can only fire after
+     * construction, but the guard keeps a (currently impossible)
+     * early event from crashing on an uninitialised field. The
+     * init-time subtitle work (applyPostInitSettings) does not
+     * touch this instance: it calls the renderer's companion
+     * function with the core passed as an argument.
+     */
+    private lateinit var subtitles: MpvSubtitleRenderer
+
+    init {
+        subtitles = MpvSubtitleRenderer(core, tracks)
+    }
 
 
     // --- Delegating accessors for the state MpvCoreEngine now owns ---
@@ -322,9 +183,6 @@ class MpvPlayerEngine(
     // names; each step that moves a function deletes the accessors it
     // no longer needs.
     private val mpv: MPV get() = core.mpv
-    private val mainHandler: Handler get() = core.mainHandler
-    private val fdOpener: MpvFdOpener get() = core.fdOpener
-    private val engineListener: PlayerEngine.Listener? get() = core.listener
 
     // Phase 4 step 1: read-only here on purpose. A `var` with an
     // explicit `private set` body generates a JVM setter
@@ -345,18 +203,6 @@ class MpvPlayerEngine(
     private var fileLoadedForCurrentItem: Boolean
         get() = core.fileLoadedForCurrentItem
         set(value) { core.fileLoadedForCurrentItem = value }
-    private var pendingLoad: Triple<List<PlayableMedia>, Int, Long>?
-        get() = core.pendingLoad
-        set(value) { core.pendingLoad = value }
-    private var activeMediaId: String?
-        get() = core.activeMediaId
-        set(value) { core.activeMediaId = value }
-    private var activeMediaUri: String?
-        get() = core.activeMediaUri
-        set(value) { core.activeMediaUri = value }
-    private var pendingSubtitles: PendingSubtitles?
-        get() = core.pendingSubtitles
-        set(value) { core.pendingSubtitles = value }
     private var cachedPositionMs: Long
         get() = core.cachedPositionMs
         set(value) { core.cachedPositionMs = value }
@@ -378,171 +224,9 @@ class MpvPlayerEngine(
     private fun setRuntimeProperty(key: String, value: String) =
         core.setRuntimeProperty(key, value)
 
-    private fun isPathMatch(path1: String?, path2: String?): Boolean =
-        MpvCoreEngine.isPathMatch(path1, path2)
 
     private fun loadSavedSubtitleSettings(): AppSettings = core.loadSavedSubtitleSettings()
 
-
-    /** Issue #372: whether the #332 confirmation is still awaiting the
-     * remembered external pick landing (see [rememberedExternalPick]).
-     * Set together with the remembered pick whenever sub-adds are issued
-     * (replaceMediaItem's loaded branch, or the FILE_LOADED dispatch),
-     * cleared the moment a track-list refresh confirms sid is pinned to
-     * the remembered track — or by the #332 timeout when the track never
-     * appears, so a failed add can never leave a stale armed pin
-     * retrying forever. Also cleared on a manual embedded/Off pick
-     * (selectSubtitleTrack) and on load/stop/release. Armed on Main
-     * (replaceMediaItem) and on the event thread (FILE_LOADED dispatch);
-     * read/cleared on the event thread: volatile. */
-    @Volatile
-    private var pendingExternalPin: Boolean = false
-
-
-    /** Issue #372: the external subtitle the user picked for the current
-     * item, remembered by identity (display name + the URI handed to
-     * mpv) so it can be re-applied after mpv unselects it. The #192
-     * pin only pinned a track that was currently selected AND external,
-     * so once a seek, VO switch or decoder re-init unselected the track
-     * the pin could never land (user's 2026-11-08 01:15 log: vo=null
-     * surface destroy + decoder re-init + seeks, pin precondition dead).
-     * mpv has no sticky pick of its own — sub-add returns no track id
-     * and sid resets to auto at playback init — so the app owns the pick
-     * (mpvEx's TrackSelector Pass 00 does the same: select ANY external
-     * track by explicit id on every file load). [reapplyRememberedPick]
-     * sets sid to the remembered track's id on every track-list refresh
-     * where the track is present but sid is not already on it, matched
-     * by title (the only identity track-list carries — the sub-add title
-     * argument sets the track title, per the mpv manual), never by
-     * isSelected — so the pin lands the moment the track appears and
-     * survives later re-evaluations. Guarded to the current track-list,
-     * so a failed sub-add can never resurrect a non-existent track.
-     * Cleared when the user picks an embedded track or turns subtitles
-     * Off (selectSubtitleTrack), on load() of a different item, on the
-     * #332 timeout (track never appeared), and on stop/release. Survives
-     * a successful pin: that is the point — a later VO change or reload
-     * (fresh track ids) re-applies it by title again. */
-    @Volatile
-    private var rememberedExternalPick: RememberedExternalPick? = null
-
-
-    /**
-     * Issue #332: outcome confirmation for a sub-add. `mpv.command()`
-     * never throws for a rejected subtitle file — the native JNI command
-     * only logs `mpv_error_string` (libplayer.so contains no Java
-     * exception class at all) — so the issued command proves nothing and
-     * the old unconditional success toast lied. The only real signal is
-     * the new track appearing in track-list, which the #192 pin already
-     * watches: a confirmation is armed whenever a sub-add is issued
-     * (replaceMediaItem's loaded branch, or the FILE_LOADED dispatch),
-     * resolved the moment the pin lands for the current item, and
-     * reported as failure if the track never appears within
-     * [SUBTITLE_CONFIRMATION_TIMEOUT_MS]. The listener is notified for
-     * every armed confirmation; the manager ignores ids it did not arm
-     * (queue restores confirm the same way). Armed on Main
-     * (replaceMediaItem) and on the event thread (FILE_LOADED dispatch);
-     * read/cleared on the event thread (track-list handler) and Main
-     * (timeout): volatile. Cleared on stop/release.
-     */
-    @Volatile
-    private var pendingSubtitleConfirmation: PendingSubtitleConfirmation? = null
-
-
-    private data class PendingSubtitleConfirmation(val mediaId: String)
-
-
-    /** Issue #372: identity of a picked external subtitle (see
-     * [rememberedExternalPick]). [uri] is the URI actually handed to mpv
-     * (resolved: fd:// for content:// picks), [name] the display name
-     * passed as the sub-add title — the title is what track-list
-     * carries, so it is the match key in [reapplyRememberedPick]. */
-    private data class RememberedExternalPick(val mediaId: String, val name: String, val uri: String)
-
-
-    private val subtitleConfirmationTimeout = Runnable {
-        val pending = pendingSubtitleConfirmation ?: return@Runnable
-        pendingSubtitleConfirmation = null
-        // Issue #372: the track never appeared within the timeout — the
-        // sub-add failed. Clear the armed pin state too: the old code
-        // reported the failure but left pendingExternalPin armed, so the
-        // pin kept retrying on every track-list refresh forever. The
-        // remembered pick goes with it — there is no track to remember.
-        pendingExternalPin = false
-        rememberedExternalPick = null
-        Log.d(TAG, "External subtitle confirmation timed out for ${pending.mediaId}: track never appeared, remembered pick cleared")
-        engineListener?.onExternalSubtitleConfirmed(pending.mediaId, false)
-    }
-
-
-    /**
-     * Issue #332: arm the sub-add outcome confirmation for [mediaId]
-     * (replacing any earlier one — the manager only ever waits for the
-     * latest pick per item). The timeout reports failure if the track
-     * never appears; [confirmPendingSubtitle] resolves it early when the
-     * pin lands.
-     */
-    private fun armSubtitleConfirmation(mediaId: String) {
-        mainHandler.removeCallbacks(subtitleConfirmationTimeout)
-        pendingSubtitleConfirmation = PendingSubtitleConfirmation(mediaId)
-        mainHandler.postDelayed(subtitleConfirmationTimeout, SUBTITLE_CONFIRMATION_TIMEOUT_MS)
-    }
-
-
-    /**
-     * Issue #332: resolve an armed confirmation. Only confirms when the
-     * confirmation belongs to the currently loaded item — a pin landing
-     * after a queue advance belongs to the new item, not the old pick.
-     * A failure after the timeout has already fired is a no-op (the
-     * field is null by then).
-     */
-    private fun confirmPendingSubtitle(success: Boolean) {
-        val pending = pendingSubtitleConfirmation ?: return
-        if (pending.mediaId != activeMediaId) return
-        pendingSubtitleConfirmation = null
-        mainHandler.removeCallbacks(subtitleConfirmationTimeout)
-        mainHandler.post {
-            engineListener?.onExternalSubtitleConfirmed(pending.mediaId, success)
-        }
-    }
-
-
-    /**
-     * Issue #332: whether a resolved subtitle URI is one mpv can actually
-     * open. A `content://` URI that survived resolution unchanged means
-     * [MpvFdOpener] could not open it (permission revoked, file gone) —
-     * mpv cannot open `content://` at all, so sub-adding it can only
-     * fail. A plain filesystem path must exist. `fd://` (resolution
-     * succeeded) and http(s) (mpv tries the network) are usable; their
-     * real outcome is confirmed asynchronously via the track-list pin.
-     */
-    private fun isUsableSubtitleUri(uri: String): Boolean = when {
-        uri.startsWith("fd://") -> true
-        uri.startsWith("content://") -> false
-        uri.startsWith("http://") || uri.startsWith("https://") -> true
-        else -> File(uri.removePrefix("file://")).exists()
-    }
-
-
-    // Phase 4 step 1: the core variant — takes the core explicitly
-    // so the core's init can apply the saved settings before this
-    // facade's `core` property is assigned (see the Host above).
-    private fun applySubtitleSettingsTo(core: MpvCoreEngine, settings: AppSettings) {
-        if (!core.mpvInitialized || core.isReleased) return
-        try {
-            val options = subtitleMpvOptions(settings)
-            options.forEach { (key, value) ->
-                core.setRuntimeProperty(key, value)
-            }
-            Log.d(TAG, "Applied subtitle settings: sub-visibility=${options["sub-visibility"]}, " +
-                "sub-font=${options["sub-font"]}, sub-font-size=${options["sub-font-size"]}, " +
-                "sub-color=${options["sub-color"]}, sub-border-color=${options["sub-border-color"]}, " +
-                "sub-border-size=${options["sub-border-size"]}, sub-back-color=${options["sub-back-color"]}, " +
-                "sub-ass-override=${options["sub-ass-override"] ?: "default"}, " +
-                "sub-delay=${options["sub-delay"]}, sub-speed=${options["sub-speed"]}")
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed applying subtitle settings to mpv", e)
-        }
-    }
 
     /**
      * Applies the subtitle style options (issue #75) to a running mpv instance.
@@ -552,7 +236,7 @@ class MpvPlayerEngine(
      * init or after release.
      */
     fun applySubtitleSettings(settings: AppSettings) {
-        applySubtitleSettingsTo(core, settings)
+        subtitles.applySubtitleSettings(settings)
     }
 
     // Phase 4 step 1: the core variant — takes the core explicitly
@@ -621,22 +305,6 @@ class MpvPlayerEngine(
         } catch (e: Exception) {
             Log.w(TAG, "Failed setting video zoom in MPV", e)
         }
-    }
-
-
-    /**
-     * Issue #441: set mpv's subtitle decoding for the file about to be
-     * sub-added. A detected codepage ("cp1256" for Windows-1256 Arabic
-     * subtitles) is set explicitly; otherwise the codepage is reset to
-     * mpv's default ("auto") so a previous file's cp1256 cannot leak
-     * into the next file. Must run immediately before the sub-add —
-     * mpv decodes the file when it is loaded. If mpv rejects the set
-     * (sub-codepage is not runtime-changeable in this build), it fails
-     * silently through setRuntimeProperty and the file decodes exactly
-     * as today — the fix degrades to no-op, never to a crash.
-     */
-    private fun applySubtitleCodepage(codepage: String?) {
-        setRuntimeProperty("sub-codepage", codepage ?: "auto")
     }
 
 
@@ -772,351 +440,22 @@ class MpvPlayerEngine(
         tracks.selectSubtitleTrack(groupIndex, trackIndex)
 
 
-    /**
-     * Issue #197: are two ExternalSubtitle entries the same file? The
-     * display name is the stable identity — but only the stable one for
-     * content:// subtitles, whose engine-side URI is a fresh `fd://<n>`
-     * on every resolve (MpvFdOpener opens a new fd per call), so the URI
-     * can never match across calls for them. File-path subtitles keep a
-     * stable URI, so those must match too: two different files that
-     * happen to share a display name (different folders) are NOT the
-     * same sub. Honest limit: two same-named content:// files cannot be
-     * told apart here — the engine never sees their original URI — so
-     * the second one is skipped. The manager still dedupes the item's
-     * list by original URI, so the list itself stays correct.
-     */
-    private fun isSameExternalSubtitle(a: ExternalSubtitle, b: ExternalSubtitle): Boolean {
-        if (a.name != b.name) return false
-        return a.uri == b.uri || a.uri.startsWith("fd://") || b.uri.startsWith("fd://")
-    }
-
-
-    /**
-     * Issue #372: outcome of one [reapplyRememberedPick] attempt.
-     * [confirms] is true when the desired end state holds — the picked
-     * external subtitle is present in track-list and sid selects it —
-     * so an armed #332 confirmation may resolve as success.
-     * APPLIED — sid was set to the remembered track (title match) this
-     * refresh. ALREADY_PINNED — the remembered track is present,
-     * selected, and sid is already its id. COUNT_CONFIRMED — no title
-     * match, but every external subtitle the current item carries has
-     * produced a track, so the remembered one is necessarily present
-     * (see [allExpectedExternalTracksPresent]) and sid was set to the
-     * selected external track. FALLBACK_APPLIED — sid was set to the
-     * selected external track with no title match, but the count is
-     * short, so the pick is not confirmed yet. NOT_PRESENT — the
-     * remembered track is not in the current track-list and no external
-     * track is selected. BLOCKED — a title match exists but a different
-     * external track is currently selected, so the remembered pick must
-     * not override that manual pick. NOTHING_PENDING — no remembered
-     * pick and no armed pin (steady state).
-     */
-    private enum class ReapplyResult(val confirms: Boolean) {
-        APPLIED(true),
-        ALREADY_PINNED(true),
-        COUNT_CONFIRMED(true),
-        FALLBACK_APPLIED(false),
-        NOT_PRESENT(false),
-        BLOCKED(false),
-        NOTHING_PENDING(false),
-    }
-
-
-    /**
-     * Issue #372: re-apply the remembered external pick — the replacement
-     * for the #192 pin. `sub-add` with the "select" flag only changes the
-     * current selection; it leaves `sid` at its default "auto", so mpv's
-     * next track-selection re-evaluation (seek, decoder reinit, VO
-     * switch) falls back to the default-flagged embedded track and the
-     * external subtitle the user just picked silently disappears (user's
-     * v0.3.1 log: sid=2 selected, sid=1 back two seconds later; user's
-     * 2026-11-08 01:15 log: vo=null surface destroy + decoder re-init +
-     * seeks). Setting `sid` to the track id explicitly makes the pick
-     * sticky — but the old pin only pinned a track that was currently
-     * selected AND external, so once a re-evaluation unselected the track
-     * the pin could never land. This matches by identity instead: the
-     * remembered track is found in track-list by title (the only identity
-     * track-list carries) and `sid` is set to its id whenever `sid` is
-     * not already on it — so it lands the moment the track appears after
-     * sub-add AND re-lands after any later re-evaluation unselects it.
-     * Safe to call on every track-list refresh: it only ever sets `sid`
-     * to the remembered track's id, only when that track is present in
-     * the current track-list (a failed sub-add can never resurrect a
-     * non-existent track), and never while a different external track is
-     * selected (BLOCKED — a manual pick of another external track wins).
-     * A manual embedded/Off pick clears the remembered pick first
-     * (selectSubtitleTrack), so this can never override one either.
-     * Callers clear [pendingExternalPin] and resolve the #332
-     * confirmation only when the result [ReapplyResult.confirms].
-     *
-     * Title-mismatch fallback: the v0.3.1 log showed mpv reporting the
-     * added track's title as "srt" for fd:// subs, so a title match can
-     * never be assumed — when no title matches, this falls back to the
-     * old #192 rule and pins the currently selected external track
-     * (that track is either mpv's own "select" choice or the user's
-     * manual external pick, so it cannot override anything). The
-     * confirmation then resolves only via [allExpectedExternalTracksPresent].
-     */
-    private fun reapplyRememberedPick(): ReapplyResult {
-        val remembered = rememberedExternalPick
-        if (remembered == null && !pendingExternalPin) return ReapplyResult.NOTHING_PENDING
-        val tracks = try {
-            getSubtitleTracks()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed reading subtitle tracks for remembered pick", e)
-            return ReapplyResult.NOT_PRESENT
-        }
-        // Primary: match the remembered pick by title. mpv appends added
-        // tracks, so the just-added one is last; prefer the selected
-        // match when there is one (sub-add "select" selects it) — two
-        // same-named files from different folders share a title, and the
-        // selected/last one is the pick.
-        if (remembered != null) {
-            val candidates = tracks.filter { it.isExternal && it.label == remembered.name }
-            val track = candidates.lastOrNull { it.isSelected } ?: candidates.lastOrNull()
-            if (track != null) {
-                if (tracks.any { it.isExternal && it.isSelected && it.trackIndex != track.trackIndex }) {
-                    Log.d(TAG, "Remembered external subtitle '${remembered.name}' not re-applied: a different external track is selected")
-                    return ReapplyResult.BLOCKED
-                }
-                val currentSid = try { mpv.getPropertyString("sid") } catch (_: Exception) { null }
-                if (track.isSelected && currentSid == track.trackIndex.toString()) {
-                    return ReapplyResult.ALREADY_PINNED
-                }
-                return try {
-                    mpv.setPropertyString("sid", track.trackIndex.toString())
-                    Log.d(TAG, "Remembered external subtitle '${remembered.name}': sid=${track.trackIndex} (was sid=$currentSid, selected=${track.isSelected})")
-                    ReapplyResult.APPLIED
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed re-applying remembered external subtitle '${remembered.name}'", e)
-                    ReapplyResult.NOT_PRESENT
-                }
-            }
-            Log.d(TAG, "Remembered external subtitle '${remembered.name}' not in track-list by title yet (external tracks: ${tracks.count { it.isExternal }})")
-        }
-        // Fallback: no title match (or a legacy-only batch, which has no
-        // identity to match — a restored queue's single subtitleUri was
-        // sub-added without a title). Pin the currently selected external
-        // track, if any — the old #192 rule, kept for this path only.
-        val selected = tracks.firstOrNull { it.isExternal && it.isSelected }
-            ?: return ReapplyResult.NOT_PRESENT
-        val currentSid = try { mpv.getPropertyString("sid") } catch (_: Exception) { null }
-        if (currentSid != selected.trackIndex.toString()) {
-            try {
-                mpv.setPropertyString("sid", selected.trackIndex.toString())
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed pinning external subtitle selection", e)
-                return ReapplyResult.NOT_PRESENT
-            }
-            Log.d(TAG, "External subtitle pin (fallback, no title match for '${remembered?.name}'): sid=${selected.trackIndex} (was sid=$currentSid, selected=${selected.isSelected})")
-        }
-        val mediaId = remembered?.mediaId ?: activeMediaId
-        return if (allExpectedExternalTracksPresent(tracks, mediaId)) {
-            Log.d(TAG, "External subtitle confirmed by count for $mediaId: ${tracks.count { it.isExternal }} external tracks present")
-            ReapplyResult.COUNT_CONFIRMED
-        } else {
-            ReapplyResult.FALLBACK_APPLIED
-        }
-    }
-
-
-    /** Issue #372: have all external subtitles the item [mediaId] carries
-     * produced a track in [tracks]? One track per sub-add, no dedupe — so
-     * an external-track count at least the item's external-subtitle count
-     * (plus one for a legacy subtitleUri) means the remembered pick is
-     * necessarily present, even when its title didn't match (mpv
-     * reporting "srt" for fd:// subs, v0.3.1 log). Same count the
-     * manager's ALREADY_ADDED branch uses. */
-    private fun allExpectedExternalTracksPresent(tracks: List<SubtitleTrackInfo>, mediaId: String?): Boolean {
-        if (mediaId == null) return false
-        val item = currentQueue.firstOrNull { it.id == mediaId } ?: return false
-        val expected = item.externalSubtitles.size + if (item.subtitleUri != null) 1 else 0
-        if (expected == 0) return false
-        return tracks.count { it.isExternal } >= expected
-    }
-
-
-    override fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult {
-        if (index !in currentQueue.indices) {
-            return ReplaceMediaItemResult.FAILED
-        }
-        // Issue #197: remember the item mpv already has, so only
-        // genuinely NEW external subtitles are sub-added below.
-        val previous = currentQueue.getOrNull(index)
-        val updated = currentQueue.toMutableList()
-        updated[index] = media
-        currentQueue = updated
-
-        val pending = pendingLoad
-        if (pending != null && index == pending.second) {
-            pendingLoad = Triple(updated, pending.second, pending.third)
-        }
-
-        if (index != currentMediaIndex) {
-            // Not the live item: the subtitles are stored in the queue
-            // and will be attempted when the item loads (issue #332:
-            // same outcome as QUEUED — the FILE_LOADED dispatch arms
-            // the confirmation then).
-            return ReplaceMediaItemResult.QUEUED
-        }
-
-        // Issue #213/#219: the stored queue keeps the RAW item
-        // (original URIs) so a later load() re-resolves it fresh.
-        // Only subtitle URIs are resolved here — replaceMediaItem
-        // never reloads the media (sub-add only), so resolving the
-        // media URI would open an fd nobody uses. The dedupe below
-        // still compares RAW lists on both sides, so name+URI
-        // identity keeps working (and, unlike before, two different
-        // same-named content:// files can now be told apart by URI).
-        if (fileLoadedForCurrentItem) {
-            // Issue #197: sub-add ONLY the external subtitles
-            // that are new since the previous item. The manager
-            // hands replaceMediaItem the item's FULL external
-            // list (existing + newly added), and mpv creates a
-            // brand-new track for every sub-add call with no
-            // dedupe — so re-adding the whole list duplicated
-            // the first .srt the moment a second one was added.
-            // The not-loaded branch below intentionally keeps
-            // the full list: pendingSubtitles is overwritten,
-            // not appended, and dispatched exactly once on
-            // FILE_LOADED, so it cannot duplicate. Only the new
-            // subtitles' URIs are resolved — the legacy single
-            // subtitleUri is never sub-added on this branch, so
-            // opening an fd for it would leak it.
-            val newExts = media.externalSubtitles.filter { rawExt ->
-                previous?.externalSubtitles?.none { isSameExternalSubtitle(it, rawExt) } ?: true
-            }
-            val resolved = fdOpener.resolveExternalSubtitles(newExts)
-            var issuedAny = false
-            var lastIssued: Pair<ExternalSubtitle, ExternalSubtitle>? = null
-            for ((i, pair) in newExts.zip(resolved).withIndex()) {
-                val (rawExt, resolvedExt) = pair
-                // Issue #332: skip a URI mpv provably cannot open — a
-                // content:// URI whose fd resolution failed, or a
-                // missing file — instead of sub-adding it and letting
-                // mpv fail silently. mpv.command() never throws for a
-                // rejected file, so without this the caller could never
-                // know the add failed.
-                if (!isUsableSubtitleUri(resolvedExt.uri)) {
-                    Log.w(TAG, "Skipping unusable external subtitle ${rawExt.name} (${resolvedExt.uri})")
-                    continue
-                }
-                try {
-                    // Issue #441: decode this file with its detected
-                    // codepage, right before mpv loads it.
-                    applySubtitleCodepage(rawExt.codepage)
-                    mpv.command("sub-add", resolvedExt.uri, "select", rawExt.name)
-                    issuedAny = true
-                    // Issue #372: each "select" sub-add selects that
-                    // track, so the last issued one is the pick.
-                    lastIssued = rawExt to resolvedExt
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed adding external subtitle ${rawExt.name}", e)
-                    // Issue #332: the remaining resolved entries were
-                    // never handed to mpv, so their descriptors are
-                    // still ours — close them. The failed entry's
-                    // descriptor is NOT closed: mpv.command is
-                    // synchronous, so by the time it throws libmpv has
-                    // already run the open attempt and owns (and
-                    // closes) it; closing here would double-close.
-                    fdOpener.closeFds(resolved.drop(i + 1).map { it.uri })
-                    break
-                }
-            }
-            // Issue #372: remember the picked external subtitle and pin
-            // sid to it — sub-add "select" alone does not stick. Arm the
-            // remembered pick first: sub-add is async, so the immediate
-            // attempt usually runs before the new track is in track-list,
-            // and the track-list handler re-applies it until it lands —
-            // and again after any later re-evaluation unselects it. A
-            // failed add (issuedAny false) never arms anything.
-            if (issuedAny) {
-                lastIssued?.let { (rawExt, resolvedExt) ->
-                    rememberedExternalPick = RememberedExternalPick(media.id, rawExt.name, resolvedExt.uri)
-                }
-                pendingExternalPin = true
-                // Issue #332: arm the outcome confirmation BEFORE
-                // the immediate pin attempt — the track may already
-                // be in track-list, and a synchronous pin landing
-                // must resolve it.
-                armSubtitleConfirmation(media.id)
-                if (reapplyRememberedPick().confirms) {
-                    pendingExternalPin = false
-                    confirmPendingSubtitle(true)
-                }
-                return ReplaceMediaItemResult.ISSUED
-            }
-            // Issue #332: nothing was issued — either every new
-            // subtitle was unusable, or there was nothing new at all
-            // (the subtitles are already in the item).
-            return if (newExts.isEmpty()) {
-                ReplaceMediaItemResult.ALREADY_ADDED
-            } else {
-                ReplaceMediaItemResult.FAILED
-            }
-        } else {
-            // Queue for dispatch when FILE_LOADED arrives. The
-            // subtitle URIs are the resolved ones (mpv cannot open
-            // content://); mediaUri is the currently-loading item's
-            // resolved URI so the FILE_LOADED match succeeds, falling
-            // back to the raw URI — the FILE_LOADED match also
-            // accepts the raw URI of the current item, which covers
-            // a load still deferred for lack of surface.
-            val resolved = fdOpener.resolveSubtitlesOnly(media)
-            val subs = mutableListOf<PendingSubtitle>()
-            resolved.subtitleUri?.let { subUri ->
-                subs.add(PendingSubtitle(uri = subUri, flag = "select"))
-            }
-            resolved.externalSubtitles.forEach { ext ->
-                subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name, codepage = ext.codepage))
-            }
-            // Issue #332: close the previous pending subtitles'
-            // descriptors before overwriting — they were never
-            // dispatched, so they are still ours.
-            pendingSubtitles?.let { fdOpener.closeFds(it.subtitles.map { sub -> sub.uri }) }
-            pendingSubtitles = if (subs.isNotEmpty()) {
-                PendingSubtitles(
-                    mediaUri = activeMediaUri ?: media.uri,
-                    mediaId = media.id,
-                    subtitles = subs,
-                )
-            } else {
-                null
-            }
-            return if (subs.isNotEmpty()) {
-                ReplaceMediaItemResult.QUEUED
-            } else {
-                ReplaceMediaItemResult.FAILED
-            }
-        }
-    }
+    override fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult =
+        subtitles.replaceMediaItem(index, media)
 
 
     override fun stop() {
-        // Issue #332: the pending subtitles were never dispatched, so
-        // their descriptors are still ours — close them instead of
-        // leaking one fd per abandoned subtitle. The confirmation is
-        // dropped too: the stop itself is the outcome, and no banner
-        // should arrive for an item that no longer plays.
-        pendingSubtitles?.let { fdOpener.closeFds(it.subtitles.map { sub -> sub.uri }) }
-        pendingSubtitles = null
-        pendingExternalPin = false
-        rememberedExternalPick = null
-        pendingSubtitleConfirmation = null
-        mainHandler.removeCallbacks(subtitleConfirmationTimeout)
+        // Issue #332: subtitle cleanup first (pending-subtitle fds,
+        // pin/remembered/confirmation), then the core stop — same order
+        // as the old monolith.
+        subtitles.cleanupForStopOrRelease()
         core.stop()
     }
 
     override fun release() {
-        // Issue #332: same as stop() — never-dispatched pending
-        // subtitles still own their descriptors; close them, and drop
-        // the confirmation (the timeout runnable is removed with every
-        // other callback below).
-        pendingSubtitles?.let { fdOpener.closeFds(it.subtitles.map { sub -> sub.uri }) }
-        pendingSubtitles = null
-        pendingExternalPin = false
-        rememberedExternalPick = null
-        pendingSubtitleConfirmation = null
+        // Issue #332: same as stop() — subtitle cleanup first, then
+        // the core release.
+        subtitles.cleanupForStopOrRelease()
         core.release()
     }
 

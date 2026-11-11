@@ -31,14 +31,14 @@ import java.io.FileOutputStream
  * decoder fallback chain. [MpvPlayerEngine] stays the [PlayerEngine]
  * implementation and is a thin facade delegating to this class.
  *
- * What is NOT here yet (later Phase 4 steps, reached through [Host]):
- * subtitle rendering/confirmation (step 3) and settings-to-mpv
- * configuration (step 4). Track listing/switching moved to
- * [MpvTrackSelection] in step 2. The host
- * callbacks below are the seams for those concerns: they run at exactly
- * the points the old monolith ran that code, so behaviour is unchanged.
- * The only mpv knowledge the facade still touches directly is the
- * not-yet-moved code, through [mpv] and the small internal helpers.
+ * What is NOT here yet (a later Phase 4 step, reached through [Host]):
+ * settings-to-mpv configuration (step 4). Subtitle
+ * rendering/confirmation moved to [MpvSubtitleRenderer] in step 3, and
+ * track listing/switching moved to [MpvTrackSelection] in step 2. The
+ * host callbacks below are the seams for those concerns: they run at
+ * exactly the points the old monolith ran that code, so behaviour is
+ * unchanged. The only mpv knowledge the facade still touches directly
+ * is the not-yet-moved code, through [mpv] and the small internal helpers.
  *
  * Verifiable by CI build + device only: constructing this class creates
  * a real MPV instance (native lib), so there are no unit tests for the
@@ -54,8 +54,11 @@ internal class MpvCoreEngine(
 
     /**
      * Seams for the concerns that stay in [MpvPlayerEngine] until their
-     * Phase 4 step moves them. Every method is called at exactly the
-     * point the old monolith ran the equivalent code.
+     * Phase 4 step moves them (step 4: settings-to-mpv) or that live in
+     * the extracted classes and are reached through the facade (step 3:
+     * [MpvSubtitleRenderer]; step 2: [MpvTrackSelection]). Every method
+     * is called at exactly the point the old monolith ran the equivalent
+     * code.
      */
     interface Host {
         /** mpv hwdec option value for a user decoder mode (step 4). Pure; safe during init. */
@@ -491,9 +494,10 @@ internal class MpvCoreEngine(
         // attachSurface() flips it to yes once a real surface is attached.
         setRuntimeProperty("force-window", "no")
 
-        // Phase 4 step 1: subtitle style + playback tweaks still live in
-        // MpvPlayerEngine (steps 3-4) — applied here, at the original
-        // point, through Host.applyPostInitSettings.
+        // Phase 4 step 3: subtitle style now lives in
+        // MpvSubtitleRenderer, playback tweaks still in MpvPlayerEngine
+        // (step 4) — applied here, at the original point, through
+        // Host.applyPostInitSettings.
         host.applyPostInitSettings(this)
 
         // Observe critical playback and decoder properties
@@ -828,9 +832,9 @@ internal class MpvCoreEngine(
                 notifyDecoderChanged()
             }
             "track-list" -> {
-                // Phase 4 step 1: the remembered-external-pick re-apply
-                // and the #332 confirmation still live in MpvPlayerEngine
-                // (step 3) — see Host.onTrackListChanged.
+                // Phase 4 step 3: the remembered-external-pick re-apply
+                // and the #332 confirmation live in MpvSubtitleRenderer
+                // — see Host.onTrackListChanged.
                 host.onTrackListChanged()
             }
             "eof-reached" -> {
@@ -976,9 +980,9 @@ internal class MpvCoreEngine(
                         Log.w(TAG, "Failed applying pending seek $target", e)
                     }
                 }
-                // Phase 4 step 1: the pending-subtitle dispatch and
-                // the embedded auto-select still live in MpvPlayerEngine
-                // (steps 2-3) — see Host.onFileLoaded.
+                // Phase 4 step 3: the pending-subtitle dispatch and
+                // the embedded auto-select live in MpvSubtitleRenderer
+                // — see Host.onFileLoaded.
                 host.onFileLoaded()
                 mainHandler.post {
                     engineListener?.onPlaybackStateChanged(PlayerEngine.STATE_READY)
@@ -1687,27 +1691,4 @@ internal class MpvCoreEngine(
     private fun logMetrics(tag: String, detail: String) {
         Log.i("MpxMetrics", "$tag $detail")
     }
-
 }
-
-/**
- * Phase 4 step 1: queued external subtitles for the item being loaded,
- * dispatched on FILE_LOADED. Moved here with load() (which builds them);
- * the dispatch itself still lives in MpvPlayerEngine (step 3) and these
- * classes move with it.
- */
-internal data class PendingSubtitle(
-    val uri: String,
-    val flag: String,
-    val title: String? = null,
-    // Issue #441: the detected mpv sub-codepage for this file
-    // ("cp1256" for Windows-1256 Arabic subtitles); null means
-    // mpv's default. Copied from the ExternalSubtitle it came from.
-    val codepage: String? = null,
-)
-
-internal data class PendingSubtitles(
-    val mediaUri: String,
-    val mediaId: String,
-    val subtitles: List<PendingSubtitle>,
-)
