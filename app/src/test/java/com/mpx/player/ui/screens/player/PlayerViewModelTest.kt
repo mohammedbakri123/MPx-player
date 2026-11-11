@@ -6,6 +6,7 @@ import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.PlaybackStateSource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +30,7 @@ import org.junit.Test
  * constants are compile-time ints, so asserting on them needs no
  * device either.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class PlayerViewModelTest {
 
     private lateinit var playback: FakePlaybackStateSource
