@@ -252,6 +252,12 @@ internal class MpvCoreEngine(
     private var loadIssued: Boolean = false
 
     @Volatile
+    private var loadGeneration: Long = 0L
+
+    @Volatile
+    private var currentLoadGeneration: Long = 0L
+
+    @Volatile
     private var lastMpvEvent: String = "none"
 
     private val metricsLock = Any()
@@ -938,15 +944,16 @@ internal class MpvCoreEngine(
                 }
             }
             MPV.mpvEvent.MPV_EVENT_FILE_LOADED -> {
-                // Issue #258: no active load means this FILE_LOADED
+                // Issue #258 / D-7: no active load means this FILE_LOADED
                 // belongs to a load the user deliberately stopped —
                 // stop() clears activeMediaUri, and a FILE_LOADED
                 // generated before the stop command was processed can
                 // still be delivered after it. Dropping it keeps the
                 // stop from re-marking the file loaded and posting READY
                 // for a session that no longer exists.
-                if (activeMediaUri.isNullOrBlank()) {
-                    Log.w(TAG, "Ignoring FILE_LOADED with no active load (stopped?)")
+                val gen = currentLoadGeneration
+                if (gen == 0L || gen != loadGeneration || activeMediaUri.isNullOrBlank()) {
+                    Log.w(TAG, "Ignoring FILE_LOADED with no active load or superseded generation (gen=$gen, current=$loadGeneration)")
                     return
                 }
                 // Drop stale FILE_LOADED event if the file changed before FILE_LOADED arrived
@@ -958,6 +965,10 @@ internal class MpvCoreEngine(
                 }
                 if (isStale) {
                     Log.w(TAG, "Ignoring stale FILE_LOADED for $loadedPath; currently loading $activeMediaUri")
+                    return
+                }
+                if (gen != loadGeneration) {
+                    Log.w(TAG, "Ignoring FILE_LOADED superseded during check (gen=$gen, current=$loadGeneration)")
                     return
                 }
 
@@ -1275,6 +1286,8 @@ internal class MpvCoreEngine(
         pendingSeekMs = null
         loadIssued = false
         lastMpvEvent = "none"
+        val gen = ++loadGeneration
+        currentLoadGeneration = gen
         synchronized(metricsLock) {
             // Tap time for tap-to-first-frame: load() is called at tap time
             // even when the actual loadfile is deferred for lack of surface.
@@ -1528,6 +1541,8 @@ internal class MpvCoreEngine(
         activeMediaUri = null
         loadIssued = false
         lastMpvEvent = "none"
+        loadGeneration++
+        currentLoadGeneration = 0L
         // Issue #258: a deliberate stop ends the loaded file AND the
         // queue — the stop itself generates an END_FILE (reason=stop,
         // eof-reached false), and with fileLoadedForCurrentItem still
@@ -1576,6 +1591,8 @@ internal class MpvCoreEngine(
         activeMediaUri = null
         fileLoadedForCurrentItem = false
         loadIssued = false
+        loadGeneration++
+        currentLoadGeneration = 0L
         currentQueue = emptyList()
         isReleased = true
         mainHandler.removeCallbacksAndMessages(null)
