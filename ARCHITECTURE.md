@@ -16,8 +16,8 @@ it has got.
 ## Stack (current)
 
 - Single-module native Kotlin Android app, package `com.mpx.player`
-  (`app/src/main/java/com/mpx/player/`, 116 Kotlin files)
-- UI: Jetpack Compose, Material 3 Expressive, one activity (`MainActivity`),
+  (`app/src/main/java/com/mpx/player/`, 123 Kotlin files)
+- UI: Jetpack Compose, Material 3, one activity (`MainActivity`),
   Compose Navigation
 - Playback: mpv only, via `mpv-android-lib` 0.1.12. There is no Media3 /
   ExoPlayer in the app any more.

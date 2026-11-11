@@ -10,7 +10,7 @@ No ads. No tracking. Your files stay on your device.
 
 ## Download
 
-**Latest: [v0.3.5.2](https://github.com/mohammedbakri123/MPx-player/releases/tag/v0.3.5.2)** — picked external subtitles now show.
+**Latest: [v0.4.58](https://github.com/mohammedbakri123/MPx-player/releases/tag/v0.4.58)**
 
 Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx-player/releases/latest), then open it on your phone. Android will ask once to allow installs from your browser — that's normal for apps installed outside the Play Store.
 
@@ -32,14 +32,14 @@ Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx
 - Browse and play from SMB shares
 
 **Look and feel**
-- Material 3 Expressive, true-black dark theme + light theme
+- True-black dark theme + light theme
 - Translated into 9 languages (English, Arabic, German, Spanish, French, Hindi, Portuguese, Russian, Chinese)
 
 ## Screenshots
 
 Real phone screenshots are coming — the ones in this repo's history were early desktop mockups, not the current app.
 
-If you try v0.3.5.2, a screenshot of the player, Library, or Download tab in [Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) would help a lot.
+If you try v0.4.58, a screenshot of the player or Library in [Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) would help a lot.
 
 ## Community
 
@@ -73,7 +73,7 @@ Full contributor guide: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Roadmap
 
-- Smoother scrolling on Library / Music, less crowded Download page
+- Smoother scrolling on Library / Music
 - MX-style rotation: videos stay portrait until you rotate
 - Better landscape player controls
 - More theme / accent colours
