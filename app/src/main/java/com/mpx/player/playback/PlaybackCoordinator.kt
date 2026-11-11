@@ -242,6 +242,13 @@ class PlaybackCoordinator(
     ).also { engine.setListener(it) }
 
     init {
+        engine.setQueueSource(
+            queue = { playbackQueue.items },
+            currentIndex = {
+                val qIdx = playbackQueue.currentIndex
+                if (qIdx >= 0) qIdx else _playbackState.value.currentIndex
+            },
+        )
         audioFocusManager.setListener(object : AudioFocusManager.Listener {
             override fun onAudioFocusLost(isTransient: Boolean, canDuck: Boolean) {
                 if (isTransient) {

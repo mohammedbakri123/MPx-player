@@ -31,6 +31,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -258,6 +259,16 @@ class PlaybackCoordinatorTest {
         }
         override fun setListener(listener: PlayerEngine.Listener?) {
             capturedListener = listener
+        }
+        var capturedQueueProvider: (() -> List<PlayableMedia>)? = null
+        var capturedIndexProvider: (() -> Int)? = null
+
+        override fun setQueueSource(
+            queue: () -> List<PlayableMedia>,
+            currentIndex: () -> Int,
+        ) {
+            capturedQueueProvider = queue
+            capturedIndexProvider = currentIndex
         }
         override fun seekToNextMediaItem() = Unit
         override fun seekToPreviousMediaItem() = Unit
@@ -962,5 +973,31 @@ class PlaybackCoordinatorTest {
 
         f.audioFocusManager.activeListener?.onAudioFocusGained()
         assertEquals(1, f.engine.playCalls)
+    }
+
+    @Test
+    fun `coordinator connects queue and index provider to engine as single source of truth`() = runTest {
+        val f = createFixture(this)
+        assertNotNull(f.engine.capturedQueueProvider)
+        assertNotNull(f.engine.capturedIndexProvider)
+
+        // Empty before playback
+        assertTrue(f.engine.capturedQueueProvider!!.invoke().isEmpty())
+        assertEquals(-1, f.engine.capturedIndexProvider!!.invoke())
+
+        // Play videos queue
+        f.playVideos("v1", "v2", startIndex = 1)
+
+        // Queue and index are reflected immediately via the provider
+        val queue = f.engine.capturedQueueProvider!!.invoke()
+        assertEquals(2, queue.size)
+        assertEquals("v1", queue[0].id)
+        assertEquals("v2", queue[1].id)
+        assertEquals(1, f.engine.capturedIndexProvider!!.invoke())
+
+        // Stopping clears the live queue and resets index
+        f.coordinator.stop()
+        assertTrue(f.engine.capturedQueueProvider!!.invoke().isEmpty())
+        assertEquals(-1, f.engine.capturedIndexProvider!!.invoke())
     }
 }

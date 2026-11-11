@@ -77,6 +77,10 @@ internal class MpvCoreEngine(
         fun onTrackListChanged()
         /** FILE_LOADED arrived: dispatch queued subtitles or auto-select (steps 2-3). */
         fun onFileLoaded()
+        /** Live queue provider for fallback reload and surface reattach (D-1 single-source-of-truth). */
+        fun getCurrentQueue(): List<PlayableMedia> = emptyList()
+        /** Live media index provider (D-1 single-source-of-truth). */
+        fun getCurrentMediaIndex(): Int = -1
     }
 
     internal enum class DecoderStage { HW, HW_PLUS, SW }
@@ -117,11 +121,9 @@ internal class MpvCoreEngine(
     /** The listener the facade's subtitle code notifies for #332 confirmations. */
     internal val listener: PlayerEngine.Listener?
         get() = engineListener
-    @Volatile
-    internal var currentQueue: List<PlayableMedia> = emptyList()
 
-    @Volatile
-    internal var currentMediaIndex: Int = 0
+    internal fun getCurrentQueue(): List<PlayableMedia> = host.getCurrentQueue()
+    internal fun getCurrentMediaIndex(): Int = host.getCurrentMediaIndex()
 
     private var currentSurface: Surface? = null
 
@@ -630,7 +632,8 @@ internal class MpvCoreEngine(
         // is loaded and there is no queue after a stop, so there is
         // nothing to fall back for: drop stale triggers here, at the
         // single entry point, instead of in each caller.
-        if (isReleased || !fileLoadedForCurrentItem || currentQueue.isEmpty()) {
+        val queue = getCurrentQueue()
+        if (isReleased || !fileLoadedForCurrentItem || queue.isEmpty()) {
             Log.d(TAG, "Decoder fallback ignored; nothing loaded or released ($reason)")
             return
         }
@@ -702,13 +705,15 @@ internal class MpvCoreEngine(
      * stage stays stepped down and the in-flight flag is cleared.
      */
     private fun reloadForDecoderFallback() {
-        if (!mpvInitialized || isReleased || !fileLoadedForCurrentItem || currentQueue.isEmpty()) return
+        val queue = getCurrentQueue()
+        val index = getCurrentMediaIndex()
+        if (!mpvInitialized || isReleased || !fileLoadedForCurrentItem || queue.isEmpty() || index !in queue.indices) return
         val wasPlaying = cachedIsPlaying
         val pos = cachedPositionMs
         fallbackHwdecStage = currentDecoderStage
         fallbackReloadPending = true
         try {
-            load(currentQueue, currentMediaIndex, pos)
+            load(queue, index, pos)
             if (wasPlaying) play()
         } catch (e: Exception) {
             Log.w(TAG, "Decoder fallback reload failed", e)
@@ -1104,8 +1109,9 @@ internal class MpvCoreEngine(
         // teardown/recreation immediately before the loadfile — a needless
         // race on the exact path that was hanging with no error. Match the
         // reference: skip the vo set whenever a load is about to run.
+        val queue = getCurrentQueue()
         val willLoad = pendingLoad != null ||
-            (mpvInitialized && !isReleased && !fileLoadedForCurrentItem && currentQueue.isNotEmpty())
+            (mpvInitialized && !isReleased && !fileLoadedForCurrentItem && queue.isNotEmpty())
         synchronized(surfaceLock) {
             currentSurface = surface
             try {
@@ -1173,8 +1179,9 @@ internal class MpvCoreEngine(
         // current file never produced FILE_LOADED, retry it now that a
         // surface exists. No-op when the file already loaded (rotation, etc.)
         // or when a load is already in flight (Issue D-6).
-        if (mpvInitialized && !isReleased && !loadIssued && !fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
-            load(currentQueue, currentMediaIndex, cachedPositionMs)
+        val index = getCurrentMediaIndex()
+        if (mpvInitialized && !isReleased && !loadIssued && !fileLoadedForCurrentItem && queue.isNotEmpty() && index in queue.indices) {
+            load(queue, index, cachedPositionMs)
             // Issue #246: same gate as the deferred flush above.
             if (playRequested) play()
         }
@@ -1264,7 +1271,6 @@ internal class MpvCoreEngine(
 
     internal fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
         if (isReleased) return
-        currentQueue = items
         if (items.isEmpty()) {
             // Issue #212: an empty queue is a fresh context — no current
             // item, so no fallback override or in-flight reload survives.
@@ -1315,7 +1321,6 @@ internal class MpvCoreEngine(
         }
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
-        currentMediaIndex = targetIndex
         val targetItem = items[targetIndex]
 
         // ROOT-CAUSE FIX (mpv "never works at all"): playback is normally
@@ -1518,7 +1523,8 @@ internal class MpvCoreEngine(
         // A seek before FILE_LOADED (resume fired on transition, scrub during
         // prepare, or a seek while the load is still deferred for lack of
         // surface) must not vanish: park it and apply it on FILE_LOADED.
-        if (!fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
+        val queue = getCurrentQueue()
+        if (!fileLoadedForCurrentItem && queue.isNotEmpty()) {
             pendingSeekMs = target
             cachedPositionMs = target
             return
@@ -1538,8 +1544,9 @@ internal class MpvCoreEngine(
 
     internal fun seekTo(index: Int, positionMs: Long) {
         if (isReleased) return
-        if (index in currentQueue.indices) {
-            load(currentQueue, index, positionMs)
+        val queue = getCurrentQueue()
+        if (index in queue.indices) {
+            load(queue, index, positionMs)
         }
     }
 
@@ -1583,8 +1590,6 @@ internal class MpvCoreEngine(
         // is dropped so it cannot step a later load down a stage.
         fileLoadedForCurrentItem = false
         loadIssued = false
-        currentQueue = emptyList()
-        currentMediaIndex = 0
         cachedPositionMs = 0L
         cachedDurationMs = 0L
         cachedBufferedMs = 0L
@@ -1616,7 +1621,6 @@ internal class MpvCoreEngine(
         loadIssued = false
         loadGeneration++
         currentLoadGeneration = 0L
-        currentQueue = emptyList()
         isReleased = true
         mainHandler.removeCallbacksAndMessages(null)
         detachSurface()
@@ -1649,8 +1653,9 @@ internal class MpvCoreEngine(
             // surface-deferred load stays paused when attachSurface()
             // flushes it.
             val wasPlaying = cachedIsPlaying
-            val next = currentMediaIndex + 1
-            load(currentQueue, next, 0L)
+            val queue = getCurrentQueue()
+            val next = getCurrentMediaIndex() + 1
+            load(queue, next, 0L)
             if (wasPlaying) play()
         }
     }
@@ -1662,8 +1667,9 @@ internal class MpvCoreEngine(
             // Issue #305: same paused-state preservation as
             // seekToNextMediaItem above.
             val wasPlaying = cachedIsPlaying
-            val prev = currentMediaIndex - 1
-            load(currentQueue, prev, 0L)
+            val queue = getCurrentQueue()
+            val prev = getCurrentMediaIndex() - 1
+            load(queue, prev, 0L)
             if (wasPlaying) play()
         } else {
             seekTo(0L)
@@ -1722,15 +1728,23 @@ internal class MpvCoreEngine(
 
 
     internal val currentMediaItemIndex: Int
-        get() = currentMediaIndex
+        get() = getCurrentMediaIndex()
 
 
     internal val hasNextMediaItem: Boolean
-        get() = currentMediaIndex < currentQueue.size - 1
+        get() {
+            val queue = getCurrentQueue()
+            val index = getCurrentMediaIndex()
+            return queue.isNotEmpty() && index in 0 until queue.lastIndex
+        }
 
 
     internal val hasPreviousMediaItem: Boolean
-        get() = currentMediaIndex > 0
+        get() {
+            val queue = getCurrentQueue()
+            val index = getCurrentMediaIndex()
+            return queue.isNotEmpty() && index > 0
+        }
 
 
     internal fun getLoadStage(): MpvLoadStage {
