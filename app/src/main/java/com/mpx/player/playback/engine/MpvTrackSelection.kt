@@ -16,11 +16,13 @@ import `is`.xyz.mpv.MPV
  * implementation and is a thin facade delegating to this class.
  *
  * mpv access comes from the core ([MpvCoreEngine.mpv]) — no second MPV
- * instance is created. The only coupling back to the facade is the
- * subtitle state that stays there until step 3 (the remembered external
- * pick + armed pin), reached through [Host]: a manual Off or embedded
- * pick supersedes the remembered pick, and the host clears it at
- * exactly the points the old monolith did.
+ * instance is created. The only coupling back to the subtitle concern
+ * is the remembered external pick + armed pin, owned by
+ * [MpvSubtitleRenderer] (Phase 4 step 3) and reached through [Host]:
+ * a manual Off or embedded pick supersedes the remembered pick, and
+ * the host clears it at exactly the points the old monolith did. The
+ * seam stays (rather than this class calling the renderer directly)
+ * because the facade builds this class before the renderer.
  *
  * Verifiable by CI build + device only: every function here touches
  * mpv directly, so there are no unit tests for this class — same as
@@ -32,8 +34,8 @@ internal class MpvTrackSelection(
 ) {
 
     /**
-     * Seam for the subtitle state that stays in [MpvPlayerEngine] until
-     * Phase 4 step 3. Called at exactly the points the old monolith
+     * Seam for the subtitle state owned by [MpvSubtitleRenderer]
+     * (Phase 4 step 3). Called at exactly the points the old monolith
      * cleared that state.
      */
     interface Host {
