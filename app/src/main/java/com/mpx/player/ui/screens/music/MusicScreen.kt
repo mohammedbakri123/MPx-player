@@ -30,8 +30,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.mpx.player.ui.ActivityResultHandler
-import java.io.File
-import java.util.Locale
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
@@ -104,10 +102,6 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.mpx.player.data.local.db.MpxDatabase
-import com.mpx.player.data.repository.MediaStoreRepository
-import com.mpx.player.data.repository.RoomMediaPersistenceRepository
-import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
@@ -118,7 +112,7 @@ import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.Playlist
 import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.model.customPlaylistId
-import com.mpx.player.domain.settings.AppSettingsRepository
+import org.koin.compose.viewmodel.koinViewModel
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.screens.local.AudioAlbumGridCard
@@ -132,11 +126,8 @@ import com.mpx.player.ui.screens.local.AudioPlaylistRow
 import com.mpx.player.ui.screens.local.AudioTrackGridCard
 import com.mpx.player.ui.screens.local.AudioTrackRow
 import com.mpx.player.ui.screens.local.LocalSortPopup
-import com.mpx.player.ui.screens.local.MediaSortComparator
 import com.mpx.player.ui.screens.local.MultiSelectAction
-import com.mpx.player.ui.screens.local.SortField
 import com.mpx.player.ui.screens.local.ViewMode
-import com.mpx.player.ui.screens.local.isPathBlacklisted
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.MpxLoadingIndicator
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
@@ -176,15 +167,6 @@ private val MusicTabSaver: Saver<MusicTab, String> = Saver(
 // value as the full History page (its own private const there).
 private const val HISTORY_PAGE_SIZE = 100
 
-// Issue #300: the four audio-library lists after the folder blacklist is
-// applied (see applyAudioBlacklist in MusicScreen).
-private data class FilteredAudioLibrary(
-    val tracks: List<AudioTrack>,
-    val albums: List<AudioAlbum>,
-    val artists: List<AudioArtist>,
-    val folders: List<AudioFolder>,
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicScreen(
@@ -192,180 +174,83 @@ fun MusicScreen(
     permissionResultHandler: ActivityResultHandler<Boolean>,
     onOpenPlayer: () -> Unit,
     playbackManager: PlaybackManager? = null,
-    settingsRepository: AppSettingsRepository? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val repository = remember(context) { MediaStoreRepository(context) }
-    val realSettingsRepo = remember(settingsRepository, context) {
-        settingsRepository ?: SharedPrefsAppSettingsRepository(context)
-    }
-    var appSettings by remember { mutableStateOf(realSettingsRepo.load()) }
-    var hasPermission by remember {
-        mutableStateOf(MediaPermissions.hasAudioPermission(context))
-    }
-    var tracks by remember { mutableStateOf<List<AudioTrack>>(emptyList()) }
-    var playlists by remember { mutableStateOf<List<Playlist>>(emptyList()) }
-    var albums by remember { mutableStateOf<List<AudioAlbum>>(emptyList()) }
-    var artists by remember { mutableStateOf<List<AudioArtist>>(emptyList()) }
-    var folders by remember { mutableStateOf<List<AudioFolder>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(false) }
-
-    var viewMode by remember {
-        mutableStateOf(if (appSettings.musicViewMode == "GRID") ViewMode.GRID else ViewMode.LIST)
-    }
-    // #185: Tracks sort uses the shared MediaSortComparator + the #156
-    // Sort & View popup, like Local. Persisted in
-    // AppSettings.musicPrimarySortField; direction is the shared global
-    // sortReverse, same as Local's popup.
-    // Issue #294: keyed on musicPrimarySortField, like sortReverse is
-    // read straight from appSettings — a Settings reset (or any other
-    // outside change) re-derives the field on resume instead of the
-    // one-time remember going stale. The popup's onSortChange still
-    // works: it writes the same value to both sortField and settings,
-    // so the re-derived value is identical.
-    var sortField by remember(appSettings.musicPrimarySortField) {
-        mutableStateOf(
-            try {
-                SortField.valueOf(appSettings.musicPrimarySortField)
-            } catch (_: Exception) {
-                SortField.NAME
-            }
-        )
-    }
+    // Migration Phase 2c: screen state lives in MusicViewModel now —
+    // library loading, settings, sort, search filtering, and selection.
+    // The screen still takes PlaybackManager directly for playback; that
+    // moves behind an interface in a later phase (same split as Phase
+    // 2a's PlayerViewModel). Settings come from the ViewModel (Koin's
+    // AppSettingsRepository single), so the old settingsRepository
+    // parameter is gone.
+    val viewModel: MusicViewModel = koinViewModel()
+    val appSettings by viewModel.settings.collectAsState()
+    val hasPermission by viewModel.hasPermission.collectAsState()
+    val tracks by viewModel.tracks.collectAsState()
+    val playlists by viewModel.playlists.collectAsState()
+    val albums by viewModel.albums.collectAsState()
+    val artists by viewModel.artists.collectAsState()
+    val folders by viewModel.folders.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val viewMode by viewModel.viewMode.collectAsState()
+    val sortField by viewModel.sortField.collectAsState()
     var showSortPopup by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
 
-    // #185: long-press multi-select on the Tracks tab, mirroring Local's
-    // #144. Keyed like Local (id, falling back to path). Long-press
-    // toggles an item (entering selection mode when empty); a tap while
-    // selecting toggles too. Back / the X exits and clears.
-    var selectedTrackIds by remember { mutableStateOf(setOf<String>()) }
+    val selectedTrackIds by viewModel.selectedTrackIds.collectAsState()
     val isTrackSelectionMode = selectedTrackIds.isNotEmpty()
     val trackSelectionCount = selectedTrackIds.size
 
-    fun clearTrackSelection() {
-        selectedTrackIds = emptySet()
-    }
+    fun clearTrackSelection() = viewModel.clearTrackSelection()
 
-    fun toggleTrackSelection(track: AudioTrack) {
-        val key = track.id.ifBlank { track.path }
-        selectedTrackIds =
-            if (selectedTrackIds.contains(key)) selectedTrackIds - key
-            else selectedTrackIds + key
-    }
+    fun toggleTrackSelection(track: AudioTrack) = viewModel.toggleTrackSelection(track)
 
-    // #185: long-press multi-select on the Albums tab, mirroring the
-    // Tracks slice / Local's #144. Keyed like Tracks (id, falling back
-    // to title). Long-press toggles an item (entering selection mode
-    // when empty); a tap while selecting toggles too. Back / the X exits
-    // and clears.
-    var selectedAlbumIds by remember { mutableStateOf(setOf<String>()) }
+    val selectedAlbumIds by viewModel.selectedAlbumIds.collectAsState()
     val isAlbumSelectionMode = selectedAlbumIds.isNotEmpty()
     val albumSelectionCount = selectedAlbumIds.size
 
-    fun clearAlbumSelection() {
-        selectedAlbumIds = emptySet()
-    }
+    fun clearAlbumSelection() = viewModel.clearAlbumSelection()
 
-    fun toggleAlbumSelection(album: AudioAlbum) {
-        val key = album.id.ifBlank { album.title }
-        selectedAlbumIds =
-            if (selectedAlbumIds.contains(key)) selectedAlbumIds - key
-            else selectedAlbumIds + key
-    }
+    fun toggleAlbumSelection(album: AudioAlbum) = viewModel.toggleAlbumSelection(album)
 
-    // #185: long-press multi-select on the Artists tab, mirroring the
-    // Tracks/Albums slices / Local's #144. Keyed like Albums (id,
-    // falling back to name). Long-press toggles an item (entering
-    // selection mode when empty); a tap while selecting toggles too.
-    // Back / the X exits and clears.
-    var selectedArtistIds by remember { mutableStateOf(setOf<String>()) }
+    val selectedArtistIds by viewModel.selectedArtistIds.collectAsState()
     val isArtistSelectionMode = selectedArtistIds.isNotEmpty()
     val artistSelectionCount = selectedArtistIds.size
 
-    fun clearArtistSelection() {
-        selectedArtistIds = emptySet()
-    }
+    fun clearArtistSelection() = viewModel.clearArtistSelection()
 
-    fun toggleArtistSelection(artist: AudioArtist) {
-        val key = artist.id.ifBlank { artist.name }
-        selectedArtistIds =
-            if (selectedArtistIds.contains(key)) selectedArtistIds - key
-            else selectedArtistIds + key
-    }
+    fun toggleArtistSelection(artist: AudioArtist) = viewModel.toggleArtistSelection(artist)
 
-    // #185: long-press multi-select on the Playlists tab, mirroring the
-    // Albums/Artists slices / Local's #144. Keyed like Albums (id,
-    // falling back to title). Long-press toggles an item (entering
-    // selection mode when empty); a tap while selecting toggles too.
-    // Back / the X exits and clears.
-    var selectedPlaylistIds by remember { mutableStateOf(setOf<String>()) }
+    val selectedPlaylistIds by viewModel.selectedPlaylistIds.collectAsState()
     val isPlaylistSelectionMode = selectedPlaylistIds.isNotEmpty()
     val playlistSelectionCount = selectedPlaylistIds.size
 
-    fun clearPlaylistSelection() {
-        selectedPlaylistIds = emptySet()
-    }
+    fun clearPlaylistSelection() = viewModel.clearPlaylistSelection()
 
-    fun togglePlaylistSelection(playlist: Playlist) {
-        val key = playlist.id.ifBlank { playlist.title }
-        selectedPlaylistIds =
-            if (selectedPlaylistIds.contains(key)) selectedPlaylistIds - key
-            else selectedPlaylistIds + key
-    }
+    fun togglePlaylistSelection(playlist: Playlist) = viewModel.togglePlaylistSelection(playlist)
 
-    // #185: long-press multi-select on the Folders tab, mirroring the
-    // Artists slice / Local's #144. Keyed like Artists (id, falling back
-    // to path). Long-press toggles an item (entering selection mode when
-    // empty); a tap while selecting toggles too. Back / the X exits and
-    // clears.
-    var selectedFolderIds by remember { mutableStateOf(setOf<String>()) }
+    val selectedFolderIds by viewModel.selectedFolderIds.collectAsState()
     val isFolderSelectionMode = selectedFolderIds.isNotEmpty()
     val folderSelectionCount = selectedFolderIds.size
 
-    fun clearFolderSelection() {
-        selectedFolderIds = emptySet()
-    }
+    fun clearFolderSelection() = viewModel.clearFolderSelection()
 
-    fun toggleFolderSelection(folder: AudioFolder) {
-        val key = folder.id.ifBlank { folder.path }
-        selectedFolderIds =
-            if (selectedFolderIds.contains(key)) selectedFolderIds - key
-            else selectedFolderIds + key
-    }
+    fun toggleFolderSelection(folder: AudioFolder) = viewModel.toggleFolderSelection(folder)
 
-    fun updateViewMode(newMode: ViewMode) {
-        viewMode = newMode
-        val updated = if (appSettings.separateViewLayout) {
-            appSettings.copy(musicViewMode = newMode.name)
-        } else {
-            appSettings.copy(musicViewMode = newMode.name, localViewMode = newMode.name)
-        }
-        // Issue #191: layout save — commit() so a swipe-away right after
-        // the tap cannot lose the view-mode choice.
-        realSettingsRepo.save(updated, commit = true)
-        appSettings = updated
-    }
+    fun updateViewMode(newMode: ViewMode) = viewModel.updateViewMode(newMode)
 
-    val persistenceRepository = remember(context) {
-        playbackManager?.persistenceRepository
-            ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context), context)
-    }
-    val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
-    // #265: the dialog list is paged (HISTORY_PAGE_SIZE rows at a time)
-    // and the counts show the real total. The old code rendered
-    // history.size from the 100-row-capped observer, freezing the Music
-    // history count and the dialog title at 100 and hiding older rows.
-    // The limit is rememberSaveable so rotation does not drop rows the
-    // user already loaded in the dialog.
-    val historyTotal by persistenceRepository.observeHistoryCount().collectAsState(initial = 0)
+    val favourites by viewModel.favourites.collectAsState()
+    val historyTotal by viewModel.historyTotal.collectAsState()
     var historyLimit by rememberSaveable { mutableStateOf(HISTORY_PAGE_SIZE) }
-    val history by persistenceRepository.observeHistory(limit = historyLimit).collectAsState(initial = emptyList())
-    val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
-    val allPlaylists = remember(customPlaylists, playlists) {
-        customPlaylists.map { it.toPlaylist() } + playlists
-    }
+    val history by viewModel.history.collectAsState()
+    val customPlaylists by viewModel.customPlaylists.collectAsState()
+    val allPlaylists by viewModel.allPlaylists.collectAsState()
+
+    // The limit is rememberSaveable here so rotation does not drop rows
+    // already loaded in the dialog (#265); the ViewModel owns the paging
+    // itself — mirror the limit into it.
+    LaunchedEffect(historyLimit) { viewModel.setHistoryLimit(historyLimit) }
 
     var showFavouritesDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
@@ -378,24 +263,7 @@ fun MusicScreen(
     var selectedCustomPlaylist by remember { mutableStateOf<CustomPlaylist?>(null) }
     var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
 
-    val visibleTabs = remember(
-        appSettings.showMusicTracksTab,
-        appSettings.showMusicPlaylistsTab,
-        appSettings.showMusicAlbumsTab,
-        appSettings.showMusicArtistsTab,
-        appSettings.showMusicFoldersTab,
-    ) {
-        val list = mutableListOf<MusicTab>()
-        if (appSettings.showMusicTracksTab) list.add(MusicTab.TRACKS)
-        if (appSettings.showMusicPlaylistsTab) list.add(MusicTab.PLAYLISTS)
-        if (appSettings.showMusicAlbumsTab) list.add(MusicTab.ALBUMS)
-        if (appSettings.showMusicArtistsTab) list.add(MusicTab.ARTISTS)
-        if (appSettings.showMusicFoldersTab) list.add(MusicTab.FOLDERS)
-        if (list.isEmpty()) {
-            list.add(MusicTab.TRACKS)
-        }
-        list
-    }
+    val visibleTabs by viewModel.visibleTabs.collectAsState()
 
     // Issue #256: rememberSaveable, not remember — navigateToTab pops
     // this tab with saveState/restoreState, which restores only
@@ -417,21 +285,13 @@ fun MusicScreen(
 
     // #185: Back exits multi-select (exactly one step), like Local.
     BackHandler(enabled = isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode || isPlaylistSelectionMode || isFolderSelectionMode) {
-        clearTrackSelection()
-        clearAlbumSelection()
-        clearArtistSelection()
-        clearPlaylistSelection()
-        clearFolderSelection()
+        viewModel.clearAllSelections()
     }
 
     // #185: leaving a tab drops its selection — a selection must not
     // linger (and its action bar must not show) on the other tabs.
     LaunchedEffect(selectedTab) {
-        if (selectedTab != MusicTab.TRACKS) clearTrackSelection()
-        if (selectedTab != MusicTab.ALBUMS) clearAlbumSelection()
-        if (selectedTab != MusicTab.ARTISTS) clearArtistSelection()
-        if (selectedTab != MusicTab.PLAYLISTS) clearPlaylistSelection()
-        if (selectedTab != MusicTab.FOLDERS) clearFolderSelection()
+        viewModel.clearSelectionsExcept(selectedTab)
     }
 
     var showManageTabsDialog by remember { mutableStateOf(false) }
@@ -446,6 +306,13 @@ fun MusicScreen(
     // switch does not drop the field while a query is active.
     var isSearching by rememberSaveable { mutableStateOf(false) }
 
+    // Migration Phase 2c: the query and the open state live in the
+    // ViewModel, but their rememberSaveable copies stay here — the
+    // ViewModel is cleared when this tab is popped with saveState, and
+    // the query must survive a dock-tab switch (#255/#326).
+    LaunchedEffect(searchQuery) { viewModel.setSearchQuery(searchQuery) }
+    LaunchedEffect(isSearching) { viewModel.setSearching(isSearching) }
+
     // #326: Back exits search (exactly one step), like Local — it closes
     // the field and clears the query. Guarded against selection mode:
     // search can still be open when a long-press starts a selection
@@ -459,187 +326,25 @@ fun MusicScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Issue #300: a track's folder, derived exactly the way
-    // MediaStoreRepository.getAudioFolders() and folderTracks() group it
-    // (parent dir; blank and content:// paths fall back to
-    // /storage/emulated/0/Music, #253/#267), so a track and its folder
-    // tile are hidden together by the blacklist below.
-    // Issue #317: a content:// track's File.parent is meaningless, so
-    // the old /Music fallback let it leak out of a blacklisted
-    // subfolder. folderPathByBucketId resolves it from the folder list
-    // instead: the key is the MediaStore BUCKET_ID scheme (#253 — hash
-    // of the lower-cased parent path), and the track carries its bucket
-    // id. An unknown bucket keeps the old /Music fallback — visible,
-    // never falsely hidden.
-    fun audioFolderPath(
-        track: AudioTrack,
-        folderPathByBucketId: Map<String, String> = emptyMap(),
-    ): String =
-        if (track.path.isNotBlank() && !track.path.startsWith("content://")) {
-            File(track.path).parent ?: "/storage/emulated/0/Music"
-        } else {
-            folderPathByBucketId[track.bucketId] ?: "/storage/emulated/0/Music"
-        }
-
-    // Issue #300: mirror LocalScreen.applyFolderBlacklist for the audio
-    // library — the folder blacklist (Preferences > Folders) hides
-    // blacklisted folders' audio from Music too, with the same prefix
-    // rule ([isPathBlacklisted]). Tracks and folders filter directly on
-    // their folder path; albums and artists derive from tracks, so they
-    // keep only rows with at least one visible track, with counts
-    // recomputed from the visible tracks (a stale count would be #275
-    // all over again). Playlists are deliberately NOT filtered: their
-    // members are explicit user choices, resolved by the repository when
-    // played. Runs on the IO thread at the load sites, like Local's.
-    fun applyAudioBlacklist(
-        scannedTracks: List<AudioTrack>,
-        scannedAlbums: List<AudioAlbum>,
-        scannedArtists: List<AudioArtist>,
-        scannedFolders: List<AudioFolder>,
-        blacklist: Set<String>,
-    ): FilteredAudioLibrary {
-        if (blacklist.isEmpty()) {
-            return FilteredAudioLibrary(scannedTracks, scannedAlbums, scannedArtists, scannedFolders)
-        }
-        // Issue #317: bucket id -> folder path, so content:// tracks
-        // resolve to their real folder (see audioFolderPath). Built
-        // from the unfiltered list so a blacklisted folder stays
-        // resolvable; the key is the MediaStore BUCKET_ID scheme
-        // (#253): hash of the lower-cased parent path.
-        val folderPathByBucketId = scannedFolders
-            .filter { it.path.isNotBlank() }
-            .associate { it.path.lowercase(Locale.US).hashCode().toString() to it.path }
-        val visibleTracks = scannedTracks.filter { !isPathBlacklisted(audioFolderPath(it, folderPathByBucketId), blacklist) }
-        val visibleFolders = scannedFolders.filter { !isPathBlacklisted(it.path, blacklist) }
-        val visibleAlbums = scannedAlbums.mapNotNull { album ->
-            val count = visibleTracks.count { it.album == album.title && it.artist == album.artist }
-            if (count > 0) album.copy(trackCount = count) else null
-        }
-        val visibleArtists = scannedArtists.mapNotNull { artist ->
-            val artistTracks = visibleTracks.filter { it.artist == artist.name }
-            if (artistTracks.isNotEmpty()) {
-                artist.copy(
-                    trackCount = artistTracks.size,
-                    albumCount = artistTracks.map { it.album }.distinct().size,
-                )
-            } else {
-                null
-            }
-        }
-        return FilteredAudioLibrary(visibleTracks, visibleAlbums, visibleArtists, visibleFolders)
-    }
-
     DisposableEffect(permissionResultHandler) {
         onDispose { permissionResultHandler.callback = null }
     }
     SideEffect {
         permissionResultHandler.callback = { isGranted ->
-        hasPermission = isGranted
-        if (isGranted) {
-            // Issue #295: isLoading is snapshot state — write it on Main,
-            // before the IO work, not inside the IO block.
-            isLoading = true
-            scope.launch(Dispatchers.IO) {
-                val t = repository.getAudioTracks()
-                val p = repository.getPlaylists()
-                val al = repository.getAudioAlbums()
-                val ar = repository.getAudioArtists()
-                val f = repository.getAudioFolders()
-                // Issue #300: folder blacklist hides blacklisted audio too.
-                val visible = applyAudioBlacklist(t, al, ar, f, appSettings.blacklistedFolders)
-                withContext(Dispatchers.Main) {
-                    tracks = visible.tracks
-                    playlists = p
-                    albums = visible.albums
-                    artists = visible.artists
-                    folders = visible.folders
-                    isLoading = false
-                }
-            }
-        } else {
-            tracks = emptyList()
-            playlists = emptyList()
-            albums = emptyList()
-            artists = emptyList()
-            folders = emptyList()
-        }
+            scope.launch { viewModel.refreshLibrary(isGranted) }
         }
     }
 
     fun refreshMusic() {
-        if (MediaPermissions.hasAudioPermission(context)) {
-            hasPermission = true
-            // Issue #295: isLoading is snapshot state — write it on Main,
-            // before the IO work, not inside the IO block.
-            isLoading = true
-            scope.launch(Dispatchers.IO) {
-                val t = repository.getAudioTracks()
-                val p = repository.getPlaylists()
-                val al = repository.getAudioAlbums()
-                val ar = repository.getAudioArtists()
-                val f = repository.getAudioFolders()
-                // Issue #300: folder blacklist hides blacklisted audio too.
-                val visible = applyAudioBlacklist(t, al, ar, f, appSettings.blacklistedFolders)
-                withContext(Dispatchers.Main) {
-                    tracks = visible.tracks
-                    playlists = p
-                    albums = visible.albums
-                    artists = visible.artists
-                    folders = visible.folders
-                    isLoading = false
-                }
-            }
-        } else {
-            hasPermission = false
-            tracks = emptyList()
-            playlists = emptyList()
-            albums = emptyList()
-            artists = emptyList()
-            folders = emptyList()
-        }
+        scope.launch { viewModel.refreshLibrary(MediaPermissions.hasAudioPermission(context)) }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                appSettings = realSettingsRepo.load()
                 val currentPerm = MediaPermissions.hasAudioPermission(context)
-                hasPermission = currentPerm
-                val loadedSettings = realSettingsRepo.load()
-                appSettings = loadedSettings
-                viewMode = if (loadedSettings.musicViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
-                if (currentPerm) {
-                    // Issue #295: isLoading is snapshot state — write it
-                    // on Main, before the IO work, not inside the IO block.
-                    isLoading = true
-                    scope.launch(Dispatchers.IO) {
-                        val t = repository.getAudioTracks()
-                        val p = repository.getPlaylists()
-                        val al = repository.getAudioAlbums()
-                        val ar = repository.getAudioArtists()
-                        val f = repository.getAudioFolders()
-                        // Issue #300: folder blacklist hides blacklisted
-                        // audio too — use the freshly reloaded settings,
-                        // so a blacklist change in Preferences applies on
-                        // return (this is the ON_RESUME reload).
-                        val visible = applyAudioBlacklist(t, al, ar, f, loadedSettings.blacklistedFolders)
-                        withContext(Dispatchers.Main) {
-                            tracks = visible.tracks
-                            playlists = p
-                            albums = visible.albums
-                            artists = visible.artists
-                            folders = visible.folders
-                            isLoading = false
-                        }
-                    }
-                } else {
-                    tracks = emptyList()
-                    playlists = emptyList()
-                    albums = emptyList()
-                    artists = emptyList()
-                    folders = emptyList()
-                }
+                scope.launch { viewModel.onResume(currentPerm) }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -648,213 +353,25 @@ fun MusicScreen(
         }
     }
 
-    val filteredTracks = remember(tracks, searchQuery) {
-        if (searchQuery.isBlank()) {
-            tracks
-        } else {
-            tracks.filter {
-                it.title.contains(searchQuery, ignoreCase = true) ||
-                    it.artist.contains(searchQuery, ignoreCase = true) ||
-                    it.album.contains(searchQuery, ignoreCase = true)
-            }
-        }
-    }
-
-    // #185: the shared MediaSortComparator (natural numeric order,
-    // secondary tie-break) replaces the hand-rolled when() on SortField.
-    // Reverse is the shared global sortReverse, like Local's popup.
-    // With reverse off the order is identical to the old hand-rolled one
-    // (Name A-Z, Date newest first, Size/Duration longest first).
-    val sortedTracks = remember(filteredTracks, sortField, appSettings.sortReverse) {
-        filteredTracks.sortedWith(
-            MediaSortComparator.audioTrackComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
-
-    // Issue #234: the same sort over the UNFILTERED list — the selection
-    // resolvers below must not lose items the search box hides. The
-    // visible list stays sortedTracks (search-filtered, then sorted).
-    val sortedAllTracks = remember(tracks, sortField, appSettings.sortReverse) {
-        tracks.sortedWith(
-            MediaSortComparator.audioTrackComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
-
-    // #185: the Albums tab shares the screen search box (contains-filter
-    // on title/artist, like Tracks) and the shared sort state — one
-    // sortField / sortReverse for the whole Music screen, like Local.
-    // There is no separate albums sort: the popup edits the same field.
-    val filteredAlbums = remember(albums, searchQuery) {
-        if (searchQuery.isBlank()) {
-            albums
-        } else {
-            albums.filter {
-                it.title.contains(searchQuery, ignoreCase = true) ||
-                    it.artist.contains(searchQuery, ignoreCase = true)
-            }
-        }
-    }
-
-    // #185: the shared MediaSortComparator for albums — same field
-    // semantics as the audio track comparator. Albums carry no duration:
-    // SIZE / DURATION sort by track count (most tracks first).
-    val sortedAlbums = remember(filteredAlbums, sortField, appSettings.sortReverse) {
-        filteredAlbums.sortedWith(
-            MediaSortComparator.audioAlbumComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
-
-    // Issue #234: the same sort over the UNFILTERED list — see sortedAllTracks.
-    val sortedAllAlbums = remember(albums, sortField, appSettings.sortReverse) {
-        albums.sortedWith(
-            MediaSortComparator.audioAlbumComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
-
-    // #185: the Artists tab shares the screen search box (contains-filter
-    // on name, like Tracks/Albums) and the shared sort state — one
-    // sortField / sortReverse for the whole Music screen, like Local.
-    // There is no separate artists sort: the popup edits the same field.
-    val filteredArtists = remember(artists, searchQuery) {
-        if (searchQuery.isBlank()) {
-            artists
-        } else {
-            artists.filter {
-                it.name.contains(searchQuery, ignoreCase = true)
-            }
-        }
-    }
-
-    // #185: the shared MediaSortComparator for artists — same field
-    // semantics as the audio album comparator. Artists carry no duration:
-    // SIZE / DURATION sort by track count (most tracks first).
-    val sortedArtists = remember(filteredArtists, sortField, appSettings.sortReverse) {
-        filteredArtists.sortedWith(
-            MediaSortComparator.audioArtistComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
-
-    // Issue #234: the same sort over the UNFILTERED list — see sortedAllTracks.
-    val sortedAllArtists = remember(artists, sortField, appSettings.sortReverse) {
-        artists.sortedWith(
-            MediaSortComparator.audioArtistComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
-
-    // #185: the Playlists tab shares the screen search box
-    // (contains-filter on title, like Tracks/Albums/Artists) and the
-    // shared sort state — one sortField / sortReverse for the whole
-    // Music screen, like Local. There is no separate playlists sort:
-    // the popup edits the same field. The list filtered here is the
-    // combined one (custom playlists first, then device playlists);
-    // the 3 header rows are not filtered — they are actions, not rows.
-    val filteredPlaylists = remember(allPlaylists, searchQuery) {
-        if (searchQuery.isBlank()) {
-            allPlaylists
-        } else {
-            allPlaylists.filter {
-                it.title.contains(searchQuery, ignoreCase = true)
-            }
-        }
-    }
-
-    // #185: the Folders tab shares the screen search box (contains-filter
-    // on name or path — the path distinguishes same-named folders on
-    // different volumes) and the shared sort state — one sortField /
-    // sortReverse for the whole Music screen, like Local. There is no
-    // separate folders sort: the popup edits the same field.
-    val filteredFolders = remember(folders, searchQuery) {
-        if (searchQuery.isBlank()) {
-            folders
-        } else {
-            folders.filter {
-                it.name.contains(searchQuery, ignoreCase = true) ||
-                    it.path.contains(searchQuery, ignoreCase = true)
-            }
-        }
-    }
-
-    // #185: the shared MediaSortComparator for playlists — same field
-    // semantics as the audio album comparator. Playlists carry no
-    // duration: SIZE / DURATION / COUNT sort by item count (most items
-    // first); DATE is id recency — playlist ids are MediaStore numeric
-    // ids (genuine recency) or "custom:<id>", not name hashes, so that
-    // stays (issue #311 changed albums / artists / folders only).
-    val sortedPlaylists = remember(filteredPlaylists, sortField, appSettings.sortReverse) {
-        filteredPlaylists.sortedWith(
-            MediaSortComparator.audioPlaylistComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
-
-    // Issue #234: the same sort over the UNFILTERED list — see sortedAllTracks.
-    val sortedAllPlaylists = remember(allPlaylists, sortField, appSettings.sortReverse) {
-        allPlaylists.sortedWith(
-            MediaSortComparator.audioPlaylistComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
-
-    // #185: the shared MediaSortComparator for folders — same field
-    // semantics as the audio artist comparator. Folders carry no size
-    // or duration: SIZE / DURATION / COUNT sort by track count (most
-    // tracks first); DATE sorts by the newest track date in the folder
-    // (issue #311 — it used to return 0 and silently sort by name).
-    val sortedFolders = remember(filteredFolders, sortField, appSettings.sortReverse) {
-        filteredFolders.sortedWith(
-            MediaSortComparator.audioFolderComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
-
-    // Issue #234: the same sort over the UNFILTERED list — see sortedAllTracks.
-    val sortedAllFolders = remember(folders, sortField, appSettings.sortReverse) {
-        folders.sortedWith(
-            MediaSortComparator.audioFolderComparator(
-                primary = sortField,
-                secondary = SortField.NAME,
-                reverse = appSettings.sortReverse,
-            )
-        )
-    }
+    val filteredTracks by viewModel.filteredTracks.collectAsState()
+    val sortedTracks by viewModel.sortedTracks.collectAsState()
+    val sortedAllTracks by viewModel.sortedAllTracks.collectAsState()
+    val filteredAlbums by viewModel.filteredAlbums.collectAsState()
+    val sortedAlbums by viewModel.sortedAlbums.collectAsState()
+    val sortedAllAlbums by viewModel.sortedAllAlbums.collectAsState()
+    val filteredArtists by viewModel.filteredArtists.collectAsState()
+    val sortedArtists by viewModel.sortedArtists.collectAsState()
+    val sortedAllArtists by viewModel.sortedAllArtists.collectAsState()
+    val filteredPlaylists by viewModel.filteredPlaylists.collectAsState()
+    val sortedPlaylists by viewModel.sortedPlaylists.collectAsState()
+    val sortedAllPlaylists by viewModel.sortedAllPlaylists.collectAsState()
+    val filteredFolders by viewModel.filteredFolders.collectAsState()
+    val sortedFolders by viewModel.sortedFolders.collectAsState()
+    val sortedAllFolders by viewModel.sortedAllFolders.collectAsState()
 
     // Issue #234: resolve against the UNFILTERED sorted list — the search
     // box must not narrow an existing selection.
-    fun selectedTracksInView(): List<AudioTrack> =
-        sortedAllTracks.filter { selectedTrackIds.contains(it.id.ifBlank { it.path }) }
+    fun selectedTracksInView(): List<AudioTrack> = viewModel.selectedTracksInView()
 
     fun playTrackSelection() {
         val selected = selectedTracksInView()
@@ -879,45 +396,13 @@ fun MusicScreen(
     // favourites Flow — no manual refresh needed. The FavouriteItem
     // shape matches the selection favourite below (audio: isVideo
     // false, subtitle "artist • album").
-    fun toggleTrackFavourite(track: AudioTrack) {
-        scope.launch(Dispatchers.IO) {
-            persistenceRepository.toggleFavourite(
-                FavouriteItem(
-                    mediaId = track.id,
-                    title = track.title,
-                    subtitle = "${track.artist} • ${track.album}",
-                    mediaUri = track.path,
-                    isVideo = false,
-                    durationMs = track.durationMs,
-                ),
-            )
-        }
-    }
+    fun toggleTrackFavourite(track: AudioTrack) = viewModel.toggleTrackFavourite(track)
 
     fun toggleTrackSelectionFavourite() {
         val selected = selectedTracksInView()
         if (selected.isEmpty()) return
-        val favUris = favourites.map { it.mediaUri }.toSet()
         scope.launch(Dispatchers.IO) {
-            // Toggle as a group: if every selected track is already a
-            // favourite, remove them all; otherwise add the missing ones.
-            val allFav = selected.all { favUris.contains(it.path) }
-            if (allFav) {
-                selected.forEach { persistenceRepository.removeFavourite(it.path) }
-            } else {
-                selected.filter { !favUris.contains(it.path) }.forEach { track ->
-                    persistenceRepository.addFavourite(
-                        FavouriteItem(
-                            mediaId = track.id,
-                            title = track.title,
-                            subtitle = "${track.artist} • ${track.album}",
-                            mediaUri = track.path,
-                            isVideo = false,
-                            durationMs = track.durationMs,
-                        )
-                    )
-                }
-            }
+            val allFav = viewModel.toggleFavouriteForTracks(selected)
             withContext(Dispatchers.Main) {
                 clearTrackSelection()
                 snackbarHostState.showSnackbar(
@@ -934,15 +419,12 @@ fun MusicScreen(
     // album's tracks are its library tracks (getAudioAlbums groups by
     // (album, artist) — #243, so same-named albums by different artists
     // stay separate), in library order — no new repository call needed.
-    fun albumTracks(album: AudioAlbum): List<AudioTrack> =
-        tracks.filter { it.album == album.title && it.artist == album.artist }
+    fun albumTracks(album: AudioAlbum): List<AudioTrack> = viewModel.albumTracks(album)
 
     // Issue #234: resolve against the UNFILTERED sorted list — see selectedTracksInView.
-    fun selectedAlbumsInView(): List<AudioAlbum> =
-        sortedAllAlbums.filter { selectedAlbumIds.contains(it.id.ifBlank { it.title }) }
+    fun selectedAlbumsInView(): List<AudioAlbum> = viewModel.selectedAlbumsInView()
 
-    fun selectedAlbumTracks(): List<AudioTrack> =
-        selectedAlbumsInView().flatMap { albumTracks(it) }
+    fun selectedAlbumTracks(): List<AudioTrack> = viewModel.selectedAlbumTracks()
 
     fun playAlbumSelection() {
         val albumTrackList = selectedAlbumTracks()
@@ -964,27 +446,8 @@ fun MusicScreen(
     fun toggleAlbumSelectionFavourite() {
         val selected = selectedAlbumTracks()
         if (selected.isEmpty()) return
-        val favUris = favourites.map { it.mediaUri }.toSet()
         scope.launch(Dispatchers.IO) {
-            // Toggle as a group: if every selected track is already a
-            // favourite, remove them all; otherwise add the missing ones.
-            val allFav = selected.all { favUris.contains(it.path) }
-            if (allFav) {
-                selected.forEach { persistenceRepository.removeFavourite(it.path) }
-            } else {
-                selected.filter { !favUris.contains(it.path) }.forEach { track ->
-                    persistenceRepository.addFavourite(
-                        FavouriteItem(
-                            mediaId = track.id,
-                            title = track.title,
-                            subtitle = "${track.artist} • ${track.album}",
-                            mediaUri = track.path,
-                            isVideo = false,
-                            durationMs = track.durationMs,
-                        )
-                    )
-                }
-            }
+            val allFav = viewModel.toggleFavouriteForTracks(selected)
             withContext(Dispatchers.Main) {
                 clearAlbumSelection()
                 snackbarHostState.showSnackbar(
@@ -1000,15 +463,12 @@ fun MusicScreen(
     // #185: Artists multi-select actions, mirroring the Albums ones. An
     // artist's tracks are its library tracks (getAudioArtists groups by
     // artist name), in library order — no new repository call needed.
-    fun artistTracks(artist: AudioArtist): List<AudioTrack> =
-        tracks.filter { it.artist == artist.name }
+    fun artistTracks(artist: AudioArtist): List<AudioTrack> = viewModel.artistTracks(artist)
 
     // Issue #234: resolve against the UNFILTERED sorted list — see selectedTracksInView.
-    fun selectedArtistsInView(): List<AudioArtist> =
-        sortedAllArtists.filter { selectedArtistIds.contains(it.id.ifBlank { it.name }) }
+    fun selectedArtistsInView(): List<AudioArtist> = viewModel.selectedArtistsInView()
 
-    fun selectedArtistTracks(): List<AudioTrack> =
-        selectedArtistsInView().flatMap { artistTracks(it) }
+    fun selectedArtistTracks(): List<AudioTrack> = viewModel.selectedArtistTracks()
 
     fun playArtistSelection() {
         val artistTrackList = selectedArtistTracks()
@@ -1030,27 +490,8 @@ fun MusicScreen(
     fun toggleArtistSelectionFavourite() {
         val selected = selectedArtistTracks()
         if (selected.isEmpty()) return
-        val favUris = favourites.map { it.mediaUri }.toSet()
         scope.launch(Dispatchers.IO) {
-            // Toggle as a group: if every selected track is already a
-            // favourite, remove them all; otherwise add the missing ones.
-            val allFav = selected.all { favUris.contains(it.path) }
-            if (allFav) {
-                selected.forEach { persistenceRepository.removeFavourite(it.path) }
-            } else {
-                selected.filter { !favUris.contains(it.path) }.forEach { track ->
-                    persistenceRepository.addFavourite(
-                        FavouriteItem(
-                            mediaId = track.id,
-                            title = track.title,
-                            subtitle = "${track.artist} • ${track.album}",
-                            mediaUri = track.path,
-                            isVideo = false,
-                            durationMs = track.durationMs,
-                        )
-                    )
-                }
-            }
+            val allFav = viewModel.toggleFavouriteForTracks(selected)
             withContext(Dispatchers.Main) {
                 clearArtistSelection()
                 snackbarHostState.showSnackbar(
@@ -1068,7 +509,7 @@ fun MusicScreen(
     // A device playlist's members come from MediaStore
     // (repository.getPlaylistTracks, a blocking call — IO only, like the
     // single-tap path), and a custom playlist's items come from Room
-    // (persistenceRepository.getPlaylistItems, suspend). Both lookups
+    // (viewModel.getPlaylistItems, suspend). Both lookups
     // skip members that are no longer in the library, so the result is
     // exactly what tapping the playlist would queue. Two shapes are
     // needed because the two kinds of playlist play differently:
@@ -1079,56 +520,14 @@ fun MusicScreen(
     // details dialog's onPlayAll uses — so a custom playlist keeps its
     // video items and its own order instead of being forced through the
     // audio-only path).
-    suspend fun playlistAudioTracks(playlist: Playlist): List<AudioTrack> {
-        // Issue #217: compare against the namespaced custom id — a bare
-        // room id would also match a device playlist with the same number.
-        val custom = customPlaylists.find { customPlaylistId(it.id) == playlist.id }
-        if (custom != null) {
-            val items = persistenceRepository.getPlaylistItems(custom.id)
-            // Library resolution only: a video item has no AudioTrack,
-            // and an item whose file is gone has no library row — both
-            // are skipped, not faked.
-            return items.filter { !it.isVideo }.mapNotNull { item ->
-                tracks.firstOrNull { it.path == item.mediaUri }
-            }
-        }
-        return repository.getPlaylistTracks(playlist.id)
-    }
+    suspend fun playlistAudioTracks(playlist: Playlist): List<AudioTrack> =
+        viewModel.playlistAudioTracks(playlist)
 
-    suspend fun playlistPlayableMedia(playlist: Playlist): List<PlayableMedia> {
-        // Issue #217: compare against the namespaced custom id — a bare
-        // room id would also match a device playlist with the same number.
-        val custom = customPlaylists.find { customPlaylistId(it.id) == playlist.id }
-        if (custom != null) {
-            return persistenceRepository.getPlaylistItems(custom.id).map { item ->
-                PlayableMedia(
-                    id = item.mediaId,
-                    title = item.title,
-                    subtitle = item.subtitle,
-                    uri = item.mediaUri,
-                    isVideo = item.isVideo,
-                    durationMs = item.durationMs,
-                )
-            }
-        }
-        return repository.getPlaylistTracks(playlist.id).map { track ->
-            PlayableMedia(
-                id = track.id,
-                title = track.title,
-                subtitle = "${track.artist} • ${track.album}",
-                // Local playback fix: play via the MediaStore content:// URI
-                // (MpvFdOpener turns it into fd:// at load time). The raw
-                // DATA path is denied to native code under scoped storage.
-                uri = track.contentUri.ifBlank { track.path },
-                isVideo = false,
-                durationMs = track.durationMs,
-            )
-        }
-    }
+    suspend fun playlistPlayableMedia(playlist: Playlist): List<PlayableMedia> =
+        viewModel.playlistPlayableMedia(playlist)
 
     // Issue #234: resolve against the UNFILTERED sorted list — see selectedTracksInView.
-    fun selectedPlaylistsInView(): List<Playlist> =
-        sortedAllPlaylists.filter { selectedPlaylistIds.contains(it.id.ifBlank { it.title }) }
+    fun selectedPlaylistsInView(): List<Playlist> = viewModel.selectedPlaylistsInView()
 
     fun playPlaylistSelection() {
         scope.launch(Dispatchers.IO) {
@@ -1173,26 +572,7 @@ fun MusicScreen(
                 }
                 return@launch
             }
-            val favUris = favourites.map { it.mediaUri }.toSet()
-            // Toggle as a group: if every selected track is already a
-            // favourite, remove them all; otherwise add the missing ones.
-            val allFav = selected.all { favUris.contains(it.path) }
-            if (allFav) {
-                selected.forEach { persistenceRepository.removeFavourite(it.path) }
-            } else {
-                selected.filter { !favUris.contains(it.path) }.forEach { track ->
-                    persistenceRepository.addFavourite(
-                        FavouriteItem(
-                            mediaId = track.id,
-                            title = track.title,
-                            subtitle = "${track.artist} • ${track.album}",
-                            mediaUri = track.path,
-                            isVideo = false,
-                            durationMs = track.durationMs,
-                        )
-                    )
-                }
-            }
+            val allFav = viewModel.toggleFavouriteForTracks(selected)
             withContext(Dispatchers.Main) {
                 clearPlaylistSelection()
                 snackbarHostState.showSnackbar(
@@ -1209,35 +589,12 @@ fun MusicScreen(
     // folder's tracks are its library tracks (folderTracks groups by
     // parent dir, the same way getAudioFolders does), in library order —
     // no new repository call needed.
-    // #200: a folder's tracks are its library tracks, grouped exactly the
-    // way MediaStoreRepository.getAudioFolders() groups them (parent dir of
-    // the file path, blank and content:// paths fall back to
-    // /storage/emulated/0/Music) — no new repository call needed. Declared here, before the selection
-    // helpers below, because local functions are only visible after their
-    // declaration point — selectedFolderTracks() calls it.
-    // #267: mirror MediaStoreRepository.getAudioFolders() (#253) exactly —
-    // a content:// path has no filesystem parent, so File(...).parent is
-    // the meaningless "content://media/external/audio/media" and never
-    // equals any folder path. Such tracks group under the Music fallback,
-    // like blank paths — otherwise tapping the "Music" folder (or Play /
-    // Add-to-playlist / Favourite on a folder selection) silently dropped
-    // every content:// track.
-    fun folderTracks(folder: AudioFolder): List<AudioTrack> =
-        tracks.filter { track ->
-            val folderPath = if (track.path.isNotBlank() && !track.path.startsWith("content://")) {
-                File(track.path).parent ?: "/storage/emulated/0/Music"
-            } else {
-                "/storage/emulated/0/Music"
-            }
-            folderPath == folder.path
-        }
+    fun folderTracks(folder: AudioFolder): List<AudioTrack> = viewModel.folderTracks(folder)
 
     // Issue #234: resolve against the UNFILTERED sorted list — see selectedTracksInView.
-    fun selectedFoldersInView(): List<AudioFolder> =
-        sortedAllFolders.filter { selectedFolderIds.contains(it.id.ifBlank { it.path }) }
+    fun selectedFoldersInView(): List<AudioFolder> = viewModel.selectedFoldersInView()
 
-    fun selectedFolderTracks(): List<AudioTrack> =
-        selectedFoldersInView().flatMap { folderTracks(it) }
+    fun selectedFolderTracks(): List<AudioTrack> = viewModel.selectedFolderTracks()
 
     fun playFolderSelection() {
         val folderTrackList = selectedFolderTracks()
@@ -1259,27 +616,8 @@ fun MusicScreen(
     fun toggleFolderSelectionFavourite() {
         val selected = selectedFolderTracks()
         if (selected.isEmpty()) return
-        val favUris = favourites.map { it.mediaUri }.toSet()
         scope.launch(Dispatchers.IO) {
-            // Toggle as a group: if every selected track is already a
-            // favourite, remove them all; otherwise add the missing ones.
-            val allFav = selected.all { favUris.contains(it.path) }
-            if (allFav) {
-                selected.forEach { persistenceRepository.removeFavourite(it.path) }
-            } else {
-                selected.filter { !favUris.contains(it.path) }.forEach { track ->
-                    persistenceRepository.addFavourite(
-                        FavouriteItem(
-                            mediaId = track.id,
-                            title = track.title,
-                            subtitle = "${track.artist} • ${track.album}",
-                            mediaUri = track.path,
-                            isVideo = false,
-                            durationMs = track.durationMs,
-                        )
-                    )
-                }
-            }
+            val allFav = viewModel.toggleFavouriteForTracks(selected)
             withContext(Dispatchers.Main) {
                 clearFolderSelection()
                 snackbarHostState.showSnackbar(
@@ -1738,7 +1076,7 @@ fun MusicScreen(
                                             // under this title while loading.
                                             playlistItemsForDialog = emptyList()
                                             scope.launch {
-                                                val items = persistenceRepository.getPlaylistItems(custom.id)
+                                                val items = viewModel.getPlaylistItems(custom.id)
                                                 // #269: a second tap starts
                                                 // a second load — only apply
                                                 // this one if this playlist
@@ -1757,7 +1095,7 @@ fun MusicScreen(
                                             // member list queues nothing instead of
                                             // falling back to the whole library.
                                             scope.launch(Dispatchers.IO) {
-                                                val memberTracks = repository.getPlaylistTracks(playlist.id)
+                                                val memberTracks = viewModel.playlistAudioTracks(playlist)
                                                 withContext(Dispatchers.Main) {
                                                     if (memberTracks.isNotEmpty()) {
                                                         playbackManager?.playAudioQueue(memberTracks, startIndex = 0)
@@ -1954,12 +1292,12 @@ fun MusicScreen(
                     val targetTrack = trackForPlaylistAdd
                     val selected = tracksForPlaylistAdd
                     try {
-                        val newId = persistenceRepository.createPlaylist(
+                        val newId = viewModel.createPlaylist(
                             name, isVideoPlaylist = isVideo
                         )
                         when {
                             targetTrack != null -> {
-                                val rowId = persistenceRepository.addItemToPlaylist(
+                                val rowId = viewModel.addItemToPlaylist(
                                     PlaylistItem(
                                         playlistId = newId,
                                         mediaUri = getPlayableUri(targetTrack),
@@ -1980,7 +1318,7 @@ fun MusicScreen(
                             selected.isNotEmpty() -> {
                                 var addedCount = 0
                                 selected.forEach { track ->
-                                    val rowId = persistenceRepository.addItemToPlaylist(
+                                    val rowId = viewModel.addItemToPlaylist(
                                         PlaylistItem(
                                             playlistId = newId,
                                             mediaUri = track.path,
@@ -2048,7 +1386,7 @@ fun MusicScreen(
                     val playableUri = getPlayableUri(targetTrack)
                     // Issue #230: -1 means the track is already in the
                     // playlist — say so instead of "added".
-                    val rowId = persistenceRepository.addItemToPlaylist(
+                    val rowId = viewModel.addItemToPlaylist(
                         PlaylistItem(
                             playlistId = pl.id,
                             mediaUri = playableUri,
@@ -2096,7 +1434,7 @@ fun MusicScreen(
                     // adds so the feedback tells the truth.
                     var addedCount = 0
                     selected.forEach { track ->
-                        val rowId = persistenceRepository.addItemToPlaylist(
+                        val rowId = viewModel.addItemToPlaylist(
                             PlaylistItem(
                                 playlistId = pl.id,
                                 mediaUri = track.path,
@@ -2197,7 +1535,7 @@ fun MusicScreen(
                                 trackForOptions = null
                                 scope.launch {
                                     val uri = getPlayableUri(targetTrack)
-                                    val added = persistenceRepository.toggleFavourite(
+                                    val added = viewModel.toggleFavourite(
                                         FavouriteItem(
                                             mediaUri = uri,
                                             mediaId = targetTrack.id,
@@ -2287,20 +1625,20 @@ fun MusicScreen(
             },
             onRemoveItem = { itemId ->
                 scope.launch {
-                    persistenceRepository.removeItemFromPlaylist(itemId)
-                    playlistItemsForDialog = persistenceRepository.getPlaylistItems(pl.id)
+                    viewModel.removeItemFromPlaylist(itemId)
+                    playlistItemsForDialog = viewModel.getPlaylistItems(pl.id)
                 }
             },
             onDeletePlaylist = {
                 scope.launch {
-                    persistenceRepository.deletePlaylist(pl.id)
+                    viewModel.deletePlaylist(pl.id)
                     selectedCustomPlaylist = null
                     snackbarHostState.showSnackbar(context.getString(R.string.music_deleted_playlist_msg, pl.name))
                 }
             },
             onRenamePlaylist = { newName ->
                 scope.launch {
-                    persistenceRepository.renamePlaylist(pl.id, newName)
+                    viewModel.renamePlaylist(pl.id, newName)
                     // Issue #230: the dialog reads its title from this
                     // snapshot — update it so the new name shows at once.
                     // The Playlists tab refreshes itself via the
@@ -2333,13 +1671,13 @@ fun MusicScreen(
             },
             onRemoveFavourite = { uri ->
                 scope.launch {
-                    persistenceRepository.removeFavourite(uri)
+                    viewModel.removeFavourite(uri)
                     snackbarHostState.showSnackbar(context.getString(R.string.music_removed_from_favourites))
                 }
             },
             onClearAll = {
                 scope.launch {
-                    persistenceRepository.clearFavourites()
+                    viewModel.clearFavourites()
                     snackbarHostState.showSnackbar(context.getString(R.string.music_cleared_favourites_msg))
                 }
             },
@@ -2375,7 +1713,7 @@ fun MusicScreen(
             },
             onClearHistory = {
                 scope.launch {
-                    persistenceRepository.clearHistory()
+                    viewModel.clearHistory()
                     // Issue #353: clearing history must also forget every
                     // saved resume position, or videos keep offering to
                     // resume from the old position (and the "Resumed
@@ -2385,7 +1723,7 @@ fun MusicScreen(
                     // manager in scope there is no in-memory state, so
                     // clear the Room table directly instead.
                     playbackManager?.resumeManager?.clearAll()
-                        ?: persistenceRepository.clearAllResumePositions()
+                        ?: viewModel.clearAllResumePositions()
                     snackbarHostState.showSnackbar(context.getString(R.string.music_cleared_history_msg))
                 }
             },
@@ -2404,18 +1742,9 @@ fun MusicScreen(
         LocalSortPopup(
             isFolderScope = false,
             currentSort = sortField,
-            onSortChange = { newSort ->
-                sortField = newSort
-                val updated = appSettings.copy(musicPrimarySortField = newSort.name)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
-            },
+            onSortChange = { newSort -> viewModel.setSortField(newSort) },
             sortReverse = appSettings.sortReverse,
-            onSortReverseChange = { reversed ->
-                val updated = appSettings.copy(sortReverse = reversed)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
-            },
+            onSortReverseChange = { reversed -> viewModel.setSortReverse(reversed) },
             currentView = viewMode,
             onViewChange = { updateViewMode(it) },
             isTreeMode = false,
@@ -2448,14 +1777,10 @@ fun MusicScreen(
             settings = appSettings,
             onDismiss = { showManageTabsDialog = false },
             onToggleTab = { tabId, currentVal ->
-                if (currentVal && appSettings.visibleMusicTabsCount <= 1) {
+                if (!viewModel.toggleMusicTab(tabId, currentVal)) {
                     scope.launch {
                         snackbarHostState.showSnackbar(context.getString(R.string.settings_tab_min_one_required))
                     }
-                } else {
-                    val updated = appSettings.withMusicTabToggled(tabId, !currentVal)
-                    appSettings = updated
-                    realSettingsRepo.save(updated)
                 }
             },
         )

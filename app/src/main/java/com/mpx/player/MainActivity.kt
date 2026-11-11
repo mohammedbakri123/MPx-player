@@ -781,7 +781,6 @@ fun MpxApp(
                     permissionResultHandler = musicPermissionHandler,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     playbackManager = playbackManager,
-                    settingsRepository = settingsRepository,
                 )
             }
             composable(Screen.Network.route) {

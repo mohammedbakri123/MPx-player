@@ -2,6 +2,7 @@ package com.mpx.player.di
 
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.screens.me.MeViewModel
+import com.mpx.player.ui.screens.music.MusicViewModel
 import com.mpx.player.ui.screens.network.NetworkViewModel
 import com.mpx.player.ui.screens.player.PlayerViewModel
 import org.koin.core.module.dsl.viewModel
@@ -17,6 +18,13 @@ import org.koin.dsl.module
  * resolves the first from the [PlaybackManager] single — the manager
  * implements the interface, so no second instance is created — and
  * the second from the [appModule] settings single.
+ *
+ * Phase 2c registers [com.mpx.player.ui.screens.music.MusicViewModel].
+ * Its constructor takes interfaces only
+ * ([com.mpx.player.domain.repository.MediaRepository],
+ * [com.mpx.player.domain.repository.MediaPersistenceRepository],
+ * [com.mpx.player.domain.settings.AppSettingsRepository]); all three
+ * resolve from [appModule] singles.
  *
  * Phase 2d adds [NetworkViewModel] the same way: its constructor
  * takes [com.mpx.player.playback.StreamPlayer], resolved from the
@@ -34,6 +42,7 @@ import org.koin.dsl.module
  */
 val viewModelModule = module {
     viewModel { PlayerViewModel(get<PlaybackManager>(), get()) }
+    viewModel { MusicViewModel(get(), get(), get()) }
     viewModel { NetworkViewModel(get<PlaybackManager>()) }
     viewModel { MeViewModel(get(), get()) }
 }
