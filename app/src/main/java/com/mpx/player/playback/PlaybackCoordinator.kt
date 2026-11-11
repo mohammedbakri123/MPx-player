@@ -120,11 +120,11 @@ interface BackgroundService {
  * banner texts themselves (the fake strings return markers).
  */
 class PlaybackCoordinator(
-    val database: MpxDatabase,
-    val persistenceRepository: MediaPersistenceRepository,
-    val resumeManager: PlaybackResumeManager,
-    val settingsRepository: AppSettingsRepository,
-    val engine: PlayerEngine,
+    private val database: MpxDatabase,
+    internal val persistenceRepository: MediaPersistenceRepository,
+    private val resumeManager: PlaybackResumeManager,
+    private val settingsRepository: AppSettingsRepository,
+    private val engine: PlayerEngine,
     private val queueStore: QueueStore,
     private val subtitleFileAccess: SubtitleManager.FileAccess,
     private val scope: CoroutineScope,
@@ -193,7 +193,7 @@ class PlaybackCoordinator(
      * so the subtitle manager asks it to apply queue/state effects
      * instead of touching them directly.
      */
-    val subtitleManager = SubtitleManager(
+    internal val subtitleManager = SubtitleManager(
         engine = engine,
         host = this,
         scope = scope,
@@ -208,7 +208,7 @@ class PlaybackCoordinator(
      * engine lifecycle effects, so the queue asks it to apply
      * session/state effects instead of touching them directly.
      */
-    val playbackQueue = PlaybackQueue(
+    internal val playbackQueue = PlaybackQueue(
         engine = engine,
         queueStore = queueStore,
         resumeManager = resumeManager,
@@ -229,7 +229,7 @@ class PlaybackCoordinator(
      * queue, and the subtitle manager must all exist first, and no
      * load can fire an event before this construction finishes.
      */
-    val engineEventTranslator = EngineEventTranslator(
+    internal val engineEventTranslator = EngineEventTranslator(
         engine = engine,
         queue = playbackQueue,
         subtitleManager = subtitleManager,
@@ -1054,6 +1054,49 @@ class PlaybackCoordinator(
                 subtitleTracks = subtitleList,
                 selectedSubtitleTrackIndex = selectedSubtitleIdx,
             )
+        }
+    }
+
+    /**
+     * Clears all persisted and in-memory playback resume positions (issue #353).
+     */
+    fun clearResumePositions() {
+        resumeManager.clearAll()
+    }
+
+    /**
+     * Fresh background play setting for background service gating (D-3, D-12).
+     */
+    fun isBackgroundPlayEnabled(): Boolean =
+        settingsRepository.load().backgroundPlay
+
+    /**
+     * Fresh double-tap seek skip duration in milliseconds (issue #351, D-3).
+     */
+    fun getDoubleTapSeekDurationMs(): Long =
+        settingsRepository.load().doubleTapSeekSeconds * 1000L
+
+    /**
+     * Fresh resume playback preference for persistence dialogs (issue #266, D-3).
+     */
+    fun isResumePlaybackEnabled(): Boolean =
+        settingsRepository.load().resumePlayback
+
+    /**
+     * Handles task removal from the recents tray (issue #258, D-3).
+     * If background play is disabled or nothing is playing, pauses playback
+     * and clears background state, returning true if the background service should stop.
+     */
+    fun onTaskRemoved(): Boolean {
+        val state = _playbackState.value
+        val settings = settingsRepository.load()
+        return if (!settings.backgroundPlay || !state.isPlaying) {
+            pause()
+            setVideoBackgroundActive(false)
+            setBackgroundPlaying(false)
+            true
+        } else {
+            false
         }
     }
 

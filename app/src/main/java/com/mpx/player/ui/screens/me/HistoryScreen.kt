@@ -161,7 +161,7 @@ fun HistoryScreen(
                                 // manager's clearAll() clears the
                                 // in-memory map, the throttle state, and
                                 // the Room table.
-                                playbackCoordinator.resumeManager.clearAll()
+                                playbackCoordinator.clearResumePositions()
                                 snackbarHostState.showSnackbar(context.getString(R.string.snackbar_cleared_history))
                             }
                         }) {

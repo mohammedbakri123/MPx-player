@@ -130,7 +130,7 @@ class PlaybackService : Service(), KoinComponent {
 
     /** Issue #351: the PiP seek duration is the double-tap skip setting, read fresh on every tap. */
     private fun skipDurationMs(): Long =
-        playbackCoordinator.settingsRepository.load().doubleTapSeekSeconds * 1000L
+        playbackCoordinator.getDoubleTapSeekDurationMs()
 
     private fun observePlaybackState() {
         serviceScope.launch {
@@ -164,8 +164,7 @@ class PlaybackService : Service(), KoinComponent {
                 stopSelf()
             }
             ACTION_START -> {
-                val settings = playbackCoordinator.settingsRepository.load()
-                if (settings.backgroundPlay) {
+                if (playbackCoordinator.isBackgroundPlayEnabled()) {
                     updateSessionAndNotification(playbackCoordinator.playbackState.value)
                 } else {
                     stopForegroundInternal(removeNotification = true)
@@ -177,8 +176,7 @@ class PlaybackService : Service(), KoinComponent {
     }
 
     private fun updateSessionAndNotification(state: PlaybackState) {
-        val settings = playbackCoordinator.settingsRepository.load()
-        if (!settings.backgroundPlay) {
+        if (!playbackCoordinator.isBackgroundPlayEnabled()) {
             stopForegroundInternal(removeNotification = true)
             stopSelf()
             return
@@ -383,12 +381,7 @@ class PlaybackService : Service(), KoinComponent {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        val state = playbackCoordinator.playbackState.value
-        val settings = playbackCoordinator.settingsRepository.load()
-        if (!settings.backgroundPlay || !state.isPlaying) {
-            playbackCoordinator.pause()
-            playbackCoordinator.setVideoBackgroundActive(false)
-            playbackCoordinator.setBackgroundPlaying(false)
+        if (playbackCoordinator.onTaskRemoved()) {
             stopForegroundInternal(removeNotification = true)
             stopSelf()
         }

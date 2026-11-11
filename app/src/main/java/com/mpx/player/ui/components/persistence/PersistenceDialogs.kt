@@ -244,7 +244,7 @@ fun PlaybackHistoryDialog(
     // this screen. Null manager (never in practice — Music passes its
     // own) hides the label rather than promising a resume that cannot
     // happen.
-    val resumePlaybackEnabled = playbackCoordinator?.settingsRepository?.load()?.resumePlayback ?: false
+    val resumePlaybackEnabled = playbackCoordinator?.isResumePlaybackEnabled() ?: false
 
     // #265: load the next page when scrolled near the end. Keys on
     // history.size too, so it re-fires after each page lands while the
