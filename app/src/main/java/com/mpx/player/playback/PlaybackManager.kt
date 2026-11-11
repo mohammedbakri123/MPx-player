@@ -47,12 +47,17 @@ import kotlinx.coroutines.launch
  * Migration Phase 3, step 2: the queue responsibility moved to
  * [PlaybackQueue]; this class stays its [QueueHost] and keeps thin
  * delegating functions (`playQueue`, `skipNext`, `setShuffleEnabled`,
- * …) so no screen, ViewModel, or service changes. The engine
- * listeners still live here — they are engine-event translation, a
- * later Phase 3 step — but the end-of-item decision is the queue's
- * ([PlaybackQueue.endedAction]).
+ * …) so no screen, ViewModel, or service changes. The end-of-item
+ * decision is the queue's ([PlaybackQueue.endedAction]).
+ *
+ * Migration Phase 3, step 3: the engine-event translation moved to
+ * [EngineEventTranslator]; this class stays its [EngineEventHost]
+ * and keeps the published state, the position ticker, and the
+ * preparing watchdog. The engine is still constructed here and the
+ * listener is attached here, right after the translator is built —
+ * no load can fire an event before construction finishes.
  */
-class PlaybackManager private constructor(context: Context) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost {
+class PlaybackManager private constructor(context: Context) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost, EngineEventHost {
 
     private val appContext: Context = context.applicationContext
     val database: MpxDatabase = MpxDatabase.getInstance(appContext)
@@ -100,7 +105,7 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
                 } else {
                     "engine=MPV"
                 }
-                engineListener.onError(Exception("Playback load timed out after 20s ($detail)"))
+                engineEventTranslator.onError(Exception("Playback load timed out after 20s ($detail)"))
             }
         }
     }
@@ -110,254 +115,6 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         PlaybackState(decoderMode = initialDecoderMode)
     )
     override val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
-
-    private val engineListener = object : PlayerEngine.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            _playbackState.update { it.copy(isPlaying = isPlaying) }
-            if (isPlaying) {
-                val settings = settingsRepository.load()
-                if (settings.backgroundPlay) {
-                    PlaybackService.start(appContext)
-                }
-                startTicker()
-            } else {
-                stopTicker()
-                // Issue #274: pause is the flush point — the ticker stops
-                // here, so force this final position into Room at once
-                // instead of leaving it to the 5 s throttle window.
-                updatePosition(forceSave = true)
-                _playbackState.value.currentItem?.let { item ->
-                    val pos = engine.currentPosition
-                    val dur = engine.duration
-                    if (pos > 1_500L) {
-                        scope.launch(Dispatchers.IO) {
-                            try {
-                                persistenceRepository.recordHistory(
-                                    PlaybackHistoryItem(
-                                        mediaUri = item.uri,
-                                        mediaId = item.id,
-                                        title = item.title,
-                                        subtitle = item.subtitle,
-                                        isVideo = item.isVideo,
-                                        lastPlayedAt = System.currentTimeMillis(),
-                                        playbackPositionMs = pos,
-                                        durationMs = if (dur > 0L) dur else item.durationMs,
-                                    )
-                                )
-                            } catch (_: Exception) {
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == PlayerEngine.STATE_READY || playbackState == PlayerEngine.STATE_ENDED) {
-                cancelPreparingWatchdog()
-            }
-            _playbackState.update {
-                it.copy(
-                    playbackState = playbackState,
-                    // Preparing ends the moment the engine is READY or ENDED;
-                    // anything else (BUFFERING, IDLE mid-load) keeps the splash.
-                    isPreparing = if (playbackState == PlayerEngine.STATE_READY || playbackState == PlayerEngine.STATE_ENDED) false else it.isPreparing,
-                    // Issue #187: a stale 'Playback error' banner must not
-                    // outlive a recovery — a file that loads fine after a
-                    // spurious error clears it. Other notifications (e.g.
-                    // 'Loaded subtitle') are left alone.
-                    // Issue #223: codec errors render as 'Playback failed:
-                    // unsupported codec ...' (player_codec_error), not
-                    // 'Playback error:' — the same READY clear must match
-                    // both prefixes, or the codec banner survives every
-                    // subsequent successful load.
-                    userNotification = if (playbackState == PlayerEngine.STATE_READY && (it.userNotification?.startsWith("Playback error:") == true || it.userNotification?.startsWith("Playback failed:") == true)) null else it.userNotification,
-                )
-            }
-            updatePosition()
-            updateTracksState()
-            if (playbackState == PlayerEngine.STATE_READY) {
-                subtitleManager.maybeAutoDetectSubtitles()
-            }
-            if (playbackState == PlayerEngine.STATE_ENDED) {
-                // Issue #211: mpv reports STATE_ENDED at the end of EVERY
-                // item — the engine holds only the current item
-                // (playlist-clear + one loadfile in load()), not a
-                // playlist. The old code assumed ENDED meant the end of
-                // the playlist (issue #76): OFF stopped after the first
-                // item and ALL reloaded index 0 forever. What plays next
-                // is the queue's decision ([PlaybackQueue.endedAction]);
-                // this branch only executes it — the listener itself
-                // stays here until the engine-event translation step.
-                val state = _playbackState.value
-                val current = state.currentItem
-                when (val action = playbackQueue.endedAction(current, state.currentIndex, state.repeatMode)) {
-                    PlaybackQueue.EndedAction.ReplayCurrent -> {
-                        engine.seekTo(0L)
-                        engine.play()
-                    }
-                    is PlaybackQueue.EndedAction.AdvanceTo -> {
-                        // A finished item keeps no resume position.
-                        // Issue #227: the resume key is the media URI, not
-                        // the bare id — pass both so the manager can derive it.
-                        current?.let { resumeManager.clearResumePosition(it.id, it.uri) }
-                        // Fresh-fd load via engineLoad: the engine resolves
-                        // the target from its original URI at load time, so
-                        // this never reuses the fd mpv closed when the
-                        // previous stream ended (issues #213/#219).
-                        engineLoad(playbackQueue.items, action.index, 0L)
-                        engine.play()
-                    }
-                    PlaybackQueue.EndedAction.Stop -> {
-                        // Issue #227: the resume key is the media URI, not the bare id.
-                        current?.let { resumeManager.clearResumePosition(it.id, it.uri) }
-                    }
-                }
-            }
-        }
-
-        override fun onMediaItemTransition(index: Int) {
-            val current = playbackQueue.itemAt(index)
-
-            // Issue #283: there is deliberately no resume seek here. The
-            // old branch sought to the saved position when isAuto was
-            // true, but the engine always passed false (a Media3
-            // MEDIA_ITEM_TRANSITION_REASON_AUTO leftover), so it could
-            // never fire. Resume is applied in-place instead: every load
-            // already carries its start position in load()'s resumeMs —
-            // startPlayback passes the saved position, the EOF
-            // auto-advance passes 0L on purpose, and shuffle passes the
-            // live position. A seek here would only race the load.
-            // The live read below is the history position, which must
-            // still wait for the preload (issue #220) instead of
-            // recording 0 when the transition fires in the first moments
-            // after construction.
-            current?.let { item ->
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        // Issue #220: wait for the Room preload so the
-                        // recorded position is the saved one, not 0.
-                        // Issue #227: the resume key is the media URI.
-                        val recordedPos = resumeManager.getResumePositionAfterPreload(item.id, item.uri) ?: 0L
-                        persistenceRepository.recordHistory(
-                            PlaybackHistoryItem(
-                                mediaUri = item.uri,
-                                mediaId = item.id,
-                                title = item.title,
-                                subtitle = item.subtitle,
-                                isVideo = item.isVideo,
-                                lastPlayedAt = System.currentTimeMillis(),
-                                playbackPositionMs = recordedPos,
-                                durationMs = item.durationMs,
-                            )
-                        )
-                    } catch (_: Exception) {
-                    }
-                }
-            }
-
-            _playbackState.update {
-                it.copy(
-                    currentItem = current,
-                    currentIndex = index,
-                    hasPrevious = engine.hasPreviousMediaItem,
-                    hasNext = engine.hasNextMediaItem,
-                    // Issue #330: only clear the resume banner when the
-                    // transition actually moves to a different item.
-                    // startPlayback sets resumedFromMs AFTER engineLoad
-                    // posts this transition, so the session-start
-                    // transition for the item startPlayback just set used
-                    // to wipe the banner in the same main-thread pass,
-                    // before Compose ever drew it. The transition's item
-                    // is the same item the state already shows (same URI
-                    // — the stable item identity, issue #227) for a
-                    // session start and for same-item reloads (decoder
-                    // fallback, attach, shuffle re-load), so the banner
-                    // stays; a move to another item (EOF auto-advance,
-                    // Next/Previous, a queue pick) clears it, so a stale
-                    // banner cannot linger across the advance. A
-                    // transition to no item (current == null, e.g. after
-                    // stop()) clears it too.
-                    resumedFromMs = if (current != null && current.uri == it.currentItem?.uri) it.resumedFromMs else null,
-                    // Issue #260: the new item's dimensions are not known
-                    // yet — drop the previous video's size so the PiP
-                    // params are not armed with a stale aspect while it
-                    // loads, and so the 0 -> WxH transition always
-                    // re-runs the effect even when the new video has the
-                    // same dimensions as the old one.
-                    videoWidth = 0,
-                    videoHeight = 0,
-                )
-            }
-            updateTracksState()
-            updatePosition()
-            // Issue #149: the current index moved; the queue itself did not.
-            playbackQueue.persistQueue(index)
-        }
-
-        override fun onTracksChanged() {
-            updateTracksState()
-            subtitleManager.onTracksChanged()
-        }
-
-        override fun onExternalSubtitleConfirmed(mediaId: String, success: Boolean) {
-            subtitleManager.onExternalSubtitleConfirmed(mediaId, success)
-        }
-
-        override fun onPlaybackParametersChanged(speed: Float) {
-            _playbackState.update { it.copy(speed = speed) }
-        }
-
-        override fun onVideoSizeChanged(width: Int, height: Int) {
-            // Issue #260: the video's dimensions became known (or the
-            // video unloaded) — publish them as state so the PiP params
-            // effect re-runs with the real aspect.
-            _playbackState.update { it.copy(videoWidth = width, videoHeight = height) }
-        }
-
-        override fun onVideoDecoderInitialized(decoderName: String) {
-            val currentMode = _playbackState.value.decoderMode
-            val isSoftware = MpxMediaCodecSelector.isSoftwareCodecName(decoderName)
-
-            val fallbackNote = when {
-                (currentMode == DecoderMode.HW || currentMode == DecoderMode.HW_PLUS) && isSoftware -> {
-                    // Issue #188: do not wrap the decoder name in parens
-                    // again — it already carries its own ("software (H.265)").
-                    "Platform override: Hardware decoder unavailable for this format on this device. Fallback to $decoderName."
-                }
-                currentMode == DecoderMode.SW && !isSoftware -> {
-                    "Platform override: Software decoder unavailable for this format. Fallback to $decoderName."
-                }
-                else -> null
-            }
-
-            _playbackState.update {
-                it.copy(
-                    activeDecoderName = decoderName,
-                    decoderFallbackNote = fallbackNote,
-                )
-            }
-        }
-
-        override fun onError(error: Exception) {
-            cancelPreparingWatchdog()
-            Log.e("PlaybackManager", "Engine error encountered", error)
-            // An error ends preparing: the banner below replaces the splash.
-            // mpv-only (issue #150): there is no fallback engine any more,
-            // so every error is reported as-is — with the codec name when
-            // libmpv knows it — instead of silently switching engines.
-            _playbackState.update {
-                it.copy(
-                    isPreparing = false,
-                    userNotification = if (error is MpvPlaybackException && error.codecName != null) {
-                        appContext.getString(R.string.player_codec_error, error.codecName)
-                    } else {
-                        "Playback error: ${error.message}"
-                    },
-                )
-            }
-        }
-    }
 
     private var activeSurface: Surface? = null
 
@@ -369,9 +126,7 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
      * here cannot crash the app — a dead core surfaces as a real error
      * through the listener instead.
      */
-    var engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode).apply {
-        setListener(engineListener)
-    }
+    var engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode)
         private set
 
     /**
@@ -409,6 +164,30 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         host = this,
         scope = scope,
     )
+
+    /**
+     * Migration Phase 3, step 3: the engine-event translation,
+     * extracted from this class. Owns the [PlayerEngine.Listener]
+     * implementation that turns mpv callbacks into published-state
+     * updates and queue / resume / subtitle effects. This manager
+     * stays the [EngineEventHost]: it owns the published state, the
+     * position ticker, and the preparing watchdog, so the translator
+     * asks it to apply state/lifecycle effects instead of touching
+     * them directly. Built here, like [resumeManager],
+     * [subtitleManager], and [playbackQueue], until Phase 3 puts the
+     * pieces behind Koin. Attached to the engine here: the engine,
+     * the queue, and the subtitle manager must all exist first, and
+     * no load can fire an event before this construction finishes.
+     */
+    val engineEventTranslator = EngineEventTranslator(
+        engine = engine,
+        queue = playbackQueue,
+        subtitleManager = subtitleManager,
+        resumeManager = resumeManager,
+        settingsRepository = settingsRepository,
+        host = this,
+        scope = scope,
+    ).also { engine.setListener(it) }
 
     // SubtitleHost implementation: the queue/state effects
     // SubtitleManager asks for. The commit body is the queue/state half
@@ -548,6 +327,133 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
 
     override fun armLoadWatchdog() {
         armPreparingWatchdog()
+    }
+
+    // EngineEventHost implementation: the state/lifecycle effects
+    // EngineEventTranslator asks for. The translator computes the
+    // values (the #187/#223 banner clear, the #330 resume-banner
+    // rule, the #188 decoder fallback note); these methods only
+    // apply the state copy or the effect, verbatim from the old
+    // engineListener bodies.
+    //
+    // Note: recordHistory (in the QueueHost section above) is the
+    // single implementation for both QueueHost and EngineEventHost —
+    // the two interfaces declare the same signature, so one override
+    // serves both. The same holds for refreshPositionAndTracks,
+    // startPositionTicker, and state.
+    override fun publishIsPlaying(isPlaying: Boolean) {
+        _playbackState.update { it.copy(isPlaying = isPlaying) }
+    }
+
+    override fun startBackgroundService() {
+        PlaybackService.start(appContext)
+    }
+
+    override fun stopPositionTicker() {
+        stopTicker()
+    }
+
+    override fun flushPosition() {
+        updatePosition(forceSave = true)
+    }
+
+    override fun recordPauseHistory(item: PlayableMedia, positionMs: Long, durationMs: Long) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                persistenceRepository.recordHistory(
+                    PlaybackHistoryItem(
+                        mediaUri = item.uri,
+                        mediaId = item.id,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        isVideo = item.isVideo,
+                        lastPlayedAt = System.currentTimeMillis(),
+                        playbackPositionMs = positionMs,
+                        durationMs = durationMs,
+                    )
+                )
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    override fun cancelLoadWatchdog() {
+        cancelPreparingWatchdog()
+    }
+
+    override fun publishEngineState(playbackState: Int, isPreparing: Boolean, userNotification: String?) {
+        _playbackState.update {
+            it.copy(
+                playbackState = playbackState,
+                isPreparing = isPreparing,
+                userNotification = userNotification,
+            )
+        }
+    }
+
+    override fun maybeAutoDetectSubtitles() {
+        subtitleManager.maybeAutoDetectSubtitles()
+    }
+
+    override fun publishTransition(
+        item: PlayableMedia?,
+        index: Int,
+        hasPrevious: Boolean,
+        hasNext: Boolean,
+        resumedFromMs: Long?,
+    ) {
+        _playbackState.update {
+            it.copy(
+                currentItem = item,
+                currentIndex = index,
+                hasPrevious = hasPrevious,
+                hasNext = hasNext,
+                resumedFromMs = resumedFromMs,
+                // Issue #260: the new item's dimensions are not known
+                // yet — drop the previous video's size so the PiP
+                // params are not armed with a stale aspect while it
+                // loads, and so the 0 -> WxH transition always
+                // re-runs the effect even when the new video has the
+                // same dimensions as the old one.
+                videoWidth = 0,
+                videoHeight = 0,
+            )
+        }
+    }
+
+    override fun publishSpeed(speed: Float) {
+        _playbackState.update { it.copy(speed = speed) }
+    }
+
+    override fun publishVideoSize(width: Int, height: Int) {
+        _playbackState.update { it.copy(videoWidth = width, videoHeight = height) }
+    }
+
+    override fun publishDecoderInitialized(decoderName: String, fallbackNote: String?) {
+        _playbackState.update {
+            it.copy(
+                activeDecoderName = decoderName,
+                decoderFallbackNote = fallbackNote,
+            )
+        }
+    }
+
+    override fun publishEngineError(error: Exception) {
+        Log.e("PlaybackManager", "Engine error encountered", error)
+        // An error ends preparing: the banner below replaces the splash.
+        // mpv-only (issue #150): there is no fallback engine any more,
+        // so every error is reported as-is — with the codec name when
+        // libmpv knows it — instead of silently switching engines.
+        _playbackState.update {
+            it.copy(
+                isPreparing = false,
+                userNotification = if (error is MpvPlaybackException && error.codecName != null) {
+                    appContext.getString(R.string.player_codec_error, error.codecName)
+                } else {
+                    "Playback error: ${error.message}"
+                },
+            )
+        }
     }
 
     /**
