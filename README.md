@@ -30,7 +30,6 @@ Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx
 **Network**
 - Play a video straight from a pasted URL (mpv plays http(s) directly)
 - Browse and play from SMB shares
-- Sign in with cookies for sites that need it
 
 **Look and feel**
 - Material 3 Expressive, true-black dark theme + light theme
