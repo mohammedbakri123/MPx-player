@@ -62,9 +62,12 @@ import org.koin.dsl.module
  * Phase 2e (Settings follow-up) registers [SettingsViewModel],
  * which serves SettingsScreen, OverlaySettingsScreen,
  * AdvancedSettingsScreen, and their hosted sub-screens. It takes
- * the same two interface dependencies as [MeViewModel], so plain
- * `get()` resolves them too. Each destination obtains its own
- * instance with `koinViewModel()`.
+ * three interface dependencies
+ * ([com.mpx.player.domain.settings.AppSettingsRepository],
+ * [com.mpx.player.domain.repository.MediaPersistenceRepository],
+ * [com.mpx.player.domain.repository.MediaRepository]), all with
+ * [appModule] singles, so plain `get()` resolves them. Each
+ * destination obtains its own instance with `koinViewModel()`.
  *
  * Screens obtain their ViewModel with `koinViewModel()`; they never
  * construct one directly.
@@ -77,5 +80,5 @@ val viewModelModule = module {
     viewModel { MusicViewModel(get(), get(), get()) }
     viewModel { NetworkViewModel(get<PlaybackManager>()) }
     viewModel { MeViewModel(get(), get()) }
-    viewModel { SettingsViewModel(get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), get()) }
 }

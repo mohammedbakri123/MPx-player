@@ -1,11 +1,18 @@
 package com.mpx.player.ui.screens.settings
 
+import com.mpx.player.domain.model.AudioAlbum
+import com.mpx.player.domain.model.AudioArtist
+import com.mpx.player.domain.model.AudioFolder
+import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.domain.model.FavouriteItem
+import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.model.PlaybackResumePosition
+import com.mpx.player.domain.model.Playlist
 import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.repository.MediaPersistenceRepository
+import com.mpx.player.domain.repository.MediaRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import kotlinx.coroutines.Dispatchers
@@ -26,23 +33,27 @@ import org.junit.Test
 
 /**
  * Migration Phase 2e (Settings follow-up): SettingsViewModel is
- * tested through fakes only — a fake [AppSettingsRepository] and a
- * fake [MediaPersistenceRepository] — no mocking framework, no
- * Android runtime. The persistence fake only holds real data for
- * the four count queries the diagnostics section reads; every other
- * method returns an empty default, because the ViewModel never
- * calls it.
+ * tested through fakes only — a fake [AppSettingsRepository], a
+ * fake [MediaPersistenceRepository], and a fake [MediaRepository] —
+ * no mocking framework, no Android runtime. The persistence fake
+ * only holds real data for the four count queries the diagnostics
+ * section reads; every other method returns an empty default,
+ * because the ViewModel never calls it. The media fake only holds
+ * real data for the two folder queries the blacklist add dialog's
+ * scan reads.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
     private lateinit var settingsRepo: FakeSettingsRepository
     private lateinit var persistence: FakeMediaPersistenceRepository
+    private lateinit var mediaRepository: FakeMediaRepository
 
     @Before
     fun setUp() {
         settingsRepo = FakeSettingsRepository()
         persistence = FakeMediaPersistenceRepository()
+        mediaRepository = FakeMediaRepository()
     }
 
     @After
@@ -50,7 +61,8 @@ class SettingsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel() = SettingsViewModel(settingsRepo, persistence)
+    private fun createViewModel() =
+        SettingsViewModel(settingsRepo, persistence, mediaRepository)
 
     /** viewModelScope runs on Dispatchers.Main; the unconfined test
      * dispatcher executes the ViewModel's collectors eagerly, so
@@ -269,6 +281,47 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `loadBlacklistFolderOptions merges video and audio, dedupes, excludes blacklisted, sorts`() = runTest {
+        mediaRepository.videoFolderList = listOf(
+            MediaFolder(id = "1", name = "Movies", path = "/sdcard/Movies", videoCount = 3, totalSizeFormatted = "1 GB"),
+            MediaFolder(id = "2", name = "clips", path = "/sdcard/Clips", videoCount = 1, totalSizeFormatted = "10 MB"),
+            MediaFolder(id = "3", name = "ClipsSub", path = "/sdcard/Clips/Sub", videoCount = 1, totalSizeFormatted = "1 MB"),
+            MediaFolder(id = "4", name = "Zebra", path = "/sdcard/Zebra", videoCount = 2, totalSizeFormatted = "5 MB"),
+            MediaFolder(id = "5", name = "apple", path = "/sdcard/Apple", videoCount = 1, totalSizeFormatted = "1 MB"),
+        )
+        mediaRepository.audioFolderList = listOf(
+            AudioFolder(id = "a1", name = "Music", path = "/sdcard/Music", trackCount = 5),
+            // Same path as the video folder, different name — the
+            // video entry wins (first occurrence) and the path
+            // appears once.
+            AudioFolder(id = "a2", name = "MoviesAudio", path = "/sdcard/Movies", trackCount = 4),
+            AudioFolder(id = "a3", name = "Tunes", path = "/sdcard/Tunes", trackCount = 2),
+            AudioFolder(id = "a4", name = "Banana", path = "/sdcard/Banana", trackCount = 1),
+        )
+        val viewModel = createViewModel()
+
+        val options = viewModel.loadBlacklistFolderOptions(setOf("/sdcard/Clips"))
+
+        // Video + audio merged, /sdcard/Movies once with the video
+        // name, /sdcard/Clips and its subfolder excluded, sorted by
+        // name lowercase — "apple" before "Banana" proves the
+        // lowercase sort (a plain sort would put "Banana" first).
+        assertEquals(
+            listOf(
+                BlacklistFolderOption(path = "/sdcard/Apple", name = "apple"),
+                BlacklistFolderOption(path = "/sdcard/Banana", name = "Banana"),
+                BlacklistFolderOption(path = "/sdcard/Movies", name = "Movies"),
+                BlacklistFolderOption(path = "/sdcard/Music", name = "Music"),
+                BlacklistFolderOption(path = "/sdcard/Tunes", name = "Tunes"),
+                BlacklistFolderOption(path = "/sdcard/Zebra", name = "Zebra"),
+            ),
+            options,
+        )
+        // The scan asks for every folder, not just the visible ones.
+        assertTrue(mediaRepository.showAllFoldersRequested)
+    }
+
+    @Test
     fun `updatePopupPlayPosition remembers explicit picks for RememberLast`() = runTest {
         setTestMainDispatcher()
         val viewModel = createViewModel()
@@ -403,5 +456,36 @@ class SettingsViewModelTest {
         override suspend fun clearAllResumePositions() = Unit
 
         override suspend fun loadAllResumePositionsMap(): Map<String, Long> = emptyMap()
+    }
+
+    /** Fake media repository: only the two folder queries the
+     * blacklist add dialog's scan reads hold real data. Every other
+     * method returns an empty default — the ViewModel never calls
+     * it. */
+    private class FakeMediaRepository : MediaRepository {
+        // Named *FolderList, not *Folders: a `var audioFolders`
+        // property would generate a getAudioFolders() getter that
+        // clashes on the JVM with the interface method of the same
+        // name (both non-suspend).
+        var videoFolderList: List<MediaFolder> = emptyList()
+        var audioFolderList: List<AudioFolder> = emptyList()
+        var showAllFoldersRequested: Boolean = false
+
+        override fun getMediaFolders(): List<MediaFolder> = videoFolderList
+
+        override fun getMediaFolders(showAllFolders: Boolean): List<MediaFolder> {
+            showAllFoldersRequested = showAllFolders
+            return videoFolderList
+        }
+
+        override fun getAudioTracks(): List<AudioTrack> = emptyList()
+
+        override fun getPlaylists(): List<Playlist> = emptyList()
+
+        override fun getAudioAlbums(): List<AudioAlbum> = emptyList()
+
+        override fun getAudioArtists(): List<AudioArtist> = emptyList()
+
+        override fun getAudioFolders(): List<AudioFolder> = audioFolderList
     }
 }

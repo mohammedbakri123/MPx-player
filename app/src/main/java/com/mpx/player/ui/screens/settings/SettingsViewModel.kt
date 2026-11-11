@@ -3,8 +3,11 @@ package com.mpx.player.ui.screens.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mpx.player.domain.repository.MediaPersistenceRepository
+import com.mpx.player.domain.repository.MediaRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.ui.screens.local.isPathBlacklisted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 /**
  * Migration Phase 2e (Settings follow-up): the settings screens'
@@ -37,8 +41,7 @@ import kotlinx.coroutines.flow.stateIn
  * scroll position, the update-check flow (#414), the diagnostics
  * scan itself (MediaStore + file sizes, still loaded in the screen),
  * the config-folder / export / import launchers (#432, #433), the
- * config-file text editing (#431), the mpv-conf folder scan in the
- * blacklist add dialog, and the PiP entry itself
+ * config-file text editing (#431), and the PiP entry itself
  * (`PipUtils.updatePipParams` / `enterPip`, which need the Activity).
  *
  * What this ViewModel deliberately does NOT own: the language /
@@ -56,14 +59,16 @@ import kotlinx.coroutines.flow.stateIn
  * `PlaybackManager.getInstance` themselves.
  *
  * Dependencies arrive through the constructor, on interfaces only
- * ([AppSettingsRepository], [MediaPersistenceRepository]), so a test
- * can pass fakes. Koin resolves both from the [appModule] singles.
+ * ([AppSettingsRepository], [MediaPersistenceRepository],
+ * [MediaRepository]), so a test can pass fakes. Koin resolves all
+ * three from the [appModule] singles.
  * No behaviour change: every value below is computed exactly the
  * way the screens computed it before.
  */
 class SettingsViewModel(
     private val settingsRepository: AppSettingsRepository,
     private val persistence: MediaPersistenceRepository,
+    private val mediaRepository: MediaRepository,
 ) : ViewModel() {
 
     // -- Settings ---------------------------------------------------------
@@ -307,6 +312,25 @@ class SettingsViewModel(
         )
     }
 
+    /**
+     * Scans all media folders for the blacklist add dialog: video
+     * and audio folders merged on (path, name) and de-duplicated by
+     * path, already-blacklisted paths (and their subfolders, via
+     * [isPathBlacklisted]) excluded, sorted by name — exactly the
+     * scan the dialog used to run itself against a hand-built
+     * repository. Runs on IO: the repository reads MediaStore.
+     */
+    suspend fun loadBlacklistFolderOptions(
+        alreadyBlacklisted: Set<String>,
+    ): List<BlacklistFolderOption> = withContext(Dispatchers.IO) {
+        (mediaRepository.getMediaFolders(showAllFolders = true).map { it.path to it.name } +
+            mediaRepository.getAudioFolders().map { it.path to it.name })
+            .distinctBy { it.first }
+            .filter { !isPathBlacklisted(it.first, alreadyBlacklisted) }
+            .sortedBy { it.second.lowercase() }
+            .map { (path, name) -> BlacklistFolderOption(path = path, name = name) }
+    }
+
     // -- Pop-up play position (#292) ----------------------------------------
     //
     // Picking an explicit position also remembers it, so a later
@@ -347,3 +371,13 @@ class SettingsViewModel(
         persistence.getAllResumePositions().size,
     )
 }
+
+// Issue #300: the blacklist hides audio too, so a folder with only songs
+// must be black-listable. Video and audio folders are merged on (path,
+// name) and de-duplicated by path — a folder holding both videos and
+// songs appears once. Only path/name are shown, so neither folder type's
+// extra fields (video counts, sizes) are needed here.
+data class BlacklistFolderOption(
+    val path: String,
+    val name: String,
+)

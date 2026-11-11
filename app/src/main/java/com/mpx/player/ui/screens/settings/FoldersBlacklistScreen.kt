@@ -34,21 +34,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mpx.player.R
-import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.ui.components.MpxDialog
 import com.mpx.player.ui.components.MpxPrimaryButton
 import com.mpx.player.ui.components.MpxSecondaryButton
-import com.mpx.player.ui.screens.local.isPathBlacklisted
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * Folder blacklist management (#158, mpvEx parity). A real setting:
@@ -66,11 +61,9 @@ import kotlinx.coroutines.withContext
 fun FoldersBlacklistScreen(
     viewModel: SettingsViewModel,
 ) {
-    // Migration Phase 2e: the sorted list and the add/remove/clear
-    // writes live in the ViewModel — this screen only renders them.
-    // The add dialog's folder scan still builds a MediaStoreRepository
-    // by hand (a dialog-local scan, not a getInstance site); wiring it
-    // behind an interface is a follow-up, not this step.
+    // Migration Phase 2e: the sorted list, the add/remove/clear
+    // writes, and the add dialog's folder scan live in the
+    // ViewModel — this screen only renders them.
     val blacklisted by viewModel.blacklistedFolders.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
@@ -164,6 +157,7 @@ fun FoldersBlacklistScreen(
 
     if (showAddDialog) {
         FoldersBlacklistAddDialog(
+            viewModel = viewModel,
             alreadyBlacklisted = blacklisted.toSet(),
             onAdd = { selected ->
                 viewModel.addBlacklistedFolders(selected)
@@ -193,38 +187,19 @@ fun FoldersBlacklistScreen(
     }
 }
 
-// Issue #300: the blacklist hides audio too, so a folder with only songs
-// must be black-listable. Video and audio folders are merged on (path,
-// name) and de-duplicated by path — a folder holding both videos and
-// songs appears once. Only path/name are shown, so neither folder type's
-// extra fields (video counts, sizes) are needed here.
-private data class BlacklistFolderOption(
-    val path: String,
-    val name: String,
-)
-
 /** Add dialog: scans all media folders (video + audio, excluding already-blacklisted) with checkboxes. */
 @Composable
 private fun FoldersBlacklistAddDialog(
+    viewModel: SettingsViewModel,
     alreadyBlacklisted: Set<String>,
     onAdd: (Set<String>) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val context = LocalContext.current
     var folders by remember { mutableStateOf<List<BlacklistFolderOption>?>(null) }
     var selected by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     LaunchedEffect(Unit) {
-        val scanned = withContext(Dispatchers.IO) {
-            val repo = MediaStoreRepository(context)
-            (repo.getMediaFolders(showAllFolders = true).map { it.path to it.name } +
-                repo.getAudioFolders().map { it.path to it.name })
-                .distinctBy { it.first }
-                .filter { !isPathBlacklisted(it.first, alreadyBlacklisted) }
-                .sortedBy { it.second.lowercase() }
-                .map { (path, name) -> BlacklistFolderOption(path = path, name = name) }
-        }
-        folders = scanned
+        folders = viewModel.loadBlacklistFolderOptions(alreadyBlacklisted)
     }
 
     val available = folders
