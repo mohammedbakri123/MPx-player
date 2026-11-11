@@ -117,8 +117,10 @@ internal class MpvCoreEngine(
     /** The listener the facade's subtitle code notifies for #332 confirmations. */
     internal val listener: PlayerEngine.Listener?
         get() = engineListener
+    @Volatile
     internal var currentQueue: List<PlayableMedia> = emptyList()
 
+    @Volatile
     internal var currentMediaIndex: Int = 0
 
     private var currentSurface: Surface? = null
@@ -140,8 +142,10 @@ internal class MpvCoreEngine(
     @Volatile
     internal var isReleased: Boolean = false
 
+    @Volatile
     internal var mpvInitialized: Boolean = false
 
+    @Volatile
     internal var currentDecoderStage: DecoderStage = DecoderStage.HW
 
     /**
@@ -155,6 +159,7 @@ internal class MpvCoreEngine(
      * reload still carries it when attachSurface() flushes it.
      * Cleared by an explicit setDecoderMode (the user's choice wins).
      */
+    @Volatile
     internal var fallbackHwdecStage: DecoderStage? = null
 
     /**
@@ -165,16 +170,21 @@ internal class MpvCoreEngine(
      * failure steps down once. Cleared on FILE_LOADED, or by a fresh
      * non-fallback load().
      */
+    @Volatile
     internal var fallbackReloadPending: Boolean = false
 
     internal var decoderMode: DecoderMode = initialDecoderMode
     // Cached playback state
+    @Volatile
     internal var cachedPositionMs: Long = 0L
 
+    @Volatile
     internal var cachedDurationMs: Long = 0L
 
+    @Volatile
     internal var cachedBufferedMs: Long = 0L
 
+    @Volatile
     internal var cachedIsPlaying: Boolean = false
 
     /**
@@ -193,10 +203,13 @@ internal class MpvCoreEngine(
      * pause()/stop()/release(); load() deliberately never touches it
      * (startPlayback loads BEFORE it plays).
      */
+    @Volatile
     internal var playRequested: Boolean = false
 
+    @Volatile
     internal var cachedPlaybackState: Int = PlayerEngine.STATE_IDLE
 
+    @Volatile
     internal var cachedSpeed: Float = 1.0f
 
     // Issue #260: last video display size notified to the listener, so
@@ -1081,6 +1094,7 @@ internal class MpvCoreEngine(
 
 
     internal fun attachSurface(surface: Surface) {
+        if (isReleased) return
         // Reference-pattern alignment (mpv-android's own BaseMPVView.surfaceCreated):
         // when a file load is about to run, it attaches the surface, sets
         // force-window=yes, and issues loadfile WITHOUT touching the "vo"
@@ -1243,11 +1257,13 @@ internal class MpvCoreEngine(
 
 
     internal fun load(media: PlayableMedia, resumeMs: Long) {
+        if (isReleased) return
         load(listOf(media), 0, resumeMs)
     }
 
 
     internal fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
+        if (isReleased) return
         currentQueue = items
         if (items.isEmpty()) {
             // Issue #212: an empty queue is a fresh context — no current
@@ -1461,6 +1477,7 @@ internal class MpvCoreEngine(
 
 
     internal fun play() {
+        if (isReleased) return
         try {
             mpv.setPropertyBoolean("pause", false)
             // Issue #246: record the intent — attachSurface() consults
@@ -1478,6 +1495,7 @@ internal class MpvCoreEngine(
 
 
     internal fun pause() {
+        if (isReleased) return
         try {
             mpv.setPropertyBoolean("pause", true)
             cachedIsPlaying = false
@@ -1493,6 +1511,7 @@ internal class MpvCoreEngine(
 
 
     internal fun seekTo(positionMs: Long) {
+        if (isReleased) return
         val dur = duration
         val target = if (dur > 0L) positionMs.coerceIn(0L, dur) else positionMs.coerceAtLeast(0L)
         // A seek before FILE_LOADED (resume fired on transition, scrub during
@@ -1517,6 +1536,7 @@ internal class MpvCoreEngine(
 
 
     internal fun seekTo(index: Int, positionMs: Long) {
+        if (isReleased) return
         if (index in currentQueue.indices) {
             load(currentQueue, index, positionMs)
         }
@@ -1524,6 +1544,7 @@ internal class MpvCoreEngine(
 
 
     internal fun setSpeed(speed: Float) {
+        if (isReleased) return
         try {
             mpv.setPropertyDouble("speed", speed.toDouble())
             cachedSpeed = speed
@@ -1535,6 +1556,7 @@ internal class MpvCoreEngine(
 
 
     internal fun stop() {
+        if (isReleased) return
         pendingLoad = null
         pendingSeekMs = null
         activeMediaId = null
@@ -1613,6 +1635,7 @@ internal class MpvCoreEngine(
 
 
     internal fun seekToNextMediaItem() {
+        if (isReleased) return
         if (hasNextMediaItem) {
             // Issue #305: resume only if it was playing — a paused
             // track stays paused (mirrors setDecoderMode /
@@ -1633,6 +1656,7 @@ internal class MpvCoreEngine(
 
 
     internal fun seekToPreviousMediaItem() {
+        if (isReleased) return
         if (hasPreviousMediaItem) {
             // Issue #305: same paused-state preservation as
             // seekToNextMediaItem above.
