@@ -880,7 +880,6 @@ fun MpxApp(
                         subtitleResultHandler = subtitleHandler,
                         onClose = { navController.popBackStack() },
                         playbackManager = playbackManager,
-                        settingsRepository = settingsRepository,
                         isInPipMode = isInPipMode,
                     )
                 }

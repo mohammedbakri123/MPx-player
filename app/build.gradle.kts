@@ -140,6 +140,8 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    // ViewModel + viewModelScope for the Phase 2 ViewModels.
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
@@ -171,4 +173,11 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+
+    // Unit tests (migration Phase 2a — first test source set in the repo).
+    // ViewModels are tested with fakes, no mocking framework.
+    testImplementation("junit:junit:4.13.2")
+    // kotlinx-coroutines-test aligned to the coroutines-core version
+    // the project resolves (1.10.2, seeded in the local Maven repo).
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }

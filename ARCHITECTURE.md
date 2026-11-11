@@ -180,7 +180,20 @@ A finished screen follows one pattern, every time:
   and `PlaybackService` (Phase 3). The mpv engine has no Koin
   registration — `PlaybackManager` still builds it internally; that
   moves in Phase 3.
-- Phase 2 (one ViewModel per screen, player first): not started.
+- Phase 2 (one ViewModel per screen, player first): in progress.
+  Phase 2a done: `PlayerViewModel` (`ui/screens/player/`) owns
+  playback-state collection, settings load / reload-on-resume,
+  queue restore on first entry, the rotation override, and the
+  keep-screen-on decision; `PlayerScreen` keeps gestures, the
+  SurfaceView, dialogs, and layout, and obtains the ViewModel with
+  `koinViewModel()` from `di/ViewModelModule`. The ViewModel depends
+  on interfaces only: `AppSettingsRepository` and the minimal
+  `playback/PlaybackStateSource` (`playbackState` +
+  `restorePersistedQueueIfEmpty()`), which `PlaybackManager`
+  implements. First unit tests in the repo:
+  `app/src/test/.../ui/screens/player/PlayerViewModelTest.kt`
+  (fakes, no mocking framework). Still to do: Local, Music,
+  Network, Me/Settings ViewModels.
 - Phase 3 (break up `PlaybackManager`): not started.
 - Phase 4 (split `MpvPlayerEngine` by concern): not started.
 - Phase 5 (contributor path): in progress. The PR template asks what

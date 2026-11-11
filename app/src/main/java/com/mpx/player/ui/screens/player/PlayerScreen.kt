@@ -132,11 +132,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
 import com.mpx.player.ui.ActivityResultHandler
-import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.settings.AppSettings
-import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.MpxMediaCodecSelector
@@ -154,6 +152,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import com.mpx.player.util.SubtitleUtils
 import com.mpx.player.util.SubtitleValidationResult
+import org.koin.compose.viewmodel.koinViewModel
 import java.util.Locale
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -331,12 +330,19 @@ fun PlayerScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     playbackManager: PlaybackManager = PlaybackManager.getInstance(LocalContext.current),
-    settingsRepository: AppSettingsRepository? = null,
     // True while the activity is in system PiP mode: hide every overlay so
     // the PiP window shows video only (issue #98).
     isInPipMode: Boolean = false,
 ) {
     val context = LocalContext.current
+    // Migration Phase 2a: screen state lives in PlayerViewModel now —
+    // playback state, settings, rotation, keep-screen-on. The screen
+    // still takes PlaybackManager directly for transport/subtitle/
+    // persistence actions; those move behind interfaces in later
+    // phases. Settings come from the ViewModel (Koin's
+    // AppSettingsRepository single), so the old settingsRepository
+    // parameter is gone.
+    val viewModel: PlayerViewModel = koinViewModel()
     // Issue #179: do NOT resolve the activity from LocalContext. MainActivity
     // provides a localized configuration context as LocalContext
     // (LocaleHelper.createLocalizedContext = createConfigurationContext),
@@ -349,8 +355,7 @@ fun PlayerScreen(
     // against the AAR). This also fixes #194 for free: the brightness
     // get/set below uses this same activity reference.
     val activity = LocalView.current.context as? Activity
-    val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
-    var currentSettings by remember { mutableStateOf(realSettingsRepo.load()) }
+    val currentSettings by viewModel.settings.collectAsState()
     // Last subtitle settings pushed to the mpv engine. Plain holder (not state)
     // so pushing options does not schedule extra recompositions.
     val lastMpvSubtitleSettings = remember { arrayOfNulls<AppSettings>(1) }
@@ -370,7 +375,7 @@ fun PlayerScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                currentSettings = realSettingsRepo.load()
+                viewModel.reloadSettings()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -379,7 +384,7 @@ fun PlayerScreen(
         }
     }
 
-    val state by playbackManager.playbackState.collectAsState()
+    val state by viewModel.playbackState.collectAsState()
 
     // Keep the screen awake while a video is playing: without this
     // Android applies the system screen timeout mid-video and the
@@ -391,8 +396,8 @@ fun PlayerScreen(
     // composition, so it can never leak onto the Home screen. The
     // lock button does not change it: a locked player is still a
     // video being watched.
-    val keepScreenOn = state.currentItem?.isVideo == true && !isInPipMode &&
-        (state.isPlaying || state.isPreparing)
+    LaunchedEffect(isInPipMode) { viewModel.setPipMode(isInPipMode) }
+    val keepScreenOn by viewModel.keepScreenOn.collectAsState()
     val playerView = LocalView.current
     DisposableEffect(keepScreenOn) {
         playerView.keepScreenOn = keepScreenOn
@@ -407,9 +412,7 @@ fun PlayerScreen(
     // fires for sessions the user never ended; with nothing persisted it is
     // a no-op and the empty state stays.
     LaunchedEffect(Unit) {
-        if (playbackManager.playbackState.value.queue.isEmpty()) {
-            playbackManager.restorePersistedQueueIfEmpty()
-        }
+        viewModel.restoreQueueIfEmpty()
     }
 
     // Issue #363: MX-style rotation — every video starts in portrait,
@@ -420,29 +423,12 @@ fun PlayerScreen(
     // override: keyed to the current item id, so the next video starts
     // in portrait again. An explicit Portrait/Landscape lock in
     // Settings still wins as the default the override starts from.
-    var rotationOverride by remember(state.currentItem?.id) { mutableStateOf<String?>(null) }
+    // The override and its resolution live in the ViewModel now; the
+    // screen only applies the resulting orientation to the activity.
     // The transport toggle reads the effective orientation
     // (override, else the persisted setting; Auto means portrait).
-    val isLandscapeOrientation = rotationOverride?.equals("landscape", ignoreCase = true) == true ||
-        (rotationOverride == null && !currentSettings.autoScreenRotation &&
-            currentSettings.screenOrientation.equals("landscape", ignoreCase = true))
-    val targetOrientation = remember(
-        currentSettings.autoScreenRotation, currentSettings.screenOrientation,
-        rotationOverride,
-    ) {
-        when {
-            rotationOverride.equals("landscape", ignoreCase = true) ->
-                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            rotationOverride.equals("portrait", ignoreCase = true) ->
-                ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-            currentSettings.autoScreenRotation || currentSettings.screenOrientation == "auto" ||
-                currentSettings.screenOrientation == "sensor" ->
-                ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-            currentSettings.screenOrientation.equals("portrait", ignoreCase = true) ->
-                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            else -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        }
-    }
+    val isLandscapeOrientation by viewModel.isLandscapeOrientation.collectAsState()
+    val targetOrientation by viewModel.targetOrientation.collectAsState()
 
     DisposableEffect(targetOrientation, activity) {
         activity?.requestedOrientation = targetOrientation
@@ -498,7 +484,7 @@ fun PlayerScreen(
     DisposableEffect(Unit) {
         onDispose {
             val activityInPip = activity?.isInPictureInPictureMode == true
-            if (!activityInPip && !realSettingsRepo.load().backgroundPlay) {
+            if (!activityInPip && !viewModel.loadSettingsNow().backgroundPlay) {
                 playbackManager.stop()
             }
         }
@@ -551,7 +537,7 @@ fun PlayerScreen(
     var tutorialStep by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
-        val settings = realSettingsRepo.load()
+        val settings = viewModel.loadSettingsNow()
         if (!settings.playerTutorialSeen && settings.gesturesEnabled) {
             showTutorial = true
         }
@@ -561,8 +547,7 @@ fun PlayerScreen(
     // never auto-shows again; the Playback sheet entry can still replay it.
     val dismissTutorial = {
         val updated = currentSettings.copy(playerTutorialSeen = true)
-        currentSettings = updated
-        realSettingsRepo.save(updated)
+        viewModel.updateSettings(updated)
         showTutorial = false
     }
 
@@ -651,8 +636,7 @@ fun PlayerScreen(
     val toggleBackgroundPlay = {
         val nextBackgroundPlay = !currentSettings.backgroundPlay
         val updated = currentSettings.copy(backgroundPlay = nextBackgroundPlay)
-        currentSettings = updated
-        realSettingsRepo.save(updated)
+        viewModel.updateSettings(updated)
         if (!nextBackgroundPlay) {
             PlaybackService.stop(context)
             playbackManager.setVideoBackgroundActive(false)
@@ -989,7 +973,7 @@ fun PlayerScreen(
                         while (true) {
                             val event = awaitPointerEvent()
                             val pressed = event.changes.filter { it.pressed }
-                            if (pressed.size >= 2 && realSettingsRepo.load().gesturesEnabled) {
+                            if (pressed.size >= 2 && viewModel.settings.value.gesturesEnabled) {
                                 // Second finger down before slop and before
                                 // the long-press timeout: enter pinch mode
                                 // now, using this event's finger distance as
@@ -1023,7 +1007,7 @@ fun PlayerScreen(
                     }
                     if (slopChange == null && !pinchFromStandstill) {
                         val stillDown = currentEvent.changes.any { it.id == down.id && it.pressed }
-                        if (stillDown && realSettingsRepo.load().gesturesEnabled) {
+                        if (stillDown && viewModel.settings.value.gesturesEnabled) {
                             // Long-press 2x: hold at 2x until release, then
                             // restore the speed that was playing before.
                             // The finally also covers the detector restarting
@@ -1060,12 +1044,12 @@ fun PlayerScreen(
                                 }
                             } else {
                                 waitForUpOrCancellation()
-                                if (realSettingsRepo.load().gesturesEnabled) {
+                                if (viewModel.settings.value.gesturesEnabled) {
                                     val oneThird = size.width / 3f
                                     val twoThirds = size.width * (2f / 3f)
                                     when {
                                         secondDown.position.x < oneThird -> {
-                                            playbackManager.skipBackward(realSettingsRepo.load().doubleTapSeekSeconds * 1000L)
+                                            playbackManager.skipBackward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
                                             sideSeekDirection = SideSeekDirection.BACKWARD
                                             hideBrightnessJob?.cancel()
                                             showBrightnessIndicator = false
@@ -1078,7 +1062,7 @@ fun PlayerScreen(
                                             }
                                         }
                                         secondDown.position.x > twoThirds -> {
-                                            playbackManager.skipForward(realSettingsRepo.load().doubleTapSeekSeconds * 1000L)
+                                            playbackManager.skipForward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
                                             sideSeekDirection = SideSeekDirection.FORWARD
                                             hideBrightnessJob?.cancel()
                                             showBrightnessIndicator = false
@@ -1128,7 +1112,7 @@ fun PlayerScreen(
                         0
                     }
                     volumeMax = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
-                    if (!realSettingsRepo.load().gesturesEnabled) {
+                    if (!viewModel.settings.value.gesturesEnabled) {
                         // Gestures off: ignore the drag entirely. (Before,
                         // the unconsumed moves fell through to the tap
                         // detector and a swipe toggled the chrome.)
@@ -1191,8 +1175,7 @@ fun PlayerScreen(
                             // resume a single-finger drag.
                             isPinching = false
                             val updated = currentSettings.copy(videoZoom = pinchCurrentZoom)
-                            currentSettings = updated
-                            realSettingsRepo.save(updated)
+                            viewModel.updateSettings(updated)
                             hideZoomJob?.cancel()
                             hideZoomJob = scope.launch {
                                 delay(1000)
@@ -1549,9 +1532,10 @@ fun PlayerScreen(
             val isBackward = direction == SideSeekDirection.BACKWARD
             // Issue #237: read the setting fresh here, as the seek does in
             // the gesture handler — the HUD composes right after the tap,
-            // so this is the value that was just jumped by. (currentSettings
-            // is a snapshot that only updates on some actions; see #241.)
-            val seekSeconds = realSettingsRepo.load().doubleTapSeekSeconds
+            // so this is the value that was just jumped by. The ViewModel's
+            // settings flow is reloaded on resume and updated on every
+            // save, so its current value is the fresh one.
+            val seekSeconds = viewModel.settings.value.doubleTapSeekSeconds
             Box(
                 modifier = Modifier
                     .align(if (isBackward) Alignment.CenterStart else Alignment.CenterEnd)
@@ -1882,8 +1866,7 @@ fun PlayerScreen(
                                             DecoderMode.SW -> DecoderMode.HW
                                         }
                                         playbackManager.setDecoderMode(nextDecoder)
-                                        realSettingsRepo.save(realSettingsRepo.load().copy(decoderMode = nextDecoder.label))
-                                        currentSettings = realSettingsRepo.load()
+                                        viewModel.updateSettings(viewModel.loadSettingsNow().copy(decoderMode = nextDecoder.label))
                                         Toast.makeText(context, context.getString(R.string.player_toast_decoder, context.getString(nextDecoder.titleRes)), Toast.LENGTH_SHORT).show()
                                     },
                                 color = Color.Transparent,
@@ -2061,7 +2044,7 @@ fun PlayerScreen(
                             // landscape. Last on the right, MX-style.
                             IconButton(
                                 onClick = {
-                                    rotationOverride = if (isLandscapeOrientation) "portrait" else "landscape"
+                                    viewModel.toggleRotation()
                                 },
                                 modifier = Modifier
                                     .size(50.dp),
@@ -2204,8 +2187,7 @@ fun PlayerScreen(
             state = state,
             currentSettings = currentSettings,
             onSettingsChanged = { updated ->
-                currentSettings = updated
-                realSettingsRepo.save(updated)
+                viewModel.updateSettings(updated)
             },
             playbackManager = playbackManager,
             subtitleLauncher = subtitleLauncher,
