@@ -72,6 +72,10 @@ android {
         // are packaged, and AGP rejects abiFilters when splits are set.
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     splits {
         abi {
             isEnable = true

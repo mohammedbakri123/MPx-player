@@ -16,8 +16,6 @@ import com.mpx.player.playback.MpvLogFile
 import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.subtitleMpvOptions
-import `is`.xyz.mpv.MPV
-import `is`.xyz.mpv.MPVNode
 import java.io.File
 import java.io.FileOutputStream
 
@@ -50,6 +48,8 @@ internal class MpvCoreEngine(
     private val context: Context,
     initialDecoderMode: DecoderMode = DecoderMode.HW,
     private val host: Host,
+    internal val port: MpvPort = RealMpvPort(),
+    internal val mainHandler: EngineHandler = RealEngineHandler(),
 ) {
 
     /**
@@ -105,8 +105,6 @@ internal class MpvCoreEngine(
 
     private val appContext: Context = context.applicationContext
 
-    internal val mainHandler = Handler(Looper.getMainLooper())
-
     private val surfaceLock = Any()
 
     // Issue #213/#219: the engine resolves content:// URIs itself, lazily,
@@ -139,7 +137,7 @@ internal class MpvCoreEngine(
      * the observation is the backstop that fires when none of them can.
      * All readers/writers run under surfaceLock (see attach/detach/load).
      */
-    private var voIsNull: Boolean = false
+    internal var voIsNull: Boolean = false
 
     @Volatile
     internal var isReleased: Boolean = false
@@ -248,7 +246,7 @@ internal class MpvCoreEngine(
      * Applied the moment FILE_LOADED arrives, so a seek is never silently lost.
      * Written on Main, read/cleared on the event thread: volatile. */
     @Volatile
-    private var pendingSeekMs: Long? = null
+    internal var pendingSeekMs: Long? = null
 
     @Volatile
     internal var activeMediaId: String? = null
@@ -264,13 +262,13 @@ internal class MpvCoreEngine(
 
     // --- Step-level load diagnostics (shown on-phone in Settings → Development) ---
     @Volatile
-    private var loadIssued: Boolean = false
+    internal var loadIssued: Boolean = false
 
     @Volatile
-    private var loadGeneration: Long = 0L
+    internal var loadGeneration: Long = 0L
 
     @Volatile
-    private var currentLoadGeneration: Long = 0L
+    internal var currentLoadGeneration: Long = 0L
 
     @Volatile
     private var lastMpvEvent: String = "none"
@@ -280,7 +278,7 @@ internal class MpvCoreEngine(
 
     private var loadStartMs: Long = 0L
 
-    private var firstFrameRecorded: Boolean = false
+    internal var firstFrameRecorded: Boolean = false
 
     private var lastTimeToReadyMs: Long? = null
 
@@ -297,60 +295,36 @@ internal class MpvCoreEngine(
     private var hardErrorCount: Int = 0
 
     /** Init failure captured instead of thrown, so the manager can report it instead of crashing. */
-    private var pendingInitError: Exception? = null
+    internal var pendingInitError: Exception? = null
 
-    internal val mpv: MPV = MPV()
-
-    private val eventObserver = object : MPV.EventObserver {
+    private val eventObserver = object : MpvPort.EventObserver {
         override fun eventProperty(property: String) {
             handlePropertyUpdate(property)
         }
 
-        override fun eventProperty(property: String, value: Long) {
-            handlePropertyUpdate(property)
-        }
-
-        override fun eventProperty(property: String, value: Boolean) {
-            handlePropertyUpdate(property)
-        }
-
-        override fun eventProperty(property: String, value: String) {
-            handlePropertyUpdate(property)
-        }
-
-        override fun eventProperty(property: String, value: Double) {
-            handlePropertyUpdate(property)
-        }
-
-        override fun eventProperty(property: String, value: MPVNode) {
-            handlePropertyUpdate(property)
-        }
-
-        override fun event(eventId: Int, data: MPVNode) {
-            handleMpvEvent(eventId, data)
+        override fun event(eventId: Int, endFile: MpvPort.EndFile?) {
+            handleMpvEvent(eventId, endFile)
         }
     }
 
-    private val logObserver = object : MPV.LogObserver {
-        override fun logMessage(prefix: String, level: Int, text: String) {
-            if (isReleased) return
-            MpvLogFile.append(appContext, prefix, level, text)
-            if (level <= 20) { // MPV_LOG_LEVEL_WARN or ERROR
-                Log.w(TAG, "[$prefix] $text")
-                // Keep a short ring buffer of the real libmpv diagnostics. When
-                // a file fails to load, these lines (e.g. demuxer/ffmpeg errors)
-                // are the only record of WHY — previously they were only in logcat.
-                synchronized(lastErrorLogs) {
-                    lastErrorLogs.addLast("[$prefix] ${text.trim()}")
-                    while (lastErrorLogs.size > 10) lastErrorLogs.removeFirst()
-                }
-                if (prefix.equals("mediacodec", ignoreCase = true) &&
-                    (text.contains("failed", ignoreCase = true) || text.contains("error", ignoreCase = true))
-                ) {
-                    mainHandler.post {
-                        if (isReleased) return@post
-                        attemptDecoderFallback("Mediacodec error: $text")
-                    }
+    private val logObserver = MpvPort.LogObserver { prefix, level, text ->
+        if (isReleased) return@LogObserver
+        MpvLogFile.append(appContext, prefix, level, text)
+        if (level <= 20) { // MPV_LOG_LEVEL_WARN or ERROR
+            Log.w(TAG, "[$prefix] $text")
+            // Keep a short ring buffer of the real libmpv diagnostics. When
+            // a file fails to load, these lines (e.g. demuxer/ffmpeg errors)
+            // are the only record of WHY — previously they were only in logcat.
+            synchronized(lastErrorLogs) {
+                lastErrorLogs.addLast("[$prefix] ${text.trim()}")
+                while (lastErrorLogs.size > 10) lastErrorLogs.removeFirst()
+            }
+            if (prefix.equals("mediacodec", ignoreCase = true) &&
+                (text.contains("failed", ignoreCase = true) || text.contains("error", ignoreCase = true))
+            ) {
+                mainHandler.post {
+                    if (isReleased) return@post
+                    attemptDecoderFallback("Mediacodec error: $text")
                 }
             }
         }
@@ -383,7 +357,7 @@ internal class MpvCoreEngine(
      */
     private fun setOption(key: String, value: String) {
         val rc = try {
-            mpv.setOptionString(key, value)
+            port.setOptionString(key, value)
         } catch (e: Exception) {
             Log.w(TAG, "setOption $key failed", e)
             return
@@ -407,7 +381,7 @@ internal class MpvCoreEngine(
      */
     internal fun setRuntimeProperty(key: String, value: String) {
         try {
-            mpv.setPropertyString(key, value)
+            port.setPropertyString(key, value)
         } catch (e: Exception) {
             Log.w(TAG, "setProperty $key failed", e)
         }
@@ -435,7 +409,7 @@ internal class MpvCoreEngine(
         val savedSettings = loadSavedSubtitleSettings()
         MpvConfigSync.sync(appContext, configDir, savedSettings.mpvConfStorageUri)
 
-        mpv.create(appContext)
+        port.create(appContext)
 
         // Set configuration options before init()
         setOption("config", "yes")
@@ -507,7 +481,7 @@ internal class MpvCoreEngine(
         }
         setOption("hwdec", host.hwdecValueFor(mode))
 
-        mpv.init()
+        port.init()
         mpvInitialized = true
 
         // Post-init options must use the property API: setOptionString after
@@ -526,15 +500,15 @@ internal class MpvCoreEngine(
         host.applyPostInitSettings(this)
 
         // Observe critical playback and decoder properties
-        mpv.observeProperty("time-pos", MPV.mpvFormat.MPV_FORMAT_DOUBLE)
-        mpv.observeProperty("duration", MPV.mpvFormat.MPV_FORMAT_DOUBLE)
-        mpv.observeProperty("demuxer-cache-time", MPV.mpvFormat.MPV_FORMAT_DOUBLE)
-        mpv.observeProperty("pause", MPV.mpvFormat.MPV_FORMAT_FLAG)
-        mpv.observeProperty("idle-active", MPV.mpvFormat.MPV_FORMAT_FLAG)
-        mpv.observeProperty("eof-reached", MPV.mpvFormat.MPV_FORMAT_FLAG)
-        mpv.observeProperty("speed", MPV.mpvFormat.MPV_FORMAT_DOUBLE)
-        mpv.observeProperty("hwdec-current", MPV.mpvFormat.MPV_FORMAT_STRING)
-        mpv.observeProperty("video-codec", MPV.mpvFormat.MPV_FORMAT_STRING)
+        port.observeProperty("time-pos", MpvPort.PropertyFormat.DOUBLE)
+        port.observeProperty("duration", MpvPort.PropertyFormat.DOUBLE)
+        port.observeProperty("demuxer-cache-time", MpvPort.PropertyFormat.DOUBLE)
+        port.observeProperty("pause", MpvPort.PropertyFormat.FLAG)
+        port.observeProperty("idle-active", MpvPort.PropertyFormat.FLAG)
+        port.observeProperty("eof-reached", MpvPort.PropertyFormat.FLAG)
+        port.observeProperty("speed", MpvPort.PropertyFormat.DOUBLE)
+        port.observeProperty("hwdec-current", MpvPort.PropertyFormat.STRING)
+        port.observeProperty("video-codec", MpvPort.PropertyFormat.STRING)
         // Issue #210: observe "vo" so mpv nulling the VO itself (a
         // reconfigure failure after the android-surface-size set, while
         // paused) is seen at all — no other restore site can fire then,
@@ -543,18 +517,18 @@ internal class MpvCoreEngine(
         // voIsNull flag is never set on that path. "vo" changes rarely
         // (gpu -> null -> gpu), so this adds no event spam; the branch
         // reads the value back and only acts when it is actually "null".
-        mpv.observeProperty("vo", MPV.mpvFormat.MPV_FORMAT_STRING)
+        port.observeProperty("vo", MpvPort.PropertyFormat.STRING)
         // Issue #260: observe the display size so the PiP aspect ratio
         // refreshes the moment the dimensions become known — they are
         // still 0 at item-change time, when the PlayerScreen effect arms
         // the params with the 16:9 fallback. dwidth/dheight change
         // rarely (0 -> WxH at load, 0 on unload), so this adds no spam.
-        mpv.observeProperty("dwidth", MPV.mpvFormat.MPV_FORMAT_INT64)
-        mpv.observeProperty("dheight", MPV.mpvFormat.MPV_FORMAT_INT64)
-        mpv.observeProperty("track-list", MPV.mpvFormat.MPV_FORMAT_NONE)
+        port.observeProperty("dwidth", MpvPort.PropertyFormat.INT64)
+        port.observeProperty("dheight", MpvPort.PropertyFormat.INT64)
+        port.observeProperty("track-list", MpvPort.PropertyFormat.NONE)
 
-        mpv.addObserver(eventObserver)
-        mpv.addLogObserver(logObserver)
+        port.addObserver(eventObserver)
+        port.addLogObserver(logObserver)
     }
 
 
@@ -647,14 +621,14 @@ internal class MpvCoreEngine(
             Log.d(TAG, "Decoder fallback already reloading; ignoring duplicate trigger ($reason)")
             return
         }
-        val codec = mpv.getPropertyString("video-codec") ?: activeVideoCodec.ifBlank { "unknown" }
+        val codec = port.getPropertyString("video-codec") ?: activeVideoCodec.ifBlank { "unknown" }
         when (currentDecoderStage) {
             DecoderStage.HW -> {
                 synchronized(metricsLock) { decoderFallbackCount++ }
                 Log.w(TAG, "HW mediacodec failed for $codec ($reason). Stepping down to HW+ (mediacodec-copy)...")
                 currentDecoderStage = DecoderStage.HW_PLUS
                 try {
-                    mpv.setPropertyString("hwdec", "mediacodec-copy")
+                    port.setPropertyString("hwdec", "mediacodec-copy")
                     reloadForDecoderFallback()
                 } catch (e: Exception) {
                     attemptDecoderFallback("Failed to switch to mediacodec-copy: ${e.message}")
@@ -665,7 +639,7 @@ internal class MpvCoreEngine(
                 Log.w(TAG, "HW+ mediacodec-copy failed for $codec ($reason). Stepping down to SW (hwdec=no)...")
                 currentDecoderStage = DecoderStage.SW
                 try {
-                    mpv.setPropertyString("hwdec", "no")
+                    port.setPropertyString("hwdec", "no")
                     reloadForDecoderFallback()
                 } catch (e: Exception) {
                     attemptDecoderFallback("Failed to switch to SW: ${e.message}")
@@ -728,7 +702,7 @@ internal class MpvCoreEngine(
 
             when (property) {
             "time-pos" -> {
-                val sec = mpv.getPropertyDouble("time-pos") ?: 0.0
+                val sec = port.getPropertyDouble("time-pos") ?: 0.0
                 cachedPositionMs = (sec * 1000).toLong().coerceAtLeast(0L)
                 // Issue #181: vo can go null MID-playback (surface destroy
                 // after a resize) with no later attach/load to restore it —
@@ -744,7 +718,7 @@ internal class MpvCoreEngine(
                     synchronized(surfaceLock) {
                         if (currentSurface != null && voIsNull) {
                             try {
-                                mpv.setPropertyString("vo", "gpu")
+                                port.setPropertyString("vo", "gpu")
                                 voIsNull = false
                             } catch (e: Exception) {
                                 Log.w(TAG, "Failed restoring vo=gpu on time-pos", e)
@@ -790,7 +764,7 @@ internal class MpvCoreEngine(
                 // restore fires (black is correct there until then).
                 synchronized(surfaceLock) {
                     val vo = try {
-                        mpv.getPropertyString("vo")
+                        port.getPropertyString("vo")
                     } catch (_: Exception) {
                         null
                     }
@@ -798,7 +772,7 @@ internal class MpvCoreEngine(
                         voIsNull = true
                         if (currentSurface != null) {
                             try {
-                                mpv.setPropertyString("vo", "gpu")
+                                port.setPropertyString("vo", "gpu")
                                 voIsNull = false
                             } catch (e: Exception) {
                                 Log.w(TAG, "Failed restoring vo=gpu on vo change", e)
@@ -810,16 +784,16 @@ internal class MpvCoreEngine(
                 }
             }
             "duration" -> {
-                val sec = mpv.getPropertyDouble("duration") ?: 0.0
+                val sec = port.getPropertyDouble("duration") ?: 0.0
                 cachedDurationMs = (sec * 1000).toLong().coerceAtLeast(0L)
             }
             "demuxer-cache-time" -> {
-                val sec = mpv.getPropertyDouble("demuxer-cache-time") ?: 0.0
+                val sec = port.getPropertyDouble("demuxer-cache-time") ?: 0.0
                 cachedBufferedMs = (sec * 1000).toLong().coerceAtLeast(0L)
             }
             "pause", "idle-active" -> {
-                val isPaused = mpv.getPropertyBoolean("pause") ?: false
-                val isIdle = mpv.getPropertyBoolean("idle-active") ?: false
+                val isPaused = port.getPropertyBoolean("pause") ?: false
+                val isIdle = port.getPropertyBoolean("idle-active") ?: false
                 val playing = !isPaused && !isIdle
                 if (cachedIsPlaying != playing) {
                     cachedIsPlaying = playing
@@ -829,7 +803,7 @@ internal class MpvCoreEngine(
                 }
             }
             "speed" -> {
-                val speed = mpv.getPropertyDouble("speed")?.toFloat() ?: 1.0f
+                val speed = port.getPropertyDouble("speed")?.toFloat() ?: 1.0f
                 if (cachedSpeed != speed) {
                     cachedSpeed = speed
                     mainHandler.post {
@@ -865,7 +839,7 @@ internal class MpvCoreEngine(
                 host.onTrackListChanged()
             }
             "eof-reached" -> {
-                val eof = mpv.getPropertyBoolean("eof-reached") ?: false
+                val eof = port.getPropertyBoolean("eof-reached") ?: false
                 if (eof) {
                     cachedPlaybackState = PlayerEngine.STATE_ENDED
                     mainHandler.post {
@@ -903,8 +877,8 @@ internal class MpvCoreEngine(
 
 
     private fun notifyDecoderChanged() {
-        val hwdec = mpv.getPropertyString("hwdec-current") ?: ""
-        val codec = mpv.getPropertyString("video-codec") ?: ""
+        val hwdec = port.getPropertyString("hwdec-current") ?: ""
+        val codec = port.getPropertyString("video-codec") ?: ""
         activeHwdec = hwdec
         activeVideoCodec = codec
 
@@ -934,18 +908,18 @@ internal class MpvCoreEngine(
     }
 
 
-    private fun handleMpvEvent(eventId: Int, data: MPVNode) {
+    private fun handleMpvEvent(eventId: Int, endFile: MpvPort.EndFile?) {
         synchronized(eventLock) {
             if (isReleased) return
 
             when (eventId) {
-            MPV.mpvEvent.MPV_EVENT_START_FILE -> {
+            MpvPort.MPV_EVENT_START_FILE -> {
                 // Demuxer opened the file: the load got past issue into
                 // libmpv. If the stage sticks here, the stall is inside
                 // demux/decode/VO init, not in load issue or event delivery.
                 lastMpvEvent = "START_FILE"
             }
-            MPV.mpvEvent.MPV_EVENT_SHUTDOWN -> {
+            MpvPort.MPV_EVENT_SHUTDOWN -> {
                 // Previously IGNORED: a core shutdown produced no event the
                 // app acted on, so a dead core looked exactly like infinite
                 // loading. Surface it as a real error so the manager clears
@@ -959,7 +933,7 @@ internal class MpvCoreEngine(
                     )
                 }
             }
-            MPV.mpvEvent.MPV_EVENT_FILE_LOADED -> {
+            MpvPort.MPV_EVENT_FILE_LOADED -> {
                 // Issue #258 / D-7: no active load means this FILE_LOADED
                 // belongs to a load the user deliberately stopped —
                 // stop() clears activeMediaUri, and a FILE_LOADED
@@ -973,7 +947,7 @@ internal class MpvCoreEngine(
                     return
                 }
                 // Drop stale FILE_LOADED event if the file changed before FILE_LOADED arrived
-                val loadedPath = try { mpv.getPropertyString("path") } catch (_: Exception) { null }
+                val loadedPath = try { port.getPropertyString("path") } catch (_: Exception) { null }
                 val isStale = if (!loadedPath.isNullOrBlank() && !activeMediaUri.isNullOrBlank()) {
                     !isPathMatch(loadedPath, activeMediaUri)
                 } else {
@@ -1009,7 +983,7 @@ internal class MpvCoreEngine(
                     try {
                         val dur = cachedDurationMs
                         val clamped = if (dur > 0L) target.coerceIn(0L, dur) else target.coerceAtLeast(0L)
-                        mpv.command("seek", (clamped / 1000.0).toString(), "absolute+exact")
+                        port.command("seek", (clamped / 1000.0).toString(), "absolute+exact")
                         cachedPositionMs = clamped
                     } catch (e: Exception) {
                         Log.w(TAG, "Failed applying pending seek $target", e)
@@ -1025,7 +999,7 @@ internal class MpvCoreEngine(
                     notifyDecoderChanged()
                 }
             }
-            MPV.mpvEvent.MPV_EVENT_VIDEO_RECONFIG -> {
+            MpvPort.MPV_EVENT_VIDEO_RECONFIG -> {
                 // First video reconfig after a load is the first presented video
                 // frame — the honest "first frame" signal on the mpv path.
                 lastMpvEvent = "VIDEO_RECONFIG"
@@ -1038,7 +1012,7 @@ internal class MpvCoreEngine(
                 }
                 notifyDecoderChanged()
             }
-            MPV.mpvEvent.MPV_EVENT_END_FILE -> {
+            MpvPort.MPV_EVENT_END_FILE -> {
                 lastMpvEvent = "END_FILE"
                 loadIssued = false
                 // A file that never loaded is a STARTUP failure, not a decoder
@@ -1053,8 +1027,8 @@ internal class MpvCoreEngine(
                 // new file then loaded and played fine. Benign reasons
                 // (stop/quit/eof/redirect) are not startup failures.
                 if (!fileLoadedForCurrentItem) {
-                    val reason = try { data.get("reason")?.asString() } catch (_: Exception) { null }
-                    val errCode = try { data.get("error")?.asInt() } catch (_: Exception) { null }
+                    val reason = endFile?.reason
+                    val errCode = endFile?.error
                     // Issue D-9: reason=stop is benign regardless of errCode (e.g. stop interrupted loadfile).
                     val isBenignStop = reason == "stop" || (reason in setOf("quit", "eof", "redirect") && (errCode == null || errCode == 0L))
                     val isRealFailure = !isBenignStop
@@ -1075,7 +1049,7 @@ internal class MpvCoreEngine(
                     return
                 }
                 // Check if end of file was an error
-                val eofReached = mpv.getPropertyBoolean("eof-reached") ?: false
+                val eofReached = port.getPropertyBoolean("eof-reached") ?: false
                 if (!eofReached && cachedPositionMs < cachedDurationMs - 1000L && cachedDurationMs > 0L) {
                     // Premature end-file implies decoder or playback error
                     mainHandler.post {
@@ -1115,14 +1089,14 @@ internal class MpvCoreEngine(
         synchronized(surfaceLock) {
             currentSurface = surface
             try {
-                mpv.attachSurface(surface)
+                port.attachSurface(surface)
                 setRuntimeProperty("force-window", "yes")
             } catch (e: Exception) {
                 Log.e(TAG, "Error attaching surface", e)
             }
             // Issue #181: restore vo=gpu in its own try/catch, so a throwing
             // native attach cannot skip it. A detach mid-session left vo=null,
-            // and mpv.attachSurface() binds to the CURRENT vo — with vo=null
+            // and port.attachSurface() binds to the CURRENT vo — with vo=null
             // there is no VO, so the next loadfile decodes but renders to the
             // null VO (sound, no video, no error: the phone log shows
             // "VO: [null]" on every load after the first detach). Restore
@@ -1132,7 +1106,7 @@ internal class MpvCoreEngine(
             // there is none.
             if (voIsNull) {
                 try {
-                    mpv.setPropertyString("vo", "gpu")
+                    port.setPropertyString("vo", "gpu")
                     voIsNull = false
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed restoring vo=gpu on attach", e)
@@ -1142,7 +1116,7 @@ internal class MpvCoreEngine(
                 // VO against the attached surface; do not touch "vo".
             } else {
                 try {
-                    mpv.setPropertyString("vo", "gpu")
+                    port.setPropertyString("vo", "gpu")
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed setting vo=gpu on attach", e)
                 }
@@ -1197,7 +1171,7 @@ internal class MpvCoreEngine(
     internal fun onSurfaceChanged(width: Int, height: Int) {
         if (!mpvInitialized || isReleased || width <= 0 || height <= 0) return
         try {
-            mpv.setPropertyString("android-surface-size", "${width}x${height}")
+            port.setPropertyString("android-surface-size", "${width}x${height}")
         } catch (e: Exception) {
             Log.w(TAG, "Failed reporting android-surface-size", e)
         }
@@ -1214,7 +1188,7 @@ internal class MpvCoreEngine(
         synchronized(surfaceLock) {
             if (currentSurface != null && voIsNull) {
                 try {
-                    mpv.setPropertyString("vo", "gpu")
+                    port.setPropertyString("vo", "gpu")
                     voIsNull = false
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed restoring vo=gpu on surfaceChanged", e)
@@ -1253,9 +1227,9 @@ internal class MpvCoreEngine(
             // Setting the flag first makes every restore site see the truth.
             voIsNull = true
             try {
-                mpv.setPropertyString("vo", "null")
-                mpv.setPropertyString("force-window", "no")
-                mpv.detachSurface()
+                port.setPropertyString("vo", "null")
+                port.setPropertyString("force-window", "no")
+                port.detachSurface()
             } catch (e: Exception) {
                 Log.w(TAG, "Error in detachSurface barrier", e)
             }
@@ -1357,7 +1331,7 @@ internal class MpvCoreEngine(
             currentDecoderStage = fallbackStage
             val hwdecVal = host.hwdecValueForStage(fallbackStage)
             try {
-                mpv.setPropertyString("hwdec", hwdecVal)
+                port.setPropertyString("hwdec", hwdecVal)
             } catch (e: Exception) {
                 Log.w(TAG, "Could not set fallback hwdec to $hwdecVal", e)
             }
@@ -1424,7 +1398,7 @@ internal class MpvCoreEngine(
         synchronized(surfaceLock) {
             if (currentSurface != null && voIsNull) {
                 try {
-                    mpv.setPropertyString("vo", "gpu")
+                    port.setPropertyString("vo", "gpu")
                     voIsNull = false
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed restoring vo=gpu before loadfile", e)
@@ -1433,7 +1407,7 @@ internal class MpvCoreEngine(
         }
 
         try {
-            mpv.command("playlist-clear")
+            port.command("playlist-clear")
 
             // Resume via libmpv's own start option, NOT via a post-load seek:
             // seeking on FILE_LOADED plays a 0:00 audio/video blip first.
@@ -1445,9 +1419,9 @@ internal class MpvCoreEngine(
             if (resumeMs > 0L) {
                 val startSec = (resumeMs / 1000.0).toString()
                 cachedPositionMs = resumeMs
-                mpv.command("loadfile", resolvedTarget.uri, "replace", "-1", "start=$startSec")
+                port.command("loadfile", resolvedTarget.uri, "replace", "-1", "start=$startSec")
             } else {
-                mpv.command("loadfile", resolvedTarget.uri, "replace")
+                port.command("loadfile", resolvedTarget.uri, "replace")
             }
 
             // Issue #103: PlaybackCoordinator alone owns queue transitions. mpv holds
@@ -1485,7 +1459,7 @@ internal class MpvCoreEngine(
     internal fun play() {
         if (isReleased) return
         try {
-            mpv.setPropertyBoolean("pause", false)
+            port.setPropertyBoolean("pause", false)
             // Issue #246: record the intent — attachSurface() consults
             // this when it flushes a not-yet-loaded file (cachedIsPlaying
             // is false while idle, so it cannot carry the intent).
@@ -1503,7 +1477,7 @@ internal class MpvCoreEngine(
     internal fun pause() {
         if (isReleased) return
         try {
-            mpv.setPropertyBoolean("pause", true)
+            port.setPropertyBoolean("pause", true)
             cachedIsPlaying = false
             // Issue #246: clear the play intent, so a later surface
             // re-attach does not resume a file the user paused during
@@ -1534,7 +1508,7 @@ internal class MpvCoreEngine(
             seekTargetMs = target
         }
         try {
-            mpv.command("seek", (target / 1000.0).toString(), "absolute+exact")
+            port.command("seek", (target / 1000.0).toString(), "absolute+exact")
             cachedPositionMs = target
         } catch (e: Exception) {
             Log.e(TAG, "Error seeking in MPV", e)
@@ -1554,7 +1528,7 @@ internal class MpvCoreEngine(
     internal fun setSpeed(speed: Float) {
         if (isReleased) return
         try {
-            mpv.setPropertyDouble("speed", speed.toDouble())
+            port.setPropertyDouble("speed", speed.toDouble())
             cachedSpeed = speed
             mainHandler.post { engineListener?.onPlaybackParametersChanged(speed) }
         } catch (e: Exception) {
@@ -1596,7 +1570,7 @@ internal class MpvCoreEngine(
         fallbackReloadPending = false
         fallbackHwdecStage = null
         try {
-            mpv.command("stop")
+            port.command("stop")
             cachedIsPlaying = false
             // Issue #246: a deliberate stop ends the play intent too, so
             // a stale intent cannot auto-play a later paused restore if
@@ -1626,9 +1600,9 @@ internal class MpvCoreEngine(
         detachSurface()
         synchronized(eventLock) {
             try {
-                mpv.removeObserver(eventObserver)
-                mpv.removeLogObserver(logObserver)
-                mpv.destroy()
+                port.removeObserver(eventObserver)
+                port.removeLogObserver(logObserver)
+                port.destroy()
             } catch (e: Exception) {
                 Log.w(TAG, "Error releasing MPV", e)
             }
@@ -1692,7 +1666,7 @@ internal class MpvCoreEngine(
             0
         } else {
             try {
-                mpv.getPropertyInt("dwidth")?.coerceAtLeast(0) ?: 0
+                port.getPropertyInt("dwidth")?.coerceAtLeast(0) ?: 0
             } catch (_: Exception) {
                 0
             }
@@ -1704,7 +1678,7 @@ internal class MpvCoreEngine(
             0
         } else {
             try {
-                mpv.getPropertyInt("dheight")?.coerceAtLeast(0) ?: 0
+                port.getPropertyInt("dheight")?.coerceAtLeast(0) ?: 0
             } catch (_: Exception) {
                 0
             }

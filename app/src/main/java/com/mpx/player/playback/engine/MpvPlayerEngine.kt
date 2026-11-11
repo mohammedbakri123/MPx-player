@@ -11,7 +11,6 @@ import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
-import `is`.xyz.mpv.MPV
 
 /**
  * Exception raised when libmpv encounters an unrecoverable decoding or playback error.
@@ -240,7 +239,7 @@ class MpvPlayerEngine(
     // The not-yet-moved code below still reads/writes it by its old
     // names; each step that moves a function deletes the accessors it
     // no longer needs.
-    private val mpv: MPV get() = core.mpv
+    private val port: MpvPort get() = core.port
 
     // Phase 4 step 1: read-only here on purpose. A `var` with an
     // explicit `private set` body generates a JVM setter
@@ -345,7 +344,7 @@ class MpvPlayerEngine(
                 // re-capture (the live value is the preset by then).
                 val savedZoom = loadSavedSubtitleSettings().videoZoom
                 zoomBeforeAspectZoom = try {
-                    mpv.getPropertyDouble("video-zoom")
+                    port.getPropertyDouble("video-zoom")
                 } catch (_: Exception) {
                     null
                 } ?: MpvEngineConfig.mpvVideoZoom(savedZoom)
@@ -362,38 +361,38 @@ class MpvPlayerEngine(
             currentAspectRatio = mode
             when (mode) {
                 AspectRatioMode.FIT -> {
-                    mpv.setPropertyString("video-aspect-override", "no")
-                    mpv.setPropertyDouble("panscan", 0.0)
-                    mpv.setPropertyString("video-unscaled", "no")
+                    port.setPropertyString("video-aspect-override", "no")
+                    port.setPropertyDouble("panscan", 0.0)
+                    port.setPropertyString("video-unscaled", "no")
                 }
                 AspectRatioMode.FILL -> {
-                    mpv.setPropertyString("video-aspect-override", "no")
-                    mpv.setPropertyDouble("panscan", 1.0)
-                    mpv.setPropertyString("video-unscaled", "no")
+                    port.setPropertyString("video-aspect-override", "no")
+                    port.setPropertyDouble("panscan", 1.0)
+                    port.setPropertyString("video-unscaled", "no")
                 }
                 AspectRatioMode.ZOOM -> {
-                    mpv.setPropertyString("video-aspect-override", "no")
-                    mpv.setPropertyDouble("panscan", 1.0)
-                    mpv.setPropertyString("video-unscaled", "no")
+                    port.setPropertyString("video-aspect-override", "no")
+                    port.setPropertyDouble("panscan", 1.0)
+                    port.setPropertyString("video-unscaled", "no")
                     // Magnify 2x beyond FILL's crop-to-fill: video-zoom is
                     // log2, so MpvEngineConfig.mpvVideoZoom(2.0f) == 1.0.
                     setRuntimeProperty("video-zoom", MpvEngineConfig.mpvVideoZoom(2.0f).toString())
                 }
                 AspectRatioMode.SIXTEEN_NINE -> {
-                    mpv.setPropertyString("video-aspect-override", "16:9")
-                    mpv.setPropertyDouble("panscan", 0.0)
-                    mpv.setPropertyString("video-unscaled", "no")
+                    port.setPropertyString("video-aspect-override", "16:9")
+                    port.setPropertyDouble("panscan", 0.0)
+                    port.setPropertyString("video-unscaled", "no")
                 }
                 AspectRatioMode.FOUR_THREE -> {
-                    mpv.setPropertyString("video-aspect-override", "4:3")
-                    mpv.setPropertyDouble("panscan", 0.0)
-                    mpv.setPropertyString("video-unscaled", "no")
+                    port.setPropertyString("video-aspect-override", "4:3")
+                    port.setPropertyDouble("panscan", 0.0)
+                    port.setPropertyString("video-unscaled", "no")
                 }
                 AspectRatioMode.ORIGINAL -> {
-                    mpv.setPropertyString("video-aspect-override", "no")
-                    mpv.setPropertyDouble("panscan", 0.0)
+                    port.setPropertyString("video-aspect-override", "no")
+                    port.setPropertyDouble("panscan", 0.0)
                     // True 1:1: mpv displays the video at native size.
-                    mpv.setPropertyString("video-unscaled", "yes")
+                    port.setPropertyString("video-unscaled", "yes")
                 }
             }
         } catch (e: Exception) {

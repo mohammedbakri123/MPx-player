@@ -198,7 +198,7 @@ internal class MpvEngineConfig(
         }
         val hwdecVal = hwdecValueFor(mode)
         try {
-            core.mpv.setPropertyString("hwdec", hwdecVal)
+            core.port.setPropertyString("hwdec", hwdecVal)
         } catch (e: Exception) {
             Log.w(TAG, "Could not set hwdec option to $hwdecVal", e)
         }

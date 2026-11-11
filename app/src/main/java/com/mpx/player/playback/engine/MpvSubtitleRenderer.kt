@@ -389,9 +389,9 @@ internal class MpvSubtitleRenderer(
                         // loads it.
                         applySubtitleCodepage(sub.codepage)
                         if (sub.title != null) {
-                            core.mpv.command("sub-add", sub.uri, sub.flag, sub.title)
+                            core.port.command("sub-add", sub.uri, sub.flag, sub.title)
                         } else {
-                            core.mpv.command("sub-add", sub.uri, sub.flag)
+                            core.port.command("sub-add", sub.uri, sub.flag)
                         }
                         issuedAny = true
                         // Issue #372: remember the last external
@@ -565,12 +565,12 @@ internal class MpvSubtitleRenderer(
                     Log.d(TAG, "Remembered external subtitle '${remembered.name}' not re-applied: a different external track is selected")
                     return ReapplyResult.BLOCKED
                 }
-                val currentSid = try { core.mpv.getPropertyString("sid") } catch (_: Exception) { null }
+                val currentSid = try { core.port.getPropertyString("sid") } catch (_: Exception) { null }
                 if (track.isSelected && currentSid == track.trackIndex.toString()) {
                     return ReapplyResult.ALREADY_PINNED
                 }
                 return try {
-                    core.mpv.setPropertyString("sid", track.trackIndex.toString())
+                    core.port.setPropertyString("sid", track.trackIndex.toString())
                     Log.d(TAG, "Remembered external subtitle '${remembered.name}': sid=${track.trackIndex} (was sid=$currentSid, selected=${track.isSelected})")
                     ReapplyResult.APPLIED
                 } catch (e: Exception) {
@@ -586,10 +586,10 @@ internal class MpvSubtitleRenderer(
         // track, if any — the old #192 rule, kept for this path only.
         val selected = tracks.firstOrNull { it.isExternal && it.isSelected }
             ?: return ReapplyResult.NOT_PRESENT
-        val currentSid = try { core.mpv.getPropertyString("sid") } catch (_: Exception) { null }
+        val currentSid = try { core.port.getPropertyString("sid") } catch (_: Exception) { null }
         if (currentSid != selected.trackIndex.toString()) {
             try {
-                core.mpv.setPropertyString("sid", selected.trackIndex.toString())
+                core.port.setPropertyString("sid", selected.trackIndex.toString())
             } catch (e: Exception) {
                 Log.w(TAG, "Failed pinning external subtitle selection", e)
                 return ReapplyResult.NOT_PRESENT
@@ -699,7 +699,7 @@ internal class MpvSubtitleRenderer(
                     // Issue #441: decode this file with its detected
                     // codepage, right before mpv loads it.
                     applySubtitleCodepage(rawExt.codepage)
-                    core.mpv.command("sub-add", resolvedExt.uri, "select", rawExt.name)
+                    core.port.command("sub-add", resolvedExt.uri, "select", rawExt.name)
                     issuedAny = true
                     // Issue #372: each "select" sub-add selects that
                     // track, so the last issued one is the pick.
