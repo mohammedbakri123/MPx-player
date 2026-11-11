@@ -252,11 +252,15 @@ class MeViewModelTest {
         assertEquals(listOf(playlistItem(12, 1, "Song B")), viewModel.playlistItems.value)
     }
 
+    // Fixed timestamps: the models default addedAt / lastPlayedAt to
+    // System.currentTimeMillis(), so two helper calls would build
+    // unequal instances and every list-equality assert would fail.
     private fun historyItem(n: Int) = PlaybackHistoryItem(
         mediaUri = "content://v/$n",
         mediaId = "$n",
         title = "Video $n",
         isVideo = true,
+        lastPlayedAt = 0L,
     )
 
     private fun playlistItem(id: Long, playlistId: Long, title: String) = PlaylistItem(
@@ -265,6 +269,7 @@ class MeViewModelTest {
         mediaUri = "content://s/$id",
         mediaId = "$id",
         title = title,
+        addedAt = 0L,
     )
 
     /** Fake settings repository: an in-memory stored value. */
