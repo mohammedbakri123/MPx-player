@@ -15,7 +15,7 @@ No ads. No tracking. Your files stay on your device.
 Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx-player/releases/latest), then open it on your phone. Android will ask once to allow installs from your browser — that's normal for apps installed outside the Play Store.
 
 - Requires Android 7.0+ (API 24)
-- Current APK is ~87 MB (it bundles ffmpeg and aria2c for the downloader)
+- Current APK is ~27 MB (minified arm64)
 
 > This is an active project under development. Releases are verified by green builds. If something breaks on your device, please report it — see [Community](#community) below.
 
@@ -27,14 +27,9 @@ Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx
 - External subtitles — pick a `.srt` / `.ass` / `.ssa` / `.vtt` file while a video plays, and it stays selected
 - Picture-in-Picture, double-tap to skip, resume where you left off
 
-**Downloader**
-- Download videos with yt-dlp (auto-updates weekly, or manually from the Download tab)
-- Quality settings: codec, resolution, audio-only (MP3)
-- aria2c acceleration, 3 downloads at a time, queue survives restarts
-- Playlists, download history, subtitles at download time
-- SponsorBlock cutting (sponsor / intro / outro / self-promo)
-- Files land in public `Downloads/MPx/` so other apps can see them
-- Sign in with cookies for sites that need it
+**Network**
+- Play a video straight from a pasted URL (mpv plays http(s) directly)
+- Browse and play from SMB shares
 
 **Look and feel**
 - Material 3 Expressive, true-black dark theme + light theme
@@ -59,7 +54,7 @@ Please be kind. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Build from source
 
-Requires JDK 17 and the Android SDK (platform 34, build-tools).
+Requires JDK 17 and the Android SDK (platform 36, build-tools).
 
 ```sh
 git clone https://github.com/mohammedbakri123/MPx-player.git
@@ -89,8 +84,7 @@ See [open issues](https://github.com/mohammedbakri123/MPx-player/issues) for wha
 ## Acknowledgements
 
 - [mpv](https://mpv.io/) and [mpv-android](https://github.com/mpv-android/mpv-android) — the playback engine, under its licence
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — the downloader backend
-- [Seal](https://github.com/JunkFood02/Seal) — the downloader design MPx learned from in v0.3.5 (auto-update, per-download temp dirs, request hardening, queue, SponsorBlock fallback). Code adapted with attribution where noted.
+- [Seal](https://github.com/JunkFood02/Seal) — the in-app self-update checker and the shared-link URL matcher are adapted from Seal's `UpdateUtil` and `matchUrlFromSharedText`, with attribution in the code. The Seal-style downloader itself was removed in 2026-11.
 - MX Player — UI inspiration only. MPx copies layout ideas in its own code; it does not use MX's source, binaries, assets, strings, or branding, and never will.
 
 ## License
