@@ -16,7 +16,7 @@ it has got.
 ## Stack (current)
 
 - Single-module native Kotlin Android app, package `com.mpx.player`
-  (`app/src/main/java/com/mpx/player/`, 105 Kotlin files)
+  (`app/src/main/java/com/mpx/player/`, 116 Kotlin files)
 - UI: Jetpack Compose, Material 3 Expressive, one activity (`MainActivity`),
   Compose Navigation
 - Playback: mpv only, via `mpv-android-lib` 0.1.12. There is no Media3 /
@@ -39,7 +39,8 @@ Data (Room, MediaStore, SharedPreferences)  ←  Domain (models + interfaces)
 ```
 
 - **UI** — `ui/`: screens per tab under `ui/screens/` (`local`, `music`,
-  `network`, `me`, `player`, `settings`, `about`), shared pieces under
+  `network`, `me`, `player`, `settings`, `about`), each beside its
+  ViewModel (Phase 2 pattern — see below); shared pieces under
   `ui/components/`, design tokens under `ui/theme/`, routes under
   `ui/navigation/Navigation.kt` (`Screen` sealed class: `local`, `music`,
   `network`, `me`, `player`). Screens render state and send events; they
@@ -71,14 +72,18 @@ Data (Room, MediaStore, SharedPreferences)  ←  Domain (models + interfaces)
   `SubtitleUtils`, `FuzzySearch`, `LocaleHelper`, `MediaPermissions`,
   `PipUtils`).
 - **App entry** — `MpxApplication` (registered as `.MpxApplication` in the
-  manifest) applies the stored theme's night mode before any activity is
-  created. `MainActivity` hosts the navigation, the tab scaffold, and the
-  activity-result launchers.
+  manifest) starts Koin (`di/AppModule`, `di/PlaybackModule`,
+  `di/ViewModelModule` — the one place objects are built) and applies the
+  stored theme's night mode before any activity is created.
+  `MainActivity` hosts the navigation, the tab scaffold, and the
+  activity-result launchers; it receives its `PlaybackManager` and
+  settings repository from Koin.
 
 ## How a video gets from a tap to mpv (current)
 
 1. The Local tab (`ui/screens/local/LocalScreen.kt`) lists folders and
-   files from `MediaStoreRepository`.
+   files through `LocalViewModel`, which reads them from
+   `MediaStoreRepository`.
 2. Tapping a video calls into `PlaybackManager` (`playVideoFiles`,
    `playQueue`, `playLiveQueueItem`, …), which builds a queue of
    `PlayableMedia` items.
@@ -95,52 +100,61 @@ Data (Room, MediaStore, SharedPreferences)  ←  Domain (models + interfaces)
 
 ## The two things that surprise newcomers (current)
 
-**There is no dependency injection and there are no ViewModels.**
-Objects are built where they are needed, and singletons are reached through
-hidden `getInstance` calls. A reader cannot see a screen's dependencies
-from its signature, and a screen cannot be tested with fake repositories.
-`getInstance` call sites today include `PlaybackService`, `PlayerScreen`, `LocalScreen`, `MusicScreen`,
-`NetworkScreen`, `MeScreen`, `HistoryScreen`, `PlaylistsScreen`,
-`SettingsScreen`, and `OverlaySettingsScreen`; `MpxDatabase.getInstance`
-is called from `PlaybackManager` and from screens that build a
-`RoomMediaPersistenceRepository` by hand. `MainActivity` no longer
-calls `getInstance` — since Phase 1 it receives its `PlaybackManager`
-and settings repository from Koin (`di/AppModule`, `di/PlaybackModule`).
+**Dependency injection and ViewModels exist now — but playback still
+goes through one god object.** Since Phases 1–2, objects are built in
+`di/` (Koin: `di/AppModule`, `di/PlaybackModule`, `di/ViewModelModule`)
+and every screen has a ViewModel beside it whose dependencies arrive
+through its constructor, so screens are testable with fake
+repositories. What has NOT changed yet: screens still hold
+`PlaybackManager` directly for transport (play/pause, queue, subtitles)
+until Phase 3 replaces it with a small coordinator, and
+`PlaybackManager` still builds its own database, persistence, settings
+repository, and engine internally. No `getInstance` call site remains in
+UI code — the only ones left are `PlaybackService` (Phase 3) and
+`PlaybackManager` itself, which calls `MpxDatabase.getInstance`
+internally (Phase 3); the `getInstance` calls in `di/AppModule` and
+`di/PlaybackModule` are the legitimate construction points. The other
+hand-built construction left is the settings repository, read directly
+in `PlaybackManager`, `PlaybackService`, and `MpvPlayerEngine`
+(Phases 3–4), plus two data/util internals — `MediaStoreRepository`
+(`showHiddenFiles` read) and `PipUtils` (default argument) — which have
+no phase assigned yet.
 
-**Two files are very large.** `PlaybackManager` is 1,443 lines and
-`MpvPlayerEngine` is 2,674 lines; `PlayerScreen` (2,684), `LocalScreen`
-(2,517), and `SettingsScreen` (1,777) are similarly large. A small fix in
-any of these means reading a lot of unrelated code first. Splitting them
-is the migration's Phase 3 and Phase 4; until then, expect it.
+**Two files are very large.** `PlaybackManager` is 1,475 lines and
+`MpvPlayerEngine` is 2,674 lines; `PlayerScreen` (2,666), `MusicScreen`
+(2,414), `LocalScreen` (1,895), and `SettingsScreen` (1,766) are
+similarly large. A small fix in any of these means reading a lot of
+unrelated code first. Splitting them is the migration's Phase 3 and
+Phase 4; until then, expect it.
 
 ## Where do I change X?
 
 | I want to… | Start from | Notes |
 |---|---|---|
-| Add a setting | `domain/settings/AppSettings.kt` (the model), `data/settings/SharedPrefsAppSettingsRepository.kt` (load/save), `ui/screens/settings/SettingsScreen.kt` (the row) | New user-facing strings need entries in all 9 locales — see CONTRIBUTING.md |
-| Add a library sort option | `ui/screens/local/LocalScreen.kt` and `ui/screens/local/MediaSortComparator.kt` | Sorting lives in the Local screen, not in the repository |
+| Add a setting | `domain/settings/AppSettings.kt` (the model), `data/settings/SharedPrefsAppSettingsRepository.kt` (load/save), `ui/screens/settings/SettingsViewModel.kt` (the write) and `ui/screens/settings/SettingsScreen.kt` (the row) | New user-facing strings need entries in all 9 locales — see CONTRIBUTING.md |
+| Add a library sort option | `ui/screens/local/LocalViewModel.kt` (Local) or `ui/screens/music/MusicViewModel.kt` (Music) | Sorting lives in the ViewModel, not in the repository or the screen |
 | Change a subtitle behaviour | `playback/PlaybackManager.kt` (discovery, selection) and `playback/engine/MpvPlayerEngine.kt` (rendering, codepage) | External subtitles are picked in the player; encoding detection sets `sub-codepage` before the sub-add. Target: `SubtitleManager` (Phase 3) and an engine subtitle file (Phase 4) |
-| Add a network source | `network/` (`StreamUrl.kt`, `SharedLink.kt`) and `ui/screens/network/NetworkScreen.kt` | Playback of a stream still goes through `PlaybackManager` and the engine |
+| Add a network source | `network/` (`StreamUrl.kt`, `SharedLink.kt`) and `ui/screens/network/NetworkViewModel.kt` | Playback of a stream still goes through `PlaybackManager` and the engine |
 | Change what resume remembers | `playback/PlaybackResumeManager.kt` and `data/local/entity/PlaybackResumeEntity.kt` | Positions are keyed by media id/URI; see `resumeKey` in the manager |
 | Change how the player looks | `ui/screens/player/PlayerScreen.kt`, `ui/components/player/`, `ui/theme/` | Keep the UX law: true black in dark mode, one accent (identity blue), back = exactly one step |
 | Change what mpv is told | `playback/engine/MpvPlayerEngine.kt` and `playback/engine/MpvConfigSync.kt` | Settings reach mpv as options; do not call mpv from a screen |
-| Add a screen | `ui/navigation/Navigation.kt` (route), a new file under `ui/screens/<feature>/`, wire it in `MainActivity` | Target: the new screen gets a ViewModel beside it (Phase 2 pattern) |
+| Add a screen | `ui/navigation/Navigation.kt` (route), a new file under `ui/screens/<feature>/` with its ViewModel beside it, wire it in `MainActivity` | Every new screen gets a ViewModel beside it (Phase 2 pattern) |
 
-## Target package map (target, not current)
-
-The migration is moving the code towards this shape. Do not assume a
-package below exists yet — check the migration status at the bottom.
+## Package map (current)
 
 - `ui/` — Compose screens, theme, navigation, components.
-- `ui/<feature>/` — each screen together with its ViewModel, e.g.
-  `ui/player/PlayerScreen.kt` beside `ui/player/PlayerViewModel.kt`.
+- `ui/screens/<feature>/` — each screen together with its ViewModel,
+  e.g. `ui/screens/player/PlayerScreen.kt` beside
+  `ui/screens/player/PlayerViewModel.kt`.
 - `domain/` — plain models and repository interfaces (as today).
 - `data/` — Room, MediaStore, and settings implementations (as today).
-- `playback/` — the playback coordinator, queue, resume, and subtitle
-  pieces, plus `PlaybackService`.
-- `engine/` — the `PlayerEngine` interface and its mpv implementation,
-  split by concern.
-- `di/` — the Koin modules. The one place in the app where objects are
+- `playback/` — today still the `PlaybackManager` god object, queue,
+  resume, and subtitle pieces, plus `PlaybackService`. Phase 3 splits
+  the manager into a coordinator, queue, resume, and subtitle pieces.
+- `playback/engine/` — the `PlayerEngine` interface and its mpv
+  implementation. Phase 4 splits the engine by concern.
+- `di/` — the Koin modules (`AppModule`, `PlaybackModule`,
+  `ViewModelModule`). The one place in the app where objects are
   constructed.
 - `network/`, `update/`, `util/` — largely as today.
 
@@ -150,7 +164,9 @@ A finished screen follows one pattern, every time:
 2. The ViewModel exposes one immutable state as a `StateFlow` and a small
    set of intent functions (`onPlay(uri)`, `onToggleFavourite()`, …).
 3. The screen collects that state and renders it. It holds no repository,
-   database, or engine reference.
+   database, or engine reference. (Until Phase 3, screens still hold
+   `PlaybackManager` directly for transport — that is the one remaining
+   exception to this rule, and it is deliberate, not a second pattern.)
 4. The ViewModel's dependencies arrive through its constructor, so a test
    can pass fakes.
 
@@ -176,24 +192,52 @@ A finished screen follows one pattern, every time:
 - Phase 1 (Koin foundation): done. `di/AppModule` (database, MediaStore
   + Room repositories, settings repository), `di/PlaybackModule`
   (`PlaybackManager` as a `single`), and `MainActivity` on Koin.
-  Remaining `getInstance` sites: the screens listed above (Phase 2)
-  and `PlaybackService` (Phase 3). The mpv engine has no Koin
-  registration — `PlaybackManager` still builds it internally; that
-  moves in Phase 3.
-- Phase 2 (one ViewModel per screen, player first): in progress.
-  Phase 2a done: `PlayerViewModel` (`ui/screens/player/`) owns
-  playback-state collection, settings load / reload-on-resume,
-  queue restore on first entry, the rotation override, and the
-  keep-screen-on decision; `PlayerScreen` keeps gestures, the
-  SurfaceView, dialogs, and layout, and obtains the ViewModel with
-  `koinViewModel()` from `di/ViewModelModule`. The ViewModel depends
-  on interfaces only: `AppSettingsRepository` and the minimal
-  `playback/PlaybackStateSource` (`playbackState` +
-  `restorePersistedQueueIfEmpty()`), which `PlaybackManager`
-  implements. First unit tests in the repo:
-  `app/src/test/.../ui/screens/player/PlayerViewModelTest.kt`
-  (fakes, no mocking framework). Still to do: Local, Music,
-  Network, Me/Settings ViewModels.
+  The mpv engine has no Koin registration — `PlaybackManager` still
+  builds it internally; that moves in Phase 3.
+- Phase 2 (one ViewModel per screen, player first): done. Every screen
+  has a ViewModel beside it, obtained with `koinViewModel()` from
+  `di/ViewModelModule`, depending on interfaces only, each with unit
+  tests using fakes (70 tests across the six test files, no mocking
+  framework):
+  - 2a `PlayerViewModel` (`ui/screens/player/`, 198 lines, 7 tests):
+    playback-state collection, settings load / reload-on-resume, queue
+    restore on first entry, rotation override, keep-screen-on. Depends
+    on `AppSettingsRepository` and the minimal
+    `playback/PlaybackStateSource` (`playbackState` +
+    `restorePersistedQueueIfEmpty()`), which `PlaybackManager`
+    implements.
+  - 2b `LocalViewModel` (`ui/screens/local/`, ~1,050 lines, 19 tests):
+    settings load / reload, folder browsing, sort / view / filter,
+    selection, favourites, playlists, search. Search state
+    (whole-page query, in-folder query, in-folder open flag) is backed
+    by the `SavedStateHandle`, not plain state, so it survives dock-tab
+    switches and process death.
+  - 2c `MusicViewModel` (`ui/screens/music/`, ~880 lines, 8 tests):
+    all five tabs' filter / sort, blacklist, selection, album / artist
+    / folder resolvers, playlist dual shapes, favourite group-toggle,
+    view mode, history paging. `selectedTab`, search state, and
+    `historyLimit` stay `rememberSaveable` in the screen (dock-tab
+    switches pop the destination and clear the ViewModel) and are
+    mirrored into the ViewModel.
+  - 2d `NetworkViewModel` (`ui/screens/network/`, 6 tests): URL state
+    as one `NetworkUiState`; streams play through the minimal
+    `StreamPlayer` interface (`playStream`), implemented by
+    `PlaybackManager`.
+  - 2e `MeViewModel` (`ui/screens/me/`, 243 lines, 12 tests): Me /
+    History / Playlists state — settings, badge flows, favourites
+    actions, history total + paging, playlists.
+  - 2e `SettingsViewModel` (`ui/screens/settings/`, 450 lines,
+    18 tests): every settings write (including menu, blacklist, and
+    diagnostics reads) goes through the ViewModel; `MainActivity`
+    passes it the `PlaybackManager` it needs for the few
+    playback-coupled reads.
+  - Consolidation: no `getInstance` call site remains in UI code —
+    `PlayerScreen`, `MeScreen`, `HistoryScreen`, and `PlaylistsScreen`
+    take `PlaybackManager` as a required parameter from `MainActivity`.
+    What is still NOT migrated (Phases 3–4): screens still hold
+    `PlaybackManager` for transport, and `PlaybackManager` /
+    `PlaybackService` / `MpvPlayerEngine` still build objects by hand
+    (see "The two things that surprise newcomers" above).
 - Phase 3 (break up `PlaybackManager`): not started.
 - Phase 4 (split `MpvPlayerEngine` by concern): not started.
 - Phase 5 (contributor path): in progress. The PR template asks what

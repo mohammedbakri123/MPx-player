@@ -257,12 +257,11 @@ class MusicViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // #265: the dialog list is paged (HISTORY_PAGE_SIZE rows at a time)
-    // and the counts show the real total. The old code rendered
-    // history.size from the 100-row-capped observer, freezing the Music
-    // history count and the dialog title at 100 and hiding older rows.
-    // The limit is rememberSaveable in the screen so rotation does not
-    // drop rows the user already loaded in the dialog; the screen mirrors
-    // it here via [setHistoryLimit].
+    // and the counts show the real total, from observeHistoryCount() —
+    // the same count query the screen read before. The limit is
+    // rememberSaveable in the screen so rotation does not drop rows
+    // the user already loaded in the dialog; the screen mirrors it
+    // here via [setHistoryLimit].
     val historyTotal: StateFlow<Int> = persistence.observeHistoryCount()
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
@@ -271,14 +270,6 @@ class MusicViewModel(
 
     fun setHistoryLimit(limit: Int) {
         _historyLimit.value = limit
-    }
-
-    /** #265: same paging as the full History page — loads the next page
-     * when the dialog is scrolled near the end. */
-    fun loadMoreHistory() {
-        if (history.value.size < historyTotal.value) {
-            _historyLimit.value += HISTORY_PAGE_SIZE
-        }
     }
 
     val history: StateFlow<List<PlaybackHistoryItem>> =

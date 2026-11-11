@@ -329,7 +329,7 @@ fun PlayerScreen(
     subtitleResultHandler: ActivityResultHandler<android.net.Uri?>,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
-    playbackManager: PlaybackManager = PlaybackManager.getInstance(LocalContext.current),
+    playbackManager: PlaybackManager,
     // True while the activity is in system PiP mode: hide every overlay so
     // the PiP window shows video only (issue #98).
     isInPipMode: Boolean = false,

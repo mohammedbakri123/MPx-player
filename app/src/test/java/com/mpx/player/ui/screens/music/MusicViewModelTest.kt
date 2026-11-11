@@ -264,17 +264,6 @@ class MusicViewModelTest {
         assertEquals(com.mpx.player.ui.screens.local.ViewMode.GRID, viewModel.viewMode.value)
     }
 
-    @Test
-    fun `loadMoreHistory pages the history dialog`() = runTest {
-        setTestMainDispatcher()
-        persistence.historyTotal = 250
-        val viewModel = createViewModel()
-
-        assertEquals(100, viewModel.historyLimit.value)
-        viewModel.loadMoreHistory()
-        assertEquals(200, viewModel.historyLimit.value)
-    }
-
     /** Fake media repository: canned library lists the test controls. */
     private class FakeMediaRepository : MediaRepository {
         var tracks: List<AudioTrack> = listOf(

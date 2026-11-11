@@ -69,11 +69,10 @@ import org.koin.compose.viewmodel.koinViewModel
 fun PlaylistsScreen(
     onNavigateBack: () -> Unit,
     onOpenPlayer: () -> Unit,
-    playbackManager: PlaybackManager? = null,
+    playbackManager: PlaybackManager,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val realPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
     // Migration Phase 2e: playlist state lives in MeViewModel now —
     // the list, the selected playlist and its items, and the
     // create / rename / delete / remove actions. The screen still
@@ -242,12 +241,12 @@ fun PlaylistsScreen(
                     )
                 }
                 viewModel.clearSelectedPlaylist()
-                realPlaybackManager.playQueue(playable)
+                playbackManager.playQueue(playable)
                 onOpenPlayer()
             },
             onPlayItem = { item ->
                 viewModel.clearSelectedPlaylist()
-                realPlaybackManager.playQueue(
+                playbackManager.playQueue(
                     listOf(
                         PlayableMedia(
                             id = item.mediaId,
