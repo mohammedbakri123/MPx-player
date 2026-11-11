@@ -277,13 +277,13 @@ class MusicViewModelTest {
             AudioFolder(id = "f1", name = "Music", path = "/storage/emulated/0/Music", trackCount = 2),
             AudioFolder(id = "f2", name = "Secret", path = "/storage/emulated/0/Music/Secret", trackCount = 1),
         )
-        var playlists: List<Playlist> = listOf(
+        var devicePlaylists: List<Playlist> = listOf(
             Playlist(id = "5", title = "Device Mix", itemCount = 2),
         )
 
         override fun getMediaFolders(): List<com.mpx.player.domain.model.MediaFolder> = emptyList()
         override fun getAudioTracks(): List<AudioTrack> = tracks
-        override fun getPlaylists(): List<Playlist> = playlists
+        override fun getPlaylists(): List<Playlist> = devicePlaylists
         override fun getPlaylistTracks(playlistId: String): List<AudioTrack> = tracks
         override fun getAudioAlbums(): List<AudioAlbum> = albums
         override fun getAudioArtists(): List<AudioArtist> = artists
