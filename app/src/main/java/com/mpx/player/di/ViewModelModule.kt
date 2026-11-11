@@ -31,11 +31,14 @@ import org.koin.dsl.module
  * screen as `parametersOf(MediaPermissions.hasVideoPermission(...))`.
  * The screen keeps the flag in sync afterwards via
  * `setHasPermission` on the permission callback and on resume.
- * The trailing `get()` is the [androidx.lifecycle.SavedStateHandle]:
- * Koin creates it from the NavBackStackEntry's CreationExtras, so
- * the search states survive dock-tab switches and process death
- * (see LocalViewModel's Search section) — it is NOT a container
- * binding, so do not move it to [appModule].
+ * The named `savedStateHandle = get()` is the
+ * [androidx.lifecycle.SavedStateHandle]: Koin creates it from the
+ * NavBackStackEntry's CreationExtras, so the search states survive
+ * dock-tab switches and process death (see LocalViewModel's Search
+ * section) — it is NOT a container binding, so do not move it to
+ * [appModule]. It is named (not positional) because the constructor's
+ * `ioDispatcher` parameter sits between it and `hasPermission` and
+ * keeps its default here.
  *
  * Phase 2c registers [com.mpx.player.ui.screens.music.MusicViewModel].
  * Its constructor takes interfaces only
@@ -61,7 +64,7 @@ import org.koin.dsl.module
 val viewModelModule = module {
     viewModel { PlayerViewModel(get<PlaybackManager>(), get()) }
     viewModel { (hasPermission: Boolean) ->
-        LocalViewModel(get(), get(), get(), hasPermission, get())
+        LocalViewModel(get(), get(), get(), hasPermission, savedStateHandle = get())
     }
     viewModel { MusicViewModel(get(), get(), get()) }
     viewModel { NetworkViewModel(get<PlaybackManager>()) }
