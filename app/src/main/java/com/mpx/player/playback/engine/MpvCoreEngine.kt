@@ -137,6 +137,7 @@ internal class MpvCoreEngine(
      */
     private var voIsNull: Boolean = false
 
+    @Volatile
     internal var isReleased: Boolean = false
 
     internal var mpvInitialized: Boolean = false
@@ -254,6 +255,7 @@ internal class MpvCoreEngine(
     private var lastMpvEvent: String = "none"
 
     private val metricsLock = Any()
+    private val eventLock = Any()
 
     private var loadStartMs: Long = 0L
 
@@ -310,6 +312,7 @@ internal class MpvCoreEngine(
 
     private val logObserver = object : MPV.LogObserver {
         override fun logMessage(prefix: String, level: Int, text: String) {
+            if (isReleased) return
             MpvLogFile.append(appContext, prefix, level, text)
             if (level <= 20) { // MPV_LOG_LEVEL_WARN or ERROR
                 Log.w(TAG, "[$prefix] $text")
@@ -324,6 +327,7 @@ internal class MpvCoreEngine(
                     (text.contains("failed", ignoreCase = true) || text.contains("error", ignoreCase = true))
                 ) {
                     mainHandler.post {
+                        if (isReleased) return@post
                         attemptDecoderFallback("Mediacodec error: $text")
                     }
                 }
@@ -607,8 +611,8 @@ internal class MpvCoreEngine(
         // is loaded and there is no queue after a stop, so there is
         // nothing to fall back for: drop stale triggers here, at the
         // single entry point, instead of in each caller.
-        if (!fileLoadedForCurrentItem || currentQueue.isEmpty()) {
-            Log.d(TAG, "Decoder fallback ignored; nothing loaded ($reason)")
+        if (isReleased || !fileLoadedForCurrentItem || currentQueue.isEmpty()) {
+            Log.d(TAG, "Decoder fallback ignored; nothing loaded or released ($reason)")
             return
         }
         // Issue #212: coalesce duplicate triggers for the same failure
@@ -697,9 +701,10 @@ internal class MpvCoreEngine(
 
 
     private fun handlePropertyUpdate(property: String) {
-        if (isReleased) return
+        synchronized(eventLock) {
+            if (isReleased) return
 
-        when (property) {
+            when (property) {
             "time-pos" -> {
                 val sec = mpv.getPropertyDouble("time-pos") ?: 0.0
                 cachedPositionMs = (sec * 1000).toLong().coerceAtLeast(0L)
@@ -872,6 +877,7 @@ internal class MpvCoreEngine(
             }
         }
     }
+    }
 
 
     private fun notifyDecoderChanged() {
@@ -907,9 +913,10 @@ internal class MpvCoreEngine(
 
 
     private fun handleMpvEvent(eventId: Int, data: MPVNode) {
-        if (isReleased) return
+        synchronized(eventLock) {
+            if (isReleased) return
 
-        when (eventId) {
+            when (eventId) {
             MPV.mpvEvent.MPV_EVENT_START_FILE -> {
                 // Demuxer opened the file: the load got past issue into
                 // libmpv. If the stage sticks here, the stall is inside
@@ -1046,6 +1053,7 @@ internal class MpvCoreEngine(
                 }
             }
         }
+    }
     }
 
 
@@ -1553,15 +1561,19 @@ internal class MpvCoreEngine(
         playRequested = false
         activeMediaId = null
         activeMediaUri = null
+        fileLoadedForCurrentItem = false
+        currentQueue = emptyList()
         isReleased = true
         mainHandler.removeCallbacksAndMessages(null)
         detachSurface()
-        try {
-            mpv.removeObserver(eventObserver)
-            mpv.removeLogObserver(logObserver)
-            mpv.destroy()
-        } catch (e: Exception) {
-            Log.w(TAG, "Error releasing MPV", e)
+        synchronized(eventLock) {
+            try {
+                mpv.removeObserver(eventObserver)
+                mpv.removeLogObserver(logObserver)
+                mpv.destroy()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error releasing MPV", e)
+            }
         }
         // Issue #306: the log observer is gone, so no more appends can arrive —
         // flush any lines still buffered in MpvLogFile and close its writer.
