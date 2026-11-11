@@ -103,9 +103,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
-import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.MeTool
-import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.network.isSupportedStreamUrl
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
@@ -119,6 +117,7 @@ import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
 import java.util.Locale
 import kotlinx.coroutines.launch
+import org.koin.compose.viewmodel.koinViewModel
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 
@@ -134,7 +133,6 @@ fun MeScreen(
     onOpenPlaylists: () -> Unit,
     onOpenNetwork: (() -> Unit)? = null,
     playbackManager: PlaybackManager? = null,
-    settingsRepository: AppSettingsRepository? = null,
     currentLanguage: String = "system",
     onLanguageChanged: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -147,22 +145,27 @@ fun MeScreen(
     // screen body, so the dialog's onTestPip lambda captures the real one.
     val activity = LocalView.current.context as? Activity
     val realPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
-    val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
-    val persistenceRepository = realPlaybackManager.persistenceRepository
+    // Migration Phase 2e: screen state lives in MeViewModel now —
+    // settings, the badge flows, and the favourites actions. The
+    // screen still takes PlaybackManager directly for transport and
+    // the PiP test; those move behind interfaces in later phases.
+    // Settings come from the ViewModel (Koin's AppSettingsRepository
+    // single), so the old settingsRepository parameter is gone.
+    val viewModel: MeViewModel = koinViewModel()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Persistent Room data observation for live badge indicators
-    val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
+    val favourites by viewModel.favourites.collectAsState()
     // #265: the badge shows the real history total. The old code observed
     // the 100-row-capped list and rendered history.size, freezing the
     // badge at 100. The list itself is not needed here at all.
-    val historyTotal by persistenceRepository.observeHistoryCount().collectAsState(initial = 0)
-    val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
+    val historyTotal by viewModel.historyTotal.collectAsState()
+    val customPlaylists by viewModel.playlists.collectAsState()
 
     // Settings state
-    var appSettings by remember { mutableStateOf(realSettingsRepo.load()) }
-    val activeLanguage = currentLanguage.ifBlank { appSettings.appLanguage }
+    val appSettings by viewModel.settings.collectAsState()
+    val activeLanguage = viewModel.activeLanguage(currentLanguage)
 
     // Issue #231: reload settings on resume (same pattern as LocalScreen) —
     // a PiP/language/last-SMB-host change made in Settings must show up
@@ -171,7 +174,7 @@ fun MeScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                appSettings = realSettingsRepo.load()
+                viewModel.reloadSettings()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -626,13 +629,13 @@ fun MeScreen(
             },
             onRemoveFavourite = { uri ->
                 scope.launch {
-                    persistenceRepository.removeFavourite(uri)
+                    viewModel.removeFavourite(uri)
                     snackbarHostState.showSnackbar(context.getString(R.string.snackbar_removed_favourites))
                 }
             },
             onClearAll = {
                 scope.launch {
-                    persistenceRepository.clearFavourites()
+                    viewModel.clearFavourites()
                     snackbarHostState.showSnackbar(context.getString(R.string.snackbar_cleared_favourites))
                 }
             },
@@ -670,9 +673,7 @@ fun MeScreen(
             currentLanguage = activeLanguage,
             onDismiss = { showLanguageDialog = false },
             onSelectLanguage = { selectedLang ->
-                val updated = appSettings.copy(appLanguage = selectedLang)
-                appSettings = updated
-                realSettingsRepo.save(updated)
+                viewModel.updateLanguage(selectedLang)
                 onLanguageChanged?.invoke(selectedLang)
                 showLanguageDialog = false
                 scope.launch {
@@ -692,9 +693,7 @@ fun MeScreen(
             controls = appSettings.popupPlayControls,
             onDismiss = { showPopupPlayDialog = false },
             onUpdateSettings = { enabled, controls ->
-                val updated = appSettings.copy(popupPlayEnabled = enabled, popupPlayControls = controls)
-                appSettings = updated
-                realSettingsRepo.save(updated)
+                viewModel.updatePopupPlay(enabled, controls)
                 showPopupPlayDialog = false
             },
             onTestPip = {

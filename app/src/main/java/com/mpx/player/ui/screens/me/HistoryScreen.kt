@@ -43,11 +43,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,6 +64,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.launch
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Full History page (#157). The Me History tile used to open the
@@ -74,11 +72,6 @@ import kotlinx.coroutines.launch
  * Room-backed data and the same rows (icon, title, date + resume-at,
  * progress bar). Back returns to Me — exactly one step.
  */
-
-// #265: one page of history rows. The list grows by this much each time
-// the user scrolls near the end, until every row is loaded.
-private const val HISTORY_PAGE_SIZE = 100
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
@@ -89,7 +82,12 @@ fun HistoryScreen(
 ) {
     val context = LocalContext.current
     val realPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
-    val persistenceRepository = realPlaybackManager.persistenceRepository
+    // Migration Phase 2e: history state lives in MeViewModel now —
+    // the total, the paged list, and the clear action. The screen
+    // still takes PlaybackManager directly for transport and for
+    // resumeManager.clearAll() beside the clear (issue #353); those
+    // move behind interfaces in later phases.
+    val viewModel: MeViewModel = koinViewModel()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val dateFormat = remember { SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()) }
@@ -97,11 +95,10 @@ fun HistoryScreen(
     // #265: the list is paged (HISTORY_PAGE_SIZE rows at a time) and the
     // title shows the real total. The old code rendered history.size as
     // the total while the observer capped at 100 rows, freezing the count
-    // at 100 and hiding every older row. The limit is rememberSaveable so
-    // rotation does not drop already-loaded rows.
-    val historyTotal by persistenceRepository.observeHistoryCount().collectAsState(initial = 0)
-    var historyLimit by rememberSaveable { mutableStateOf(HISTORY_PAGE_SIZE) }
-    val history by persistenceRepository.observeHistory(limit = historyLimit).collectAsState(initial = emptyList())
+    // at 100 and hiding every older row. The limit lives in the
+    // ViewModel now, so rotation does not drop already-loaded rows.
+    val historyTotal by viewModel.historyTotal.collectAsState()
+    val history by viewModel.history.collectAsState()
 
     // #265: load the next page when the user scrolls near the end. The
     // effect keys on history.size too, so it re-fires after each page
@@ -116,9 +113,7 @@ fun HistoryScreen(
         }
     }
     LaunchedEffect(historyNearEnd, history.size) {
-        if (historyNearEnd && history.size < historyTotal) {
-            historyLimit += HISTORY_PAGE_SIZE
-        }
+        viewModel.loadMoreHistoryIfNearEnd(historyNearEnd)
     }
 
     // #252: the "Resume at" label must only appear when a tap would
@@ -127,7 +122,7 @@ fun HistoryScreen(
     // taps), so with the setting off the label would promise a resume
     // the tap does not deliver. Read fresh on every composition so a
     // Settings change is picked up when returning to this screen.
-    val resumePlaybackEnabled = realPlaybackManager.settingsRepository.load().resumePlayback
+    val resumePlaybackEnabled = viewModel.isResumePlaybackEnabled()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -158,7 +153,7 @@ fun HistoryScreen(
                     if (history.isNotEmpty()) {
                         TextButton(onClick = {
                             scope.launch {
-                                persistenceRepository.clearHistory()
+                                viewModel.clearHistory()
                                 // Issue #353: clearing history must also
                                 // forget every saved resume position, or
                                 // videos keep offering to resume from the

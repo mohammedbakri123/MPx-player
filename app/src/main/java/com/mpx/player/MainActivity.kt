@@ -806,7 +806,6 @@ fun MpxApp(
                     onOpenPlaylists = { navController.navigate(Screen.Playlists.route) },
                     onOpenNetwork = { navigateToTab(Screen.Network.route) },
                     playbackManager = playbackManager,
-                    settingsRepository = settingsRepository,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                 )

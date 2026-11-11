@@ -48,8 +48,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
-import com.mpx.player.domain.model.CustomPlaylist
-import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
@@ -57,6 +55,7 @@ import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import kotlinx.coroutines.launch
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Full Playlists page (#157). The Me Playlists tile used to open the
@@ -75,14 +74,19 @@ fun PlaylistsScreen(
 ) {
     val context = LocalContext.current
     val realPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
-    val persistenceRepository = realPlaybackManager.persistenceRepository
+    // Migration Phase 2e: playlist state lives in MeViewModel now —
+    // the list, the selected playlist and its items, and the
+    // create / rename / delete / remove actions. The screen still
+    // takes PlaybackManager directly for transport; that moves
+    // behind interfaces in later phases.
+    val viewModel: MeViewModel = koinViewModel()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
+    val customPlaylists by viewModel.playlists.collectAsState()
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
-    var selectedPlaylist by remember { mutableStateOf<CustomPlaylist?>(null) }
-    var playlistItemsForDialog by remember { mutableStateOf<List<PlaylistItem>>(emptyList()) }
+    val selectedPlaylist by viewModel.selectedPlaylist.collectAsState()
+    val playlistItemsForDialog by viewModel.playlistItems.collectAsState()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -149,23 +153,14 @@ fun PlaylistsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                selectedPlaylist = pl
                                 // #269: clear the old list at once, so the
                                 // dialog never shows the previous playlist's
                                 // items under this title while loading.
-                                playlistItemsForDialog = emptyList()
-                                scope.launch {
-                                    val items = persistenceRepository.getPlaylistItems(pl.id)
-                                    // #269: a second tap starts a second
-                                    // load — only apply this one if this
-                                    // playlist is still selected, so the
-                                    // slower load cannot win over the newer
-                                    // tap and put the wrong songs under the
-                                    // dialog's title.
-                                    if (selectedPlaylist?.id == pl.id) {
-                                        playlistItemsForDialog = items
-                                    }
-                                }
+                                // A second tap starts a second load — the
+                                // ViewModel only applies a load while its
+                                // playlist is still selected, so the slower
+                                // load cannot win over the newer tap.
+                                viewModel.selectPlaylist(pl)
                             }
                             .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -221,7 +216,7 @@ fun PlaylistsScreen(
             showTypeSelector = true,
             onConfirm = { name, isVideo ->
                 scope.launch {
-                    persistenceRepository.createPlaylist(name, isVideoPlaylist = isVideo)
+                    viewModel.createPlaylist(name, isVideo)
                     showCreatePlaylistDialog = false
                     snackbarHostState.showSnackbar(context.getString(R.string.snackbar_playlist_created, name))
                 }
@@ -234,7 +229,7 @@ fun PlaylistsScreen(
         PlaylistDetailsDialog(
             playlist = pl,
             items = playlistItemsForDialog,
-            onDismiss = { selectedPlaylist = null },
+            onDismiss = { viewModel.clearSelectedPlaylist() },
             onPlayAll = {
                 val playable = playlistItemsForDialog.map { item ->
                     PlayableMedia(
@@ -246,12 +241,12 @@ fun PlaylistsScreen(
                         durationMs = item.durationMs,
                     )
                 }
-                selectedPlaylist = null
+                viewModel.clearSelectedPlaylist()
                 realPlaybackManager.playQueue(playable)
                 onOpenPlayer()
             },
             onPlayItem = { item ->
-                selectedPlaylist = null
+                viewModel.clearSelectedPlaylist()
                 realPlaybackManager.playQueue(
                     listOf(
                         PlayableMedia(
@@ -268,25 +263,23 @@ fun PlaylistsScreen(
             },
             onRemoveItem = { itemId ->
                 scope.launch {
-                    persistenceRepository.removeItemFromPlaylist(itemId)
-                    playlistItemsForDialog = persistenceRepository.getPlaylistItems(pl.id)
+                    viewModel.removeItemFromPlaylist(itemId)
                 }
             },
             onDeletePlaylist = {
                 scope.launch {
-                    persistenceRepository.deletePlaylist(pl.id)
-                    selectedPlaylist = null
+                    viewModel.deletePlaylist(pl.id)
+                    viewModel.clearSelectedPlaylist()
                     snackbarHostState.showSnackbar(context.getString(R.string.music_deleted_playlist_msg, pl.name))
                 }
             },
             onRenamePlaylist = { newName ->
                 scope.launch {
-                    persistenceRepository.renamePlaylist(pl.id, newName)
+                    viewModel.renamePlaylist(pl.id, newName)
                     // Issue #230: the dialog reads its title from this
-                    // snapshot — update it so the new name shows at once.
-                    // The Playlists list refreshes itself via the
-                    // observePlaylists Flow.
-                    selectedPlaylist = pl.copy(name = newName)
+                    // snapshot — the ViewModel updates it so the new name
+                    // shows at once. The Playlists list refreshes itself
+                    // via the observePlaylists Flow.
                 }
             },
         )
