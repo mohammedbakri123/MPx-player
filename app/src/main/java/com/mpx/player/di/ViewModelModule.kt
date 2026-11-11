@@ -1,6 +1,7 @@
 package com.mpx.player.di
 
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.ui.screens.local.LocalViewModel
 import com.mpx.player.ui.screens.me.MeViewModel
 import com.mpx.player.ui.screens.music.MusicViewModel
 import com.mpx.player.ui.screens.network.NetworkViewModel
@@ -18,6 +19,26 @@ import org.koin.dsl.module
  * resolves the first from the [PlaybackManager] single — the manager
  * implements the interface, so no second instance is created — and
  * the second from the [appModule] settings single.
+ *
+ * Phase 2b registers [com.mpx.player.ui.screens.local.LocalViewModel].
+ * Its constructor takes interfaces only
+ * ([com.mpx.player.domain.repository.MediaRepository],
+ * [com.mpx.player.domain.repository.MediaPersistenceRepository],
+ * [com.mpx.player.domain.settings.AppSettingsRepository]); Koin
+ * resolves all three from [appModule]. The video-permission flag is
+ * the one value the ViewModel cannot know on its own (it needs a
+ * Context to check): it arrives as a parameter, supplied by the
+ * screen as `parametersOf(MediaPermissions.hasVideoPermission(...))`.
+ * The screen keeps the flag in sync afterwards via
+ * `setHasPermission` on the permission callback and on resume.
+ * The named `savedStateHandle = get()` is the
+ * [androidx.lifecycle.SavedStateHandle]: Koin creates it from the
+ * NavBackStackEntry's CreationExtras, so the search states survive
+ * dock-tab switches and process death (see LocalViewModel's Search
+ * section) — it is NOT a container binding, so do not move it to
+ * [appModule]. It is named (not positional) because the constructor's
+ * `ioDispatcher` parameter sits between it and `hasPermission` and
+ * keeps its default here.
  *
  * Phase 2c registers [com.mpx.player.ui.screens.music.MusicViewModel].
  * Its constructor takes interfaces only
@@ -42,6 +63,9 @@ import org.koin.dsl.module
  */
 val viewModelModule = module {
     viewModel { PlayerViewModel(get<PlaybackManager>(), get()) }
+    viewModel { (hasPermission: Boolean) ->
+        LocalViewModel(get(), get(), get(), hasPermission, savedStateHandle = get())
+    }
     viewModel { MusicViewModel(get(), get(), get()) }
     viewModel { NetworkViewModel(get<PlaybackManager>()) }
     viewModel { MeViewModel(get(), get()) }

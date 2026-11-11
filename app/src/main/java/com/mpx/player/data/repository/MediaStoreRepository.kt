@@ -253,6 +253,14 @@ class MediaStoreRepository(
         return roots.toList()
     }
 
+    /** Phase 2b: the process-lifetime scan cache, for LocalViewModel's
+     * initial state (#100). Delegates to the companion cache. */
+    override fun cachedFolders(showAllFolders: Boolean, showHiddenFiles: Boolean): List<MediaFolder>? =
+        MediaStoreRepository.cachedFolders(showAllFolders, showHiddenFiles)
+
+    override fun cachedVideos(showAll: Boolean, showHiddenFiles: Boolean): List<VideoFile>? =
+        MediaStoreRepository.cachedVideos(showAll, showHiddenFiles)
+
     override fun getMediaFolders(): List<MediaFolder> = getMediaFolders(showAllFolders = false)
 
     override fun getMediaFolders(showAllFolders: Boolean): List<MediaFolder> {

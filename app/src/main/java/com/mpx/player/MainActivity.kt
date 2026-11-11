@@ -768,7 +768,6 @@ fun MpxApp(
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
                     playbackManager = playbackManager,
-                    settingsRepository = settingsRepository,
                     // Issue #245: while the search page is open the
                     // tab-swipe detector above is off, so a swipe
                     // mid-search cannot switch tabs and destroy the query.

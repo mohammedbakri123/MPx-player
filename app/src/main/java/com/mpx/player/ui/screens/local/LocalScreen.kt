@@ -82,18 +82,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
 import com.mpx.player.ui.ActivityResultHandler
-import com.mpx.player.data.local.db.MpxDatabase
-import com.mpx.player.data.repository.MediaStoreRepository
-import com.mpx.player.data.repository.RoomMediaPersistenceRepository
-import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
-import com.mpx.player.domain.model.CustomPlaylist
-import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.PlaybackHistoryItem
-import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.model.VideoFile
-import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlaybackManager
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import com.mpx.player.ui.components.EmptyStateView
 import com.mpx.player.ui.components.MpxLoadingIndicator
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
@@ -102,7 +96,6 @@ import com.mpx.player.util.MediaPermissions
 import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.mpx.player.ui.theme.MpxHairline
@@ -149,39 +142,6 @@ private val MediaFolderSaver: Saver<MediaFolder?, List<Any>> = Saver(
     },
 )
 
-/**
- * #202: is this path covered by the folder blacklist (#158)? A blacklisted
- * path hides the folder itself AND everything under it — exact match, or
- * the path starts with the blacklisted path plus a separator. The
- * separator matters: blacklisting `/Movies` must NOT hide the sibling
- * `/Movies2` (a different folder whose name merely starts with the same
- * characters). Both sides go through [normalizedTreePath] first, so a
- * trailing slash on either side is harmless and the storage-prefix aliases
- * (#196: `/sdcard`, `/mnt/sdcard`, `/storage/emulated/legacy`, …) compare
- * equal to their canonical `/storage/emulated/0` form. A case-insensitive
- * fallback mirrors the tree's parent walk (#196): scanned paths can differ
- * in case from the stored entry for the same directory. A blacklisted
- * storage root (e.g. `/storage/emulated/0`) hides everything under it —
- * that is the user's explicit choice, no guard is applied here. A blank
- * entry is different (#316): it normalizes to `""`, so `"$base/"` is `"/"`
- * and every absolute path would match — blank/whitespace-only entries
- * (and a lone `/`, which also normalizes to `""`) never match anything.
- */
-internal fun isPathBlacklisted(path: String, blacklist: Set<String>): Boolean {
-    if (blacklist.isEmpty()) return false
-    val normalized = normalizedTreePath(path)
-    return blacklist.any { entry ->
-        val base = normalizedTreePath(entry)
-        // #316: a blank entry normalizes to "", so "$base/" is "/" and
-        // every absolute path would match. Skip blank entries outright.
-        if (base.isBlank()) return@any false
-        normalized == base ||
-            normalized.startsWith("$base/") ||
-            normalized.equals(base, ignoreCase = true) ||
-            normalized.startsWith("$base/", ignoreCase = true)
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalScreen(
@@ -190,7 +150,6 @@ fun LocalScreen(
     onOpenPlayer: () -> Unit,
     onOpenSettings: () -> Unit,
     playbackManager: PlaybackManager? = null,
-    settingsRepository: AppSettingsRepository? = null,
     // Issue #245: reports whether the whole-page search is open so
     // MainActivity can turn the tab-swipe detector off while it is —
     // a swipe mid-search used to switch tabs and destroy the typed
@@ -199,113 +158,82 @@ fun LocalScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val repository = remember(context) { MediaStoreRepository(context) }
-    val realSettingsRepo = remember(settingsRepository, context) {
-        settingsRepository ?: SharedPrefsAppSettingsRepository(context)
-    }
-    var appSettings by remember { mutableStateOf(realSettingsRepo.load()) }
-    // #100: permission state survives back-stack restore (rememberSaveable),
-    // and the last scan survives tab switches via the repository's
-    // process-lifetime cache, so returning to Local renders the previous
-    // content instantly instead of flashing an empty page while the rescan
-    // runs. First launch (no cache) still starts in the loading state.
-    var hasPermission by rememberSaveable {
-        mutableStateOf(MediaPermissions.hasVideoPermission(context))
-    }
-    var folders by remember {
-        mutableStateOf(
-            MediaStoreRepository.cachedFolders(
-                appSettings.showAllFolders,
-                appSettings.showHiddenFiles,
-            ) ?: emptyList()
-        )
-    }
-    var isLoading by remember {
-        mutableStateOf(
-            MediaStoreRepository.cachedFolders(
-                appSettings.showAllFolders,
-                appSettings.showHiddenFiles,
-            ) == null
-        )
-    }
-    var allVideos by remember {
-        mutableStateOf(
-            MediaStoreRepository.cachedVideos(
-                appSettings.showAllFolders,
-                appSettings.showHiddenFiles,
-            ) ?: emptyList()
-        )
-    }
+    // Phase 2b: the screen's state lives in LocalViewModel, obtained
+    // from Koin. The video-permission flag arrives as a parameter —
+    // the ViewModel cannot check it without a Context — and the
+    // screen keeps it in sync via setHasPermission (permission
+    // callback, ON_RESUME).
+    val viewModel: LocalViewModel = koinViewModel(
+        parameters = { parametersOf(MediaPermissions.hasVideoPermission(context)) },
+    )
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Root folder list view mode: loaded from persisted localViewMode
-    var viewMode by remember {
-        mutableStateOf(
-            try {
-                ViewMode.valueOf(appSettings.localViewMode)
-            } catch (_: Exception) {
-                ViewMode.LIST
-            }
-        )
-    }
-    // Issue #331: keyed on primarySortField, like #294's MusicScreen
-    // fix — a Settings reset (or any other outside change) re-derives
-    // the field on resume instead of the one-time remember going stale.
-    // The popup's onSortChange still works: it writes the same value to
-    // both sortField and settings, so the re-derived value is identical.
-    var sortField by remember(appSettings.primarySortField) {
-        mutableStateOf(
-            try {
-                SortField.valueOf(appSettings.primarySortField)
-            } catch (_: Exception) {
-                SortField.DATE
-            }
-        )
-    }
-    // Issue #331: same keying as sortField above.
-    var secondarySortField by remember(appSettings.secondarySortField) {
-        mutableStateOf(
-            try {
-                SortField.valueOf(appSettings.secondarySortField)
-            } catch (_: Exception) {
-                SortField.NAME
-            }
-        )
-    }
+    // State owned by the ViewModel, collected here under the same
+    // names the screen used before, so the rendering below reads
+    // exactly what it read before.
+    val appSettings by viewModel.settings.collectAsState()
+    val hasPermission by viewModel.hasPermission.collectAsState()
+    val folders by viewModel.folders.collectAsState()
+    val allVideos by viewModel.allVideos.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val folderVideos by viewModel.folderVideos.collectAsState()
+    val isFolderLoading by viewModel.isFolderLoading.collectAsState()
+    val viewMode by viewModel.viewMode.collectAsState()
+    val sortField by viewModel.sortField.collectAsState()
+    val secondarySortField by viewModel.secondarySortField.collectAsState()
+    val folderSortField by viewModel.folderSortField.collectAsState()
+    val folderSecondarySortField by viewModel.folderSecondarySortField.collectAsState()
+    val isTreeMode by viewModel.isTreeMode.collectAsState()
+    val expandedTreeFolders by viewModel.expandedTreeFolders.collectAsState()
+    val folderSearchQuery by viewModel.folderSearchQuery.collectAsState()
+    val isFolderSearching by viewModel.isFolderSearching.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedFolderIds by viewModel.selectedFolderIds.collectAsState()
+    val selectedVideoIds by viewModel.selectedVideoIds.collectAsState()
+    val isSelectionMode by viewModel.isSelectionMode.collectAsState()
+    val selectionCount by viewModel.selectionCount.collectAsState()
+    val favourites by viewModel.favourites.collectAsState()
+    val favouriteUris by viewModel.favouriteUris.collectAsState()
+    val customPlaylists by viewModel.customPlaylists.collectAsState()
+    val history by viewModel.history.collectAsState()
+    val sortedFolders by viewModel.sortedFolders.collectAsState()
+    val sortedVideos by viewModel.sortedVideos.collectAsState()
+    val sortedFolderVideos by viewModel.sortedFolderVideos.collectAsState()
+    val filteredFolderVideos by viewModel.filteredFolderVideos.collectAsState()
+    val videosForPlaylistAdd by viewModel.videosForPlaylistAdd.collectAsState()
+    val showAddToPlaylistDialog by viewModel.showAddToPlaylistDialog.collectAsState()
+    val showCreatePlaylistDialog by viewModel.showCreatePlaylistDialog.collectAsState()
 
-    fun updateViewMode(newMode: ViewMode) {
-        viewMode = newMode
-        val updated = if (appSettings.separateViewLayout) {
-            appSettings.copy(localViewMode = newMode.name)
-        } else {
-            appSettings.copy(localViewMode = newMode.name, musicViewMode = newMode.name)
-        }
-        realSettingsRepo.save(updated, commit = true)
-        appSettings = updated
-    }
-    // #164: Tree view (Sort & View popup): the root folders list shows
-    // the folder hierarchy inline. Persisted in AppSettings.localTreeMode;
-    // expanded folders are session-only (not persisted).
-    var isTreeMode by remember { mutableStateOf(appSettings.localTreeMode) }
-    var expandedTreeFolders by remember { mutableStateOf(setOf<String>()) }
-
-    fun updateTreeMode(tree: Boolean) {
-        isTreeMode = tree
-        val updated = appSettings.copy(localTreeMode = tree)
-        realSettingsRepo.save(updated, commit = true)
-        appSettings = updated
-    }
+    // Compose-only state stays in the screen: dialog visibility for
+    // the sort / view dialogs, and the two saveable navigation
+    // states below. The ViewModel deliberately does NOT own
+    // currentFolder or showSearchPage (see LocalViewModel's KDoc):
+    // both are rememberSaveable, so a process death restores the
+    // drilled-in folder and the open search page.
     var showSortDialog by remember { mutableStateOf(false) }
     // #156: the header layout button opens the Sort & View popup
     // (LocalSortPopup), which replaced #141's LocalLayoutSheet.
     var showSortPopup by remember { mutableStateOf(false) }
     var popupFolderScope by remember { mutableStateOf(false) }
+    var showFolderSortDialog by remember { mutableStateOf(false) }
     // #142: the search page replaces the old inline root search.
-    // Issue #318: rememberSaveable, not remember — the query inside
-    // LocalSearchScreen is saveable too, but it is only in composition
-    // while this flag is true, so a plain-remember flag would close the
-    // page on rotation and the saved query would never be reached.
-    // (Same query + flag pair as Music's #255.)
+    // Issue #318: rememberSaveable, not remember — the query lives
+    // in the ViewModel's SavedStateHandle, but the flag gating the
+    // page still needs to survive rotation, or the saved query would
+    // never be reached. (Same query + flag pair as Music's #255.)
     var showSearchPage by rememberSaveable { mutableStateOf(false) }
+    // Folder view mode state (drilled-down folder contents view).
+    // Issue #175: rememberSaveable, not remember — Compose Navigation
+    // disposes this screen's composition when the Player destination is
+    // pushed, so plain remember re-initialised the folder to null (Home)
+    // on the way back. The Saver above round-trips the folder through
+    // the back-stack entry's saved state.
+    var currentFolder by rememberSaveable(stateSaver = MediaFolderSaver) {
+        mutableStateOf<MediaFolder?>(null)
+    }
+    var isRefreshing by remember { mutableStateOf(false) }
+
     // Issue #245: report the search page state to MainActivity so the
     // tab-swipe detector can turn off while the page is open — a swipe
     // mid-search used to switch tabs and destroy the typed query.
@@ -317,18 +245,7 @@ fun LocalScreen(
     LaunchedEffect(showSearchPage) {
         onSearchPageChanged(showSearchPage)
     }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
-    // Folder view mode state (drilled-down folder contents view).
-    // Issue #175: rememberSaveable, not remember — Compose Navigation
-    // disposes this screen's composition when the Player destination is
-    // pushed, so plain remember re-initialised the folder to null (Home)
-    // on the way back. The Saver above round-trips the folder through
-    // the back-stack entry's saved state.
-    var currentFolder by rememberSaveable(stateSaver = MediaFolderSaver) {
-        mutableStateOf<MediaFolder?>(null)
-    }
     // Re-resolve the restored folder against the freshly scanned list, so
     // the header counts are never a stale snapshot from before navigation.
     LaunchedEffect(folders) {
@@ -337,77 +254,30 @@ fun LocalScreen(
             folders.find { it.path == path }?.let { currentFolder = it }
         }
     }
-    var folderVideos by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
-    var isFolderLoading by remember { mutableStateOf(false) }
-    // #277: the in-flight folder-videos load — cancelled before a new one
-    // starts, so a stale scan can never overwrite the current folder's
-    // videos (same Job-handle pattern as PlayerScreen's hide jobs).
-    var folderVideosJob by remember { mutableStateOf<Job?>(null) }
-    // Issue #319: the in-flight root scan (refreshFolders, the
-    // permission callback, ON_RESUME) — cancelled on permission loss
-    // so a stale completion cannot repopulate the cleared lists
-    // afterwards, same Job-handle pattern as folderVideosJob (#277).
-    var foldersLoadJob by remember { mutableStateOf<Job?>(null) }
-    // Issue #331: same defect as the root sort fields above — the
-    // folder-scope fields are one-time remembers too, so a Settings
-    // reset left them stale. Keyed on their settings values, same as
-    // #294's MusicScreen fix; the folder popups' onSortChange writes the
-    // same value to both the local state and settings.
-    var folderSortField by remember(appSettings.folderPrimarySortField) {
-        mutableStateOf(
-            try {
-                SortField.valueOf(appSettings.folderPrimarySortField)
-            } catch (_: Exception) {
-                SortField.DATE
-            }
-        )
-    }
-    var folderSecondarySortField by remember(appSettings.folderSecondarySortField) {
-        mutableStateOf(
-            try {
-                SortField.valueOf(appSettings.folderSecondarySortField)
-            } catch (_: Exception) {
-                SortField.NAME
-            }
-        )
-    }
-    // Issue #318: rememberSaveable, not remember — rotation dropped
-    // the folder search query (and the flag gating the search field,
-    // same query + flag pair as Music's #255).
-    var folderSearchQuery by rememberSaveable { mutableStateOf("") }
-    var isFolderSearching by rememberSaveable { mutableStateOf(false) }
-    var showFolderSortDialog by remember { mutableStateOf(false) }
-    // #144: videos queued for "Add to playlist" — the whole
-    // multi-select action-bar selection.
-    var videosForPlaylistAdd by remember { mutableStateOf<List<VideoFile>>(emptyList()) }
-    var showAddToPlaylistDialog by remember { mutableStateOf(false) }
 
-    // #144: long-press multi-select. One selection per view: folders on
-    // the root folder list, videos in file view and inside a folder.
-    // Long-press toggles an item (entering selection mode when empty);
-    // a tap while selecting toggles too. Back / the X exits and clears.
-    var selectedFolderIds by remember { mutableStateOf(setOf<String>()) }
-    var selectedVideoIds by remember { mutableStateOf(setOf<String>()) }
-    val isSelectionMode = selectedFolderIds.isNotEmpty() || selectedVideoIds.isNotEmpty()
-    val selectionCount = selectedFolderIds.size + selectedVideoIds.size
+    // #142: back from the search page returns to Local (exactly one step).
+    BackHandler(enabled = showSearchPage) {
+        showSearchPage = false
+    }
+
+    fun updateViewMode(newMode: ViewMode) {
+        viewModel.updateViewMode(newMode)
+    }
+
+    fun updateTreeMode(tree: Boolean) {
+        viewModel.updateTreeMode(tree)
+    }
 
     fun clearSelection() {
-        selectedFolderIds = emptySet()
-        selectedVideoIds = emptySet()
+        viewModel.clearSelection()
     }
 
     fun toggleFolderSelection(folder: MediaFolder) {
-        val key = folder.id.ifBlank { folder.path }
-        selectedFolderIds =
-            if (selectedFolderIds.contains(key)) selectedFolderIds - key
-            else selectedFolderIds + key
+        viewModel.toggleFolderSelection(folder)
     }
 
     fun toggleVideoSelection(video: VideoFile) {
-        val key = video.id.ifBlank { video.path }
-        selectedVideoIds =
-            if (selectedVideoIds.contains(key)) selectedVideoIds - key
-            else selectedVideoIds + key
+        viewModel.toggleVideoSelection(video)
     }
 
     // #146: shared "back to root" — the back button and the breadcrumb's
@@ -418,66 +288,25 @@ fun LocalScreen(
     // resolve to nothing.
     fun goToRoot() {
         currentFolder = null
-        isFolderSearching = false
-        folderSearchQuery = ""
-        clearSelection()
-    }
-
-    // #142: back from the search page returns to Local (exactly one step).
-    BackHandler(enabled = showSearchPage) {
-        showSearchPage = false
-    }
-
-    // #375: the folder + selection back handlers live after
-    // currentSubfolders (below) — goToParentFolder needs filteredFolders,
-    // and local functions are only visible after their declaration point.
-
-    // #277: the single entry point for every folder-videos scan
-    // (openFolder, refreshFolderVideos — hence the ON_RESUME refresh and
-    // pull-to-refresh too). Declared before openFolder, because local
-    // functions are only visible after their declaration point.
-    // One in-flight load at a time: the previous load is cancelled
-    // before a new one starts, and the result is only applied if this
-    // folder is still the open one when the scan completes — tapping
-    // folder A then B quickly can no longer show A's videos under B's
-    // header, whichever scan finishes last. isFolderLoading is written
-    // here on Main (all callers run on Main); the old code wrote it
-    // from the IO thread in both functions.
-    fun loadFolderVideos(folderId: String) {
-        folderVideosJob?.cancel()
-        isFolderLoading = true
-        folderVideosJob = scope.launch(Dispatchers.IO) {
-            val vids = repository.getVideosInFolder(folderId)
-            withContext(Dispatchers.Main) {
-                if (currentFolder?.id == folderId) {
-                    folderVideos = vids
-                }
-                isFolderLoading = false
-            }
-        }
+        viewModel.clearFolderViewState()
     }
 
     fun openFolder(folder: MediaFolder) {
         // Issue #276: a new folder is a new view — a selection made in
         // the previous folder no longer resolves against this folder's
         // videos, so clear it instead of leaving a lying badge behind.
-        clearSelection()
-        currentFolder = folder
-        isFolderSearching = false
-        folderSearchQuery = ""
         // Issue #186: one layout for Home and all folders — the folder
         // contents use the shared viewMode, no per-folder lookup.
-        // #277: clear at once, so the previous folder's videos are never
-        // shown under this folder's header while the scan runs (same as
-        // the #269 playlist-dialog clear).
-        folderVideos = emptyList()
-        loadFolderVideos(folder.id)
+        currentFolder = folder
+        viewModel.openFolder(folder)
     }
 
     fun refreshFolderVideos(folderId: String) {
-        // #277: same folder — no synchronous clear, so pull-to-refresh /
-        // ON_RESUME keeps showing the current videos while reloading.
-        loadFolderVideos(folderId)
+        viewModel.refreshFolderVideos(folderId)
+    }
+
+    fun refreshFolders(showAll: Boolean = appSettings.showAllFolders) {
+        viewModel.refreshFolders(showAll)
     }
 
     // #378: startEntry resumes a specific video from the folder (quick-play
@@ -485,7 +314,7 @@ fun LocalScreen(
     // other caller (tile taps, Play all) keeps the from-the-start behaviour.
     fun playFolder(folder: MediaFolder, startEntry: PlaybackHistoryItem? = null) {
         scope.launch(Dispatchers.IO) {
-            val videos = repository.getVideosInFolder(folder.id)
+            val videos = viewModel.videosInFolder(folder.id)
             withContext(Dispatchers.Main) {
                 if (videos.isEmpty()) {
                     scope.launch {
@@ -511,7 +340,7 @@ fun LocalScreen(
     fun playVideoWithFolder(video: VideoFile) {
         scope.launch(Dispatchers.IO) {
             val vids = if (video.bucketId.isNotBlank()) {
-                val found = repository.getVideosInFolder(video.bucketId)
+                val found = viewModel.videosInFolder(video.bucketId)
                 if (found.isNotEmpty()) found else listOf(video)
             } else {
                 listOf(video)
@@ -524,140 +353,17 @@ fun LocalScreen(
         }
     }
 
-    val persistenceRepository = remember(context) {
-        playbackManager?.persistenceRepository
-            ?: RoomMediaPersistenceRepository(MpxDatabase.getInstance(context), context)
-    }
-    val favourites by persistenceRepository.observeFavourites().collectAsState(initial = emptyList())
-    // Issue #360: the favourite URIs as a Set, computed once per
-    // favourites change — the rows below used to scan the whole
-    // favourites list per row on every composition while scrolling.
-    val favouriteUris = remember(favourites) { favourites.map { it.mediaUri }.toSet() }
-    val customPlaylists by persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
-    // Issue #378: playback history powers the quick-play FAB — it resumes
-    // the last played video instead of rolling dice. Same observe pattern
-    // as favourites above; newest first.
-    val history by persistenceRepository.observeHistory().collectAsState(initial = emptyList())
+    // Issue #378: the last played video in a list (see LocalViewModel).
+    fun lastPlayedIn(videos: List<VideoFile>): VideoFile? =
+        viewModel.lastPlayedIn(videos)
 
-    // Issue #378: the last played video in a list. History is newest
-    // first, so the first entry that matches a video in the list is the
-    // most recent one. Matches on the MediaStore id first, the path as a
-    // fallback — both are recorded by PlaybackManager.
-    fun lastPlayedIn(videos: List<VideoFile>): VideoFile? {
-        for (entry in history) {
-            if (!entry.isVideo) continue
-            val match = videos.firstOrNull { it.id == entry.mediaId || it.path == entry.mediaUri }
-            if (match != null) return match
-        }
-        return null
-    }
-
-
-    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
-
-    // #158: folder blacklist (Preferences > Folders). A blacklisted
-    // folder and its videos never reach the UI; the filter runs on the
-    // scanned result at every load site, so it also applies after
-    // returning from Preferences. #202: the match is a prefix rule
-    // ([isPathBlacklisted]) — a blacklisted folder hides its subfolders
-    // and their videos too, not just its own top level.
-    fun applyFolderBlacklist(
-        scanned: List<MediaFolder>,
-        scannedVideos: List<VideoFile>,
-        blacklist: Set<String>,
-    ): Pair<List<MediaFolder>, List<VideoFile>> {
-        if (blacklist.isEmpty()) return scanned to scannedVideos
-        val visibleFolders = scanned.filter { !isPathBlacklisted(it.path, blacklist) }
-        // Issue #317: a content://-pathed video (blank DATA) has no
-        // filesystem parent — File(path).parent is the meaningless
-        // "content://media/external/...", so it could never match a
-        // blacklisted folder and leaked into file view and search.
-        // Resolve it from the folder list instead: the video's bucketId
-        // is the scanned folder's id (MediaFolder.id == bucket id), and
-        // the folder carries the real parent path. Built from the
-        // unfiltered list — the blacklisted folder itself must stay in
-        // the map, or its videos could never be matched. A video whose
-        // bucket has no folder entry (bucket "unknown", or every row in
-        // the bucket had blank DATA so the folder path is unknown)
-        // falls back to the old File.parent behaviour — visible, never
-        // falsely hidden.
-        val folderPathByBucketId = scanned
-            .filter { it.path.isNotBlank() }
-            .associate { it.id to it.path }
-        val visibleVideos = scannedVideos.filter { video ->
-            val parent = if (video.path.isNotBlank() && !video.path.startsWith("content://")) {
-                File(video.path).parent
-            } else {
-                folderPathByBucketId[video.bucketId] ?: File(video.path).parent
-            }
-            parent == null || !isPathBlacklisted(parent, blacklist)
-        }
-        return visibleFolders to visibleVideos
-    }
-
-    // Issue #319: permission loss must clear ALL media state, not
-    // just folders — the old code left allVideos (file view + search)
-    // and the open folder's folderVideos stale, so the open folder
-    // view kept showing — and playing — videos after permission loss.
-    // The folder is closed, the selection and the pending
-    // playlist-add items are dropped, the add/create dialogs are
-    // closed, and both in-flight scans are cancelled first so a
-    // stale completion cannot repopulate the cleared lists afterwards
-    // (loadFolderVideos' folder-id guard alone is not enough: the
-    // open folder id still matches until it is cleared).
     fun clearMediaStateOnPermissionLoss() {
-        foldersLoadJob?.cancel()
-        folderVideosJob?.cancel()
-        folders = emptyList()
-        allVideos = emptyList()
-        folderVideos = emptyList()
+        // Issue #319: the folder is closed here, not in the ViewModel
+        // — the screen owns currentFolder — so the ON_RESUME
+        // refreshFolderVideos below is skipped instead of rescanning
+        // a folder the app can no longer read.
         currentFolder = null
-        isLoading = false
-        isFolderLoading = false
-        clearSelection()
-        videosForPlaylistAdd = emptyList()
-        showAddToPlaylistDialog = false
-        showCreatePlaylistDialog = false
-        isFolderSearching = false
-        folderSearchQuery = ""
-    }
-
-    // Issue #320: a refresh requested while a scan is in flight is
-    // queued instead of dropped. Repeated requests coalesce into this
-    // single pending refresh (latest showAll wins); it runs when the
-    // in-flight scan finishes (see the drain effect below, next to the
-    // isRefreshing effect). Null means no refresh is queued.
-    var pendingRefreshShowAll by remember { mutableStateOf<Boolean?>(null) }
-
-    fun refreshFolders(showAll: Boolean = appSettings.showAllFolders) {
-        if (isLoading) {
-            // Issue #320: queue instead of dropping — the pull-to-refresh
-            // spinner (isRefreshing) stays up until this queued refresh
-            // actually runs, and the Sort dialog's show-all toggle is no
-            // longer silently swallowed mid-scan.
-            pendingRefreshShowAll = showAll
-            return
-        }
-        if (MediaPermissions.hasVideoPermission(context)) {
-            hasPermission = true
-            // Issue #295: isLoading is snapshot state — write it on Main,
-            // before the IO work, not inside the IO block.
-            isLoading = true
-            foldersLoadJob?.cancel()
-            foldersLoadJob = scope.launch(Dispatchers.IO) {
-                val scanned = repository.getMediaFolders(showAll)
-                val scannedVideos = repository.getAllVideos(showAll)
-                val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, appSettings.blacklistedFolders)
-                withContext(Dispatchers.Main) {
-                    folders = visibleFolders
-                    allVideos = visibleVideos
-                    isLoading = false
-                }
-            }
-        } else {
-            hasPermission = false
-            clearMediaStateOnPermissionLoss()
-        }
+        viewModel.clearMediaStateOnPermissionLoss()
     }
 
     DisposableEffect(permissionResultHandler) {
@@ -665,26 +371,15 @@ fun LocalScreen(
     }
     SideEffect {
         permissionResultHandler.callback = { isGranted ->
-        hasPermission = isGranted
-        if (isGranted) {
-            // Issue #295: isLoading is snapshot state — write it on Main,
-            // before the IO work, not inside the IO block.
-            isLoading = true
-            foldersLoadJob?.cancel()
-            foldersLoadJob = scope.launch(Dispatchers.IO) {
-                val scanned = repository.getMediaFolders(appSettings.showAllFolders)
-                val scannedVideos = repository.getAllVideos(appSettings.showAllFolders)
-                val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, appSettings.blacklistedFolders)
-                withContext(Dispatchers.Main) {
-                    folders = visibleFolders
-                    allVideos = visibleVideos
-                    isLoading = false
-                }
+            viewModel.setHasPermission(isGranted)
+            if (isGranted) {
+                // Issue #295: the scan runs through the ViewModel's
+                // reload path, which cancels any in-flight scan first.
+                viewModel.reloadFolders()
+            } else {
+                // Issue #319: clear all media state, not just folders.
+                clearMediaStateOnPermissionLoss()
             }
-        } else {
-            // Issue #319: clear all media state, not just folders.
-            clearMediaStateOnPermissionLoss()
-        }
         }
     }
 
@@ -693,9 +388,9 @@ fun LocalScreen(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 val currentPerm = MediaPermissions.hasVideoPermission(context)
-                hasPermission = currentPerm
-                val loadedSettings = realSettingsRepo.load()
-                appSettings = loadedSettings
+                viewModel.setHasPermission(currentPerm)
+                viewModel.reloadSettings()
+                val loadedSettings = viewModel.settings.value
                 // #158: if the open folder was just blacklisted, leave it.
                 // #202: prefix rule — leaving applies when the open folder
                 // is itself blacklisted OR sits under a blacklisted parent.
@@ -703,25 +398,12 @@ fun LocalScreen(
                     currentFolder = null
                     // Issue #276: leaving the folder this way must clear
                     // the selection too, like every other folder exit.
-                    clearSelection()
+                    viewModel.clearSelection()
                 }
-                viewMode = if (loadedSettings.localViewMode == "GRID") ViewMode.GRID else ViewMode.LIST
-                isTreeMode = loadedSettings.localTreeMode
+                // The view mode / tree mode re-sync the screen used to do
+                // here now follows the settings reload in the ViewModel.
                 if (currentPerm) {
-                    // Issue #295: isLoading is snapshot state — write it
-                    // on Main, before the IO work, not inside the IO block.
-                    isLoading = true
-                    foldersLoadJob?.cancel()
-                    foldersLoadJob = scope.launch(Dispatchers.IO) {
-                        val scanned = repository.getMediaFolders(loadedSettings.showAllFolders)
-                        val scannedVideos = repository.getAllVideos(loadedSettings.showAllFolders)
-                        val (visibleFolders, visibleVideos) = applyFolderBlacklist(scanned, scannedVideos, loadedSettings.blacklistedFolders)
-                        withContext(Dispatchers.Main) {
-                            folders = visibleFolders
-                            allVideos = visibleVideos
-                            isLoading = false
-                        }
-                    }
+                    viewModel.reloadFolders(showAll = loadedSettings.showAllFolders)
                 } else {
                     // Issue #319: clear all media state, not just
                     // folders — and close the open folder, so the
@@ -731,7 +413,7 @@ fun LocalScreen(
                     clearMediaStateOnPermissionLoss()
                 }
                 currentFolder?.let { cf ->
-                    refreshFolderVideos(cf.id)
+                    viewModel.refreshFolderVideos(cf.id)
                 }
             }
         }
@@ -741,62 +423,14 @@ fun LocalScreen(
         }
     }
 
-    val sortedFolders = remember(folders, sortField, secondarySortField, appSettings) {
-        folders.sortedWith(
-            MediaSortComparator.folderComparator(
-                primary = sortField,
-                secondary = secondarySortField,
-                reverse = appSettings.sortReverse,
-                secondaryReverse = appSettings.sortSecondaryReverse,
-                numeric = appSettings.sortNumeric,
-                caseSensitive = appSettings.sortCaseSensitive,
-            )
-        )
-    }
-
     // #142: root lists are no longer query-filtered — search lives on its
     // own page over these same sorted lists.
     val filteredFolders = sortedFolders
 
     // File view: all videos ungrouped, sorted and filtered
-    val sortedVideos = remember(allVideos, sortField, secondarySortField, appSettings) {
-        allVideos.sortedWith(
-            MediaSortComparator.videoComparator(
-                primary = sortField,
-                secondary = secondarySortField,
-                reverse = appSettings.sortReverse,
-                secondaryReverse = appSettings.sortSecondaryReverse,
-                numeric = appSettings.sortNumeric,
-                caseSensitive = appSettings.sortCaseSensitive,
-                ignoreExtension = appSettings.sortIgnoreExtension,
-            )
-        )
-    }
-
     val filteredVideos = sortedVideos
 
     val rootEmpty = if (appSettings.fileView) filteredVideos.isEmpty() else filteredFolders.isEmpty()
-
-    // Folder view sorted and filtered videos
-    val sortedFolderVideos = remember(folderVideos, folderSortField, folderSecondarySortField, appSettings) {
-        folderVideos.sortedWith(
-            MediaSortComparator.videoComparator(
-                primary = folderSortField,
-                secondary = folderSecondarySortField,
-                reverse = appSettings.sortReverse,
-                secondaryReverse = appSettings.sortSecondaryReverse,
-                numeric = appSettings.sortNumeric,
-                caseSensitive = appSettings.sortCaseSensitive,
-                ignoreExtension = appSettings.sortIgnoreExtension,
-            )
-        )
-    }
-
-    val filteredFolderVideos = remember(sortedFolderVideos, folderSearchQuery) {
-        val q = folderSearchQuery.trim()
-        if (q.isBlank()) sortedFolderVideos
-        else sortedFolderVideos.filter { it.title.contains(q, ignoreCase = true) || it.path.contains(q, ignoreCase = true) }
-    }
 
     // #375: immediate subfolders of the open folder (MX/mpvEx drill-in):
     // derived from the same scanned list through the tree's parent logic,
@@ -809,10 +443,8 @@ fun LocalScreen(
     // #375: back from a folder goes up exactly one level (MX/mpvEx),
     // not straight to root — unless the folder is already a root, in
     // which case there is no parent and it goes to the root list.
-    // Declared here (not next to openFolder) because it needs
-    // filteredFolders, declared just above.
     fun goToParentFolder() {
-        val parent = currentFolder?.let { parentFolderOf(filteredFolders, it.path) }
+        val parent = currentFolder?.let { viewModel.findParentFolder(it.path) }
         if (parent != null) openFolder(parent) else goToRoot()
     }
 
@@ -833,66 +465,16 @@ fun LocalScreen(
     // selected folders — the videos inside them (#233: both halves are
     // combined, never videos-first with a folders-only fallback).
     // There is NO delete action: it never existed in the tile menus.
-    // Issue #234: the resolvers below filter the UNFILTERED sorted lists
-    // (sortedFolderVideos / sortedVideos / sortedFolders) — never the
-    // search-filtered ones. The search box helps find items; it must not
-    // narrow an existing selection. (filteredVideos / filteredFolders are
-    // aliases of the sorted lists today, but the resolvers name the sorted
-    // lists so the intent survives any future filtering of those aliases.
-    // The in-folder search box DOES filter filteredFolderVideos, which is
-    // why the folder branch previously dropped hidden selections here.)
-    fun selectedVideosInView(): List<VideoFile> {
-        return when {
-            // #165: on the search page the selection resolves against
-            // the full video list — matches are a subset of it, and the
-            // folder/file views below cannot see them.
-            showSearchPage -> allVideos.filter {
-                selectedVideoIds.contains(it.id.ifBlank { it.path })
-            }
-            currentFolder != null -> sortedFolderVideos.filter {
-                selectedVideoIds.contains(it.id.ifBlank { it.path })
-            }
-            appSettings.fileView -> sortedVideos.filter {
-                selectedVideoIds.contains(it.id.ifBlank { it.path })
-            }
-            else -> emptyList()
-        }
-    }
-
-    fun selectedFoldersInView(): List<MediaFolder> {
-        return when {
-            // #165: same as videos — search matches live in the full
-            // folder list.
-            showSearchPage -> folders.filter {
-                selectedFolderIds.contains(it.id.ifBlank { it.path })
-            }
-            currentFolder == null && !appSettings.fileView -> {
-                sortedFolders.filter {
-                    selectedFolderIds.contains(it.id.ifBlank { it.path })
-                }
-            }
-            else -> emptyList()
-        }
-    }
-
-    // Issue #233: videos inside the given folders — the folder half of a
-    // multi-select. Call only from an IO coroutine: it scans MediaStore
-    // buckets. (The folder half must never be silently dropped when the
-    // selection also holds videos — see the four actions below.)
-    fun videosInFolders(folders: List<MediaFolder>): List<VideoFile> =
-        folders.flatMap { repository.getVideosInFolder(it.id) }
-
     fun playSelection() {
-        val videos = selectedVideosInView()
-        val folders = selectedFoldersInView()
+        val videos = viewModel.selectedVideosInView(currentFolder, showSearchPage)
+        val folders = viewModel.selectedFoldersInView(currentFolder, showSearchPage)
         if (videos.isEmpty() && folders.isEmpty()) return
         scope.launch(Dispatchers.IO) {
             // Issue #233: combine both halves — selected videos first,
             // then the videos inside selected folders, deduped by id so
             // a video that is both directly selected and inside a
             // selected folder plays once.
-            val all = (videos + videosInFolders(folders))
-                .distinctBy { it.id.ifBlank { it.path } }
+            val all = viewModel.resolveSelectionVideos(currentFolder, showSearchPage)
             withContext(Dispatchers.Main) {
                 if (all.isEmpty()) {
                     snackbarHostState.showSnackbar(
@@ -905,21 +487,21 @@ fun LocalScreen(
                     playbackManager?.playVideoFiles(all)
                     onOpenPlayer()
                 }
-                clearSelection()
+                viewModel.clearSelection()
             }
         }
     }
 
     fun playSelectionFolder() {
-        val videos = selectedVideosInView()
-        val folders = selectedFoldersInView()
+        val videos = viewModel.selectedVideosInView(currentFolder, showSearchPage)
+        val folders = viewModel.selectedFoldersInView(currentFolder, showSearchPage)
         if (videos.isNotEmpty()) {
             // Play the folder the first selected video lives in,
             // starting at that video.
             val first = videos.first()
             scope.launch(Dispatchers.IO) {
                 val vids = if (first.bucketId.isNotBlank()) {
-                    repository.getVideosInFolder(first.bucketId)
+                    viewModel.videosInFolder(first.bucketId)
                 } else {
                     listOf(first)
                 }
@@ -928,13 +510,13 @@ fun LocalScreen(
                 // appended after this folder's videos, deduped by id so
                 // a video already in the folder plays once (including
                 // when the first video's own folder is selected).
-                val all = (vids + videosInFolders(folders))
+                val all = (vids + viewModel.videosInFolders(folders))
                     .distinctBy { it.id.ifBlank { it.path } }
                 val startIndex = all.indexOfFirst { it.id == first.id }.coerceAtLeast(0)
                 withContext(Dispatchers.Main) {
                     playbackManager?.playVideoFiles(all, startIndex)
                     onOpenPlayer()
-                    clearSelection()
+                    viewModel.clearSelection()
                 }
             }
         } else if (folders.isNotEmpty()) {
@@ -944,16 +526,15 @@ fun LocalScreen(
     }
 
     fun addSelectionToPlaylist() {
-        val videos = selectedVideosInView()
-        val folders = selectedFoldersInView()
+        val videos = viewModel.selectedVideosInView(currentFolder, showSearchPage)
+        val folders = viewModel.selectedFoldersInView(currentFolder, showSearchPage)
         if (videos.isEmpty() && folders.isEmpty()) return
         scope.launch(Dispatchers.IO) {
             // Issue #233: combine both halves — selected videos first,
             // then the videos inside selected folders, deduped by id so
             // a video that is both directly selected and inside a
             // selected folder is added once.
-            val all = (videos + videosInFolders(folders))
-                .distinctBy { it.id.ifBlank { it.path } }
+            val all = viewModel.resolveSelectionVideos(currentFolder, showSearchPage)
             withContext(Dispatchers.Main) {
                 if (all.isEmpty()) {
                     snackbarHostState.showSnackbar(
@@ -963,105 +544,46 @@ fun LocalScreen(
                         )
                     )
                 } else {
-                    videosForPlaylistAdd = all
-                    showAddToPlaylistDialog = true
+                    viewModel.showAddToPlaylist(all)
                 }
             }
         }
     }
 
     // Issue #235: single-video favourite toggle for the grid card heart.
-    // Uses the same repository toggle the player uses, so the heart flips
-    // through the observed favourites Flow — no manual refresh needed.
+    // The ViewModel owns the toggle; the heart flips through the
+    // observed favourites Flow — no manual refresh needed.
     fun toggleVideoFavourite(video: VideoFile) {
-        scope.launch(Dispatchers.IO) {
-            persistenceRepository.toggleFavourite(
-                FavouriteItem(
-                    mediaId = video.id,
-                    title = video.title,
-                    subtitle = video.folderName,
-                    mediaUri = video.path,
-                    isVideo = true,
-                    durationMs = video.durationMs,
-                ),
-            )
-        }
+        viewModel.toggleVideoFavourite(video)
     }
 
     fun toggleSelectionFavourite() {
-        val direct = selectedVideosInView()
-        val folders = selectedFoldersInView()
-        val favUris = favourites.map { it.mediaUri }.toSet()
-        scope.launch(Dispatchers.IO) {
-            // Issue #233: combine both halves — selected videos first,
-            // then the videos inside selected folders, deduped by path
-            // (favourites are keyed by path, so a video that is both
-            // directly selected and inside a selected folder must
-            // resolve once).
-            val resolved = (direct + videosInFolders(folders))
-                .distinctBy { it.path }
-            if (resolved.isEmpty()) {
-                withContext(Dispatchers.Main) {
-                    snackbarHostState.showSnackbar(
-                        context.getString(
-                            R.string.snackbar_no_playable_videos,
-                            folders.firstOrNull()?.name ?: "",
-                        )
-                    )
-                }
-                return@launch
-            }
-            // Toggle as a group: if every selected video is already a
-            // favourite, remove them all; otherwise add the missing ones.
-            val allFav = resolved.all { favUris.contains(it.path) }
-            if (allFav) {
-                resolved.forEach { persistenceRepository.removeFavourite(it.path) }
-            } else {
-                resolved.filter { !favUris.contains(it.path) }.forEach { video ->
-                    persistenceRepository.addFavourite(
-                        FavouriteItem(
-                            mediaId = video.id,
-                            title = video.title,
-                            subtitle = video.folderName,
-                            mediaUri = video.path,
-                            isVideo = true,
-                            durationMs = video.durationMs,
-                        )
-                    )
-                }
-            }
-            withContext(Dispatchers.Main) {
-                clearSelection()
-                snackbarHostState.showSnackbar(
+        scope.launch {
+            when (viewModel.toggleSelectionFavourite(currentFolder, showSearchPage)) {
+                SelectionFavouriteOutcome.ADDED -> snackbarHostState.showSnackbar(
+                    context.getString(R.string.snackbar_added_to_favourites)
+                )
+                SelectionFavouriteOutcome.REMOVED -> snackbarHostState.showSnackbar(
+                    context.getString(R.string.snackbar_removed_favourites)
+                )
+                SelectionFavouriteOutcome.EMPTY -> snackbarHostState.showSnackbar(
                     context.getString(
-                        if (allFav) R.string.snackbar_removed_favourites
-                        else R.string.snackbar_added_to_favourites
+                        R.string.snackbar_no_playable_videos,
+                        viewModel.selectedFoldersInView(currentFolder, showSearchPage)
+                            .firstOrNull()?.name ?: "",
                     )
                 )
             }
         }
     }
 
-    var isRefreshing by remember { mutableStateOf(false) }
     LaunchedEffect(isLoading, isFolderLoading) {
         if (!isLoading && !isFolderLoading) isRefreshing = false
     }
 
-    // Issue #320: drain a queued refresh when the in-flight root scan
-    // finishes. The pending value is cleared BEFORE starting the refresh,
-    // so the isLoading=true the refresh sets cannot re-trigger this
-    // effect into a loop; a refresh queued during the drained scan is a
-    // new pending value and drains on the next finish. The permission /
-    // ON_RESUME scans set isLoading too, so a refresh requested during
-    // those also drains here instead of being dropped.
-    LaunchedEffect(isLoading) {
-        if (!isLoading) {
-            pendingRefreshShowAll?.let { showAll ->
-                pendingRefreshShowAll = null
-                refreshFolders(showAll)
-            }
-        }
-    }
+    // Issue #320: the queued-refresh drain used to live here as a
+    // LaunchedEffect(isLoading); the ViewModel drains internally
+    // when a scan finishes, so no effect is needed here anymore.
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -1119,7 +641,7 @@ fun LocalScreen(
                         if (isFolderSearching) {
                             OutlinedTextField(
                                 value = folderSearchQuery,
-                                onValueChange = { folderSearchQuery = it },
+                                onValueChange = { viewModel.setFolderSearchQuery(it) },
                                 modifier = Modifier.fillMaxWidth(),
                                 placeholder = {
                                     Text(
@@ -1181,7 +703,7 @@ fun LocalScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MpxTheme.colors.black),
                     actions = {
                         if (isFolderSearching) {
-                            IconButton(onClick = { isFolderSearching = false; folderSearchQuery = "" }) {
+                            IconButton(onClick = { viewModel.setFolderSearching(false); viewModel.setFolderSearchQuery("") }) {
                                 Icon(
                                     imageVector = Icons.Filled.Close,
                                     contentDescription = stringResource(R.string.cd_close_search),
@@ -1202,7 +724,7 @@ fun LocalScreen(
                             )
                         }
 
-                        IconButton(onClick = { isFolderSearching = true }) {
+                        IconButton(onClick = { viewModel.setFolderSearching(true) }) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
                                 contentDescription = stringResource(R.string.cd_search),
@@ -1449,6 +971,10 @@ fun LocalScreen(
                     showFieldDate = appSettings.showFieldDate,
                     showFieldLocation = appSettings.showFieldLocation,
                     showFullName = appSettings.showFullName,
+                    // Phase 2b: the search query lives in the ViewModel
+                    // (#318: rotation keeps it); the page renders it.
+                    query = searchQuery,
+                    onQueryChange = { viewModel.setSearchQuery(it) },
                     // #165: search results are Local's own tiles, so they
                     // share the #144 multi-select state and toggles.
                     selectedFolderIds = selectedFolderIds,
@@ -1498,7 +1024,7 @@ fun LocalScreen(
                         message = stringResource(R.string.folder_view_search_empty_desc, folderSearchQuery),
                         icon = Icons.Filled.PlayArrow,
                         actionLabel = stringResource(R.string.empty_search_action),
-                        onActionClick = { folderSearchQuery = "" },
+                        onActionClick = { viewModel.setFolderSearchQuery("") },
                     )
                 } else if (filteredFolderVideos.isEmpty() && currentSubfolders.isEmpty()) {
                     EmptyStateView(
@@ -1695,9 +1221,7 @@ fun LocalScreen(
                             icon = Icons.Filled.Folder,
                             actionLabel = stringResource(R.string.list_show_all_folders),
                             onActionClick = {
-                                val updated = appSettings.copy(showAllFolders = true)
-                                realSettingsRepo.save(updated)
-                                appSettings = updated
+                                viewModel.updateSettings { it.copy(showAllFolders = true) }
                                 refreshFolders(showAll = true)
                                 scope.launch {
                                     snackbarHostState.showSnackbar(
@@ -1850,10 +1374,7 @@ fun LocalScreen(
                             listState = treeListState,
                             expandedKeys = expandedTreeFolders,
                             onToggleExpand = { folder ->
-                                val key = folder.id.ifBlank { folder.path }
-                                expandedTreeFolders =
-                                    if (expandedTreeFolders.contains(key)) expandedTreeFolders - key
-                                    else expandedTreeFolders + key
+                                viewModel.toggleTreeFolder(folder)
                             },
                             showThumbnails = appSettings.showThumbnails,
                             showSize = appSettings.showFieldSize,
@@ -1966,30 +1487,19 @@ fun LocalScreen(
                 // emptyList at root in folder mode), so switching views
                 // must clear the selection instead of leaving a badge
                 // whose actions resolve to nothing.
-                clearSelection()
-                val updated = appSettings.copy(fileView = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.setFileView(isChecked)
             },
             onSortChange = { newSort ->
-                sortField = newSort
-                val updated = appSettings.copy(primarySortField = newSort.name)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.setRootSortField(newSort)
             },
             onSecondarySortChange = { newSecSort ->
-                secondarySortField = newSecSort
-                val updated = appSettings.copy(secondarySortField = newSecSort.name)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.setRootSecondarySortField(newSecSort)
             },
             onViewChange = {
                 updateViewMode(it)
             },
             onSeparateViewLayoutChange = { isChecked ->
-                val updated = appSettings.copy(separateViewLayout = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(separateViewLayout = isChecked) }
                 scope.launch {
                     val msg = if (isChecked) {
                         context.getString(R.string.snackbar_separate_view_enabled)
@@ -2000,9 +1510,7 @@ fun LocalScreen(
                 }
             },
             onShowAllFoldersChange = { isChecked ->
-                val updated = appSettings.copy(showAllFolders = isChecked)
-                realSettingsRepo.save(updated)
-                appSettings = updated
+                viewModel.updateSettings { it.copy(showAllFolders = isChecked) }
                 refreshFolders(isChecked)
                 scope.launch {
                     val msg = if (isChecked) {
@@ -2015,57 +1523,39 @@ fun LocalScreen(
             },
             showFieldSize = appSettings.showFieldSize,
             onShowFieldSizeChange = { isChecked ->
-                val updated = appSettings.copy(showFieldSize = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(showFieldSize = isChecked) }
             },
             showFieldDate = appSettings.showFieldDate,
             onShowFieldDateChange = { isChecked ->
-                val updated = appSettings.copy(showFieldDate = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(showFieldDate = isChecked) }
             },
             showFieldDuration = appSettings.showFieldDuration,
             onShowFieldDurationChange = { isChecked ->
-                val updated = appSettings.copy(showFieldDuration = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(showFieldDuration = isChecked) }
             },
             showFieldLocation = appSettings.showFieldLocation,
             onShowFieldLocationChange = { isChecked ->
-                val updated = appSettings.copy(showFieldLocation = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(showFieldLocation = isChecked) }
             },
             sortReverse = appSettings.sortReverse,
             onSortReverseChange = { isChecked ->
-                val updated = appSettings.copy(sortReverse = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortReverse = isChecked) }
             },
             sortSecondaryReverse = appSettings.sortSecondaryReverse,
             onSortSecondaryReverseChange = { isChecked ->
-                val updated = appSettings.copy(sortSecondaryReverse = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortSecondaryReverse = isChecked) }
             },
             sortNumeric = appSettings.sortNumeric,
             onSortNumericChange = { isChecked ->
-                val updated = appSettings.copy(sortNumeric = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortNumeric = isChecked) }
             },
             sortCaseSensitive = appSettings.sortCaseSensitive,
             onSortCaseSensitiveChange = { isChecked ->
-                val updated = appSettings.copy(sortCaseSensitive = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortCaseSensitive = isChecked) }
             },
             sortIgnoreExtension = appSettings.sortIgnoreExtension,
             onSortIgnoreExtensionChange = { isChecked ->
-                val updated = appSettings.copy(sortIgnoreExtension = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortIgnoreExtension = isChecked) }
             },
             onDismiss = { showSortDialog = false },
         )
@@ -2084,71 +1574,47 @@ fun LocalScreen(
                 updateViewMode(newMode)
             },
             onSortChange = { newSort ->
-                folderSortField = newSort
-                val updated = appSettings.copy(folderPrimarySortField = newSort.name)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.setFolderSortField(newSort)
             },
             currentSecondarySort = folderSecondarySortField,
             onSecondarySortChange = { newSecSort ->
-                folderSecondarySortField = newSecSort
-                val updated = appSettings.copy(folderSecondarySortField = newSecSort.name)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.setFolderSecondarySortField(newSecSort)
             },
             showFieldSize = appSettings.showFieldSize,
             onShowFieldSizeChange = { isChecked ->
-                val updated = appSettings.copy(showFieldSize = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(showFieldSize = isChecked) }
             },
             showFieldDate = appSettings.showFieldDate,
             onShowFieldDateChange = { isChecked ->
-                val updated = appSettings.copy(showFieldDate = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(showFieldDate = isChecked) }
             },
             showFieldDuration = appSettings.showFieldDuration,
             onShowFieldDurationChange = { isChecked ->
-                val updated = appSettings.copy(showFieldDuration = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(showFieldDuration = isChecked) }
             },
             showFieldLocation = appSettings.showFieldLocation,
             onShowFieldLocationChange = { isChecked ->
-                val updated = appSettings.copy(showFieldLocation = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(showFieldLocation = isChecked) }
             },
             sortReverse = appSettings.sortReverse,
             onSortReverseChange = { isChecked ->
-                val updated = appSettings.copy(sortReverse = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortReverse = isChecked) }
             },
             sortSecondaryReverse = appSettings.sortSecondaryReverse,
             onSortSecondaryReverseChange = { isChecked ->
-                val updated = appSettings.copy(sortSecondaryReverse = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortSecondaryReverse = isChecked) }
             },
             sortNumeric = appSettings.sortNumeric,
             onSortNumericChange = { isChecked ->
-                val updated = appSettings.copy(sortNumeric = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortNumeric = isChecked) }
             },
             sortCaseSensitive = appSettings.sortCaseSensitive,
             onSortCaseSensitiveChange = { isChecked ->
-                val updated = appSettings.copy(sortCaseSensitive = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortCaseSensitive = isChecked) }
             },
             sortIgnoreExtension = appSettings.sortIgnoreExtension,
             onSortIgnoreExtensionChange = { isChecked ->
-                val updated = appSettings.copy(sortIgnoreExtension = isChecked)
-                realSettingsRepo.save(updated, commit = true)
-                appSettings = updated
+                viewModel.updateSettings(commit = true) { it.copy(sortIgnoreExtension = isChecked) }
             },
             onDismiss = {
                 showFolderSortDialog = false
@@ -2166,16 +1632,11 @@ fun LocalScreen(
                 isFolderScope = true,
                 currentSort = folderSortField,
                 onSortChange = { newSort ->
-                    folderSortField = newSort
-                    val updated = appSettings.copy(folderPrimarySortField = newSort.name)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.setFolderSortField(newSort)
                 },
                 sortReverse = appSettings.sortReverse,
                 onSortReverseChange = { reversed ->
-                    val updated = appSettings.copy(sortReverse = reversed)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(sortReverse = reversed) }
                 },
                 currentView = viewMode,
                 onViewChange = { newMode ->
@@ -2204,9 +1665,7 @@ fun LocalScreen(
                     // a commit() is a synchronous disk write — only write
                     // when the value actually changed.
                     if (columns != appSettings.folderGridColumns) {
-                        val updated = appSettings.copy(folderGridColumns = columns)
-                        realSettingsRepo.save(updated, commit = true)
-                        appSettings = updated
+                        viewModel.updateSettings(commit = true) { it.copy(folderGridColumns = columns) }
                     }
                 },
                 // Issue #309: the Folder-grid slider edits the root
@@ -2220,28 +1679,20 @@ fun LocalScreen(
                     // a commit() is a synchronous disk write — only write
                     // when the value actually changed.
                     if (columns != appSettings.videoGridColumns) {
-                        val updated = appSettings.copy(videoGridColumns = columns)
-                        realSettingsRepo.save(updated, commit = true)
-                        appSettings = updated
+                        viewModel.updateSettings(commit = true) { it.copy(videoGridColumns = columns) }
                     }
                 },
                 showFullName = appSettings.showFullName,
                 onShowFullNameChange = { show ->
-                    val updated = appSettings.copy(showFullName = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFullName = show) }
                 },
                 showFieldLocation = appSettings.showFieldLocation,
                 onShowFieldLocationChange = { show ->
-                    val updated = appSettings.copy(showFieldLocation = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldLocation = show) }
                 },
                 showFieldCount = appSettings.showFieldCount,
                 onShowFieldCountChange = { show ->
-                    val updated = appSettings.copy(showFieldCount = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldCount = show) }
                 },
                 // Issue #309: the Total-videos chip is folder-row-only —
                 // no video row inside a folder renders it. Hide the chip
@@ -2249,21 +1700,15 @@ fun LocalScreen(
                 showFieldCountChip = false,
                 showFieldDuration = appSettings.showFieldDuration,
                 onShowFieldDurationChange = { show ->
-                    val updated = appSettings.copy(showFieldDuration = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldDuration = show) }
                 },
                 showFieldSize = appSettings.showFieldSize,
                 onShowFieldSizeChange = { show ->
-                    val updated = appSettings.copy(showFieldSize = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldSize = show) }
                 },
                 showFieldDate = appSettings.showFieldDate,
                 onShowFieldDateChange = { show ->
-                    val updated = appSettings.copy(showFieldDate = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldDate = show) }
                 },
                 onDismiss = { showSortPopup = false },
                 // Issue #232: the folder-scope full sort dialog
@@ -2276,16 +1721,11 @@ fun LocalScreen(
                 isFolderScope = false,
                 currentSort = sortField,
                 onSortChange = { newSort ->
-                    sortField = newSort
-                    val updated = appSettings.copy(primarySortField = newSort.name)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.setRootSortField(newSort)
                 },
                 sortReverse = appSettings.sortReverse,
                 onSortReverseChange = { reversed ->
-                    val updated = appSettings.copy(sortReverse = reversed)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(sortReverse = reversed) }
                 },
                 currentView = viewMode,
                 onViewChange = { updateViewMode(it) },
@@ -2298,9 +1738,7 @@ fun LocalScreen(
                     // a commit() is a synchronous disk write — only write
                     // when the value actually changed.
                     if (columns != appSettings.folderGridColumns) {
-                        val updated = appSettings.copy(folderGridColumns = columns)
-                        realSettingsRepo.save(updated, commit = true)
-                        appSettings = updated
+                        viewModel.updateSettings(commit = true) { it.copy(folderGridColumns = columns) }
                     }
                 },
                 videoGridColumns = appSettings.videoGridColumns,
@@ -2309,46 +1747,32 @@ fun LocalScreen(
                     // a commit() is a synchronous disk write — only write
                     // when the value actually changed.
                     if (columns != appSettings.videoGridColumns) {
-                        val updated = appSettings.copy(videoGridColumns = columns)
-                        realSettingsRepo.save(updated, commit = true)
-                        appSettings = updated
+                        viewModel.updateSettings(commit = true) { it.copy(videoGridColumns = columns) }
                     }
                 },
                 showFullName = appSettings.showFullName,
                 onShowFullNameChange = { show ->
-                    val updated = appSettings.copy(showFullName = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFullName = show) }
                 },
                 showFieldLocation = appSettings.showFieldLocation,
                 onShowFieldLocationChange = { show ->
-                    val updated = appSettings.copy(showFieldLocation = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldLocation = show) }
                 },
                 showFieldCount = appSettings.showFieldCount,
                 onShowFieldCountChange = { show ->
-                    val updated = appSettings.copy(showFieldCount = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldCount = show) }
                 },
                 showFieldDuration = appSettings.showFieldDuration,
                 onShowFieldDurationChange = { show ->
-                    val updated = appSettings.copy(showFieldDuration = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldDuration = show) }
                 },
                 showFieldSize = appSettings.showFieldSize,
                 onShowFieldSizeChange = { show ->
-                    val updated = appSettings.copy(showFieldSize = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldSize = show) }
                 },
                 showFieldDate = appSettings.showFieldDate,
                 onShowFieldDateChange = { show ->
-                    val updated = appSettings.copy(showFieldDate = show)
-                    realSettingsRepo.save(updated, commit = true)
-                    appSettings = updated
+                    viewModel.updateSettings(commit = true) { it.copy(showFieldDate = show) }
                 },
                 onDismiss = { showSortPopup = false },
                 // Issue #232: the root-scope full sort dialog
@@ -2371,43 +1795,25 @@ fun LocalScreen(
             mediaTitle = if (vids.size == 1) vids.first().title
             else stringResource(R.string.playlist_items_count, vids.size),
             onDismiss = {
-                showAddToPlaylistDialog = false
-                videosForPlaylistAdd = emptyList()
+                viewModel.dismissAddToPlaylist()
             },
             onSelectPlaylist = { pl ->
                 scope.launch {
-                    // Issue #230: addItemToPlaylist returns -1 for an item
-                    // that is already in the playlist — count the real
-                    // adds so the feedback tells the truth.
-                    var addedCount = 0
-                    vids.forEach { vid ->
-                        val rowId = persistenceRepository.addItemToPlaylist(
-                            PlaylistItem(
-                                playlistId = pl.id,
-                                mediaUri = vid.path,
-                                mediaId = vid.id,
-                                title = vid.title,
-                                subtitle = vid.folderName,
-                                isVideo = true,
-                                durationMs = vid.durationMs,
-                            )
-                        )
-                        if (rowId != -1L) addedCount++
-                    }
-                    showAddToPlaylistDialog = false
-                    videosForPlaylistAdd = emptyList()
-                    clearSelection()
+                    // Issue #230: the ViewModel counts the real adds
+                    // (addItemToPlaylist returns -1 for an item already
+                    // in the playlist) so the feedback tells the truth.
+                    val result = viewModel.addPendingToPlaylist(pl.id)
                     when {
-                        addedCount == vids.size -> snackbarHostState.showSnackbar(
+                        result.added == result.total -> snackbarHostState.showSnackbar(
                             context.getString(R.string.music_added_to_playlist_msg, pl.name)
                         )
-                        addedCount == 0 -> snackbarHostState.showSnackbar(
+                        result.added == 0 -> snackbarHostState.showSnackbar(
                             context.getString(R.string.music_already_in_playlist_msg, pl.name)
                         )
                         else -> snackbarHostState.showSnackbar(
                             context.getString(
                                 R.string.music_added_some_to_playlist_msg,
-                                addedCount, pl.name, vids.size - addedCount,
+                                result.added, pl.name, result.total - result.added,
                             )
                         )
                     }
@@ -2418,8 +1824,7 @@ fun LocalScreen(
                 // dialog's onConfirm adds them to the new playlist, and
                 // its onDismiss puts this dialog back if creation is
                 // cancelled, so the pending videos are never dropped.
-                showAddToPlaylistDialog = false
-                showCreatePlaylistDialog = true
+                viewModel.openCreatePlaylist()
             },
         )
     }
@@ -2430,8 +1835,7 @@ fun LocalScreen(
             // videos — put the add dialog back so the user can pick an
             // existing playlist or try creating again.
             onDismiss = {
-                showCreatePlaylistDialog = false
-                if (videosForPlaylistAdd.isNotEmpty()) showAddToPlaylistDialog = true
+                viewModel.dismissCreatePlaylist()
             },
             // #268: Local creates video playlists; the fixed type is
             // passed through (no selector on this screen).
@@ -2441,55 +1845,29 @@ fun LocalScreen(
                     // Issue #310: carry the pending add-to-playlist
                     // videos into the newly created playlist, with the
                     // same item mapping, order and feedback as adding
-                    // to an existing playlist above.
-                    val vids = videosForPlaylistAdd
-                    try {
-                        val newId = persistenceRepository.createPlaylist(
-                            name, isVideoPlaylist = isVideo
+                    // to an existing playlist above. A failure keeps
+                    // the pending videos and puts the add dialog back
+                    // so the user can retry instead of silently losing
+                    // the selection.
+                    when (val outcome = viewModel.createPlaylistAndAddPending(name, isVideo)) {
+                        is CreatePlaylistOutcome.Created -> snackbarHostState.showSnackbar(
+                            context.getString(R.string.snackbar_playlist_created, outcome.name)
                         )
-                        var addedCount = 0
-                        vids.forEach { vid ->
-                            val rowId = persistenceRepository.addItemToPlaylist(
-                                PlaylistItem(
-                                    playlistId = newId,
-                                    mediaUri = vid.path,
-                                    mediaId = vid.id,
-                                    title = vid.title,
-                                    subtitle = vid.folderName,
-                                    isVideo = true,
-                                    durationMs = vid.durationMs,
-                                )
+                        is CreatePlaylistOutcome.Added -> when {
+                            outcome.added == outcome.total -> snackbarHostState.showSnackbar(
+                                context.getString(R.string.music_added_to_playlist_msg, outcome.name)
                             )
-                            if (rowId != -1L) addedCount++
-                        }
-                        if (vids.isNotEmpty()) {
-                            videosForPlaylistAdd = emptyList()
-                            clearSelection()
-                        }
-                        showCreatePlaylistDialog = false
-                        when {
-                            vids.isEmpty() -> snackbarHostState.showSnackbar(
-                                context.getString(R.string.snackbar_playlist_created, name)
-                            )
-                            addedCount == vids.size -> snackbarHostState.showSnackbar(
-                                context.getString(R.string.music_added_to_playlist_msg, name)
-                            )
-                            addedCount == 0 -> snackbarHostState.showSnackbar(
-                                context.getString(R.string.music_already_in_playlist_msg, name)
+                            outcome.added == 0 -> snackbarHostState.showSnackbar(
+                                context.getString(R.string.music_already_in_playlist_msg, outcome.name)
                             )
                             else -> snackbarHostState.showSnackbar(
                                 context.getString(
                                     R.string.music_added_some_to_playlist_msg,
-                                    addedCount, name, vids.size - addedCount,
+                                    outcome.added, outcome.name, outcome.total - outcome.added,
                                 )
                             )
                         }
-                    } catch (_: Exception) {
-                        // Creation failed — keep the pending videos and
-                        // put the add dialog back so the user can retry
-                        // instead of silently losing the selection.
-                        showCreatePlaylistDialog = false
-                        if (vids.isNotEmpty()) showAddToPlaylistDialog = true
+                        CreatePlaylistOutcome.Failed -> Unit
                     }
                 }
             },
