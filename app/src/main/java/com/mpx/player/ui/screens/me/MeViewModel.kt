@@ -120,9 +120,10 @@ class MeViewModel(
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /**
-     * #265: the badge shows the real history total. The old code
-     * observed the 100-row-capped list and rendered `history.size`,
-     * freezing the badge at 100.
+     * #265: the badge shows the real history total, from
+     * [MediaPersistenceRepository.observeHistoryCount] — the same
+     * count query the screen read before; the paged list below stays
+     * capped at the limit.
      */
     val historyTotal: StateFlow<Int> =
         persistence.observeHistoryCount()

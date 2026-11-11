@@ -132,7 +132,7 @@ fun MeScreen(
     onOpenHistory: () -> Unit,
     onOpenPlaylists: () -> Unit,
     onOpenNetwork: (() -> Unit)? = null,
-    playbackManager: PlaybackManager? = null,
+    playbackManager: PlaybackManager,
     currentLanguage: String = "system",
     onLanguageChanged: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -144,7 +144,6 @@ fun MeScreen(
     // The host view's context IS the real Activity. Resolved here, in the
     // screen body, so the dialog's onTestPip lambda captures the real one.
     val activity = LocalView.current.context as? Activity
-    val realPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
     // Migration Phase 2e: screen state lives in MeViewModel now —
     // settings, the badge flows, and the favourites actions. The
     // screen still takes PlaybackManager directly for transport and
@@ -613,7 +612,7 @@ fun MeScreen(
             onDismiss = { showFavouritesDialog = false },
             onItemClick = { item ->
                 showFavouritesDialog = false
-                realPlaybackManager.playQueue(
+                playbackManager.playQueue(
                     listOf(
                         PlayableMedia(
                             id = item.mediaId,
@@ -649,7 +648,7 @@ fun MeScreen(
             onPlayStream = { url ->
                 showNetworkStreamDialog = false
                 val streamTitle = url.substringAfterLast("/").substringBefore("?").ifBlank { "Network Stream" }
-                realPlaybackManager.playQueue(
+                playbackManager.playQueue(
                     listOf(
                         PlayableMedia(
                             id = "stream_${System.currentTimeMillis()}",
@@ -701,13 +700,13 @@ fun MeScreen(
                 // the old bare call defaulted to playing with 0x0 dims
                 // (wrong action label, 16:9 window) and armed auto-enter
                 // for whatever session followed.
-                val pipState = realPlaybackManager.playbackState.value
+                val pipState = playbackManager.playbackState.value
                 val entered = PipUtils.enterPip(
                     activity,
                     null,
                     pipState.isPlaying,
-                    realPlaybackManager.videoWidth,
-                    realPlaybackManager.videoHeight,
+                    playbackManager.videoWidth,
+                    playbackManager.videoHeight,
                     pipState.currentItem?.isVideo == true,
                 )
                 if (!entered) {

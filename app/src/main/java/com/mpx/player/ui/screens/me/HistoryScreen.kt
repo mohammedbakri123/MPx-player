@@ -77,11 +77,10 @@ import org.koin.compose.viewmodel.koinViewModel
 fun HistoryScreen(
     onNavigateBack: () -> Unit,
     onOpenPlayer: () -> Unit,
-    playbackManager: PlaybackManager? = null,
+    playbackManager: PlaybackManager,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val realPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
     // Migration Phase 2e: history state lives in MeViewModel now —
     // the total, the paged list, and the clear action. The screen
     // still takes PlaybackManager directly for transport and for
@@ -162,7 +161,7 @@ fun HistoryScreen(
                                 // manager's clearAll() clears the
                                 // in-memory map, the throttle state, and
                                 // the Room table.
-                                realPlaybackManager.resumeManager.clearAll()
+                                playbackManager.resumeManager.clearAll()
                                 snackbarHostState.showSnackbar(context.getString(R.string.snackbar_cleared_history))
                             }
                         }) {
@@ -226,7 +225,7 @@ fun HistoryScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                realPlaybackManager.playQueue(
+                                playbackManager.playQueue(
                                     listOf(
                                         PlayableMedia(
                                             id = item.mediaId,
