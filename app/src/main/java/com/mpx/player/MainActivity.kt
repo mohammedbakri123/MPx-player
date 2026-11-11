@@ -64,10 +64,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.playback.PlaybackService
+import org.koin.android.ext.android.inject
 import com.mpx.player.ui.components.player.MiniPlayer
 import com.mpx.player.ui.navigation.Screen
 import com.mpx.player.ui.navigation.navigationTabs
@@ -139,7 +139,11 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.mpxTabExit(
 
 class MainActivity : ComponentActivity() {
     private var isInPipMode by mutableStateOf(false)
-    private lateinit var settingsRepository: SharedPrefsAppSettingsRepository
+    // Migration Phase 1c: dependencies come from Koin, not from
+    // construction here. Both are `single` instances declared in
+    // di/AppModule and di/PlaybackModule.
+    private val settingsRepository: AppSettingsRepository by inject()
+    private val playbackManager: PlaybackManager by inject()
     private var currentLanguage by mutableStateOf(LocaleHelper.LANGUAGE_SYSTEM)
     private var currentTheme by mutableStateOf("System")
     private var currentPalette by mutableStateOf("Blue")
@@ -220,7 +224,6 @@ class MainActivity : ComponentActivity() {
         // the window is created so the running UI is unaffected.
         setTheme(R.style.Theme_MPx)
         super.onCreate(savedInstanceState)
-        settingsRepository = SharedPrefsAppSettingsRepository(this)
         val initialSettings = settingsRepository.load()
         currentLanguage = initialSettings.appLanguage
         currentTheme = initialSettings.appTheme
@@ -313,6 +316,7 @@ class MainActivity : ComponentActivity() {
                         settingsImportLauncher = settingsImportLauncher,
                         settingsImportHandler = settingsImportHandler,
                         isInPipMode = isInPipMode,
+                        playbackManager = playbackManager,
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
                         currentPalette = currentPalette,
@@ -380,7 +384,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        val playbackManager = PlaybackManager.getInstance(this)
         val state = playbackManager.playbackState.value
         if (state.isVideoBackgroundActive || state.isBackgroundPlaying) {
             playbackManager.setVideoBackgroundActive(false)
@@ -393,7 +396,6 @@ class MainActivity : ComponentActivity() {
         if (isFinishing) {
             val settings = settingsRepository.load()
             if (!settings.backgroundPlay) {
-                val playbackManager = PlaybackManager.getInstance(this)
                 if (playbackManager.playbackState.value.isPlaying) {
                     playbackManager.pause()
                 }
@@ -411,7 +413,6 @@ class MainActivity : ComponentActivity() {
         // (issue #98). The original logic below is untouched for non-PiP.
         if (isInPipMode) return
         val settings = settingsRepository.load()
-        val playbackManager = PlaybackManager.getInstance(this)
         val state = playbackManager.playbackState.value
 
         // Issue #205: the stop decision is backgroundPlay alone.
@@ -453,7 +454,6 @@ class MainActivity : ComponentActivity() {
         // (Rotation never reaches here: orientation is in
         // configChanges, so it only recomposes.)
         if (!settings.backgroundPlay) {
-            val playbackManager = PlaybackManager.getInstance(this)
             if (playbackManager.playbackState.value.isPlaying) {
                 playbackManager.pause()
             }
@@ -488,7 +488,6 @@ class MainActivity : ComponentActivity() {
         if (!isInPictureInPictureMode) {
             val settings = settingsRepository.load()
             if (!settings.backgroundPlay && !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
-                val playbackManager = PlaybackManager.getInstance(this)
                 if (playbackManager.playbackState.value.isPlaying) {
                     playbackManager.pause()
                 }
@@ -515,7 +514,6 @@ class MainActivity : ComponentActivity() {
         // separate destination, so Home over an open sheet still PiPs.
         // Already-in-PiP is a no-op re-entry, guarded for clarity.
         if (settings.popupPlayEnabled && !isInPipMode && currentRoute == Screen.Player.route) {
-            val playbackManager = PlaybackManager.getInstance(this)
             val state = playbackManager.playbackState.value
             if (state.isPlaying && state.currentItem?.isVideo == true) {
                 // Issue #225: pass the real playback state and video size —
@@ -551,7 +549,10 @@ fun MpxApp(
     settingsImportLauncher: ActivityResultLauncher<Array<String>>,
     settingsImportHandler: ActivityResultHandler<android.net.Uri?>,
     isInPipMode: Boolean = false,
-    settingsRepository: AppSettingsRepository? = null,
+    // Migration Phase 1c: supplied by MainActivity from Koin; no
+    // longer nullable with a hand-built fallback.
+    playbackManager: PlaybackManager,
+    settingsRepository: AppSettingsRepository,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
     currentPalette: String = "Blue",
     currentThemeColor: String = "TrueBlack",
@@ -572,9 +573,6 @@ fun MpxApp(
     // which gates Home-press PiP on the Player being visible.
     onDestinationChanged: ((String?) -> Unit)? = null,
 ) {
-    val context = LocalContext.current
-    val playbackManager = remember { PlaybackManager.getInstance(context) }
-    val realSettingsRepo = settingsRepository ?: remember(context) { SharedPrefsAppSettingsRepository(context) }
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
@@ -590,8 +588,8 @@ fun MpxApp(
     fun navigateToTab(route: String) {
         // Issue #228: commit the last-tab save synchronously — a swipe-away
         // right after a tab switch must not lose which tab was open.
-        realSettingsRepo.save(
-            realSettingsRepo.load().copy(lastTabRoute = route),
+        settingsRepository.save(
+            settingsRepository.load().copy(lastTabRoute = route),
             commit = true,
         )
         navController.navigate(route) {
@@ -630,7 +628,7 @@ fun MpxApp(
     // showing.
     var pendingUpdate by remember { mutableStateOf<AppUpdateChecker.Release?>(null) }
     LaunchedEffect(Unit) {
-        if (realSettingsRepo.load().appUpdateAutoCheck) {
+        if (settingsRepository.load().appUpdateAutoCheck) {
             when (val result = AppUpdateChecker.checkForUpdate()) {
                 is AppUpdateChecker.CheckResult.Available -> pendingUpdate = result.release
                 else -> { /* Up to date or failed: stay silent. */ }
@@ -691,7 +689,7 @@ fun MpxApp(
         // #157: reopen on the last dock tab (persisted on every tab tap).
         val tabOrder = navigationTabs.map { it.route }
         val startTabRoute = remember {
-            realSettingsRepo.load().lastTabRoute
+            settingsRepository.load().lastTabRoute
         }.takeIf { it in tabOrder } ?: Screen.Local.route
 
         // #157: density is captured here (composable scope) because
@@ -770,7 +768,7 @@ fun MpxApp(
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
                     playbackManager = playbackManager,
-                    settingsRepository = realSettingsRepo,
+                    settingsRepository = settingsRepository,
                     // Issue #245: while the search page is open the
                     // tab-swipe detector above is off, so a swipe
                     // mid-search cannot switch tabs and destroy the query.
@@ -783,7 +781,7 @@ fun MpxApp(
                     permissionResultHandler = musicPermissionHandler,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     playbackManager = playbackManager,
-                    settingsRepository = realSettingsRepo,
+                    settingsRepository = settingsRepository,
                 )
             }
             composable(Screen.Network.route) {
@@ -809,7 +807,7 @@ fun MpxApp(
                     onOpenPlaylists = { navController.navigate(Screen.Playlists.route) },
                     onOpenNetwork = { navigateToTab(Screen.Network.route) },
                     playbackManager = playbackManager,
-                    settingsRepository = realSettingsRepo,
+                    settingsRepository = settingsRepository,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                 )
@@ -834,7 +832,7 @@ fun MpxApp(
                     onOpenOverlaySettings = { navController.navigate(Screen.OverlaySettings.route) },
                     onOpenAdvancedSettings = { navController.navigate(Screen.AdvancedSettings.route) },
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
-                    settingsRepository = realSettingsRepo,
+                    settingsRepository = settingsRepository,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                     onThemeChanged = onThemeChanged,
@@ -846,13 +844,13 @@ fun MpxApp(
             composable(Screen.OverlaySettings.route) {
                 OverlaySettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    settingsRepository = realSettingsRepo,
+                    settingsRepository = settingsRepository,
                 )
             }
             composable(Screen.AdvancedSettings.route) {
                 AdvancedSettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    settingsRepository = realSettingsRepo,
+                    settingsRepository = settingsRepository,
                     mpvConfigFolderLauncher = mpvConfigFolderLauncher,
                     mpvConfigFolderHandler = mpvConfigFolderHandler,
                     settingsExportLauncher = settingsExportLauncher,
@@ -882,7 +880,7 @@ fun MpxApp(
                         subtitleResultHandler = subtitleHandler,
                         onClose = { navController.popBackStack() },
                         playbackManager = playbackManager,
-                        settingsRepository = realSettingsRepo,
+                        settingsRepository = settingsRepository,
                         isInPipMode = isInPipMode,
                     )
                 }
