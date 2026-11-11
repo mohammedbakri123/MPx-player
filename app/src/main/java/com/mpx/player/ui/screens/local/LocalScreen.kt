@@ -54,8 +54,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
@@ -89,6 +87,7 @@ import com.mpx.player.playback.PlaybackCoordinator
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.mpx.player.ui.components.EmptyStateView
+import com.mpx.player.ui.components.MpxCompactTopBar
 import com.mpx.player.ui.components.MpxLoadingIndicator
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
@@ -592,7 +591,7 @@ fun LocalScreen(
         topBar = {
             if (isSelectionMode) {
                 // #144: selection top bar — count + close. Back exits too.
-                TopAppBar(
+                MpxCompactTopBar(
                     navigationIcon = {
                         IconButton(onClick = { clearSelection() }) {
                             Icon(
@@ -612,16 +611,13 @@ fun LocalScreen(
                             color = MpxTheme.colors.textPrimary,
                         )
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MpxTheme.colors.black,
-                    ),
                 )
             } else if (showSearchPage) {
                 // #142: the search page draws its own header (back + field).
             } else if (currentFolder != null) {
                 // Folder View Top Bar
                 val folder = currentFolder!!
-                TopAppBar(
+                MpxCompactTopBar(
                     navigationIcon = {
                         IconButton(onClick = {
                             // Issue #276: go through goToParentFolder()
@@ -700,7 +696,6 @@ fun LocalScreen(
                             }
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MpxTheme.colors.black),
                     actions = {
                         if (isFolderSearching) {
                             IconButton(onClick = { viewModel.setFolderSearching(false); viewModel.setFolderSearchQuery("") }) {
@@ -755,7 +750,7 @@ fun LocalScreen(
                 )
             } else {
                 // Root Folders List Top Bar
-                TopAppBar(
+                MpxCompactTopBar(
                     title = {
                         Text(
                             text = stringResource(R.string.local_title),
@@ -766,9 +761,6 @@ fun LocalScreen(
                             color = MpxTheme.colors.textPrimary,
                         )
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MpxTheme.colors.black,
-                    ),
                     actions = {
                         // #156: layout button opens the Sort & View popup.
                         IconButton(onClick = {

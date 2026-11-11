@@ -75,8 +75,6 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
@@ -129,6 +127,7 @@ import com.mpx.player.ui.screens.local.LocalSortPopup
 import com.mpx.player.ui.screens.local.MultiSelectAction
 import com.mpx.player.ui.screens.local.ViewMode
 import com.mpx.player.ui.components.EmptyStateView
+import com.mpx.player.ui.components.MpxCompactTopBar
 import com.mpx.player.ui.components.MpxLoadingIndicator
 import com.mpx.player.ui.components.persistence.AddToPlaylistDialog
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
@@ -657,7 +656,7 @@ fun MusicScreen(
         topBar = {
             if (isTrackSelectionMode || isAlbumSelectionMode || isArtistSelectionMode || isPlaylistSelectionMode || isFolderSelectionMode) {
                 // #185: selection top bar — count + close. Back exits too.
-                TopAppBar(
+                MpxCompactTopBar(
                     navigationIcon = {
                         IconButton(onClick = {
                             clearTrackSelection()
@@ -692,12 +691,9 @@ fun MusicScreen(
                             color = MpxTheme.colors.textPrimary,
                         )
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MpxTheme.colors.black,
-                    ),
                 )
             } else {
-            TopAppBar(
+            MpxCompactTopBar(
                 title = {
                     if (isSearching) {
                         // #326: Local folder-view pattern — the title slot
@@ -737,9 +733,6 @@ fun MusicScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MpxTheme.colors.black,
-                ),
                 actions = {
                     if (isSearching) {
                         // #326: while searching only Close + Shuffle stay —

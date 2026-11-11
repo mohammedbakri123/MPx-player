@@ -74,8 +74,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -109,6 +107,7 @@ import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.ui.components.persistence.FavouritesDialog
 import com.mpx.player.ui.components.MpxCard
+import com.mpx.player.ui.components.MpxCompactTopBar
 import com.mpx.player.ui.components.MpxPrimaryButton
 import com.mpx.player.ui.components.MpxSecondaryButton
 import com.mpx.player.ui.components.MpxSectionHeader
@@ -344,7 +343,7 @@ fun MeScreen(
         containerColor = MpxTheme.colors.black,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            MpxCompactTopBar(
                 title = {
                     Text(
                         text = stringResource(R.string.me_title),
@@ -355,9 +354,6 @@ fun MeScreen(
                         color = MpxTheme.colors.textPrimary,
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MpxTheme.colors.black,
-                ),
             )
         },
     ) { padding ->

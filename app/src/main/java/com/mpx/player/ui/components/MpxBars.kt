@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -194,5 +196,45 @@ fun MpxBlurSurface(
         contentAlignment = Alignment.Center,
     ) {
         content()
+    }
+}
+
+/**
+ * Compact top bar for the main tabs (Local, Music, Me). MX's toolbar
+ * height (?actionBarSize = 56dp) instead of Material 3's 64dp TopAppBar,
+ * so the title sits closer to the top edge. Same slots as TopAppBar
+ * (title / navigationIcon / actions) and the same horizontal spacing
+ * (title 16dp from the left edge, actions 4dp from the right), so the
+ * swap is mechanical. The status-bar inset is kept (statusBarsPadding)
+ * so the title never sits under the clock / battery icons.
+ */
+@Composable
+fun MpxCompactTopBar(
+    title: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MpxTheme.colors.black)
+            .statusBarsPadding()
+            .height(56.dp)
+            .padding(start = 4.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        navigationIcon()
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            title()
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            actions()
+        }
     }
 }
