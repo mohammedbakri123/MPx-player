@@ -12,7 +12,6 @@ import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
 import `is`.xyz.mpv.MPV
-import kotlin.math.log2
 
 /**
  * Exception raised when libmpv encounters an unrecoverable decoding or playback error.
@@ -32,8 +31,12 @@ class MpvPlaybackException(
  * [MpvTrackSelection], which owns track listing/switching. Phase 4
  * step 3 adds [MpvSubtitleRenderer], which owns subtitle rendering/
  * confirmation (including [replaceMediaItem], whose body is sub-add +
- * #332 confirmation). What stays here until its own step moves it is
- * settings-to-mpv configuration (step 4). The [MpvCoreEngine.Host]
+ * #332 confirmation). Phase 4 step 4 adds [MpvEngineConfig], which
+ * owns settings-to-mpv configuration (playback tweaks, hwdec mode,
+ * video-zoom conversion). What stays here is presentation:
+ * [setAspectRatio]/[setVideoZoom] and the #226 ZOOM state they own
+ * (the config class reaches that state only through its narrow
+ * [MpvEngineConfig.ZoomState] interface). The [MpvCoreEngine.Host]
  * implementation below is the seam: the core calls back into it at
  * exactly the points the old monolith ran that code.
  *
@@ -91,6 +94,29 @@ class MpvPlayerEngine(
 
 
     /**
+     * Phase 4 step 4 seam: the narrow [MpvEngineConfig.ZoomState]
+     * view of the #226 state above, so the config class can apply
+     * playback tweaks without owning the aspect mode. Declared BEFORE
+     * `core` on purpose: the core's init applies the saved settings
+     * through the Host below, which passes this object to
+     * [MpvEngineConfig.applyPlaybackTweaksTo] — it must already exist
+     * while `core` is still being assigned. It only delegates to the
+     * private vars above, so it is safe to read that early (they are
+     * at their FIT / null defaults then).
+     */
+    private val zoomState: MpvEngineConfig.ZoomState = object : MpvEngineConfig.ZoomState {
+        override val isZoomAspectActive: Boolean
+            get() = currentAspectRatio == AspectRatioMode.ZOOM
+        override var zoomBeforeAspectZoom: Double?
+            get() = this@MpvPlayerEngine.zoomBeforeAspectZoom
+            set(value) { this@MpvPlayerEngine.zoomBeforeAspectZoom = value }
+        override var videoZoomAtAspectZoomEntry: Float?
+            get() = this@MpvPlayerEngine.videoZoomAtAspectZoomEntry
+            set(value) { this@MpvPlayerEngine.videoZoomAtAspectZoomEntry = value }
+    }
+
+
+    /**
      * Phase 4 step 1 seam: the core engine, with the host callbacks for
      * the concerns still owned here. The callbacks run at exactly the
      * points the old monolith ran the equivalent code.
@@ -106,18 +132,19 @@ class MpvPlayerEngine(
         context,
         initialDecoderMode,
         host = object : MpvCoreEngine.Host {
-            override fun hwdecValueFor(mode: DecoderMode): String = hwdecValueFor(mode)
+            override fun hwdecValueFor(mode: DecoderMode): String =
+                MpvEngineConfig.hwdecValueFor(mode)
 
             override fun hwdecValueForStage(stage: MpvCoreEngine.DecoderStage): String =
-                hwdecValueForStage(stage)
+                MpvEngineConfig.hwdecValueForStage(stage)
 
             override fun applyHwdecForMode(mode: DecoderMode) {
-                applyHwdecForMode(mode)
+                config.applyHwdecForMode(mode)
             }
 
             override fun applyPostInitSettings(core: MpvCoreEngine) {
                 MpvSubtitleRenderer.applySubtitleSettingsTo(core, core.loadSavedSubtitleSettings())
-                applyPlaybackTweaksTo(core, core.loadSavedSubtitleSettings())
+                MpvEngineConfig.applyPlaybackTweaksTo(core, core.loadSavedSubtitleSettings(), zoomState)
             }
 
             override fun onLoadStarted() {
@@ -173,8 +200,22 @@ class MpvPlayerEngine(
      */
     private lateinit var subtitles: MpvSubtitleRenderer
 
+    /**
+     * Phase 4 step 4: engine configuration. Built after the core
+     * and the subtitle class. `lateinit` on purpose, same as
+     * `subtitles`: the core's init runs while this property is still
+     * being assigned, so the Host callbacks above must not touch this
+     * instance — the init-time config work
+     * (applyPostInitSettings, hwdec values) calls the config
+     * companion functions with the core passed as an argument, and
+     * [MpvCoreEngine.Host.applyHwdecForMode] only ever runs from
+     * `load()`, after construction.
+     */
+    private lateinit var config: MpvEngineConfig
+
     init {
         subtitles = MpvSubtitleRenderer(core, tracks)
+        config = MpvEngineConfig(core, zoomState)
     }
 
 
@@ -189,7 +230,7 @@ class MpvPlayerEngine(
     // `setDecoderMode(DecoderMode)` that clashes with the PlayerEngine
     // `setDecoderMode(mode)` function below (the old backing-field
     // `private set` did not); internal writes go through `core`
-    // directly (see applyHwdecForMode). Externally this is unchanged:
+    // directly (see MpvEngineConfig.applyHwdecForMode). Externally this is unchanged:
     // the old setter was private too.
     val decoderMode: DecoderMode
         get() = core.decoderMode
@@ -209,9 +250,6 @@ class MpvPlayerEngine(
     private var cachedIsPlaying: Boolean
         get() = core.cachedIsPlaying
         set(value) { core.cachedIsPlaying = value }
-    private var currentDecoderStage: MpvCoreEngine.DecoderStage
-        get() = core.currentDecoderStage
-        set(value) { core.currentDecoderStage = value }
     private var fallbackHwdecStage: MpvCoreEngine.DecoderStage?
         get() = core.fallbackHwdecStage
         set(value) { core.fallbackHwdecStage = value }
@@ -239,49 +277,16 @@ class MpvPlayerEngine(
         subtitles.applySubtitleSettings(settings)
     }
 
-    // Phase 4 step 1: the core variant — takes the core explicitly
-    // so the core's init can apply the saved settings before this
-    // facade's `core` property is assigned (see the Host above).
-    private fun applyPlaybackTweaksTo(core: MpvCoreEngine, settings: AppSettings) {
-        if (!core.mpvInitialized || core.isReleased) return
-        try {
-            core.setRuntimeProperty("audio-delay", (settings.audioDelayMs / 1000.0).toString())
-            if (currentAspectRatio == AspectRatioMode.ZOOM) {
-                // Issue #226: ZOOM owns video-zoom (2x magnification, see
-                // setAspectRatio). An unrelated settings change — audio
-                // delay, subtitle style — must not silently undo it. Only
-                // a user-driven zoom change moves it: the sheet slider and
-                // the pinch-end save both change settings.videoZoom, and
-                // then the new value becomes both the live zoom and the
-                // restore point for leaving ZOOM.
-                if (settings.videoZoom != videoZoomAtAspectZoomEntry) {
-                    val zoom = mpvVideoZoom(settings.videoZoom)
-                    core.setRuntimeProperty("video-zoom", zoom.toString())
-                    zoomBeforeAspectZoom = zoom
-                    videoZoomAtAspectZoomEntry = settings.videoZoom
-                }
-            } else {
-                core.setRuntimeProperty("video-zoom", mpvVideoZoom(settings.videoZoom).toString())
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed applying playback tweaks to mpv", e)
-        }
-    }
-
     /**
      * Applies audio delay + video zoom (issue #153, Playback sheet) to a
      * running mpv instance. Both are runtime-changeable mpv properties, so
      * this is safe to call whenever settings change mid-playback — same
      * pattern as [applySubtitleSettings]. No-op before init or after release.
-     * audio-delay is in seconds (positive = audio later). videoZoom is
-     * MPx's plain multiplier (1.0 = no zoom, 0.5..2.0) — it is converted
-     * to mpv's log2 video-zoom ([mpvVideoZoom]) because mpv reads the
-     * property as log2: 0 is unscaled, 1 doubles the size. Sending the
-     * plain multiplier straight through (#172) made every video play at
-     * 2x the fit size, cropped and zoomed.
+     * Owned by [MpvEngineConfig] (Phase 4 step 4); this is the facade
+     * delegation the coordinator calls.
      */
     fun applyPlaybackTweaks(settings: AppSettings) {
-        applyPlaybackTweaksTo(core, settings)
+        config.applyPlaybackTweaks(settings)
     }
 
     /**
@@ -292,7 +297,7 @@ class MpvPlayerEngine(
     fun setVideoZoom(zoom: Float) {
         if (!mpvInitialized || isReleased) return
         try {
-            setRuntimeProperty("video-zoom", mpvVideoZoom(zoom).toString())
+            setRuntimeProperty("video-zoom", MpvEngineConfig.mpvVideoZoom(zoom).toString())
             // Issue #226: a pinch while ZOOM is active moves the zoom the
             // user will get back when leaving ZOOM — the preset must not
             // resurrect the pre-ZOOM value over a newer manual zoom. (The
@@ -300,53 +305,10 @@ class MpvPlayerEngine(
             // the same restore point; this keeps it correct even if the
             // gesture ends without a save.)
             if (currentAspectRatio == AspectRatioMode.ZOOM) {
-                zoomBeforeAspectZoom = mpvVideoZoom(zoom)
+                zoomBeforeAspectZoom = MpvEngineConfig.mpvVideoZoom(zoom)
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed setting video zoom in MPV", e)
-        }
-    }
-
-
-    /**
-     * mpv's video-zoom is log2, not a plain multiplier (#172): 0 is
-     * unscaled, 1 doubles the size, -1 halves it. MPx's videoZoom is a
-     * plain multiplier (1.0 = no zoom), so convert with log2. Clamped to
-     * the 0.5..2.0 UI range first, so a stray persisted value can never
-     * produce NaN (log2 of 0) or an extreme zoom.
-     */
-    private fun mpvVideoZoom(mpxZoom: Float): Double =
-        log2(mpxZoom.coerceIn(0.5f, 2.0f).toDouble())
-
-
-    private fun hwdecValueFor(mode: DecoderMode): String = hwdecValueForStage(
-        when (mode) {
-            DecoderMode.HW -> MpvCoreEngine.DecoderStage.HW
-            DecoderMode.HW_PLUS -> MpvCoreEngine.DecoderStage.HW_PLUS
-            DecoderMode.SW -> MpvCoreEngine.DecoderStage.SW
-        }
-    )
-
-
-    private fun hwdecValueForStage(stage: MpvCoreEngine.DecoderStage): String = when (stage) {
-        MpvCoreEngine.DecoderStage.HW -> "mediacodec"
-        MpvCoreEngine.DecoderStage.HW_PLUS -> "mediacodec-copy"
-        MpvCoreEngine.DecoderStage.SW -> "no"
-    }
-
-
-    private fun applyHwdecForMode(mode: DecoderMode) {
-        core.decoderMode = mode
-        currentDecoderStage = when (mode) {
-            DecoderMode.HW -> MpvCoreEngine.DecoderStage.HW
-            DecoderMode.HW_PLUS -> MpvCoreEngine.DecoderStage.HW_PLUS
-            DecoderMode.SW -> MpvCoreEngine.DecoderStage.SW
-        }
-        val hwdecVal = hwdecValueFor(mode)
-        try {
-            mpv.setPropertyString("hwdec", hwdecVal)
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not set hwdec option to $hwdecVal", e)
         }
     }
 
@@ -375,7 +337,7 @@ class MpvPlayerEngine(
                     mpv.getPropertyDouble("video-zoom")
                 } catch (_: Exception) {
                     null
-                } ?: mpvVideoZoom(savedZoom)
+                } ?: MpvEngineConfig.mpvVideoZoom(savedZoom)
                 videoZoomAtAspectZoomEntry = savedZoom
             }
             if (wasZoom && mode != AspectRatioMode.ZOOM) {
@@ -403,8 +365,8 @@ class MpvPlayerEngine(
                     mpv.setPropertyDouble("panscan", 1.0)
                     mpv.setPropertyString("video-unscaled", "no")
                     // Magnify 2x beyond FILL's crop-to-fill: video-zoom is
-                    // log2, so mpvVideoZoom(2.0f) == 1.0.
-                    setRuntimeProperty("video-zoom", mpvVideoZoom(2.0f).toString())
+                    // log2, so MpvEngineConfig.mpvVideoZoom(2.0f) == 1.0.
+                    setRuntimeProperty("video-zoom", MpvEngineConfig.mpvVideoZoom(2.0f).toString())
                 }
                 AspectRatioMode.SIXTEEN_NINE -> {
                     mpv.setPropertyString("video-aspect-override", "16:9")
@@ -465,7 +427,7 @@ class MpvPlayerEngine(
         // user's explicit choice.
         fallbackHwdecStage = null
         fallbackReloadPending = false
-        applyHwdecForMode(mode)
+        config.applyHwdecForMode(mode)
         // A live hwdec property change only affects the NEXT decoder init, so
         // the current stream would keep its old decoder and the pill would go
         // stale. MX restarts playback with the newly chosen decoder — do the

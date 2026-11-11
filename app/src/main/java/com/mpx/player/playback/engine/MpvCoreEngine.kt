@@ -495,7 +495,7 @@ internal class MpvCoreEngine(
         setRuntimeProperty("force-window", "no")
 
         // Phase 4 step 3: subtitle style now lives in
-        // MpvSubtitleRenderer, playback tweaks still in MpvPlayerEngine
+        // MpvSubtitleRenderer, playback tweaks in MpvEngineConfig
         // (step 4) — applied here, at the original point, through
         // Host.applyPostInitSettings.
         host.applyPostInitSettings(this)

@@ -59,13 +59,15 @@ Data (Room, MediaStore, SharedPreferences)  ←  Domain (models + interfaces)
   `seekTo`, `setSpeed`, `selectTrack`, `replaceMediaItem`, `stop`,
   `release`, `setDecoderMode`, plus a `Listener` for state/track/error
   callbacks). `MpvPlayerEngine` is the only implementation — since
-  Phase 4 steps 1–3 it is a thin facade over `MpvCoreEngine`, which
+  Phase 4 steps 1–4 it is a thin facade over `MpvCoreEngine`, which
   owns the mpv lifecycle, the load/play commands, position/state
   observation and the decoder fallback chain, over
-  `MpvTrackSelection`, which owns track listing/switching, and over
-  `MpvSubtitleRenderer`, which owns subtitle rendering/confirmation;
-  settings-to-mpv configuration still lives in the facade until its
-  own step moves it.
+  `MpvTrackSelection`, which owns track listing/switching, over
+  `MpvSubtitleRenderer`, which owns subtitle rendering/confirmation,
+  and over `MpvEngineConfig`, which owns settings-to-mpv
+  configuration (playback tweaks, hwdec mode, video-zoom
+  conversion). What stays in the facade is presentation:
+  `setAspectRatio`/`setVideoZoom` and the #226 ZOOM state they own.
 - **Domain** — `domain/`: plain models (`VideoFile`, `MediaFolder`, music
   and persistence models) and repository interfaces (`MediaRepository`,
   `MediaPersistenceRepository`, `AppSettingsRepository` with `load()` /
@@ -136,8 +138,9 @@ and in `MpvPlayerEngine` (Phase 4), plus two data/util internals —
 (the moved `PlaybackManager` body plus the coordinator's seams,
 `production()` factory, and KDoc) and `MpvCoreEngine` is 1,694 lines
 with the `MpvSubtitleRenderer` at 832 lines, the `MpvPlayerEngine`
-facade at 550 lines and `MpvTrackSelection` at 255 lines (the old
-2,674-line monolith, split by Phase 4 steps 1–3); `PlayerScreen` (2,666),
+facade at 512 lines, `MpvEngineConfig` at 207 lines and
+`MpvTrackSelection` at 255 lines (the old
+2,674-line monolith, split by Phase 4 steps 1–4); `PlayerScreen` (2,666),
 `MusicScreen` (2,414), `LocalScreen` (1,895), and `SettingsScreen`
 (1,766) are similarly large. The old `PlaybackManager` (987 lines)
 is deleted — its body lives in `PlaybackCoordinator` and its pieces in
@@ -181,13 +184,15 @@ Phase 4; until then, expect it.
   the preparing watchdog, the sleep timer, transport and session
   functions, and the three host implementations.
 - `playback/engine/` — the `PlayerEngine` interface and its mpv
-  implementation. Phase 4 splits the engine by concern: steps 1–3 are
+  implementation. Phase 4 splits the engine by concern: steps 1–4 are
   done (`playback/engine/MpvCoreEngine.kt`, 1,694 lines, 6 unit tests
   for its testable path helper, `MpvTrackSelection.kt`, 255 lines,
-  no tests — every function touches mpv directly, and
+  no tests — every function touches mpv directly,
   `MpvSubtitleRenderer.kt`, 832 lines, 9 unit tests for its two pure
-  companion helpers), with `MpvPlayerEngine` (550 lines) as the facade;
-  settings-to-mpv configuration (step 4) still lives in the facade.
+  companion helpers, and `MpvEngineConfig.kt`, 207 lines, 11 unit
+  tests for its three pure companion helpers), with `MpvPlayerEngine`
+  (512 lines) as the facade; Phase 4 is complete and the
+  `PlayerEngine` interface is unchanged.
 - `di/` — the Koin modules (`AppModule`, `PlaybackModule`,
   `ViewModelModule`). The one place in the app where objects are
   constructed.
@@ -305,7 +310,7 @@ A finished screen follows one pattern, every time:
   Phase 2 + 18 for `SubtitleManager` + 29 for `PlaybackQueue` + 28
   for `EngineEventTranslator` + 34 for `PlaybackCoordinator` + 6 for
   `MpvCoreEngine`).
-- Phase 4 (split `MpvPlayerEngine` by concern): steps 1–3 done.
+- Phase 4 (split `MpvPlayerEngine` by concern): steps 1–4 done.
   `MpvCoreEngine` (`playback/engine/`, 1,694 lines, 6 tests) owns the
   mpv lifecycle (MPV creation/init, release), the load/play commands
   (`load`, `play`, `pause`, `seekTo`, `setSpeed`, `stop`,
@@ -343,21 +348,40 @@ A finished screen follows one pattern, every time:
   `::subtitles.isInitialized`. `stop()`/`release()` run the renderer's
   subtitle cleanup first, then the core stop/release — same order as
   the old monolith.
-  `MpvPlayerEngine` (550 lines) stays the `PlayerEngine`
+  `MpvPlayerEngine` (512 lines) stays the `PlayerEngine`
   implementation and is a thin facade delegating to the core, the
-  track class and the renderer; the `PlayerEngine` interface is
-  unchanged. The one concern that stays in the facade is
-  settings-to-mpv configuration (step 4) — including the
-  subtitle-font/certificate asset setup, which moved with
-  `initializeMpv` because mpv cannot start without it. The core and
+  track class, the renderer and the config class; the `PlayerEngine`
+  interface is unchanged. `MpvEngineConfig` (`playback/engine/`, 207
+  lines, 11 tests) owns settings-to-mpv configuration: the playback
+  tweaks (`applyPlaybackTweaks` — audio delay + video zoom), the
+  decoder mode (`applyHwdecForMode`, via the pure `hwdecValueFor` /
+  `hwdecValueForStage` mappings) and the log2 video-zoom conversion
+  (`mpvVideoZoom`, kept as a companion so the facade's presentation
+  functions `setVideoZoom`/`setAspectRatio` can call it qualified
+  for the same conversion). It reaches mpv through the core — no
+  second MPV instance. Its one coupling back to the facade is the
+  #226 ZOOM interplay: `applyPlaybackTweaks` must not overwrite
+  ZOOM's 2x magnification on an unrelated settings change, and
+  leaving ZOOM must restore the pre-ZOOM zoom — but the aspect/zoom
+  presentation state stays in the facade (`setAspectRatio` /
+  `setVideoZoom` own it), so the config class reaches it only
+  through the narrow `MpvEngineConfig.ZoomState` interface the
+  facade implements as an anonymous object delegating to its private
+  vars (one boolean read, two restore-point read/writes). The
+  init-time config work uses the config companion functions
+  (`applyPlaybackTweaksTo(core, settings, zoomState)`,
+  `hwdecValueFor`) because the core's init runs before the config
+  instance exists; `applyHwdecForMode` is an instance call, safe
+  because the core invokes it only from `load()`. The core and
   the track class are verifiable by CI build + device only
   (constructing the core creates a real MPV instance; every track
   function touches mpv directly); the one unit-testable piece in the
   core is the pure `isPathMatch` path helper, which lives in the
   core's companion object for that reason, and the renderer's two pure
   companion helpers (`isUsableSubtitleUri`, `isSameExternalSubtitle`)
-  are tested the same way. Unit-test total is now 194 — step 3 adds 9
-  tests for those two helpers; the rest of the moved code touches mpv
+  are tested the same way. Unit-test total is now 205 — step 4 adds 11
+  tests for the config class's three pure companion helpers; the rest
+  of the moved code touches mpv
   directly and is not testable without it.
 - Phase 5 (contributor path): in progress. The PR template asks what
   changed, what did not change, and how it was verified; CI runs the
