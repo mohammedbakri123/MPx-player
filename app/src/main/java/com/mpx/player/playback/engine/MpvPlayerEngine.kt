@@ -3,7 +3,9 @@ package com.mpx.player.playback.engine
 import android.content.Context
 import android.util.Log
 import android.view.Surface
+import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.settings.AppSettings
+import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
@@ -50,6 +52,7 @@ class MpvPlaybackException(
 class MpvPlayerEngine(
     context: Context,
     initialDecoderMode: DecoderMode = DecoderMode.HW,
+    private val settingsRepository: AppSettingsRepository = SharedPrefsAppSettingsRepository(context),
 ) : PlayerEngine {
 
 
@@ -167,6 +170,9 @@ class MpvPlayerEngine(
 
             override fun getCurrentMediaIndex(): Int =
                 indexProvider()
+
+            override fun loadSettings(): AppSettings =
+                loadSavedSubtitleSettings()
         },
     )
 
@@ -273,7 +279,7 @@ class MpvPlayerEngine(
         core.setRuntimeProperty(key, value)
 
 
-    private fun loadSavedSubtitleSettings(): AppSettings = core.loadSavedSubtitleSettings()
+    private fun loadSavedSubtitleSettings(): AppSettings = settingsRepository.load()
 
 
     /**

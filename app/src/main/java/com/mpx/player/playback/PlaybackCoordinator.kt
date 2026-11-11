@@ -1080,7 +1080,7 @@ class PlaybackCoordinator(
             val resumeManager = PlaybackResumeManager(persistenceRepository)
             val queueStore = PlaybackQueueStore(appContext)
             val initialDecoderMode = resolveInitialDecoderModeFrom(settingsRepository)
-            val engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode)
+            val engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode, settingsRepository)
             val scope = CoroutineScope(Dispatchers.Main)
             return PlaybackCoordinator(
                 database = database,
