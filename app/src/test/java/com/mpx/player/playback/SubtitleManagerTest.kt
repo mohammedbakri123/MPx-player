@@ -444,7 +444,7 @@ class SubtitleManagerTest {
      * and records notifications and track refreshes.
      */
     private class FakeSubtitleHost : SubtitleHost {
-        var currentItem: PlayableMedia? = null
+        override var currentItem: PlayableMedia? = null
         var queue: List<PlayableMedia> = emptyList()
         var tracks: List<SubtitleTrackInfo> = emptyList()
         val commits = mutableListOf<Triple<Int, PlayableMedia, String?>>()
