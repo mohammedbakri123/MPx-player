@@ -150,10 +150,14 @@ class PlaybackCoordinator(
     private val errorLog: (message: String, error: Throwable?) -> Unit =
         { message, error -> Log.e("PlaybackManager", message, error) },
     private val clock: () -> Long = { SystemClock.elapsedRealtime() },
-) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost, EngineEventHost {
+) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost, EngineEventHost, SleepTimerHost {
 
     private var tickerJob: Job? = null
-    private var sleepTimerJob: Job? = null
+    internal val sleepTimer = SleepTimer(
+        scope = scope,
+        clock = clock,
+        host = this,
+    )
     private var pausedForTransientFocus: Boolean = false
 
     /** Preparing watchdog: a video load that produces neither READY nor an
@@ -861,45 +865,39 @@ class PlaybackCoordinator(
     }
 
     fun setSleepTimer(minutes: Int) {
-        sleepTimerJob?.cancel()
-        if (minutes <= 0) {
-            cancelSleepTimer()
-            return
-        }
-        val durationMs = minutes * 60 * 1000L
-        val targetElapsedRealtime = clock() + durationMs
-        _playbackState.update {
-            it.copy(
-                sleepTimerMinutes = minutes,
-                sleepTimerRemainingSeconds = durationMs / 1000L,
-            )
-        }
-        sleepTimerJob = scope.launch {
-            while (isActive) {
-                delay(1000L)
-                val remainingMs = targetElapsedRealtime - clock()
-                if (remainingMs <= 0L) {
-                    _playbackState.update {
-                        it.copy(
-                            sleepTimerMinutes = null,
-                            sleepTimerRemainingSeconds = null,
-                        )
-                    }
-                    pause()
-                    break
-                } else {
-                    val remainingSec = (remainingMs + 999L) / 1000L
-                    _playbackState.update {
-                        it.copy(sleepTimerRemainingSeconds = remainingSec)
-                    }
-                }
-            }
-        }
+        sleepTimer.start(minutes)
     }
 
     fun cancelSleepTimer() {
-        sleepTimerJob?.cancel()
-        sleepTimerJob = null
+        sleepTimer.cancel()
+    }
+
+    override fun onSleepTimerStarted(minutes: Int, remainingSeconds: Long) {
+        _playbackState.update {
+            it.copy(
+                sleepTimerMinutes = minutes,
+                sleepTimerRemainingSeconds = remainingSeconds,
+            )
+        }
+    }
+
+    override fun onSleepTimerTick(remainingSeconds: Long) {
+        _playbackState.update {
+            it.copy(sleepTimerRemainingSeconds = remainingSeconds)
+        }
+    }
+
+    override fun onSleepTimerExpired() {
+        _playbackState.update {
+            it.copy(
+                sleepTimerMinutes = null,
+                sleepTimerRemainingSeconds = null,
+            )
+        }
+        pause()
+    }
+
+    override fun onSleepTimerCancelled() {
         _playbackState.update {
             it.copy(
                 sleepTimerMinutes = null,
