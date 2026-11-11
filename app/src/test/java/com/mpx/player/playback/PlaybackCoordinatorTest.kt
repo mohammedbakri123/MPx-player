@@ -595,7 +595,10 @@ class PlaybackCoordinatorTest {
         assertTrue(f.coordinator.playbackState.value.isPreparing)
         assertNull(f.coordinator.playbackState.value.userNotification)
 
-        advanceTimeBy(1)
+        // Step 1ms past the 20s mark: a virtual-time delay due at
+        // exactly the advance target does not fire, so advancing to
+        // exactly 20,000ms would leave the watchdog armed.
+        advanceTimeBy(2)
         assertFalse(f.coordinator.playbackState.value.isPreparing)
         assertEquals(
             "Playback error: Playback load timed out after 20s (engine=MPV)",
@@ -624,7 +627,9 @@ class PlaybackCoordinatorTest {
         assertEquals(1, f.coordinator.playbackState.value.sleepTimerMinutes)
         assertEquals(60L, f.coordinator.playbackState.value.sleepTimerRemainingSeconds)
 
-        advanceTimeBy(1000)
+        // 1ms past the first tick for the same reason as the watchdog
+        // test: a delay due at exactly the advance target does not fire.
+        advanceTimeBy(1001)
         assertEquals(59L, f.coordinator.playbackState.value.sleepTimerRemainingSeconds)
 
         advanceTimeBy(59_000)
