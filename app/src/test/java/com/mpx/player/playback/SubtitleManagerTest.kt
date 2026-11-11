@@ -1,6 +1,7 @@
 package com.mpx.player.playback
 
 import android.view.Surface
+import com.mpx.player.fakes.FakePlayerEngine
 import com.mpx.player.playback.engine.PlayerEngine
 import com.mpx.player.playback.engine.ReplaceMediaItemResult
 import com.mpx.player.playback.engine.TrackType
@@ -378,65 +379,6 @@ class SubtitleManagerTest {
         assertEquals(listOf("movie.srt"), engine.replaceCalls.single().second.externalSubtitles.map { it.name })
     }
 
-    /**
-     * Fake engine: answers synchronously from [replaceResult] and
-     * [subtitleTracksToReturn], records every call the manager makes. A
-     * replace pauses playback in this fake (isPlaying = false), which
-     * is what makes the manager's restore-playback branch observable;
-     * [play] resumes it.
-     */
-    private class FakePlayerEngine : PlayerEngine {
-        var replaceResult: ReplaceMediaItemResult = ReplaceMediaItemResult.ISSUED
-        val replaceCalls = mutableListOf<Pair<Int, PlayableMedia>>()
-        val selectSubtitleCalls = mutableListOf<Pair<Int?, Int?>>()
-        var subtitleTracksToReturn: List<SubtitleTrackInfo> = emptyList()
-        override var currentMediaItemIndex: Int = 0
-        var playCalls: Int = 0
-        var capturedListener: PlayerEngine.Listener? = null
-
-        override val currentPosition: Long = 0L
-        override val duration: Long = 0L
-        override val bufferedPosition: Long = 0L
-        override var isPlaying: Boolean = false
-        override val playbackState: Int = PlayerEngine.STATE_IDLE
-        override val hasNextMediaItem: Boolean = false
-        override val hasPreviousMediaItem: Boolean = false
-
-        override fun attachSurface(surface: Surface) = Unit
-        override fun detachSurface() = Unit
-        override fun load(media: PlayableMedia, resumeMs: Long) = Unit
-        override fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) = Unit
-        override fun play() {
-            playCalls++
-            isPlaying = true
-        }
-        override fun pause() {
-            isPlaying = false
-        }
-        override fun seekTo(positionMs: Long) = Unit
-        override fun seekTo(index: Int, positionMs: Long) = Unit
-        override fun setSpeed(speed: Float) = Unit
-        override fun selectTrack(type: TrackType, id: String?) = Unit
-        override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) = Unit
-        override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {
-            selectSubtitleCalls.add(groupIndex to trackIndex)
-        }
-        override fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult {
-            replaceCalls.add(index to media)
-            isPlaying = false
-            return replaceResult
-        }
-        override fun stop() = Unit
-        override fun release() = Unit
-        override fun setDecoderMode(mode: DecoderMode) = Unit
-        override fun setListener(listener: PlayerEngine.Listener?) {
-            capturedListener = listener
-        }
-        override fun seekToNextMediaItem() = Unit
-        override fun seekToPreviousMediaItem() = Unit
-        override fun getAudioTracks(): List<AudioTrackInfo> = emptyList()
-        override fun getSubtitleTracks(): List<SubtitleTrackInfo> = subtitleTracksToReturn
-    }
 
     /**
      * Fake host: mirrors the real coordinator's commit (the queue item

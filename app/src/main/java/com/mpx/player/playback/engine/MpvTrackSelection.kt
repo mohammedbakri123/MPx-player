@@ -3,7 +3,6 @@ package com.mpx.player.playback.engine
 import android.util.Log
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.SubtitleTrackInfo
-import `is`.xyz.mpv.MPV
 
 /**
  * Phase 4 step 2: audio, video and subtitle track listing and switching,
@@ -15,7 +14,7 @@ import `is`.xyz.mpv.MPV
  * `vid` properties. [MpvPlayerEngine] stays the [PlayerEngine]
  * implementation and is a thin facade delegating to this class.
  *
- * mpv access comes from the core ([MpvCoreEngine.mpv]) — no second MPV
+ * mpv access comes from the core ([MpvCoreEngine.port]) — no second MPV
  * instance is created. The only coupling back to the subtitle concern
  * is the remembered external pick + armed pin, owned by
  * [MpvSubtitleRenderer] (Phase 4 step 3) and reached through [Host]:
@@ -53,13 +52,13 @@ internal class MpvTrackSelection(
         private const val TAG = "MpvPlayerEngine"
     }
 
-    private val mpv: MPV = core.mpv
+    private val port: MpvPort = core.port
 
     fun selectTrack(type: TrackType, id: String?) {
         when (type) {
             TrackType.AUDIO -> {
                 if (id == null || id == "-1" || id.isBlank()) {
-                    try { mpv.setPropertyString("aid", "no") } catch (_: Exception) {}
+                    try { port.setPropertyString("aid", "no") } catch (_: Exception) {}
                 } else {
                     val parts = id.split(":")
                     if (parts.size == 2) {
@@ -104,7 +103,7 @@ internal class MpvTrackSelection(
                 // same id scheme as audio — "group:track" or a plain ordinal
                 // among video tracks — driving mpv's "vid" property.
                 if (id == null || id == "-1" || id.isBlank()) {
-                    try { mpv.setPropertyString("vid", "auto") } catch (_: Exception) {}
+                    try { port.setPropertyString("vid", "auto") } catch (_: Exception) {}
                 } else {
                     val videoIds = getVideoTrackIds()
                     val targetId = run {
@@ -127,7 +126,7 @@ internal class MpvTrackSelection(
                             videoIds.getOrNull(ordinal)
                         }
                     } ?: return
-                    try { mpv.setPropertyString("vid", targetId.toString()) } catch (_: Exception) {}
+                    try { port.setPropertyString("vid", targetId.toString()) } catch (_: Exception) {}
                 }
             }
         }
@@ -144,7 +143,7 @@ internal class MpvTrackSelection(
         // in the manager and on every track-list change.
         val target = tracks.find { it.groupIndex == groupIndex && it.trackIndex == trackIndex }
         if (target != null) {
-            try { mpv.setPropertyString("aid", target.trackIndex.toString()) } catch (_: Exception) {}
+            try { port.setPropertyString("aid", target.trackIndex.toString()) } catch (_: Exception) {}
         } else {
             Log.w(TAG, "Ignoring stale audio track pick ($groupIndex:$trackIndex): no such track")
         }
@@ -157,7 +156,7 @@ internal class MpvTrackSelection(
             // the track-list handler's fallback could re-select the
             // external track over the user's explicit Off.
             host.clearRememberedExternalPick()
-            try { mpv.setPropertyString("sid", "no") } catch (_: Exception) {}
+            try { port.setPropertyString("sid", "no") } catch (_: Exception) {}
         } else {
             val tracks = getSubtitleTracks()
             // Issue #247: same as selectAudioTrack — no positional
@@ -174,7 +173,7 @@ internal class MpvTrackSelection(
                     // reapplyRememberedPick's BLOCKED guard).
                     host.clearRememberedExternalPick()
                 }
-                try { mpv.setPropertyString("sid", target.trackIndex.toString()) } catch (_: Exception) {}
+                try { port.setPropertyString("sid", target.trackIndex.toString()) } catch (_: Exception) {}
             } else {
                 Log.w(TAG, "Ignoring stale subtitle track pick ($groupIndex:$trackIndex): no such track")
             }
@@ -183,28 +182,28 @@ internal class MpvTrackSelection(
 
     /** mpv track-list ids of video tracks, in order — used by VIDEO selection. */
     fun getVideoTrackIds(): List<Int> {
-        val count = mpv.getPropertyInt("track-list/count") ?: 0
+        val count = port.getPropertyInt("track-list/count") ?: 0
         val ids = mutableListOf<Int>()
         for (i in 0 until count) {
-            val type = mpv.getPropertyString("track-list/$i/type")
+            val type = port.getPropertyString("track-list/$i/type")
             if (type.equals("video", ignoreCase = true)) {
-                ids.add(mpv.getPropertyInt("track-list/$i/id") ?: (ids.size + 1))
+                ids.add(port.getPropertyInt("track-list/$i/id") ?: (ids.size + 1))
             }
         }
         return ids
     }
 
     fun getAudioTracks(): List<AudioTrackInfo> {
-        val count = mpv.getPropertyInt("track-list/count") ?: 0
+        val count = port.getPropertyInt("track-list/count") ?: 0
         val audioList = mutableListOf<AudioTrackInfo>()
         var audioGroup = 0
         for (i in 0 until count) {
-            val type = mpv.getPropertyString("track-list/$i/type")
+            val type = port.getPropertyString("track-list/$i/type")
             if (type.equals("audio", ignoreCase = true)) {
-                val id = mpv.getPropertyInt("track-list/$i/id") ?: (audioGroup + 1)
-                val title = mpv.getPropertyString("track-list/$i/title")
-                val lang = mpv.getPropertyString("track-list/$i/lang") ?: "und"
-                val selected = mpv.getPropertyBoolean("track-list/$i/selected") ?: false
+                val id = port.getPropertyInt("track-list/$i/id") ?: (audioGroup + 1)
+                val title = port.getPropertyString("track-list/$i/title")
+                val lang = port.getPropertyString("track-list/$i/lang") ?: "und"
+                val selected = port.getPropertyBoolean("track-list/$i/selected") ?: false
                 val label = title?.ifBlank { null } ?: "Audio $id ($lang)"
                 audioList.add(
                     AudioTrackInfo(
@@ -213,7 +212,7 @@ internal class MpvTrackSelection(
                         label = label,
                         language = lang,
                         isSelected = selected,
-                        mimeType = mpv.getPropertyString("track-list/$i/codec"),
+                        mimeType = port.getPropertyString("track-list/$i/codec"),
                     )
                 )
                 audioGroup++
@@ -223,18 +222,18 @@ internal class MpvTrackSelection(
     }
 
     fun getSubtitleTracks(): List<SubtitleTrackInfo> {
-        val count = mpv.getPropertyInt("track-list/count") ?: 0
+        val count = port.getPropertyInt("track-list/count") ?: 0
         val subtitleList = mutableListOf<SubtitleTrackInfo>()
         var subGroup = 0
         for (i in 0 until count) {
-            val type = mpv.getPropertyString("track-list/$i/type")
+            val type = port.getPropertyString("track-list/$i/type")
             if (type.equals("sub", ignoreCase = true)) {
-                val id = mpv.getPropertyInt("track-list/$i/id") ?: (subGroup + 1)
-                val title = mpv.getPropertyString("track-list/$i/title")
-                val lang = mpv.getPropertyString("track-list/$i/lang") ?: "und"
-                val selected = mpv.getPropertyBoolean("track-list/$i/selected") ?: false
-                val external = mpv.getPropertyBoolean("track-list/$i/external") ?: false
-                val isDefault = mpv.getPropertyBoolean("track-list/$i/default") ?: false
+                val id = port.getPropertyInt("track-list/$i/id") ?: (subGroup + 1)
+                val title = port.getPropertyString("track-list/$i/title")
+                val lang = port.getPropertyString("track-list/$i/lang") ?: "und"
+                val selected = port.getPropertyBoolean("track-list/$i/selected") ?: false
+                val external = port.getPropertyBoolean("track-list/$i/external") ?: false
+                val isDefault = port.getPropertyBoolean("track-list/$i/default") ?: false
                 val label = title?.ifBlank { null } ?: "Subtitle $id ($lang)"
                 subtitleList.add(
                     SubtitleTrackInfo(

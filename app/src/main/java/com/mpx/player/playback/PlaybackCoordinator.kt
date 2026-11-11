@@ -702,14 +702,6 @@ class PlaybackCoordinator(
     }
 
     /**
-     * Delegates to [playbackQueue]; behaviour is unchanged (still a
-     * no-op stub — issue #57; real videos play via [playVideoFiles]).
-     */
-    fun playVideoQueue(folderId: String = "camera") {
-        playbackQueue.playVideoQueue(folderId)
-    }
-
-    /**
      * Play real video files from a MediaStore folder. Empty list = no-op.
      * Delegates to [playbackQueue]; behaviour is unchanged.
      */

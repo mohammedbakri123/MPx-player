@@ -350,10 +350,6 @@ class PlaybackQueue(
         playQueue(items, startIndex.coerceIn(0, items.lastIndex), autoPlay = true)
     }
 
-    fun playVideoQueue(folderId: String = "camera") {
-        // Fallback to sample video queue removed (issue #57). Real videos are played via playVideoFiles.
-    }
-
     /** Play real video files from a MediaStore folder. Empty list = no-op. */
     fun playVideoFiles(videos: List<VideoFile>, startIndex: Int = 0) {
         if (videos.isEmpty()) return
