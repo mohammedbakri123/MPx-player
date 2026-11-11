@@ -65,22 +65,21 @@ interface BackgroundService {
 
 /**
  * Playback coordinator: the small public face of playback that the
- * ViewModels and screens talk to (migration Phase 3, step 4).
+ * ViewModels and screens talk to (migration Phase 3, step 5: the
+ * old PlaybackManager shell is deleted, this class is the only
+ * playback owner).
  *
- * This is [PlaybackManager] with its shell removed: it owns the
- * published [PlaybackState], the position ticker, the preparing
- * watchdog, the sleep timer, transport and session functions, and it
- * builds the engine, the database/repositories, the resume manager,
- * and the three extracted pieces ([SubtitleManager], [PlaybackQueue],
- * [EngineEventTranslator]) — and it is their host
- * ([SubtitleHost], [QueueHost], [EngineEventHost]), so every state
- * write still goes through exactly one class. [PlaybackManager]
- * keeps its exact public API and delegates everything here; no
- * caller changed in this step, and the final Phase 3 step rewires
- * the callers to this class and deletes [PlaybackManager].
+ * It owns the published [PlaybackState], the position ticker, the
+ * preparing watchdog, the sleep timer, transport and session
+ * functions, and it builds the engine, the database/repositories,
+ * the resume manager, and the three extracted pieces
+ * ([SubtitleManager], [PlaybackQueue], [EngineEventTranslator]) —
+ * and it is their host ([SubtitleHost], [QueueHost],
+ * [EngineEventHost]), so every state write still goes through
+ * exactly one class.
  *
- * No behaviour change from the [PlaybackManager] code this was moved
- * from — the bodies are verbatim except for the seams below.
+ * No behaviour change from the old PlaybackManager code this was
+ * moved from — the bodies are verbatim except for the seams below.
  *
  * Seams (all constructor parameters, so the class is unit-testable
  * with fakes and no Android runtime):
@@ -89,10 +88,10 @@ interface BackgroundService {
  *   [settingsRepository], the queue store, and the subtitle
  *   [SubtitleManager.FileAccess]. Production wiring lives in the
  *   [production] factory, which builds them from a [Context] in
- *   exactly the order [PlaybackManager] built them. Taking the
+ *   exactly the order the old PlaybackManager built them. Taking the
  *   already-built pieces (instead of a bare [Context]) keeps the
  *   seam clean: the coordinator never calls `getInstance` or a
- *   constructor it cannot test, and the final step can hand the
+ *   constructor it cannot test, and a later step can hand the
  *   pieces in from Koin instead.
  * - [strings], [backgroundService], and [errorLog] cover the three
  *   Android-only effects the coordinator itself performs (banner
@@ -187,7 +186,7 @@ class PlaybackCoordinator(
 
     /**
      * Migration Phase 3, step 1: the external-subtitle responsibility,
-     * extracted from [PlaybackManager]. Owns subtitle discovery, the
+     * extracted from the old PlaybackManager. Owns subtitle discovery, the
      * manual-pick load path, the pending-confirmation state, and
      * subtitle style settings. This coordinator stays the
      * [SubtitleHost]: it owns the live queue and the published state,
@@ -203,7 +202,7 @@ class PlaybackCoordinator(
 
     /**
      * Migration Phase 3, step 2: the queue responsibility, extracted
-     * from [PlaybackManager]. Owns the live queue, queue building,
+     * from the old PlaybackManager. Owns the live queue, queue building,
      * shuffle and repeat, and queue persistence. This coordinator
      * stays the [QueueHost]: it owns the published state and the
      * engine lifecycle effects, so the queue asks it to apply
@@ -220,7 +219,7 @@ class PlaybackCoordinator(
 
     /**
      * Migration Phase 3, step 3: the engine-event translation,
-     * extracted from [PlaybackManager]. Owns the [PlayerEngine.Listener]
+     * extracted from the old PlaybackManager. Owns the [PlayerEngine.Listener]
      * implementation that turns mpv callbacks into published-state
      * updates and queue / resume / subtitle effects. This coordinator
      * stays the [EngineEventHost]: it owns the published state, the
@@ -1010,18 +1009,17 @@ class PlaybackCoordinator(
     companion object {
         /**
          * Production wiring: builds the coordinator and everything it
-         * owns from a [Context], in exactly the order [PlaybackManager]
-         * built them (database, persistence, resume, settings, queue
-         * store, decoder mode, engine, scope). The engine is built
-         * with the decoder mode read from settings, and the state is
-         * seeded from the same read inside the constructor — two reads
-         * of the same SharedPreferences file during synchronous
-         * construction, so they always agree.
+         * owns from a [Context], in exactly the order the old
+         * PlaybackManager built them (database, persistence, resume,
+         * settings, queue store, decoder mode, engine, scope). The
+         * engine is built with the decoder mode read from settings,
+         * and the state is seeded from the same read inside the
+         * constructor — two reads of the same SharedPreferences file
+         * during synchronous construction, so they always agree.
          *
-         * `PlaybackManager.getInstance` is still the process-wide
-         * entry point (Koin and `PlaybackService` use it); it calls
-         * this factory. The final Phase 3 step registers the
-         * coordinator itself and deletes [PlaybackManager].
+         * This factory is the process-wide entry point: Koin
+         * registers the coordinator built here as a `single`, and
+         * [PlaybackService] injects that same instance.
          */
         fun production(context: Context): PlaybackCoordinator {
             val appContext = context.applicationContext

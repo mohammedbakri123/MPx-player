@@ -57,7 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.playback.PlayableMedia
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.ui.components.AsyncThumbnail
 import com.mpx.player.ui.components.AsyncVideoThumbnail
 import com.mpx.player.util.ThumbnailLoader
@@ -80,17 +80,17 @@ fun formatTimeMs(millis: Long): String {
 
 /**
  * MX Player inspired persistent mini-player bar.
- * Directly wired to the real mpv engine via PlaybackManager.
+ * Directly wired to the real mpv engine via PlaybackCoordinator.
  * Displays the real playing media item, real live progress tick, real duration,
  * and responsive play/pause/prev/next controls.
  */
 @Composable
 fun MiniPlayer(
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     onOpenPlayer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val state by playbackManager.playbackState.collectAsState()
+    val state by playbackCoordinator.playbackState.collectAsState()
     val item = state.currentItem
     var showQueue by remember { mutableStateOf(false) }
 
@@ -99,7 +99,7 @@ fun MiniPlayer(
     // never cleared when playback stopped, so stopping playback left
     // the dialog floating over the home screen with an empty queue.
     // Clear the flag when the item goes null (stop() sets currentItem
-    // to null, PlaybackManager.kt:1099), and gate the render on the
+    // to null, PlaybackCoordinator.kt:888), and gate the render on the
     // item too so it vanishes in the same composition instead of one
     // frame later. A track change (non-null item to another non-null
     // item) does not dismiss the dialog.
@@ -117,7 +117,7 @@ fun MiniPlayer(
                 // Issue #203: this is a pick inside the live queue, not a
                 // new queue — playLiveQueueItem keeps the shuffle state
                 // (pre-shuffle order + flag) instead of destroying it.
-                playbackManager.playLiveQueueItem(index)
+                playbackCoordinator.playLiveQueueItem(index)
             },
         )
     }
@@ -241,7 +241,7 @@ fun MiniPlayer(
                     // Mirrors PlayerScreen's transport (enabled +
                     // 0.3f-alpha tint when disabled).
                     IconButton(
-                        onClick = { playbackManager.skipPrevious() },
+                        onClick = { playbackCoordinator.skipPrevious() },
                         enabled = state.hasPrevious,
                         modifier = Modifier.size(36.dp),
                     ) {
@@ -254,7 +254,7 @@ fun MiniPlayer(
                     }
 
                     IconButton(
-                        onClick = { playbackManager.togglePlayPause() },
+                        onClick = { playbackCoordinator.togglePlayPause() },
                         modifier = Modifier.size(40.dp),
                     ) {
                         Icon(
@@ -266,7 +266,7 @@ fun MiniPlayer(
                     }
 
                     IconButton(
-                        onClick = { playbackManager.skipNext() },
+                        onClick = { playbackCoordinator.skipNext() },
                         enabled = state.hasNext,
                         modifier = Modifier.size(36.dp),
                     ) {
@@ -292,7 +292,7 @@ fun MiniPlayer(
                     }
 
                     IconButton(
-                        onClick = { playbackManager.stop() },
+                        onClick = { playbackCoordinator.stop() },
                         modifier = Modifier.size(32.dp),
                     ) {
                         Icon(
@@ -311,7 +311,7 @@ fun MiniPlayer(
 /**
  * Real current-queue list for the mini-player queue button (issue #73).
  * Shows exactly PlaybackState.queue — never invented entries. Tapping an
- * entry plays that queue position via PlaybackManager.playLiveQueueItem
+ * entry plays that queue position via PlaybackCoordinator.playLiveQueueItem
  * (issue #203: a live-queue pick, so the shuffle state is preserved); the
  * current entry is highlighted and labelled. Screenshot-only evidence
  * per the V1 re-grounding report: the local mini-player has no layout

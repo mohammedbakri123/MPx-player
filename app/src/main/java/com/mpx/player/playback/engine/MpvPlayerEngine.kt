@@ -608,7 +608,7 @@ class MpvPlayerEngine(
         // higher audio latency after seeks/pauses, negligible for a player.
         setOption("audio-buffer", "0.5")
         // Issue #103: keep-open=yes pauses on EOF so the last frame stays visible
-        // and eof-reached signals to PlaybackManager. PlaybackManager owns queue
+        // and eof-reached signals to PlaybackCoordinator. PlaybackCoordinator owns queue
         // transitions; mpv holds only the active item.
         setOption("keep-open", "yes")
         setOption("ytdl", "no")
@@ -1583,7 +1583,7 @@ class MpvPlayerEngine(
      *
      * What destroys the surface (issue #161): the ONLY caller of this barrier
      * besides release() is PlayerScreen's SurfaceHolder.Callback.surfaceDestroyed
-     * (via PlaybackManager.detachSurface()); the AndroidView has no key() and no
+     * (via PlaybackCoordinator.detachSurface()); the AndroidView has no key() and no
      * conditional, so the SurfaceView stays in composition while the player is
      * open. surfaceDestroyed is a framework callback — the surface is torn down
      * when the view leaves the window / the window is hidden — and the phone log
@@ -1666,7 +1666,7 @@ class MpvPlayerEngine(
         // SurfaceView) exists. The old code fired loadfile immediately, and
         // with force-window=yes libmpv attempted VO init with no ANativeWindow
         // attached: the video chain failed, the file aborted with END_FILE,
-        // and PlaybackManager reported a failure before surfaceCreated ever
+        // and PlaybackCoordinator reported a failure before surfaceCreated ever
         // ran — so mpv never got a fair load. Now a VIDEO load with no surface
         // is deferred, not fired: attachSurface() flushes it the moment a
         // real surface exists. Audio loads are never deferred (no video
@@ -1790,7 +1790,7 @@ class MpvPlayerEngine(
                 mpv.command("loadfile", resolvedTarget.uri, "replace")
             }
 
-            // Issue #103: PlaybackManager alone owns queue transitions. mpv holds
+            // Issue #103: PlaybackCoordinator alone owns queue transitions. mpv holds
             // only the current active item; internal appends were redundant and
             // scrambled playlist order.
 

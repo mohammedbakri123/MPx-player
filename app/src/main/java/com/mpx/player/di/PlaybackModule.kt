@@ -1,35 +1,37 @@
 package com.mpx.player.di
 
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 /**
- * Migration Phase 1b: the playback Koin module.
+ * Migration Phase 1b, rewired in Phase 3 step 5: the playback Koin
+ * module.
  *
- * Only [PlaybackManager] is registered here, as a `single` built
- * through its existing [PlaybackManager.getInstance] factory — Koin
- * returns the same process-wide singleton the rest of the app
- * already uses, it does not build a second one.
+ * Only [PlaybackCoordinator] is registered here, as a `single` built
+ * through its [PlaybackCoordinator.production] factory — Koin
+ * returns the same process-wide instance the rest of the app
+ * already uses, it does not build a second one. [PlaybackService]
+ * injects this same single.
  *
- * The mpv engine is deliberately NOT registered. PlaybackManager
+ * The mpv engine is deliberately NOT registered. The coordinator
  * builds its engine internally
- * (`var engine: PlayerEngine = MpvPlayerEngine(appContext, ...)` in
- * PlaybackManager.kt) and wires the engine listener to itself at
- * construction time; a separate engine `single` in Koin would create
+ * (`val engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode)`
+ * in [PlaybackCoordinator.production]) and wires the engine listener
+ * to itself at construction time; a separate engine `single` in Koin would create
  * a second mpv engine instance that nothing listens to, and would
- * change behaviour. Engine registration is deferred to Phase 3, when
- * PlaybackManager is split apart and the engine can be handed in
- * through its constructor.
+ * change behaviour. Engine registration is deferred to Phase 4, when
+ * the engine is split apart and can be handed in through its
+ * constructor.
  *
  * Same note for the database / persistence / settings instances
- * PlaybackManager builds internally: [MpxDatabase.getInstance] is a
- * true singleton, so Koin's `single` and PlaybackManager's internal
+ * the coordinator builds internally: [MpxDatabase.getInstance] is a
+ * true singleton, so Koin's `single` and the coordinator's internal
  * reference are the same object; the settings and persistence
  * wrappers it constructs are stateless facades over the same
  * SharedPreferences file / Room database. Unifying those
- * constructors is Phase 3 work.
+ * constructors is Phase 4 work.
  */
 val playbackModule = module {
-    single { PlaybackManager.getInstance(androidContext()) }
+    single { PlaybackCoordinator.production(androidContext()) }
 }

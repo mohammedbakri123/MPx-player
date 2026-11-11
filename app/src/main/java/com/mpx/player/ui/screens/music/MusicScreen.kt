@@ -114,7 +114,7 @@ import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.model.customPlaylistId
 import org.koin.compose.viewmodel.koinViewModel
 import com.mpx.player.playback.PlayableMedia
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.ui.screens.local.AudioAlbumGridCard
 import com.mpx.player.ui.screens.local.AudioAlbumRow
 import com.mpx.player.ui.screens.local.AudioArtistGridCard
@@ -173,13 +173,13 @@ fun MusicScreen(
     permissionLauncher: ActivityResultLauncher<String>,
     permissionResultHandler: ActivityResultHandler<Boolean>,
     onOpenPlayer: () -> Unit,
-    playbackManager: PlaybackManager? = null,
+    playbackCoordinator: PlaybackCoordinator? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     // Migration Phase 2c: screen state lives in MusicViewModel now —
     // library loading, settings, sort, search filtering, and selection.
-    // The screen still takes PlaybackManager directly for playback; that
+    // The screen still takes PlaybackCoordinator directly for playback; that
     // moves behind an interface in a later phase (same split as Phase
     // 2a's PlayerViewModel). Settings come from the ViewModel (Koin's
     // AppSettingsRepository single), so the old settingsRepository
@@ -376,7 +376,7 @@ fun MusicScreen(
     fun playTrackSelection() {
         val selected = selectedTracksInView()
         if (selected.isNotEmpty()) {
-            playbackManager?.playAudioQueue(selected, startIndex = 0)
+            playbackCoordinator?.playAudioQueue(selected, startIndex = 0)
             onOpenPlayer()
             clearTrackSelection()
         }
@@ -429,7 +429,7 @@ fun MusicScreen(
     fun playAlbumSelection() {
         val albumTrackList = selectedAlbumTracks()
         if (albumTrackList.isNotEmpty()) {
-            playbackManager?.playAudioQueue(albumTrackList, startIndex = 0)
+            playbackCoordinator?.playAudioQueue(albumTrackList, startIndex = 0)
             onOpenPlayer()
             clearAlbumSelection()
         }
@@ -473,7 +473,7 @@ fun MusicScreen(
     fun playArtistSelection() {
         val artistTrackList = selectedArtistTracks()
         if (artistTrackList.isNotEmpty()) {
-            playbackManager?.playAudioQueue(artistTrackList, startIndex = 0)
+            playbackCoordinator?.playAudioQueue(artistTrackList, startIndex = 0)
             onOpenPlayer()
             clearArtistSelection()
         }
@@ -534,7 +534,7 @@ fun MusicScreen(
             val playable = selectedPlaylistsInView().flatMap { playlistPlayableMedia(it) }
             withContext(Dispatchers.Main) {
                 if (playable.isNotEmpty()) {
-                    playbackManager?.playQueue(playable, startIndex = 0)
+                    playbackCoordinator?.playQueue(playable, startIndex = 0)
                     onOpenPlayer()
                     clearPlaylistSelection()
                 } else {
@@ -599,7 +599,7 @@ fun MusicScreen(
     fun playFolderSelection() {
         val folderTrackList = selectedFolderTracks()
         if (folderTrackList.isNotEmpty()) {
-            playbackManager?.playAudioQueue(folderTrackList, startIndex = 0)
+            playbackCoordinator?.playAudioQueue(folderTrackList, startIndex = 0)
             onOpenPlayer()
             clearFolderSelection()
         }
@@ -645,7 +645,7 @@ fun MusicScreen(
     // nothing like the old filled button did.
     fun shuffleVisibleTracks() {
         if (sortedTracks.isNotEmpty()) {
-            playbackManager?.playAudioQueue(sortedTracks.shuffled(), startIndex = 0)
+            playbackCoordinator?.playAudioQueue(sortedTracks.shuffled(), startIndex = 0)
             onOpenPlayer()
         }
     }
@@ -1025,7 +1025,7 @@ fun MusicScreen(
                                     onToggleTrackFavourite = { toggleTrackFavourite(it) },
                                     onToggleTrackSelection = { toggleTrackSelection(it) },
                                     onTrackClick = { index ->
-                                        playbackManager?.playAudioQueue(sortedTracks, startIndex = index)
+                                        playbackCoordinator?.playAudioQueue(sortedTracks, startIndex = index)
                                         onOpenPlayer()
                                     },
                                     onTrackOptionsClick = { track ->
@@ -1098,7 +1098,7 @@ fun MusicScreen(
                                                 val memberTracks = viewModel.playlistAudioTracks(playlist)
                                                 withContext(Dispatchers.Main) {
                                                     if (memberTracks.isNotEmpty()) {
-                                                        playbackManager?.playAudioQueue(memberTracks, startIndex = 0)
+                                                        playbackCoordinator?.playAudioQueue(memberTracks, startIndex = 0)
                                                         onOpenPlayer()
                                                     } else {
                                                         // #207: an empty playlist tap used
@@ -1150,7 +1150,7 @@ fun MusicScreen(
                                         // never the whole library.
                                         val albumTrackList = albumTracks(album)
                                         if (albumTrackList.isNotEmpty()) {
-                                            playbackManager?.playAudioQueue(albumTrackList, startIndex = 0)
+                                            playbackCoordinator?.playAudioQueue(albumTrackList, startIndex = 0)
                                             onOpenPlayer()
                                         } else {
                                             // #207: same silent-tap problem as
@@ -1200,7 +1200,7 @@ fun MusicScreen(
                                         // never the whole library.
                                         val artistTrackList = artistTracks(artist)
                                         if (artistTrackList.isNotEmpty()) {
-                                            playbackManager?.playAudioQueue(artistTrackList, startIndex = 0)
+                                            playbackCoordinator?.playAudioQueue(artistTrackList, startIndex = 0)
                                             onOpenPlayer()
                                         } else {
                                             // #207: same silent-tap problem as
@@ -1250,7 +1250,7 @@ fun MusicScreen(
                                         // whole library.
                                         val folderTrackList = folderTracks(folder)
                                         if (folderTrackList.isNotEmpty()) {
-                                            playbackManager?.playAudioQueue(folderTrackList, startIndex = 0)
+                                            playbackCoordinator?.playAudioQueue(folderTrackList, startIndex = 0)
                                             onOpenPlayer()
                                         } else {
                                             // #207: same silent-tap problem as
@@ -1516,7 +1516,7 @@ fun MusicScreen(
                                 // filtered, sorted queue row tap plays — not
                                 // the whole unsorted library.
                                 val idx = sortedTracks.indexOfFirst { it.id == targetTrack.id }.coerceAtLeast(0)
-                                playbackManager?.playAudioQueue(sortedTracks, startIndex = idx)
+                                playbackCoordinator?.playAudioQueue(sortedTracks, startIndex = idx)
                                 onOpenPlayer()
                             }
                             .padding(vertical = 10.dp, horizontal = 8.dp),
@@ -1603,13 +1603,13 @@ fun MusicScreen(
                     )
                 }
                 if (playable.isNotEmpty()) {
-                    playbackManager?.playQueue(playable, startIndex = 0)
+                    playbackCoordinator?.playQueue(playable, startIndex = 0)
                     selectedCustomPlaylist = null
                     onOpenPlayer()
                 }
             },
             onPlayItem = { item ->
-                playbackManager?.playQueue(
+                playbackCoordinator?.playQueue(
                     listOf(
                         PlayableMedia(
                             id = item.mediaId,
@@ -1655,7 +1655,7 @@ fun MusicScreen(
             onDismiss = { showFavouritesDialog = false },
             onItemClick = { item ->
                 showFavouritesDialog = false
-                playbackManager?.playQueue(
+                playbackCoordinator?.playQueue(
                     listOf(
                         PlayableMedia(
                             id = item.mediaId,
@@ -1693,11 +1693,11 @@ fun MusicScreen(
             onLoadMore = {
                 if (history.size < historyTotal) historyLimit += HISTORY_PAGE_SIZE
             },
-            playbackManager = playbackManager,
+            playbackCoordinator = playbackCoordinator,
             onDismiss = { showHistoryDialog = false },
             onItemClick = { item ->
                 showHistoryDialog = false
-                playbackManager?.playQueue(
+                playbackCoordinator?.playQueue(
                     listOf(
                         PlayableMedia(
                             id = item.mediaId,
@@ -1722,7 +1722,7 @@ fun MusicScreen(
                     // the throttle state, and the Room table. With no
                     // manager in scope there is no in-memory state, so
                     // clear the Room table directly instead.
-                    playbackManager?.resumeManager?.clearAll()
+                    playbackCoordinator?.resumeManager?.clearAll()
                         ?: viewModel.clearAllResumePositions()
                     snackbarHostState.showSnackbar(context.getString(R.string.music_cleared_history_msg))
                 }

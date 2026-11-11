@@ -138,7 +138,7 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.MpxMediaCodecSelector
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.RepeatMode
@@ -329,7 +329,7 @@ fun PlayerScreen(
     subtitleResultHandler: ActivityResultHandler<android.net.Uri?>,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     // True while the activity is in system PiP mode: hide every overlay so
     // the PiP window shows video only (issue #98).
     isInPipMode: Boolean = false,
@@ -337,7 +337,7 @@ fun PlayerScreen(
     val context = LocalContext.current
     // Migration Phase 2a: screen state lives in PlayerViewModel now —
     // playback state, settings, rotation, keep-screen-on. The screen
-    // still takes PlaybackManager directly for transport/subtitle/
+    // still takes PlaybackCoordinator directly for transport/subtitle/
     // persistence actions; those move behind interfaces in later
     // phases. Settings come from the ViewModel (Koin's
     // AppSettingsRepository single), so the old settingsRepository
@@ -405,7 +405,7 @@ fun PlayerScreen(
     }
 
     // Issue #149: after a process death in the background, Android restores
-    // this destination but the PlaybackManager singleton is fresh with an
+    // this destination but the PlaybackCoordinator singleton is fresh with an
     // empty queue, which used to render the "No video queued" empty state.
     // Restore the last persisted queue instead (paused, at the saved
     // position). Deliberate stops clear the persisted queue, so this only
@@ -485,7 +485,7 @@ fun PlayerScreen(
         onDispose {
             val activityInPip = activity?.isInPictureInPictureMode == true
             if (!activityInPip && !viewModel.loadSettingsNow().backgroundPlay) {
-                playbackManager.stop()
+                playbackCoordinator.stop()
             }
         }
     }
@@ -507,9 +507,9 @@ fun PlayerScreen(
                     // whenever mpv rejected the file (mpv.command()
                     // never throws for a rejected subtitle), so the
                     // success/failure banner is now shown by
-                    // PlaybackManager once the sub-add outcome is
+                    // PlaybackCoordinator once the sub-add outcome is
                     // actually known (track in track-list, or timeout).
-                    playbackManager.loadExternalSubtitle(
+                    playbackCoordinator.loadExternalSubtitle(
                         uri = validation.uri,
                         displayName = validation.displayName,
                         mimeType = validation.mimeType,
@@ -561,7 +561,7 @@ fun PlayerScreen(
     val toggleFavourite: () -> Unit = {
         state.currentItem?.let { item ->
             scope.launch {
-                playbackManager.persistenceRepository.toggleFavourite(
+                playbackCoordinator.persistenceRepository.toggleFavourite(
                     FavouriteItem(
                         mediaUri = item.uri,
                         mediaId = item.id,
@@ -587,8 +587,8 @@ fun PlayerScreen(
                 activity,
                 currentSettings,
                 state.isPlaying,
-                playbackManager.videoWidth,
-                playbackManager.videoHeight,
+                playbackCoordinator.videoWidth,
+                playbackCoordinator.videoHeight,
                 true,
             )
             if (!entered) {
@@ -639,8 +639,8 @@ fun PlayerScreen(
         viewModel.updateSettings(updated)
         if (!nextBackgroundPlay) {
             PlaybackService.stop(context)
-            playbackManager.setVideoBackgroundActive(false)
-            playbackManager.setBackgroundPlaying(false)
+            playbackCoordinator.setVideoBackgroundActive(false)
+            playbackCoordinator.setBackgroundPlaying(false)
         }
         val note = if (nextBackgroundPlay) {
             if (state.currentItem?.isVideo == true) {
@@ -654,13 +654,13 @@ fun PlayerScreen(
         Toast.makeText(context, note, Toast.LENGTH_SHORT).show()
     }
 
-    val customPlaylists by playbackManager.persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
+    val customPlaylists by playbackCoordinator.persistenceRepository.observePlaylists().collectAsState(initial = emptyList())
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     val currentUri = state.currentItem?.uri.orEmpty()
     val isFavourite by produceState(initialValue = false, currentUri) {
         if (currentUri.isNotBlank()) {
-            playbackManager.persistenceRepository.observeIsFavourite(currentUri).collect {
+            playbackCoordinator.persistenceRepository.observeIsFavourite(currentUri).collect {
                 value = it
             }
         } else {
@@ -816,7 +816,7 @@ fun PlayerScreen(
     fun resumeAfterSeekDrag() {
         if (wasPlayingBeforeSeekDrag) {
             wasPlayingBeforeSeekDrag = false
-            playbackManager.play()
+            playbackCoordinator.play()
         }
     }
 
@@ -852,7 +852,7 @@ fun PlayerScreen(
                         // resumeAfterSeekDrag restores it on release.
                         if (state.isPlaying) {
                             wasPlayingBeforeSeekDrag = true
-                            playbackManager.pause()
+                            playbackCoordinator.pause()
                         }
                         seekStartMs = state.currentPositionMs
                     }
@@ -1021,13 +1021,13 @@ fun PlayerScreen(
                             // identity (issue #227).
                             val previousSpeed = state.speed
                             val heldItemUri = state.currentItem?.uri
-                            playbackManager.setSpeed(2f)
+                            playbackCoordinator.setSpeed(2f)
                             isLongPress2x = true
                             try {
                                 waitForUpOrCancellation()
                             } finally {
                                 if (state.currentItem?.uri == heldItemUri) {
-                                    playbackManager.setSpeed(previousSpeed)
+                                    playbackCoordinator.setSpeed(previousSpeed)
                                 }
                                 isLongPress2x = false
                             }
@@ -1049,7 +1049,7 @@ fun PlayerScreen(
                                     val twoThirds = size.width * (2f / 3f)
                                     when {
                                         secondDown.position.x < oneThird -> {
-                                            playbackManager.skipBackward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
+                                            playbackCoordinator.skipBackward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
                                             sideSeekDirection = SideSeekDirection.BACKWARD
                                             hideBrightnessJob?.cancel()
                                             showBrightnessIndicator = false
@@ -1062,7 +1062,7 @@ fun PlayerScreen(
                                             }
                                         }
                                         secondDown.position.x > twoThirds -> {
-                                            playbackManager.skipForward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
+                                            playbackCoordinator.skipForward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
                                             sideSeekDirection = SideSeekDirection.FORWARD
                                             hideBrightnessJob?.cancel()
                                             showBrightnessIndicator = false
@@ -1075,7 +1075,7 @@ fun PlayerScreen(
                                             }
                                         }
                                         else -> {
-                                            playbackManager.togglePlayPause()
+                                            playbackCoordinator.togglePlayPause()
                                             if (sideSeekDirection != null) {
                                                 hideSideSeekJob?.cancel()
                                                 sideSeekDirection = null
@@ -1159,7 +1159,7 @@ fun PlayerScreen(
                                     val newZoom = (pinchStartZoom * (distance / pinchStartDistance)).coerceIn(0.5f, 2.0f)
                                     if (newZoom != pinchCurrentZoom) {
                                         pinchCurrentZoom = newZoom
-                                        playbackManager.setVideoZoom(newZoom)
+                                        playbackCoordinator.setVideoZoom(newZoom)
                                         zoomDisplayText = formatMultiplier(newZoom)
                                     }
                                 }
@@ -1203,7 +1203,7 @@ fun PlayerScreen(
                         when (currentDragMode) {
                             DragGestureMode.HORIZONTAL_SEEK -> {
                                 if (isDraggingSeek) {
-                                    playbackManager.seekTo(seekTargetMs)
+                                    playbackCoordinator.seekTo(seekTargetMs)
                                     isDraggingSeek = false
                                     // Issue #259: seek first, then resume —
                                     // play() must see the post-seek state, and
@@ -1261,17 +1261,17 @@ fun PlayerScreen(
                 SurfaceView(ctx).apply {
                     holder.addCallback(object : SurfaceHolder.Callback {
                         override fun surfaceCreated(holder: SurfaceHolder) {
-                            playbackManager.attachSurface(holder.surface)
+                            playbackCoordinator.attachSurface(holder.surface)
                         }
 
                         override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-                            playbackManager.surfaceChanged(width, height)
+                            playbackCoordinator.surfaceChanged(width, height)
                         }
 
                         override fun surfaceDestroyed(holder: SurfaceHolder) {
                             // SYNCHRONOUS barrier:
                             // Set vo=null and detach before surfaceDestroyed returns.
-                            playbackManager.detachSurface()
+                            playbackCoordinator.detachSurface()
                         }
                     })
                 }
@@ -1280,8 +1280,8 @@ fun PlayerScreen(
                 // Push subtitle style changes to a running mpv engine (issue #75),
                 // plus audio delay + video zoom (issue #153).
                 if (lastMpvSubtitleSettings[0] != currentSettings) {
-                    playbackManager.applySubtitleSettings(currentSettings)
-                    playbackManager.applyPlaybackTweaks(currentSettings)
+                    playbackCoordinator.applySubtitleSettings(currentSettings)
+                    playbackCoordinator.applyPlaybackTweaks(currentSettings)
                     lastMpvSubtitleSettings[0] = currentSettings
                 }
             },
@@ -1625,13 +1625,13 @@ fun PlayerScreen(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable {
-                                playbackManager.seekTo(0L)
-                                playbackManager.clearResumedNotification()
+                                playbackCoordinator.seekTo(0L)
+                                playbackCoordinator.clearResumedNotification()
                             },
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(
-                            onClick = { playbackManager.clearResumedNotification() },
+                            onClick = { playbackCoordinator.clearResumedNotification() },
                             modifier = Modifier.size(32.dp),
                         ) {
                             Icon(
@@ -1672,7 +1672,7 @@ fun PlayerScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(
-                            onClick = { playbackManager.clearDecoderFallbackNote() },
+                            onClick = { playbackCoordinator.clearDecoderFallbackNote() },
                             modifier = Modifier.size(32.dp),
                         ) {
                             Icon(
@@ -1713,7 +1713,7 @@ fun PlayerScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(
-                            onClick = { playbackManager.clearUserNotification() },
+                            onClick = { playbackCoordinator.clearUserNotification() },
                             modifier = Modifier.size(32.dp),
                         ) {
                             Icon(
@@ -1741,7 +1741,7 @@ fun PlayerScreen(
                     .padding(start = 24.dp),
             ) {
                 IconButton(
-                    onClick = { playbackManager.setLocked(false) },
+                    onClick = { playbackCoordinator.setLocked(false) },
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
@@ -1836,7 +1836,7 @@ fun PlayerScreen(
                                 onEnterPip = enterPip,
                                 onToggleBackgroundPlay = toggleBackgroundPlay,
                                 onAddToPlaylist = { showAddToPlaylistDialog = true },
-                                playbackManager = playbackManager,
+                                playbackCoordinator = playbackCoordinator,
                             )
 
                             // Decoder Pill Badge: configured mode + real active codec
@@ -1865,7 +1865,7 @@ fun PlayerScreen(
                                             DecoderMode.HW_PLUS -> DecoderMode.SW
                                             DecoderMode.SW -> DecoderMode.HW
                                         }
-                                        playbackManager.setDecoderMode(nextDecoder)
+                                        playbackCoordinator.setDecoderMode(nextDecoder)
                                         viewModel.updateSettings(viewModel.loadSettingsNow().copy(decoderMode = nextDecoder.label))
                                         Toast.makeText(context, context.getString(R.string.player_toast_decoder, context.getString(nextDecoder.titleRes)), Toast.LENGTH_SHORT).show()
                                     },
@@ -1941,7 +1941,7 @@ fun PlayerScreen(
                                 },
                                 onValueChangeFinished = {
                                     val target = (scrubFraction * currentDuration).toLong()
-                                    playbackManager.seekTo(target)
+                                    playbackCoordinator.seekTo(target)
                                     isScrubbingSlider = false
                                 },
                                 modifier = Modifier
@@ -1980,7 +1980,7 @@ fun PlayerScreen(
                             // MX-faithful transparent button (issue #94): no
                             // glass fill, no border — white icon on the scrim.
                             IconButton(
-                                onClick = { playbackManager.setLocked(true) },
+                                onClick = { playbackCoordinator.setLocked(true) },
                                 modifier = Modifier
                                     .size(50.dp),
                             ) {
@@ -1994,7 +1994,7 @@ fun PlayerScreen(
 
                             // Previous Track
                             IconButton(
-                                onClick = { playbackManager.skipPrevious() },
+                                onClick = { playbackCoordinator.skipPrevious() },
                                 enabled = state.hasPrevious,
                                 modifier = Modifier
                                     .size(50.dp),
@@ -2011,7 +2011,7 @@ fun PlayerScreen(
                             // MX-faithful: transparent play/pause, larger white
                             // icon instead of a filled hero circle.
                             IconButton(
-                                onClick = { playbackManager.togglePlayPause() },
+                                onClick = { playbackCoordinator.togglePlayPause() },
                                 modifier = Modifier
                                     .size(50.dp),
                             ) {
@@ -2025,7 +2025,7 @@ fun PlayerScreen(
 
                             // Next Track
                             IconButton(
-                                onClick = { playbackManager.skipNext() },
+                                onClick = { playbackCoordinator.skipNext() },
                                 enabled = state.hasNext,
                                 modifier = Modifier
                                     .size(50.dp),
@@ -2122,7 +2122,7 @@ fun PlayerScreen(
                                             contentAlignment = Alignment.Center,
                                             modifier = Modifier
                                                 .clickable {
-                                                    playbackManager.cancelSleepTimer()
+                                                    playbackCoordinator.cancelSleepTimer()
                                                     Toast.makeText(
                                                         context,
                                                         context.getString(R.string.player_sleep_timer_canceled_toast),
@@ -2189,7 +2189,7 @@ fun PlayerScreen(
             onSettingsChanged = { updated ->
                 viewModel.updateSettings(updated)
             },
-            playbackManager = playbackManager,
+            playbackCoordinator = playbackCoordinator,
             subtitleLauncher = subtitleLauncher,
             isFavourite = isFavourite,
             onToggleFavourite = toggleFavourite,
@@ -2216,7 +2216,7 @@ fun PlayerScreen(
                     // playlist — say so instead of "added". This screen
                     // has no snackbar host, so feedback is a Toast like
                     // the rest of the player screen.
-                    val rowId = playbackManager.persistenceRepository.addItemToPlaylist(
+                    val rowId = playbackCoordinator.persistenceRepository.addItemToPlaylist(
                         PlaylistItem(
                             playlistId = pl.id,
                             mediaUri = current.uri,
@@ -2251,12 +2251,12 @@ fun PlayerScreen(
             initialIsVideoPlaylist = state.currentItem?.isVideo ?: false,
             onConfirm = { name, isVideo ->
                 scope.launch {
-                    val newId = playbackManager.persistenceRepository.createPlaylist(
+                    val newId = playbackCoordinator.persistenceRepository.createPlaylist(
                         name = name,
                         isVideoPlaylist = isVideo,
                     )
                     state.currentItem?.let { current ->
-                        playbackManager.persistenceRepository.addItemToPlaylist(
+                        playbackCoordinator.persistenceRepository.addItemToPlaylist(
                             PlaylistItem(
                                 playlistId = newId,
                                 mediaUri = current.uri,
@@ -2317,7 +2317,7 @@ private fun PlayerTopBarActions(
     onEnterPip: () -> Unit,
     onToggleBackgroundPlay: () -> Unit,
     onAddToPlaylist: () -> Unit,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
 ) {
     val layoutIds = remember(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds) {
         parsePlayerMenuLayout(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds)
@@ -2339,7 +2339,7 @@ private fun PlayerTopBarActions(
                 onEnterPip = onEnterPip,
                 onToggleBackgroundPlay = onToggleBackgroundPlay,
                 onAddToPlaylist = onAddToPlaylist,
-                playbackManager = playbackManager,
+                playbackCoordinator = playbackCoordinator,
             )
         }
     }
@@ -2363,7 +2363,7 @@ private fun PlayerTopBarActionItem(
     onEnterPip: () -> Unit,
     onToggleBackgroundPlay: () -> Unit,
     onAddToPlaylist: () -> Unit,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
 ) {
     val context = LocalContext.current
     when (id) {
@@ -2391,13 +2391,13 @@ private fun PlayerTopBarActionItem(
             icon = Icons.Filled.Shuffle,
             contentDescription = stringResource(R.string.player_cd_shuffle),
             active = state.shuffleEnabled,
-            onClick = { playbackManager.setShuffleEnabled(!state.shuffleEnabled) },
+            onClick = { playbackCoordinator.setShuffleEnabled(!state.shuffleEnabled) },
         )
         "repeat" -> PlayerTopBarActionButton(
             icon = if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
             contentDescription = stringResource(R.string.playback_sheet_repeat),
             active = state.repeatMode != RepeatMode.OFF,
-            onClick = { playbackManager.cycleRepeatMode() },
+            onClick = { playbackCoordinator.cycleRepeatMode() },
         )
         // Issue #225: PiP is video-only — hide the entry for audio
         // items (the enterPip lambda also refuses them, so an audio
@@ -2428,7 +2428,7 @@ private fun PlayerTopBarActionItem(
                 // Same cycle the #167 top-bar pill did.
                 val modes = AspectRatioMode.values()
                 val next = modes[(modes.indexOf(state.aspectRatio) + 1) % modes.size]
-                playbackManager.setAspectRatio(next)
+                playbackCoordinator.setAspectRatio(next)
                 Toast.makeText(
                     context,
                     context.getString(R.string.player_menu_aspect, context.getString(next.labelRes)),

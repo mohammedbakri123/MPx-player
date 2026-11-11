@@ -54,13 +54,13 @@ interface SubtitleHost {
 }
 
 /**
- * External-subtitle responsibility, extracted from [PlaybackManager]
+ * External-subtitle responsibility, extracted from the old PlaybackManager
  * (migration Phase 3, step 1). Owns subtitle discovery (same-name
  * siblings in the video's folder), the manual-pick load path, the
  * pending-confirmation state for an add the engine could not pin yet,
  * and handing subtitle style settings to the engine.
  *
- * No behaviour change from the [PlaybackManager] code this was moved
+ * No behaviour change from the old PlaybackManager code this was moved
  * from — the bodies are verbatim except for the seams below.
  *
  * The Android-dependent pieces arrive through [fileAccess] so the
@@ -386,7 +386,7 @@ class SubtitleManager(
         /**
          * Production wiring for the Android-dependent seams, from the
          * coordinator's application context. Kept here so
-         * [PlaybackManager] stays a one-line construction call.
+         * [PlaybackCoordinator] stays a one-line construction call.
          */
         fun productionFileAccess(context: android.content.Context): FileAccess {
             return FileAccess(

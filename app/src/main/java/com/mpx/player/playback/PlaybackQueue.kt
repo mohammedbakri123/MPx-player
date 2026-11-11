@@ -94,14 +94,14 @@ interface QueueHost {
 }
 
 /**
- * Queue responsibility, extracted from [PlaybackManager] (migration
+ * Queue responsibility, extracted from the old PlaybackManager (migration
  * Phase 3, step 2). Owns the live queue, the pre-shuffle order,
  * the playQueue session generation, queue building (audio / video /
  * live picks), shuffle and repeat, and queue persistence — plus the
  * pure end-of-item decision (what plays next when the engine
  * reports ENDED).
  *
- * No behaviour change from the [PlaybackManager] code this was moved
+ * No behaviour change from the old PlaybackManager code this was moved
  * from — the bodies are verbatim except for the seams below.
  *
  * Seams:
@@ -118,7 +118,7 @@ interface QueueHost {
  *
  * Deliberately NOT moved here: the engine listeners themselves.
  * `onPlaybackStateChanged` (including the STATE_ENDED branch) and
- * `onMediaItemTransition` stay in [PlaybackManager] — they are
+ * `onMediaItemTransition` stay in [PlaybackCoordinator] — they are
  * engine-event translation, a later Phase 3 step. The ENDED branch
  * asks this class for its decision via [endedAction] and executes
  * it; the transition handler reads the queue through [itemAt] and
@@ -469,7 +469,7 @@ class PlaybackQueue(
     /**
      * Restores the last persisted queue when the live queue is empty
      * (issue #149): the process died in the background and Android restored
-     * the Player destination with a fresh, empty PlaybackManager. Loads the
+     * the Player destination with a fresh, empty PlaybackCoordinator. Loads the
      * queue paused at the Room-saved position (playQueue's normal resume
      * rules apply, so with resume playback off it starts at 0 instead).
      * Returns false when there is nothing to restore, so the caller keeps

@@ -31,7 +31,7 @@ it has got.
 ```
 UI (Compose screens, theme, navigation, components)
         │  calls
-Playback (PlaybackManager, PlaybackService, queue, resume, subtitles)
+Playback (PlaybackCoordinator, PlaybackService, queue, resume, subtitles)
         │  calls
 Engine (PlayerEngine interface → MpvPlayerEngine → mpv)
         │
@@ -45,9 +45,12 @@ Data (Room, MediaStore, SharedPreferences)  ←  Domain (models + interfaces)
   `ui/navigation/Navigation.kt` (`Screen` sealed class: `local`, `music`,
   `network`, `me`, `player`). Screens render state and send events; they
   are not supposed to talk to mpv directly.
-- **Playback** — `playback/`: `PlaybackManager` is the centre of the app.
-  It owns the queue, resume positions, subtitle handling, and the engine
-  listener, and exposes playback state as `StateFlow<PlaybackState>`.
+- **Playback** — `playback/`: `PlaybackCoordinator` is the centre of the app.
+  It owns the published state, the position ticker, the preparing
+  watchdog, the sleep timer, transport and session functions, and —
+  through the three extracted pieces — the queue, resume positions,
+  subtitle handling, and the engine listener; it exposes playback
+  state as `StateFlow<PlaybackState>`.
   `PlaybackService` is the foreground service for background playback.
   `PlaybackQueueStore` persists the queue; `PlaybackResumeManager` saves
   and restores positions.
@@ -76,7 +79,7 @@ Data (Room, MediaStore, SharedPreferences)  ←  Domain (models + interfaces)
   `di/ViewModelModule` — the one place objects are built) and applies the
   stored theme's night mode before any activity is created.
   `MainActivity` hosts the navigation, the tab scaffold, and the
-  activity-result launchers; it receives its `PlaybackManager` and
+  activity-result launchers; it receives its `PlaybackCoordinator` and
   settings repository from Koin.
 
 ## How a video gets from a tap to mpv (current)
@@ -84,14 +87,14 @@ Data (Room, MediaStore, SharedPreferences)  ←  Domain (models + interfaces)
 1. The Local tab (`ui/screens/local/LocalScreen.kt`) lists folders and
    files through `LocalViewModel`, which reads them from
    `MediaStoreRepository`.
-2. Tapping a video calls into `PlaybackManager` (`playVideoFiles`,
+2. Tapping a video calls into `PlaybackCoordinator` (`playVideoFiles`,
    `playQueue`, `playLiveQueueItem`, …), which builds a queue of
    `PlayableMedia` items.
-3. `PlaybackManager` hands the queue to the engine through the
+3. `PlaybackCoordinator` hands the queue to the engine through the
    `PlayerEngine` interface (`load(items, startIndex, resumeMs)`), and
    `MpvPlayerEngine` drives mpv.
 4. mpv events come back through `PlayerEngine.Listener` into
-   `PlaybackManager`, which updates its `StateFlow<PlaybackState>`.
+   `PlaybackCoordinator`, which updates its `StateFlow<PlaybackState>`.
 5. `PlayerScreen` collects that state and renders transport, position,
    tracks, and subtitles. The foreground `PlaybackService` keeps audio
    going when the app leaves the foreground.
@@ -106,34 +109,32 @@ goes through one god object.** Since Phases 1–2, objects are built in
 and every screen has a ViewModel beside it whose dependencies arrive
 through its constructor, so screens are testable with fake
 repositories. What has NOT changed yet: screens still hold
-`PlaybackManager` directly for transport (play/pause, queue, subtitles)
-until Phase 3's final step replaces it with the small coordinator —
-the coordinator itself already exists (`playback/
-PlaybackCoordinator.kt`): `PlaybackManager` is now a 175-line shell
-that delegates everything to it, and the coordinator builds the
-database, persistence, settings, resume manager, engine, and the
-three extracted pieces through its `production()` factory. No
-`getInstance` call site remains in UI code — the only ones left are
-`PlaybackService` (final Phase 3 step) and `PlaybackManager` itself,
-which calls `PlaybackCoordinator.production()` internally (final
-step); the `getInstance` calls in `di/AppModule` and
-`di/PlaybackModule` are the legitimate construction points. The other
-hand-built construction left is the settings repository, built
-directly in `PlaybackCoordinator.production()`, `PlaybackService`,
-and `MpvPlayerEngine` (Phases 3–4), plus two data/util internals —
+`PlaybackCoordinator` directly for transport (play/pause, queue,
+subtitles) — that is the one remaining exception to the ViewModel
+pattern, and it is deliberate (see below). `PlaybackCoordinator`
+is the centre of playback: it builds the database, persistence,
+settings, resume manager, engine, and the three extracted pieces
+through its `production()` factory, and it is their host. No
+`getInstance` call site remains in UI or playback code — the only
+ones left are `MpxDatabase.getInstance` in `di/AppModule` and in
+`PlaybackCoordinator.production()`, which are the legitimate
+construction points. The other hand-built construction left is the
+settings repository, built directly in
+`PlaybackCoordinator.production()`, in `PlaybackService.start()`,
+and in `MpvPlayerEngine` (Phase 4), plus two data/util internals —
 `MediaStoreRepository` (`showHiddenFiles` read) and `PipUtils`
 (default argument) — which have no phase assigned yet.
 
-**Two files are very large.** `PlaybackCoordinator` is 1,081 lines
+**Two files are very large.** `PlaybackCoordinator` is 1,086 lines
 (the moved `PlaybackManager` body plus the coordinator's seams,
 `production()` factory, and KDoc) and `MpvPlayerEngine` is 2,674
 lines; `PlayerScreen` (2,666), `MusicScreen` (2,414), `LocalScreen`
 (1,895), and `SettingsScreen` (1,766) are similarly large. The old
-`PlaybackManager` (987 lines) is now a 175-line delegating shell —
-its pieces live in `SubtitleManager` (424 lines), `PlaybackQueue`
-(585 lines), and `EngineEventTranslator` (363 lines). A small fix in
-any of these means reading a lot of unrelated code first. Splitting
-them is the migration's Phase 3 and Phase 4; until then, expect it.
+`PlaybackManager` (987 lines) is deleted — its body lives in
+`PlaybackCoordinator` and its pieces in `SubtitleManager` (424 lines),
+`PlaybackQueue` (585 lines), and `EngineEventTranslator` (363 lines).
+A small fix in any of these means reading a lot of unrelated code
+first. Splitting them further is Phase 4; until then, expect it.
 
 ## Where do I change X?
 
@@ -141,10 +142,10 @@ them is the migration's Phase 3 and Phase 4; until then, expect it.
 |---|---|---|
 | Add a setting | `domain/settings/AppSettings.kt` (the model), `data/settings/SharedPrefsAppSettingsRepository.kt` (load/save), `ui/screens/settings/SettingsViewModel.kt` (the write) and `ui/screens/settings/SettingsScreen.kt` (the row) | New user-facing strings need entries in all 9 locales — see CONTRIBUTING.md |
 | Add a library sort option | `ui/screens/local/LocalViewModel.kt` (Local) or `ui/screens/music/MusicViewModel.kt` (Music) | Sorting lives in the ViewModel, not in the repository or the screen |
-| Change a subtitle behaviour | `playback/SubtitleManager.kt` (discovery, selection, pending pick) and `playback/engine/MpvPlayerEngine.kt` (rendering, codepage) | External subtitles are picked in the player; encoding detection sets `sub-codepage` before the sub-add. `PlaybackManager` is a shell over `PlaybackCoordinator` and keeps thin delegating functions (`loadExternalSubtitle`, `selectSubtitleTrack`, `applySubtitleSettings`) so screens do not change; the track list itself is still published by `PlaybackCoordinator.updateTracksState()` (audio+video+subtitle together). An engine subtitle file is Phase 4 |
-| Change queue behaviour (shuffle, repeat, next/previous, restore) | `playback/PlaybackQueue.kt` (queue order, the end-of-item decision, persistence via the `QueueStore` interface) | `PlaybackManager` is a shell over `PlaybackCoordinator` and keeps thin delegating functions (`playQueue`, `skipNext`, `setShuffleEnabled`, …) so screens do not change; the engine listeners that execute the queue's end-of-item decision now live in `playback/EngineEventTranslator.kt` (Phase 3 step 3) |
+| Change a subtitle behaviour | `playback/SubtitleManager.kt` (discovery, selection, pending pick) and `playback/engine/MpvPlayerEngine.kt` (rendering, codepage) | External subtitles are picked in the player; encoding detection sets `sub-codepage` before the sub-add. The track list itself is published by `PlaybackCoordinator.updateTracksState()` (audio+video+subtitle together). An engine subtitle file is Phase 4 |
+| Change queue behaviour (shuffle, repeat, next/previous, restore) | `playback/PlaybackQueue.kt` (queue order, the end-of-item decision, persistence via the `QueueStore` interface) | The engine listeners that execute the queue's end-of-item decision live in `playback/EngineEventTranslator.kt` (Phase 3 step 3) |
 | Change what an engine event does (play/pause, READY/ENDED, track change, error, decoder fallback) | `playback/EngineEventTranslator.kt` (the `PlayerEngine.Listener` implementation) and `playback/PlaybackCoordinator.kt` (its `EngineEventHost`: published state, ticker, watchdog) | The translator decides what an event means; the coordinator applies the state/lifecycle effects. The preparing watchdog stays in the coordinator (it is also armed from session start), and the codec-error banner text is formatted through the coordinator's `CoordinatorStrings` seam (it needs string resources) |
-| Add a network source | `network/` (`StreamUrl.kt`, `SharedLink.kt`) and `ui/screens/network/NetworkViewModel.kt` | Playback of a stream still goes through `PlaybackManager` (a shell over `PlaybackCoordinator`) and the engine |
+| Add a network source | `network/` (`StreamUrl.kt`, `SharedLink.kt`) and `ui/screens/network/NetworkViewModel.kt` | Playback of a stream still goes through `PlaybackCoordinator` and the engine |
 | Change what resume remembers | `playback/PlaybackResumeManager.kt` and `data/local/entity/PlaybackResumeEntity.kt` | Positions are keyed by media id/URI; see `resumeKey` in the manager |
 | Change how the player looks | `ui/screens/player/PlayerScreen.kt`, `ui/components/player/`, `ui/theme/` | Keep the UX law: true black in dark mode, one accent (identity blue), back = exactly one step |
 | Change what mpv is told | `playback/engine/MpvPlayerEngine.kt` and `playback/engine/MpvConfigSync.kt` | Settings reach mpv as options; do not call mpv from a screen |
@@ -158,18 +159,17 @@ them is the migration's Phase 3 and Phase 4; until then, expect it.
   `ui/screens/player/PlayerViewModel.kt`.
 - `domain/` — plain models and repository interfaces (as today).
 - `data/` — Room, MediaStore, and settings implementations (as today).
-- `playback/` — today still the `PlaybackManager` god object, queue,
-  resume, and subtitle pieces, plus `PlaybackService`. Phase 3 splits
-  the manager into a coordinator, queue, resume, and subtitle pieces;
-  the subtitle piece is done (`playback/SubtitleManager.kt`, 18 unit
-  tests), the queue piece is done (`playback/PlaybackQueue.kt`,
-  585 lines, 29 unit tests), the engine-event translation is
-  done (`playback/EngineEventTranslator.kt`, 363 lines, 28 unit
-  tests), and the coordinator shell is done
-  (`playback/PlaybackCoordinator.kt`, 1,081 lines, 34 unit tests;
-  `PlaybackManager` is now a 175-line shell delegating to it). Only
-  the final step remains: rewiring the callers to the coordinator
-  and deleting `PlaybackManager`.
+- `playback/` — the `PlaybackCoordinator` (1,086 lines, 34 unit
+  tests) plus the queue, resume, and subtitle pieces, plus
+  `PlaybackService`. Phase 3 split the old `PlaybackManager` god
+  object into the coordinator and the pieces: the subtitle piece is
+  done (`playback/SubtitleManager.kt`, 424 lines, 18 unit tests),
+  the queue piece is done (`playback/PlaybackQueue.kt`, 585 lines,
+  29 unit tests), the engine-event translation is done
+  (`playback/EngineEventTranslator.kt`, 363 lines, 28 unit tests),
+  and the coordinator owns the published state, the position ticker,
+  the preparing watchdog, the sleep timer, transport and session
+  functions, and the three host implementations.
 - `playback/engine/` — the `PlayerEngine` interface and its mpv
   implementation. Phase 4 splits the engine by concern.
 - `di/` — the Koin modules (`AppModule`, `PlaybackModule`,
@@ -183,8 +183,8 @@ A finished screen follows one pattern, every time:
 2. The ViewModel exposes one immutable state as a `StateFlow` and a small
    set of intent functions (`onPlay(uri)`, `onToggleFavourite()`, …).
 3. The screen collects that state and renders it. It holds no repository,
-   database, or engine reference. (Until Phase 3, screens still hold
-   `PlaybackManager` directly for transport — that is the one remaining
+   database, or engine reference. (Screens still hold
+   `PlaybackCoordinator` directly for transport — that is the one remaining
    exception to this rule, and it is deliberate, not a second pattern.)
 4. The ViewModel's dependencies arrive through its constructor, so a test
    can pass fakes.
@@ -194,10 +194,9 @@ A finished screen follows one pattern, every time:
 - **Engine** — the thing that actually decodes and renders media: mpv,
   reached only through the `PlayerEngine` interface.
 - **Coordinator** — the small public face of playback that
-  ViewModels talk to. `PlaybackCoordinator.kt` already owns the
-  state, ticker, watchdog, and transport; `PlaybackManager` is a
-  thin shell over it until the final Phase 3 step rewires the
-  callers and deletes it.
+  ViewModels talk to. `PlaybackCoordinator.kt` owns the state,
+  ticker, watchdog, sleep timer, and transport; it is the only
+  playback owner.
 - **Queue store** — `PlaybackQueueStore`: persists the current play queue
   so it survives the app being killed.
 - **Resume position** — the saved playback position for a media item,
@@ -213,12 +212,11 @@ A finished screen follows one pattern, every time:
 - Phase 0 (this document + CONTRIBUTING.md build notes): done.
 - Phase 1 (Koin foundation): done. `di/AppModule` (database, MediaStore
   + Room repositories, settings repository), `di/PlaybackModule`
-  (`PlaybackManager` as a `single`), and `MainActivity` on Koin.
+  (`PlaybackCoordinator` as a `single`, built by
+  `PlaybackCoordinator.production()`), and `MainActivity` on Koin.
   The mpv engine has no Koin registration —
   `PlaybackCoordinator.production()` builds it (with the database,
-  repositories, and resume manager); Koin still provides
-  `PlaybackManager`, which delegates to the coordinator. Registering
-  the coordinator itself is the final Phase 3 step.
+  repositories, and resume manager).
 - Phase 2 (one ViewModel per screen, player first): done. Every screen
   has a ViewModel beside it, obtained with `koinViewModel()` from
   `di/ViewModelModule`, depending on interfaces only, each with unit
@@ -229,7 +227,7 @@ A finished screen follows one pattern, every time:
     restore on first entry, rotation override, keep-screen-on. Depends
     on `AppSettingsRepository` and the minimal
     `playback/PlaybackStateSource` (`playbackState` +
-    `restorePersistedQueueIfEmpty()`), which `PlaybackManager`
+    `restorePersistedQueueIfEmpty()`), which `PlaybackCoordinator`
     implements.
   - 2b `LocalViewModel` (`ui/screens/local/`, ~1,050 lines, 19 tests):
     settings load / reload, folder browsing, sort / view / filter,
@@ -247,51 +245,45 @@ A finished screen follows one pattern, every time:
   - 2d `NetworkViewModel` (`ui/screens/network/`, 6 tests): URL state
     as one `NetworkUiState`; streams play through the minimal
     `StreamPlayer` interface (`playStream`), implemented by
-    `PlaybackManager`.
+    `PlaybackCoordinator`.
   - 2e `MeViewModel` (`ui/screens/me/`, 243 lines, 12 tests): Me /
     History / Playlists state — settings, badge flows, favourites
     actions, history total + paging, playlists.
   - 2e `SettingsViewModel` (`ui/screens/settings/`, 450 lines,
     18 tests): every settings write (including menu, blacklist, and
     diagnostics reads) goes through the ViewModel; `MainActivity`
-    passes it the `PlaybackManager` it needs for the few
+    passes it the `PlaybackCoordinator` it needs for the few
     playback-coupled reads.
   - Consolidation: no `getInstance` call site remains in UI code —
     `PlayerScreen`, `MeScreen`, `HistoryScreen`, and `PlaylistsScreen`
-    take `PlaybackManager` as a required parameter from `MainActivity`.
-    What is still NOT migrated (Phases 3–4): screens still hold
-    `PlaybackManager` for transport, and `PlaybackManager` /
+    take `PlaybackCoordinator` as a required parameter from `MainActivity`.
+    What is still NOT migrated (Phase 4): screens still hold
+    `PlaybackCoordinator` for transport, and `PlaybackCoordinator` /
     `PlaybackService` / `MpvPlayerEngine` still build objects by hand
     (see "The two things that surprise newcomers" above).
-- Phase 3 (break up `PlaybackManager`): in progress. Step 1 done:
+- Phase 3 (break up `PlaybackManager`): done. Step 1:
   `SubtitleManager` (`playback/`, 424 lines, 18 tests) owns external
   subtitle discovery, the manual-pick load path, the pending
-  confirmation, and subtitle style settings; `PlaybackManager` keeps
-  thin delegating functions so no screen, ViewModel, or service
-  changed, and still owns the queue, the published state, and the
-  shared track-list refresh. Step 2 done: `PlaybackQueue`
+  confirmation, and subtitle style settings. Step 2: `PlaybackQueue`
   (`playback/`, 585 lines, 29 tests) owns the live queue, queue
   building, shuffle and repeat, queue persistence (behind the new
   `QueueStore` interface), and the pure end-of-item decision
-  (`endedAction`); `PlaybackManager` stays its `QueueHost`, keeps
-  thin delegating functions, and still owns the published state and
-  the engine listeners. Step 3 done: `EngineEventTranslator`
-  (`playback/`, 363 lines, 28 tests) owns the `PlayerEngine.Listener`
-  implementation — play/pause effects, the READY/ENDED publishes
-  and the ENDED decision execution, transitions, track/subtitle
-  delegation, speed/size/decoder/error publishes; `PlaybackManager`
-  stays its `EngineEventHost` (published state, ticker, watchdog)
-  and still owns the published state. Step 4 done: `PlaybackCoordinator`
-  (`playback/`, 1,081 lines, 34 tests) owns the published state, the
-  position ticker, the preparing watchdog, the sleep timer, transport
-  and session functions, and the three host implementations
-  (`SubtitleHost`, `QueueHost`, `EngineEventHost`); `PlaybackManager`
-  is a 175-line shell keeping its exact public API and delegating
-  everything to the coordinator built by
-  `PlaybackCoordinator.production()`, and implements
-  `PlaybackStateSource` and `StreamPlayer` the same way the
-  coordinator does. Still to do: rewiring the callers to the
-  coordinator, then deleting `PlaybackManager` itself.
+  (`endedAction`); the coordinator stays its `QueueHost`. Step 3:
+  `EngineEventTranslator` (`playback/`, 363 lines, 28 tests) owns the
+  `PlayerEngine.Listener` implementation — play/pause effects, the
+  READY/ENDED publishes and the ENDED decision execution, transitions,
+  track/subtitle delegation, speed/size/decoder/error publishes; the
+  coordinator stays its `EngineEventHost` (published state, ticker,
+  watchdog). Step 4: `PlaybackCoordinator` (`playback/`, 1,086 lines,
+  34 tests) owns the published state, the position ticker, the
+  preparing watchdog, the sleep timer, transport and session functions,
+  and the three host implementations (`SubtitleHost`, `QueueHost`,
+  `EngineEventHost`); it implements `PlaybackStateSource` and
+  `StreamPlayer`. Step 5: the callers are rewired to the coordinator
+  (`MainActivity` and the screens take `PlaybackCoordinator` from Koin,
+  `PlaybackService` injects the same `single`) and `PlaybackManager`
+  is deleted — the engine-error log tag stays "PlaybackManager" so
+  existing logcat filters keep working.
   `PlaybackResumeManager` already exists and is wired behind the
   coordinator. Unit-test total is now 179 (70 from
   Phase 2 + 18 for `SubtitleManager` + 29 for `PlaybackQueue` + 28
@@ -300,8 +292,8 @@ A finished screen follows one pattern, every time:
 - Phase 5 (contributor path): in progress. The PR template asks what
   changed, what did not change, and how it was verified; CI runs the
   debug build and unit tests on every pull request. Still to do: the
-  worked end-to-end example in CONTRIBUTING.md (needs a real migrated
-  feature, so it waits for Phases 1–2) and honest `good first issue`
+  worked end-to-end example in CONTRIBUTING.md (the coordinator split
+  is the real migrated feature to use) and honest `good first issue`
   labels on genuinely small post-migration tasks.
 
 Until a phase is marked done here, assume the old pattern still applies

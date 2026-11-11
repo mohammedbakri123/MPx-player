@@ -1,5 +1,5 @@
 package com.mpx.player.ui.components.persistence
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.ui.theme.MpxTheme
 
 import androidx.compose.foundation.background
@@ -232,7 +232,7 @@ fun PlaybackHistoryDialog(
     // #266: the playback manager, so the dialog can apply the same
     // "Resume at" guard as HistoryScreen (#252) — the label must only
     // appear when a tap would actually resume.
-    playbackManager: PlaybackManager? = null,
+    playbackCoordinator: PlaybackCoordinator? = null,
     onDismiss: () -> Unit,
     onItemClick: (PlaybackHistoryItem) -> Unit,
     onClearHistory: () -> Unit,
@@ -244,7 +244,7 @@ fun PlaybackHistoryDialog(
     // this screen. Null manager (never in practice — Music passes its
     // own) hides the label rather than promising a resume that cannot
     // happen.
-    val resumePlaybackEnabled = playbackManager?.settingsRepository?.load()?.resumePlayback ?: false
+    val resumePlaybackEnabled = playbackCoordinator?.settingsRepository?.load()?.resumePlayback ?: false
 
     // #265: load the next page when scrolled near the end. Keys on
     // history.size too, so it re-fires after each page lands while the
@@ -378,7 +378,7 @@ fun PlaybackHistoryDialog(
                                         // #266: same guard as HistoryScreen
                                         // (#252) — hidden when resume is off,
                                         // and the 2_000 ms floor matches
-                                        // PlaybackManager.shouldResume. The
+                                        // PlaybackCoordinator.shouldResume. The
                                         // old > 1_500 ms check showed the
                                         // label for positions that restart
                                         // from 0 on tap.

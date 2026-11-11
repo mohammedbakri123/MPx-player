@@ -82,7 +82,7 @@ import com.mpx.player.ui.screens.settings.parsePlayerMenuLayout
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.RepeatMode
 import com.mpx.player.ui.components.MpxBottomSheet
@@ -151,7 +151,7 @@ fun PlayerPlaybackSheet(
     state: PlaybackState,
     currentSettings: AppSettings,
     onSettingsChanged: (AppSettings) -> Unit,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     subtitleLauncher: ActivityResultLauncher<Array<String>>,
     isFavourite: Boolean,
     onToggleFavourite: () -> Unit,
@@ -230,7 +230,7 @@ fun PlayerPlaybackSheet(
                     state = state,
                     currentSettings = currentSettings,
                     onPageChange = onPageChange,
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                     isFavourite = isFavourite,
                     onToggleFavourite = onToggleFavourite,
                     onEnterPip = onEnterPip,
@@ -240,22 +240,22 @@ fun PlayerPlaybackSheet(
                 )
                 PlaybackSheetPage.Speed -> PlaybackSheetSpeedPage(
                     state = state,
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                 )
                 PlaybackSheetPage.SleepTimer -> PlaybackSheetSleepPage(
                     state = state,
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                 )
                 PlaybackSheetPage.Decoder -> PlaybackSheetDecoderPage(
                     state = state,
                     currentSettings = currentSettings,
                     onSettingsChanged = onSettingsChanged,
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                     onDismiss = dismiss,
                 )
                 PlaybackSheetPage.AspectRatio -> PlaybackSheetAspectPage(
                     state = state,
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                     onDismiss = dismiss,
                 )
                 PlaybackSheetPage.Zoom -> PlaybackSheetZoomPage(
@@ -264,7 +264,7 @@ fun PlayerPlaybackSheet(
                 )
                 PlaybackSheetPage.AudioTracks -> PlaybackSheetAudioTracksPage(
                     state = state,
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                     currentSettings = currentSettings,
                     onSettingsChanged = onSettingsChanged,
                     onDismiss = dismiss,
@@ -275,14 +275,14 @@ fun PlayerPlaybackSheet(
                 )
                 PlaybackSheetPage.SubtitleTracks -> PlaybackSheetSubtitleTracksPage(
                     state = state,
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                     subtitleLauncher = subtitleLauncher,
                     onDismiss = dismiss,
                     onOpenBrowse = { onPageChange(PlaybackSheetPage.SubtitleBrowse) },
                 )
                 PlaybackSheetPage.SubtitleBrowse -> PlaybackSheetSubtitleBrowsePage(
                     state = state,
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                     subtitleLauncher = subtitleLauncher,
                     onDismiss = dismiss,
                 )
@@ -431,7 +431,7 @@ private fun PlaybackSheetMainPage(
     state: PlaybackState,
     currentSettings: AppSettings,
     onPageChange: (PlaybackSheetPage?) -> Unit,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     isFavourite: Boolean,
     onToggleFavourite: () -> Unit,
     onEnterPip: () -> Unit,
@@ -490,7 +490,7 @@ private fun PlaybackSheetMainPage(
                         else -> stringResource(R.string.player_cd_repeat_off)
                     },
                     // Toggle rows stay open so the new value is visible immediately.
-                    onClick = { playbackManager.cycleRepeatMode() },
+                    onClick = { playbackCoordinator.cycleRepeatMode() },
                 )
                 "shuffle" -> PlaybackSheetRow(
                     icon = Icons.Filled.Shuffle,
@@ -498,7 +498,7 @@ private fun PlaybackSheetMainPage(
                     value = stringResource(
                         if (state.shuffleEnabled) R.string.player_state_on else R.string.player_state_off,
                     ),
-                    onClick = { playbackManager.setShuffleEnabled(!state.shuffleEnabled) },
+                    onClick = { playbackCoordinator.setShuffleEnabled(!state.shuffleEnabled) },
                 )
                 "favourite" -> PlaybackSheetRow(
                     icon = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
@@ -659,7 +659,7 @@ private fun PlaybackSheetMainPage(
 @Composable
 private fun PlaybackSheetSpeedPage(
     state: PlaybackState,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
 ) {
     Text(
         text = formatMultiplier(state.speed),
@@ -689,7 +689,7 @@ private fun PlaybackSheetSpeedPage(
                     // once. Display-only: tapping a chip still sets the
                     // exact preset speed via setSpeed below.
                     selected = abs(state.speed - speed) < 0.01f,
-                    onClick = { playbackManager.setSpeed(speed) },
+                    onClick = { playbackCoordinator.setSpeed(speed) },
                     label = { Text(formatMultiplier(speed)) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MpxTheme.colors.primary,
@@ -703,7 +703,7 @@ private fun PlaybackSheetSpeedPage(
     }
     Slider(
         value = state.speed,
-        onValueChange = { playbackManager.setSpeed(it) },
+        onValueChange = { playbackCoordinator.setSpeed(it) },
         valueRange = 0.5f..2.0f,
         steps = 29,
         modifier = Modifier.fillMaxWidth(),
@@ -720,7 +720,7 @@ private fun PlaybackSheetSpeedPage(
 @Composable
 private fun PlaybackSheetSleepPage(
     state: PlaybackState,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
 ) {
     val context = LocalContext.current
     state.sleepTimerRemainingSeconds?.let { remaining ->
@@ -757,14 +757,14 @@ private fun PlaybackSheetSleepPage(
                     selected = isSelected,
                     onClick = {
                         if (mins == 0) {
-                            playbackManager.cancelSleepTimer()
+                            playbackCoordinator.cancelSleepTimer()
                             Toast.makeText(
                                 context,
                                 context.getString(R.string.player_sleep_timer_canceled_toast),
                                 Toast.LENGTH_SHORT,
                             ).show()
                         } else {
-                            playbackManager.setSleepTimer(mins)
+                            playbackCoordinator.setSleepTimer(mins)
                             Toast.makeText(
                                 context,
                                 context.getString(R.string.player_sleep_timer_set_toast, mins),
@@ -817,7 +817,7 @@ private fun PlaybackSheetSleepPage(
             // value is also 5, so re-arming setSleepTimer would reset the
             // countdown to a full 5:00, making the timer longer.
             if (timerMinutes == null || mins != timerMinutes) {
-                playbackManager.setSleepTimer(mins)
+                playbackCoordinator.setSleepTimer(mins)
                 Toast.makeText(
                     context,
                     context.getString(R.string.player_sleep_timer_set_toast, mins),
@@ -830,7 +830,7 @@ private fun PlaybackSheetSleepPage(
             // Issue #285: same as minus — plus at the 180-minute ceiling
             // is a no-op instead of re-arming a full 180.
             if (timerMinutes == null || mins != timerMinutes) {
-                playbackManager.setSleepTimer(mins)
+                playbackCoordinator.setSleepTimer(mins)
                 Toast.makeText(
                     context,
                     context.getString(R.string.player_sleep_timer_set_toast, mins),
@@ -840,7 +840,7 @@ private fun PlaybackSheetSleepPage(
         },
         onReset = if (state.sleepTimerMinutes != null) {
             {
-                playbackManager.cancelSleepTimer()
+                playbackCoordinator.cancelSleepTimer()
                 Toast.makeText(
                     context,
                     context.getString(R.string.player_sleep_timer_canceled_toast),
@@ -858,7 +858,7 @@ private fun PlaybackSheetDecoderPage(
     state: PlaybackState,
     currentSettings: AppSettings,
     onSettingsChanged: (AppSettings) -> Unit,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     onDismiss: () -> Unit,
 ) {
     Column {
@@ -868,7 +868,7 @@ private fun PlaybackSheetDecoderPage(
                 subtitle = stringResource(mode.descriptionRes),
                 selected = state.decoderMode == mode,
                 onClick = {
-                    playbackManager.setDecoderMode(mode)
+                    playbackCoordinator.setDecoderMode(mode)
                     onSettingsChanged(currentSettings.copy(decoderMode = mode.label))
                     onDismiss()
                 },
@@ -917,7 +917,7 @@ private fun PlaybackSheetDecoderPage(
 @Composable
 private fun PlaybackSheetAspectPage(
     state: PlaybackState,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     onDismiss: () -> Unit,
 ) {
     Column {
@@ -927,7 +927,7 @@ private fun PlaybackSheetAspectPage(
                 subtitle = null,
                 selected = state.aspectRatio == mode,
                 onClick = {
-                    playbackManager.setAspectRatio(mode)
+                    playbackCoordinator.setAspectRatio(mode)
                     onDismiss()
                 },
             )
@@ -999,7 +999,7 @@ private fun AudioDelayStepper(
 @Composable
 private fun PlaybackSheetAudioTracksPage(
     state: PlaybackState,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     currentSettings: AppSettings,
     onSettingsChanged: (AppSettings) -> Unit,
     onDismiss: () -> Unit,
@@ -1017,7 +1017,7 @@ private fun PlaybackSheetAudioTracksPage(
                     subtitle = stringResource(R.string.player_track_language, track.language),
                     selected = track.isSelected,
                     onClick = {
-                        playbackManager.selectAudioTrack(track.groupIndex, track.trackIndex)
+                        playbackCoordinator.selectAudioTrack(track.groupIndex, track.trackIndex)
                         onDismiss()
                     },
                 )
@@ -1049,7 +1049,7 @@ private fun PlaybackSheetAudioDelayPage(
 @Composable
 private fun PlaybackSheetSubtitleTracksPage(
     state: PlaybackState,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     subtitleLauncher: ActivityResultLauncher<Array<String>>,
     onDismiss: () -> Unit,
     onOpenBrowse: () -> Unit,
@@ -1097,7 +1097,7 @@ private fun PlaybackSheetSubtitleTracksPage(
             subtitle = null,
             selected = state.selectedSubtitleTrackIndex == -1,
             onClick = {
-                playbackManager.selectSubtitleTrack(null, null)
+                playbackCoordinator.selectSubtitleTrack(null, null)
                 onDismiss()
             },
         )
@@ -1114,7 +1114,7 @@ private fun PlaybackSheetSubtitleTracksPage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            playbackManager.selectSubtitleTrack(track.groupIndex, track.trackIndex)
+                            playbackCoordinator.selectSubtitleTrack(track.groupIndex, track.trackIndex)
                             onDismiss()
                         }
                         .padding(vertical = 6.dp),
@@ -1123,7 +1123,7 @@ private fun PlaybackSheetSubtitleTracksPage(
                     RadioButton(
                         selected = track.isSelected,
                         onClick = {
-                            playbackManager.selectSubtitleTrack(track.groupIndex, track.trackIndex)
+                            playbackCoordinator.selectSubtitleTrack(track.groupIndex, track.trackIndex)
                             onDismiss()
                         },
                         colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
@@ -1176,7 +1176,7 @@ private fun PlaybackSheetSubtitleTracksPage(
 @Composable
 private fun PlaybackSheetSubtitleBrowsePage(
     state: PlaybackState,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     subtitleLauncher: ActivityResultLauncher<Array<String>>,
     onDismiss: () -> Unit,
 ) {
@@ -1215,7 +1215,7 @@ private fun PlaybackSheetSubtitleBrowsePage(
     fun pickFile(file: File) {
         when (val validation = SubtitleUtils.validateSubtitleFile(context, Uri.fromFile(file))) {
             is SubtitleValidationResult.Supported -> {
-                playbackManager.loadExternalSubtitle(
+                playbackCoordinator.loadExternalSubtitle(
                     uri = validation.uri,
                     displayName = validation.displayName,
                     mimeType = validation.mimeType,

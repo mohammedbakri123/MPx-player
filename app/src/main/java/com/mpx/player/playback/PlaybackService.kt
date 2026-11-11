@@ -25,19 +25,28 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /**
  * Real MediaSession foreground service for background audio playback.
  * Keeps mpv playback alive when the app is backgrounded or screen is turned off,
  * provides rich lockscreen & notification media controls with play/pause/next/previous,
  * and maintains honest reporting for video audio-only continuation.
+ *
+ * Migration Phase 3 step 5: the coordinator comes from Koin (the
+ * same `single` the rest of the app uses), not from a
+ * `getInstance` factory — the service is a [KoinComponent] so it
+ * can inject. Koin starts in [com.mpx.player.MpxApplication] before
+ * any service is created, so the lazy inject resolves on first use
+ * in [onCreate], exactly when the old factory call ran.
  */
-class PlaybackService : Service() {
+class PlaybackService : Service(), KoinComponent {
 
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
 
-    private lateinit var playbackManager: PlaybackManager
+    private val playbackCoordinator: PlaybackCoordinator by inject()
     private lateinit var mediaSession: MediaSessionCompat
     private var isForegroundActive = false
 
@@ -54,7 +63,6 @@ class PlaybackService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        playbackManager = PlaybackManager.getInstance(applicationContext)
 
         createNotificationChannel()
         initMediaSession()
@@ -85,29 +93,29 @@ class PlaybackService : Service() {
             )
             setCallback(object : MediaSessionCompat.Callback() {
                 override fun onPlay() {
-                    playbackManager.play()
+                    playbackCoordinator.play()
                 }
 
                 override fun onPause() {
-                    playbackManager.pause()
+                    playbackCoordinator.pause()
                 }
 
                 override fun onSkipToNext() {
-                    playbackManager.skipNext()
+                    playbackCoordinator.skipNext()
                 }
 
                 override fun onSkipToPrevious() {
-                    playbackManager.skipPrevious()
+                    playbackCoordinator.skipPrevious()
                 }
 
                 override fun onSeekTo(pos: Long) {
-                    playbackManager.seekTo(pos)
+                    playbackCoordinator.seekTo(pos)
                 }
 
                 override fun onStop() {
-                    playbackManager.pause()
-                    playbackManager.setVideoBackgroundActive(false)
-                    playbackManager.setBackgroundPlaying(false)
+                    playbackCoordinator.pause()
+                    playbackCoordinator.setVideoBackgroundActive(false)
+                    playbackCoordinator.setBackgroundPlaying(false)
                     stopForegroundInternal(removeNotification = true)
                     stopSelf()
                 }
@@ -122,11 +130,11 @@ class PlaybackService : Service() {
 
     /** Issue #351: the PiP seek duration is the double-tap skip setting, read fresh on every tap. */
     private fun skipDurationMs(): Long =
-        playbackManager.settingsRepository.load().doubleTapSeekSeconds * 1000L
+        playbackCoordinator.settingsRepository.load().doubleTapSeekSeconds * 1000L
 
     private fun observePlaybackState() {
         serviceScope.launch {
-            playbackManager.playbackState.collectLatest { state ->
+            playbackCoordinator.playbackState.collectLatest { state ->
                 updateSessionAndNotification(state)
             }
         }
@@ -136,29 +144,29 @@ class PlaybackService : Service() {
         MediaButtonReceiver.handleIntent(mediaSession, intent)
 
         when (intent?.action) {
-            ACTION_PLAY -> playbackManager.play()
-            ACTION_PAUSE -> playbackManager.pause()
-            ACTION_TOGGLE -> playbackManager.togglePlayPause()
-            ACTION_NEXT -> playbackManager.skipNext()
-            ACTION_PREVIOUS -> playbackManager.skipPrevious()
+            ACTION_PLAY -> playbackCoordinator.play()
+            ACTION_PAUSE -> playbackCoordinator.pause()
+            ACTION_TOGGLE -> playbackCoordinator.togglePlayPause()
+            ACTION_NEXT -> playbackCoordinator.skipNext()
+            ACTION_PREVIOUS -> playbackCoordinator.skipPrevious()
             // Issue #351: PiP seek follows the double-tap skip setting
             // (5/10/15/30 s, default 10), read live here so a changed
             // setting applies even to PiP params built earlier. The
             // ACTION_SEEK_*_10 names are legacy identifiers only — the
             // duration is no longer 10 s by definition.
-            ACTION_SEEK_FORWARD_10 -> playbackManager.skipForward(skipDurationMs())
-            ACTION_SEEK_BACKWARD_10 -> playbackManager.skipBackward(skipDurationMs())
+            ACTION_SEEK_FORWARD_10 -> playbackCoordinator.skipForward(skipDurationMs())
+            ACTION_SEEK_BACKWARD_10 -> playbackCoordinator.skipBackward(skipDurationMs())
             ACTION_STOP -> {
-                playbackManager.pause()
-                playbackManager.setVideoBackgroundActive(false)
-                playbackManager.setBackgroundPlaying(false)
+                playbackCoordinator.pause()
+                playbackCoordinator.setVideoBackgroundActive(false)
+                playbackCoordinator.setBackgroundPlaying(false)
                 stopForegroundInternal(removeNotification = true)
                 stopSelf()
             }
             ACTION_START -> {
-                val settings = playbackManager.settingsRepository.load()
+                val settings = playbackCoordinator.settingsRepository.load()
                 if (settings.backgroundPlay) {
-                    updateSessionAndNotification(playbackManager.playbackState.value)
+                    updateSessionAndNotification(playbackCoordinator.playbackState.value)
                 } else {
                     stopForegroundInternal(removeNotification = true)
                     stopSelf()
@@ -169,7 +177,7 @@ class PlaybackService : Service() {
     }
 
     private fun updateSessionAndNotification(state: PlaybackState) {
-        val settings = playbackManager.settingsRepository.load()
+        val settings = playbackCoordinator.settingsRepository.load()
         if (!settings.backgroundPlay) {
             stopForegroundInternal(removeNotification = true)
             stopSelf()
@@ -375,12 +383,12 @@ class PlaybackService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        val state = playbackManager.playbackState.value
-        val settings = playbackManager.settingsRepository.load()
+        val state = playbackCoordinator.playbackState.value
+        val settings = playbackCoordinator.settingsRepository.load()
         if (!settings.backgroundPlay || !state.isPlaying) {
-            playbackManager.pause()
-            playbackManager.setVideoBackgroundActive(false)
-            playbackManager.setBackgroundPlaying(false)
+            playbackCoordinator.pause()
+            playbackCoordinator.setVideoBackgroundActive(false)
+            playbackCoordinator.setBackgroundPlaying(false)
             stopForegroundInternal(removeNotification = true)
             stopSelf()
         }
