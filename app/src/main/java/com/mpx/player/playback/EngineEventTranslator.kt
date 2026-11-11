@@ -122,13 +122,13 @@ interface EngineEventHost {
 }
 
 /**
- * Engine-event translation, extracted from [PlaybackManager]
+ * Engine-event translation, extracted from the old PlaybackManager
  * (migration Phase 3, step 3). Owns the [PlayerEngine.Listener]
  * implementation: it turns mpv callbacks into published-state
  * updates and into queue / resume / subtitle effects, and nothing
  * else.
  *
- * No behaviour change from the [PlaybackManager] code this was moved
+ * No behaviour change from the old PlaybackManager code this was moved
  * from — the callback bodies are verbatim except for the seams
  * below.
  *
@@ -138,12 +138,12 @@ interface EngineEventHost {
  *   the #330 resume-banner rule, the #188 decoder fallback note)
  *   and the host applies the copy, so the decision logic is here
  *   and unit-testable while the state stays owned by one class.
- * - The preparing watchdog stays in [PlaybackManager]: it is armed
+ * - The preparing watchdog stays in [PlaybackCoordinator]: it is armed
  *   from session start (via [QueueHost.armLoadWatchdog]) as well as
  *   cancelled from listener paths, so it is not listener-only. The
  *   translator only asks the host to cancel it.
  * - The engine load in the STATE_ENDED branch goes straight to
- *   `engine.load(...)` — the manager's `engineLoad` was a trivial
+ *   `engine.load(...)` — the old manager's `engineLoad` was a trivial
  *   forwarder to it.
  * - The codec-error banner text stays with the host: it needs string
  *   resources (`player_codec_error`), which the translator must not
@@ -296,7 +296,7 @@ class EngineEventTranslator(
             hasNext = engine.hasNextMediaItem,
             // Issue #330: only clear the resume banner when the
             // transition actually moves to a different item.
-            // startPlayback sets resumedFromMs AFTER engineLoad
+            // startPlayback sets resumedFromMs AFTER the engine load
             // posts this transition, so the session-start
             // transition for the item startPlayback just set used
             // to wipe the banner in the same main-thread pass,

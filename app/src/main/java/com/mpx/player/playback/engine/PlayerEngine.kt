@@ -61,7 +61,7 @@ enum class ReplaceMediaItemResult {
 }
 
 /**
- * Common playback engine interface extracted from PlaybackManager.
+ * Common playback engine interface extracted from the old PlaybackManager.
  * Defines the contract for core playback operations: surface attachment, media loading,
  * playback control, seeking, speed adjustments, track selection, and engine lifecycle.
  *
@@ -85,7 +85,7 @@ interface PlayerEngine {
     }
 
     /**
-     * Listener interface to notify the orchestrator (PlaybackManager) of engine events.
+     * Listener interface to notify the orchestrator (PlaybackCoordinator) of engine events.
      */
     interface Listener {
         fun onPlaybackStateChanged(playbackState: Int) {}

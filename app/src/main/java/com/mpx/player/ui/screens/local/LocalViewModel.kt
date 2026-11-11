@@ -52,7 +52,7 @@ private const val KEY_FOLDER_SEARCHING = "local.isFolderSearching"
  * Compose-only concerns stay in the screen: layout, gestures,
  * scroll states, dialog visibility for the sort / view dialogs,
  * the permission launcher and lifecycle observer, snackbars, and
- * playback calls through `PlaybackManager`.
+ * playback calls through `PlaybackCoordinator`.
  *
  * Deliberately NOT moved here: the open folder itself
  * (`currentFolder`) and the search-page flag (`showSearchPage`).
@@ -722,7 +722,7 @@ class LocalViewModel(
     // Issue #378: the last played video in a list. History is newest
     // first, so the first entry that matches a video in the list is
     // the most recent one. Matches on the MediaStore id first, the
-    // path as a fallback — both are recorded by PlaybackManager.
+    // path as a fallback — both are recorded by PlaybackCoordinator.
     fun lastPlayedIn(videos: List<VideoFile>): VideoFile? {
         for (entry in history.value) {
             if (!entry.isVideo) continue

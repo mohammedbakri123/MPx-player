@@ -57,7 +57,7 @@ private const val HISTORY_PAGE_SIZE = 100
  * Dependencies arrive through the constructor, on interfaces only
  * ([MediaRepository], [MediaPersistenceRepository],
  * [AppSettingsRepository]), so a test can pass fakes. Playback still
- * goes through `PlaybackManager` directly from the screen — it has no
+ * goes through `PlaybackCoordinator` directly from the screen — it has no
  * interface yet, and moves behind one in a later phase (same split as
  * Phase 2a's PlayerViewModel). No behaviour change: every value below
  * is computed exactly the way the screen computed it before.

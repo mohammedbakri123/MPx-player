@@ -85,7 +85,7 @@ import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.PlaybackHistoryItem
 import com.mpx.player.domain.model.VideoFile
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.mpx.player.ui.components.EmptyStateView
@@ -149,7 +149,7 @@ fun LocalScreen(
     permissionResultHandler: ActivityResultHandler<Boolean>,
     onOpenPlayer: () -> Unit,
     onOpenSettings: () -> Unit,
-    playbackManager: PlaybackManager? = null,
+    playbackCoordinator: PlaybackCoordinator? = null,
     // Issue #245: reports whether the whole-page search is open so
     // MainActivity can turn the tab-swipe detector off while it is —
     // a swipe mid-search used to switch tabs and destroy the typed
@@ -330,7 +330,7 @@ fun LocalScreen(
                     val startIndex = startEntry?.let { entry ->
                         videos.indexOfFirst { it.id == entry.mediaId || it.path == entry.mediaUri }
                     }?.takeIf { it >= 0 } ?: 0
-                    playbackManager?.playVideoFiles(videos, startIndex)
+                    playbackCoordinator?.playVideoFiles(videos, startIndex)
                     onOpenPlayer()
                 }
             }
@@ -347,7 +347,7 @@ fun LocalScreen(
             }
             val startIndex = vids.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
             withContext(Dispatchers.Main) {
-                playbackManager?.playVideoFiles(vids, startIndex)
+                playbackCoordinator?.playVideoFiles(vids, startIndex)
                 onOpenPlayer()
             }
         }
@@ -484,7 +484,7 @@ fun LocalScreen(
                         )
                     )
                 } else {
-                    playbackManager?.playVideoFiles(all)
+                    playbackCoordinator?.playVideoFiles(all)
                     onOpenPlayer()
                 }
                 viewModel.clearSelection()
@@ -514,7 +514,7 @@ fun LocalScreen(
                     .distinctBy { it.id.ifBlank { it.path } }
                 val startIndex = all.indexOfFirst { it.id == first.id }.coerceAtLeast(0)
                 withContext(Dispatchers.Main) {
-                    playbackManager?.playVideoFiles(all, startIndex)
+                    playbackCoordinator?.playVideoFiles(all, startIndex)
                     onOpenPlayer()
                     viewModel.clearSelection()
                 }
@@ -741,7 +741,7 @@ fun LocalScreen(
                         // RANDOM video (#169); this button plays them in order.
                         IconButton(onClick = {
                             if (filteredFolderVideos.isNotEmpty()) {
-                                playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = 0)
+                                playbackCoordinator?.playVideoFiles(filteredFolderVideos, startIndex = 0)
                                 onOpenPlayer()
                             }
                         }) {
@@ -810,7 +810,7 @@ fun LocalScreen(
                             if (filteredFolderVideos.isNotEmpty()) {
                                 val target = lastPlayedIn(filteredFolderVideos)
                                     ?: filteredFolderVideos.first()
-                                playbackManager?.playVideoFiles(
+                                playbackCoordinator?.playVideoFiles(
                                     filteredFolderVideos,
                                     startIndex = filteredFolderVideos.indexOf(target),
                                 )
@@ -1109,7 +1109,7 @@ fun LocalScreen(
                                             if (isSelectionMode) {
                                                 toggleVideoSelection(video)
                                             } else {
-                                                playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
+                                                playbackCoordinator?.playVideoFiles(filteredFolderVideos, startIndex = index)
                                                 onOpenPlayer()
                                             }
                                         },
@@ -1182,7 +1182,7 @@ fun LocalScreen(
                                             if (isSelectionMode) {
                                                 toggleVideoSelection(video)
                                             } else {
-                                                playbackManager?.playVideoFiles(filteredFolderVideos, startIndex = index)
+                                                playbackCoordinator?.playVideoFiles(filteredFolderVideos, startIndex = index)
                                                 onOpenPlayer()
                                             }
                                         },

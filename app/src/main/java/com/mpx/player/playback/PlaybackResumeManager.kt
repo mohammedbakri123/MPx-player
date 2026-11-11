@@ -140,8 +140,8 @@ class PlaybackResumeManager(
      * than [RESUME_DB_WRITE_MIN_INTERVAL_MS] has passed and the position
      * moved less than [RESUME_DB_WRITE_MIN_DELTA_MS]; a big seek (or
      * [force]) still writes at once. [force] is for explicit saves that
-     * must land immediately — [PlaybackManager.load] with a user-chosen
-     * resume position, and the pause flush in [PlaybackManager] — not for
+     * must land immediately — [PlaybackCoordinator.load] with a user-chosen
+     * resume position, and the pause flush in [PlaybackCoordinator] — not for
      * the ticker, which passes the default.
      */
     fun saveResumePosition(

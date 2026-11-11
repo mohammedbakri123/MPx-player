@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.playback.PlayableMedia
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
 import com.mpx.player.ui.theme.MpxHairline
@@ -69,14 +69,14 @@ import org.koin.compose.viewmodel.koinViewModel
 fun PlaylistsScreen(
     onNavigateBack: () -> Unit,
     onOpenPlayer: () -> Unit,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     // Migration Phase 2e: playlist state lives in MeViewModel now —
     // the list, the selected playlist and its items, and the
     // create / rename / delete / remove actions. The screen still
-    // takes PlaybackManager directly for transport; that moves
+    // takes PlaybackCoordinator directly for transport; that moves
     // behind interfaces in later phases.
     val viewModel: MeViewModel = koinViewModel()
     val scope = rememberCoroutineScope()
@@ -241,12 +241,12 @@ fun PlaylistsScreen(
                     )
                 }
                 viewModel.clearSelectedPlaylist()
-                playbackManager.playQueue(playable)
+                playbackCoordinator.playQueue(playable)
                 onOpenPlayer()
             },
             onPlayItem = { item ->
                 viewModel.clearSelectedPlaylist()
-                playbackManager.playQueue(
+                playbackCoordinator.playQueue(
                     listOf(
                         PlayableMedia(
                             id = item.mediaId,

@@ -1,20 +1,20 @@
 package com.mpx.player.playback
 
 /**
- * Migration Phase 2d: the minimal play surface of [PlaybackManager]
+ * Migration Phase 2d: the minimal play surface of [PlaybackCoordinator]
  * that [com.mpx.player.ui.screens.network.NetworkViewModel] needs.
  *
  * The ViewModel depends on this interface — never on the concrete
- * [PlaybackManager] — so a unit test can pass a fake instead of the
- * 1,400-line singleton and its mpv engine. It covers only what the
+ * [PlaybackCoordinator] — so a unit test can pass a fake instead of the
+ * coordinator and its mpv engine. It covers only what the
  * Network tab actually uses from playback today: hand a stream URL
  * to the player as a one-item queue.
  *
- * Everything else still goes through [PlaybackManager] directly from
+ * Everything else still goes through [PlaybackCoordinator] directly from
  * the screens that use it, and moves behind interfaces in later
- * phases. When Phase 3 replaces [PlaybackManager] with a
- * coordinator, the coordinator implements this same interface and
- * the ViewModel does not change.
+ * phases. Phase 3 replaced the old PlaybackManager with the
+ * coordinator, which implements this same interface, so the ViewModel
+ * did not change.
  */
 interface StreamPlayer {
     /**

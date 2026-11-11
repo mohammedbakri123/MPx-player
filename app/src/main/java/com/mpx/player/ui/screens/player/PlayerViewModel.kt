@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
  * Dependencies arrive through the constructor, on interfaces only
  * ([PlaybackStateSource], [AppSettingsRepository]), so a test can
  * pass fakes. Transport actions, subtitles, favourites, and
- * playlists still go through `PlaybackManager` directly from the
+ * playlists still go through `PlaybackCoordinator` directly from the
  * screen — they move behind interfaces in later phases, not here.
  * No behaviour change: every value below is computed exactly the
  * way the screen computed it before.

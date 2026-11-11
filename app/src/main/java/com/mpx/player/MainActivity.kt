@@ -65,7 +65,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mpx.player.domain.settings.AppSettingsRepository
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.playback.PlaybackService
 import org.koin.android.ext.android.inject
 import com.mpx.player.ui.components.player.MiniPlayer
@@ -143,7 +143,7 @@ class MainActivity : ComponentActivity() {
     // construction here. Both are `single` instances declared in
     // di/AppModule and di/PlaybackModule.
     private val settingsRepository: AppSettingsRepository by inject()
-    private val playbackManager: PlaybackManager by inject()
+    private val playbackCoordinator: PlaybackCoordinator by inject()
     private var currentLanguage by mutableStateOf(LocaleHelper.LANGUAGE_SYSTEM)
     private var currentTheme by mutableStateOf("System")
     private var currentPalette by mutableStateOf("Blue")
@@ -316,7 +316,7 @@ class MainActivity : ComponentActivity() {
                         settingsImportLauncher = settingsImportLauncher,
                         settingsImportHandler = settingsImportHandler,
                         isInPipMode = isInPipMode,
-                        playbackManager = playbackManager,
+                        playbackCoordinator = playbackCoordinator,
                         settingsRepository = settingsRepository,
                         currentLanguage = currentLanguage,
                         currentPalette = currentPalette,
@@ -384,10 +384,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        val state = playbackManager.playbackState.value
+        val state = playbackCoordinator.playbackState.value
         if (state.isVideoBackgroundActive || state.isBackgroundPlaying) {
-            playbackManager.setVideoBackgroundActive(false)
-            playbackManager.setBackgroundPlaying(false)
+            playbackCoordinator.setVideoBackgroundActive(false)
+            playbackCoordinator.setBackgroundPlaying(false)
         }
     }
 
@@ -396,11 +396,11 @@ class MainActivity : ComponentActivity() {
         if (isFinishing) {
             val settings = settingsRepository.load()
             if (!settings.backgroundPlay) {
-                if (playbackManager.playbackState.value.isPlaying) {
-                    playbackManager.pause()
+                if (playbackCoordinator.playbackState.value.isPlaying) {
+                    playbackCoordinator.pause()
                 }
-                playbackManager.setVideoBackgroundActive(false)
-                playbackManager.setBackgroundPlaying(false)
+                playbackCoordinator.setVideoBackgroundActive(false)
+                playbackCoordinator.setBackgroundPlaying(false)
                 PlaybackService.stop(this)
             }
         }
@@ -413,7 +413,7 @@ class MainActivity : ComponentActivity() {
         // (issue #98). The original logic below is untouched for non-PiP.
         if (isInPipMode) return
         val settings = settingsRepository.load()
-        val state = playbackManager.playbackState.value
+        val state = playbackCoordinator.playbackState.value
 
         // Issue #205: the stop decision is backgroundPlay alone.
         // isFinishing must NOT stop playback: swiping the app from
@@ -427,18 +427,18 @@ class MainActivity : ComponentActivity() {
         if (!settings.backgroundPlay) {
             // off = playback MUST stop when leaving the foreground
             if (state.isPlaying) {
-                playbackManager.pause()
+                playbackCoordinator.pause()
             }
-            playbackManager.setVideoBackgroundActive(false)
-            playbackManager.setBackgroundPlaying(false)
+            playbackCoordinator.setVideoBackgroundActive(false)
+            playbackCoordinator.setBackgroundPlaying(false)
             PlaybackService.stop(this)
         } else {
             // on = service keeps it alive
             if (state.isPlaying) {
                 if (state.currentItem?.isVideo == true) {
-                    playbackManager.setVideoBackgroundActive(true)
+                    playbackCoordinator.setVideoBackgroundActive(true)
                 } else {
-                    playbackManager.setBackgroundPlaying(true)
+                    playbackCoordinator.setBackgroundPlaying(true)
                 }
                 PlaybackService.start(this)
             }
@@ -454,11 +454,11 @@ class MainActivity : ComponentActivity() {
         // (Rotation never reaches here: orientation is in
         // configChanges, so it only recomposes.)
         if (!settings.backgroundPlay) {
-            if (playbackManager.playbackState.value.isPlaying) {
-                playbackManager.pause()
+            if (playbackCoordinator.playbackState.value.isPlaying) {
+                playbackCoordinator.pause()
             }
-            playbackManager.setVideoBackgroundActive(false)
-            playbackManager.setBackgroundPlaying(false)
+            playbackCoordinator.setVideoBackgroundActive(false)
+            playbackCoordinator.setBackgroundPlaying(false)
             PlaybackService.stop(this)
         }
     }
@@ -488,11 +488,11 @@ class MainActivity : ComponentActivity() {
         if (!isInPictureInPictureMode) {
             val settings = settingsRepository.load()
             if (!settings.backgroundPlay && !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
-                if (playbackManager.playbackState.value.isPlaying) {
-                    playbackManager.pause()
+                if (playbackCoordinator.playbackState.value.isPlaying) {
+                    playbackCoordinator.pause()
                 }
-                playbackManager.setVideoBackgroundActive(false)
-                playbackManager.setBackgroundPlaying(false)
+                playbackCoordinator.setVideoBackgroundActive(false)
+                playbackCoordinator.setBackgroundPlaying(false)
                 PlaybackService.stop(this)
             }
         }
@@ -514,7 +514,7 @@ class MainActivity : ComponentActivity() {
         // separate destination, so Home over an open sheet still PiPs.
         // Already-in-PiP is a no-op re-entry, guarded for clarity.
         if (settings.popupPlayEnabled && !isInPipMode && currentRoute == Screen.Player.route) {
-            val state = playbackManager.playbackState.value
+            val state = playbackCoordinator.playbackState.value
             if (state.isPlaying && state.currentItem?.isVideo == true) {
                 // Issue #225: pass the real playback state and video size —
                 // the old bare enterPip(this) defaulted to playing with 0x0
@@ -523,8 +523,8 @@ class MainActivity : ComponentActivity() {
                     this,
                     settings,
                     state.isPlaying,
-                    playbackManager.videoWidth,
-                    playbackManager.videoHeight,
+                    playbackCoordinator.videoWidth,
+                    playbackCoordinator.videoHeight,
                     true,
                 )
             }
@@ -551,7 +551,7 @@ fun MpxApp(
     isInPipMode: Boolean = false,
     // Migration Phase 1c: supplied by MainActivity from Koin; no
     // longer nullable with a hand-built fallback.
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     settingsRepository: AppSettingsRepository,
     currentLanguage: String = LocaleHelper.LANGUAGE_SYSTEM,
     currentPalette: String = "Blue",
@@ -662,7 +662,7 @@ fun MpxApp(
                 Column {
                     // Real Media3 persistent MiniPlayer bar
                     MiniPlayer(
-                        playbackManager = playbackManager,
+                        playbackCoordinator = playbackCoordinator,
                         onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     )
                     // #157 dock: mpvEx-style NavigationBar (28dp rounded top
@@ -767,7 +767,7 @@ fun MpxApp(
                     permissionResultHandler = localPermissionHandler,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                     // Issue #245: while the search page is open the
                     // tab-swipe detector above is off, so a swipe
                     // mid-search cannot switch tabs and destroy the query.
@@ -779,7 +779,7 @@ fun MpxApp(
                     permissionLauncher = musicPermissionLauncher,
                     permissionResultHandler = musicPermissionHandler,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                 )
             }
             composable(Screen.Network.route) {
@@ -803,7 +803,7 @@ fun MpxApp(
                     onOpenHistory = { navController.navigate(Screen.History.route) },
                     onOpenPlaylists = { navController.navigate(Screen.Playlists.route) },
                     onOpenNetwork = { navigateToTab(Screen.Network.route) },
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                 )
@@ -812,14 +812,14 @@ fun MpxApp(
                 HistoryScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                 )
             }
             composable(Screen.Playlists.route) {
                 PlaylistsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                 )
             }
             composable(Screen.Settings.route) {
@@ -833,13 +833,13 @@ fun MpxApp(
                     onThemeChanged = onThemeChanged,
                     onPaletteChanged = onPaletteChanged,
                     onThemeColorChanged = onThemeColorChanged,
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                 )
             }
             composable(Screen.OverlaySettings.route) {
                 OverlaySettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    playbackManager = playbackManager,
+                    playbackCoordinator = playbackCoordinator,
                 )
             }
             composable(Screen.AdvancedSettings.route) {
@@ -873,7 +873,7 @@ fun MpxApp(
                         subtitleLauncher = subtitleLauncher,
                         subtitleResultHandler = subtitleHandler,
                         onClose = { navController.popBackStack() },
-                        playbackManager = playbackManager,
+                        playbackCoordinator = playbackCoordinator,
                         isInPipMode = isInPipMode,
                     )
                 }

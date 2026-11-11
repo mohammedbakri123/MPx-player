@@ -37,7 +37,7 @@ internal const val HISTORY_PAGE_SIZE = 100
  *
  * Compose-only concerns stay in the screens: dialog visibility,
  * scroll position, the network-stream text field, PiP entry, and
- * playback itself — transport still goes through `PlaybackManager`
+ * playback itself — transport still goes through `PlaybackCoordinator`
  * directly from the screens, and HistoryScreen still calls
  * `resumeManager.clearAll()` beside [clearHistory] (issue #353), as
  * before. No behaviour change: every value below is computed exactly
@@ -100,7 +100,7 @@ class MeViewModel(
 
     /**
      * #252: the "Resume at" label must only appear when a tap would
-     * actually resume — `PlaybackManager.playQueue` only resumes
+     * actually resume — `PlaybackCoordinator.playQueue` only resumes
      * when `settings.resumePlayback` is on. Read fresh on every call
      * so a Settings change is picked up when returning to History,
      * exactly as the screen's per-composition read did.

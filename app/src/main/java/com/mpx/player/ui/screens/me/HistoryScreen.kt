@@ -57,7 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.playback.PlayableMedia
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import java.text.SimpleDateFormat
@@ -77,13 +77,13 @@ import org.koin.compose.viewmodel.koinViewModel
 fun HistoryScreen(
     onNavigateBack: () -> Unit,
     onOpenPlayer: () -> Unit,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     // Migration Phase 2e: history state lives in MeViewModel now —
     // the total, the paged list, and the clear action. The screen
-    // still takes PlaybackManager directly for transport and for
+    // still takes PlaybackCoordinator directly for transport and for
     // resumeManager.clearAll() beside the clear (issue #353); those
     // move behind interfaces in later phases.
     val viewModel: MeViewModel = koinViewModel()
@@ -116,7 +116,7 @@ fun HistoryScreen(
     }
 
     // #252: the "Resume at" label must only appear when a tap would
-    // actually resume — PlaybackManager.playQueue only resumes when
+    // actually resume — PlaybackCoordinator.playQueue only resumes when
     // settings.resumePlayback is on (forceResume is false for history
     // taps), so with the setting off the label would promise a resume
     // the tap does not deliver. Read fresh on every composition so a
@@ -161,7 +161,7 @@ fun HistoryScreen(
                                 // manager's clearAll() clears the
                                 // in-memory map, the throttle state, and
                                 // the Room table.
-                                playbackManager.resumeManager.clearAll()
+                                playbackCoordinator.resumeManager.clearAll()
                                 snackbarHostState.showSnackbar(context.getString(R.string.snackbar_cleared_history))
                             }
                         }) {
@@ -225,7 +225,7 @@ fun HistoryScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                playbackManager.playQueue(
+                                playbackCoordinator.playQueue(
                                     listOf(
                                         PlayableMedia(
                                             id = item.mediaId,
@@ -275,7 +275,7 @@ fun HistoryScreen(
                                     )
                                     // #252: hidden when resume is off (see
                                     // above), and the 2_000 ms floor matches
-                                    // PlaybackManager.shouldResume — a
+                                    // PlaybackCoordinator.shouldResume — a
                                     // 1_501–2_000 ms position would otherwise
                                     // show the label while the tap restarts
                                     // from 0 even with the setting on.

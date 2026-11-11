@@ -103,7 +103,7 @@ import com.mpx.player.domain.settings.AppSettings
 import org.koin.compose.viewmodel.koinViewModel
 import com.mpx.player.ui.components.StepperRow
 import com.mpx.player.playback.MpxMediaCodecSelector
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.buildDiagnosticsReport
 import com.mpx.player.playback.buildDiagnosticsSummary
@@ -145,13 +145,13 @@ fun SettingsScreen(
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
     onThemeColorChanged: ((String) -> Unit)? = null,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     // Migration Phase 2e: settings, search, and drill-down state live
     // in SettingsViewModel now — the screen holds no repository and
-    // builds none. PlaybackManager arrives as a parameter from
+    // builds none. PlaybackCoordinator arrives as a parameter from
     // MainActivity (Koin), never via getInstance.
     val viewModel: SettingsViewModel = koinViewModel()
     val settings by viewModel.settings.collectAsState()
@@ -221,7 +221,7 @@ fun SettingsScreen(
     // The language / theme / palette / theme-color callbacks and the
     // decoder-mode application stay here, in this thin wrapper around
     // viewModel.updateSettings(): they are MainActivity wiring and a
-    // PlaybackManager call, not settings state.
+    // PlaybackCoordinator call, not settings state.
     fun update(next: AppSettings, commit: Boolean = false) {
         val oldLanguage = settings.appLanguage
         val oldTheme = settings.appTheme
@@ -243,7 +243,7 @@ fun SettingsScreen(
         }
         if (next.decoderMode != oldDecoder) {
             val decMode = com.mpx.player.playback.DecoderMode.values().find { it.label == next.decoderMode } ?: com.mpx.player.playback.DecoderMode.HW
-            playbackManager.setDecoderMode(decMode)
+            playbackCoordinator.setDecoderMode(decMode)
         }
     }
 
@@ -253,8 +253,8 @@ fun SettingsScreen(
     // toggle can never drift apart again.
     fun stopBackgroundPlayback() {
         PlaybackService.stop(context)
-        playbackManager.setVideoBackgroundActive(false)
-        playbackManager.setBackgroundPlaying(false)
+        playbackCoordinator.setVideoBackgroundActive(false)
+        playbackCoordinator.setBackgroundPlaying(false)
     }
 
     fun toggleMusicTab(tabId: String, currentVal: Boolean) {
@@ -931,7 +931,7 @@ fun SettingsScreen(
                                 Spacer(Modifier.height(16.dp))
                                 DevelopmentSettingsSection(
                                     context = context,
-                                    playbackManager = playbackManager,
+                                    playbackCoordinator = playbackCoordinator,
                                     settings = settings,
                                     viewModel = viewModel,
                                     cachedDiagnostics = devDiagnostics,
@@ -1216,7 +1216,7 @@ private data class DevDiagnosticsData(
 @Composable
 private fun DevelopmentSettingsSection(
     context: Context,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     settings: AppSettings,
     viewModel: SettingsViewModel,
     // Issue #299: the loaded stats live in SettingsScreen, not here —
@@ -1227,7 +1227,7 @@ private fun DevelopmentSettingsSection(
     cachedDiagnostics: DevDiagnosticsData?,
     onDiagnosticsLoaded: (DevDiagnosticsData) -> Unit,
 ) {
-    val playbackState by playbackManager.playbackState.collectAsState()
+    val playbackState by playbackCoordinator.playbackState.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 

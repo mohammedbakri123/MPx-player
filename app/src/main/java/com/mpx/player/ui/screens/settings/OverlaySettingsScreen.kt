@@ -55,7 +55,7 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
 import org.koin.compose.viewmodel.koinViewModel
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.util.PipUtils
 import com.mpx.player.ui.components.MpxSecondaryButton
 import com.mpx.player.ui.theme.MpxHairline
@@ -70,7 +70,7 @@ import com.mpx.player.ui.theme.MpxShapes
 @Composable
 fun OverlaySettingsScreen(
     onNavigateBack: () -> Unit,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -80,7 +80,7 @@ fun OverlaySettingsScreen(
     // The host view's context IS the real Activity.
     val activity = LocalView.current.context as? Activity
     // Migration Phase 2e: settings load/save live in SettingsViewModel
-    // now — the screen holds no repository. PlaybackManager arrives as
+    // now — the screen holds no repository. PlaybackCoordinator arrives as
     // a parameter from MainActivity (Koin), never via getInstance.
     val viewModel: SettingsViewModel = koinViewModel()
     val settings by viewModel.settings.collectAsState()
@@ -208,8 +208,8 @@ fun OverlaySettingsScreen(
                     text = stringResource(R.string.pip_test_button),
                     icon = Icons.Filled.PictureInPictureAlt,
                     onClick = {
-                        val isPlaying = playbackManager.playbackState.value.isPlaying
-                        val currentItem = playbackManager.playbackState.value.currentItem
+                        val isPlaying = playbackCoordinator.playbackState.value.isPlaying
+                        val currentItem = playbackCoordinator.playbackState.value.currentItem
                         // Issue #225: pass the real playback state and video
                         // size — the old call defaulted to playing with 0x0
                         // dims (wrong action label, 16:9 window) and armed
@@ -218,8 +218,8 @@ fun OverlaySettingsScreen(
                             activity,
                             settings,
                             isPlaying,
-                            playbackManager.videoWidth,
-                            playbackManager.videoHeight,
+                            playbackCoordinator.videoWidth,
+                            playbackCoordinator.videoHeight,
                             currentItem?.isVideo == true,
                         )
                         if (!entered) {

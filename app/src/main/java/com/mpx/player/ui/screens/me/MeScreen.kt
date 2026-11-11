@@ -106,7 +106,7 @@ import com.mpx.player.R
 import com.mpx.player.domain.model.MeTool
 import com.mpx.player.network.isSupportedStreamUrl
 import com.mpx.player.playback.PlayableMedia
-import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.ui.components.persistence.FavouritesDialog
 import com.mpx.player.ui.components.MpxCard
 import com.mpx.player.ui.components.MpxPrimaryButton
@@ -132,7 +132,7 @@ fun MeScreen(
     onOpenHistory: () -> Unit,
     onOpenPlaylists: () -> Unit,
     onOpenNetwork: (() -> Unit)? = null,
-    playbackManager: PlaybackManager,
+    playbackCoordinator: PlaybackCoordinator,
     currentLanguage: String = "system",
     onLanguageChanged: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -146,7 +146,7 @@ fun MeScreen(
     val activity = LocalView.current.context as? Activity
     // Migration Phase 2e: screen state lives in MeViewModel now —
     // settings, the badge flows, and the favourites actions. The
-    // screen still takes PlaybackManager directly for transport and
+    // screen still takes PlaybackCoordinator directly for transport and
     // the PiP test; those move behind interfaces in later phases.
     // Settings come from the ViewModel (Koin's AppSettingsRepository
     // single), so the old settingsRepository parameter is gone.
@@ -612,7 +612,7 @@ fun MeScreen(
             onDismiss = { showFavouritesDialog = false },
             onItemClick = { item ->
                 showFavouritesDialog = false
-                playbackManager.playQueue(
+                playbackCoordinator.playQueue(
                     listOf(
                         PlayableMedia(
                             id = item.mediaId,
@@ -648,7 +648,7 @@ fun MeScreen(
             onPlayStream = { url ->
                 showNetworkStreamDialog = false
                 val streamTitle = url.substringAfterLast("/").substringBefore("?").ifBlank { "Network Stream" }
-                playbackManager.playQueue(
+                playbackCoordinator.playQueue(
                     listOf(
                         PlayableMedia(
                             id = "stream_${System.currentTimeMillis()}",
@@ -700,13 +700,13 @@ fun MeScreen(
                 // the old bare call defaulted to playing with 0x0 dims
                 // (wrong action label, 16:9 window) and armed auto-enter
                 // for whatever session followed.
-                val pipState = playbackManager.playbackState.value
+                val pipState = playbackCoordinator.playbackState.value
                 val entered = PipUtils.enterPip(
                     activity,
                     null,
                     pipState.isPlaying,
-                    playbackManager.videoWidth,
-                    playbackManager.videoHeight,
+                    playbackCoordinator.videoWidth,
+                    playbackCoordinator.videoHeight,
                     pipState.currentItem?.isVideo == true,
                 )
                 if (!entered) {

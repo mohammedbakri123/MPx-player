@@ -49,16 +49,16 @@ import kotlinx.coroutines.withContext
  * What this ViewModel deliberately does NOT own: the language /
  * theme / palette / theme-color callbacks and the decoder-mode
  * application in `SettingsScreen.update()` — those are MainActivity
- * wiring and a PlaybackManager call, and the screen keeps them in
+ * wiring and a PlaybackCoordinator call, and the screen keeps them in
  * its thin `update()` wrapper around [updateSettings]. None of the
  * functions below changes any of those fields, so no callback is
  * lost by going through the ViewModel directly: layout, blacklist,
  * and pop-up-play writes only touch their own fields. Transport and
- * playback-state observation still go through `PlaybackManager`
+ * playback-state observation still go through `PlaybackCoordinator`
  * directly from the screens, as in [MeViewModel] — no new playback
  * interface was needed for this step, and the screens take the
- * manager as a parameter from MainActivity instead of reaching
- * `PlaybackManager.getInstance` themselves.
+ * coordinator as a parameter from MainActivity instead of reaching
+ * for it themselves.
  *
  * Dependencies arrive through the constructor, on interfaces only
  * ([AppSettingsRepository], [MediaPersistenceRepository],

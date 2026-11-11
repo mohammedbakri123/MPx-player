@@ -20,10 +20,10 @@ import org.koin.dsl.module
  * `getInstance` singletons where they exist ([MpxDatabase]), so no
  * second copy of the database is created.
  *
- * Not yet in this module: [com.mpx.player.playback.PlaybackManager]
- * (see [playbackModule]) and the mpv engine — PlaybackManager builds
+ * Not yet in this module: [com.mpx.player.playback.PlaybackCoordinator]
+ * (see [playbackModule]) and the mpv engine — the coordinator builds
  * its engine internally, so the engine gets no Koin registration
- * until Phase 3 splits PlaybackManager apart.
+ * until Phase 4 splits it apart.
  */
 val appModule = module {
     single { MpxDatabase.getInstance(androidContext()) }
