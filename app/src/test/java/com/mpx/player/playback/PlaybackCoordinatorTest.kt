@@ -938,21 +938,24 @@ class PlaybackCoordinatorTest {
         f.coordinator.play()
         f.coordinator.setSleepTimer(10)
 
-        advanceTimeBy(60_000L)
+        // 1ms past each 60s boundary: a delay due at exactly the
+        // advance target does not fire (same reason as the
+        // `sleep timer counts down` test's 1001ms advance).
+        advanceTimeBy(60_001L)
         val remainingBefore = f.coordinator.playbackState.value.sleepTimerRemainingSeconds
         assertTrue(remainingBefore != null && remainingBefore <= 540L)
 
         f.audioFocusManager.activeListener?.onAudioFocusLost(isTransient = true, canDuck = false)
         assertEquals(1, f.engine.pauseCalls)
 
-        advanceTimeBy(60_000L)
+        advanceTimeBy(60_001L)
         val remainingDuring = f.coordinator.playbackState.value.sleepTimerRemainingSeconds
         assertTrue(remainingDuring != null && remainingDuring <= 480L)
 
         f.audioFocusManager.activeListener?.onAudioFocusGained()
         assertEquals(2, f.engine.playCalls)
 
-        advanceTimeBy(60_000L)
+        advanceTimeBy(60_001L)
         val remainingAfter = f.coordinator.playbackState.value.sleepTimerRemainingSeconds
         assertTrue(remainingAfter != null && remainingAfter <= 420L)
     }
