@@ -962,6 +962,7 @@ internal class MpvCoreEngine(
                 }
 
                 fileLoadedForCurrentItem = true
+                loadIssued = false
                 // Issue #212: the fallback reload landed — duplicate
                 // triggers for the old failure are behind us; a fresh
                 // failure may fall back again.
@@ -1012,6 +1013,7 @@ internal class MpvCoreEngine(
             }
             MPV.mpvEvent.MPV_EVENT_END_FILE -> {
                 lastMpvEvent = "END_FILE"
+                loadIssued = false
                 // A file that never loaded is a STARTUP failure, not a decoder
                 // failure: previously this fell through every check (duration
                 // is 0, eof flag unset) and playback died silently. Report it
@@ -1144,8 +1146,9 @@ internal class MpvCoreEngine(
         // Legacy load-before-surface recovery (kept as a safety net for loads
         // that ran surfaceless before this fix, e.g. engine switches): if the
         // current file never produced FILE_LOADED, retry it now that a
-        // surface exists. No-op when the file already loaded (rotation, etc.).
-        if (mpvInitialized && !isReleased && !fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
+        // surface exists. No-op when the file already loaded (rotation, etc.)
+        // or when a load is already in flight (Issue D-6).
+        if (mpvInitialized && !isReleased && !loadIssued && !fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
             load(currentQueue, currentMediaIndex, cachedPositionMs)
             // Issue #246: same gate as the deferred flush above.
             if (playRequested) play()
@@ -1428,6 +1431,7 @@ internal class MpvCoreEngine(
             // manager reports a real error message.
             Log.e(TAG, "Error loading media items in MPV", e)
             lastMpvEvent = "loadfile-failed"
+            loadIssued = false
             synchronized(metricsLock) { hardErrorCount++ }
             mainHandler.post {
                 engineListener?.onError(
@@ -1540,6 +1544,7 @@ internal class MpvCoreEngine(
         // into a later state read, and the in-flight fallback override
         // is dropped so it cannot step a later load down a stage.
         fileLoadedForCurrentItem = false
+        loadIssued = false
         currentQueue = emptyList()
         currentMediaIndex = 0
         cachedPositionMs = 0L
@@ -1570,6 +1575,7 @@ internal class MpvCoreEngine(
         activeMediaId = null
         activeMediaUri = null
         fileLoadedForCurrentItem = false
+        loadIssued = false
         currentQueue = emptyList()
         isReleased = true
         mainHandler.removeCallbacksAndMessages(null)
