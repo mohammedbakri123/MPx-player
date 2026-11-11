@@ -390,7 +390,7 @@ class SubtitleManagerTest {
         val replaceCalls = mutableListOf<Pair<Int, PlayableMedia>>()
         val selectSubtitleCalls = mutableListOf<Pair<Int?, Int?>>()
         var subtitleTracks: List<SubtitleTrackInfo> = emptyList()
-        var currentMediaItemIndex: Int = 0
+        override var currentMediaItemIndex: Int = 0
         var playCalls: Int = 0
         var listener: PlayerEngine.Listener? = null
 
