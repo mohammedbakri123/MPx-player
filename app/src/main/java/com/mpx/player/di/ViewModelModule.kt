@@ -18,7 +18,6 @@ import org.koin.dsl.module
  * implements the interface, so no second instance is created — and
  * the second from the [appModule] settings single.
  *
-<<<<<<< HEAD
  * Phase 2d adds [NetworkViewModel] the same way: its constructor
  * takes [com.mpx.player.playback.StreamPlayer], resolved from the
  * [PlaybackManager] single, which implements that interface too.
