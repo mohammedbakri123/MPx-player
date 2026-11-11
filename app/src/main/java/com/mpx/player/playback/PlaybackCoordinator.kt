@@ -244,10 +244,14 @@ class PlaybackCoordinator(
     init {
         engine.setQueueSource(
             queue = { playbackQueue.items },
-            currentIndex = {
-                val qIdx = playbackQueue.currentIndex
-                if (qIdx >= 0) qIdx else _playbackState.value.currentIndex
-            },
+            // The queue's own index is the source of truth: -1 exactly
+            // when the queue is empty (initial, clearForStop) and >= 0
+            // whenever a session is live (every persistQueue call sets
+            // it). Falling back to the published state's currentIndex
+            // was wrong — stop() clears the queue but leaves the state's
+            // index at the last session's value, so the engine would
+            // keep seeing a stale index after a stop.
+            currentIndex = { playbackQueue.currentIndex },
         )
         audioFocusManager.setListener(object : AudioFocusManager.Listener {
             override fun onAudioFocusLost(isTransient: Boolean, canDuck: Boolean) {
@@ -266,9 +270,15 @@ class PlaybackCoordinator(
             override fun onAudioFocusGained() {
                 if (pausedForTransientFocus) {
                     pausedForTransientFocus = false
-                    if (_playbackState.value.playbackState != PlayerEngine.STATE_ENDED &&
-                        _playbackState.value.playbackState != PlayerEngine.STATE_IDLE
-                    ) {
+                    // Resume unless the item ended while paused: the flag
+                    // alone proves a session was playing when focus was
+                    // lost (stop()/release() clear it), and playbackState
+                    // is IDLE while a load is still preparing — publishSession
+                    // never sets it, only the engine's READY report does —
+                    // so an IDLE check here would also block a legitimate
+                    // resume in the preparing window. ENDED is the only
+                    // state where resuming would restart a finished item.
+                    if (_playbackState.value.playbackState != PlayerEngine.STATE_ENDED) {
                         engine.play()
                     }
                 }
