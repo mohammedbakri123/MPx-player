@@ -94,9 +94,14 @@ interface BackgroundService {
  *   seam clean: the coordinator never calls `getInstance` or a
  *   constructor it cannot test, and the final step can hand the
  *   pieces in from Koin instead.
- * - [strings] and [backgroundService] cover the two Android-only
- *   effects the coordinator itself performs (banner texts and the
- *   foreground service); the pieces already had their own seams.
+ * - [strings], [backgroundService], and [errorLog] cover the three
+ *   Android-only effects the coordinator itself performs (banner
+ *   texts, the foreground service, and the engine-error logcat line);
+ *   the pieces already had their own seams. [errorLog] defaults to
+ *   [Log.e] with the "PlaybackManager" tag, so existing logcat
+ *   filters keep working; tests record the calls instead (a direct
+ *   [Log] call would throw in JVM unit tests, where Android methods
+ *   are not mocked).
  * - [clock] is the elapsed-realtime source for the sleep timer
  *   (production: [SystemClock.elapsedRealtime]); tests tie it to
  *   the test scheduler so the timer can be driven by virtual time.
@@ -129,6 +134,8 @@ class PlaybackCoordinator(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val strings: CoordinatorStrings,
     private val backgroundService: BackgroundService,
+    private val errorLog: (message: String, error: Throwable?) -> Unit =
+        { message, error -> Log.e("PlaybackManager", message, error) },
     private val clock: () -> Long = { SystemClock.elapsedRealtime() },
 ) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost, EngineEventHost {
 
@@ -483,7 +490,7 @@ class PlaybackCoordinator(
     }
 
     override fun publishEngineError(error: Exception) {
-        Log.e("PlaybackManager", "Engine error encountered", error)
+        errorLog("Engine error encountered", error)
         // An error ends preparing: the banner below replaces the splash.
         // mpv-only (issue #150): there is no fallback engine any more,
         // so every error is reported as-is — with the codec name when

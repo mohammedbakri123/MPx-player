@@ -83,6 +83,7 @@ class PlaybackCoordinatorTest {
         val store = FakeQueueStore()
         val strings = FakeCoordinatorStrings()
         val backgroundService = FakeBackgroundService()
+        val errorLogs = mutableListOf<Pair<String, Throwable?>>()
         // Long-lived coordinator jobs run in the background scope:
         // virtual time still drives them, but they do not block
         // runTest from finishing when the test body returns.
@@ -108,6 +109,7 @@ class PlaybackCoordinatorTest {
             ioDispatcher = UnconfinedTestDispatcher(),
             strings = strings,
             backgroundService = backgroundService,
+            errorLog = { message, error -> errorLogs.add(message to error) },
             clock = { scope.testScheduler.currentTime },
         )
         return Fixture(
@@ -118,6 +120,7 @@ class PlaybackCoordinatorTest {
             store = store,
             strings = strings,
             backgroundService = backgroundService,
+            errorLogs = errorLogs,
             resumeManager = resumeManager,
             coordinator = coordinator,
         )
@@ -131,6 +134,7 @@ class PlaybackCoordinatorTest {
         val store: FakeQueueStore,
         val strings: FakeCoordinatorStrings,
         val backgroundService: FakeBackgroundService,
+        val errorLogs: MutableList<Pair<String, Throwable?>>,
         val resumeManager: PlaybackResumeManager,
         val coordinator: PlaybackCoordinator,
     ) {
@@ -711,20 +715,24 @@ class PlaybackCoordinatorTest {
     @Test
     fun `codec error publishes the codec branch`() = runTest {
         val f = createFixture(this)
+        val error = MpvPlaybackException("codec boom", codecName = "H.265")
 
-        f.coordinator.engineEventTranslator.onError(MpvPlaybackException("codec boom", codecName = "H.265"))
+        f.coordinator.engineEventTranslator.onError(error)
 
         assertEquals("codec:H.265", f.coordinator.playbackState.value.userNotification)
         assertFalse(f.coordinator.playbackState.value.isPreparing)
+        assertEquals(listOf("Engine error encountered" to error), f.errorLogs)
     }
 
     @Test
     fun `plain error publishes the message`() = runTest {
         val f = createFixture(this)
+        val error = Exception("boom")
 
-        f.coordinator.engineEventTranslator.onError(Exception("boom"))
+        f.coordinator.engineEventTranslator.onError(error)
 
         assertEquals("Playback error: boom", f.coordinator.playbackState.value.userNotification)
+        assertEquals(listOf("Engine error encountered" to error), f.errorLogs)
     }
 
     @Test
