@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
 import com.mpx.player.di.appModule
+import com.mpx.player.di.playbackModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -38,7 +39,7 @@ class MpxApplication : Application() {
         // in step 1c.
         startKoin {
             androidContext(this@MpxApplication)
-            modules(appModule)
+            modules(appModule, playbackModule)
         }
     }
 }
