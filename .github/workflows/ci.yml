@@ -1,10 +1,18 @@
-# CI — debug build + unit tests on every pull request.
+# CI — debug build + unit tests on every pull request, and the minified
+# release build on demand (manual dispatch) or on a version-tag push.
 #
 # Runs on GitHub-hosted runners, which have normal internet access, so the
 # mpv AAR and Gradle plugins resolve directly (unlike the maintainer's
 # local setup — see CONTRIBUTING.md for the offline / local-Maven notes).
-# The minified build is NOT run here: it is slow, and it is the release
-# step, verified from the downloaded file before any release is cut.
+#
+# The minified build is NOT run on PRs: it is slow, and it is the release
+# step. It used to run only on the maintainer's machine, but the local
+# Gradle daemon cannot dispatch to its forked daemon on this VM
+# (Broken pipe on the first client write, daemon never accepts — see the
+# migration mission log, 2026-11-11), so the release APK is built here
+# instead and verified from the downloaded file before any release is cut.
+# A tag-triggered run checks out the tag itself, so the APK stamps its
+# own tag exactly as the local release flow requires.
 name: CI
 
 on:
@@ -12,6 +20,8 @@ on:
     branches: [master]
   push:
     branches: [master]
+    tags: ["v*"]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -19,6 +29,8 @@ concurrency:
 
 jobs:
   build:
+    # PRs and branch pushes only — a tag push runs build-minified, not this.
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,3 +51,38 @@ jobs:
 
       - name: Build debug + run unit tests
         run: ./gradlew --no-daemon assembleDebug testDebugUnitTest
+
+  build-minified:
+    # Manual dispatch, or a version-tag push (v0.4.55, ...). Never on PRs.
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history + tags: versionName/versionCode come from
+          # `git describe --tags`, so the APK stamps its own tag.
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # NOTE: do not list the obsolete `tools` package here — the
+          # action's default package list includes it and sdkmanager
+          # fails the run with "Failed to find package 'tools'".
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+
+      - name: Build minified release APKs
+        run: ./gradlew --no-daemon assembleMinified
+
+      - name: Upload minified APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpx-minified-apks
+          path: app/build/outputs/apk/minified/**/app-*-minified.apk
+          retention-days: 14
