@@ -22,10 +22,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -33,33 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
-import com.mpx.player.playback.PlayableMedia
-import com.mpx.player.playback.PlaybackManager
-
-/**
- * Hosts that serve web pages, not video files. A link to one of these
- * can never play in a direct-stream player — mpv needs the actual
- * media URL, and extracting it takes yt-dlp, which was removed in
- * #434. mpvEx and MX cannot play these either. The tab says so
- * plainly instead of handing the page to mpv and showing its
- * cryptic "could not play this file" error.
- */
-private val VIDEO_PAGE_HOSTS = setOf(
-    "youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be",
-    "vimeo.com", "www.vimeo.com",
-    "dailymotion.com", "www.dailymotion.com",
-    "twitch.tv", "www.twitch.tv",
-    "tiktok.com", "www.tiktok.com",
-    "facebook.com", "www.facebook.com", "fb.watch",
-    "instagram.com", "www.instagram.com",
-    "x.com", "twitter.com", "www.twitter.com",
-)
-
-private fun isVideoPageUrl(url: String): Boolean {
-    val host = url.substringAfter("://", "").substringBefore("/").substringBefore(":")
-        .lowercase().trim()
-    return host in VIDEO_PAGE_HOSTS
-}
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Network tab (issue #438): streaming only, like mpvEx's "Stream
@@ -69,30 +42,30 @@ private fun isVideoPageUrl(url: String): Boolean {
  * stack (data/network/smb, smbj, lastSmbHost, smb_* strings).
  *
  * A link shared to the app arrives pre-filled via [sharedUrl].
+ *
+ * Migration Phase 2d: state lives in [NetworkViewModel] — the
+ * screen renders [NetworkUiState] and forwards events. It holds no
+ * playback reference any more.
  */
 @Composable
 fun NetworkScreen(
-    playbackManager: PlaybackManager? = null,
     sharedUrl: String? = null,
     onSharedUrlConsumed: (() -> Unit)? = null,
     onOpenPlayer: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: NetworkViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
-    val realPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
+    val uiState by viewModel.uiState.collectAsState()
 
-    var urlText by remember { mutableStateOf(sharedUrl ?: "") }
     // Issue #416: a shared link pre-fills the URL field once, then is
     // consumed so a later share can pre-fill again.
     LaunchedEffect(sharedUrl) {
         if (sharedUrl != null) {
-            urlText = sharedUrl
+            viewModel.onSharedUrl(sharedUrl)
             onSharedUrlConsumed?.invoke()
         }
     }
-    val trimmedUrl = urlText.trim()
-    val isPageUrl = trimmedUrl.isNotBlank() && isVideoPageUrl(trimmedUrl)
-    val canPlay = trimmedUrl.isNotBlank() && !isPageUrl
     val clipboardManager = remember(context) { context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager }
 
     fun pasteClipboard() {
@@ -100,27 +73,10 @@ fun NetworkScreen(
             if (clip.itemCount > 0) {
                 val text = clip.getItemAt(0).text?.toString() ?: ""
                 if (text.isNotBlank()) {
-                    urlText = text.trim()
+                    viewModel.onUrlChange(text.trim())
                 }
             }
         }
-    }
-
-    fun playUrl(url: String) {
-        val streamTitle = url.substringAfterLast("/").substringBefore("?").ifBlank { "Network Stream" }
-        realPlaybackManager.playQueue(
-            listOf(
-                PlayableMedia(
-                    id = "stream_${System.currentTimeMillis()}",
-                    title = streamTitle,
-                    subtitle = url,
-                    uri = url,
-                    isVideo = true,
-                    durationMs = 0L,
-                ),
-            ),
-        )
-        onOpenPlayer()
     }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
@@ -137,8 +93,8 @@ fun NetworkScreen(
         )
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
-            value = urlText,
-            onValueChange = { urlText = it },
+            value = uiState.urlText,
+            onValueChange = viewModel::onUrlChange,
             placeholder = { Text("https://example.com/video.mp4", fontSize = 13.sp) },
             trailingIcon = {
                 IconButton(onClick = { pasteClipboard() }) {
@@ -146,9 +102,9 @@ fun NetworkScreen(
                 }
             },
             singleLine = true,
-            isError = isPageUrl,
+            isError = uiState.isPageUrl,
             supportingText = {
-                if (isPageUrl) {
+                if (uiState.isPageUrl) {
                     Text(stringResource(R.string.network_stream_page_link))
                 }
             },
@@ -164,8 +120,11 @@ fun NetworkScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Button(
-                onClick = { playUrl(trimmedUrl) },
-                enabled = canPlay,
+                onClick = {
+                    viewModel.playUrl()
+                    onOpenPlayer()
+                },
+                enabled = uiState.canPlay,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
                 Text(stringResource(R.string.dialog_network_play))

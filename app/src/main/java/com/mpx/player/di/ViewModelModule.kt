@@ -1,6 +1,7 @@
 package com.mpx.player.di
 
 import com.mpx.player.playback.PlaybackManager
+import com.mpx.player.ui.screens.network.NetworkViewModel
 import com.mpx.player.ui.screens.player.PlayerViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -16,9 +17,14 @@ import org.koin.dsl.module
  * implements the interface, so no second instance is created — and
  * the second from the [appModule] settings single.
  *
+ * Phase 2d adds [NetworkViewModel] the same way: its constructor
+ * takes [com.mpx.player.playback.StreamPlayer], resolved from the
+ * [PlaybackManager] single, which implements that interface too.
+ *
  * Screens obtain their ViewModel with `koinViewModel()`; they never
  * construct one directly.
  */
 val viewModelModule = module {
     viewModel { PlayerViewModel(get<PlaybackManager>(), get()) }
+    viewModel { NetworkViewModel(get<PlaybackManager>()) }
 }
