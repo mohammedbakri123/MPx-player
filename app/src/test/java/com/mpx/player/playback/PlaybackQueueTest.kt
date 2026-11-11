@@ -494,7 +494,7 @@ class PlaybackQueueTest {
         val items = queueOf("v1", "v2", "v3")
         queue.playQueue(items, startIndex = 0)
 
-        assertEquals(PlaybackQueue.EndedAction.AdvanceTo(1), queue.endedAction(video("v2"), 1, RepeatMode.ALL))
+        assertEquals(PlaybackQueue.EndedAction.AdvanceTo(2), queue.endedAction(video("v2"), 1, RepeatMode.ALL))
         assertEquals(PlaybackQueue.EndedAction.AdvanceTo(0), queue.endedAction(video("v3"), 2, RepeatMode.ALL))
         assertEquals(PlaybackQueue.EndedAction.ReplayCurrent, queue.endedAction(video("v3"), 2, RepeatMode.ONE))
         assertEquals(PlaybackQueue.EndedAction.ReplayCurrent, queue.endedAction(video("v1"), 0, RepeatMode.ONE))
