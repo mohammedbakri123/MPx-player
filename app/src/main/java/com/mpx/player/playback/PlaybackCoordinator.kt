@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -108,7 +109,15 @@ interface BackgroundService {
  *   dispatcher so the fire-and-forget writes are observable.
  * - [scope] is the Main-scope the ticker, watchdog, sleep timer,
  *   and the pieces' deferred work run in (production:
- *   `CoroutineScope(Dispatchers.Main)`).
+ *   `CoroutineScope(SupervisorJob() + Dispatchers.Main)`).
+ *   Scope lifecycle note (D-2): in production, this scope intentionally has
+ *   no cancellation point because the coordinator is a process-lifetime
+ *   singleton. Neither MainActivity nor PlaybackService owns the scope;
+ *   cancelling it on Activity or Service destruction would break
+ *   transitions between background and foreground playback. Transient
+ *   and looping jobs launched on this scope (ticker, watchdog, sleep timer)
+ *   are individually tracked and cancelled per session. SupervisorJob
+ *   ensures child failures do not cancel sibling jobs.
  *
  * What unit tests cover: transport delegation to the engine, state
  * publishing (including the decoder-mode seed from settings), the
@@ -1148,7 +1157,11 @@ class PlaybackCoordinator(
             val queueStore = PlaybackQueueStore(appContext)
             val initialDecoderMode = resolveInitialDecoderModeFrom(settingsRepository)
             val engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode, settingsRepository)
-            val scope = CoroutineScope(Dispatchers.Main)
+            // D-2: Process-lifetime scope backed by SupervisorJob so individual child
+            // job failures do not cancel sibling coordinator or collaborator tasks.
+            // Intentionally uncancelled in production: the coordinator lives for the
+            // process lifetime and outlives individual Activity/Service lifecycles.
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
             return PlaybackCoordinator(
                 database = database,
                 persistenceRepository = persistenceRepository,
