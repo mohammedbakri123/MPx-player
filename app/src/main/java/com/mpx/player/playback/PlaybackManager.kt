@@ -774,6 +774,11 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         playbackQueue.skipPrevious()
     }
 
+    fun setSpeed(speed: Float) {
+        engine.setSpeed(speed)
+        _playbackState.update { it.copy(speed = speed) }
+    }
+
     /**
      * Cycles OFF -> ALL -> ONE -> OFF. Delegates to [playbackQueue];
      * behaviour is unchanged.
