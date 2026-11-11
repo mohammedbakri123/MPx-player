@@ -3,6 +3,8 @@ package com.mpx.player.playback
 import android.view.Surface
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.fakes.FakePlayerEngine
+import com.mpx.player.fakes.FakeSettingsRepository
 import com.mpx.player.playback.engine.MpvPlaybackException
 import com.mpx.player.playback.engine.PlayerEngine
 import com.mpx.player.playback.engine.ReplaceMediaItemResult
@@ -510,82 +512,6 @@ class EngineEventTranslatorTest {
         assertEquals("codec:H.265", f.eventHost.state.userNotification)
     }
 
-    /**
-     * Fake engine: answers positions and has-next/previous from plain
-     * vars; records loads, seeks, plays, and subtitle operations.
-     * A replace pauses playback in this fake (isPlaying = false),
-     * which is what makes the subtitle manager's restore-playback
-     * branch observable; [play] resumes it.
-     */
-    private class FakePlayerEngine : PlayerEngine {
-        val loadCalls = mutableListOf<Triple<List<PlayableMedia>, Int, Long>>()
-        val seekCalls = mutableListOf<Long>()
-        val speedCalls = mutableListOf<Float>()
-        val replaceCalls = mutableListOf<Pair<Int, PlayableMedia>>()
-        val selectSubtitleCalls = mutableListOf<Pair<Int?, Int?>>()
-        var replaceResult: ReplaceMediaItemResult = ReplaceMediaItemResult.ISSUED
-        var subtitleTracksToReturn: List<SubtitleTrackInfo> = emptyList()
-        var playCalls: Int = 0
-        var capturedListener: PlayerEngine.Listener? = null
-        override var currentPosition: Long = 0L
-        override var duration: Long = 0L
-        override val bufferedPosition: Long = 0L
-        override var isPlaying: Boolean = false
-        override val playbackState: Int = PlayerEngine.STATE_IDLE
-        override var currentMediaItemIndex: Int = 0
-        override var hasNextMediaItem: Boolean = false
-        override var hasPreviousMediaItem: Boolean = false
-
-        override fun attachSurface(surface: Surface) = Unit
-        override fun detachSurface() = Unit
-        override fun load(media: PlayableMedia, resumeMs: Long) = Unit
-        override fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
-            loadCalls.add(Triple(items, startIndex, resumeMs))
-        }
-        override fun play() {
-            playCalls++
-            isPlaying = true
-        }
-        override fun pause() {
-            isPlaying = false
-        }
-        override fun seekTo(positionMs: Long) {
-            seekCalls.add(positionMs)
-        }
-        override fun seekTo(index: Int, positionMs: Long) = Unit
-        override fun setSpeed(speed: Float) {
-            speedCalls.add(speed)
-        }
-        override fun selectTrack(type: TrackType, id: String?) = Unit
-        override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) = Unit
-        override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {
-            selectSubtitleCalls.add(groupIndex to trackIndex)
-        }
-        override fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult {
-            replaceCalls.add(index to media)
-            isPlaying = false
-            return replaceResult
-        }
-        override fun stop() = Unit
-        override fun release() = Unit
-        override fun setDecoderMode(mode: DecoderMode) = Unit
-        override fun setListener(listener: PlayerEngine.Listener?) {
-            capturedListener = listener
-        }
-        override fun seekToNextMediaItem() = Unit
-        override fun seekToPreviousMediaItem() = Unit
-        override fun getAudioTracks(): List<AudioTrackInfo> = emptyList()
-        override fun getSubtitleTracks(): List<SubtitleTrackInfo> = subtitleTracksToReturn
-    }
-
-    /** Fake settings repository: load returns [settings], save replaces it. */
-    private class FakeSettingsRepository : AppSettingsRepository {
-        var settings: AppSettings = AppSettings()
-        override fun load(): AppSettings = settings
-        override fun save(settings: AppSettings, commit: Boolean) {
-            this.settings = settings
-        }
-    }
 
     /**
      * Fake queue store: in-memory, mirroring the real store's

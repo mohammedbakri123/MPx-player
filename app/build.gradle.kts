@@ -76,6 +76,12 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 
+    sourceSets {
+        getByName("test") {
+            java.srcDirs("src/test/java", "src/testFixtures/java")
+        }
+    }
+
     splits {
         abi {
             isEnable = true

@@ -3,6 +3,7 @@ package com.mpx.player.ui.screens.player
 import android.content.pm.ActivityInfo
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.fakes.FakeSettingsRepository
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.PlaybackStateSource
@@ -39,7 +40,12 @@ class PlayerViewModelTest {
     @Before
     fun setUp() {
         playback = FakePlaybackStateSource()
-        settingsRepo = FakeSettingsRepository()
+        settingsRepo = FakeSettingsRepository(
+            AppSettings(
+                autoScreenRotation = true,
+                screenOrientation = "landscape",
+            ),
+        )
     }
 
     @After
@@ -243,17 +249,4 @@ class PlayerViewModelTest {
         }
     }
 
-    /** Fake settings repository: an in-memory stored value. */
-    private class FakeSettingsRepository(
-        var stored: AppSettings = AppSettings(
-            autoScreenRotation = true,
-            screenOrientation = "landscape",
-        ),
-    ) : AppSettingsRepository {
-        override fun load(): AppSettings = stored
-
-        override fun save(settings: AppSettings, commit: Boolean) {
-            stored = settings
-        }
-    }
 }

@@ -15,6 +15,9 @@ import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.repository.MediaPersistenceRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.fakes.FakeMediaPersistenceRepository
+import com.mpx.player.fakes.FakePlayerEngine
+import com.mpx.player.fakes.FakeSettingsRepository
 import com.mpx.player.playback.engine.MpvPlaybackException
 import com.mpx.player.playback.engine.PlayerEngine
 import com.mpx.player.playback.engine.ReplaceMediaItemResult
@@ -166,125 +169,6 @@ class PlaybackCoordinatorTest {
         }
     }
 
-    /**
-     * Fake engine: answers positions and has-next/previous from plain
-     * vars; records loads, seeks, plays, pauses, stops, releases, and
-     * track/decoder operations. A replace pauses playback in this fake
-     * (isPlaying = false), which is what makes the subtitle manager's
-     * restore-playback branch observable; [play] resumes it.
-     */
-    private class FakePlayerEngine : PlayerEngine {
-        val loadCalls = mutableListOf<Triple<List<PlayableMedia>, Int, Long>>()
-        val singleLoadCalls = mutableListOf<Pair<PlayableMedia, Long>>()
-        val seekCalls = mutableListOf<Long>()
-        val speedCalls = mutableListOf<Float>()
-        val replaceCalls = mutableListOf<Pair<Int, PlayableMedia>>()
-        val selectTrackCalls = mutableListOf<Pair<TrackType, String?>>()
-        val selectAudioCalls = mutableListOf<Pair<Int, Int>>()
-        val selectSubtitleCalls = mutableListOf<Pair<Int?, Int?>>()
-        val decoderModeCalls = mutableListOf<DecoderMode>()
-        val surfaceChangedCalls = mutableListOf<Pair<Int, Int>>()
-        var replaceResult: ReplaceMediaItemResult = ReplaceMediaItemResult.ISSUED
-        var audioTracksToReturn: List<AudioTrackInfo> = emptyList()
-        var subtitleTracksToReturn: List<SubtitleTrackInfo> = emptyList()
-        var metricsToReturn: EnginePlaybackMetrics? = null
-        var loadStageToReturn: MpvLoadStage? = null
-        var playCalls: Int = 0
-        var pauseCalls: Int = 0
-        var stopCalls: Int = 0
-        var releaseCalls: Int = 0
-        var capturedListener: PlayerEngine.Listener? = null
-        override var currentPosition: Long = 0L
-        override var duration: Long = 0L
-        override var bufferedPosition: Long = 0L
-        override var isPlaying: Boolean = false
-        override var playbackState: Int = PlayerEngine.STATE_IDLE
-        override var currentMediaItemIndex: Int = 0
-        override var hasNextMediaItem: Boolean = false
-        override var hasPreviousMediaItem: Boolean = false
-        override var videoWidth: Int = 0
-        override var videoHeight: Int = 0
-
-        override fun getPlaybackMetrics(): EnginePlaybackMetrics? = metricsToReturn
-        override fun getLoadStage(): MpvLoadStage? = loadStageToReturn
-
-        override fun attachSurface(surface: Surface) = Unit
-        override fun detachSurface() = Unit
-        override fun onSurfaceChanged(width: Int, height: Int) {
-            surfaceChangedCalls.add(width to height)
-        }
-        override fun load(media: PlayableMedia, resumeMs: Long) {
-            singleLoadCalls.add(media to resumeMs)
-        }
-        override fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
-            loadCalls.add(Triple(items, startIndex, resumeMs))
-        }
-        override fun play() {
-            playCalls++
-            isPlaying = true
-        }
-        override fun pause() {
-            pauseCalls++
-            isPlaying = false
-        }
-        override fun seekTo(positionMs: Long) {
-            seekCalls.add(positionMs)
-        }
-        override fun seekTo(index: Int, positionMs: Long) = Unit
-        override fun setSpeed(speed: Float) {
-            speedCalls.add(speed)
-        }
-        override fun selectTrack(type: TrackType, id: String?) {
-            selectTrackCalls.add(type to id)
-        }
-        override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) {
-            selectAudioCalls.add(groupIndex to trackIndex)
-        }
-        override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {
-            selectSubtitleCalls.add(groupIndex to trackIndex)
-        }
-        override fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult {
-            replaceCalls.add(index to media)
-            isPlaying = false
-            return replaceResult
-        }
-        override fun stop() {
-            stopCalls++
-        }
-        override fun release() {
-            releaseCalls++
-        }
-        override fun setDecoderMode(mode: DecoderMode) {
-            decoderModeCalls.add(mode)
-        }
-        override fun setListener(listener: PlayerEngine.Listener?) {
-            capturedListener = listener
-        }
-        var capturedQueueProvider: (() -> List<PlayableMedia>)? = null
-        var capturedIndexProvider: (() -> Int)? = null
-
-        override fun setQueueSource(
-            queue: () -> List<PlayableMedia>,
-            currentIndex: () -> Int,
-        ) {
-            capturedQueueProvider = queue
-            capturedIndexProvider = currentIndex
-        }
-        override fun seekToNextMediaItem() = Unit
-        override fun seekToPreviousMediaItem() = Unit
-        override fun getAudioTracks(): List<AudioTrackInfo> = audioTracksToReturn
-        override fun getSubtitleTracks(): List<SubtitleTrackInfo> = subtitleTracksToReturn
-    }
-
-    /** Fake settings repository: load returns [settings], save replaces it. */
-    private class FakeSettingsRepository(
-        var settings: AppSettings = AppSettings(),
-    ) : AppSettingsRepository {
-        override fun load(): AppSettings = settings
-        override fun save(settings: AppSettings, commit: Boolean) {
-            this.settings = settings
-        }
-    }
 
     /**
      * Fake queue store: in-memory, mirroring the real store's
@@ -312,47 +196,7 @@ class PlaybackCoordinatorTest {
         }
     }
 
-    /** Fake persistence repository: records history rows, answers nothing else. */
-    private class FakeMediaPersistenceRepository : MediaPersistenceRepository {
-        val historyRecords = mutableListOf<PlaybackHistoryItem>()
 
-        override fun observeFavourites(): Flow<List<FavouriteItem>> = emptyFlow()
-        override suspend fun getFavourites(): List<FavouriteItem> = emptyList()
-        override fun observeIsFavourite(mediaUri: String): Flow<Boolean> = flowOf(false)
-        override suspend fun isFavourite(mediaUri: String): Boolean = false
-        override suspend fun addFavourite(item: FavouriteItem) = Unit
-        override suspend fun removeFavourite(mediaUri: String) = Unit
-        override suspend fun toggleFavourite(item: FavouriteItem): Boolean = false
-        override suspend fun clearFavourites() = Unit
-        override fun observeHistory(limit: Int, offset: Int): Flow<List<PlaybackHistoryItem>> = emptyFlow()
-        override suspend fun getHistory(limit: Int, offset: Int): List<PlaybackHistoryItem> = emptyList()
-        override fun observeHistoryCount(): Flow<Int> = flowOf(0)
-        override suspend fun recordHistory(item: PlaybackHistoryItem) {
-            historyRecords.add(item)
-        }
-        override suspend fun deleteHistoryItem(mediaUri: String) = Unit
-        override suspend fun clearHistory() = Unit
-        override fun observePlaylists(): Flow<List<CustomPlaylist>> = emptyFlow()
-        override suspend fun getPlaylists(): List<CustomPlaylist> = emptyList()
-        override suspend fun getPlaylistById(id: Long): CustomPlaylist? = null
-        override suspend fun createPlaylist(name: String, isVideoPlaylist: Boolean): Long = 1L
-        override suspend fun renamePlaylist(playlistId: Long, newName: String) = Unit
-        override suspend fun deletePlaylist(playlistId: Long) = Unit
-        override suspend fun clearPlaylists() = Unit
-        override fun observePlaylistItems(playlistId: Long): Flow<List<PlaylistItem>> = emptyFlow()
-        override suspend fun getPlaylistItems(playlistId: Long): List<PlaylistItem> = emptyList()
-        override suspend fun addItemToPlaylist(item: PlaylistItem): Long = 1L
-        override suspend fun removeItemFromPlaylist(playlistItemId: Long) = Unit
-        override suspend fun removeMediaFromPlaylist(playlistId: Long, mediaUri: String) = Unit
-        override suspend fun clearPlaylistItems(playlistId: Long) = Unit
-        override fun observeResumePositions(): Flow<List<PlaybackResumePosition>> = emptyFlow()
-        override suspend fun getAllResumePositions(): List<PlaybackResumePosition> = emptyList()
-        override suspend fun getResumePosition(mediaId: String): Long? = null
-        override suspend fun saveResumePosition(mediaId: String, mediaUri: String, positionMs: Long, durationMs: Long) = Unit
-        override suspend fun clearResumePosition(mediaId: String) = Unit
-        override suspend fun clearAllResumePositions() = Unit
-        override suspend fun loadAllResumePositionsMap(): Map<String, Long> = emptyMap()
-    }
 
     /**
      * Fake database: the coordinator only holds it for the public

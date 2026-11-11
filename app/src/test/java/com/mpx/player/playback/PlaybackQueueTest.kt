@@ -11,6 +11,8 @@ import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.repository.MediaPersistenceRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.fakes.FakePlayerEngine
+import com.mpx.player.fakes.FakeSettingsRepository
 import com.mpx.player.playback.engine.PlayerEngine
 import com.mpx.player.playback.engine.ReplaceMediaItemResult
 import com.mpx.player.playback.engine.TrackType
@@ -574,68 +576,6 @@ class PlaybackQueueTest {
         assertTrue(engine.loadCalls.isEmpty())
     }
 
-    /**
-     * Fake engine: records loads, speed changes, play calls, and
-     * next/previous requests; answers position/playing/has-next from
-     * plain vars.
-     */
-    private class FakePlayerEngine : PlayerEngine {
-        val loadCalls = mutableListOf<Triple<List<PlayableMedia>, Int, Long>>()
-        val singleLoadCalls = mutableListOf<Pair<PlayableMedia, Long>>()
-        val speedCalls = mutableListOf<Float>()
-        var playCalls: Int = 0
-        var nextCalls: Int = 0
-        var previousCalls: Int = 0
-        var capturedListener: PlayerEngine.Listener? = null
-        override var currentPosition: Long = 0L
-        override val duration: Long = 0L
-        override val bufferedPosition: Long = 0L
-        override var isPlaying: Boolean = false
-        override val playbackState: Int = PlayerEngine.STATE_IDLE
-        override var currentMediaItemIndex: Int = 0
-        override var hasNextMediaItem: Boolean = false
-        override var hasPreviousMediaItem: Boolean = false
-
-        override fun attachSurface(surface: Surface) = Unit
-        override fun detachSurface() = Unit
-        override fun load(media: PlayableMedia, resumeMs: Long) {
-            singleLoadCalls.add(media to resumeMs)
-        }
-        override fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) {
-            loadCalls.add(Triple(items, startIndex, resumeMs))
-        }
-        override fun play() {
-            playCalls++
-            isPlaying = true
-        }
-        override fun pause() {
-            isPlaying = false
-        }
-        override fun seekTo(positionMs: Long) = Unit
-        override fun seekTo(index: Int, positionMs: Long) = Unit
-        override fun setSpeed(speed: Float) {
-            speedCalls.add(speed)
-        }
-        override fun selectTrack(type: TrackType, id: String?) = Unit
-        override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) = Unit
-        override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) = Unit
-        override fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult =
-            ReplaceMediaItemResult.FAILED
-        override fun stop() = Unit
-        override fun release() = Unit
-        override fun setDecoderMode(mode: DecoderMode) = Unit
-        override fun setListener(listener: PlayerEngine.Listener?) {
-            capturedListener = listener
-        }
-        override fun seekToNextMediaItem() {
-            nextCalls++
-        }
-        override fun seekToPreviousMediaItem() {
-            previousCalls++
-        }
-        override fun getAudioTracks(): List<AudioTrackInfo> = emptyList()
-        override fun getSubtitleTracks(): List<SubtitleTrackInfo> = emptyList()
-    }
 
     /**
      * Fake queue store: in-memory, mirroring the real store's
@@ -663,14 +603,6 @@ class PlaybackQueueTest {
         }
     }
 
-    /** Fake settings repository: load returns [settings], save replaces it. */
-    private class FakeSettingsRepository : AppSettingsRepository {
-        var settings: AppSettings = AppSettings()
-        override fun load(): AppSettings = settings
-        override fun save(settings: AppSettings, commit: Boolean) {
-            this.settings = settings
-        }
-    }
 
     /**
      * Fake host: mirrors the real coordinator's publishes (the session

@@ -15,6 +15,8 @@ import com.mpx.player.domain.repository.MediaPersistenceRepository
 import com.mpx.player.domain.repository.MediaRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.fakes.FakeMediaPersistenceRepository
+import com.mpx.player.fakes.FakeSettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -401,12 +403,12 @@ class SettingsViewModelTest {
     @Test
     fun `loadRecordCounts reads the four diagnostics counts`() = runTest {
         setTestMainDispatcher()
-        persistence.favourites = listOf(
+        persistence.favourites.value = listOf(
             FavouriteItem(mediaUri = "content://v/1", mediaId = "1", title = "Video 1", isVideo = true),
             FavouriteItem(mediaUri = "content://v/2", mediaId = "2", title = "Video 2", isVideo = true),
         )
         persistence.historyCount.value = 7
-        persistence.playlists = listOf(CustomPlaylist(id = 1, name = "Mix"))
+        persistence.playlists.value = listOf(CustomPlaylist(id = 1, name = "Mix"))
         persistence.resumePositions = listOf(
             PlaybackResumePosition(mediaId = "content://v/1", mediaUri = "content://v/1", positionMs = 1000L),
         )
@@ -415,107 +417,6 @@ class SettingsViewModelTest {
         assertEquals(listOf(2, 7, 1, 1), viewModel.loadRecordCounts())
     }
 
-    /** Fake settings repository: an in-memory stored value, recording
-     * whether the last save committed synchronously. */
-    private class FakeSettingsRepository(
-        var stored: AppSettings = AppSettings(),
-    ) : AppSettingsRepository {
-        var lastCommit: Boolean = false
-
-        override fun load(): AppSettings = stored
-
-        override fun save(settings: AppSettings, commit: Boolean) {
-            stored = settings
-            lastCommit = commit
-        }
-    }
-
-    /** Fake persistence repository: only the four count queries the
-     * diagnostics section reads hold real data. Every other method
-     * returns an empty default — the ViewModel never calls it. */
-    private class FakeMediaPersistenceRepository : MediaPersistenceRepository {
-        var favourites: List<FavouriteItem> = emptyList()
-        val historyCount = MutableStateFlow(0)
-        var playlists: List<CustomPlaylist> = emptyList()
-        var resumePositions: List<PlaybackResumePosition> = emptyList()
-
-        override fun observeFavourites(): Flow<List<FavouriteItem>> = flowOf(favourites)
-
-        override suspend fun getFavourites(): List<FavouriteItem> = favourites
-
-        override fun observeIsFavourite(mediaUri: String): Flow<Boolean> = flowOf(false)
-
-        override suspend fun isFavourite(mediaUri: String): Boolean = false
-
-        override suspend fun addFavourite(item: FavouriteItem) = Unit
-
-        override suspend fun removeFavourite(mediaUri: String) = Unit
-
-        override suspend fun toggleFavourite(item: FavouriteItem): Boolean = false
-
-        override suspend fun clearFavourites() = Unit
-
-        override fun observeHistory(limit: Int, offset: Int): Flow<List<PlaybackHistoryItem>> =
-            flowOf(emptyList())
-
-        override suspend fun getHistory(limit: Int, offset: Int): List<PlaybackHistoryItem> =
-            emptyList()
-
-        override fun observeHistoryCount(): Flow<Int> = historyCount
-
-        override suspend fun recordHistory(item: PlaybackHistoryItem) = Unit
-
-        override suspend fun deleteHistoryItem(mediaUri: String) = Unit
-
-        override suspend fun clearHistory() = Unit
-
-        override fun observePlaylists(): Flow<List<CustomPlaylist>> = flowOf(playlists)
-
-        override suspend fun getPlaylists(): List<CustomPlaylist> = playlists
-
-        override suspend fun getPlaylistById(id: Long): CustomPlaylist? = null
-
-        override suspend fun createPlaylist(name: String, isVideoPlaylist: Boolean): Long = -1L
-
-        override suspend fun renamePlaylist(playlistId: Long, newName: String) = Unit
-
-        override suspend fun deletePlaylist(playlistId: Long) = Unit
-
-        override suspend fun clearPlaylists() = Unit
-
-        override fun observePlaylistItems(playlistId: Long): Flow<List<PlaylistItem>> =
-            flowOf(emptyList())
-
-        override suspend fun getPlaylistItems(playlistId: Long): List<PlaylistItem> = emptyList()
-
-        override suspend fun addItemToPlaylist(item: PlaylistItem): Long = -1L
-
-        override suspend fun removeItemFromPlaylist(playlistItemId: Long) = Unit
-
-        override suspend fun removeMediaFromPlaylist(playlistId: Long, mediaUri: String) = Unit
-
-        override suspend fun clearPlaylistItems(playlistId: Long) = Unit
-
-        override fun observeResumePositions(): Flow<List<PlaybackResumePosition>> =
-            flowOf(resumePositions)
-
-        override suspend fun getAllResumePositions(): List<PlaybackResumePosition> = resumePositions
-
-        override suspend fun getResumePosition(mediaId: String): Long? = null
-
-        override suspend fun saveResumePosition(
-            mediaId: String,
-            mediaUri: String,
-            positionMs: Long,
-            durationMs: Long,
-        ) = Unit
-
-        override suspend fun clearResumePosition(mediaId: String) = Unit
-
-        override suspend fun clearAllResumePositions() = Unit
-
-        override suspend fun loadAllResumePositionsMap(): Map<String, Long> = emptyMap()
-    }
 
     /** Fake media repository: only the two folder queries the
      * blacklist add dialog's scan reads hold real data. Every other

@@ -23,6 +23,9 @@ import com.mpx.player.domain.repository.MediaPersistenceRepository
 import com.mpx.player.domain.repository.MediaRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.fakes.FakeMediaPersistenceRepository
+import com.mpx.player.fakes.FakePlayerEngine
+import com.mpx.player.fakes.FakeSettingsRepository
 import com.mpx.player.playback.AudioFocusManager
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.BackgroundService
@@ -192,9 +195,9 @@ class DiGraphTest {
     @Test
     fun `all ViewModels in viewModelModule resolve successfully from Koin container`() {
         val coordinator = createTestCoordinator()
-        val settingsRepo = TestAppSettingsRepository()
+        val settingsRepo = FakeSettingsRepository()
         val mediaRepo = TestMediaRepository()
-        val persistenceRepo = TestMediaPersistenceRepository()
+        val persistenceRepo = FakeMediaPersistenceRepository()
 
         val testDependenciesModule = module {
             single { coordinator }
@@ -240,10 +243,10 @@ class DiGraphTest {
         val resumeManager = PlaybackResumeManager(null, workScope)
         return PlaybackCoordinator(
             database = TestMpxDatabase(),
-            persistenceRepository = TestMediaPersistenceRepository(),
+            persistenceRepository = FakeMediaPersistenceRepository(),
             resumeManager = resumeManager,
-            settingsRepository = TestAppSettingsRepository(),
-            engine = TestPlayerEngine(),
+            settingsRepository = FakeSettingsRepository(),
+            engine = FakePlayerEngine(),
             queueStore = TestQueueStore(),
             subtitleFileAccess = SubtitleManager.FileAccess(
                 detectCodepage = { null },
@@ -273,16 +276,8 @@ class DiGraphTest {
         override fun playbackResumeDao(): PlaybackResumeDao = throw UnsupportedOperationException()
         override fun clearAllTables() {}
         override fun createInvalidationTracker(): InvalidationTracker = throw UnsupportedOperationException()
+        @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
         override fun createOpenHelper(config: androidx.room.DatabaseConfiguration) = throw UnsupportedOperationException()
-    }
-
-    private class TestAppSettingsRepository(
-        var settings: AppSettings = AppSettings(),
-    ) : AppSettingsRepository {
-        override fun load(): AppSettings = settings
-        override fun save(settings: AppSettings, commit: Boolean) {
-            this.settings = settings
-        }
     }
 
     private class TestMediaRepository : MediaRepository {
@@ -299,82 +294,6 @@ class DiGraphTest {
         override fun getAudioAlbums(): List<AudioAlbum> = emptyList()
         override fun getAudioArtists(): List<AudioArtist> = emptyList()
         override fun getAudioFolders(): List<AudioFolder> = emptyList()
-    }
-
-    private class TestMediaPersistenceRepository : MediaPersistenceRepository {
-        override fun observeFavourites(): Flow<List<FavouriteItem>> = emptyFlow()
-        override suspend fun getFavourites(): List<FavouriteItem> = emptyList()
-        override fun observeIsFavourite(mediaUri: String): Flow<Boolean> = flowOf(false)
-        override suspend fun isFavourite(mediaUri: String): Boolean = false
-        override suspend fun addFavourite(item: FavouriteItem) = Unit
-        override suspend fun removeFavourite(mediaUri: String) = Unit
-        override suspend fun toggleFavourite(item: FavouriteItem): Boolean = false
-        override suspend fun clearFavourites() = Unit
-        override fun observeHistory(limit: Int, offset: Int): Flow<List<PlaybackHistoryItem>> = emptyFlow()
-        override suspend fun getHistory(limit: Int, offset: Int): List<PlaybackHistoryItem> = emptyList()
-        override fun observeHistoryCount(): Flow<Int> = flowOf(0)
-        override suspend fun recordHistory(item: PlaybackHistoryItem) = Unit
-        override suspend fun deleteHistoryItem(mediaUri: String) = Unit
-        override suspend fun clearHistory() = Unit
-        override fun observePlaylists(): Flow<List<CustomPlaylist>> = emptyFlow()
-        override suspend fun getPlaylists(): List<CustomPlaylist> = emptyList()
-        override suspend fun getPlaylistById(id: Long): CustomPlaylist? = null
-        override suspend fun createPlaylist(name: String, isVideoPlaylist: Boolean): Long = 1L
-        override suspend fun renamePlaylist(playlistId: Long, newName: String) = Unit
-        override suspend fun deletePlaylist(playlistId: Long) = Unit
-        override suspend fun clearPlaylists() = Unit
-        override fun observePlaylistItems(playlistId: Long): Flow<List<PlaylistItem>> = emptyFlow()
-        override suspend fun getPlaylistItems(playlistId: Long): List<PlaylistItem> = emptyList()
-        override suspend fun addItemToPlaylist(item: PlaylistItem): Long = 1L
-        override suspend fun removeItemFromPlaylist(playlistItemId: Long) = Unit
-        override suspend fun removeMediaFromPlaylist(playlistId: Long, mediaUri: String) = Unit
-        override suspend fun clearPlaylistItems(playlistId: Long) = Unit
-        override fun observeResumePositions(): Flow<List<PlaybackResumePosition>> = emptyFlow()
-        override suspend fun getAllResumePositions(): List<PlaybackResumePosition> = emptyList()
-        override suspend fun getResumePosition(mediaId: String): Long? = null
-        override suspend fun saveResumePosition(mediaId: String, mediaUri: String, positionMs: Long, durationMs: Long) = Unit
-        override suspend fun clearResumePosition(mediaId: String) = Unit
-        override suspend fun clearAllResumePositions() = Unit
-        override suspend fun loadAllResumePositionsMap(): Map<String, Long> = emptyMap()
-    }
-
-    private class TestPlayerEngine : PlayerEngine {
-        override var currentPosition: Long = 0L
-        override var duration: Long = 0L
-        override var bufferedPosition: Long = 0L
-        override var isPlaying: Boolean = false
-        override var playbackState: Int = PlayerEngine.STATE_IDLE
-        override var currentMediaItemIndex: Int = 0
-        override var hasNextMediaItem: Boolean = false
-        override var hasPreviousMediaItem: Boolean = false
-        override var videoWidth: Int = 0
-        override var videoHeight: Int = 0
-        override fun getPlaybackMetrics(): EnginePlaybackMetrics? = null
-        override fun getLoadStage(): MpvLoadStage? = null
-        override fun attachSurface(surface: android.view.Surface) = Unit
-        override fun detachSurface() = Unit
-        override fun onSurfaceChanged(width: Int, height: Int) = Unit
-        override fun load(media: PlayableMedia, resumeMs: Long) = Unit
-        override fun load(items: List<PlayableMedia>, startIndex: Int, resumeMs: Long) = Unit
-        override fun play() = Unit
-        override fun pause() = Unit
-        override fun seekTo(positionMs: Long) = Unit
-        override fun seekTo(index: Int, positionMs: Long) = Unit
-        override fun setSpeed(speed: Float) = Unit
-        override fun selectTrack(type: TrackType, id: String?) = Unit
-        override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) = Unit
-        override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) = Unit
-        override fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult =
-            ReplaceMediaItemResult.ISSUED
-        override fun stop() = Unit
-        override fun release() = Unit
-        override fun setDecoderMode(mode: DecoderMode) = Unit
-        override fun setListener(listener: PlayerEngine.Listener?) = Unit
-        override fun setQueueSource(queue: () -> List<PlayableMedia>, currentIndex: () -> Int) = Unit
-        override fun seekToNextMediaItem() = Unit
-        override fun seekToPreviousMediaItem() = Unit
-        override fun getAudioTracks(): List<AudioTrackInfo> = emptyList()
-        override fun getSubtitleTracks(): List<SubtitleTrackInfo> = emptyList()
     }
 
     private class TestQueueStore : QueueStore {
