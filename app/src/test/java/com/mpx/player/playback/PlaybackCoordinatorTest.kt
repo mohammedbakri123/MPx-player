@@ -36,6 +36,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -919,5 +920,151 @@ class PlaybackCoordinatorTest {
         assertFalse(f.coordinator.isBackgroundPlayEnabled())
         assertEquals(30_000L, f.coordinator.getDoubleTapSeekDurationMs())
         assertFalse(f.coordinator.isResumePlaybackEnabled())
+    }
+
+    @Test
+    fun `coordinator accepts injected subtitleManager, playbackQueue, and engineEventTranslator via constructor`() = runTest {
+        val engine = FakePlayerEngine()
+        val settingsRepo = FakeSettingsRepository()
+        val persistence = FakeMediaPersistenceRepository()
+        val database = FakeMpxDatabase()
+        val workScope = CoroutineScope(backgroundScope.coroutineContext)
+        val resumeManager = PlaybackResumeManager(null, workScope)
+
+        val stubHost = object : SubtitleHost, QueueHost, EngineEventHost {
+            override val state: PlaybackState = PlaybackState()
+            override val currentItem: PlayableMedia? = null
+            override val liveQueue: List<PlayableMedia> = emptyList()
+            override val subtitleTracks: List<SubtitleTrackInfo> = emptyList()
+            override fun commitSubtitleItem(index: Int, updatedItem: PlayableMedia, notification: String?) = Unit
+            override fun subtitleLoadedMessage(displayName: String): String = ""
+            override fun subtitleFailedMessage(displayName: String): String = ""
+            override fun showNotification(message: String) = Unit
+            override fun refreshTracksState() = Unit
+            override fun publishSession(
+                items: List<PlayableMedia>,
+                targetIndex: Int,
+                targetItem: PlayableMedia,
+                resumedFromMs: Long?,
+                speed: Float,
+                shuffleEnabled: Boolean,
+                hasPrevious: Boolean,
+                hasNext: Boolean,
+            ) = Unit
+            override fun publishQueueOrder(
+                items: List<PlayableMedia>,
+                currentIndex: Int,
+                shuffleEnabled: Boolean,
+                hasPrevious: Boolean,
+                hasNext: Boolean,
+            ) = Unit
+            override fun publishShuffleEnabled(enabled: Boolean) = Unit
+            override fun publishRepeatMode(mode: RepeatMode) = Unit
+            override fun recordHistory(item: PlayableMedia, positionMs: Long) = Unit
+            override fun clearAutoDetectAttempts() = Unit
+            override fun refreshPositionAndTracks() = Unit
+            override fun refreshPosition() = Unit
+            override fun startPositionTicker() = Unit
+            override fun armLoadWatchdog() = Unit
+            override fun publishIsPlaying(isPlaying: Boolean) = Unit
+            override fun startBackgroundService() = Unit
+            override fun stopPositionTicker() = Unit
+            override fun flushPosition() = Unit
+            override fun recordPauseHistory(item: PlayableMedia, positionMs: Long, durationMs: Long) = Unit
+            override fun cancelLoadWatchdog() = Unit
+            override fun publishEngineState(playbackState: Int, isPreparing: Boolean, userNotification: String?) = Unit
+            override fun maybeAutoDetectSubtitles() = Unit
+            override fun publishTransition(
+                item: PlayableMedia?,
+                index: Int,
+                hasPrevious: Boolean,
+                hasNext: Boolean,
+                resumedFromMs: Long?,
+            ) = Unit
+            override fun publishSpeed(speed: Float) = Unit
+            override fun publishVideoSize(width: Int, height: Int) = Unit
+            override fun publishDecoderInitialized(decoderName: String, fallbackNote: String?) = Unit
+            override fun publishEngineError(error: Exception) = Unit
+        }
+
+        val customSubtitleManager = SubtitleManager(
+            engine = engine,
+            host = stubHost,
+            scope = workScope,
+            fileAccess = SubtitleManager.FileAccess(
+                detectCodepage = { null },
+                hasAllFilesAccess = { true },
+                findSiblings = { emptyList() },
+                validateSibling = { null },
+            ),
+        )
+        val customQueue = PlaybackQueue(
+            engine = engine,
+            queueStore = FakeQueueStore(),
+            resumeManager = resumeManager,
+            settingsRepository = settingsRepo,
+            host = stubHost,
+            scope = workScope,
+        )
+        val customTranslator = EngineEventTranslator(
+            engine = engine,
+            queue = customQueue,
+            subtitleManager = customSubtitleManager,
+            resumeManager = resumeManager,
+            settingsRepository = settingsRepo,
+            host = stubHost,
+            scope = workScope,
+        )
+
+        val coordinator = PlaybackCoordinator(
+            database = database,
+            persistenceRepository = persistence,
+            resumeManager = resumeManager,
+            settingsRepository = settingsRepo,
+            engine = engine,
+            scope = workScope,
+            strings = FakeCoordinatorStrings(),
+            backgroundService = FakeBackgroundService(),
+            audioFocusManager = FakeAudioFocusManager(),
+            subtitleManager = customSubtitleManager,
+            playbackQueue = customQueue,
+            engineEventTranslator = customTranslator,
+        )
+
+        assertSame(customSubtitleManager, coordinator.subtitleManager)
+        assertSame(customQueue, coordinator.playbackQueue)
+        assertSame(customTranslator, coordinator.engineEventTranslator)
+        assertSame(customTranslator, engine.capturedListener)
+    }
+
+    @Test
+    fun `coordinatorHostProxy throws IllegalStateException when accessed before attach`() {
+        val proxy = CoordinatorHostProxy()
+        try {
+            proxy.state
+            org.junit.Assert.fail("Expected IllegalStateException before attach")
+        } catch (e: IllegalStateException) {
+            assertEquals("CoordinatorHostProxy not attached yet", e.message)
+        }
+    }
+
+    @Test
+    fun `coordinatorHostProxy forwards operations to attached coordinator`() = runTest {
+        val f = createFixture(this)
+        val proxy = CoordinatorHostProxy()
+        proxy.attach(f.coordinator)
+
+        assertEquals(f.coordinator.state, proxy.state)
+        assertEquals(f.coordinator.currentItem, proxy.currentItem)
+        assertEquals(f.coordinator.liveQueue, proxy.liveQueue)
+        assertEquals(f.coordinator.subtitleTracks, proxy.subtitleTracks)
+        assertEquals(
+            f.coordinator.subtitleLoadedMessage("sub.srt"),
+            proxy.subtitleLoadedMessage("sub.srt"),
+        )
+        assertEquals(
+            f.coordinator.subtitleFailedMessage("sub.srt"),
+            proxy.subtitleFailedMessage("sub.srt"),
+        )
     }
 }
