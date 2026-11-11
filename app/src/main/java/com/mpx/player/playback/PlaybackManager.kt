@@ -16,11 +16,7 @@ import android.util.Log
 import com.mpx.player.playback.engine.MpvPlaybackException
 import com.mpx.player.playback.engine.MpvPlayerEngine
 import com.mpx.player.playback.engine.PlayerEngine
-import com.mpx.player.playback.engine.ReplaceMediaItemResult
 import com.mpx.player.playback.engine.TrackType
-import com.mpx.player.util.SubtitleSiblingFinder
-import com.mpx.player.util.SubtitleUtils
-import com.mpx.player.util.SubtitleValidationResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -31,7 +27,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Central controller for playback orchestration in MPx Player.
@@ -49,7 +44,7 @@ import kotlinx.coroutines.withContext
  * depends on. Its [playStream] body is the Network tab's old inline
  * play action, moved verbatim.
  */
-class PlaybackManager private constructor(context: Context) : PlaybackStateSource, StreamPlayer {
+class PlaybackManager private constructor(context: Context) : PlaybackStateSource, StreamPlayer, SubtitleHost {
 
     private val appContext: Context = context.applicationContext
     val database: MpxDatabase = MpxDatabase.getInstance(appContext)
@@ -117,32 +112,6 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         }
     }
     private var currentQueue: List<PlayableMedia> = emptyList()
-    // Issue #192: a manual external-subtitle pick the engine could not
-    // pin yet (track not visible in track-list when sub-add returned).
-    // Re-applied on the next track-list change by picking the newest
-    // external track — NOT by display-name label: mpv reports the added
-    // track's title as "srt" for fd:// subs, so label matching could
-    // never fire (user's v0.3.1 log). Scoped to the item it was picked
-    // for, so it can never select a track in a different video.
-    private var pendingExternalSubtitleMediaId: String? = null
-    /**
-     * Issue #332: the display name of the subtitle the pending
-     * confirmation (above) is waiting for, so the async success/failure
-     * banner can name it. Always set and cleared together with the id.
-     */
-    private var pendingExternalSubtitleDisplayName: String? = null
-    /**
-     * Subtitle auto-detect: media ids already scanned for same-name
-     * subtitle files this session. A scan is attempted once per item
-     * (a folder scan that finds nothing stays attempted — re-scanning
-     * on every READY re-fire would be pure disk churn). Cleared on a
-     * new session (playQueue) and on stop(), so playing the video
-     * again later re-scans — a subtitle added to the folder since is
-     * then found. The item's own externalSubtitles list is the second
-     * guard: an item that already has external subtitles (manual pick,
-     * restore, or an earlier auto-detect) is never scanned again.
-     */
-    private val autoDetectAttemptedIds = mutableSetOf<String>()
     /** Pre-shuffle queue order, restored when shuffle is turned off (issue #76). */
     private var unshuffledQueue: List<PlayableMedia>? = null
 
@@ -219,7 +188,7 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
             updatePosition()
             updateTracksState()
             if (playbackState == PlayerEngine.STATE_READY) {
-                maybeAutoDetectSubtitles()
+                subtitleManager.maybeAutoDetectSubtitles()
             }
             if (playbackState == PlayerEngine.STATE_ENDED) {
                 // Issue #211: mpv reports STATE_ENDED at the end of EVERY
@@ -365,50 +334,11 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
 
         override fun onTracksChanged() {
             updateTracksState()
-            // Issue #192: second chance for a manual external pick the
-            // engine could not pin synchronously — select the newest
-            // external track (mpv appends added tracks, so the last one
-            // is the one just picked). Only for the item it was picked
-            // for; a manual pick in the sheet clears it first, and a
-            // different video clears it here instead of mis-selecting.
-            pendingExternalSubtitleMediaId?.let { mediaId ->
-                if (_playbackState.value.currentItem?.id == mediaId) {
-                    val newestExternal = _playbackState.value.subtitleTracks.lastOrNull { it.isExternal }
-                    if (newestExternal != null) {
-                        selectSubtitleTrack(newestExternal.groupIndex, newestExternal.trackIndex)
-                        pendingExternalSubtitleMediaId = null
-                        pendingExternalSubtitleDisplayName = null
-                    }
-                } else {
-                    pendingExternalSubtitleMediaId = null
-                    pendingExternalSubtitleDisplayName = null
-                }
-            }
+            subtitleManager.onTracksChanged()
         }
 
-        /**
-         * Issue #332: the async verdict on a manually added external
-         * subtitle (see [PlayerEngine.Listener.onExternalSubtitleConfirmed]).
-         * Ignores confirmations the manager is not waiting for (queue
-         * restores confirm the same way) and confirmations for an item
-         * that is no longer current — the user has moved on, so no banner
-         * should arrive for the old pick.
-         */
         override fun onExternalSubtitleConfirmed(mediaId: String, success: Boolean) {
-            if (pendingExternalSubtitleMediaId != mediaId) return
-            val displayName = pendingExternalSubtitleDisplayName ?: return
-            pendingExternalSubtitleMediaId = null
-            pendingExternalSubtitleDisplayName = null
-            if (_playbackState.value.currentItem?.id != mediaId) return
-            _playbackState.update {
-                it.copy(
-                    userNotification = if (success) {
-                        appContext.getString(R.string.player_toast_subtitle_loaded, displayName)
-                    } else {
-                        appContext.getString(R.string.player_subtitle_load_failed, displayName)
-                    },
-                )
-            }
+            subtitleManager.onExternalSubtitleConfirmed(mediaId, success)
         }
 
         override fun onPlaybackParametersChanged(speed: Float) {
@@ -482,6 +412,60 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         private set
 
     /**
+     * Migration Phase 3, step 1: the external-subtitle responsibility,
+     * extracted from this class. Owns subtitle discovery, the manual-pick
+     * load path, the pending-confirmation state, and subtitle style
+     * settings. This manager stays the [SubtitleHost]: it owns the live
+     * queue and the published state, so the subtitle manager asks it to
+     * apply queue/state effects instead of touching them directly.
+     * Built here, like [resumeManager], until Phase 3 puts the pieces
+     * behind Koin.
+     */
+    val subtitleManager = SubtitleManager(
+        engine = engine,
+        host = this,
+        scope = scope,
+        fileAccess = SubtitleManager.productionFileAccess(appContext),
+    )
+
+    // SubtitleHost implementation: the queue/state effects
+    // SubtitleManager asks for. The commit body is the queue/state half
+    // of the old commitSubtitleAdd — the restore half moved into
+    // SubtitleManager with the decision logic.
+    override val currentItem: PlayableMedia?
+        get() = _playbackState.value.currentItem
+    override val liveQueue: List<PlayableMedia>
+        get() = currentQueue
+    override val subtitleTracks: List<SubtitleTrackInfo>
+        get() = _playbackState.value.subtitleTracks
+
+    override fun commitSubtitleItem(index: Int, updatedItem: PlayableMedia, notification: String?) {
+        val updatedQueue = currentQueue.toMutableList()
+        updatedQueue[index] = updatedItem
+        currentQueue = updatedQueue
+        _playbackState.update { state ->
+            val withItem = state.copy(currentItem = updatedItem, queue = updatedQueue)
+            if (notification != null) withItem.copy(userNotification = notification) else withItem
+        }
+        // Issue #149: the queue item itself changed (new subtitle list).
+        persistQueue(index)
+    }
+
+    override fun subtitleLoadedMessage(displayName: String): String =
+        appContext.getString(R.string.player_toast_subtitle_loaded, displayName)
+
+    override fun subtitleFailedMessage(displayName: String): String =
+        appContext.getString(R.string.player_subtitle_load_failed, displayName)
+
+    override fun showNotification(message: String) {
+        _playbackState.update { it.copy(userNotification = message) }
+    }
+
+    override fun refreshTracksState() {
+        updateTracksState()
+    }
+
+    /**
      * Issue #225: display size of the current video (engine's
      * `dwidth`/`dheight`), the PiP aspect-ratio source of truth. 0 when
      * no video is loaded.
@@ -540,10 +524,11 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
 
     /**
      * Applies subtitle style settings to the mpv engine, which renders
-     * subtitles itself.
+     * subtitles itself. Delegates to [subtitleManager]; behaviour is
+     * unchanged.
      */
     fun applySubtitleSettings(settings: AppSettings) {
-        (engine as? MpvPlayerEngine)?.applySubtitleSettings(settings)
+        subtitleManager.applySubtitleSettings(settings)
     }
 
     /**
@@ -627,7 +612,7 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         if (items.isEmpty()) return
         // Subtitle auto-detect: a new session re-scans — a subtitle
         // added to the folder since the last play is then found.
-        autoDetectAttemptedIds.clear()
+        subtitleManager.clearAutoDetectAttempts()
         // Issue #203: keep the shuffle state only when the queue being
         // played is the live one (same items, different start index).
         // A new queue is a new session: shuffle order does not carry over.
@@ -1011,218 +996,18 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
     }
 
     fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {
-        // Issue #192: a manual pick (sheet tap / Off) supersedes any
-        // pending external pick — never let a stale pending re-select
-        // over the user's explicit choice.
-        pendingExternalSubtitleMediaId = null
-        pendingExternalSubtitleDisplayName = null
-        engine.selectSubtitleTrack(groupIndex, trackIndex)
-        updateTracksState()
+        subtitleManager.selectSubtitleTrack(groupIndex, trackIndex)
     }
 
     /**
      * Loads an external subtitle file (SRT / VTT) into the currently playing media item.
-     * Replaces the media item in the engine so the new sidecar subtitle track is loaded,
-     * maintaining the current playback position and state, and marks the track to be auto-selected.
-     *
-     * Issue #332: returns whether the subtitle was ACCEPTED for loading —
-     * never an unconditional success any more. The old code returned true
-     * and showed "External subtitle loaded" even when every sub-add had
-     * failed, because `mpv.command()` never throws for a rejected file.
-     * ISSUED/QUEUED are accepted and their real outcome arrives
-     * asynchronously via [onExternalSubtitleConfirmed], which shows the
-     * success/failure banner; FAILED (nothing could be attempted) shows
-     * the failure banner here and returns false.
+     * Delegates to [subtitleManager], which owns the load path
+     * (issue #332: the returned boolean is whether the subtitle was
+     * ACCEPTED for loading, and the success/failure banner arrives
+     * asynchronously). Behaviour is unchanged.
      */
     fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean {
-        val currentItem = _playbackState.value.currentItem ?: return false
-        val index = engine.currentMediaItemIndex
-        if (index < 0 || index >= currentQueue.size) return false
-
-        val ext = ExternalSubtitle(
-            uri = uri.toString(),
-            name = displayName,
-            mimeType = mimeType,
-            // Issue #441: detect a legacy Arabic encoding (Windows-1256)
-            // so the engine can tell mpv the right codepage before the
-            // sub-add. Null means mpv's default (valid UTF-8 files).
-            codepage = SubtitleUtils.detectSubtitleCodepage(appContext, uri),
-        )
-
-        // Avoid duplicate entry of the same URI
-        val existingSubs = currentItem.externalSubtitles.filter { it.uri != ext.uri }
-        val updatedSubs = existingSubs + ext
-        val updatedItem = currentItem.copy(externalSubtitles = updatedSubs)
-
-        val wasPlaying = engine.isPlaying
-
-        // Replace current media item in engine timeline. The raw item is
-        // handed over — the engine resolves only the subtitle URIs itself
-        // (content:// subtitles need the same treatment as content://
-        // media); the media URI is never resolved here, because
-        // replaceMediaItem never reloads the file and the fd would leak
-        // (issue #219). The stored item keeps the original URI so the
-        // persisted queue stays restorable.
-        return when (val result = engine.replaceMediaItem(index, updatedItem)) {
-            ReplaceMediaItemResult.ISSUED, ReplaceMediaItemResult.QUEUED -> {
-                // Issue #192: the engine pins sid to the new track; keep
-                // this as the second chance in case the track was not in
-                // track-list yet when sub-add returned. Issue #332: the
-                // success/failure banner is NOT shown here — it arrives
-                // with the async confirmation, once the track actually
-                // appears (or the timeout reports it never did).
-                pendingExternalSubtitleMediaId = currentItem.id
-                pendingExternalSubtitleDisplayName = displayName
-                commitSubtitleAdd(index, updatedItem, wasPlaying, notification = null)
-                true
-            }
-            ReplaceMediaItemResult.ALREADY_ADDED -> {
-                // No sub-add was issued — the subtitle was already in the
-                // item. It is loaded iff mpv's track-list currently holds
-                // at least as many external tracks as the item lists
-                // external subtitles (checked live on the engine, not the
-                // cached state, so a track that only just appeared still
-                // counts). A re-pick of a subtitle that never loaded
-                // reports failure instead of the old lying success.
-                val loadedExternalCount = engine.getSubtitleTracks().count { it.isExternal }
-                if (loadedExternalCount >= updatedItem.externalSubtitles.size) {
-                    pendingExternalSubtitleMediaId = null
-                    pendingExternalSubtitleDisplayName = null
-                    commitSubtitleAdd(
-                        index, updatedItem, wasPlaying,
-                        notification = appContext.getString(R.string.player_toast_subtitle_loaded, displayName),
-                    )
-                    true
-                } else {
-                    commitSubtitleAdd(index, updatedItem, wasPlaying, notification = null)
-                    _playbackState.update {
-                        it.copy(userNotification = appContext.getString(R.string.player_subtitle_load_failed, displayName))
-                    }
-                    false
-                }
-            }
-            ReplaceMediaItemResult.FAILED -> {
-                // Nothing was attempted (unreadable content://, missing
-                // file, or no new subtitles). Re-sync the engine's queue
-                // with the original item — replaceMediaItem stored the
-                // updated item even though it added nothing — and report
-                // the failure instead of the old unconditional success.
-                engine.replaceMediaItem(index, currentItem)
-                restorePlaybackAfterSubtitleAdd(wasPlaying)
-                _playbackState.update {
-                    it.copy(userNotification = appContext.getString(R.string.player_subtitle_load_failed, displayName))
-                }
-                false
-            }
-        }
-    }
-
-    /**
-     * Subtitle auto-detect (MX behaviour): when a local video's file
-     * has loaded, look in its folder for subtitle files with the same
-     * name (`movie.srt`, `movie.en.srt`, `movie.ar.srt`) and load them
-     * through the same [loadExternalSubtitle] path a manual pick uses
-     * — the engine sub-adds them and selects the last one added, and
-     * the #332 confirmation shows the usual "Loaded subtitle" banner
-     * for it. Matches are added worst-first so the best match (the
-     * exact stem) is added last and ends up selected.
-     *
-     * Runs only for local videos ([PlayableMedia.filePath] present)
-     * with no external subtitles yet. A manual pick made while the
-     * folder scan is running wins: the state is re-checked on Main
-     * before loading, and an item that gained external subtitles in
-     * the meantime is skipped. Network streams have no folder, so
-     * nothing is attempted for them. A folder the app cannot list
-     * (no All files access on Android 11+) simply yields no matches
-     * — the subtitle page explains that and offers the grant.
-     */
-    private fun maybeAutoDetectSubtitles() {
-        val item = _playbackState.value.currentItem ?: return
-        if (!item.isVideo) return
-        val videoPath = item.filePath?.takeIf { it.isNotBlank() } ?: return
-        if (item.externalSubtitles.isNotEmpty()) return
-        // Without All files access the folder scan cannot see subtitle
-        // files on Android 11+ and mpv cannot open a raw path either
-        // (issue #444) — attempting would only produce a "failed to
-        // load" banner for a file the user never asked for. Checked
-        // before marking the id attempted, so granting the permission
-        // later in the session still allows a scan on the next video.
-        if (!SubtitleSiblingFinder.hasAllFilesAccess(appContext)) return
-        if (!autoDetectAttemptedIds.add(item.id)) return
-        scope.launch(Dispatchers.IO) {
-            val siblings = SubtitleSiblingFinder.findSiblings(videoPath)
-            if (siblings.isEmpty()) return@launch
-            withContext(Dispatchers.Main) {
-                val current = _playbackState.value.currentItem ?: return@withContext
-                if (current.id != item.id) return@withContext
-                if (current.externalSubtitles.isNotEmpty()) return@withContext
-                // Worst-first: the engine selects the last sub-added
-                // track, so the best match must be added last.
-                for (file in siblings.asReversed()) {
-                    val uri = Uri.fromFile(file)
-                    when (val validation = SubtitleUtils.validateSubtitleFile(appContext, uri)) {
-                        is SubtitleValidationResult.Supported -> {
-                            loadExternalSubtitle(
-                                uri = validation.uri,
-                                displayName = validation.displayName,
-                                mimeType = validation.mimeType,
-                            )
-                        }
-                        is SubtitleValidationResult.Unsupported -> {
-                            // The finder already filters by extension;
-                            // unreachable in practice, skip silently.
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Issue #332: commits a subtitle add to the manager's queue and state
-     * (issue #149: the queue item itself changed), restoring the playback
-     * position/state afterwards. [notification] is shown only when
-     * non-null — an accepted (ISSUED/QUEUED) add shows nothing yet; its
-     * banner arrives with the async confirmation.
-     */
-    private fun commitSubtitleAdd(
-        index: Int,
-        updatedItem: PlayableMedia,
-        wasPlaying: Boolean,
-        notification: String?,
-    ) {
-        val updatedQueue = currentQueue.toMutableList()
-        updatedQueue[index] = updatedItem
-        currentQueue = updatedQueue
-        restorePlaybackAfterSubtitleAdd(wasPlaying)
-        _playbackState.update { state ->
-            val withItem = state.copy(currentItem = updatedItem, queue = updatedQueue)
-            if (notification != null) withItem.copy(userNotification = notification) else withItem
-        }
-        // Issue #149: the queue item itself changed (new subtitle list).
-        persistQueue(index)
-    }
-
-    /**
-     * Issue #332: plain seek, NOT seekTo(index, pos): the mpv engine's
-     * replaceMediaItem never reloads the file (sub-add only), so the
-     * position is already where it was — no reload is needed at all.
-     *
-     * Issue #357: there is deliberately NO seek here at all any more.
-     * A seek makes mpv re-evaluate track selection, and with `sid`
-     * still at "auto" it falls back to the default-flagged embedded
-     * track — unselecting the external subtitle that was just sub-added
-     * (user's v0.3.1 log: sid=2 selected, sid=1 back two seconds
-     * later). Issue #372 fixed the deeper half of that: the engine now
-     * remembers the picked external subtitle by identity and re-applies
-     * `sid` to it on every track-list refresh, so a re-evaluation can no
-     * longer strand the pick — but the seek is still gone, because
-     * there is nothing for it to do here at all.
-     */
-    private fun restorePlaybackAfterSubtitleAdd(wasPlaying: Boolean) {
-        if (wasPlaying && !engine.isPlaying) {
-            engine.play()
-        }
+        return subtitleManager.loadExternalSubtitle(uri.toString(), displayName, mimeType)
     }
 
     fun clearDecoderFallbackNote() {
@@ -1317,7 +1102,7 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         stopTicker()
         PlaybackService.stop(appContext)
         unshuffledQueue = null
-        autoDetectAttemptedIds.clear()
+        subtitleManager.clearAutoDetectAttempts()
         // Issue #258: a deliberate stop ends the session, so the live
         // queue goes too — otherwise the fallback reload's
         // onMediaItemTransition (or any other in-flight transition)
