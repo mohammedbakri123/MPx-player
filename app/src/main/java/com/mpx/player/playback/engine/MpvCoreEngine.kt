@@ -32,8 +32,9 @@ import java.io.FileOutputStream
  * implementation and is a thin facade delegating to this class.
  *
  * What is NOT here yet (later Phase 4 steps, reached through [Host]):
- * track listing/switching (step 2), subtitle rendering/confirmation
- * (step 3) and settings-to-mpv configuration (step 4). The host
+ * subtitle rendering/confirmation (step 3) and settings-to-mpv
+ * configuration (step 4). Track listing/switching moved to
+ * [MpvTrackSelection] in step 2. The host
  * callbacks below are the seams for those concerns: they run at exactly
  * the points the old monolith ran that code, so behaviour is unchanged.
  * The only mpv knowledge the facade still touches directly is the

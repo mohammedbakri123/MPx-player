@@ -33,14 +33,15 @@ class MpvPlaybackException(
  *
  * Phase 4 step 1: this class is now a thin facade over [MpvCoreEngine],
  * which owns the mpv lifecycle, the load/play commands, position/state
- * observation and the decoder fallback chain. What stays here until its
- * own step moves it: track listing/switching (step 2), subtitle
- * rendering/confirmation (step 3) and settings-to-mpv configuration
- * (step 4) — plus [replaceMediaItem], which straddles the core and the
- * subtitle concern (its body is sub-add + #332 confirmation) and so
- * stays here until step 3. The [MpvCoreEngine.Host] implementation
- * below is the seam: the core calls back into it at exactly the points
- * the old monolith ran that code.
+ * observation and the decoder fallback chain. Phase 4 step 2 adds
+ * [MpvTrackSelection], which owns track listing/switching. What stays
+ * here until its own step moves it: subtitle rendering/confirmation
+ * (step 3) and settings-to-mpv configuration (step 4) — plus
+ * [replaceMediaItem], which straddles the core and the subtitle concern
+ * (its body is sub-add + #332 confirmation) and so stays here until
+ * step 3. The [MpvCoreEngine.Host] implementation below is the seam:
+ * the core calls back into it at exactly the points the old monolith
+ * ran that code.
  *
  * Implements the contract defined in [PlayerEngine]:
  * - Synchronous surface detach barrier (vo=null and detachSurface before surfaceDestroyed returns)
@@ -292,6 +293,25 @@ class MpvPlayerEngine(
                         Log.w(TAG, "Failed auto-selecting a subtitle track", e)
                     }
                 }
+            }
+        },
+    )
+
+
+    /**
+     * Phase 4 step 2 seam: track listing/switching, with the host
+     * callback for the subtitle state that stays here until step 3.
+     * The callback runs at exactly the points the old monolith
+     * cleared that state. The host only ever runs after construction
+     * (a track pick is a user action), so reading the facade's
+     * subtitle fields here is safe.
+     */
+    private val tracks: MpvTrackSelection = MpvTrackSelection(
+        core,
+        host = object : MpvTrackSelection.Host {
+            override fun clearRememberedExternalPick() {
+                rememberedExternalPick = null
+                pendingExternalPin = false
             }
         },
     )
@@ -741,135 +761,15 @@ class MpvPlayerEngine(
     }
 
 
-    override fun selectTrack(type: TrackType, id: String?) {
-        when (type) {
-            TrackType.AUDIO -> {
-                if (id == null || id == "-1" || id.isBlank()) {
-                    try { mpv.setPropertyString("aid", "no") } catch (_: Exception) {}
-                } else {
-                    val parts = id.split(":")
-                    if (parts.size == 2) {
-                        val groupIndex = parts[0].toIntOrNull() ?: return
-                        val trackIndex = parts[1].toIntOrNull() ?: return
-                        selectAudioTrack(groupIndex, trackIndex)
-                    } else {
-                        val trackIdx = id.toIntOrNull() ?: return
-                        val tracks = getAudioTracks()
-                        val target = tracks.getOrNull(trackIdx) ?: return
-                        selectAudioTrack(target.groupIndex, target.trackIndex)
-                    }
-                }
-            }
-            TrackType.SUBTITLE -> {
-                if (id == null || id == "-1" || id.isBlank()) {
-                    selectSubtitleTrack(null, null)
-                } else {
-                    val parts = id.split(":")
-                    if (parts.size == 2) {
-                        val groupIndex = parts[0].toIntOrNull()
-                        val trackIndex = parts[1].toIntOrNull()
-                        selectSubtitleTrack(groupIndex, trackIndex)
-                    } else {
-                        val trackIdx = id.toIntOrNull()
-                        if (trackIdx == null || trackIdx < 0) {
-                            selectSubtitleTrack(null, null)
-                        } else {
-                            val tracks = getSubtitleTracks()
-                            val target = tracks.getOrNull(trackIdx)
-                            if (target != null) {
-                                selectSubtitleTrack(target.groupIndex, target.trackIndex)
-                            } else {
-                                selectSubtitleTrack(null, null)
-                            }
-                        }
-                    }
-                }
-            }
-            TrackType.VIDEO -> {
-                // Video track selection (multi-angle / multi-quality files):
-                // same id scheme as audio — "group:track" or a plain ordinal
-                // among video tracks — driving mpv's "vid" property.
-                if (id == null || id == "-1" || id.isBlank()) {
-                    try { mpv.setPropertyString("vid", "auto") } catch (_: Exception) {}
-                } else {
-                    val videoIds = getVideoTrackIds()
-                    val targetId = run {
-                        val parts = id.split(":")
-                        if (parts.size == 2) {
-                            val groupIndex = parts[0].toIntOrNull() ?: return
-                            val trackIndex = parts[1].toIntOrNull() ?: return
-                            // Issue #247: validate, don't fall back by
-                            // position — groupIndex is the ordinal among
-                            // video tracks and trackIndex is the mpv id,
-                            // so the track at that ordinal must carry
-                            // that id or the tap is stale and this is a
-                            // no-op (the ?: return below skips the vid
-                            // write). The old getOrNull(groupIndex) ?:
-                            // getOrNull(trackIndex) picked whatever id
-                            // sat at those positions once the list changed.
-                            videoIds.getOrNull(groupIndex)?.takeIf { it == trackIndex }
-                        } else {
-                            val ordinal = id.toIntOrNull() ?: return
-                            videoIds.getOrNull(ordinal)
-                        }
-                    } ?: return
-                    try { mpv.setPropertyString("vid", targetId.toString()) } catch (_: Exception) {}
-                }
-            }
-        }
-    }
+    override fun selectTrack(type: TrackType, id: String?) = tracks.selectTrack(type, id)
 
 
-    override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) {
-        val tracks = getAudioTracks()
-        // Issue #247: no positional fallback — groupIndex is the ordinal
-        // among audio tracks, so getOrNull(groupIndex) picks whatever
-        // track sits at that position now, which is a different track
-        // when the list changed between render and tap. A stale tap is
-        // a no-op (the current selection stays, and aid is left alone —
-        // NOT set to "no"); the UI list refreshes via updateTracksState()
-        // in the manager and on every track-list change.
-        val target = tracks.find { it.groupIndex == groupIndex && it.trackIndex == trackIndex }
-        if (target != null) {
-            try { mpv.setPropertyString("aid", target.trackIndex.toString()) } catch (_: Exception) {}
-        } else {
-            Log.w(TAG, "Ignoring stale audio track pick ($groupIndex:$trackIndex): no such track")
-        }
-    }
+    override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) =
+        tracks.selectAudioTrack(groupIndex, trackIndex)
 
 
-    override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {
-        if (groupIndex == null || trackIndex == null) {
-            // Issue #372: the user turned subtitles Off — the remembered
-            // external pick is superseded. Clear the armed pin too, or
-            // the track-list handler's fallback could re-select the
-            // external track over the user's explicit Off.
-            rememberedExternalPick = null
-            pendingExternalPin = false
-            try { mpv.setPropertyString("sid", "no") } catch (_: Exception) {}
-        } else {
-            val tracks = getSubtitleTracks()
-            // Issue #247: same as selectAudioTrack — no positional
-            // fallback; a stale tap is a no-op and sid is left alone
-            // (NOT set to "no", which would drop subtitles).
-            val target = tracks.find { it.groupIndex == groupIndex && it.trackIndex == trackIndex }
-            if (target != null) {
-                if (!target.isExternal) {
-                    // Issue #372: the user picked an embedded track — it
-                    // supersedes the remembered external pick, same as
-                    // Off above. An external pick leaves the remembered
-                    // pick alone (the re-apply must not override a manual
-                    // pick of a different external track — see
-                    // reapplyRememberedPick's BLOCKED guard).
-                    rememberedExternalPick = null
-                    pendingExternalPin = false
-                }
-                try { mpv.setPropertyString("sid", target.trackIndex.toString()) } catch (_: Exception) {}
-            } else {
-                Log.w(TAG, "Ignoring stale subtitle track pick ($groupIndex:$trackIndex): no such track")
-            }
-        }
-    }
+    override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) =
+        tracks.selectSubtitleTrack(groupIndex, trackIndex)
 
 
     /**
@@ -1304,77 +1204,8 @@ class MpvPlayerEngine(
     override fun seekToPreviousMediaItem() = core.seekToPreviousMediaItem()
 
 
-    /** mpv track-list ids of video tracks, in order — used by VIDEO selection. */
-    private fun getVideoTrackIds(): List<Int> {
-        val count = mpv.getPropertyInt("track-list/count") ?: 0
-        val ids = mutableListOf<Int>()
-        for (i in 0 until count) {
-            val type = mpv.getPropertyString("track-list/$i/type")
-            if (type.equals("video", ignoreCase = true)) {
-                ids.add(mpv.getPropertyInt("track-list/$i/id") ?: (ids.size + 1))
-            }
-        }
-        return ids
-    }
+    override fun getAudioTracks(): List<AudioTrackInfo> = tracks.getAudioTracks()
 
 
-    override fun getAudioTracks(): List<AudioTrackInfo> {
-        val count = mpv.getPropertyInt("track-list/count") ?: 0
-        val audioList = mutableListOf<AudioTrackInfo>()
-        var audioGroup = 0
-        for (i in 0 until count) {
-            val type = mpv.getPropertyString("track-list/$i/type")
-            if (type.equals("audio", ignoreCase = true)) {
-                val id = mpv.getPropertyInt("track-list/$i/id") ?: (audioGroup + 1)
-                val title = mpv.getPropertyString("track-list/$i/title")
-                val lang = mpv.getPropertyString("track-list/$i/lang") ?: "und"
-                val selected = mpv.getPropertyBoolean("track-list/$i/selected") ?: false
-                val label = title?.ifBlank { null } ?: "Audio $id ($lang)"
-                audioList.add(
-                    AudioTrackInfo(
-                        groupIndex = audioGroup,
-                        trackIndex = id,
-                        label = label,
-                        language = lang,
-                        isSelected = selected,
-                        mimeType = mpv.getPropertyString("track-list/$i/codec"),
-                    )
-                )
-                audioGroup++
-            }
-        }
-        return audioList
-    }
-
-
-    override fun getSubtitleTracks(): List<SubtitleTrackInfo> {
-        val count = mpv.getPropertyInt("track-list/count") ?: 0
-        val subtitleList = mutableListOf<SubtitleTrackInfo>()
-        var subGroup = 0
-        for (i in 0 until count) {
-            val type = mpv.getPropertyString("track-list/$i/type")
-            if (type.equals("sub", ignoreCase = true)) {
-                val id = mpv.getPropertyInt("track-list/$i/id") ?: (subGroup + 1)
-                val title = mpv.getPropertyString("track-list/$i/title")
-                val lang = mpv.getPropertyString("track-list/$i/lang") ?: "und"
-                val selected = mpv.getPropertyBoolean("track-list/$i/selected") ?: false
-                val external = mpv.getPropertyBoolean("track-list/$i/external") ?: false
-                val isDefault = mpv.getPropertyBoolean("track-list/$i/default") ?: false
-                val label = title?.ifBlank { null } ?: "Subtitle $id ($lang)"
-                subtitleList.add(
-                    SubtitleTrackInfo(
-                        groupIndex = subGroup,
-                        trackIndex = id,
-                        label = label,
-                        language = lang,
-                        isSelected = selected,
-                        isExternal = external,
-                        isDefault = isDefault,
-                    )
-                )
-                subGroup++
-            }
-        }
-        return subtitleList
-    }
+    override fun getSubtitleTracks(): List<SubtitleTrackInfo> = tracks.getSubtitleTracks()
 }
