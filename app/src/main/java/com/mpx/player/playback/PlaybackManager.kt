@@ -38,8 +38,13 @@ import kotlinx.coroutines.withContext
  * Manages the high-level playback state, playlist queue, real position ticker,
  * Room database-backed persistent resume tracking, playback history recording,
  * and delegates underlying playback engine operations to [PlayerEngine].
+ *
+ * Migration Phase 2a: implements [PlaybackStateSource], the minimal
+ * interface [com.mpx.player.ui.screens.player.PlayerViewModel] depends
+ * on. No behaviour change — the members below already existed with
+ * exactly these signatures.
  */
-class PlaybackManager private constructor(context: Context) {
+class PlaybackManager private constructor(context: Context) : PlaybackStateSource {
 
     private val appContext: Context = context.applicationContext
     val database: MpxDatabase = MpxDatabase.getInstance(appContext)
