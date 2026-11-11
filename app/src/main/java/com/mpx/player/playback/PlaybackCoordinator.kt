@@ -133,6 +133,7 @@ class PlaybackCoordinator(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val strings: CoordinatorStrings,
     private val backgroundService: BackgroundService,
+    private val audioFocusManager: AudioFocusManager = AudioFocusManager.NoOp,
     private val errorLog: (message: String, error: Throwable?) -> Unit =
         { message, error -> Log.e("PlaybackManager", message, error) },
     private val clock: () -> Long = { SystemClock.elapsedRealtime() },
@@ -140,6 +141,7 @@ class PlaybackCoordinator(
 
     private var tickerJob: Job? = null
     private var sleepTimerJob: Job? = null
+    private var pausedForTransientFocus: Boolean = false
 
     /** Preparing watchdog: a video load that produces neither READY nor an
      * error within 20s is a stuck load, not a slow one (local files). Firing
@@ -238,6 +240,38 @@ class PlaybackCoordinator(
         host = this,
         scope = scope,
     ).also { engine.setListener(it) }
+
+    init {
+        audioFocusManager.setListener(object : AudioFocusManager.Listener {
+            override fun onAudioFocusLost(isTransient: Boolean, canDuck: Boolean) {
+                if (isTransient) {
+                    if (engine.isPlaying) {
+                        pausedForTransientFocus = true
+                        engine.pause()
+                    }
+                } else {
+                    pausedForTransientFocus = false
+                    audioFocusManager.abandonAudioFocus()
+                    pause()
+                }
+            }
+
+            override fun onAudioFocusGained() {
+                if (pausedForTransientFocus) {
+                    pausedForTransientFocus = false
+                    if (_playbackState.value.playbackState != PlayerEngine.STATE_ENDED &&
+                        _playbackState.value.playbackState != PlayerEngine.STATE_IDLE
+                    ) {
+                        engine.play()
+                    }
+                }
+            }
+
+            override fun onAudioBecomingNoisy() {
+                pause()
+            }
+        })
+    }
 
     // SubtitleHost implementation: the queue/state effects
     // SubtitleManager asks for. The commit body is the queue/state half
@@ -624,6 +658,11 @@ class PlaybackCoordinator(
         forceResume: Boolean = false,
         preserveShuffleState: Boolean = false,
     ) {
+        if (autoPlay) {
+            val granted = audioFocusManager.requestAudioFocus()
+            if (!granted) return
+            pausedForTransientFocus = false
+        }
         playbackQueue.playQueue(items, startIndex, autoPlay, forceResume, preserveShuffleState)
     }
 
@@ -632,6 +671,9 @@ class PlaybackCoordinator(
      * Delegates to [playbackQueue]; behaviour is unchanged.
      */
     fun playLiveQueueItem(index: Int) {
+        val granted = audioFocusManager.requestAudioFocus()
+        if (!granted) return
+        pausedForTransientFocus = false
         playbackQueue.playLiveQueueItem(index)
     }
 
@@ -659,6 +701,9 @@ class PlaybackCoordinator(
     }
 
     fun play() {
+        val granted = audioFocusManager.requestAudioFocus()
+        if (!granted) return
+        pausedForTransientFocus = false
         // Issue #211: at EOF mpv stays eof-reached, so un-pausing alone
         // cannot restart — only a seek to 0 can. This is the MediaSession
         // onPlay() / notification Play path; togglePlayPause() below has
@@ -670,18 +715,16 @@ class PlaybackCoordinator(
     }
 
     fun pause() {
+        pausedForTransientFocus = false
+        audioFocusManager.abandonAudioFocus()
         engine.pause()
     }
 
     fun togglePlayPause() {
         if (engine.isPlaying) {
-            engine.pause()
-        } else if (_playbackState.value.playbackState == PlayerEngine.STATE_ENDED) {
-            // Issue #211: Play after EOF — see play() above.
-            engine.seekTo(0L)
-            engine.play()
+            pause()
         } else {
-            engine.play()
+            play()
         }
     }
 
@@ -858,6 +901,8 @@ class PlaybackCoordinator(
     }
 
     fun stop() {
+        pausedForTransientFocus = false
+        audioFocusManager.abandonAudioFocus()
         cancelSleepTimer()
         cancelPreparingWatchdog()
         engine.stop()
@@ -901,6 +946,9 @@ class PlaybackCoordinator(
     }
 
     fun release() {
+        pausedForTransientFocus = false
+        audioFocusManager.abandonAudioFocus()
+        audioFocusManager.setListener(null)
         cancelSleepTimer()
         cancelPreparingWatchdog()
         engine.release()
@@ -1043,6 +1091,7 @@ class PlaybackCoordinator(
                 scope = scope,
                 strings = ProductionStrings(appContext),
                 backgroundService = ProductionBackgroundService(appContext),
+                audioFocusManager = ProductionAudioFocusManager(appContext),
             )
         }
 
