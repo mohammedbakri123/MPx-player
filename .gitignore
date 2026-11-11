@@ -1,0 +1,20 @@
+# Kotlin incremental and error state
+.kotlin/
+
+# Gradle build directories
+.gradle/
+build/
+app/build/
+
+# Local configuration
+local.properties
+
+# IDE files
+*.iml
+.idea/
+
+# Android generated / caches
+captures/
+.externalNativeBuild/
+.cxx/
+.DS_Store
