@@ -306,9 +306,15 @@ class MpvPlayerEngine(
     private val fdOpener: MpvFdOpener get() = core.fdOpener
     private val engineListener: PlayerEngine.Listener? get() = core.listener
 
-    var decoderMode: DecoderMode
+    // Phase 4 step 1: read-only here on purpose. A `var` with an
+    // explicit `private set` body generates a JVM setter
+    // `setDecoderMode(DecoderMode)` that clashes with the PlayerEngine
+    // `setDecoderMode(mode)` function below (the old backing-field
+    // `private set` did not); internal writes go through `core`
+    // directly (see applyHwdecForMode). Externally this is unchanged:
+    // the old setter was private too.
+    val decoderMode: DecoderMode
         get() = core.decoderMode
-        private set(value) { core.decoderMode = value }
 
     private var currentQueue: List<PlayableMedia>
         get() = core.currentQueue
@@ -642,7 +648,7 @@ class MpvPlayerEngine(
 
 
     private fun applyHwdecForMode(mode: DecoderMode) {
-        decoderMode = mode
+        core.decoderMode = mode
         currentDecoderStage = when (mode) {
             DecoderMode.HW -> MpvCoreEngine.DecoderStage.HW
             DecoderMode.HW_PLUS -> MpvCoreEngine.DecoderStage.HW_PLUS
