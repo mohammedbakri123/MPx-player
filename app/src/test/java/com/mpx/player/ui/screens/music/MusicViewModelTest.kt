@@ -110,12 +110,30 @@ class MusicViewModelTest {
         settingsRepo.stored = settingsRepo.stored.copy(
             blacklistedFolders = setOf("/storage/emulated/0/Music/Secret"),
         )
+        // Abbey has 3 library tracks, one of them in the blacklisted
+        // folder — its count must recompute from 3 to 2, not stay stale.
+        media.tracks = listOf(
+            track("1", "Alpha Song", "Beatles", "Abbey", "/storage/emulated/0/Music/alpha.mp3"),
+            track("2", "Beta Song", "Stones", "Exile", "/storage/emulated/0/Music/beta.mp3"),
+            track("3", "Gamma", "Beatles", "Abbey", "/storage/emulated/0/Music/Secret/gamma.mp3"),
+            track("4", "Delta", "Beatles", "Abbey", "/storage/emulated/0/Music/delta.mp3"),
+            track("5", "Epsilon", "Beatles", "Secret Album", "/storage/emulated/0/Music/Secret/epsilon.mp3"),
+        )
+        media.albums = listOf(
+            AudioAlbum(id = "al1", title = "Abbey", artist = "Beatles", trackCount = 3),
+            AudioAlbum(id = "al2", title = "Exile", artist = "Stones", trackCount = 1),
+            AudioAlbum(id = "al3", title = "Secret Album", artist = "Beatles", trackCount = 1),
+        )
+        media.artists = listOf(
+            AudioArtist(id = "ar1", name = "Beatles", trackCount = 3, albumCount = 1),
+            AudioArtist(id = "ar2", name = "Stones", trackCount = 1, albumCount = 1),
+        )
         val viewModel = createViewModel()
 
         viewModel.refreshLibrary(hasPermission = true)
 
         // The track in the blacklisted folder is hidden (issue #300).
-        assertEquals(listOf("Alpha Song", "Beta Song"), viewModel.tracks.value.map { it.title })
+        assertEquals(listOf("Alpha Song", "Beta Song", "Delta"), viewModel.tracks.value.map { it.title })
         // Albums keep only rows with a visible track, counts recomputed.
         assertEquals(listOf("Abbey", "Exile"), viewModel.albums.value.map { it.title })
         assertEquals(2, viewModel.albums.value.first { it.title == "Abbey" }.trackCount)
