@@ -146,7 +146,7 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
     private val _playbackState = MutableStateFlow(
         PlaybackState(decoderMode = initialDecoderMode)
     )
-    val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
+    override val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
     private val engineListener = object : PlayerEngine.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -1276,7 +1276,7 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
      * stop(), so this never resurrects a session the user ended. Shuffle
      * order is not persisted: a restored queue always starts unshuffled.
      */
-    fun restorePersistedQueueIfEmpty(): Boolean {
+    override fun restorePersistedQueueIfEmpty(): Boolean {
         if (_playbackState.value.queue.isNotEmpty()) return false
         val persisted = queueStore.load() ?: return false
         playQueue(persisted.items, persisted.currentIndex, autoPlay = false)
