@@ -11,6 +11,23 @@ data class PersistedQueue(
 )
 
 /**
+ * The queue persistence seam [PlaybackQueue] depends on. The
+ * SharedPreferences implementation is [PlaybackQueueStore]; tests
+ * pass an in-memory fake. A failed write or a corrupt blob is
+ * treated as "nothing persisted" and never breaks playback.
+ */
+interface QueueStore {
+    /** Saves [items] with [currentIndex] as the live position. */
+    fun save(items: List<PlayableMedia>, currentIndex: Int)
+
+    /** Loads the last saved queue, or null when there is none. */
+    fun load(): PersistedQueue?
+
+    /** Clears the saved queue. */
+    fun clear()
+}
+
+/**
  * Persists the last playback queue in SharedPreferences as one JSON blob
  * (issue #149).
  *
@@ -32,13 +49,13 @@ data class PersistedQueue(
  * change. A failed write or a corrupt blob is treated as "nothing
  * persisted" and never breaks playback.
  */
-class PlaybackQueueStore(context: Context) {
+class PlaybackQueueStore(context: Context) : QueueStore {
 
     private val prefs = context.applicationContext.getSharedPreferences(
         PREFS_NAME, Context.MODE_PRIVATE
     )
 
-    fun save(items: List<PlayableMedia>, currentIndex: Int) {
+    override fun save(items: List<PlayableMedia>, currentIndex: Int) {
         if (items.isEmpty()) {
             clear()
             return
@@ -80,7 +97,7 @@ class PlaybackQueueStore(context: Context) {
         }
     }
 
-    fun load(): PersistedQueue? {
+    override fun load(): PersistedQueue? {
         val raw = prefs.getString(KEY_QUEUE, null) ?: return null
         try {
             val root = JSONObject(raw)
@@ -131,7 +148,7 @@ class PlaybackQueueStore(context: Context) {
         }
     }
 
-    fun clear() {
+    override fun clear() {
         prefs.edit().remove(KEY_QUEUE).apply()
     }
 

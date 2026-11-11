@@ -43,8 +43,16 @@ import kotlinx.coroutines.launch
  * interface [com.mpx.player.ui.screens.network.NetworkViewModel]
  * depends on. Its [playStream] body is the Network tab's old inline
  * play action, moved verbatim.
+ *
+ * Migration Phase 3, step 2: the queue responsibility moved to
+ * [PlaybackQueue]; this class stays its [QueueHost] and keeps thin
+ * delegating functions (`playQueue`, `skipNext`, `setShuffleEnabled`,
+ * …) so no screen, ViewModel, or service changes. The engine
+ * listeners still live here — they are engine-event translation, a
+ * later Phase 3 step — but the end-of-item decision is the queue's
+ * ([PlaybackQueue.endedAction]).
  */
-class PlaybackManager private constructor(context: Context) : PlaybackStateSource, StreamPlayer, SubtitleHost {
+class PlaybackManager private constructor(context: Context) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost {
 
     private val appContext: Context = context.applicationContext
     val database: MpxDatabase = MpxDatabase.getInstance(appContext)
@@ -61,21 +69,6 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
     private val scope = CoroutineScope(Dispatchers.Main)
     private var tickerJob: Job? = null
     private var sleepTimerJob: Job? = null
-
-    /**
-     * Issue #220: counts playQueue sessions. playQueue runs on Main, and
-     * when the resume preload has not finished yet it defers the engine
-     * load to a coroutine that awaits the preload first — a second tap
-     * (or a restore) in that window must supersede the pending load, not
-     * race it: the deferred load only runs while its generation is still
-     * the latest. Issue #258: stop() bumps the generation too, so a
-     * deferred load cannot outlive a deliberate stop and resurrect the
-     * queue it just cleared. Issue #272: the fast path bumps it as well —
-     * a preload-complete playQueue is a new session just like a slow one,
-     * and without the bump a pending deferred load would fire after it
-     * and take over.
-     */
-    private var playQueueGeneration = 0
 
     /** Preparing watchdog: a video load that produces neither READY nor an
      * error within 20s is a stuck load, not a slow one (local files). Firing
@@ -111,10 +104,6 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
             }
         }
     }
-    private var currentQueue: List<PlayableMedia> = emptyList()
-    /** Pre-shuffle queue order, restored when shuffle is turned off (issue #76). */
-    private var unshuffledQueue: List<PlayableMedia>? = null
-
     private val initialDecoderMode: DecoderMode = resolveInitialDecoderMode()
 
     private val _playbackState = MutableStateFlow(
@@ -196,57 +185,31 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
                 // (playlist-clear + one loadfile in load()), not a
                 // playlist. The old code assumed ENDED meant the end of
                 // the playlist (issue #76): OFF stopped after the first
-                // item and ALL reloaded index 0 forever.
+                // item and ALL reloaded index 0 forever. What plays next
+                // is the queue's decision ([PlaybackQueue.endedAction]);
+                // this branch only executes it — the listener itself
+                // stays here until the engine-event translation step.
                 val state = _playbackState.value
                 val current = state.currentItem
-                // Index of the item that just ended, from the manager's
-                // own state: the tracked index when it still points at
-                // the current item, otherwise resolved against the live
-                // queue by id.
-                val endedIndex = if (currentQueue.isEmpty()) {
-                    0
-                } else if (current != null &&
-                    state.currentIndex in currentQueue.indices &&
-                    currentQueue[state.currentIndex].id == current.id
-                ) {
-                    state.currentIndex
-                } else {
-                    current?.let { item -> currentQueue.indexOfFirst { it.id == item.id } }
-                        ?.takeIf { it >= 0 }
-                        ?: state.currentIndex.coerceIn(0, currentQueue.lastIndex)
-                }
-                val hasNext = current != null && currentQueue.isNotEmpty() &&
-                    endedIndex < currentQueue.lastIndex
-                when {
-                    state.repeatMode == RepeatMode.ONE && current != null -> {
+                when (val action = playbackQueue.endedAction(current, state.currentIndex, state.repeatMode)) {
+                    PlaybackQueue.EndedAction.ReplayCurrent -> {
                         engine.seekTo(0L)
                         engine.play()
                     }
-                    state.repeatMode == RepeatMode.ALL && current != null &&
-                        currentQueue.isNotEmpty() -> {
-                        // Advance, wrapping to 0 only from the last item.
+                    is PlaybackQueue.EndedAction.AdvanceTo -> {
                         // A finished item keeps no resume position.
                         // Issue #227: the resume key is the media URI, not
                         // the bare id — pass both so the manager can derive it.
-                        resumeManager.clearResumePosition(current.id, current.uri)
-                        val next = if (endedIndex >= currentQueue.lastIndex) 0 else endedIndex + 1
+                        current?.let { resumeManager.clearResumePosition(it.id, it.uri) }
                         // Fresh-fd load via engineLoad: the engine resolves
                         // the target from its original URI at load time, so
                         // this never reuses the fd mpv closed when the
                         // previous stream ended (issues #213/#219).
-                        engineLoad(currentQueue, next, 0L)
+                        engineLoad(playbackQueue.items, action.index, 0L)
                         engine.play()
                     }
-                    hasNext -> {
-                        // Repeat OFF: keep going through the queue; only
-                        // the last item stops at EOF.
-                        // Issue #227: resume key is the media URI, not the bare id.
-                        current?.let { resumeManager.clearResumePosition(it.id, it.uri) }
-                        engineLoad(currentQueue, endedIndex + 1, 0L)
-                        engine.play()
-                    }
-                    else -> {
-                        // Issue #227: resume key is the media URI, not the bare id.
+                    PlaybackQueue.EndedAction.Stop -> {
+                        // Issue #227: the resume key is the media URI, not the bare id.
                         current?.let { resumeManager.clearResumePosition(it.id, it.uri) }
                     }
                 }
@@ -254,7 +217,7 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         }
 
         override fun onMediaItemTransition(index: Int) {
-            val current = currentQueue.getOrNull(index)
+            val current = playbackQueue.itemAt(index)
 
             // Issue #283: there is deliberately no resume seek here. The
             // old branch sought to the saved position when isAuto was
@@ -329,7 +292,7 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
             updateTracksState()
             updatePosition()
             // Issue #149: the current index moved; the queue itself did not.
-            persistQueue(index)
+            playbackQueue.persistQueue(index)
         }
 
         override fun onTracksChanged() {
@@ -428,6 +391,25 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         fileAccess = SubtitleManager.productionFileAccess(appContext),
     )
 
+    /**
+     * Migration Phase 3, step 2: the queue responsibility, extracted
+     * from this class. Owns the live queue, queue building, shuffle
+     * and repeat, and queue persistence. This manager stays the
+     * [QueueHost]: it owns the published state and the engine
+     * lifecycle effects, so the queue asks it to apply session/state
+     * effects instead of touching them directly. Built here, like
+     * [resumeManager] and [subtitleManager], until Phase 3 puts the
+     * pieces behind Koin.
+     */
+    val playbackQueue = PlaybackQueue(
+        engine = engine,
+        queueStore = queueStore,
+        resumeManager = resumeManager,
+        settingsRepository = settingsRepository,
+        host = this,
+        scope = scope,
+    )
+
     // SubtitleHost implementation: the queue/state effects
     // SubtitleManager asks for. The commit body is the queue/state half
     // of the old commitSubtitleAdd — the restore half moved into
@@ -435,20 +417,18 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
     override val currentItem: PlayableMedia?
         get() = _playbackState.value.currentItem
     override val liveQueue: List<PlayableMedia>
-        get() = currentQueue
+        get() = playbackQueue.items
     override val subtitleTracks: List<SubtitleTrackInfo>
         get() = _playbackState.value.subtitleTracks
 
     override fun commitSubtitleItem(index: Int, updatedItem: PlayableMedia, notification: String?) {
-        val updatedQueue = currentQueue.toMutableList()
-        updatedQueue[index] = updatedItem
-        currentQueue = updatedQueue
+        playbackQueue.replaceItem(index, updatedItem)
         _playbackState.update { state ->
-            val withItem = state.copy(currentItem = updatedItem, queue = updatedQueue)
+            val withItem = state.copy(currentItem = updatedItem, queue = playbackQueue.items)
             if (notification != null) withItem.copy(userNotification = notification) else withItem
         }
         // Issue #149: the queue item itself changed (new subtitle list).
-        persistQueue(index)
+        playbackQueue.persistQueue(index)
     }
 
     override fun subtitleLoadedMessage(displayName: String): String =
@@ -463,6 +443,111 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
 
     override fun refreshTracksState() {
         updateTracksState()
+    }
+
+    // QueueHost implementation: the session/state effects
+    // PlaybackQueue asks for. The queue decides what plays and in
+    // what order; these methods are the only places its decisions
+    // become published state, history, ticker, or watchdog effects.
+    override val state: PlaybackState
+        get() = _playbackState.value
+
+    override fun publishSession(
+        items: List<PlayableMedia>,
+        targetIndex: Int,
+        targetItem: PlayableMedia,
+        resumedFromMs: Long?,
+        speed: Float,
+        shuffleEnabled: Boolean,
+        hasPrevious: Boolean,
+        hasNext: Boolean,
+    ) {
+        _playbackState.update {
+            it.copy(
+                currentItem = targetItem,
+                queue = items,
+                currentIndex = targetIndex,
+                hasPrevious = hasPrevious,
+                hasNext = hasNext,
+                resumedFromMs = resumedFromMs,
+                speed = speed,
+                shuffleEnabled = shuffleEnabled,
+                // A fresh video load is preparing until the engine reports READY.
+                isPreparing = targetItem.isVideo,
+                // Issue #260: same reset as onMediaItemTransition — the
+                // transition callback may land after this update, so the
+                // effect must not read the previous video's size here.
+                videoWidth = 0,
+                videoHeight = 0,
+            )
+        }
+    }
+
+    override fun publishQueueOrder(
+        items: List<PlayableMedia>,
+        currentIndex: Int,
+        shuffleEnabled: Boolean,
+        hasPrevious: Boolean,
+        hasNext: Boolean,
+    ) {
+        _playbackState.update {
+            it.copy(
+                queue = items,
+                currentIndex = currentIndex,
+                hasPrevious = hasPrevious,
+                hasNext = hasNext,
+                shuffleEnabled = shuffleEnabled,
+            )
+        }
+    }
+
+    override fun publishShuffleEnabled(enabled: Boolean) {
+        _playbackState.update { it.copy(shuffleEnabled = enabled) }
+    }
+
+    override fun publishRepeatMode(mode: RepeatMode) {
+        _playbackState.update { it.copy(repeatMode = mode) }
+    }
+
+    override fun recordHistory(item: PlayableMedia, positionMs: Long) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                persistenceRepository.recordHistory(
+                    PlaybackHistoryItem(
+                        mediaUri = item.uri,
+                        mediaId = item.id,
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        isVideo = item.isVideo,
+                        lastPlayedAt = System.currentTimeMillis(),
+                        playbackPositionMs = positionMs,
+                        durationMs = item.durationMs,
+                    )
+                )
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    override fun clearAutoDetectAttempts() {
+        subtitleManager.clearAutoDetectAttempts()
+    }
+
+    override fun refreshPositionAndTracks() {
+        updatePosition()
+        updateTracksState()
+    }
+
+    override fun refreshPosition() {
+        updatePosition()
+    }
+
+    override fun startPositionTicker() {
+        startTicker()
+    }
+
+    override fun armLoadWatchdog() {
+        armPreparingWatchdog()
     }
 
     /**
@@ -567,20 +652,6 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
     }
 
     /**
-     * Starts [items] as a new playback session from [startIndex].
-     *
-     * [preserveShuffleState] is for playing a position in the LIVE queue
-     * (issue #203): the mini-player queue dialog passes the live queue
-     * back with a new start index, which is not a new session — so the
-     * pre-shuffle order and the shuffle flag are kept. It only takes
-     * effect when [items] IS the live queue (same list instance); any
-     * other list is a genuinely new queue and resets shuffle as before.
-     * Every other caller passes a fresh list and gets the default.
-     * Issue #239: the same "not a new session" applies to speed — a
-     * live-queue pick keeps the speed that is playing instead of
-     * resetting to the persisted default.
-     */
-    /**
      * Migration Phase 2d ([StreamPlayer]): plays a stream URL as a
      * one-item queue. Moved verbatim from NetworkScreen's old inline
      * play action — the title is the URL's last path segment, or
@@ -602,6 +673,12 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         )
     }
 
+    /**
+     * Starts [items] as a new playback session from [startIndex].
+     * Delegates to [playbackQueue]; behaviour is unchanged. See
+     * [PlaybackQueue.playQueue] for the session rules (#203 shuffle,
+     * #239 speed, #220 preload, #149 persist).
+     */
     fun playQueue(
         items: List<PlayableMedia>,
         startIndex: Int = 0,
@@ -609,216 +686,38 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         forceResume: Boolean = false,
         preserveShuffleState: Boolean = false,
     ) {
-        if (items.isEmpty()) return
-        // Subtitle auto-detect: a new session re-scans — a subtitle
-        // added to the folder since the last play is then found.
-        subtitleManager.clearAutoDetectAttempts()
-        // Issue #203: keep the shuffle state only when the queue being
-        // played is the live one (same items, different start index).
-        // A new queue is a new session: shuffle order does not carry over.
-        val keepShuffle = preserveShuffleState && items === currentQueue
-        if (!keepShuffle) {
-            unshuffledQueue = null
-        }
-        currentQueue = items
-        val targetIndex = startIndex.coerceIn(0, items.lastIndex)
-        val targetItem = items[targetIndex]
-        // Issue #149: persist the new session immediately, before the engine
-        // load, so even a crash mid-load leaves a restorable queue behind.
-        persistQueue(targetIndex)
-        // Issue #220: the engine load needs the saved resume position, and
-        // the Room preload may not have landed yet (a tap right after a
-        // cold start, or the process-death restore) — reading the cache
-        // now would return null and start the video from 0. Fast path:
-        // preload already done, load synchronously exactly as before.
-        // Slow path: wait for the preload first, on Main (no thread is
-        // blocked — the preload is one Room query). A newer playQueue in
-        // that window supersedes this one via playQueueGeneration.
-        if (resumeManager.isPreloadComplete) {
-            // Issue #272: the fast path is a new session too — bump the
-            // generation so a still-pending deferred load (tap A while the
-            // preload was pending) cannot fire after this load and take
-            // over. Without this, tap B once the preload lands started B,
-            // then A's coroutine resumed, saw its generation still match,
-            // and put A back on screen.
-            playQueueGeneration++
-            startPlayback(items, targetIndex, targetItem, autoPlay, forceResume, keepShuffle)
-        } else {
-            val generation = ++playQueueGeneration
-            scope.launch {
-                resumeManager.awaitPreload()
-                if (generation != playQueueGeneration) return@launch
-                startPlayback(items, targetIndex, targetItem, autoPlay, forceResume, keepShuffle)
-            }
-        }
+        playbackQueue.playQueue(items, startIndex, autoPlay, forceResume, preserveShuffleState)
     }
 
     /**
-     * The resume-dependent tail of [playQueue]: reads the saved position
-     * (only correct once the Room preload has finished — see #220),
-     * loads the target item at it, and publishes the new session state.
-     * Runs synchronously from playQueue on the fast path, or from a
-     * Main-scope coroutine that awaited the preload on the slow path.
-     */
-    private fun startPlayback(
-        items: List<PlayableMedia>,
-        targetIndex: Int,
-        targetItem: PlayableMedia,
-        autoPlay: Boolean,
-        forceResume: Boolean,
-        keepShuffle: Boolean,
-    ) {
-        // Issue #227: the resume lookup key is the media URI, not the bare
-        // id — pass both so the manager can derive it.
-        val savedPos = resumeManager.getResumePosition(targetItem.id, targetItem.uri) ?: 0L
-        val settings = settingsRepository.load()
-        val shouldResume = (forceResume || settings.resumePlayback) &&
-            savedPos > 2_000L
-
-        // Issue #239: a live-queue pick (playLiveQueueItem) is not a new
-        // session, so the speed that is playing is kept — the same
-        // reasoning as the shuffle state above. Capture it before the
-        // load, mirroring setShuffleEnabled, which re-applies the playing
-        // speed after its own reload for the same reason.
-        val currentSpeed = _playbackState.value.speed
-        engineLoad(items, targetIndex, if (shouldResume) savedPos else 0L)
-        if (keepShuffle) {
-            engine.setSpeed(currentSpeed)
-        } else {
-            // Persisted default speed (issue #76): every new session
-            // starts here. The in-player speed toggle stays session-only
-            // (see setSpeed).
-            engine.setSpeed(settings.defaultPlaybackSpeed)
-        }
-        if (autoPlay) {
-            engine.play()
-        }
-
-        targetItem.let { item ->
-            scope.launch(Dispatchers.IO) {
-                try {
-                    persistenceRepository.recordHistory(
-                        PlaybackHistoryItem(
-                            mediaUri = item.uri,
-                            mediaId = item.id,
-                            title = item.title,
-                            subtitle = item.subtitle,
-                            isVideo = item.isVideo,
-                            lastPlayedAt = System.currentTimeMillis(),
-                            playbackPositionMs = if (shouldResume) savedPos else 0L,
-                            durationMs = item.durationMs,
-                        )
-                    )
-                } catch (_: Exception) {
-                }
-            }
-        }
-
-        _playbackState.update {
-            it.copy(
-                currentItem = targetItem,
-                queue = items,
-                currentIndex = targetIndex,
-                hasPrevious = engine.hasPreviousMediaItem,
-                hasNext = engine.hasNextMediaItem,
-                resumedFromMs = if (shouldResume) savedPos else null,
-                // Issue #239: a live-queue pick keeps the playing speed
-                // (state and engine agree — see the setSpeed above); a
-                // new session starts at the persisted default (#76).
-                speed = if (keepShuffle) it.speed else settings.defaultPlaybackSpeed,
-                // Issue #203: a live-queue pick keeps the shuffle flag as
-                // it is (on stays on, off stays off); a new queue resets
-                // it, as before.
-                shuffleEnabled = if (keepShuffle) it.shuffleEnabled else false,
-                // A fresh video load is preparing until the engine reports READY.
-                isPreparing = targetItem.isVideo,
-                // Issue #260: same reset as onMediaItemTransition — the
-                // transition callback may land after this update, so the
-                // effect must not read the previous video's size here.
-                videoWidth = 0,
-                videoHeight = 0,
-            )
-        }
-        updatePosition()
-        updateTracksState()
-        // Issue #222: only run the 250 ms ticker when this session
-        // actually plays. A paused restore (restorePersistedQueueIfEmpty
-        // passes autoPlay = false) produces no playing-state transition,
-        // so an unconditional startTicker() here ran forever — Room
-        // resume writes, state emissions and notification rebuilds
-        // every 250 ms until the next play/pause. Pressing play after
-        // the restore still starts the ticker via onIsPlayingChanged.
-        if (autoPlay) {
-            startTicker()
-        }
-        armPreparingWatchdog()
-    }
-
-    /**
-     * Plays the item at [index] in the LIVE queue (issue #203) — the
-     * mini-player queue dialog's pick. The queue itself does not change,
-     * only the start index, so the shuffle state is preserved: while
-     * shuffled, the pre-shuffle order stays saved in [unshuffledQueue]
-     * and the shuffle flag stays on, so turning shuffle off still
-     * restores the original order. While unshuffled this is a plain
-     * jump to the picked item. No-op on an empty queue.
+     * Plays the item at [index] in the LIVE queue (issue #203).
+     * Delegates to [playbackQueue]; behaviour is unchanged.
      */
     fun playLiveQueueItem(index: Int) {
-        if (currentQueue.isEmpty()) return
-        playQueue(
-            currentQueue,
-            startIndex = index.coerceIn(0, currentQueue.lastIndex),
-            autoPlay = true,
-            preserveShuffleState = true,
-        )
+        playbackQueue.playLiveQueueItem(index)
     }
 
+    /**
+     * Delegates to [playbackQueue]; behaviour is unchanged.
+     */
     fun playAudioQueue(tracks: List<AudioTrack>, startIndex: Int = 0) {
-        val playableTracks = tracks.filter { it.path.isNotBlank() }
-        if (playableTracks.isEmpty()) return
-        val items = playableTracks.map { track ->
-            PlayableMedia(
-                id = track.id,
-                title = track.title,
-                subtitle = "${track.artist} • ${track.album}",
-                // Local playback fix: play via the MediaStore content:// URI
-                // (MpvFdOpener turns it into fd:// at load time). The raw
-                // DATA path is denied to native code under scoped storage.
-                uri = track.contentUri.ifBlank { track.path },
-                isVideo = false,
-                durationMs = track.durationMs,
-            )
-        }
-        playQueue(items, startIndex.coerceIn(0, items.lastIndex), autoPlay = true)
+        playbackQueue.playAudioQueue(tracks, startIndex)
     }
 
+    /**
+     * Delegates to [playbackQueue]; behaviour is unchanged (still a
+     * no-op stub — issue #57; real videos play via [playVideoFiles]).
+     */
     fun playVideoQueue(folderId: String = "camera") {
-        // Fallback to sample video queue removed (issue #57). Real videos are played via playVideoFiles.
+        playbackQueue.playVideoQueue(folderId)
     }
 
-    /** Play real video files from a MediaStore folder. Empty list = no-op. */
+    /**
+     * Play real video files from a MediaStore folder. Empty list = no-op.
+     * Delegates to [playbackQueue]; behaviour is unchanged.
+     */
     fun playVideoFiles(videos: List<com.mpx.player.domain.model.VideoFile>, startIndex: Int = 0) {
-        if (videos.isEmpty()) return
-        val items = videos.map { video ->
-            PlayableMedia(
-                id = video.id,
-                title = video.title,
-                subtitle = "",
-                // Local playback fix: play via the MediaStore content:// URI
-                // (MpvFdOpener turns it into fd:// at load time). The raw
-                // DATA path is denied to native code under scoped storage.
-                uri = video.contentUri.ifBlank { video.path },
-                isVideo = true,
-                durationMs = video.durationMs,
-                // Subtitle auto-detect + in-app browser: keep the raw
-                // filesystem path so the player can look for same-name
-                // subtitle files in the video's folder (see
-                // SubtitleSiblingFinder). The content:// uri above stays
-                // the playback source.
-                filePath = video.path,
-            )
-        }
-        playQueue(items, startIndex, autoPlay = true)
+        playbackQueue.playVideoFiles(videos, startIndex)
     }
 
     fun play() {
@@ -861,94 +760,34 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         seekTo(engine.currentPosition - deltaMs)
     }
 
+    /**
+     * Delegates to [playbackQueue]; behaviour is unchanged.
+     */
     fun skipNext() {
-        engine.seekToNextMediaItem()
-    }
-
-    fun skipPrevious() {
-        engine.seekToPreviousMediaItem()
-    }
-
-    fun setSpeed(speed: Float) {
-        engine.setSpeed(speed)
-        _playbackState.update { it.copy(speed = speed) }
-    }
-
-    /** Cycles OFF -> ALL -> ONE -> OFF. The mode only changes end-of-queue
-     * behaviour (see the STATE_ENDED branch); it never invents tracks. */
-    fun cycleRepeatMode() {
-        val next = when (_playbackState.value.repeatMode) {
-            RepeatMode.OFF -> RepeatMode.ALL
-            RepeatMode.ALL -> RepeatMode.ONE
-            RepeatMode.ONE -> RepeatMode.OFF
-        }
-        _playbackState.update { it.copy(repeatMode = next) }
+        playbackQueue.skipNext()
     }
 
     /**
-     * Toggles shuffle (issue #76). Enabling reorders the live queue with the
-     * currently playing item first and the rest shuffled, reloading the engine
-     * at the same position so playback continues uninterrupted; the current
-     * speed is re-applied after reload. Disabling restores the pre-shuffle
-     * order. A no-op with no current item (the flag still flips so the button
-     * reflects the request, and the next queue starts unshuffled).
+     * Delegates to [playbackQueue]; behaviour is unchanged.
+     */
+    fun skipPrevious() {
+        playbackQueue.skipPrevious()
+    }
+
+    /**
+     * Cycles OFF -> ALL -> ONE -> OFF. Delegates to [playbackQueue];
+     * behaviour is unchanged.
+     */
+    fun cycleRepeatMode() {
+        playbackQueue.cycleRepeatMode()
+    }
+
+    /**
+     * Toggles shuffle (issue #76). Delegates to [playbackQueue];
+     * behaviour is unchanged.
      */
     fun setShuffleEnabled(enabled: Boolean) {
-        val state = _playbackState.value
-        if (enabled == state.shuffleEnabled && currentQueue.isNotEmpty()) return
-        val current = state.currentItem
-        if (current == null || currentQueue.isEmpty()) {
-            _playbackState.update { it.copy(shuffleEnabled = enabled) }
-            return
-        }
-        val position = engine.currentPosition
-        val wasPlaying = engine.isPlaying
-        val speed = state.speed
-        if (enabled) {
-            unshuffledQueue = currentQueue
-            val currentIndex = state.currentIndex.coerceIn(0, currentQueue.lastIndex)
-            val rest = currentQueue.filterIndexed { index, _ -> index != currentIndex }.shuffled()
-            val newQueue = listOf(currentQueue[currentIndex]) + rest
-            currentQueue = newQueue
-            engineLoad(newQueue, 0, position)
-            engine.setSpeed(speed)
-            if (wasPlaying) engine.play()
-            _playbackState.update {
-                it.copy(
-                    queue = newQueue,
-                    currentIndex = 0,
-                    hasPrevious = false,
-                    hasNext = newQueue.size > 1,
-                    shuffleEnabled = true,
-                )
-            }
-            // Issue #149: the shuffled order is the live order now.
-            persistQueue(0)
-        } else {
-            val original = unshuffledQueue
-            unshuffledQueue = null
-            if (original != null && original.isNotEmpty()) {
-                val index = original.indexOfFirst { it.id == current.id }.coerceAtLeast(0)
-                currentQueue = original
-                engineLoad(original, index, position)
-                engine.setSpeed(speed)
-                if (wasPlaying) engine.play()
-                _playbackState.update {
-                    it.copy(
-                        queue = original,
-                        currentIndex = index,
-                        hasPrevious = index > 0,
-                        hasNext = index < original.lastIndex,
-                        shuffleEnabled = false,
-                    )
-                }
-                // Issue #149: the restored pre-shuffle order is live again.
-                persistQueue(index)
-            } else {
-                _playbackState.update { it.copy(shuffleEnabled = false) }
-            }
-        }
-        updatePosition()
+        playbackQueue.setShuffleEnabled(enabled)
     }
 
     fun setAspectRatio(mode: AspectRatioMode) {
@@ -1067,32 +906,12 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
     }
 
     /**
-     * Writes the live queue + current index to the queue store (issue #149).
-     * Called on every queue mutation and on track transitions, never from
-     * the position ticker, so a write costs one small JSON encode per track
-     * change, not per tick. A write failure is swallowed inside the store:
-     * persistence must never break playback.
-     */
-    private fun persistQueue(currentIndex: Int = _playbackState.value.currentIndex) {
-        queueStore.save(currentQueue, currentIndex)
-    }
-
-    /**
      * Restores the last persisted queue when the live queue is empty
-     * (issue #149): the process died in the background and Android restored
-     * the Player destination with a fresh, empty PlaybackManager. Loads the
-     * queue paused at the Room-saved position (playQueue's normal resume
-     * rules apply, so with resume playback off it starts at 0 instead).
-     * Returns false when there is nothing to restore, so the caller keeps
-     * the empty state. Deliberate stops clear the persisted queue in
-     * stop(), so this never resurrects a session the user ended. Shuffle
-     * order is not persisted: a restored queue always starts unshuffled.
+     * (issue #149). Delegates to [playbackQueue]; behaviour is
+     * unchanged.
      */
     override fun restorePersistedQueueIfEmpty(): Boolean {
-        if (_playbackState.value.queue.isNotEmpty()) return false
-        val persisted = queueStore.load() ?: return false
-        playQueue(persisted.items, persisted.currentIndex, autoPlay = false)
-        return true
+        return playbackQueue.restorePersistedQueueIfEmpty()
     }
 
     fun stop() {
@@ -1101,22 +920,19 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
         engine.stop()
         stopTicker()
         PlaybackService.stop(appContext)
-        unshuffledQueue = null
-        subtitleManager.clearAutoDetectAttempts()
-        // Issue #258: a deliberate stop ends the session, so the live
-        // queue goes too — otherwise the fallback reload's
+        // Issue #258: a deliberate stop ends the session — the live
+        // queue, the persisted queue, and any deferred playQueue load
+        // all go; see PlaybackQueue.clearForStop. (One reordering:
+        // the persisted-queue clear now runs before the subtitle
+        // auto-detect clear below instead of after it; the two touch
+        // independent state.) Otherwise the fallback reload's
         // onMediaItemTransition (or any other in-flight transition)
         // resurrects currentItem in state and persistQueue() re-saves
         // the queue stop() just cleared from the store. With the queue
         // empty, a late transition resolves to null and persistQueue
         // re-saves nothing (save() clears on an empty list).
-        currentQueue = emptyList()
-        // Issue #258: a playQueue still awaiting the Room preload (the
-        // #220 slow path) holds its own captured items, so clearing
-        // the queue alone cannot stop it — bump the generation so its
-        // deferred startPlayback is superseded like any other stale load.
-        playQueueGeneration++
-        queueStore.clear()
+        playbackQueue.clearForStop()
+        subtitleManager.clearAutoDetectAttempts()
         // Issue #149: a deliberate stop ends the session, so the persisted
         // queue must not resurrect it later. This is also what makes the
         // stop-on-leave effect (PlayerScreen) safe: leaving via back clears
