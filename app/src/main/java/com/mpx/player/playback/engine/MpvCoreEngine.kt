@@ -1240,7 +1240,15 @@ internal class MpvCoreEngine(
             // item, so no fallback override or in-flight reload survives.
             fallbackHwdecStage = null
             fallbackReloadPending = false
+            pendingLoad = null
             return
+        }
+        if (pendingLoad != null) {
+            // Issue D-5: a fresh load overwriting an existing pendingLoad
+            // drops any stale fallback override so it cannot leak to the new item.
+            fallbackHwdecStage = null
+            fallbackReloadPending = false
+            pendingLoad = null
         }
         // Issue #221: drop the previous file's cached position/duration
         // NOW, before anything else reads them. They only update when the
