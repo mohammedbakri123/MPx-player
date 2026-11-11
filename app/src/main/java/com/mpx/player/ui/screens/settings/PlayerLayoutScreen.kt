@@ -20,12 +20,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mpx.player.R
-import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.ui.components.MpxSecondaryButton
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
@@ -47,23 +48,13 @@ import com.mpx.player.ui.theme.MpxTheme
  */
 @Composable
 fun PlayerLayoutScreen(
-    settings: AppSettings,
-    onSettingsChanged: (AppSettings) -> Unit,
+    viewModel: SettingsViewModel,
 ) {
-    val visible = parsePlayerMenuLayout(settings.playerMenuLayout, settings.hiddenPlayerMenuIds)
-    val hidden = PLAYER_MENU_IDS.filter { it !in visible }
-
-    fun applyVisible(next: List<String>) {
-        // #201: keep the hidden set in sync — every known id not in the
-        // visible list is recorded as explicitly hidden, so the parse
-        // never resurrects it as a "missing" id.
-        onSettingsChanged(
-            settings.copy(
-                playerMenuLayout = next.joinToString(","),
-                hiddenPlayerMenuIds = (PLAYER_MENU_IDS - next.toSet()).joinToString(","),
-            ),
-        )
-    }
+    // Migration Phase 2e: the visible/hidden lists and the
+    // reorder/hide/show/reset logic live in the ViewModel — this
+    // screen only renders them.
+    val visible by viewModel.visibleMenuItems.collectAsState()
+    val hidden by viewModel.hiddenMenuItems.collectAsState()
 
     Column(
         modifier = Modifier
@@ -95,12 +86,7 @@ fun PlayerLayoutScreen(
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(
-                        onClick = {
-                            val next = visible.toMutableList()
-                            val moved = next.removeAt(index)
-                            next.add(index - 1, moved)
-                            applyVisible(next)
-                        },
+                        onClick = { viewModel.moveMenuItemUp(id) },
                         enabled = index > 0,
                     ) {
                         Icon(
@@ -110,12 +96,7 @@ fun PlayerLayoutScreen(
                         )
                     }
                     IconButton(
-                        onClick = {
-                            val next = visible.toMutableList()
-                            val moved = next.removeAt(index)
-                            next.add(index + 1, moved)
-                            applyVisible(next)
-                        },
+                        onClick = { viewModel.moveMenuItemDown(id) },
                         enabled = index < visible.lastIndex,
                     ) {
                         Icon(
@@ -124,7 +105,7 @@ fun PlayerLayoutScreen(
                             tint = MpxTheme.colors.textSecondary,
                         )
                     }
-                    IconButton(onClick = { applyVisible(visible - id) }) {
+                    IconButton(onClick = { viewModel.hideMenuItem(id) }) {
                         Icon(
                             Icons.Filled.VisibilityOff,
                             contentDescription = stringResource(R.string.pref_layout_hide),
@@ -153,7 +134,7 @@ fun PlayerLayoutScreen(
                             color = MpxTheme.colors.textMuted,
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(onClick = { applyVisible(visible + id) }) {
+                        IconButton(onClick = { viewModel.showMenuItem(id) }) {
                             Icon(
                                 Icons.Filled.Visibility,
                                 contentDescription = stringResource(R.string.pref_layout_show),
@@ -169,7 +150,7 @@ fun PlayerLayoutScreen(
         Spacer(modifier = Modifier.height(MpxSpaceL))
         MpxSecondaryButton(
             text = stringResource(R.string.pref_layout_reset),
-            onClick = { applyVisible(PLAYER_MENU_IDS) },
+            onClick = { viewModel.resetMenuLayout() },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = MpxSpaceL),

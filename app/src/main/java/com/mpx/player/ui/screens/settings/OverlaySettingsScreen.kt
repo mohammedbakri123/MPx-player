@@ -40,10 +40,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,7 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
-import com.mpx.player.domain.settings.AppSettingsRepository
+import org.koin.compose.viewmodel.koinViewModel
 import com.mpx.player.playback.PlaybackManager
 import com.mpx.player.util.PipUtils
 import com.mpx.player.ui.components.MpxSecondaryButton
@@ -64,14 +63,14 @@ import com.mpx.player.ui.theme.MpxShapes
 
 /**
  * Real, complete settings screen for Picture-in-Picture (PiP) and floating pop-up play.
- * Persists all configuration options via [AppSettingsRepository] and [AppSettings]
+ * Persists all configuration options via [SettingsViewModel] and [AppSettings]
  * into SharedPreferences, while clearly stating Android OS limits.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverlaySettingsScreen(
     onNavigateBack: () -> Unit,
-    settingsRepository: AppSettingsRepository,
+    playbackManager: PlaybackManager,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -80,12 +79,15 @@ fun OverlaySettingsScreen(
     // context.findActivity() returns null and PiP entry silently fails.
     // The host view's context IS the real Activity.
     val activity = LocalView.current.context as? Activity
-    var settings by remember { mutableStateOf(settingsRepository.load()) }
+    // Migration Phase 2e: settings load/save live in SettingsViewModel
+    // now — the screen holds no repository. PlaybackManager arrives as
+    // a parameter from MainActivity (Koin), never via getInstance.
+    val viewModel: SettingsViewModel = koinViewModel()
+    val settings by viewModel.settings.collectAsState()
     val isSupported = remember(context) { PipUtils.isPipSupported(context) }
 
     fun update(next: AppSettings) {
-        settings = next
-        settingsRepository.save(next)
+        viewModel.updateSettings(next)
         activity?.let { PipUtils.updatePipParams(it, next) }
     }
 
@@ -206,7 +208,6 @@ fun OverlaySettingsScreen(
                     text = stringResource(R.string.pip_test_button),
                     icon = Icons.Filled.PictureInPictureAlt,
                     onClick = {
-                        val playbackManager = PlaybackManager.getInstance(context)
                         val isPlaying = playbackManager.playbackState.value.isPlaying
                         val currentItem = playbackManager.playbackState.value.currentItem
                         // Issue #225: pass the real playback state and video
@@ -405,14 +406,13 @@ fun OverlaySettingsScreen(
                         // Issue #292: picking an explicit position also
                         // remembers it, so a later RememberLast reuses
                         // it. Picking RememberLast itself leaves the
-                        // last explicit choice untouched.
+                        // last explicit choice untouched. The rule lives
+                        // in the ViewModel; the live PiP params are
+                        // refreshed from the returned settings, as
+                        // update() does above.
                         onClick = {
-                            update(
-                                settings.copy(
-                                    popupPlayPosition = key,
-                                    lastPopupPlayPosition = if (key != "RememberLast") key else settings.lastPopupPlayPosition,
-                                ),
-                            )
+                            val next = viewModel.updatePopupPlayPosition(key)
+                            activity?.let { PipUtils.updatePipParams(it, next) }
                         },
                     )
                 }

@@ -41,7 +41,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
-import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.engine.MpvConfigSync
 import com.mpx.player.ui.components.MpxDialog
 import com.mpx.player.ui.theme.MpxTheme
@@ -69,7 +68,7 @@ enum class MpvConfigType { MPV_CONF, INPUT_CONF }
 @Composable
 fun ConfigEditorScreen(
     configType: MpvConfigType,
-    settingsRepository: AppSettingsRepository,
+    viewModel: SettingsViewModel,
     storageUri: String,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -101,7 +100,9 @@ fun ConfigEditorScreen(
                         .takeIf { it.exists() }?.readText()
                 }.getOrNull()
                 ?: run {
-                    val saved = settingsRepository.load()
+                    // Migration Phase 2e: the pref cache reads through
+                    // the shared SettingsViewModel, not the repository.
+                    val saved = viewModel.loadSettingsNow()
                     if (configType == MpvConfigType.MPV_CONF) saved.mpvConf else saved.inputConf
                 }
         }
@@ -113,8 +114,8 @@ fun ConfigEditorScreen(
         scope.launch(Dispatchers.IO) {
             val ok = runCatching {
                 File(MpvConfigSync.configDir(context), fileName).writeText(configText)
-                val saved = settingsRepository.load()
-                settingsRepository.save(
+                val saved = viewModel.loadSettingsNow()
+                viewModel.updateSettings(
                     if (configType == MpvConfigType.MPV_CONF) saved.copy(mpvConf = configText)
                     else saved.copy(inputConf = configText),
                 )
@@ -151,8 +152,8 @@ fun ConfigEditorScreen(
         scope.launch(Dispatchers.IO) {
             runCatching {
                 File(MpvConfigSync.configDir(context), fileName).delete()
-                val saved = settingsRepository.load()
-                settingsRepository.save(
+                val saved = viewModel.loadSettingsNow()
+                viewModel.updateSettings(
                     if (configType == MpvConfigType.MPV_CONF) saved.copy(mpvConf = "")
                     else saved.copy(inputConf = ""),
                 )
