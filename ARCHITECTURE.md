@@ -138,16 +138,17 @@ and in `MpvPlayerEngine` (Phase 4), plus two data/util internals —
 (the moved `PlaybackManager` body plus the coordinator's seams,
 `production()` factory, and KDoc) and `MpvCoreEngine` is 1,694 lines
 with the `MpvSubtitleRenderer` at 832 lines, the `MpvPlayerEngine`
-facade at 512 lines, `MpvEngineConfig` at 207 lines and
+facade at 512 lines, `MpvEngineConfig` at 206 lines and
 `MpvTrackSelection` at 255 lines (the old
 2,674-line monolith, split by Phase 4 steps 1–4); `PlayerScreen` (2,666),
 `MusicScreen` (2,414), `LocalScreen` (1,895), and `SettingsScreen`
 (1,766) are similarly large. The old `PlaybackManager` (987 lines)
 is deleted — its body lives in `PlaybackCoordinator` and its pieces in
-`SubtitleManager` (424 lines), `PlaybackQueue` (585 lines), and
+`SubtitleManager` (424 lines), `PlaybackQueue` (593 lines), and
 `EngineEventTranslator` (363 lines). A small fix in any of these means
-reading a lot of unrelated code first. Splitting them further is
-Phase 4; until then, expect it.
+reading a lot of unrelated code first. Phase 4 split the engine instead
+(`MpvPlayerEngine`, 2,674 lines, is now a 512-line facade over four
+focused classes); these playback pieces stay as they are.
 
 ## Where do I change X?
 
@@ -177,7 +178,7 @@ Phase 4; until then, expect it.
   `PlaybackService`. Phase 3 split the old `PlaybackManager` god
   object into the coordinator and the pieces: the subtitle piece is
   done (`playback/SubtitleManager.kt`, 424 lines, 18 unit tests),
-  the queue piece is done (`playback/PlaybackQueue.kt`, 585 lines,
+  the queue piece is done (`playback/PlaybackQueue.kt`, 593 lines,
   29 unit tests), the engine-event translation is done
   (`playback/EngineEventTranslator.kt`, 363 lines, 28 unit tests),
   and the coordinator owns the published state, the position ticker,
@@ -189,7 +190,7 @@ Phase 4; until then, expect it.
   for its testable path helper, `MpvTrackSelection.kt`, 255 lines,
   no tests — every function touches mpv directly,
   `MpvSubtitleRenderer.kt`, 832 lines, 9 unit tests for its two pure
-  companion helpers, and `MpvEngineConfig.kt`, 207 lines, 11 unit
+  companion helpers, and `MpvEngineConfig.kt`, 206 lines, 11 unit
   tests for its three pure companion helpers), with `MpvPlayerEngine`
   (512 lines) as the facade; Phase 4 is complete and the
   `PlayerEngine` interface is unchanged.
@@ -278,15 +279,16 @@ A finished screen follows one pattern, every time:
   - Consolidation: no `getInstance` call site remains in UI code —
     `PlayerScreen`, `MeScreen`, `HistoryScreen`, and `PlaylistsScreen`
     take `PlaybackCoordinator` as a required parameter from `MainActivity`.
-    What is still NOT migrated (Phase 4): screens still hold
+    What is still NOT migrated: screens still hold
     `PlaybackCoordinator` for transport, and `PlaybackCoordinator` /
     `PlaybackService` / `MpvPlayerEngine` still build objects by hand
-    (see "The two things that surprise newcomers" above).
+    (see "The two things that surprise newcomers" above). Both are
+    deliberate and stay — the engine has no Koin registration by design.
 - Phase 3 (break up `PlaybackManager`): done. Step 1:
   `SubtitleManager` (`playback/`, 424 lines, 18 tests) owns external
   subtitle discovery, the manual-pick load path, the pending
   confirmation, and subtitle style settings. Step 2: `PlaybackQueue`
-  (`playback/`, 585 lines, 29 tests) owns the live queue, queue
+  (`playback/`, 593 lines, 29 tests) owns the live queue, queue
   building, shuffle and repeat, queue persistence (behind the new
   `QueueStore` interface), and the pure end-of-item decision
   (`endedAction`); the coordinator stays its `QueueHost`. Step 3:
@@ -306,10 +308,9 @@ A finished screen follows one pattern, every time:
   is deleted — the engine-error log tag stays "PlaybackManager" so
   existing logcat filters keep working.
   `PlaybackResumeManager` already exists and is wired behind the
-  coordinator. Unit-test total is now 185 (70 from
+  coordinator. Unit-test total is now 179 (70 from
   Phase 2 + 18 for `SubtitleManager` + 29 for `PlaybackQueue` + 28
-  for `EngineEventTranslator` + 34 for `PlaybackCoordinator` + 6 for
-  `MpvCoreEngine`).
+  for `EngineEventTranslator` + 34 for `PlaybackCoordinator`).
 - Phase 4 (split `MpvPlayerEngine` by concern): steps 1–4 done.
   `MpvCoreEngine` (`playback/engine/`, 1,694 lines, 6 tests) owns the
   mpv lifecycle (MPV creation/init, release), the load/play commands
@@ -383,12 +384,19 @@ A finished screen follows one pattern, every time:
   tests for the config class's three pure companion helpers; the rest
   of the moved code touches mpv
   directly and is not testable without it.
-- Phase 5 (contributor path): in progress. The PR template asks what
-  changed, what did not change, and how it was verified; CI runs the
-  debug build and unit tests on every pull request. Still to do: the
-  worked end-to-end example in CONTRIBUTING.md (the coordinator split
-  is the real migrated feature to use) and honest `good first issue`
-  labels on genuinely small post-migration tasks.
+- Phase 5 (contributor path): done. The PR template asks what
+  changed, what did not change, and how it was verified (with the
+  build result stated); CI runs the debug build and unit tests on
+  every pull request. The worked end-to-end example is in
+  CONTRIBUTING.md (the audio-delay setting, traced through screen,
+  ViewModel, repository, Koin registration, and the coordinator down
+  to `MpvEngineConfig`). Two honest `good first issue`s are open,
+  each naming the file to start from: #465 (pin the CI `build` job
+  to `ubuntu-24.04`, one line in `.github/workflows/ci.yml`) and
+  #466 (inject `AppSettingsRepository` into `MediaStoreRepository`
+  instead of building one inline). The `PipUtils` inline-construction
+  shape was checked and is NOT labelled: its call sites make it a
+  bigger refactor than a first issue.
 
 Until a phase is marked done here, assume the old pattern still applies
 to the files it covers.
