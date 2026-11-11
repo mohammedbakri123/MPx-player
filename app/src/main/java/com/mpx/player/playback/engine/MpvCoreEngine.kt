@@ -652,7 +652,6 @@ internal class MpvCoreEngine(
                 currentDecoderStage = DecoderStage.HW_PLUS
                 try {
                     mpv.setPropertyString("hwdec", "mediacodec-copy")
-                    notifyDecoderChanged()
                     reloadForDecoderFallback()
                 } catch (e: Exception) {
                     attemptDecoderFallback("Failed to switch to mediacodec-copy: ${e.message}")
@@ -664,7 +663,6 @@ internal class MpvCoreEngine(
                 currentDecoderStage = DecoderStage.SW
                 try {
                     mpv.setPropertyString("hwdec", "no")
-                    notifyDecoderChanged()
                     reloadForDecoderFallback()
                 } catch (e: Exception) {
                     attemptDecoderFallback("Failed to switch to SW: ${e.message}")
@@ -1052,9 +1050,11 @@ internal class MpvCoreEngine(
                 if (!fileLoadedForCurrentItem) {
                     val reason = try { data.get("reason")?.asString() } catch (_: Exception) { null }
                     val errCode = try { data.get("error")?.asInt() } catch (_: Exception) { null }
-                    val isBenignStop = reason in setOf("stop", "quit", "eof", "redirect")
-                    val isRealFailure = !isBenignStop || (errCode != null && errCode != 0L)
+                    // Issue D-9: reason=stop is benign regardless of errCode (e.g. stop interrupted loadfile).
+                    val isBenignStop = reason == "stop" || (reason in setOf("quit", "eof", "redirect") && (errCode == null || errCode == 0L))
+                    val isRealFailure = !isBenignStop
                     if (!isRealFailure) return
+                    fallbackReloadPending = false
                     val lastLog = synchronized(lastErrorLogs) { lastErrorLogs.lastOrNull() }
                     val detail = listOfNotNull(
                         reason?.let { "reason=$it" },
@@ -1295,6 +1295,7 @@ internal class MpvCoreEngine(
         cachedPositionMs = resumeMs
         cachedDurationMs = 0L
         cachedBufferedMs = 0L
+        cachedPlaybackState = PlayerEngine.STATE_IDLE
         fileLoadedForCurrentItem = false
         // Issue #199: a pending pin belongs to the item it was picked
         // for — a new load must never let it pin a track on this item.
