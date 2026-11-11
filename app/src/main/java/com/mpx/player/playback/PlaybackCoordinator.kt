@@ -150,9 +150,14 @@ class PlaybackCoordinator(
     private val errorLog: (message: String, error: Throwable?) -> Unit =
         { message, error -> Log.e("PlaybackManager", message, error) },
     private val clock: () -> Long = { SystemClock.elapsedRealtime() },
-) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost, EngineEventHost, SleepTimerHost {
+) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost, EngineEventHost, SleepTimerHost, PositionSink {
 
-    private var tickerJob: Job? = null
+    internal val positionTracker = PositionTracker(
+        engine = engine,
+        resumeManager = resumeManager,
+        scope = scope,
+        sink = this,
+    )
     internal val sleepTimer = SleepTimer(
         scope = scope,
         clock = clock,
@@ -1011,18 +1016,11 @@ class PlaybackCoordinator(
     }
 
     private fun startTicker() {
-        tickerJob?.cancel()
-        tickerJob = scope.launch {
-            while (isActive) {
-                updatePosition()
-                delay(250)
-            }
-        }
+        positionTracker.startTicker()
     }
 
     private fun stopTicker() {
-        tickerJob?.cancel()
-        tickerJob = null
+        positionTracker.stopTicker()
     }
 
     // Issue #274: [forceSave] bypasses the manager's Room-write throttle
@@ -1030,60 +1028,47 @@ class PlaybackCoordinator(
     // stops with it, so without the flush the persisted position could
     // sit up to 5 s behind. The ticker itself passes the default.
     private fun updatePosition(forceSave: Boolean = false) {
-        val current = engine.currentPosition
-        val duration = engine.duration
-        val buffered = engine.bufferedPosition
+        positionTracker.updatePosition(forceSave)
+    }
 
-        // Save position into persistent resume store. Issue #227: the
-        // manager keys this row by the media URI, not the bare id — both
-        // are passed so the key can be derived.
-        _playbackState.value.currentItem?.let { item ->
-            if (current > 1_500L && (duration <= 0L || current < duration - 2_000L)) {
-                resumeManager.saveResumePosition(
-                    id = item.id,
-                    positionMs = current,
-                    mediaUri = item.uri,
-                    durationMs = duration,
-                    force = forceSave,
-                )
-            }
-        }
+    private fun updateTracksState() {
+        positionTracker.updateTracksState()
+    }
 
+    override fun updatePositionState(
+        currentPositionMs: Long,
+        durationMs: Long,
+        bufferedPositionMs: Long,
+        hasPrevious: Boolean,
+        hasNext: Boolean,
+        playbackMetrics: EnginePlaybackMetrics?,
+        mpvLoadStage: MpvLoadStage?,
+    ) {
         _playbackState.update {
             it.copy(
-                currentPositionMs = current,
-                durationMs = duration,
-                bufferedPositionMs = buffered,
-                hasPrevious = engine.hasPreviousMediaItem,
-                hasNext = engine.hasNextMediaItem,
-                // Refresh measured engine metrics on every tick so the
-                // diagnostics rows track the live engine (null before any
-                // video has played is rendered as "not observed").
-                playbackMetrics = engine.getPlaybackMetrics(),
-                mpvLoadStage = engine.getLoadStage(),
+                currentPositionMs = currentPositionMs,
+                durationMs = durationMs,
+                bufferedPositionMs = bufferedPositionMs,
+                hasPrevious = hasPrevious,
+                hasNext = hasNext,
+                playbackMetrics = playbackMetrics,
+                mpvLoadStage = mpvLoadStage,
             )
         }
     }
 
-    private fun updateTracksState() {
-        val audioList = engine.getAudioTracks().toMutableList()
-        val rawSubtitles = engine.getSubtitleTracks()
-        val externalNames = _playbackState.value.currentItem?.externalSubtitles?.map { it.name } ?: emptyList()
-
-        val subtitleList = rawSubtitles.map { track ->
-            val isExt = externalNames.any { it.equals(track.label, ignoreCase = true) }
-            if (isExt) track.copy(isExternal = true) else track
-        }.toMutableList()
-
-        val selectedAudioIdx = audioList.indexOfFirst { it.isSelected }
-        val selectedSubtitleIdx = subtitleList.indexOfFirst { it.isSelected }
-
+    override fun updateTracksState(
+        audioTracks: List<AudioTrackInfo>,
+        selectedAudioTrackIndex: Int,
+        subtitleTracks: List<SubtitleTrackInfo>,
+        selectedSubtitleTrackIndex: Int,
+    ) {
         _playbackState.update {
             it.copy(
-                audioTracks = audioList,
-                selectedAudioTrackIndex = selectedAudioIdx,
-                subtitleTracks = subtitleList,
-                selectedSubtitleTrackIndex = selectedSubtitleIdx,
+                audioTracks = audioTracks,
+                selectedAudioTrackIndex = selectedAudioTrackIndex,
+                subtitleTracks = subtitleTracks,
+                selectedSubtitleTrackIndex = selectedSubtitleTrackIndex,
             )
         }
     }
