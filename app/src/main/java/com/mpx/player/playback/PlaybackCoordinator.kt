@@ -7,8 +7,6 @@ import android.util.Log
 import android.view.Surface
 import com.mpx.player.R
 import com.mpx.player.data.local.db.MpxDatabase
-import com.mpx.player.data.repository.RoomMediaPersistenceRepository
-import com.mpx.player.data.settings.SharedPrefsAppSettingsRepository
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.repository.MediaPersistenceRepository
@@ -134,6 +132,7 @@ class PlaybackCoordinator(
     private val strings: CoordinatorStrings,
     private val backgroundService: BackgroundService,
     private val audioFocusManager: AudioFocusManager = AudioFocusManager.NoOp,
+    initialDecoderMode: DecoderMode = resolveInitialDecoderModeFrom(settingsRepository),
     private val errorLog: (message: String, error: Throwable?) -> Unit =
         { message, error -> Log.e("PlaybackManager", message, error) },
     private val clock: () -> Long = { SystemClock.elapsedRealtime() },
@@ -177,7 +176,6 @@ class PlaybackCoordinator(
             }
         }
     }
-    private val initialDecoderMode: DecoderMode = resolveInitialDecoderMode()
 
     private val _playbackState = MutableStateFlow(
         PlaybackState(decoderMode = initialDecoderMode)
@@ -567,10 +565,6 @@ class PlaybackCoordinator(
 
     val videoHeight: Int
         get() = engine.videoHeight
-
-    private fun resolveInitialDecoderMode(): DecoderMode {
-        return resolveInitialDecoderModeFrom(settingsRepository)
-    }
 
     /**
      * Attaches a native video surface to the active playback engine.
@@ -1065,26 +1059,25 @@ class PlaybackCoordinator(
 
     companion object {
         /**
-         * Production wiring: builds the coordinator and everything it
-         * owns from a [Context], in exactly the order the old
-         * PlaybackManager built them (database, persistence, resume,
-         * settings, queue store, decoder mode, engine, scope). The
-         * engine is built with the decoder mode read from settings,
-         * and the state is seeded from the same read inside the
-         * constructor — two reads of the same SharedPreferences file
-         * during synchronous construction, so they always agree.
+         * Production wiring: builds the coordinator from injected Koin
+         * singles ([database], [persistenceRepository], [settingsRepository])
+         * and the given [Context] (D-10). The engine is built with the
+         * decoder mode read once from the injected settings repository,
+         * and passed directly into the constructor to seed [PlaybackState],
+         * ensuring the engine and published state strictly agree.
          *
          * This factory is the process-wide entry point: Koin
          * registers the coordinator built here as a `single`, and
          * [PlaybackService] injects that same instance.
          */
-        fun production(context: Context): PlaybackCoordinator {
+        fun production(
+            context: Context,
+            database: MpxDatabase,
+            persistenceRepository: MediaPersistenceRepository,
+            settingsRepository: AppSettingsRepository,
+        ): PlaybackCoordinator {
             val appContext = context.applicationContext
-            val database = MpxDatabase.getInstance(appContext)
-            val persistenceRepository: MediaPersistenceRepository =
-                RoomMediaPersistenceRepository(database, appContext)
             val resumeManager = PlaybackResumeManager(persistenceRepository)
-            val settingsRepository = SharedPrefsAppSettingsRepository(appContext)
             val queueStore = PlaybackQueueStore(appContext)
             val initialDecoderMode = resolveInitialDecoderModeFrom(settingsRepository)
             val engine: PlayerEngine = MpvPlayerEngine(appContext, initialDecoderMode)
@@ -1101,6 +1094,7 @@ class PlaybackCoordinator(
                 strings = ProductionStrings(appContext),
                 backgroundService = ProductionBackgroundService(appContext),
                 audioFocusManager = ProductionAudioFocusManager(appContext),
+                initialDecoderMode = initialDecoderMode,
             )
         }
 

@@ -24,14 +24,18 @@ import org.koin.dsl.module
  * the engine is split apart and can be handed in through its
  * constructor.
  *
- * Same note for the database / persistence / settings instances
- * the coordinator builds internally: [MpxDatabase.getInstance] is a
- * true singleton, so Koin's `single` and the coordinator's internal
- * reference are the same object; the settings and persistence
- * wrappers it constructs are stateless facades over the same
- * SharedPreferences file / Room database. Unifying those
- * constructors is Phase 4 work.
+ * Same note for the database / persistence / settings instances:
+ * In Phase 3 step 3.1 (D-10), Koin's [MpxDatabase], [MediaPersistenceRepository],
+ * and [AppSettingsRepository] singles are injected into [PlaybackCoordinator.production],
+ * eliminating duplicate repository instances.
  */
 val playbackModule = module {
-    single { PlaybackCoordinator.production(androidContext()) }
+    single {
+        PlaybackCoordinator.production(
+            context = androidContext(),
+            database = get(),
+            persistenceRepository = get(),
+            settingsRepository = get(),
+        )
+    }
 }
