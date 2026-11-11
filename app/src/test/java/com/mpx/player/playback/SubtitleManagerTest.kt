@@ -164,7 +164,7 @@ class SubtitleManagerTest {
         val manager = createManager(this)
         play(video())
         engine.replaceResult = ReplaceMediaItemResult.ALREADY_ADDED
-        engine.subtitleTracks = listOf(
+        engine.subtitleTracksToReturn = listOf(
             SubtitleTrackInfo(0, 0, "sub", "en", isSelected = true, isExternal = true),
         )
 
@@ -179,7 +179,7 @@ class SubtitleManagerTest {
         val manager = createManager(this)
         play(video())
         engine.replaceResult = ReplaceMediaItemResult.ALREADY_ADDED
-        engine.subtitleTracks = emptyList()
+        engine.subtitleTracksToReturn = emptyList()
 
         assertFalse(manager.loadExternalSubtitle("file:///sub.srt", "sub.srt", "application/x-subrip"))
 
@@ -380,7 +380,7 @@ class SubtitleManagerTest {
 
     /**
      * Fake engine: answers synchronously from [replaceResult] and
-     * [subtitleTracks], records every call the manager makes. A
+     * [subtitleTracksToReturn], records every call the manager makes. A
      * replace pauses playback in this fake (isPlaying = false), which
      * is what makes the manager's restore-playback branch observable;
      * [play] resumes it.
@@ -389,10 +389,10 @@ class SubtitleManagerTest {
         var replaceResult: ReplaceMediaItemResult = ReplaceMediaItemResult.ISSUED
         val replaceCalls = mutableListOf<Pair<Int, PlayableMedia>>()
         val selectSubtitleCalls = mutableListOf<Pair<Int?, Int?>>()
-        var subtitleTracks: List<SubtitleTrackInfo> = emptyList()
+        var subtitleTracksToReturn: List<SubtitleTrackInfo> = emptyList()
         override var currentMediaItemIndex: Int = 0
         var playCalls: Int = 0
-        var listener: PlayerEngine.Listener? = null
+        var capturedListener: PlayerEngine.Listener? = null
 
         override val currentPosition: Long = 0L
         override val duration: Long = 0L
@@ -430,12 +430,12 @@ class SubtitleManagerTest {
         override fun release() = Unit
         override fun setDecoderMode(mode: DecoderMode) = Unit
         override fun setListener(listener: PlayerEngine.Listener?) {
-            this.listener = listener
+            capturedListener = listener
         }
         override fun seekToNextMediaItem() = Unit
         override fun seekToPreviousMediaItem() = Unit
         override fun getAudioTracks(): List<AudioTrackInfo> = emptyList()
-        override fun getSubtitleTracks(): List<SubtitleTrackInfo> = subtitleTracks
+        override fun getSubtitleTracks(): List<SubtitleTrackInfo> = subtitleTracksToReturn
     }
 
     /**
