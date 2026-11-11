@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,7 +55,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
-import com.mpx.player.domain.settings.AppSettingsRepository
+import org.koin.compose.viewmodel.koinViewModel
 import com.mpx.player.data.settings.SettingsBackup
 import com.mpx.player.playback.engine.MpvConfigSync
 import com.mpx.player.ui.ActivityResultHandler
@@ -82,7 +83,6 @@ import kotlinx.coroutines.withContext
 @Composable
 fun AdvancedSettingsScreen(
     onNavigateBack: () -> Unit,
-    settingsRepository: AppSettingsRepository,
     // Issue #432: the mpv config folder picker — the launcher lives
     // on the Activity (MainActivity), this screen only supplies the
     // callback, same as the SD-card picker in SettingsScreen.
@@ -98,7 +98,10 @@ fun AdvancedSettingsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var settings by remember { mutableStateOf(settingsRepository.load()) }
+    // Migration Phase 2e: settings load/save live in SettingsViewModel
+    // now — the screen holds no repository.
+    val viewModel: SettingsViewModel = koinViewModel()
+    val settings by viewModel.settings.collectAsState()
 
     // Issue #433: import stages the URI (the confirm dialog asks
     // first — import replaces all current settings); the result
@@ -109,8 +112,7 @@ fun AdvancedSettingsScreen(
     var importStats by remember { mutableStateOf<SettingsBackup.ImportStats?>(null) }
 
     fun update(next: AppSettings) {
-        settings = next
-        settingsRepository.save(next)
+        viewModel.updateSettings(next)
     }
 
     // Issue #432: the picked folder takes the persistable read/write
@@ -177,7 +179,7 @@ fun AdvancedSettingsScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                settings = settingsRepository.load()
+                viewModel.reloadSettings()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -189,14 +191,14 @@ fun AdvancedSettingsScreen(
     // The editor saves through the repo; reload when it closes so the
     // row subtitles show the saved text.
     LaunchedEffect(editing) {
-        if (editing == null) settings = settingsRepository.load()
+        if (editing == null) viewModel.reloadSettings()
     }
 
     val editingType = editing
     if (editingType != null) {
         ConfigEditorScreen(
             configType = editingType,
-            settingsRepository = settingsRepository,
+            viewModel = viewModel,
             storageUri = settings.mpvConfStorageUri,
             onNavigateBack = { editing = null },
         )
@@ -342,7 +344,7 @@ fun AdvancedSettingsScreen(
                                     when (importResult) {
                                         is SettingsBackup.ImportResult.Success -> {
                                             importStats = importResult.stats
-                                            settings = settingsRepository.load()
+                                            viewModel.reloadSettings()
                                         }
                                         SettingsBackup.ImportResult.InvalidFile -> {
                                             Toast.makeText(

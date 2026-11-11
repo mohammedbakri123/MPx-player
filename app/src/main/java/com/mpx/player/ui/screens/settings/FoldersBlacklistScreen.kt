@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,7 +40,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mpx.player.R
 import com.mpx.player.data.repository.MediaStoreRepository
-import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.ui.components.MpxDialog
 import com.mpx.player.ui.components.MpxPrimaryButton
 import com.mpx.player.ui.components.MpxSecondaryButton
@@ -64,10 +64,14 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun FoldersBlacklistScreen(
-    settings: AppSettings,
-    onSettingsChanged: (AppSettings) -> Unit,
+    viewModel: SettingsViewModel,
 ) {
-    val blacklisted = settings.blacklistedFolders.sorted()
+    // Migration Phase 2e: the sorted list and the add/remove/clear
+    // writes live in the ViewModel — this screen only renders them.
+    // The add dialog's folder scan still builds a MediaStoreRepository
+    // by hand (a dialog-local scan, not a getInstance site); wiring it
+    // behind an interface is a follow-up, not this step.
+    val blacklisted by viewModel.blacklistedFolders.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
 
@@ -125,9 +129,7 @@ fun FoldersBlacklistScreen(
                             )
                         }
                         IconButton(onClick = {
-                            onSettingsChanged(
-                                settings.copy(blacklistedFolders = settings.blacklistedFolders - path),
-                            )
+                            viewModel.removeBlacklistedFolder(path)
                         }) {
                             Icon(
                                 Icons.Filled.Delete,
@@ -162,11 +164,9 @@ fun FoldersBlacklistScreen(
 
     if (showAddDialog) {
         FoldersBlacklistAddDialog(
-            alreadyBlacklisted = settings.blacklistedFolders,
+            alreadyBlacklisted = blacklisted.toSet(),
             onAdd = { selected ->
-                onSettingsChanged(
-                    settings.copy(blacklistedFolders = settings.blacklistedFolders + selected),
-                )
+                viewModel.addBlacklistedFolders(selected)
                 showAddDialog = false
             },
             onDismiss = { showAddDialog = false },
@@ -179,7 +179,7 @@ fun FoldersBlacklistScreen(
             onDismiss = { showClearConfirm = false },
             confirmText = stringResource(R.string.pref_folders_clear_all),
             onConfirm = {
-                onSettingsChanged(settings.copy(blacklistedFolders = emptySet()))
+                viewModel.clearBlacklistedFolders()
                 showClearConfirm = false
             },
             dismissText = stringResource(R.string.action_cancel),

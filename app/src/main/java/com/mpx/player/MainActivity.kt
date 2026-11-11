@@ -828,7 +828,6 @@ fun MpxApp(
                     onOpenOverlaySettings = { navController.navigate(Screen.OverlaySettings.route) },
                     onOpenAdvancedSettings = { navController.navigate(Screen.AdvancedSettings.route) },
                     onOpenAboutBeta = { navController.navigate(Screen.AboutBeta.route) },
-                    settingsRepository = settingsRepository,
                     currentLanguage = currentLanguage,
                     onLanguageChanged = onLanguageChanged,
                     onThemeChanged = onThemeChanged,
@@ -840,13 +839,12 @@ fun MpxApp(
             composable(Screen.OverlaySettings.route) {
                 OverlaySettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    settingsRepository = settingsRepository,
+                    playbackManager = playbackManager,
                 )
             }
             composable(Screen.AdvancedSettings.route) {
                 AdvancedSettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    settingsRepository = settingsRepository,
                     mpvConfigFolderLauncher = mpvConfigFolderLauncher,
                     mpvConfigFolderHandler = mpvConfigFolderHandler,
                     settingsExportLauncher = settingsExportLauncher,

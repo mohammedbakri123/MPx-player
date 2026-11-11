@@ -98,11 +98,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mpx.player.R
-import com.mpx.player.data.local.db.MpxDatabase
 import com.mpx.player.data.repository.MediaStoreRepository
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.domain.settings.AppSettings
-import com.mpx.player.domain.settings.AppSettingsRepository
+import org.koin.compose.viewmodel.koinViewModel
 import com.mpx.player.ui.components.StepperRow
 import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlaybackManager
@@ -141,19 +140,22 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onOpenOverlaySettings: (() -> Unit)? = null,
     onOpenAdvancedSettings: (() -> Unit)? = null,
-    settingsRepository: AppSettingsRepository,
     onOpenAboutBeta: (() -> Unit)? = null,
     currentLanguage: String = "system",
     onLanguageChanged: ((String) -> Unit)? = null,
     onThemeChanged: ((String) -> Unit)? = null,
     onPaletteChanged: ((String) -> Unit)? = null,
     onThemeColorChanged: ((String) -> Unit)? = null,
-    playbackManager: PlaybackManager? = null,
+    playbackManager: PlaybackManager,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val actualPlaybackManager = playbackManager ?: remember(context) { PlaybackManager.getInstance(context) }
-    var settings by remember { mutableStateOf(settingsRepository.load()) }
+    // Migration Phase 2e: settings, search, and drill-down state live
+    // in SettingsViewModel now — the screen holds no repository and
+    // builds none. PlaybackManager arrives as a parameter from
+    // MainActivity (Koin), never via getInstance.
+    val viewModel: SettingsViewModel = koinViewModel()
+    val settings by viewModel.settings.collectAsState()
 
     // Issue #270: reload settings on resume (same pattern as MeScreen,
     // #231) — a PiP change made in Overlay Settings, a separate NavHost
@@ -167,7 +169,7 @@ fun SettingsScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                settings = settingsRepository.load()
+                viewModel.reloadSettings()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -176,26 +178,27 @@ fun SettingsScreen(
 
     // Drill-down navigation (#77): null shows the category list, otherwise
     // the selected category's own sub-screen, like MX's per-header fragments.
-    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    val selectedId by viewModel.selectedCategoryId.collectAsState()
     // mpvEx-style search (#158): true shows the working settings search
     // page; back closes search before leaving the category list.
-    var isSearching by rememberSaveable { mutableStateOf(false) }
-    // Issue #303: the search query lives here, not in PreferencesSearchScreen
-    // — opening a result sets isSearching = false, which removes the search
-    // screen from the composition and discards any state it owns (even
-    // rememberSaveable, cf. #255's MusicScreen query, which stays composed
-    // across tab switches), so a query kept inside it would reset every
-    // time a result category is opened. Hoisted here next to
-    // isSearching/selectedId, it survives rotation (rememberSaveable) and
-    // returning from a category, and resets when Settings itself is left,
-    // like isSearching/selectedId.
-    var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
+    val isSearching by viewModel.isSearching.collectAsState()
+    // Issue #303: the search query lives in the ViewModel, not in
+    // PreferencesSearchScreen — opening a result sets isSearching =
+    // false, which removes the search screen from the composition and
+    // discards any state it owns (even rememberSaveable, cf. #255's
+    // MusicScreen query, which stays composed across tab switches), so
+    // a query kept inside it would reset every time a result category
+    // is opened. Hoisted to the ViewModel next to isSearching /
+    // selectedId, it survives rotation and returning from a category,
+    // and resets when Settings itself is left, like isSearching /
+    // selectedId.
+    val settingsSearchQuery by viewModel.searchQuery.collectAsState()
     var showResetDialog by rememberSaveable { mutableStateOf(false) }
     // System back mirrors the TopAppBar icon: search closes first, then a
     // drilled-down category returns to the category list (#124); only at
     // the root list does it leave Settings.
     BackHandler(enabled = isSearching || selectedId != null) {
-        if (isSearching) isSearching = false else selectedId = null
+        viewModel.handleBack()
     }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -215,14 +218,18 @@ fun SettingsScreen(
     // choice. Issue #228: the two hosted sub-screens (Player Layout,
     // folder blacklist) and Reset commit too, via their own wiring below.
     // Every other row keeps the queued apply() write.
+    //
+    // The language / theme / palette / theme-color callbacks and the
+    // decoder-mode application stay here, in this thin wrapper around
+    // viewModel.updateSettings(): they are MainActivity wiring and a
+    // PlaybackManager call, not settings state.
     fun update(next: AppSettings, commit: Boolean = false) {
         val oldLanguage = settings.appLanguage
         val oldTheme = settings.appTheme
         val oldPalette = settings.colorPalette
         val oldThemeColor = settings.themeColor
         val oldDecoder = settings.decoderMode
-        settings = next
-        settingsRepository.save(next, commit = commit)
+        viewModel.updateSettings(next, commit = commit)
         if (next.appLanguage != oldLanguage) {
             onLanguageChanged?.invoke(next.appLanguage)
         }
@@ -237,35 +244,31 @@ fun SettingsScreen(
         }
         if (next.decoderMode != oldDecoder) {
             val decMode = com.mpx.player.playback.DecoderMode.values().find { it.label == next.decoderMode } ?: com.mpx.player.playback.DecoderMode.HW
-            actualPlaybackManager.setDecoderMode(decMode)
+            playbackManager.setDecoderMode(decMode)
         }
     }
 
     // Issue #240: turning background play off must stop any background
     // session — the same three calls the background-play toggle and the
     // player toggle run when disabling. Shared here so Reset and the
-    // toggle can never drift apart again. (actualPlaybackManager is the
-    // same PlaybackManager singleton getInstance(context) returns.)
+    // toggle can never drift apart again.
     fun stopBackgroundPlayback() {
         PlaybackService.stop(context)
-        actualPlaybackManager.setVideoBackgroundActive(false)
-        actualPlaybackManager.setBackgroundPlaying(false)
+        playbackManager.setVideoBackgroundActive(false)
+        playbackManager.setBackgroundPlaying(false)
     }
 
     fun toggleMusicTab(tabId: String, currentVal: Boolean) {
-        if (currentVal && settings.visibleMusicTabsCount <= 1) {
+        if (!viewModel.toggleMusicTab(tabId, currentVal)) {
             scope.launch {
                 snackbarHostState.showSnackbar(
                     context.getString(R.string.settings_tab_min_one_required)
                 )
             }
-            return
         }
-        val next = settings.withMusicTabToggled(tabId, !currentVal)
-        update(next)
     }
 
-    val activeLanguage = currentLanguage.ifBlank { settings.appLanguage }
+    val activeLanguage = viewModel.activeLanguage(currentLanguage)
     // Issue #231: one shared language list — the display name comes from
     // LocaleHelper.languageTitleRes, the same mapping the Me screen uses.
     val languageSubtitle = stringResource(LocaleHelper.languageTitleRes(activeLanguage))
@@ -317,11 +320,7 @@ fun SettingsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        when {
-                            isSearching -> isSearching = false
-                            selectedCategory != null -> selectedId = null
-                            else -> onNavigateBack()
-                        }
+                        if (!viewModel.handleBack()) onNavigateBack()
                     }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back), tint = MpxTheme.colors.textPrimary)
                     }
@@ -334,13 +333,13 @@ fun SettingsScreen(
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
                 PreferencesSearchScreen(
                     query = settingsSearchQuery,
-                    onQueryChange = { settingsSearchQuery = it },
+                    onQueryChange = { viewModel.setSearchQuery(it) },
                     onOpenCategory = { id ->
-                        isSearching = false
+                        viewModel.setSearching(false)
                         // Issue #431: the Advanced settings screen is a
                         // separate destination, not a drill-down category.
                         if (id == "advanced_settings") onOpenAdvancedSettings?.invoke()
-                        else selectedId = id
+                        else viewModel.selectCategory(id)
                     },
                 )
             }
@@ -355,7 +354,7 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { isSearching = true }
+                                .clickable { viewModel.setSearching(true) }
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -370,35 +369,35 @@ fun SettingsScreen(
                 item {
                     PreferenceCategoryCard(
                         categories = listOf("appearance", "layout", "language", "tabs").mapNotNull { id -> categories.find { it.id == id } },
-                        onSelect = { selectedId = it },
+                        onSelect = viewModel::selectCategory,
                     )
                 }
                 item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_playback)) }
                 item {
                     PreferenceCategoryCard(
                         categories = listOf("player", "gestures", "pip").mapNotNull { id -> categories.find { it.id == id } },
-                        onSelect = { selectedId = it },
+                        onSelect = viewModel::selectCategory,
                     )
                 }
                 item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_files)) }
                 item {
                     PreferenceCategoryCard(
                         categories = listOf("folders", "list").mapNotNull { id -> categories.find { it.id == id } },
-                        onSelect = { selectedId = it },
+                        onSelect = viewModel::selectCategory,
                     )
                 }
                 item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_media)) }
                 item {
                     PreferenceCategoryCard(
                         categories = listOf("decoder", "subtitle").mapNotNull { id -> categories.find { it.id == id } },
-                        onSelect = { selectedId = it },
+                        onSelect = viewModel::selectCategory,
                     )
                 }
                 item { PreferenceSectionHeader(text = stringResource(R.string.pref_section_advanced)) }
                 item {
                     PreferenceCategoryCard(
                         categories = listOf("advanced", "about").mapNotNull { id -> categories.find { it.id == id } },
-                        onSelect = { selectedId = it },
+                        onSelect = viewModel::selectCategory,
                     )
                 }
             }
@@ -406,12 +405,12 @@ fun SettingsScreen(
             // #158: hosted at Scaffold level, not inside the drill-down
             // LazyColumn — the screen scrolls itself.
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                FoldersBlacklistScreen(settings = settings, onSettingsChanged = { update(it, commit = true) })
+                FoldersBlacklistScreen(viewModel = viewModel)
             }
         } else if (selectedId == "layout") {
             // #158: same as above — the editor scrolls itself.
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                PlayerLayoutScreen(settings = settings, onSettingsChanged = { update(it, commit = true) })
+                PlayerLayoutScreen(viewModel = viewModel)
             }
         } else {
             // Dedicated sub-screen for one category: only its own options.
@@ -933,8 +932,9 @@ fun SettingsScreen(
                                 Spacer(Modifier.height(16.dp))
                                 DevelopmentSettingsSection(
                                     context = context,
-                                    playbackManager = actualPlaybackManager,
+                                    playbackManager = playbackManager,
                                     settings = settings,
+                                    viewModel = viewModel,
                                     cachedDiagnostics = devDiagnostics,
                                     onDiagnosticsLoaded = { devDiagnostics = it },
                                 )
@@ -1219,6 +1219,7 @@ private fun DevelopmentSettingsSection(
     context: Context,
     playbackManager: PlaybackManager,
     settings: AppSettings,
+    viewModel: SettingsViewModel,
     // Issue #299: the loaded stats live in SettingsScreen, not here —
     // this section is a LazyColumn item whose remember was dropped
     // whenever it left composition, re-running the five MediaStore scans
@@ -1235,7 +1236,14 @@ private fun DevelopmentSettingsSection(
         if (isRefreshing) return
         isRefreshing = true
         scope.launch {
-            val stats = loadDevDiagnostics(context)
+            // The record counts come from the ViewModel's persistence
+            // repository — the scan below no longer opens the Room
+            // database directly (MpxDatabase.getInstance). A failed
+            // read still yields zeros, as the old try/catch did, so
+            // the rest of the diagnostics still loads.
+            val recordCounts = runCatching { viewModel.loadRecordCounts() }
+                .getOrElse { listOf(0, 0, 0, 0) }
+            val stats = loadDevDiagnostics(context, recordCounts)
             onDiagnosticsLoaded(stats)
             isRefreshing = false
         }
@@ -1653,7 +1661,12 @@ private fun DiagnosticRow(
     }
 }
 
-private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = withContext(Dispatchers.IO) {
+private suspend fun loadDevDiagnostics(
+    context: Context,
+    // Record counts from SettingsViewModel.loadRecordCounts() — the
+    // persistence repository, not MpxDatabase.getInstance.
+    recordCounts: List<Int>,
+): DevDiagnosticsData = withContext(Dispatchers.IO) {
     val pInfo = try {
         context.packageManager.getPackageInfo(context.packageName, 0)
     } catch (_: Exception) {
@@ -1695,19 +1708,16 @@ private suspend fun loadDevDiagnostics(context: Context): DevDiagnosticsData = w
     }
 
     // Built inside loadDevDiagnostics (a plain function, not a
-    // @Composable): context.getString, not stringResource.
-    val recordCounts = try {
-        val db = MpxDatabase.getInstance(context)
-        listOf(
-            db.favouriteDao().getCount(),
-            db.playbackHistoryDao().getCount(),
-            db.playlistDao().getPlaylistsWithCount().size,
-            db.playbackResumeDao().getAllResumePositions().size,
-        )
-    } catch (_: Exception) {
-        listOf(0, 0, 0, 0)
-    }
-    val recordStats = context.getString(R.string.dev_db_records_summary, recordCounts[0], recordCounts[1], recordCounts[2], recordCounts[3])
+    // @Composable): context.getString, not stringResource. The counts
+    // arrive as a parameter — favourites, history, playlists, resume
+    // positions, in that order.
+    val recordStats = context.getString(
+        R.string.dev_db_records_summary,
+        recordCounts.getOrElse(0) { 0 },
+        recordCounts.getOrElse(1) { 0 },
+        recordCounts.getOrElse(2) { 0 },
+        recordCounts.getOrElse(3) { 0 },
+    )
 
     val hasVideoPerm = MediaPermissions.hasVideoPermission(context)
     val hasAudioPerm = MediaPermissions.hasAudioPermission(context)
