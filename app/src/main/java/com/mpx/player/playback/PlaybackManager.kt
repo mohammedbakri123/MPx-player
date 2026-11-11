@@ -43,8 +43,13 @@ import kotlinx.coroutines.withContext
  * interface [com.mpx.player.ui.screens.player.PlayerViewModel] depends
  * on. No behaviour change — the members below already existed with
  * exactly these signatures.
+ *
+ * Migration Phase 2d: also implements [StreamPlayer], the minimal
+ * interface [com.mpx.player.ui.screens.network.NetworkViewModel]
+ * depends on. Its [playStream] body is the Network tab's old inline
+ * play action, moved verbatim.
  */
-class PlaybackManager private constructor(context: Context) : PlaybackStateSource {
+class PlaybackManager private constructor(context: Context) : PlaybackStateSource, StreamPlayer {
 
     private val appContext: Context = context.applicationContext
     val database: MpxDatabase = MpxDatabase.getInstance(appContext)
@@ -590,6 +595,28 @@ class PlaybackManager private constructor(context: Context) : PlaybackStateSourc
      * live-queue pick keeps the speed that is playing instead of
      * resetting to the persisted default.
      */
+    /**
+     * Migration Phase 2d ([StreamPlayer]): plays a stream URL as a
+     * one-item queue. Moved verbatim from NetworkScreen's old inline
+     * play action — the title is the URL's last path segment, or
+     * "Network Stream" when there is none.
+     */
+    override fun playStream(url: String) {
+        val streamTitle = url.substringAfterLast("/").substringBefore("?").ifBlank { "Network Stream" }
+        playQueue(
+            listOf(
+                PlayableMedia(
+                    id = "stream_${System.currentTimeMillis()}",
+                    title = streamTitle,
+                    subtitle = url,
+                    uri = url,
+                    isVideo = true,
+                    durationMs = 0L,
+                ),
+            ),
+        )
+    }
+
     fun playQueue(
         items: List<PlayableMedia>,
         startIndex: Int = 0,
