@@ -1,6 +1,7 @@
 package com.mpx.player.playback
 
 import android.view.Surface
+import androidx.room.InvalidationTracker
 import com.mpx.player.data.local.dao.FavouriteDao
 import com.mpx.player.data.local.dao.PlaybackHistoryDao
 import com.mpx.player.data.local.dao.PlaybackResumeDao
@@ -14,8 +15,6 @@ import com.mpx.player.domain.model.PlaylistItem
 import com.mpx.player.domain.repository.MediaPersistenceRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
-import com.mpx.player.playback.engine.EnginePlaybackMetrics
-import com.mpx.player.playback.engine.MpvLoadStage
 import com.mpx.player.playback.engine.MpvPlaybackException
 import com.mpx.player.playback.engine.PlayerEngine
 import com.mpx.player.playback.engine.ReplaceMediaItemResult
@@ -342,6 +341,11 @@ class PlaybackCoordinatorTest {
      * the DAOs are never called and throw if they ever are.
      */
     private class FakeMpxDatabase : MpxDatabase() {
+        override fun createInvalidationTracker(): InvalidationTracker =
+            throw UnsupportedOperationException("not used")
+        override fun clearAllTables() {
+            throw UnsupportedOperationException("not used")
+        }
         override fun favouriteDao(): FavouriteDao =
             throw UnsupportedOperationException("not used")
         override fun playbackHistoryDao(): PlaybackHistoryDao =
