@@ -162,8 +162,25 @@ class MpvPlayerEngine(
             override fun onFileLoaded() {
                 if (this@MpvPlayerEngine::subtitles.isInitialized) subtitles.onFileLoaded()
             }
+
+            override fun getCurrentQueue(): List<PlayableMedia> =
+                queueProvider()
+
+            override fun getCurrentMediaIndex(): Int =
+                indexProvider()
         },
     )
+
+    private var queueProvider: () -> List<PlayableMedia> = { emptyList() }
+    private var indexProvider: () -> Int = { -1 }
+
+    override fun setQueueSource(
+        queue: () -> List<PlayableMedia>,
+        currentIndex: () -> Int,
+    ) {
+        this.queueProvider = queue
+        this.indexProvider = currentIndex
+    }
 
 
     /**
@@ -235,12 +252,6 @@ class MpvPlayerEngine(
     val decoderMode: DecoderMode
         get() = core.decoderMode
 
-    private var currentQueue: List<PlayableMedia>
-        get() = core.currentQueue
-        set(value) { core.currentQueue = value }
-    private var currentMediaIndex: Int
-        get() = core.currentMediaIndex
-        set(value) { core.currentMediaIndex = value }
     private var fileLoadedForCurrentItem: Boolean
         get() = core.fileLoadedForCurrentItem
         set(value) { core.fileLoadedForCurrentItem = value }
@@ -434,10 +445,12 @@ class MpvPlayerEngine(
         // same: reload the current item at its position. No-op before any load.
         // Issue #224: resume only if it was playing — a paused file stays
         // paused (mirrors reloadForDecoderFallback, which never had this bug).
-        if (mpvInitialized && !isReleased && fileLoadedForCurrentItem && currentQueue.isNotEmpty()) {
+        val queue = core.getCurrentQueue()
+        val index = core.getCurrentMediaIndex()
+        if (mpvInitialized && !isReleased && fileLoadedForCurrentItem && queue.isNotEmpty() && index in queue.indices) {
             val wasPlaying = cachedIsPlaying
             val pos = cachedPositionMs
-            load(currentQueue, currentMediaIndex, pos)
+            load(queue, index, pos)
             if (wasPlaying) play()
         }
     }

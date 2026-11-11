@@ -16,15 +16,15 @@ it has got.
 ## Stack (current)
 
 - Single-module native Kotlin Android app, package `com.mpx.player`
-  (`app/src/main/java/com/mpx/player/`, 116 Kotlin files)
-- UI: Jetpack Compose, Material 3 Expressive, one activity (`MainActivity`),
+  (`app/src/main/java/com/mpx/player/`, 123 Kotlin files)
+- UI: Jetpack Compose, Material 3, one activity (`MainActivity`),
   Compose Navigation
 - Playback: mpv only, via `mpv-android-lib` 0.1.12. There is no Media3 /
   ExoPlayer in the app any more.
 - Persistence: Room 2.8.5 for library data, SharedPreferences for settings
 - Build: AGP 9.2.1, Kotlin 2.5.0-Beta2, KSP 2.3.13, Compose BOM 2026.06.01,
-  compileSdk 36, minSdk 24, targetSdk 34. Dependencies are hardcoded in
-  `app/build.gradle.kts`; there is no version catalog.
+  compileSdk 36, minSdk 24, targetSdk 34. Dependencies and versions
+  are managed in `gradle/libs.versions.toml`.
 
 ## Layers (current)
 

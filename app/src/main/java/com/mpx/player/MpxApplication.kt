@@ -34,10 +34,8 @@ class MpxApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // Migration Phase 1: Koin is the one place objects are built.
-        // Modules are added one per migration step; nothing reads from
-        // Koin yet except the modules themselves — MainActivity starts
-        // in step 1c.
+        // Koin DI composition root: registers app, playback, and viewModel modules.
+        // MainActivity, PlaybackService, and ViewModels inject their dependencies from here.
         startKoin {
             androidContext(this@MpxApplication)
             modules(appModule, playbackModule, viewModelModule)

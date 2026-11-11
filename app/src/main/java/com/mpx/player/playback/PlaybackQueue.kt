@@ -143,6 +143,7 @@ class PlaybackQueue(
     private val scope: CoroutineScope,
 ) {
     private var currentQueue: List<PlayableMedia> = emptyList()
+    private var currentQueueIndex: Int = -1
     /** Pre-shuffle queue order, restored when shuffle is turned off (issue #76). */
     private var unshuffledQueue: List<PlayableMedia>? = null
 
@@ -164,6 +165,10 @@ class PlaybackQueue(
     /** The live queue, as the coordinator's listeners read it. */
     val items: List<PlayableMedia>
         get() = currentQueue
+
+    /** The live media index (D-1 single-source-of-truth). */
+    val currentIndex: Int
+        get() = currentQueueIndex
 
     /** The queue item at [index], or null when out of range. */
     fun itemAt(index: Int): PlayableMedia? = currentQueue.getOrNull(index)
@@ -463,6 +468,7 @@ class PlaybackQueue(
      * persistence must never break playback.
      */
     fun persistQueue(currentIndex: Int = host.state.currentIndex) {
+        this.currentQueueIndex = currentIndex
         queueStore.save(currentQueue, currentIndex)
     }
 
@@ -509,6 +515,7 @@ class PlaybackQueue(
     fun clearForStop() {
         unshuffledQueue = null
         currentQueue = emptyList()
+        currentQueueIndex = -1
         // Issue #258: a playQueue still awaiting the Room preload (the
         // #220 slow path) holds its own captured items, so clearing
         // the queue alone cannot stop it — bump the generation so its

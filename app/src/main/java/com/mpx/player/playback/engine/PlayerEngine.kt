@@ -261,6 +261,15 @@ interface PlayerEngine {
      */
     fun setListener(listener: Listener?)
 
+    /**
+     * Connects the live queue and index providers to the engine (D-1 single source of truth).
+     * Eliminates engine-side mirroring of the playback queue.
+     */
+    fun setQueueSource(
+        queue: () -> List<PlayableMedia>,
+        currentIndex: () -> Int,
+    ) = Unit
+
     // Properties for position and state queries
     val currentPosition: Long
     val duration: Long

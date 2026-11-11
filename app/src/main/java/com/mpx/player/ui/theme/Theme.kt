@@ -19,10 +19,10 @@ import androidx.compose.ui.graphics.Color
 // as System / Dark / Light instead of the four legacy schemes.
 // #147 adds an accent palette (Blue default, Emerald, Violet, Amber,
 // Rose, Teal) that recolours only the accent over those surfaces.
-// #374 replaces it with one theme color (TrueBlack default,
-// Charcoal, Graphite, Midnight, Forest, Plum) shared by Dark and
-// Light — the mode only picks which brightness of it renders; the
-// player route (always Dark) follows its dark scale.
+// #374 adds one theme color (TrueBlack default, Charcoal, Graphite,
+// Midnight, Forest, Plum) shared by Dark and Light — the mode only picks
+// which brightness of it renders, and the accent palette is applied on top.
+// The player route (always Dark) follows its dark scale.
 object MpxTheme {
     val colors: MpxColors
         @Composable get() = LocalMpxColors.current

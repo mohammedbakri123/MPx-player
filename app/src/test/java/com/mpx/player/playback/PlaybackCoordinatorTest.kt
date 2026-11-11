@@ -31,6 +31,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -83,6 +84,7 @@ class PlaybackCoordinatorTest {
         val store = FakeQueueStore()
         val strings = FakeCoordinatorStrings()
         val backgroundService = FakeBackgroundService()
+        val audioFocusManager = FakeAudioFocusManager()
         val errorLogs = mutableListOf<Pair<String, Throwable?>>()
         // Long-lived coordinator jobs run in the background scope:
         // virtual time still drives them, but they do not block
@@ -109,6 +111,7 @@ class PlaybackCoordinatorTest {
             ioDispatcher = UnconfinedTestDispatcher(),
             strings = strings,
             backgroundService = backgroundService,
+            audioFocusManager = audioFocusManager,
             errorLog = { message, error -> errorLogs.add(message to error) },
             clock = { scope.testScheduler.currentTime },
         )
@@ -120,6 +123,7 @@ class PlaybackCoordinatorTest {
             store = store,
             strings = strings,
             backgroundService = backgroundService,
+            audioFocusManager = audioFocusManager,
             errorLogs = errorLogs,
             resumeManager = resumeManager,
             coordinator = coordinator,
@@ -134,6 +138,7 @@ class PlaybackCoordinatorTest {
         val store: FakeQueueStore,
         val strings: FakeCoordinatorStrings,
         val backgroundService: FakeBackgroundService,
+        val audioFocusManager: FakeAudioFocusManager,
         val errorLogs: MutableList<Pair<String, Throwable?>>,
         val resumeManager: PlaybackResumeManager,
         val coordinator: PlaybackCoordinator,
@@ -254,6 +259,16 @@ class PlaybackCoordinatorTest {
         }
         override fun setListener(listener: PlayerEngine.Listener?) {
             capturedListener = listener
+        }
+        var capturedQueueProvider: (() -> List<PlayableMedia>)? = null
+        var capturedIndexProvider: (() -> Int)? = null
+
+        override fun setQueueSource(
+            queue: () -> List<PlayableMedia>,
+            currentIndex: () -> Int,
+        ) {
+            capturedQueueProvider = queue
+            capturedIndexProvider = currentIndex
         }
         override fun seekToNextMediaItem() = Unit
         override fun seekToPreviousMediaItem() = Unit
@@ -377,6 +392,27 @@ class PlaybackCoordinatorTest {
         }
         override fun stop() {
             stopCalls++
+        }
+    }
+
+    /** Fake audio focus manager: records requests/abandons, simulates focus transitions. */
+    private class FakeAudioFocusManager : AudioFocusManager {
+        var focusGranted: Boolean = true
+        var requestCount: Int = 0
+        var abandonCount: Int = 0
+        var activeListener: AudioFocusManager.Listener? = null
+
+        override fun requestAudioFocus(): Boolean {
+            requestCount++
+            return focusGranted
+        }
+
+        override fun abandonAudioFocus() {
+            abandonCount++
+        }
+
+        override fun setListener(listener: AudioFocusManager.Listener?) {
+            this.activeListener = listener
         }
     }
 
@@ -826,5 +862,145 @@ class PlaybackCoordinatorTest {
         f.coordinator.clearResumedNotification()
 
         assertNull(f.coordinator.playbackState.value.resumedFromMs)
+    }
+
+    @Test
+    fun `play requests audio focus and respects rejection`() = runTest {
+        val f = createFixture(this)
+        f.audioFocusManager.focusGranted = false
+
+        f.coordinator.play()
+
+        assertEquals(1, f.audioFocusManager.requestCount)
+        assertEquals(0, f.engine.playCalls)
+
+        f.audioFocusManager.focusGranted = true
+        f.coordinator.play()
+
+        assertEquals(2, f.audioFocusManager.requestCount)
+        assertEquals(1, f.engine.playCalls)
+    }
+
+    @Test
+    fun `permanent focus loss pauses playback and abandons focus`() = runTest {
+        val f = createFixture(this)
+        f.coordinator.play()
+        assertEquals(1, f.engine.playCalls)
+
+        f.audioFocusManager.activeListener?.onAudioFocusLost(isTransient = false, canDuck = false)
+
+        assertEquals(1, f.engine.pauseCalls)
+        assertTrue(f.audioFocusManager.abandonCount >= 1)
+    }
+
+    @Test
+    fun `transient focus loss pauses playback and regain resumes playback`() = runTest {
+        val f = createFixture(this)
+        f.coordinator.play()
+        assertEquals(1, f.engine.playCalls)
+
+        f.audioFocusManager.activeListener?.onAudioFocusLost(isTransient = true, canDuck = false)
+        assertEquals(1, f.engine.pauseCalls)
+
+        f.audioFocusManager.activeListener?.onAudioFocusGained()
+        assertEquals(2, f.engine.playCalls)
+    }
+
+    @Test
+    fun `user pause during transient focus loss cancels auto-resume`() = runTest {
+        val f = createFixture(this)
+        f.coordinator.play()
+        assertEquals(1, f.engine.playCalls)
+
+        f.audioFocusManager.activeListener?.onAudioFocusLost(isTransient = true, canDuck = false)
+        assertEquals(1, f.engine.pauseCalls)
+
+        f.coordinator.pause()
+
+        f.audioFocusManager.activeListener?.onAudioFocusGained()
+        assertEquals(1, f.engine.playCalls)
+    }
+
+    @Test
+    fun `audio becoming noisy pauses playback and abandons focus`() = runTest {
+        val f = createFixture(this)
+        f.coordinator.play()
+        assertEquals(1, f.engine.playCalls)
+
+        f.audioFocusManager.activeListener?.onAudioBecomingNoisy()
+        assertEquals(1, f.engine.pauseCalls)
+        assertTrue(f.audioFocusManager.abandonCount >= 1)
+    }
+
+    @Test
+    fun `sleep timer countdown continues during transient focus loss and auto-resume`() = runTest {
+        val f = createFixture(this)
+        f.coordinator.play()
+        f.coordinator.setSleepTimer(10)
+
+        // 1ms past each 60s boundary: a delay due at exactly the
+        // advance target does not fire (same reason as the
+        // `sleep timer counts down` test's 1001ms advance).
+        advanceTimeBy(60_001L)
+        val remainingBefore = f.coordinator.playbackState.value.sleepTimerRemainingSeconds
+        assertTrue(remainingBefore != null && remainingBefore <= 540L)
+
+        f.audioFocusManager.activeListener?.onAudioFocusLost(isTransient = true, canDuck = false)
+        assertEquals(1, f.engine.pauseCalls)
+
+        advanceTimeBy(60_001L)
+        val remainingDuring = f.coordinator.playbackState.value.sleepTimerRemainingSeconds
+        assertTrue(remainingDuring != null && remainingDuring <= 480L)
+
+        f.audioFocusManager.activeListener?.onAudioFocusGained()
+        assertEquals(2, f.engine.playCalls)
+
+        advanceTimeBy(60_001L)
+        val remainingAfter = f.coordinator.playbackState.value.sleepTimerRemainingSeconds
+        assertTrue(remainingAfter != null && remainingAfter <= 420L)
+    }
+
+    @Test
+    fun `sleep timer expiry during transient focus loss cancels auto-resume on focus regain`() = runTest {
+        val f = createFixture(this)
+        f.coordinator.play()
+        f.coordinator.setSleepTimer(1)
+
+        advanceTimeBy(30_000L)
+        f.audioFocusManager.activeListener?.onAudioFocusLost(isTransient = true, canDuck = false)
+        assertEquals(1, f.engine.pauseCalls)
+
+        advanceTimeBy(31_000L)
+        assertNull(f.coordinator.playbackState.value.sleepTimerMinutes)
+        assertNull(f.coordinator.playbackState.value.sleepTimerRemainingSeconds)
+
+        f.audioFocusManager.activeListener?.onAudioFocusGained()
+        assertEquals(1, f.engine.playCalls)
+    }
+
+    @Test
+    fun `coordinator connects queue and index provider to engine as single source of truth`() = runTest {
+        val f = createFixture(this)
+        assertNotNull(f.engine.capturedQueueProvider)
+        assertNotNull(f.engine.capturedIndexProvider)
+
+        // Empty before playback
+        assertTrue(f.engine.capturedQueueProvider!!.invoke().isEmpty())
+        assertEquals(-1, f.engine.capturedIndexProvider!!.invoke())
+
+        // Play videos queue
+        f.playVideos("v1", "v2", startIndex = 1)
+
+        // Queue and index are reflected immediately via the provider
+        val queue = f.engine.capturedQueueProvider!!.invoke()
+        assertEquals(2, queue.size)
+        assertEquals("v1", queue[0].id)
+        assertEquals("v2", queue[1].id)
+        assertEquals(1, f.engine.capturedIndexProvider!!.invoke())
+
+        // Stopping clears the live queue and resets index
+        f.coordinator.stop()
+        assertTrue(f.engine.capturedQueueProvider!!.invoke().isEmpty())
+        assertEquals(-1, f.engine.capturedIndexProvider!!.invoke())
     }
 }

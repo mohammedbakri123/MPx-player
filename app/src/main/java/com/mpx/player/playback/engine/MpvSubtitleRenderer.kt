@@ -366,7 +366,7 @@ internal class MpvSubtitleRenderer(
             // in replaceMediaItem would be dropped as stale.
             val matches = core.activeMediaUri == null ||
                 MpvCoreEngine.isPathMatch(pending.mediaUri, core.activeMediaUri) ||
-                pending.mediaUri == core.currentQueue.getOrNull(core.currentMediaIndex)?.uri
+                pending.mediaUri == core.getCurrentQueue().getOrNull(core.getCurrentMediaIndex())?.uri
             if (matches) {
                 var issuedAny = false
                 var lastIssuedExternal: PendingSubtitle? = null
@@ -615,7 +615,7 @@ internal class MpvSubtitleRenderer(
      * manager's ALREADY_ADDED branch uses. */
     private fun allExpectedExternalTracksPresent(tracks: List<SubtitleTrackInfo>, mediaId: String?): Boolean {
         if (mediaId == null) return false
-        val item = core.currentQueue.firstOrNull { it.id == mediaId } ?: return false
+        val item = core.getCurrentQueue().firstOrNull { it.id == mediaId } ?: return false
         val expected = item.externalSubtitles.size + if (item.subtitleUri != null) 1 else 0
         if (expected == 0) return false
         return tracks.count { it.isExternal } >= expected
@@ -631,22 +631,22 @@ internal class MpvSubtitleRenderer(
      * (original URIs) so a later load() re-resolves it fresh.
      */
     fun replaceMediaItem(index: Int, media: PlayableMedia): ReplaceMediaItemResult {
-        if (index !in core.currentQueue.indices) {
+        val currentQueue = core.getCurrentQueue()
+        if (index !in currentQueue.indices) {
             return ReplaceMediaItemResult.FAILED
         }
         // Issue #197: remember the item mpv already has, so only
         // genuinely NEW external subtitles are sub-added below.
-        val previous = core.currentQueue.getOrNull(index)
-        val updated = core.currentQueue.toMutableList()
+        val previous = currentQueue.getOrNull(index)
+        val updated = currentQueue.toMutableList()
         updated[index] = media
-        core.currentQueue = updated
 
         val pending = core.pendingLoad
         if (pending != null && index == pending.second) {
             core.pendingLoad = Triple(updated, pending.second, pending.third)
         }
 
-        if (index != core.currentMediaIndex) {
+        if (index != core.getCurrentMediaIndex()) {
             // Not the live item: the subtitles are stored in the queue
             // and will be attempted when the item loads (issue #332:
             // same outcome as QUEUED — the FILE_LOADED dispatch arms
