@@ -23,8 +23,8 @@ it has got.
   ExoPlayer in the app any more.
 - Persistence: Room 2.8.5 for library data, SharedPreferences for settings
 - Build: AGP 9.2.1, Kotlin 2.5.0-Beta2, KSP 2.3.13, Compose BOM 2026.06.01,
-  compileSdk 36, minSdk 24, targetSdk 34. Dependencies are hardcoded in
-  `app/build.gradle.kts`; there is no version catalog.
+  compileSdk 36, minSdk 24, targetSdk 34. Dependencies and versions
+  are managed in `gradle/libs.versions.toml`.
 
 ## Layers (current)
 

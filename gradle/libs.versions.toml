@@ -1,0 +1,72 @@
+[versions]
+# Core build tool versions
+agp = "9.2.1"
+
+# Kotlin 2.5.0-Beta2 and KSP 2.3.13 (tracks Kotlin 2.3).
+# Grouped together to keep the compiler/plugin skew visible (audit R-12, R-13).
+kotlin = "2.5.0-Beta2"
+ksp = "2.3.13"
+
+# AndroidX / Compose
+composeBom = "2026.06.01"
+coreKtx = "1.13.1"
+lifecycle = "2.8.4"
+activityCompose = "1.9.2"
+navigationCompose = "2.7.7"
+media = "1.7.0"
+
+# Playback and UI effects
+mpvAndroidLib = "0.1.12"
+haze = "1.6.0"
+
+# Room (all 3 artifacts aligned)
+room = "2.8.5"
+
+# Koin 4.2.2 (all 3 artifacts aligned)
+koin = "4.2.2"
+
+# Testing
+junit = "4.13.2"
+coroutinesTest = "1.10.2"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+androidx-media = { module = "androidx.media:media", version.ref = "media" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+
+# Compose UI artifacts (versions managed via compose-bom)
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
+
+mpv-android-lib = { module = "io.github.abdallahmehiz:mpv-android-lib", version.ref = "mpvAndroidLib" }
+haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+
+# Room
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+
+# Koin
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+
+# Testing
+junit = { module = "junit:junit", version.ref = "junit" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
