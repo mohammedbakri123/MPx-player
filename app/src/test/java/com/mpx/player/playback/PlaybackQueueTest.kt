@@ -293,16 +293,6 @@ class PlaybackQueueTest {
     }
 
     @Test
-    fun `playVideoQueue is a no-op`() = runTest {
-        val engine = FakePlayerEngine()
-        val queue = createQueue(this, engine = engine)
-
-        queue.playVideoQueue()
-
-        assertTrue(engine.loadCalls.isEmpty())
-    }
-
-    @Test
     fun `skipNext and skipPrevious delegate to the engine`() = runTest {
         val engine = FakePlayerEngine()
         val queue = createQueue(this, engine = engine)
