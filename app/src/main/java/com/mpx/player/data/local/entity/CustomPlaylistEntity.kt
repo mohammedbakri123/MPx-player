@@ -1,13 +1,19 @@
 package com.mpx.player.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.mpx.player.domain.model.CustomPlaylist
 
 /**
  * Room entity representing a custom playlist container.
  */
-@Entity(tableName = "custom_playlists")
+@Entity(
+    tableName = "custom_playlists",
+    indices = [
+        Index("updatedAt"),
+    ],
+)
 data class CustomPlaylistEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,

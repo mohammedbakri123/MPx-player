@@ -1,13 +1,20 @@
 package com.mpx.player.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.mpx.player.domain.model.FavouriteItem
 
 /**
  * Room entity representing a user-favourited media item.
  */
-@Entity(tableName = "favourites")
+@Entity(
+    tableName = "favourites",
+    indices = [
+        Index("addedAt"),
+        Index("mediaId"),
+    ],
+)
 data class FavouriteEntity(
     @PrimaryKey
     val mediaUri: String,
