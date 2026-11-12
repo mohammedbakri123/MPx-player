@@ -10,7 +10,7 @@ No ads. No tracking. Your files stay on your device.
 
 ## Download
 
-**Latest: [v0.4.58](https://github.com/mohammedbakri123/MPx-player/releases/tag/v0.4.58)**
+**Latest: [v0.4.59](https://github.com/mohammedbakri123/MPx-player/releases/tag/v0.4.59)**
 
 Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx-player/releases/latest), then open it on your phone. Android will ask once to allow installs from your browser — that's normal for apps installed outside the Play Store.
 
@@ -29,7 +29,6 @@ Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx
 
 **Network**
 - Play a video straight from a pasted URL (mpv plays http(s) directly)
-- Browse and play from SMB shares
 
 **Look and feel**
 - True-black dark theme + light theme
@@ -39,7 +38,7 @@ Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx
 
 Real phone screenshots are coming — the ones in this repo's history were early desktop mockups, not the current app.
 
-If you try v0.4.58, a screenshot of the player or Library in [Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) would help a lot.
+If you try v0.4.59, a screenshot of the player or Library in [Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) would help a lot.
 
 ## Community
 
