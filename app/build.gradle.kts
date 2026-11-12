@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
@@ -78,10 +77,12 @@ android {
 
     sourceSets {
         getByName("test") {
-            java.srcDirs("src/test/java", "src/testFixtures/java")
+            java.directories.add("src/testFixtures/java")
+            kotlin.directories.add("src/testFixtures/java")
         }
         getByName("androidTest") {
-            java.srcDirs("src/androidTest/java", "src/testFixtures/java")
+            java.directories.add("src/testFixtures/java")
+            kotlin.directories.add("src/testFixtures/java")
         }
     }
 
@@ -102,7 +103,7 @@ android {
         // (app-arm64-v8a-minified.apk, app-armeabi-v7a-minified.apk).
         create("minified") {
             initWith(getByName("debug"))
-            isDebuggable = true
+            isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
