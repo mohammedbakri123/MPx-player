@@ -343,12 +343,12 @@ class MpvCoreEngineTest {
     @Test
     fun `seekToNextMediaItem preserves paused state`() {
         val engine = createEngine()
+        engine.attachSurface(surface)
         val media1 = PlayableMedia(id = "1", uri = "http://localhost/1.mp4", title = "1")
         val media2 = PlayableMedia(id = "2", uri = "http://localhost/2.mp4", title = "2")
         fakeHost.queue.addAll(listOf(media1, media2))
         fakeHost.mediaIndex = 0
 
-        engine.attachSurface(surface)
         engine.load(fakeHost.queue, 0, 0L)
 
         // Paused state
@@ -364,13 +364,13 @@ class MpvCoreEngineTest {
     @Test
     fun `seekToNextMediaItem advances index and loads next item when next exists`() {
         val engine = createEngine()
+        engine.attachSurface(surface)
         val media0 = PlayableMedia(id = "0", uri = "http://localhost/0.mp4", title = "0")
         val media1 = PlayableMedia(id = "1", uri = "http://localhost/1.mp4", title = "1")
         val media2 = PlayableMedia(id = "2", uri = "http://localhost/2.mp4", title = "2")
         fakeHost.queue.addAll(listOf(media0, media1, media2))
         fakeHost.mediaIndex = 0
 
-        engine.attachSurface(surface)
         engine.load(fakeHost.queue, 0, 0L)
 
         // At index 0, hasNextMediaItem is true
