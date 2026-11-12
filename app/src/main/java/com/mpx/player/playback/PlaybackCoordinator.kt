@@ -687,6 +687,8 @@ class PlaybackCoordinator(
         return subtitleManager.loadExternalSubtitle(uri.toString(), displayName, mimeType)
     }
 
+    override fun getMediaInfo(): MediaInfo? = engine.getMediaInfo()
+
     override fun clearDecoderFallbackNote() {
         _playbackState.update { it.copy(decoderFallbackNote = null) }
     }

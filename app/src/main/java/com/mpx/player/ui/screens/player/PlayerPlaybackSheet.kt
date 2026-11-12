@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
+import com.mpx.player.playback.MediaInfo
 import com.mpx.player.playback.PlaybackController
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.ui.components.MpxBottomSheet
@@ -33,6 +34,7 @@ import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetAu
 import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetAudioTracksPage
 import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetDecoderPage
 import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetMainPage
+import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetMediaInfoPage
 import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetSleepPage
 import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetSpeedPage
 import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetSubtitleBrowsePage
@@ -81,6 +83,7 @@ enum class PlaybackSheetPage {
     SubtitleBrowse,
     SubtitleDelay,
     SubtitleSettings,
+    MediaInfo,
 }
 
 /**
@@ -103,6 +106,7 @@ data class PlaybackSheetState(
     val onReplayTutorial: () -> Unit,
     val onAddToPlaylist: () -> Unit,
     val sheetState: SheetState,
+    val getMediaInfo: () -> MediaInfo? = { null },
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,6 +128,7 @@ fun PlayerPlaybackSheet(
         PlaybackSheetPage.SubtitleBrowse -> R.string.player_subtitle_browse_title
         PlaybackSheetPage.SubtitleDelay -> R.string.subtitle_sync_header
         PlaybackSheetPage.SubtitleSettings -> R.string.playback_sheet_subtitle_settings
+        PlaybackSheetPage.MediaInfo -> R.string.media_info_title
     }
     MpxBottomSheet(
         onDismiss = dismiss,
@@ -242,6 +247,9 @@ fun PlayerPlaybackSheet(
                 PlaybackSheetPage.SubtitleSettings -> PlaybackSheetSubtitleSettingsPage(
                     currentSettings = sheetState.currentSettings,
                     onSettingsChanged = sheetState.onSettingsChanged,
+                )
+                PlaybackSheetPage.MediaInfo -> PlaybackSheetMediaInfoPage(
+                    getMediaInfo = sheetState.getMediaInfo,
                 )
             }
         }

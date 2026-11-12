@@ -45,6 +45,7 @@ interface PlaybackController {
     fun selectAudioTrack(groupIndex: Int, trackIndex: Int)
     fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?)
     fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean
+    fun getMediaInfo(): MediaInfo? = null
 
     val videoWidth: Int
     val videoHeight: Int

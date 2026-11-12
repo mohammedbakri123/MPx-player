@@ -7,6 +7,7 @@ import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
+import com.mpx.player.playback.MediaInfo
 import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
@@ -128,6 +129,12 @@ interface PlayerEngine {
      * that do not measure report nothing rather than invented numbers.
      */
     fun getPlaybackMetrics(): EnginePlaybackMetrics? = null
+
+    /**
+     * Technical information about the currently playing media item and its tracks (issue #468).
+     * Default null: engines that do not report media info report nothing.
+     */
+    fun getMediaInfo(): MediaInfo? = null
 
     /**
      * Step-level load diagnostics (mpv only). Default null: engines that do

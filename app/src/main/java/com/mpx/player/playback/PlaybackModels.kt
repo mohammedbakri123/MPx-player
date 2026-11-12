@@ -101,6 +101,42 @@ data class SubtitleTrackInfo(
     val isDefault: Boolean = false,
 )
 
+/** Video stream technical information for [MediaInfo] (issue #468). */
+data class MediaVideoTrackInfo(
+    val codec: String? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    val fps: Double? = null,
+    val bitrate: Long? = null,
+)
+
+/** Audio stream technical information for [MediaInfo] (issue #468). */
+data class MediaAudioTrackInfo(
+    val id: Int? = null,
+    val name: String? = null,
+    val codec: String? = null,
+    val channels: Int? = null,
+    val bitrate: Long? = null,
+    val sampleRate: Int? = null,
+    val language: String? = null,
+    val isSelected: Boolean = false,
+)
+
+/**
+ * Technical media information for the currently playing file (issue #468).
+ * All technical values are measured directly from the mpv track-list or file system;
+ * null means "not observed / unknown".
+ */
+data class MediaInfo(
+    val title: String? = null,
+    val format: String? = null,
+    val fileSize: Long? = null,
+    val durationMs: Long? = null,
+    val videoTrack: MediaVideoTrackInfo? = null,
+    val audioTracks: List<MediaAudioTrackInfo> = emptyList(),
+    val subtitleTracks: List<SubtitleTrackInfo> = emptyList(),
+)
+
 /** Lightweight playback metrics for the MPV engine.
  * All values are measured, never estimated: null means "not observed yet". */
 data class EnginePlaybackMetrics(
