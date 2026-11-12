@@ -40,9 +40,9 @@ interface PlaybackStateDispatcher {
 /**
  * Independent state store that owns [PlaybackState] publishing and event dispatch (Phase 8 CP-1).
  *
- * Constructible BEFORE collaborators and [PlaybackCoordinator], breaking the cyclic
- * dependency previously bridged by `CoordinatorHostProxy`. It maintains the single source
- * of truth for playback state across the application via [StateFlow] and thread-safe `.update { }`.
+ * Constructible BEFORE collaborators and [PlaybackCoordinator], eliminating cyclic
+ * construction dependencies. It maintains the single source of truth for playback state
+ * across the application via [StateFlow] and thread-safe `.update { }`.
  */
 class PlaybackStateStore(
     initialDecoderMode: DecoderMode = DecoderMode.HW,
