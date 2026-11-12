@@ -4,7 +4,7 @@ Thanks for helping. MPx is a small project with one maintainer, so small, focuse
 
 ## First: how this project works
 
-- **Stack:** native Kotlin, Jetpack Compose, Material 3 Expressive, Room, mpv (via `mpv-android-lib`) for playback. There is no downloader — it was removed in 2026-11 (see #434); the fourth dock tab is Network (streams + SMB), not Download.
+- **Stack:** native Kotlin, Jetpack Compose, Material 3, Room, mpv (via `mpv-android-lib`) for playback. There is no downloader — it was removed in 2026-11 (see #434); the fourth dock tab is Network (streams + SMB), not Download.
 - **Architecture:** see [ARCHITECTURE.md](ARCHITECTURE.md) — layers, where playback state lives, and a "where do I change X?" table. Read it before your first code change.
 - **Branch:** `master` is the current branch. Open PRs against `master`.
 - **Releases** go out when a goal is reached, verified by **green builds** — that is the gate. The maintainer sometimes launch-tests a release on his phone, but does not test every build, so on-device proof also comes from users in Discussions.

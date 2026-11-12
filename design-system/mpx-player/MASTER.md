@@ -1,214 +1,150 @@
-# Design System Master File
+# MPx Player — Design System Master
 
-> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
-> If that file exists, its rules **override** this Master file.
-> If not, strictly follow the rules below.
-
----
-
-**Project:** MPx Player
-**Generated:** 2026-11-03 09:36:00
-**Category:** Video Streaming/OTT
+> **Source of Truth:** This document defines the actual design tokens and patterns implemented in `app/src/main/java/com/mpx/player/ui/theme/`.
+> MPx Player is a native Kotlin Android application built with Jetpack Compose and Material 3 (not a web/CSS app).
 
 ---
 
-## Global Rules
+**Project:** MPx Player  
+**Platform:** Android (Jetpack Compose, Material 3)  
+**Theme Implementation:** `com.mpx.player.ui.theme` (`Color.kt`, `Theme.kt`, `Type.kt`, `Shape.kt`, `Spacing.kt`, `Motion.kt`, `MpxPalette.kt`)  
+**Core Design Philosophy:** Instagram/Facebook level polish — clean, uncrowded layout, standard Android placements, subtle physical motion, with ONE accent color (MPx identity blue by default, used sparingly for selection, progress, and primary actions).
 
-### Color Palette
+---
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#0F0F23` | `--color-primary` |
-| On Primary | `#FFFFFF` | `--color-on-primary` |
-| Secondary | `#1E1B4B` | `--color-secondary` |
-| On Secondary | `#FFFFFF` | `--color-on-secondary` |
-| Accent/CTA | `#E11D48` | `--color-accent` |
-| On Accent/CTA | `#FFFFFF` | `--color-on-accent` |
-| Background | `#000000` | `--color-background` |
-| Foreground | `#F8FAFC` | `--color-foreground` |
-| Card | `#0C0C0D` | `--color-card` |
-| Card Foreground | `#F8FAFC` | `--color-card-foreground` |
-| Muted | `#181818` | `--color-muted` |
-| Muted Foreground | `#94A3B8` | `--color-muted-foreground` |
-| Border | `#312E81` | `--color-border` |
-| Destructive | `#EF4444` | `--color-destructive` |
-| On Destructive | `#000000` | `--color-on-destructive` |
-| Ring | `#FFFFFF` | `--color-ring` |
+## 1. Surfaces & Themes
 
-**Color Notes:** Cinema dark + play red
+MPx supports **System**, **Dark**, and **Light** modes (`Theme.kt`). Flipping between Dark and Light retains the selected color family. The video player route (`PlayerScreen`) is always rendered in Dark mode.
 
-### Typography
+### Default Surfaces (True Black AMOLED vs Clean White)
 
-- **Heading Font:** Inter
-- **Body Font:** Playfair Display
-- **Mood:** bold typography, editorial, poster, near-black, vermillion, luxury, type-as-hero, manifesto, high-contrast
-- **Google Fonts:** [Inter + Playfair Display](https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400&family=Playfair+Display:ital@1)
+| Token (`MpxColors`) | Dark Mode (Default) | Light Mode | Usage |
+|---------------------|---------------------|------------|-------|
+| `black` | `#000000` | `#FFFFFF` | Canvas base, dialog background |
+| `surface` | `#000000` | `#FFFFFF` | Root screens, lists |
+| `surfaceRaised` | `#0A0A0A` | `#F6F6F6` | Cards, list rows |
+| `surfaceVariant` | `#111111` | `#EDEDED` | Elevated cards, chip containers |
+| `surfaceElevated` | `#1A1A1A` | `#E2E2E2` | Sheets, popups, elevated dialogs |
+| `border` | `#222222` | `#E0E0E0` | Hairline dividers, card outlines |
+| `borderSubtle` | `#3394A3B8` | `#1F000000` | Subtle row separators |
 
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400&family=Playfair+Display:ital@1&display=swap');
-```
+### Theme Color Families (`mpxThemeColorsFor`)
 
-### Spacing Variables
+The user can choose between 6 surface families (one color, two brightnesses):
+1. **True Black / White** (Default): Pure `#000000` AMOLED base / `#FFFFFF` Light base.
+2. **Charcoal / Warm Light**: `#121212` softer AMOLED base / `#FAF7F2` warm-paper light base.
+3. **Graphite**: `#1E1E1E` dark base.
+4. **Midnight / Cool Light**: `#0A0F1E` navy dark base / `#F4F7FA` cool-mist light base.
+5. **Forest**: `#0C1510` dark base.
+6. **Plum**: `#16111F` dark base.
+
+---
+
+## 2. Accents & Semantics
+
+### Identity Accent (`primary`, `primaryHover`, `primaryVariant`)
+
+- Default: **MPx Identity Blue** (`primary #3B82F6`, `primaryHover #2563EB`, `primaryVariant #1D4ED8`).
+- Accent is applied over surfaces via `MpxTheme.colors.primary` and `MaterialTheme.colorScheme.primary`.
+- **12 User-Selectable Palettes:** Blue, Emerald, Violet, Amber, Rose, Teal, Sky, Orange, Pink, Lime, Indigo, Cyan (`MpxPalette.kt`). Palettes modify *only* the accent tokens; surface backgrounds and contrast rules remain untouched.
+
+### Semantic Tokens
+
+| Token | Dark Mode | Light Mode | Usage |
+|-------|-----------|------------|-------|
+| `destructive` | `#EF4444` | `#DC2626` | Destructive actions, fatal error states (never decorative) |
+| `warning` / `warningContainer` | `#FFB74D` / `0x33FFB74D` | `#D97706` / `0x26D97706` | Non-fatal warnings (e.g. decoder fallbacks) |
+| `success` | `#10B981` | `#059669` | Success confirmation, completed states |
+| `textPrimary` | `#FFFFFF` | `#111111` | High-emphasis headings, titles |
+| `textSecondary` | `#CBD5E1` | `#475569` | Body copy, secondary metadata |
+| `textMuted` | `#94A3B8` | `#64748B` | Subtle captions, timestamps, placeholder text |
+
+---
+
+## 3. Typography (`Type.kt`)
+
+All typography tokens use the system font (`FontFamily.Default`) via Material 3 `Typography`.
+No external fonts (Inter, Playfair Display) are bundled. All sizes use `.sp` to support system font-scaling accessibility.
+
+| Style | Weight | Size | Line Height |
+|-------|--------|------|-------------|
+| `headlineLarge` | Bold (700) | 28sp | 34sp |
+| `headlineMedium` | Bold (700) | 22sp | 28sp |
+| `titleLarge` | SemiBold (600) | 19sp | 24sp |
+| `titleMedium` | Medium (500) | 16sp | 22sp |
+| `titleSmall` | SemiBold (600) | 14sp | 20sp |
+| `bodyLarge` | Normal (400) | 15sp | 22sp |
+| `bodyMedium` | Normal (400) | 14sp | 20sp |
+| `bodySmall` | Normal (400) | 12sp | 16sp |
+| `labelMedium` | Medium (500) | 12sp | 16sp |
+| `labelSmall` | SemiBold (600) | 11sp | 14sp |
+
+Diagnostics and config text use `FontFamily.Monospace`.
+
+---
+
+## 4. Spacing & Sizing Grid (`Spacing.kt`)
+
+Based on an 8dp grid (with 2dp/4dp/12dp half-steps):
+
+| Token | Value | Standard Usage |
+|-------|-------|----------------|
+| `MpxSpaceXxs` | `2.dp` | Hairline gaps, micro-badges |
+| `MpxSpaceXs` | `4.dp` | Inline icon-to-text spacing |
+| `MpxSpaceS` | `8.dp` | Standard padding, item spacing, card gaps |
+| `MpxSpaceM` | `12.dp` | Screen padding (compact), list row vertical padding |
+| `MpxSpaceL` | `16.dp` | Standard screen horizontal padding, card content padding |
+| `MpxSpaceXl` | `24.dp` | Section spacing, header margins |
+| `MpxSpaceXxl` | `32.dp` | Major section separators |
+
+### Component Sizing Constants
+
+- `MpxTouchTarget = 48.dp`: Minimum touch target height/width per Android accessibility guidelines.
+- `MpxIconSize = 24.dp`: Standard navigation and action icon dimensions.
+- `MpxDockHeight = 64.dp`: Bottom navigation dock height.
+- `MpxCardGap = 8.dp`: Spacing between adjacent cards.
+
+---
+
+## 5. Shapes (`Shape.kt`)
+
+Restrained radii; soft rectangles and pills only. No decorative asymmetric shapes.
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
-
-### Shadow Depths
-
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
+| `MpxShapes.extraSmall` | `4.dp` | Tooltips, micro-indicators |
+| `MpxShapes.small` | `8.dp` | Input fields, small buttons, tags |
+| `MpxShapes.medium` | `12.dp` | Tiles, dialog content boxes |
+| `MpxShapes.large` | `16.dp` | Standard cards (`MpxRadiusCard`), dialog frames |
+| `MpxShapes.extraLarge` | `24.dp` | Large sheets, chips (`MpxRadiusChip`) |
+| `MpxRadiusPill` | `100.dp` | Capsule buttons, pill FABs, filter chips |
+| `MpxHairline` | `0.5.dp` | Hairline divider stroke |
 
 ---
 
-## Component Specs
+## 6. Motion (`Motion.kt`)
 
-### Buttons
+Quick, physical, subtle animations. No springy, bouncy, or gratuitous motion.
 
-```css
-/* Primary Button */
-.btn-primary {
-  background: #E11D48;
-  color: #FFFFFF;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: #F8FAFC;
-  border: 2px solid #0F0F23;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
-
-### Cards
-
-```css
-.card {
-  background: #000000;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
-
-### Inputs
-
-```css
-.input {
-  padding: 12px 16px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 200ms ease;
-}
-
-.input:focus {
-  border-color: #0F0F23;
-  outline: none;
-  box-shadow: 0 0 0 3px #0F0F2320;
-}
-```
-
-### Modals
-
-```css
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-}
-```
+- `MpxMotionFast = 150ms`: State toggles, button presses.
+- `MpxMotionStandard = 250ms`: Sheet expansions, dialog enter/exit.
+- `MpxMotionSlow = 350ms`: Major screen route crossfades.
+- Easings:
+  - `MpxEasingStandard`: `FastOutSlowInEasing` (standard transitions)
+  - `MpxEasingDecelerate`: `LinearOutSlowInEasing` (incoming overlays)
+  - `MpxEasingEmphasized`: `CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)`
+- Dock tab switches are tap-only (no horizontal swipe token).
 
 ---
 
-## Style Guidelines
+## 7. Android UI Guidelines & Rules
 
-**Style:** Dark Mode (OLED)
-
-**Keywords:** Dark theme, low light, high contrast, deep black, midnight blue, eye-friendly, OLED, night mode, power efficient
-
-**Best For:** Night-mode apps, coding platforms, entertainment, eye-strain prevention, OLED devices, low-light
-
-**Key Effects:** Minimal glow (text-shadow: 0 0 10px), dark-to-light transitions, low white emission, high readability, visible focus
-
-### Page Pattern
-
-**Pattern Name:** Hero-Centric Design
-
-- **Conversion Strategy:** One primary CTA. Let the hero dominate the initial viewport without hiding the next content cue. Use a static hero and non-pulsing CTA when reduced motion is requested; provide video controls. Pause hero media offscreen/hidden and keep the final hero message and CTA static under reduced motion.
-- **CTA Placement:** Hero dominant (center/bottom) + Sticky nav CTA
-- **Section Order:** Full-bleed Hero (headline + visual) > Single value prop strip > Key benefit or proof > Primary CTA
-
----
-
-## Anti-Patterns (Do NOT Use)
-
-- ❌ Static layout
-- ❌ Slow video player
-
-### Additional Forbidden Patterns
-
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
-
----
-
-## Pre-Delivery Checklist
-
-Before delivering any UI code, verify:
-
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
-- [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
-- [ ] Light mode: text contrast 4.5:1 minimum
-- [ ] Focus states visible for keyboard navigation
-- [ ] `prefers-reduced-motion` respected
-- [ ] Responsive: 375px, 768px, 1024px, 1440px
-- [ ] No content hidden behind fixed navbars
-- [ ] No horizontal scroll on mobile
+1. **Tokens over Literals:** Always use `MpxTheme.colors`, `MpxShapes`, `MpxTypography`, and `MpxSpace*` tokens. Never introduce raw `Color(0x...)` or hardcoded `.dp`/`.sp` values in UI components.
+2. **Theme Awareness:** Never hardcode `Color.White` or `Color.Black` for text or icons inside composables; use `colors.textPrimary` or rely on `LocalContentColor`. Dark mode icons over dark media thumbnails may use white with explicit context.
+3. **Accessibility:**
+   - Minimum 48dp touch targets on all interactive elements (`MpxTouchTarget`).
+   - Every interactive icon must supply a localized `contentDescription` (or `null` if purely decorative beside a text label).
+   - Text sizes must always use `.sp` to respect system font scaling.
+4. **RTL Support:**
+   - MPx supports LTR and RTL (e.g. Arabic) using `LocalLayoutDirection`.
+   - Never use absolute Left/Right layout paddings or alignments; use start/end.
