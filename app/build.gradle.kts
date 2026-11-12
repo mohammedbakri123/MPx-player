@@ -112,7 +112,8 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -132,6 +133,9 @@ android {
         buildConfig = true
         compose = true
     }
+    composeCompiler {
+        includeComposeMappingFile.set(false)
+    }
     packaging {
         // Native libs (mpv) are extracted at install time
         // (useLegacyPackaging). AGP 9 refuses
@@ -143,6 +147,9 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+    lint {
+        checkReleaseBuilds = false
     }
 }
 

@@ -1,12 +1,14 @@
 # CI — debug build + unit tests on every pull request, and the minified
-# release build on demand (manual dispatch) or on a version-tag push.
+# release build on demand (manual dispatch), on version-tag pushes, or
+# on pull requests that touch build/proguard/playback/di/manifest paths (D-18, D-19).
 #
 # Runs on GitHub-hosted runners, which have normal internet access, so the
 # mpv AAR and Gradle plugins resolve directly (unlike the maintainer's
 # local setup — see CONTRIBUTING.md for the offline / local-Maven notes).
 #
-# The minified build is NOT run on PRs: it is slow, and it is the release
-# step. It used to run only on the maintainer's machine, but the local
+# The minified build runs on PRs when R8/reflection-sensitive paths change,
+# and verifies R8-kept classes (e.g. is.xyz.mpv) via dexdump smoke assertions.
+# It used to run only on the maintainer's machine, but the local
 # Gradle daemon cannot dispatch to its forked daemon on this VM
 # (Broken pipe on the first client write, daemon never accepts — see the
 # migration mission log, 2026-11-11), so the release APK is built here
@@ -52,9 +54,43 @@ jobs:
       - name: Build debug + run unit tests
         run: ./gradlew --no-daemon assembleDebug testDebugUnitTest
 
+  changes:
+    # Path-filter check for pull requests: determines whether R8/reflection-sensitive
+    # paths were modified, warranting a minified build run (D-19).
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      should_minify: ${{ steps.check.outputs.should_minify }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: check
+        name: Check for R8-sensitive path changes
+        run: |
+          BASE_REF="origin/${{ github.base_ref }}"
+          DIFF=$(git diff --name-only "$BASE_REF"...HEAD 2>/dev/null || git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD 2>/dev/null || true)
+          echo "Changed files in PR:"
+          echo "$DIFF"
+          if echo "$DIFF" | grep -q -E '^(gradle/|.*\.gradle\.kts$|gradle\.properties$|app/proguard-rules\.pro$|app/src/main/AndroidManifest\.xml$|app/src/main/java/com/mpx/player/playback/|app/src/main/java/com/mpx/player/di/)'; then
+            echo "R8-sensitive files changed; minified build enabled."
+            echo "should_minify=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No R8-sensitive files changed; skipping minified build."
+            echo "should_minify=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build-minified:
-    # Manual dispatch, or a version-tag push (v0.4.55, ...). Never on PRs.
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    # Manual dispatch, version-tag push (v0.4.55, ...), or PRs touching
+    # gradle, proguard, playback, di, or manifest (D-18, D-19).
+    needs: [changes]
+    if: |
+      always() && (
+        github.event_name == 'workflow_dispatch' ||
+        startsWith(github.ref, 'refs/tags/v') ||
+        (github.event_name == 'pull_request' && needs.changes.outputs.should_minify == 'true')
+      )
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -79,6 +115,24 @@ jobs:
 
       - name: Build minified release APKs
         run: ./gradlew --no-daemon assembleMinified
+
+      - name: Verify R8-kept classes (smoke assertion)
+        run: |
+          DEXDUMP=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -name dexdump | sort -V | tail -n 1)
+          if [ -z "$DEXDUMP" ] || [ ! -x "$DEXDUMP" ]; then
+            echo "Error: dexdump not found in Android SDK"
+            exit 1
+          fi
+          for apk in app/build/outputs/apk/minified/app-*-minified.apk; do
+            test -f "$apk" || { echo "Error: Expected minified APK missing: $apk"; exit 1; }
+            echo "Checking kept classes in $apk..."
+            mpv_count=$("$DEXDUMP" "$apk" | grep -c "Class descriptor.*Lis/xyz/mpv/" || true)
+            echo "Found $mpv_count kept is.xyz.mpv classes in $apk"
+            if [ "$mpv_count" -le 0 ]; then
+              echo "Assertion failed: No is.xyz.mpv classes found in $apk! R8 may have stripped required native reflection/JNI wrapper classes."
+              exit 1
+            fi
+          done
 
       - name: Upload minified APKs
         uses: actions/upload-artifact@v4
