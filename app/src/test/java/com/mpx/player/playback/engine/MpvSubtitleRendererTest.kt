@@ -192,7 +192,11 @@ class MpvSubtitleRendererTest {
         renderer.onFileLoaded()
 
         assertNull(core.pendingSubtitles)
-        assertEquals("cp1256", fakePort.recordedProperties["sub-codepage"])
+        assertEquals(
+            listOf("sub-codepage" to "cp1256", "sub-codepage" to "auto"),
+            fakePort.propertyHistory.filter { it.first == "sub-codepage" },
+        )
+        assertEquals("auto", fakePort.recordedProperties["sub-codepage"])
         assertTrue(
             fakePort.recordedCommands.contains(
                 listOf("sub-add", "http://example.com/en.srt", "select", "English"),
