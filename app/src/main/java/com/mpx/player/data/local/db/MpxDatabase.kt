@@ -33,7 +33,7 @@ import com.mpx.player.data.local.entity.PlaylistItemEntity
         PlaylistItemEntity::class,
         PlaybackResumeEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = false,
 )
 abstract class MpxDatabase : RoomDatabase() {
@@ -240,6 +240,24 @@ abstract class MpxDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * CP-3 / Phase 8: Add indexes on timestamp and lookup columns sorted
+         * and queried by the UI to eliminate full table scans:
+         * - playback_history: lastPlayedAt
+         * - favourites: addedAt, mediaId
+         * - playback_resume: lastUpdated
+         * - custom_playlists: updatedAt
+         */
+        val MIGRATION_12_13: Migration = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_playback_history_lastPlayedAt` ON `playback_history` (`lastPlayedAt`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_favourites_addedAt` ON `favourites` (`addedAt`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_favourites_mediaId` ON `favourites` (`mediaId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_playback_resume_lastUpdated` ON `playback_resume` (`lastUpdated`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_custom_playlists_updatedAt` ON `custom_playlists` (`updatedAt`)")
+            }
+        }
+
         fun getInstance(context: Context): MpxDatabase {
             return instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -247,7 +265,20 @@ abstract class MpxDatabase : RoomDatabase() {
                     MpxDatabase::class.java,
                     DATABASE_NAME,
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8,
+                        MIGRATION_8_9,
+                        MIGRATION_9_10,
+                        MIGRATION_10_11,
+                        MIGRATION_11_12,
+                        MIGRATION_12_13,
+                    )
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }
