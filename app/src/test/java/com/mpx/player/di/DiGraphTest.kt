@@ -35,9 +35,12 @@ import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.PersistedQueue
 import com.mpx.player.playback.PlayableMedia
+import com.mpx.player.playback.PlaybackController
 import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.playback.PlaybackResumeManager
+import com.mpx.player.playback.PlaybackStateSource
 import com.mpx.player.playback.QueueStore
+import com.mpx.player.playback.StreamPlayer
 import com.mpx.player.playback.SubtitleManager
 import com.mpx.player.playback.SubtitleTrackInfo
 import com.mpx.player.playback.engine.PlayerEngine
@@ -120,6 +123,26 @@ class DiGraphTest {
     }
 
     @Test
+    fun `playbackModule registers interface bindings for PlaybackStateSource, PlaybackController, and StreamPlayer as singletons`() {
+        val definitions = playbackModule.mappings.values.map { it.beanDefinition }
+        val expectedInterfaces = listOf(
+            PlaybackStateSource::class,
+            PlaybackController::class,
+            StreamPlayer::class,
+        )
+
+        for (iface in expectedInterfaces) {
+            val def = definitions.firstOrNull { it.hasType(iface) }
+            assertNotNull("Missing binding for ${iface.simpleName} in playbackModule", def)
+            assertEquals(
+                "${iface.simpleName} must be registered as Kind.Singleton",
+                Kind.Singleton,
+                def?.kind,
+            )
+        }
+    }
+
+    @Test
     fun `appModule registers all database and repository bindings as singletons`() {
         val definitions = appModule.mappings.values.map { it.beanDefinition }
 
@@ -190,6 +213,31 @@ class DiGraphTest {
         assertTrue("References must be identical", first === second)
     }
 
+    @Test
+    fun `PlaybackCoordinator interface bindings resolve to the exact same coordinator instance`() {
+        val coordinator = createTestCoordinator()
+
+        val koinApp = koinApplication {
+            modules(
+                module {
+                    single { coordinator }
+                    single<PlaybackStateSource> { get<PlaybackCoordinator>() }
+                    single<PlaybackController> { get<PlaybackCoordinator>() }
+                    single<StreamPlayer> { get<PlaybackCoordinator>() }
+                },
+            )
+        }
+
+        val concrete = koinApp.koin.get<PlaybackCoordinator>()
+        val stateSource = koinApp.koin.get<PlaybackStateSource>()
+        val controller = koinApp.koin.get<PlaybackController>()
+        val streamPlayer = koinApp.koin.get<StreamPlayer>()
+
+        assertSame(concrete, stateSource)
+        assertSame(concrete, controller)
+        assertSame(concrete, streamPlayer)
+    }
+
     // --- Graph Resolution Verification (Manual checkKoin without Android Context) ---
 
     @Test
@@ -201,6 +249,9 @@ class DiGraphTest {
 
         val testDependenciesModule = module {
             single { coordinator }
+            single<PlaybackStateSource> { get<PlaybackCoordinator>() }
+            single<PlaybackController> { get<PlaybackCoordinator>() }
+            single<StreamPlayer> { get<PlaybackCoordinator>() }
             single<AppSettingsRepository> { settingsRepo }
             single<MediaRepository> { mediaRepo }
             single<MediaPersistenceRepository> { persistenceRepo }
@@ -234,6 +285,32 @@ class DiGraphTest {
         // ViewModels must produce fresh instances on each resolution
         val playerVm2 = koin.get<PlayerViewModel>()
         assertNotSame("ViewModels must not be singletons", playerVm, playerVm2)
+    }
+
+    @Test
+    fun `PlayerViewModel and NetworkViewModel resolve from interface bindings without concrete PlaybackCoordinator in graph`() {
+        val fakeStateSource = com.mpx.player.fakes.FakePlaybackStateSource()
+        val fakeStreamPlayer = object : StreamPlayer {
+            override fun playStream(url: String) {}
+        }
+        val settingsRepo = FakeSettingsRepository()
+
+        val interfaceOnlyModule = module {
+            single<PlaybackStateSource> { fakeStateSource }
+            single<StreamPlayer> { fakeStreamPlayer }
+            single<AppSettingsRepository> { settingsRepo }
+            single<MediaPersistenceRepository> { FakeMediaPersistenceRepository() }
+        }
+
+        val koinApp = koinApplication {
+            modules(interfaceOnlyModule, viewModelModule)
+        }
+
+        val playerVm = koinApp.koin.get<PlayerViewModel>()
+        assertNotNull(playerVm)
+
+        val networkVm = koinApp.koin.get<NetworkViewModel>()
+        assertNotNull(networkVm)
     }
 
     // --- Minimal Test Doubles for Graph Resolution ---
