@@ -4,15 +4,20 @@ import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.VideoFile
 
 /**
- * Repository-managed process-lifetime cache of the last media scan.
+ * Repository-managed process-lifetime cache of the last media scan results.
  * Owned as an instance by [MediaStoreRepository] (registered as a Koin singleton).
  *
  * Preserves the previous scan across LocalViewModel re-creations so returning
  * to the Local tab renders previous content instantly without flashing empty
  * while the background rescan runs (#100).
  *
- * Provides explicit invalidation ([invalidate], [invalidateFolders], [invalidateVideos])
- * and path resolution for fallback bucket IDs.
+ * Invariants:
+ * - Thread safety: cached data is held in `@Volatile` triples ([cachedFolders], [cachedVideos])
+ *   keyed by the `showAll` and `showHiddenFiles` query flags.
+ * - Instance ownership: completely avoids global mutable companion or static state.
+ * - Explicit invalidation: provides fine-grained invalidation hooks ([invalidate],
+ *   [invalidateFolders], [invalidateVideos]) for explicit cache clearing.
+ * - Bucket path resolution: provides [findFolderPath] to resolve directory paths for blank bucket ID rows.
  */
 class MediaStoreCache {
     @Volatile

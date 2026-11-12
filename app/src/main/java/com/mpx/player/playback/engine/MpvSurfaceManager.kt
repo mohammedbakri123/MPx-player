@@ -5,14 +5,27 @@ import android.view.Surface
 
 /**
  * Manages native surface attachment, surface sizing, surface loss detection,
- * and video output (VO) recovery (e.g. vo=null to vo=gpu) under libmpv (PI-2, Phase 8 Step 3.4).
+ * and video output (VO) recovery (e.g. `vo=null` to `vo=gpu`) under libmpv.
+ *
+ * Collaborators:
+ * - [MpvPort]: abstracted native interface used for surface attachment and property manipulation.
+ * - [MpvCoreEngine]: coordinates engine lifecycle and playback events with surface changes.
  *
  * Encapsulates:
- * - [surfaceLock]: synchronization lock for all surface and VO state mutations.
+ * - [surfaceLock]: synchronization lock for all surface and VO state mutations across threads.
  * - [currentSurface]: the currently attached Android [Surface], null when detached.
- * - [voIsNull]: tracking whether libmpv's VO is currently set or reported as "null".
- * - VO restore logic across attachSurface, onSurfaceChanged, time-pos, vo property updates,
- *   and load preparation.
+ * - [voIsNull]: tracks whether libmpv's VO is currently set or reported as "null" (issue #161).
+ *
+ * Invariants & VO Restore Rules:
+ * - On surface attach: if a load is actively preparing (`willLoad = true`) and `voIsNull = false`,
+ *   setting "vo" is skipped because mpv's `loadfile` initializes VO against the attached surface.
+ * - If `voIsNull = true`, "vo=gpu" is always restored even when `willLoad = true`, preventing black
+ *   screens on surface reattachment.
+ * - Surface changes, playback resumptions, and VO loss notifications restore "vo=gpu" whenever
+ *   a valid surface is held.
+ * - Detaching a surface sets `vo=null` to release native display resources.
+ * - All surface and VO transitions are guarded by [surfaceLock] for thread safety between UI
+ *   surface callbacks and engine event dispatch threads.
  */
 internal class MpvSurfaceManager(
     private val port: MpvPort,

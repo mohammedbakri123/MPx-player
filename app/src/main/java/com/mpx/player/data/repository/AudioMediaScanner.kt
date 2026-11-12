@@ -13,6 +13,18 @@ import java.util.Locale
 
 /**
  * Scanner for audio tracks, albums, artists, and audio folders backed by MediaStore.
+ *
+ * Collaborators:
+ * - [Context]: provides [android.content.ContentResolver] for querying MediaStore.
+ * - [MediaStoreScannerHelper]: resolves audio content URIs across storage volumes and hidden file settings.
+ *
+ * Invariants:
+ * - Multi-volume support: iterates over all volume-specific URIs returned by
+ *   [MediaStoreScannerHelper.getAudioContentUris].
+ * - In-memory grouping: groups tracks into [AudioAlbum], [AudioArtist], and [AudioFolder] domain models,
+ *   sorting by newest track dates and track indices.
+ * - Hidden file filtering: excludes hidden tracks in Kotlin when disabled in settings.
+ * - Raw values: models store durations as raw milliseconds; formatting is deferred to UI rows.
  */
 internal class AudioMediaScanner(
     private val context: Context,

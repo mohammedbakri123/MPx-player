@@ -16,29 +16,34 @@ import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlayableMedia
 
 /**
- * Phase 4 step 1: the core mpv engine, extracted from [MpvPlayerEngine].
+ * Core playback engine driving native libmpv through the [MpvPort] abstraction.
  *
- * Owns the mpv lifecycle (MPV creation/init, release), the load/play
- * commands (load, play, pause, seek, setSpeed, stop, next/previous),
- * position/state observation (cached position/duration/buffered/playing/
- * state, property getters, mpv event + property observation) and the
- * decoder fallback chain. [MpvPlayerEngine] stays the [PlayerEngine]
- * implementation and is a thin facade delegating to this class.
+ * Owns the native mpv lifecycle (initialization, options setup, log observation,
+ * and process-lifetime release), load commands (`loadfile`), transport controls
+ * (play, pause, seek, setSpeed, stop), cached position/duration/state observation,
+ * and the hardware decoder fallback chain ([attemptDecoderFallback]).
  *
- * What is NOT here yet (a later Phase 4 step, reached through [Host]):
- * settings-to-mpv configuration (step 4). Subtitle
- * rendering/confirmation moved to [MpvSubtitleRenderer] in step 3, and
- * track listing/switching moved to [MpvTrackSelection] in step 2. The
- * host callbacks below are the seams for those concerns: they run at
- * exactly the points the old monolith ran that code, so behaviour is
- * unchanged. The only mpv knowledge the facade still touches directly
- * is the not-yet-moved code, through [mpv] and the small internal helpers.
+ * Extracted collaborators handle specialized concerns:
+ * - [MpvSurfaceManager]: manages surface attachment, sizing, and VO recovery under `surfaceLock`.
+ * - [MpvTrackSelection]: manages audio, video, and subtitle track listing and selection.
+ * - [MpvSubtitleRenderer]: manages subtitle rendering, codepage, and asynchronous confirmation.
+ * - [MpvEngineConfig]: manages settings-to-mpv option mapping and logarithmic zoom conversion.
+ * - [MpvLifecycleManager] & [MpvMetricsTracker]: handles MPV options, error capture, and metrics.
  *
- * Verifiable by CI build + device only: constructing this class creates
- * a real MPV instance (native lib), so there are no unit tests for the
- * engine itself — except [isPathMatch], which lives in the companion
- * object precisely so it can be tested without mpv (see
- * MpvCoreEngineTest).
+ * Collaborators & Seams:
+ * - Communicates with native mpv strictly via [port] ([MpvPort]), allowing complete, deterministic
+ *   JVM unit testing via `FakeMpvPort` without an Android device or emulator (see `MpvCoreEngineTest`).
+ * - Interacts with [host] ([MpvCoreEngine.Host]) for cross-cutting decoder fallback stages,
+ *   subtitle pin clearing, and queue item updates.
+ * - Dispatches callbacks to [listener] ([com.mpx.player.playback.PlayerEngine.Listener]).
+ *
+ * Invariants:
+ * - Operates primarily on the main thread via [mainHandler] ([EngineHandler]), using `@Volatile`
+ *   fields for cross-thread property queries.
+ * - Process lifetime: in production, this engine lives for the duration of the application process;
+ *   [release] is annotated [VisibleForTesting].
+ * - Load generation counter ([loadGeneration]) prevents in-flight `FILE_LOADED` callbacks
+ *   from re-starting playback after a concurrent [stop].
  */
 internal class MpvCoreEngine(
     private val context: Context,
@@ -49,12 +54,9 @@ internal class MpvCoreEngine(
 ) {
 
     /**
-     * Seams for the concerns that stay in [MpvPlayerEngine] until their
-     * Phase 4 step moves them (step 4: settings-to-mpv) or that live in
-     * the extracted classes and are reached through the facade (step 3:
-     * [MpvSubtitleRenderer]; step 2: [MpvTrackSelection]). Every method
-     * is called at exactly the point the old monolith ran the equivalent
-     * code.
+     * Seams for collaborating subsystems ([MpvSubtitleRenderer], [MpvTrackSelection],
+     * [MpvEngineConfig]) coordinating decoder stages, subtitle pick pins, and queue
+     * synchronization during media load and playback.
      */
     interface Host {
         /** mpv hwdec option value for a user decoder mode (step 4). Pure; safe during init. */

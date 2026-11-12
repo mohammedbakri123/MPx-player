@@ -9,46 +9,30 @@ import com.mpx.player.playback.subtitleMpvOptions
 import java.io.File
 
 /**
- * Phase 4 step 3: subtitle rendering, extracted from [MpvPlayerEngine].
+ * Subtitle rendering, codepage application, and track confirmation under libmpv.
  *
- * Owns the subtitle style options ([applySubtitleSettings], via the
- * [subtitleMpvOptions] mapping), the subtitle codepage
- * ([applySubtitleCodepage]), the pending-subtitle queue dispatch on
- * FILE_LOADED, the remembered external pick + pin
- * ([reapplyRememberedPick]), the #332 sub-add outcome confirmation,
- * and [replaceMediaItem] — whose body is sub-add + #332 confirmation,
- * so it fits this class whole (step 1 left it in the facade for this
- * step). [MpvPlayerEngine] stays the [PlayerEngine] implementation and
- * is a thin facade delegating to this class.
+ * Owns the subtitle style options ([applySubtitleSettings], via the [subtitleMpvOptions] mapping),
+ * the subtitle codepage configuration ([applySubtitleCodepage]), pending subtitle queue dispatch
+ * upon `FILE_LOADED`, remembered external subtitle reapplication ([reapplyRememberedPick]),
+ * external subtitle addition confirmation (#332), and dynamic subtitle replacement ([replaceMediaItem]).
  *
- * mpv access comes from the core ([MpvCoreEngine.mpv]) — no second MPV
- * instance is created — and track-list reads/writes go through
- * [MpvTrackSelection] (constructor dependency, not the facade). The
- * queue state [replaceMediaItem] and the FILE_LOADED dispatch mutate
- * lives in the core ([MpvCoreEngine.currentQueue],
- * [MpvCoreEngine.pendingSubtitles], …) and is reached through it.
- * The [PendingSubtitle]/[PendingSubtitles] queue data moved here with
- * the dispatch: the core still builds the queue in `load()` (same
- * package, so it keeps constructing them) and stores it in
- * [MpvCoreEngine.pendingSubtitles]; this class owns dispatching and
- * clearing it.
+ * Collaborators:
+ * - [MpvCoreEngine]: provides access to the native port ([MpvCoreEngine.port]), main thread handler
+ *   ([MpvCoreEngine.mainHandler]), and current queue items.
+ * - [MpvTrackSelection]: queries and updates subtitle track selections.
  *
- * Construction order matters: the facade builds the core first, and
- * the core's init applies the saved subtitle settings through
- * [applySubtitleSettingsTo] (the core variant — it takes the core
- * explicitly, so it can run before this class exists). The facade's
- * [MpvCoreEngine.Host] callbacks delegate to this instance only after
- * construction, which is when they can first fire. The
- * [MpvTrackSelection.Host] seam stays: the track class is built before
- * this class, so it still clears the remembered pick through the
- * facade, which forwards to [clearRememberedExternalPick].
- *
- * Verifiable by CI build + device only: every function here touches
- * mpv directly, so there are no unit tests for the class itself — with
- * two exceptions in the companion object, pure logic kept there
- * precisely so it can be tested without mpv (see
- * MpvSubtitleRendererTest): [isUsableSubtitleUri] and
- * [isSameExternalSubtitle].
+ * Invariants:
+ * - Subtitle confirmation timeout: adding an external subtitle (`sub-add`) arms a 5000 ms timeout
+ *   via `core.mainHandler.postDelayed`. If the subtitle track fails to appear in mpv's track-list
+ *   within 5000 ms, the timeout fires, resets pending pin state, and notifies confirmation failure.
+ * - Codepage isolation (#441): applying a codepage sets mpv's `"sub-codepage"` property; when a
+ *   subsequent subtitle has no explicit codepage, it is reset to `"auto"` so earlier codepages do
+ *   not bleed into subsequent media loads.
+ * - Embedded vs external precedence: selecting an embedded subtitle or "Off" clears remembered
+ *   external picks; remembered picks are restored on file load or track changes only when the
+ *   track appears and no conflicting manual pick is active.
+ * - Unit testing: thoroughly verified by JVM unit tests using `FakeMpvPort` and `DirectEngineHandler`
+ *   (see `MpvSubtitleRendererTest`).
  */
 internal class MpvSubtitleRenderer(
     private val core: MpvCoreEngine,
