@@ -447,10 +447,16 @@ object MediaSortComparator {
         caseSensitive: Boolean = false,
         ignoreExtension: Boolean = true,
     ): Comparator<Playlist> = Comparator { a, b ->
-        val isCustomA = a.id.startsWith("custom:")
-        val isCustomB = b.id.startsWith("custom:")
-        if (isCustomA != isCustomB) {
-            return@Comparator if (isCustomA) 1 else -1
+        // Issue #242 (DATE / DATE_DURATION only): custom playlists sort
+        // after device ones. The old DATE arm relied on the string
+        // fallback of compareIds() for this; scoping the partition to
+        // the DATE arms keeps NAME / SIZE / COUNT behaviour unchanged.
+        if (primary == SortField.DATE || primary == SortField.DATE_DURATION) {
+            val isCustomA = a.id.startsWith("custom:")
+            val isCustomB = b.id.startsWith("custom:")
+            if (isCustomA != isCustomB) {
+                return@Comparator if (isCustomA) 1 else -1
+            }
         }
 
         var cmp = comparePlaylistByField(a, b, primary, numeric, caseSensitive, ignoreExtension)
