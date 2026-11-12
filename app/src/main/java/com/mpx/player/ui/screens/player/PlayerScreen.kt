@@ -512,6 +512,7 @@ fun PlayerScreen(
                 },
                 onAddToPlaylist = { state.currentItem?.let { viewModel.showAddToPlaylist(it) } },
                 sheetState = playbackSheetState,
+                getMediaInfo = { viewModel.getMediaInfo() },
             ),
         )
     }

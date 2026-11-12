@@ -5,6 +5,7 @@ import android.view.Surface
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
+import com.mpx.player.playback.MediaInfo
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.PlaybackStateSource
 import com.mpx.player.playback.engine.TrackType
@@ -58,6 +59,7 @@ class FakePlaybackStateSource(
     val attachedSurfaces = mutableListOf<Surface>()
     var detachSurfaceCalls = 0
     val surfaceChangedCalls = mutableListOf<Pair<Int, Int>>()
+    var mediaInfoToReturn: MediaInfo? = null
 
     override fun restorePersistedQueueIfEmpty(): Boolean {
         restoreCalls++
@@ -106,6 +108,8 @@ class FakePlaybackStateSource(
         loadExternalSubtitleCalls.add(Triple(uri, displayName, mimeType))
         return true
     }
+
+    override fun getMediaInfo(): MediaInfo? = mediaInfoToReturn
 
     override val videoWidth: Int = 1920
     override val videoHeight: Int = 1080

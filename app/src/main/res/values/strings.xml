@@ -1138,4 +1138,29 @@
     <string name="pref_folders_select_all">Select all</string>
     <string name="pref_folders_deselect_all">Deselect all</string>
     <string name="share_no_link">No link found in the shared text</string>
+
+    <!-- Media Information (issue #468) -->
+    <string name="media_info_title">Media Information</string>
+    <string name="media_info_section_general">General</string>
+    <string name="media_info_section_video">Video</string>
+    <string name="media_info_section_audio">Audio</string>
+    <string name="media_info_section_subtitles">Subtitles</string>
+    <string name="media_info_audio_track">Audio Track %1$d</string>
+    <string name="media_info_audio_track_selected">Audio Track %1$d (Selected)</string>
+    <string name="media_info_title_label">Title</string>
+    <string name="media_info_format">Format</string>
+    <string name="media_info_file_size">File size</string>
+    <string name="media_info_duration">Duration</string>
+    <string name="media_info_codec">Codec</string>
+    <string name="media_info_resolution">Resolution</string>
+    <string name="media_info_frame_rate">Frame rate (FPS)</string>
+    <string name="media_info_bitrate">Bitrate</string>
+    <string name="media_info_channels">Channels</string>
+    <string name="media_info_sample_rate">Sample rate</string>
+    <string name="media_info_language">Language</string>
+    <string name="media_info_status_selected">Selected</string>
+    <string name="media_info_status_external">External</string>
+    <string name="media_info_status_embedded">Embedded</string>
+    <string name="media_info_unknown">Unknown</string>
+    <string name="media_info_no_media">No media loaded</string>
 </resources>

@@ -13,6 +13,7 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
+import com.mpx.player.playback.MediaInfo
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackController
 import com.mpx.player.playback.PlaybackState
@@ -134,6 +135,8 @@ class PlayerViewModel(
     override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) = playback.selectSubtitleTrack(groupIndex, trackIndex)
     override fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean =
         playback.loadExternalSubtitle(uri, displayName, mimeType)
+
+    override fun getMediaInfo(): MediaInfo? = playback.getMediaInfo()
 
     override val videoWidth: Int get() = playback.videoWidth
     override val videoHeight: Int get() = playback.videoHeight

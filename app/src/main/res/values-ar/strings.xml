@@ -1137,4 +1137,29 @@
     <string name="pref_folders_select_all">تحديد الكل</string>
     <string name="pref_folders_deselect_all">إلغاء تحديد الكل</string>
     <string name="share_no_link">لم يتم العثور على رابط في النص المشارك</string>
+
+    <!-- Media Information (issue #468) -->
+    <string name="media_info_title">معلومات الوسائط</string>
+    <string name="media_info_section_general">عام</string>
+    <string name="media_info_section_video">الفيديو</string>
+    <string name="media_info_section_audio">الصوت</string>
+    <string name="media_info_section_subtitles">الترجمة</string>
+    <string name="media_info_audio_track">المسار الصوتي %1$d</string>
+    <string name="media_info_audio_track_selected">المسار الصوتي %1$d (محدد)</string>
+    <string name="media_info_title_label">العنوان</string>
+    <string name="media_info_format">الصيغة</string>
+    <string name="media_info_file_size">حجم الملف</string>
+    <string name="media_info_duration">المدة</string>
+    <string name="media_info_codec">الترميز</string>
+    <string name="media_info_resolution">الدقة</string>
+    <string name="media_info_frame_rate">معدل الإطارات (FPS)</string>
+    <string name="media_info_bitrate">معدل البت</string>
+    <string name="media_info_channels">القنوات</string>
+    <string name="media_info_sample_rate">معدل العينة</string>
+    <string name="media_info_language">اللغة</string>
+    <string name="media_info_status_selected">محدد</string>
+    <string name="media_info_status_external">خارجي</string>
+    <string name="media_info_status_embedded">مدمج</string>
+    <string name="media_info_unknown">غير معروف</string>
+    <string name="media_info_no_media">لم يتم تحميل أي وسائط</string>
 </resources>

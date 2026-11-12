@@ -6,6 +6,7 @@ import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
+import com.mpx.player.playback.MediaInfo
 import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
@@ -39,6 +40,7 @@ class FakePlayerEngine : PlayerEngine {
     var subtitleTracksToReturn: List<SubtitleTrackInfo> = emptyList()
     var metricsToReturn: EnginePlaybackMetrics? = null
     var loadStageToReturn: MpvLoadStage? = null
+    var mediaInfoToReturn: MediaInfo? = null
 
     var playCalls: Int = 0
     var pauseCalls: Int = 0
@@ -64,6 +66,7 @@ class FakePlayerEngine : PlayerEngine {
 
     override fun getPlaybackMetrics(): EnginePlaybackMetrics? = metricsToReturn
     override fun getLoadStage(): MpvLoadStage? = loadStageToReturn
+    override fun getMediaInfo(): MediaInfo? = mediaInfoToReturn
 
     override fun attachSurface(surface: Surface) = Unit
     override fun detachSurface() = Unit

@@ -2,6 +2,10 @@ package com.mpx.player.playback.engine
 
 import android.util.Log
 import com.mpx.player.playback.AudioTrackInfo
+import com.mpx.player.playback.MediaAudioTrackInfo
+import com.mpx.player.playback.MediaInfo
+import com.mpx.player.playback.MediaVideoTrackInfo
+import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
 
 /**
@@ -247,5 +251,97 @@ internal class MpvTrackSelection(
             }
         }
         return subtitleList
+    }
+
+    /**
+     * Technical media information about the current file and its tracks (issue #468).
+     * Reads directly from mpv track-list properties and the media item.
+     */
+    fun getMediaInfo(currentMedia: PlayableMedia?, durationMs: Long?): MediaInfo {
+        val count = port.getPropertyInt("track-list/count") ?: 0
+        var selectedVideo: MediaVideoTrackInfo? = null
+        var fallbackVideo: MediaVideoTrackInfo? = null
+        val audioList = mutableListOf<MediaAudioTrackInfo>()
+        var audioGroup = 0
+
+        for (i in 0 until count) {
+            val type = port.getPropertyString("track-list/$i/type")
+            if (type.equals("video", ignoreCase = true)) {
+                val codec = port.getPropertyString("track-list/$i/codec")?.takeIf { it.isNotBlank() }
+                val width = port.getPropertyInt("track-list/$i/demux-w")?.takeIf { it > 0 }
+                val height = port.getPropertyInt("track-list/$i/demux-h")?.takeIf { it > 0 }
+                val fps = port.getPropertyDouble("track-list/$i/demux-fps")?.takeIf { it > 0.0 }
+                val bitrate = (port.getPropertyInt("track-list/$i/demux-bitrate")?.takeIf { it > 0 }?.toLong()
+                    ?: port.getPropertyDouble("track-list/$i/demux-bitrate")?.takeIf { it > 0.0 }?.toLong())
+                val selected = port.getPropertyBoolean("track-list/$i/selected") ?: false
+                val videoTrack = MediaVideoTrackInfo(
+                    codec = codec,
+                    width = width,
+                    height = height,
+                    fps = fps,
+                    bitrate = bitrate,
+                )
+                if (fallbackVideo == null) {
+                    fallbackVideo = videoTrack
+                }
+                if (selected) {
+                    selectedVideo = videoTrack
+                }
+            } else if (type.equals("audio", ignoreCase = true)) {
+                val id = port.getPropertyInt("track-list/$i/id") ?: (audioGroup + 1)
+                val codec = port.getPropertyString("track-list/$i/codec")?.takeIf { it.isNotBlank() }
+                val channels = port.getPropertyInt("track-list/$i/audio-channels")?.takeIf { it > 0 }
+                val bitrate = (port.getPropertyInt("track-list/$i/demux-bitrate")?.takeIf { it > 0 }?.toLong()
+                    ?: port.getPropertyDouble("track-list/$i/demux-bitrate")?.takeIf { it > 0.0 }?.toLong())
+                val sampleRate = port.getPropertyInt("track-list/$i/demux-samplerate")?.takeIf { it > 0 }
+                val lang = port.getPropertyString("track-list/$i/lang")?.takeIf { it.isNotBlank() }
+                val selected = port.getPropertyBoolean("track-list/$i/selected") ?: false
+                val title = port.getPropertyString("track-list/$i/title")?.takeIf { it.isNotBlank() }
+                audioList.add(
+                    MediaAudioTrackInfo(
+                        id = id,
+                        name = title,
+                        codec = codec,
+                        channels = channels,
+                        bitrate = bitrate,
+                        sampleRate = sampleRate,
+                        language = lang,
+                        isSelected = selected,
+                    )
+                )
+                audioGroup++
+            }
+        }
+
+        val videoTrack = selectedVideo ?: fallbackVideo
+        val subtitleTracks = getSubtitleTracks()
+
+        val pathExt = currentMedia?.filePath?.substringAfterLast('.', "")?.takeIf { it.isNotEmpty() && !it.contains('/') }
+        val titleExt = currentMedia?.title?.substringAfterLast('.', "")?.takeIf { it.isNotEmpty() && !it.contains('/') }
+        val uriExt = try {
+            currentMedia?.uri?.let { android.net.Uri.parse(it).path?.substringAfterLast('.', "") }?.takeIf { it.isNotEmpty() && !it.contains('/') }
+        } catch (_: Exception) {
+            null
+        }
+        val format = (pathExt ?: titleExt ?: uriExt)?.lowercase()?.takeIf { it.isNotBlank() }
+
+        val fileSize: Long? = currentMedia?.filePath?.let { path ->
+            try {
+                val f = java.io.File(path)
+                if (f.exists() && f.isFile && f.length() > 0L) f.length() else null
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        return MediaInfo(
+            title = currentMedia?.title,
+            format = format,
+            fileSize = fileSize,
+            durationMs = durationMs,
+            videoTrack = if (currentMedia?.isVideo != false) videoTrack else null,
+            audioTracks = audioList,
+            subtitleTracks = subtitleTracks,
+        )
     }
 }

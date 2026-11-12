@@ -11,6 +11,7 @@ import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
+import com.mpx.player.playback.MediaInfo
 import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
@@ -544,4 +545,13 @@ class MpvPlayerEngine(
 
 
     override fun getSubtitleTracks(): List<SubtitleTrackInfo> = tracks.getSubtitleTracks()
+
+    override fun getMediaInfo(): MediaInfo? {
+        if (!mpvInitialized || isReleased) return null
+        val queue = core.getCurrentQueue()
+        val index = core.getCurrentMediaIndex()
+        val currentMedia = queue.getOrNull(index) ?: return null
+        val durationMs = if (core.duration > 0) core.duration else currentMedia.durationMs.takeIf { it > 0 }
+        return tracks.getMediaInfo(currentMedia, durationMs)
+    }
 }

@@ -240,4 +240,13 @@ internal fun PlaybackSheetMainPage(
         value = state.activeDecoderName ?: stringResource(R.string.player_codec_initializing),
         onClick = null,
     )
+    if (state.currentItem?.isVideo == true) {
+        PlaybackSheetRow(
+            icon = Icons.Filled.Info,
+            title = stringResource(R.string.media_info_title),
+            value = null,
+            onClick = { onPageChange(PlaybackSheetPage.MediaInfo) },
+            showChevron = true,
+        )
+    }
 }
