@@ -31,6 +31,11 @@ interface MediaRepository {
      */
     fun cachedFolders(showAllFolders: Boolean, showHiddenFiles: Boolean): List<MediaFolder>? = null
     fun cachedVideos(showAll: Boolean, showHiddenFiles: Boolean): List<VideoFile>? = null
+
+    /**
+     * Explicit invalidation hook to clear cached media scan results.
+     */
+    fun invalidateCache() {}
     /**
      * Returns the library tracks that belong to a device (MediaStore) playlist,
      * in the playlist's own member order. Returns an empty list for an unknown

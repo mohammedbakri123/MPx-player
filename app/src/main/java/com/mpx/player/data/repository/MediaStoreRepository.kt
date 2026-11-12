@@ -28,43 +28,20 @@ import java.io.File
  * - [AudioMediaScanner]: audio tracks, albums, artists, and audio folders.
  * - [PlaylistMediaScanner]: device playlists and playlist track resolution.
  * - [MediaStoreScannerHelper]: shared volume discovery and storage path filtering.
+ * - [MediaStoreCache]: instance-managed scan cache with explicit invalidation.
  */
 class MediaStoreRepository(
     private val context: Context,
     private val settingsRepository: AppSettingsRepository = SharedPrefsAppSettingsRepository(context),
+    private val cache: MediaStoreCache = MediaStoreCache(),
 ) : MediaRepository {
-
-    companion object {
-        // Process-lifetime cache of the last scan, keyed by the
-        // (show-all-folders, show-hidden-files) flags that shape the lists.
-        // Plain remember state is wiped when a tab's back-stack entry is
-        // popped (tab switch with saveState), so without this, returning to
-        // Local rebuilt from empty lists and flashed an empty page for a
-        // few ms before the rescan filled it. The rescan still runs on
-        // return and refreshes both the cache and the screen; this only
-        // covers the gap with the previous real content. It dies with the
-        // process, so a fresh launch always scans.
-        @Volatile
-        private var cachedFolders: Triple<Boolean, Boolean, List<MediaFolder>>? = null
-
-        @Volatile
-        private var cachedVideos: Triple<Boolean, Boolean, List<VideoFile>>? = null
-
-        fun cachedFolders(showAllFolders: Boolean, showHiddenFiles: Boolean): List<MediaFolder>? =
-            cachedFolders?.takeIf { it.first == showAllFolders && it.second == showHiddenFiles }?.third
-
-        fun cachedVideos(showAll: Boolean, showHiddenFiles: Boolean): List<VideoFile>? =
-            cachedVideos?.takeIf { it.first == showAll && it.second == showHiddenFiles }?.third
-    }
 
     private val helper = MediaStoreScannerHelper(context, settingsRepository)
 
     private val videoScanner = VideoMediaScanner(
         context = context,
         helper = helper,
-        getCachedFolderPath = { bucketId ->
-            cachedFolders?.third?.firstOrNull { it.id == bucketId }?.path
-        },
+        getCachedFolderPath = cache::findFolderPath,
     )
 
     private val audioScanner = AudioMediaScanner(
@@ -87,17 +64,21 @@ class MediaStoreRepository(
     fun getStorageRootDirectories(): List<File> = helper.getStorageRootDirectories()
 
     override fun cachedFolders(showAllFolders: Boolean, showHiddenFiles: Boolean): List<MediaFolder>? =
-        MediaStoreRepository.cachedFolders(showAllFolders, showHiddenFiles)
+        cache.getFolders(showAllFolders, showHiddenFiles)
 
     override fun cachedVideos(showAll: Boolean, showHiddenFiles: Boolean): List<VideoFile>? =
-        MediaStoreRepository.cachedVideos(showAll, showHiddenFiles)
+        cache.getVideos(showAll, showHiddenFiles)
+
+    override fun invalidateCache() {
+        cache.invalidate()
+    }
 
     override fun getMediaFolders(): List<MediaFolder> = getMediaFolders(showAllFolders = false)
 
     override fun getMediaFolders(showAllFolders: Boolean): List<MediaFolder> {
         val showHidden = helper.showHiddenFiles()
         val result = videoScanner.getMediaFolders(showAllFolders)
-        cachedFolders = Triple(showAllFolders, showHidden, result)
+        cache.updateFolders(showAllFolders, showHidden, result)
         return result
     }
 
@@ -109,7 +90,7 @@ class MediaStoreRepository(
     override fun getAllVideos(showAll: Boolean): List<VideoFile> {
         val showHidden = helper.showHiddenFiles()
         val result = videoScanner.getAllVideos(showAll)
-        cachedVideos = Triple(showAll, showHidden, result)
+        cache.updateVideos(showAll, showHidden, result)
         return result
     }
 
