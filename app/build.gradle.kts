@@ -80,6 +80,9 @@ android {
         getByName("test") {
             java.srcDirs("src/test/java", "src/testFixtures/java")
         }
+        getByName("androidTest") {
+            java.srcDirs("src/androidTest/java", "src/testFixtures/java")
+        }
     }
 
     splits {

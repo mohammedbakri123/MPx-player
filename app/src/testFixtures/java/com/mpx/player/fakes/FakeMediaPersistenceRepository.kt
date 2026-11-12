@@ -39,6 +39,10 @@ class FakeMediaPersistenceRepository : MediaPersistenceRepository {
     val pendingLoads = mutableMapOf<Long, CompletableDeferred<List<PlaylistItem>>>()
     var resumePositions: List<PlaybackResumePosition> = emptyList()
 
+    var createPlaylistError: Throwable? = null
+    var addItemError: Throwable? = null
+    var getPlaylistItemsError: Throwable? = null
+
     private var nextRowId = 1L
     private var nextPlaylistId = 1L
 
@@ -106,6 +110,7 @@ class FakeMediaPersistenceRepository : MediaPersistenceRepository {
         playlistsFlow.value.firstOrNull { it.id == id }
 
     override suspend fun createPlaylist(name: String, isVideoPlaylist: Boolean): Long {
+        createPlaylistError?.let { throw it }
         val id = nextPlaylistId++
         playlistsFlow.value = playlistsFlow.value +
             CustomPlaylist(id = id, name = name, isVideoPlaylist = isVideoPlaylist)
@@ -133,11 +138,13 @@ class FakeMediaPersistenceRepository : MediaPersistenceRepository {
         flowOf(playlistItems[playlistId]?.toList() ?: emptyList())
 
     override suspend fun getPlaylistItems(playlistId: Long): List<PlaylistItem> {
+        getPlaylistItemsError?.let { throw it }
         pendingLoads[playlistId]?.let { return it.await() }
         return playlistItems[playlistId]?.toList() ?: emptyList()
     }
 
     override suspend fun addItemToPlaylist(item: PlaylistItem): Long {
+        addItemError?.let { throw it }
         val items = playlistItems.getOrPut(item.playlistId) { mutableListOf() }
         if (items.any { it.mediaUri == item.mediaUri }) return -1L
         val rowId = if (item.id != 0L) item.id else nextRowId++

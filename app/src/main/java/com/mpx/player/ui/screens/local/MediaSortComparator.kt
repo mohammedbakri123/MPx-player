@@ -401,6 +401,31 @@ object MediaSortComparator {
     }
 
     /**
+     * Issue #242: compares two playlist IDs by recency for DATE sort.
+     * MediaStore device playlists sort numerically by ID (highest/newest first)
+     * and custom playlists ("custom:<id>") always sort after device playlists.
+     */
+    private fun comparePlaylistIdsByDate(idA: String, idB: String): Int {
+        val numA = idA.toLongOrNull()
+        val numB = idB.toLongOrNull()
+        return if (numA != null && numB != null) {
+            numB.compareTo(numA)
+        } else if (numA != null) {
+            -1
+        } else if (numB != null) {
+            1
+        } else {
+            val customA = idA.removePrefix("custom:").toLongOrNull()
+            val customB = idB.removePrefix("custom:").toLongOrNull()
+            if (customA != null && customB != null) {
+                customB.compareTo(customA)
+            } else {
+                idB.compareTo(idA)
+            }
+        }
+    }
+
+    /**
      * Constructs a Comparator for Playlist with primary sort and secondary tie-break sort.
      * #185 (Playlists tab): same field semantics as [audioAlbumComparator].
      * Playlists carry no duration: SIZE / DURATION sort by item count (most
@@ -422,6 +447,18 @@ object MediaSortComparator {
         caseSensitive: Boolean = false,
         ignoreExtension: Boolean = true,
     ): Comparator<Playlist> = Comparator { a, b ->
+        // Issue #242 (DATE / DATE_DURATION only): custom playlists sort
+        // after device ones. The old DATE arm relied on the string
+        // fallback of compareIds() for this; scoping the partition to
+        // the DATE arms keeps NAME / SIZE / COUNT behaviour unchanged.
+        if (primary == SortField.DATE || primary == SortField.DATE_DURATION) {
+            val isCustomA = a.id.startsWith("custom:")
+            val isCustomB = b.id.startsWith("custom:")
+            if (isCustomA != isCustomB) {
+                return@Comparator if (isCustomA) 1 else -1
+            }
+        }
+
         var cmp = comparePlaylistByField(a, b, primary, numeric, caseSensitive, ignoreExtension)
         if (reverse) cmp = -cmp
         if (cmp != 0) return@Comparator cmp
@@ -452,10 +489,10 @@ object MediaSortComparator {
                 else a.title.lowercase(Locale.US).compareTo(b.title.lowercase(Locale.US))
             }
         }
-        SortField.DATE -> compareIds(b.id, a.id)
+        SortField.DATE -> comparePlaylistIdsByDate(a.id, b.id)
         // Playlists carry no date: id recency first, item count breaks ties.
         SortField.DATE_DURATION -> {
-            val idCmp = compareIds(b.id, a.id)
+            val idCmp = comparePlaylistIdsByDate(a.id, b.id)
             if (idCmp != 0) idCmp else b.itemCount.compareTo(a.itemCount)
         }
         // Playlists carry no duration: item count is the playlist's size.

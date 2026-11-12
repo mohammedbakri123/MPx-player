@@ -478,6 +478,76 @@ class LocalViewModelTest {
         assertTrue(viewModel.videosForPlaylistAdd.value.isEmpty())
     }
 
+    @Test
+    fun `createPlaylistAndAddPending returns Failed and restores add dialog when persistence throws`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val vids = listOf(video("v1", "/Movies/a.mp4", "b1"))
+
+        viewModel.showAddToPlaylist(vids)
+        viewModel.openCreatePlaylist()
+        assertTrue(viewModel.showCreatePlaylistDialog.value)
+        assertFalse(viewModel.showAddToPlaylistDialog.value)
+
+        // Simulate repository failure (e.g. SQLite disk I/O error)
+        persistence.createPlaylistError = RuntimeException("Disk full")
+
+        val outcome = viewModel.createPlaylistAndAddPending("Favorites", isVideo = true)
+
+        assertEquals(CreatePlaylistOutcome.Failed, outcome)
+        // Dialog state: create dialog dismissed, add dialog restored with selection intact (#310)
+        assertFalse(viewModel.showCreatePlaylistDialog.value)
+        assertTrue(viewModel.showAddToPlaylistDialog.value)
+        assertEquals(vids, viewModel.videosForPlaylistAdd.value)
+    }
+
+    @Test
+    fun `addPendingToPlaylist handles insertion failure or duplicate item correctly`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val vids = listOf(
+            video("v1", "/Movies/a.mp4", "b1"),
+            video("v2", "/Movies/b.mp4", "b1"),
+        )
+        val plId = persistence.createPlaylist("Mix", isVideoPlaylist = true)
+        // Pre-add v1 so it is rejected as duplicate
+        persistence.addItemToPlaylist(
+            PlaylistItem(
+                playlistId = plId,
+                mediaUri = "/Movies/a.mp4",
+                mediaId = "v1",
+                title = "v1",
+                isVideo = true,
+                durationMs = 1000L,
+            )
+        )
+
+        viewModel.showAddToPlaylist(vids)
+        val result = viewModel.addPendingToPlaylist(plId)
+
+        // Exactly 1 new video added (v2), v1 rejected as duplicate
+        assertEquals(AddToPlaylistResult(added = 1, total = 2), result)
+        assertFalse(viewModel.showAddToPlaylistDialog.value)
+        assertTrue(viewModel.videosForPlaylistAdd.value.isEmpty())
+    }
+
+    @Test
+    fun `corrupt settings sort field or view mode gracefully falls back to defaults`() = runTest {
+        setTestMainDispatcher()
+        settingsRepo.stored = AppSettings(
+            primarySortField = "CORRUPT_FIELD_NAME",
+            secondarySortField = "NON_EXISTENT",
+            folderPrimarySortField = "INVALID",
+            localViewMode = "UNKNOWN_VIEW_MODE",
+        )
+        val viewModel = createViewModel()
+
+        assertEquals(SortField.DATE, viewModel.sortField.value)
+        assertEquals(SortField.NAME, viewModel.secondarySortField.value)
+        assertEquals(SortField.DATE, viewModel.folderSortField.value)
+        assertEquals(ViewMode.LIST, viewModel.viewMode.value)
+    }
+
     private fun folder(id: String, path: String, name: String = path.substringAfterLast('/')) =
         MediaFolder(
             id = id,

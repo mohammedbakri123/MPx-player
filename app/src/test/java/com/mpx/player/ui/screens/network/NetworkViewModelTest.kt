@@ -110,12 +110,47 @@ class NetworkViewModelTest {
         assertTrue(viewModel.uiState.value.canPlay)
     }
 
+    @Test
+    fun `stream player error propagates when playback fails`() {
+        val viewModel = createViewModel()
+        streamPlayer.playStreamError = IllegalStateException("Stream decoder failed to initialize")
+        viewModel.onUrlChange("https://cdn.example.com/stream.m3u8")
+
+        try {
+            viewModel.playUrl()
+            org.junit.Assert.fail("Expected IllegalStateException")
+        } catch (e: IllegalStateException) {
+            assertEquals("Stream decoder failed to initialize", e.message)
+        }
+        assertEquals(listOf("https://cdn.example.com/stream.m3u8"), streamPlayer.playedUrls)
+    }
+
+    @Test
+    fun `additional video page hosts are blocked from playback`() {
+        val viewModel = createViewModel()
+
+        val blockedUrls = listOf(
+            "https://vimeo.com/123456",
+            "https://dailymotion.com/video/x7tgad0",
+            "https://tiktok.com/@user/video/123456",
+        )
+        for (url in blockedUrls) {
+            viewModel.onUrlChange(url)
+            assertTrue("Expected isPageUrl for $url", viewModel.uiState.value.isPageUrl)
+            assertFalse("Expected canPlay=false for $url", viewModel.uiState.value.canPlay)
+            viewModel.playUrl()
+        }
+        assertTrue(streamPlayer.playedUrls.isEmpty())
+    }
+
     /** Fake stream player: records every URL the ViewModel plays. */
     private class FakeStreamPlayer : StreamPlayer {
         val playedUrls = mutableListOf<String>()
+        var playStreamError: Throwable? = null
 
         override fun playStream(url: String) {
             playedUrls += url
+            playStreamError?.let { throw it }
         }
     }
 }
