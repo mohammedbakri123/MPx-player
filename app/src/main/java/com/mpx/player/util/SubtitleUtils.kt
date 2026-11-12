@@ -254,4 +254,60 @@ object SubtitleUtils {
             false
         }
     }
+
+    // Issue #470: resolve the mpv sub-codepage for a subtitle at LOAD
+    // time, not just at pick time. A subtitle picked before v0.4.54 was
+    // persisted WITHOUT a codepage (null), and auto-detect skips items
+    // that already have external subtitles — so on every later load the
+    // engine set "auto" and mpv garbled the file exactly as before.
+    // If a codepage was already detected (fresh pick, or persisted),
+    // use it; if it is null, detect fresh from the RAW uri instead of
+    // defaulting to "auto". Works for both file:// and content:// URIs
+    // (ContentResolver.openInputStream handles both). Never throws and
+    // never breaks a load — any failure returns null (mpv default).
+    fun codepageFor(context: Context, uriString: String, existingCodepage: String?): String? {
+        existingCodepage?.let { return it }
+        return try {
+            detectSubtitleCodepage(context, Uri.parse(uriString))
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    // Issue #470 step 3: transcode a Windows-1256 subtitle to a UTF-8
+    // copy in the app cache dir, for when mpv rejects the sub-codepage
+    // set (read-back mismatch). mpv always handles UTF-8, so the copy
+    // renders correctly regardless of sub-codepage behaviour. Returns
+    // the copy's absolute file path, or null on any failure (the caller
+    // then falls back to sub-adding the original). The caller owns
+    // cleanup: delete the copy when the item stops / the subtitle is
+    // removed. Only transcodes when detection says cp1256 — a file
+    // that is already valid UTF-8 needs no copy.
+    fun transcodeSubtitleToUtf8(context: Context, uriString: String, name: String): String? {
+        return try {
+            val bytes = context.contentResolver.openInputStream(Uri.parse(uriString))?.use { stream ->
+                stream.readBytes()
+            } ?: return null
+            if (bytes.isEmpty()) return null
+            if (isValidUtf8(bytes)) return null
+            // Only transcode when the file actually decodes as
+            // Windows-1256 with substantial Arabic content — the same
+            // bar as detectSubtitleCodepage, so an unrelated legacy
+            // file is never rewritten.
+            if (detectSubtitleCodepage(context, Uri.parse(uriString)) != "cp1256") return null
+            val text = WINDOWS_1256.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE)
+                .decode(ByteBuffer.wrap(bytes)).toString()
+            val dir = java.io.File(context.cacheDir, "subtitle-utf8").apply { mkdirs() }
+            // Unique per subtitle so two items never share (or clobber)
+            // one temp file; sanitised so the name is filesystem-safe.
+            val safeName = name.replace(Regex("[^A-Za-z0-9._-]"), "_").take(64)
+            val file = java.io.File(dir, "${System.nanoTime()}-$safeName")
+            file.writeText(text, StandardCharsets.UTF_8)
+            file.absolutePath
+        } catch (_: Exception) {
+            null
+        }
+    }
 }
