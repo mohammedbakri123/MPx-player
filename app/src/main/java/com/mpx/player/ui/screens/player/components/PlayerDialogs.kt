@@ -8,7 +8,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,7 +50,7 @@ fun PlayerDialogs(
             title = {
                 Text(
                     text = stringResource(R.string.player_dialog_unsupported_subtitle),
-                    color = Color(0xFFFF6B6B),
+                    color = MpxTheme.colors.destructive,
                     fontWeight = FontWeight.Bold,
                 )
             },

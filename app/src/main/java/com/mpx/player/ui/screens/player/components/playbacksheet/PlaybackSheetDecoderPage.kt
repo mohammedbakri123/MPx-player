@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -68,22 +67,22 @@ internal fun PlaybackSheetDecoderPage(
         state.decoderFallbackNote?.let { note ->
             Spacer(Modifier.height(8.dp))
             Surface(
-                color = Color(0x33FFB74D),
+                color = MpxTheme.colors.warningContainer,
                 shape = MpxShapes.small,
-                border = BorderStroke(1.dp, Color(0xFFFFB74D)),
+                border = BorderStroke(1.dp, MpxTheme.colors.warning),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.Top) {
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = Color(0xFFFFB74D),
+                        tint = MpxTheme.colors.warning,
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = note,
-                        color = Color(0xFFFFE082),
+                        color = MpxTheme.colors.onWarningContainer,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                     )
