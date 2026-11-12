@@ -140,7 +140,7 @@ interface BackgroundService {
  */
 class PlaybackCoordinator(
     private val database: MpxDatabase,
-    internal val persistenceRepository: MediaPersistenceRepository,
+    private val persistenceRepository: MediaPersistenceRepository,
     private val resumeManager: PlaybackResumeManager,
     private val settingsRepository: AppSettingsRepository,
     private val engine: PlayerEngine,
@@ -168,13 +168,13 @@ class PlaybackCoordinator(
     private val _playbackState: PlaybackStateStore get() = this.stateStore
     override val playbackState: StateFlow<PlaybackState> = this.stateStore.playbackState
 
-    internal val positionTracker = PositionTracker(
+    private val positionTracker = PositionTracker(
         engine = engine,
         resumeManager = resumeManager,
         scope = scope,
         sink = this,
     )
-    internal val sleepTimer = SleepTimer(
+    private val sleepTimer = SleepTimer(
         scope = scope,
         clock = clock,
         host = this,
