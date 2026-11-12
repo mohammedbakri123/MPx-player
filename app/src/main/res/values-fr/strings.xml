@@ -153,6 +153,10 @@
     <string name="list_show_thumbnails">Afficher les miniatures</string>
 
     <string name="player_resume_playback">Reprendre la lecture</string>
+    <string name="player_show_strip_menu">Afficher la barre d\'actions</string>
+    <string name="player_show_strip_menu_desc">Afficher la barre flottante d\'actions rapides sous l\'en-tête</string>
+    <string name="player_cd_expand">Développer les actions</string>
+    <string name="player_cd_collapse">Réduire les actions</string>
     <string name="player_background_play">Lecture en arrière-plan</string>
     <string name="player_background_play_desc">Continue l’audio lorsque l’application passe en arrière-plan ou que l’écran s’éteint. Pour les vidéos, l’audio continue réellement pendant que l’image se met en pause.</string>
     <string name="player_menu_background_play">Lecture en arrière-plan (audio seul pour la vidéo)</string>

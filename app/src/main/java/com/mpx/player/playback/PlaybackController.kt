@@ -38,6 +38,7 @@ interface PlaybackController {
     fun surfaceChanged(width: Int, height: Int)
     fun applySubtitleSettings(settings: AppSettings)
     fun applyPlaybackTweaks(settings: AppSettings)
+    fun setSubtitleMarginY(margin: Int)
     fun setVideoBackgroundActive(active: Boolean)
     fun setBackgroundPlaying(active: Boolean)
     fun selectTrack(type: TrackType, id: String?)

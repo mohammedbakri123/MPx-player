@@ -33,6 +33,7 @@ class FakePlaybackStateSource(
     val speedCalls = mutableListOf<Float>()
     val aspectRatioCalls = mutableListOf<AspectRatioMode>()
     val videoZoomCalls = mutableListOf<Float>()
+    val setSubtitleMarginYCalls = mutableListOf<Int>()
     var stopCalls = 0
     var lockedCalls = 0
     var skipNextCalls = 0
@@ -95,6 +96,7 @@ class FakePlaybackStateSource(
     override fun surfaceChanged(width: Int, height: Int) { surfaceChangedCalls.add(width to height) }
     override fun applySubtitleSettings(settings: AppSettings) { appliedSubtitleSettings.add(settings) }
     override fun applyPlaybackTweaks(settings: AppSettings) { appliedPlaybackTweaks.add(settings) }
+    override fun setSubtitleMarginY(margin: Int) { setSubtitleMarginYCalls.add(margin) }
     override fun setVideoBackgroundActive(active: Boolean) { videoBackgroundActiveCalls.add(active) }
     override fun setBackgroundPlaying(active: Boolean) { backgroundPlayingCalls.add(active) }
     override fun selectTrack(type: TrackType, id: String?) { selectTrackCalls.add(type to id) }

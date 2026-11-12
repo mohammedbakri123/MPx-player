@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.AspectRatio
@@ -70,8 +71,9 @@ fun PlayerTopBarActions(
     LazyRow(
         state = listState,
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        contentPadding = PaddingValues(horizontal = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         items(layoutIds, key = { it }) { id ->
             PlayerTopBarActionItem(
@@ -193,18 +195,17 @@ fun PlayerTopBarActionButton(
     active: Boolean,
     onClick: () -> Unit,
 ) {
-    Box(
+    FloatingIsland(
+        shape = CircleShape,
         modifier = Modifier
-            .clip(MpxShapes.small)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center,
+            .size(40.dp)
+            .clickable(onClick = onClick),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = if (active) MpxTheme.colors.primary else MpxTheme.colors.textPrimary,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(22.dp),
         )
     }
 }

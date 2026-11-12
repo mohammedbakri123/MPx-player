@@ -153,6 +153,10 @@
     <string name="list_show_thumbnails">显示缩略图</string>
 
     <string name="player_resume_playback">续播</string>
+    <string name="player_show_strip_menu">显示快捷动作栏</string>
+    <string name="player_show_strip_menu_desc">在顶部标题栏下方显示悬浮快捷动作栏</string>
+    <string name="player_cd_expand">展开动作</string>
+    <string name="player_cd_collapse">折叠动作</string>
     <string name="player_background_play">后台播放</string>
     <string name="player_background_play_desc">当应用转入后台或屏幕关闭时，音频会继续播放。对于视频，视频渲染暂停时音频播放仍会如实继续。</string>
     <string name="player_menu_background_play">后台播放（视频仅播放音频）</string>

@@ -153,6 +153,10 @@
     <string name="list_show_thumbnails">Vorschaubilder anzeigen</string>
 
     <string name="player_resume_playback">Wiedergabe fortsetzen</string>
+    <string name="player_show_strip_menu">Aktionsleiste anzeigen</string>
+    <string name="player_show_strip_menu_desc">Schwebende Schnellaktionsleiste unter der Kopfzeile anzeigen</string>
+    <string name="player_cd_expand">Aktionen erweitern</string>
+    <string name="player_cd_collapse">Aktionen einklappen</string>
     <string name="player_background_play">Hintergrundwiedergabe</string>
     <string name="player_background_play_desc">Audio läuft weiter, wenn die App in den Hintergrund geht oder der Bildschirm ausgeschaltet wird. Bei Videos läuft die Audiowiedergabe ehrlich weiter, während das Videorendering pausiert.</string>
     <string name="player_menu_background_play">Hintergrundwiedergabe (bei Video nur Audio)</string>

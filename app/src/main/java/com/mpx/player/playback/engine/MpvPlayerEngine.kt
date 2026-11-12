@@ -329,6 +329,15 @@ class MpvPlayerEngine(
         }
     }
 
+    override fun setSubtitleMarginY(margin: Int) {
+        if (!mpvInitialized || isReleased) return
+        try {
+            setRuntimeProperty("sub-margin-y", margin.toString())
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed setting sub-margin-y in MPV", e)
+        }
+    }
+
 
     /**
      * Issue #226: the six UI modes used to collapse to four engine states

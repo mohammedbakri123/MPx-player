@@ -163,4 +163,9 @@ class FakePlayerEngine : PlayerEngine {
     override fun setAspectRatio(mode: AspectRatioMode) {
         aspectRatioCalls.add(mode)
     }
+
+    var lastSubtitleMarginY: Int? = null
+    override fun setSubtitleMarginY(margin: Int) {
+        lastSubtitleMarginY = margin
+    }
 }

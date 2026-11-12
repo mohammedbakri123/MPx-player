@@ -1,8 +1,13 @@
 package com.mpx.player.ui.screens.player.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -152,6 +158,7 @@ fun BoxScope.PlayerOverlays(
     currentDuration: Long,
     gestureState: PlayerGestureState,
     viewModel: PlayerViewModel,
+    isLandscapeOrientation: Boolean = false,
 ) {
     val currentMedia = state.currentItem
 
@@ -549,24 +556,33 @@ fun BoxScope.PlayerOverlays(
     if (!isInPipMode && state.isLocked) {
         AnimatedVisibility(
             visible = controlsVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = fadeIn(animationSpec = tween(180, easing = LinearOutSlowInEasing)) +
+                scaleIn(initialScale = 0.96f, animationSpec = tween(180, easing = LinearOutSlowInEasing)),
+            exit = fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                scaleOut(targetScale = 0.96f, animationSpec = tween(220, easing = FastOutSlowInEasing)),
             modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 24.dp),
+                .align(if (isLandscapeOrientation) Alignment.BottomCenter else Alignment.CenterStart)
+                .then(
+                    if (isLandscapeOrientation) {
+                        Modifier
+                            .navigationBarsPadding()
+                            .padding(bottom = 24.dp)
+                    } else {
+                        Modifier.padding(start = 24.dp)
+                    }
+                ),
         ) {
-            IconButton(
-                onClick = { viewModel.setLocked(false) },
+            FloatingIsland(
+                shape = CircleShape,
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MpxTheme.colors.black.copy(alpha = 0.6f)),
+                    .size(52.dp)
+                    .clickable { viewModel.setLocked(false) },
             ) {
                 Icon(
                     imageVector = Icons.Filled.Lock,
                     contentDescription = stringResource(R.string.player_cd_unlock),
                     tint = MpxTheme.colors.primary,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(26.dp),
                 )
             }
         }

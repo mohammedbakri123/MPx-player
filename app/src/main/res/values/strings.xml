@@ -154,6 +154,10 @@
     <string name="list_show_thumbnails">Show thumbnails</string>
 
     <string name="player_resume_playback">Resume playback</string>
+    <string name="player_show_strip_menu">Show action strip</string>
+    <string name="player_show_strip_menu_desc">Show floating quick action strip below the header</string>
+    <string name="player_cd_expand">Expand actions</string>
+    <string name="player_cd_collapse">Collapse actions</string>
     <string name="player_background_play">Background play</string>
     <string name="player_background_play_desc">Keeps audio playing when the app is backgrounded or screen is turned off. For videos, audio playback continues honestly while video rendering pauses.</string>
     <string name="player_menu_background_play">Background play (audio only for video)</string>

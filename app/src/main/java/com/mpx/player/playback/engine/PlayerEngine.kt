@@ -311,4 +311,9 @@ interface PlayerEngine {
      * Sets aspect ratio mode (FIT, CROP, STRETCH, 16:9, 4:3, ORIGINAL, ZOOM) (R-3).
      */
     fun setAspectRatio(mode: AspectRatioMode) = Unit
+
+    /**
+     * Sets dynamic vertical subtitle margin (e.g. to avoid bottom floating islands).
+     */
+    fun setSubtitleMarginY(margin: Int) = Unit
 }
