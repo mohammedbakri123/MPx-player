@@ -423,25 +423,27 @@ fun PlayerScreen(
     // Playback Sheet
     playbackSheetPage?.let { sheetPage ->
         PlayerPlaybackSheet(
-            page = sheetPage,
-            onPageChange = { playbackSheetPage = it },
-            state = state,
-            currentSettings = currentSettings,
-            onSettingsChanged = { updated ->
-                viewModel.updateSettings(updated)
-            },
-            playbackController = viewModel,
-            subtitleLauncher = subtitleLauncher,
-            isFavourite = isFavourite,
-            onToggleFavourite = { viewModel.toggleFavourite() },
-            onEnterPip = enterPip,
-            onToggleBackgroundPlay = toggleBackgroundPlay,
-            onReplayTutorial = {
-                tutorialStep = 0
-                showTutorial = true
-            },
-            onAddToPlaylist = { state.currentItem?.let { viewModel.showAddToPlaylist(it) } },
-            sheetState = playbackSheetState,
+            sheetState = PlaybackSheetState(
+                page = sheetPage,
+                onPageChange = { playbackSheetPage = it },
+                state = state,
+                currentSettings = currentSettings,
+                onSettingsChanged = { updated ->
+                    viewModel.updateSettings(updated)
+                },
+                playbackController = viewModel,
+                subtitleLauncher = subtitleLauncher,
+                isFavourite = isFavourite,
+                onToggleFavourite = { viewModel.toggleFavourite() },
+                onEnterPip = enterPip,
+                onToggleBackgroundPlay = toggleBackgroundPlay,
+                onReplayTutorial = {
+                    tutorialStep = 0
+                    showTutorial = true
+                },
+                onAddToPlaylist = { state.currentItem?.let { viewModel.showAddToPlaylist(it) } },
+                sheetState = playbackSheetState,
+            ),
         )
     }
 
