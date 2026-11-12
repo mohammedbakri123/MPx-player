@@ -18,6 +18,8 @@ import com.mpx.player.domain.model.Playlist
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.domain.repository.MediaRepository
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.ui.screens.local.components.formatDuration
+import com.mpx.player.ui.screens.local.components.formatSize
 import java.io.File
 import java.util.Locale
 
@@ -1145,32 +1147,6 @@ class MediaStoreRepository(
             }
         }
         return emptyList()
-    }
-
-    private fun formatSize(bytes: Long): String {
-        if (bytes <= 0L) return "0 B"
-        val kb = bytes / 1024.0
-        val mb = kb / 1024.0
-        val gb = mb / 1024.0
-        return when {
-            gb >= 1.0 -> String.format(Locale.US, "%.1f GB", gb)
-            mb >= 1.0 -> String.format(Locale.US, "%.1f MB", mb)
-            kb >= 1.0 -> String.format(Locale.US, "%.1f KB", kb)
-            else -> "$bytes B"
-        }
-    }
-
-    private fun formatDuration(durationMs: Long): String {
-        if (durationMs <= 0L) return "0:00"
-        val totalSeconds = durationMs / 1000
-        val seconds = totalSeconds % 60
-        val minutes = (totalSeconds / 60) % 60
-        val hours = totalSeconds / 3600
-        return if (hours > 0) {
-            String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            String.format(Locale.US, "%d:%02d", minutes, seconds)
-        }
     }
 
     private class FolderAccumulator(

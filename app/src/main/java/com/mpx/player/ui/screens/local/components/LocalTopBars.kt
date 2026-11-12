@@ -30,10 +30,10 @@ import com.mpx.player.ui.theme.MpxTheme
 import java.util.Locale
 
 /**
- * #252: formats a summed byte count for the folder subtitle while
- * searching. Mirrors MediaStoreRepository.formatSize exactly (same
- * thresholds, same "%.1f GB/MB/KB" units) so a filtered sum reads the
- * same as the stored whole-folder total it replaces.
+ * Formats a byte count into a human-readable size string using standard 1024-based binary units:
+ * - "0 B" for non-positive or 0 bytes
+ * - "%d B" for bytes under 1 KB
+ * - "%.1f KB", "%.1f MB", "%.1f GB" with 1 decimal place using US locale formatting.
  */
 fun formatSize(bytes: Long): String {
     if (bytes <= 0L) return "0 B"
@@ -45,6 +45,27 @@ fun formatSize(bytes: Long): String {
         mb >= 1.0 -> String.format(Locale.US, "%.1f MB", mb)
         kb >= 1.0 -> String.format(Locale.US, "%.1f KB", kb)
         else -> "$bytes B"
+    }
+}
+
+/**
+ * Formats a media duration in milliseconds into a display string:
+ * - "0:00" for non-positive or 0 ms
+ * - "M:SS" for durations under 1 hour (e.g. "1:05", "12:34")
+ * - "H:MM:SS" for durations of 1 hour or more (e.g. "1:02:03")
+ *
+ * Produces byte-identical output to legacy MediaStoreRepository.formatDuration.
+ */
+fun formatDuration(durationMs: Long): String {
+    if (durationMs <= 0L) return "0:00"
+    val totalSeconds = durationMs / 1000
+    val seconds = totalSeconds % 60
+    val minutes = (totalSeconds / 60) % 60
+    val hours = totalSeconds / 3600
+    return if (hours > 0) {
+        String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(Locale.US, "%d:%02d", minutes, seconds)
     }
 }
 
