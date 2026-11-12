@@ -47,17 +47,17 @@ class MediaSortComparatorTest {
         val byNameRev = list.sortedWith(MediaSortComparator.videoComparator(SortField.NAME, SortField.NAME, reverse = true))
         assertEquals(listOf("B_Movie", "A_Movie"), byNameRev.map { it.title })
 
-        // Sort by DATE ascending (oldest first: v1 then v2)
+        // Sort by DATE descending (newest first: v2 then v1)
         val byDate = list.sortedWith(MediaSortComparator.videoComparator(SortField.DATE, SortField.NAME, reverse = false))
-        assertEquals(listOf("B_Movie", "A_Movie"), byDate.map { it.title })
+        assertEquals(listOf("A_Movie", "B_Movie"), byDate.map { it.title })
 
-        // Sort by SIZE ascending (smallest first: v2 then v1)
+        // Sort by SIZE descending (largest first: v1 then v2)
         val bySize = list.sortedWith(MediaSortComparator.videoComparator(SortField.SIZE, SortField.NAME, reverse = false))
-        assertEquals(listOf("A_Movie", "B_Movie"), bySize.map { it.title })
+        assertEquals(listOf("B_Movie", "A_Movie"), bySize.map { it.title })
 
-        // Sort by DURATION ascending (shortest first: v2 then v1)
+        // Sort by DURATION descending (longest first: v1 then v2)
         val byDuration = list.sortedWith(MediaSortComparator.videoComparator(SortField.DURATION, SortField.NAME, reverse = false))
-        assertEquals(listOf("A_Movie", "B_Movie"), byDuration.map { it.title })
+        assertEquals(listOf("B_Movie", "A_Movie"), byDuration.map { it.title })
     }
 
     @Test
@@ -80,11 +80,13 @@ class MediaSortComparatorTest {
         val byName = list.sortedWith(MediaSortComparator.folderComparator(SortField.NAME, reverse = false))
         assertEquals(listOf("Camera", "Videos"), byName.map { it.name })
 
+        // COUNT sorts descending (most items first: f2 then f1)
         val byCount = list.sortedWith(MediaSortComparator.folderComparator(SortField.COUNT, reverse = false))
-        assertEquals(listOf("Videos", "Camera"), byCount.map { it.name })
+        assertEquals(listOf("Camera", "Videos"), byCount.map { it.name })
 
+        // SIZE sorts descending (largest size first: f1 then f2)
         val bySize = list.sortedWith(MediaSortComparator.folderComparator(SortField.SIZE, reverse = false))
-        assertEquals(listOf("Camera", "Videos"), bySize.map { it.name })
+        assertEquals(listOf("Videos", "Camera"), bySize.map { it.name })
     }
 
     @Test
@@ -107,8 +109,12 @@ class MediaSortComparatorTest {
         val pCustom = Playlist(id = "custom:1", title = "Custom Playlist", itemCount = 1)
         val list = listOf(p1, pCustom, p2)
 
-        // Issue #242: numeric IDs sort numerically (2 before 10), and custom IDs sort after
+        // Issue #242: numeric IDs sort by recency (10 before 2), and custom IDs sort after
         val sorted = list.sortedWith(MediaSortComparator.audioPlaylistComparator(SortField.DATE, reverse = false))
-        assertEquals(listOf("Device 2", "Device 10", "Custom Playlist"), sorted.map { it.title })
+        assertEquals(listOf("Device 10", "Device 2", "Custom Playlist"), sorted.map { it.title })
+
+        // Reverse DATE sort orders oldest first (2 before 10), with custom IDs still after
+        val sortedRev = list.sortedWith(MediaSortComparator.audioPlaylistComparator(SortField.DATE, reverse = true))
+        assertEquals(listOf("Device 2", "Device 10", "Custom Playlist"), sortedRev.map { it.title })
     }
 }
