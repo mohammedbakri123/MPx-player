@@ -158,7 +158,15 @@ class PlaybackCoordinator(
     subtitleManager: SubtitleManager? = null,
     playbackQueue: PlaybackQueue? = null,
     engineEventTranslator: EngineEventTranslator? = null,
+    stateStore: PlaybackStateStore? = null,
 ) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost, EngineEventHost, SleepTimerHost, PositionSink {
+
+    val stateStore: PlaybackStateStore = stateStore ?: PlaybackStateStore(
+        initialDecoderMode = initialDecoderMode,
+        strings = strings,
+    )
+    private val _playbackState: PlaybackStateStore get() = this.stateStore
+    override val playbackState: StateFlow<PlaybackState> = this.stateStore.playbackState
 
     internal val positionTracker = PositionTracker(
         engine = engine,
@@ -208,20 +216,15 @@ class PlaybackCoordinator(
         }
     }
 
-    private val _playbackState = MutableStateFlow(
-        PlaybackState(decoderMode = initialDecoderMode)
-    )
-    override val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
-
     private var activeSurface: Surface? = null
 
     /**
      * External subtitle handling (R-5).
-     * Injected via constructor or constructed with this coordinator as [SubtitleHost].
+     * Injected via constructor or constructed with stateStore as [SubtitleHost].
      */
     internal val subtitleManager: SubtitleManager = subtitleManager ?: SubtitleManager(
         engine = engine,
-        host = this,
+        host = this.stateStore,
         scope = scope,
         fileAccess = subtitleFileAccess ?: error("subtitleFileAccess required when subtitleManager is not injected"),
         ioDispatcher = ioDispatcher,
@@ -229,20 +232,20 @@ class PlaybackCoordinator(
 
     /**
      * Playback queue handling (R-5).
-     * Injected via constructor or constructed with this coordinator as [QueueHost].
+     * Injected via constructor or constructed with stateStore as [QueueHost].
      */
     internal val playbackQueue: PlaybackQueue = playbackQueue ?: PlaybackQueue(
         engine = engine,
         queueStore = queueStore ?: error("queueStore required when playbackQueue is not injected"),
         resumeManager = resumeManager,
         settingsRepository = settingsRepository,
-        host = this,
+        host = this.stateStore,
         scope = scope,
     )
 
     /**
      * Engine event translation (R-5).
-     * Injected via constructor or constructed with this coordinator as [EngineEventHost].
+     * Injected via constructor or constructed with stateStore as [EngineEventHost].
      */
     internal val engineEventTranslator: EngineEventTranslator = engineEventTranslator ?: EngineEventTranslator(
         engine = engine,
@@ -250,12 +253,13 @@ class PlaybackCoordinator(
         subtitleManager = this.subtitleManager,
         resumeManager = resumeManager,
         settingsRepository = settingsRepository,
-        host = this,
+        host = this.stateStore,
         scope = scope,
         ioDispatcher = ioDispatcher,
     )
 
     init {
+        this.stateStore.setEventListener { handlePlaybackEvent(it) }
         engine.setListener(this.engineEventTranslator)
         engine.setQueueSource(
             queue = { this.playbackQueue.items },
@@ -303,6 +307,78 @@ class PlaybackCoordinator(
                 pause()
             }
         })
+    }
+
+    private fun handlePlaybackEvent(event: PlaybackEvent) {
+        when (event) {
+            is PlaybackEvent.StartPositionTicker -> startTicker()
+            is PlaybackEvent.StopPositionTicker -> stopTicker()
+            is PlaybackEvent.RefreshPosition -> updatePosition()
+            is PlaybackEvent.RefreshPositionAndTracks -> {
+                updatePosition()
+                updateTracksState()
+            }
+            is PlaybackEvent.RefreshTracksState -> updateTracksState()
+            is PlaybackEvent.FlushPosition -> updatePosition(forceSave = true)
+            is PlaybackEvent.ArmLoadWatchdog -> armPreparingWatchdog()
+            is PlaybackEvent.CancelLoadWatchdog -> cancelPreparingWatchdog()
+            is PlaybackEvent.StartBackgroundService -> backgroundService.start()
+            is PlaybackEvent.RecordHistory -> {
+                scope.launch(ioDispatcher) {
+                    try {
+                        persistenceRepository.recordHistory(
+                            PlaybackHistoryItem(
+                                mediaUri = event.item.uri,
+                                mediaId = event.item.id,
+                                title = event.item.title,
+                                subtitle = event.item.subtitle,
+                                isVideo = event.item.isVideo,
+                                lastPlayedAt = System.currentTimeMillis(),
+                                playbackPositionMs = event.positionMs,
+                                durationMs = event.item.durationMs,
+                            )
+                        )
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+            is PlaybackEvent.RecordPauseHistory -> {
+                scope.launch(ioDispatcher) {
+                    try {
+                        persistenceRepository.recordHistory(
+                            PlaybackHistoryItem(
+                                mediaUri = event.item.uri,
+                                mediaId = event.item.id,
+                                title = event.item.title,
+                                subtitle = event.item.subtitle,
+                                isVideo = event.item.isVideo,
+                                lastPlayedAt = System.currentTimeMillis(),
+                                playbackPositionMs = event.positionMs,
+                                durationMs = event.durationMs,
+                            )
+                        )
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+            is PlaybackEvent.ClearAutoDetectAttempts -> {
+                subtitleManager.clearAutoDetectAttempts()
+            }
+            is PlaybackEvent.MaybeAutoDetectSubtitles -> {
+                subtitleManager.maybeAutoDetectSubtitles()
+            }
+            is PlaybackEvent.CommitSubtitleItem -> {
+                playbackQueue.replaceItem(event.index, event.updatedItem)
+                _playbackState.update { state ->
+                    val withItem = state.copy(currentItem = event.updatedItem, queue = playbackQueue.items)
+                    if (event.notification != null) withItem.copy(userNotification = event.notification) else withItem
+                }
+                playbackQueue.persistQueue(event.index)
+            }
+            is PlaybackEvent.EngineError -> {
+                errorLog("Engine error encountered", event.error)
+            }
+        }
     }
 
     // SubtitleHost implementation: the queue/state effects
@@ -1139,10 +1215,14 @@ class PlaybackCoordinator(
             // Intentionally uncancelled in production: the coordinator lives for the
             // process lifetime and outlives individual Activity/Service lifecycles.
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-            val hostProxy = CoordinatorHostProxy()
+            val strings = ProductionStrings(appContext)
+            val stateStore = PlaybackStateStore(
+                initialDecoderMode = initialDecoderMode,
+                strings = strings,
+            )
             val subtitleManager = SubtitleManager(
                 engine = engine,
-                host = hostProxy,
+                host = stateStore,
                 scope = scope,
                 fileAccess = SubtitleManager.productionFileAccess(appContext),
             )
@@ -1151,7 +1231,7 @@ class PlaybackCoordinator(
                 queueStore = queueStore,
                 resumeManager = resumeManager,
                 settingsRepository = settingsRepository,
-                host = hostProxy,
+                host = stateStore,
                 scope = scope,
             )
             val engineEventTranslator = EngineEventTranslator(
@@ -1160,26 +1240,25 @@ class PlaybackCoordinator(
                 subtitleManager = subtitleManager,
                 resumeManager = resumeManager,
                 settingsRepository = settingsRepository,
-                host = hostProxy,
+                host = stateStore,
                 scope = scope,
             )
-            val coordinator = PlaybackCoordinator(
+            return PlaybackCoordinator(
                 database = database,
                 persistenceRepository = persistenceRepository,
                 resumeManager = resumeManager,
                 settingsRepository = settingsRepository,
                 engine = engine,
                 scope = scope,
-                strings = ProductionStrings(appContext),
+                strings = strings,
                 backgroundService = ProductionBackgroundService(appContext),
                 audioFocusManager = ProductionAudioFocusManager(appContext),
                 initialDecoderMode = initialDecoderMode,
                 subtitleManager = subtitleManager,
                 playbackQueue = playbackQueue,
                 engineEventTranslator = engineEventTranslator,
+                stateStore = stateStore,
             )
-            hostProxy.attach(coordinator)
-            return coordinator
         }
 
         private fun resolveInitialDecoderModeFrom(
