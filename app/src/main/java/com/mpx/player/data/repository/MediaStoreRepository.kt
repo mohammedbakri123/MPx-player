@@ -29,6 +29,24 @@ import java.io.File
  * - [PlaylistMediaScanner]: device playlists and playlist track resolution.
  * - [MediaStoreScannerHelper]: shared volume discovery and storage path filtering.
  * - [MediaStoreCache]: instance-managed scan cache with explicit invalidation.
+ *
+ * ## Cursor-based Pagination Feasibility Verdict (CP-7, Step 4.3)
+ * Full cursor-based pagination was investigated and rejected as high-risk and uncontained:
+ * 1. Multi-volume scanning: Storage volumes (internal, SD card, USB OTG) are queried via
+ *    independent content URIs. Paging with LIMIT/OFFSET cannot be unified across distinct
+ *    provider queries without complex multi-cursor priority merges.
+ * 2. In-memory aggregation: MediaStore stores only file rows. [MediaFolder]s, audio albums,
+ *    and artists are derived in-memory by grouping tracks and calculating aggregate counts,
+ *    byte sizes, and durations. Cursor paging would yield partial groups and inaccurate totals.
+ * 3. In-memory filtering: Hidden files and system cache exclusions (/Android/data, /Android/obb)
+ *    must be filtered in Kotlin due to scoped storage path virtualization (API 29+). Fixed SQL
+ *    LIMIT queries would produce variable-sized, unpredictable page results downstream.
+ * 4. Tree navigation & sorting: [LocalFolderTree] requires the complete folder graph to build
+ *    parent-child hierarchies, and user-configurable multi-field sort orders cannot be mapped
+ *    to keyset pagination on `_ID`.
+ *
+ * Verdict: Cursor pagination is NOT recommended at this time; full in-memory scans with
+ * instance-level caching remain optimal for current architecture and performance.
  */
 class MediaStoreRepository(
     private val context: Context,
