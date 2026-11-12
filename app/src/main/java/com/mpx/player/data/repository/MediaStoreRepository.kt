@@ -28,7 +28,13 @@ import java.io.File
  * - [AudioMediaScanner]: audio tracks, albums, artists, and audio folders.
  * - [PlaylistMediaScanner]: device playlists and playlist track resolution.
  * - [MediaStoreScannerHelper]: shared volume discovery and storage path filtering.
- * - [MediaStoreCache]: instance-managed scan cache with explicit invalidation.
+ * - [MediaStoreCache]: instance-managed scan cache with explicit invalidation hooks.
+ *
+ * Invariants:
+ * - Returns raw numeric values (durations in ms, sizes in bytes); string formatting is performed
+ *   strictly in the UI layer.
+ * - Caching is instance-managed via [MediaStoreCache] (no companion-object or global mutable static state).
+ *   Cache can be explicitly refreshed via [invalidateCache].
  *
  * ## Cursor-based Pagination Feasibility Verdict (CP-7, Step 4.3)
  * Full cursor-based pagination was investigated and rejected as high-risk and uncontained:

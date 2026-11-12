@@ -5,27 +5,24 @@ import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.SubtitleTrackInfo
 
 /**
- * Phase 4 step 2: audio, video and subtitle track listing and switching,
- * extracted from [MpvPlayerEngine].
+ * Audio, video, and subtitle track listing and switching under libmpv.
  *
- * Owns the mpv `track-list` reads ([getAudioTracks], [getSubtitleTracks],
- * [getVideoTrackIds]) and the selection writes ([selectTrack],
- * [selectAudioTrack], [selectSubtitleTrack]) driving mpv's `aid`/`sid`/
- * `vid` properties. [MpvPlayerEngine] stays the [PlayerEngine]
- * implementation and is a thin facade delegating to this class.
+ * Owns the mpv `track-list` property queries ([getAudioTracks], [getSubtitleTracks],
+ * [getVideoTrackIds]) and track selection writes ([selectTrack], [selectAudioTrack],
+ * [selectSubtitleTrack]) driving mpv's `aid`, `sid`, and `vid` properties via [MpvCoreEngine.port].
  *
- * mpv access comes from the core ([MpvCoreEngine.port]) — no second MPV
- * instance is created. The only coupling back to the subtitle concern
- * is the remembered external pick + armed pin, owned by
- * [MpvSubtitleRenderer] (Phase 4 step 3) and reached through [Host]:
- * a manual Off or embedded pick supersedes the remembered pick, and
- * the host clears it at exactly the points the old monolith did. The
- * seam stays (rather than this class calling the renderer directly)
- * because the facade builds this class before the renderer.
+ * Collaborators:
+ * - [MpvCoreEngine]: provides access to the native abstraction [MpvCoreEngine.port] ([MpvPort]).
+ * - [Host]: communication seam to [MpvSubtitleRenderer] (implemented by the engine facade).
  *
- * Verifiable by CI build + device only: every function here touches
- * mpv directly, so there are no unit tests for this class — same as
- * [MpvCoreEngine], whose only testable piece is its pure path helper.
+ * Invariants:
+ * - Embedded track or "Off" selection: selecting an embedded subtitle track or disabling subtitles
+ *   ("Off" / `sid="no"`) clears any remembered external subtitle pick via [Host.clearRememberedExternalPick]
+ *   (issue #372), preventing stale external subtitle reapplications.
+ * - External track selection: selecting an external subtitle track updates `sid` while preserving
+ *   the remembered external subtitle pick.
+ * - Unit testing: fully unit-testable without native mpv binaries via [MpvPort] test doubles
+ *   (see `MpvTrackSelectionTest`).
  */
 internal class MpvTrackSelection(
     core: MpvCoreEngine,

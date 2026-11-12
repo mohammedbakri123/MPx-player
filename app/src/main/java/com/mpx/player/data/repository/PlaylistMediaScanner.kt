@@ -9,7 +9,19 @@ import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.domain.model.Playlist
 
 /**
- * Scanner for device (MediaStore) playlists and playlist tracks.
+ * Scanner for device (MediaStore) playlists and playlist track resolution.
+ *
+ * Collaborators:
+ * - [Context]: provides [android.content.ContentResolver] for querying MediaStore.
+ * - [MediaStoreScannerHelper]: resolves playlist content URIs and volume names.
+ * - [audioTrackProvider]: supplier of all active audio tracks, used to resolve playlist track references.
+ *
+ * Invariants:
+ * - Playlist deduplication (#308): deduplicates playlists using a composite `(volume, id)` key
+ *   (e.g. `"$volume:$id"`), ensuring identical playlist names across different storage volumes
+ *   are preserved with distinct identities.
+ * - Single library scan: tracks are resolved against a single shared audio track scan so displayed
+ *   counts match playable members on tap.
  */
 internal class PlaylistMediaScanner(
     private val context: Context,

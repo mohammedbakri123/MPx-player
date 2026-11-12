@@ -12,6 +12,17 @@ import java.io.File
 /**
  * Shared storage volume and file path resolution helpers used across
  * MediaStore scanner components.
+ *
+ * Collaborators:
+ * - [Context]: provides access to [android.os.storage.StorageManager] and content resolvers.
+ * - [AppSettingsRepository]: provides user preference for showing hidden files.
+ *
+ * Invariants:
+ * - Multi-volume resolution: inspects [MediaStore.getExternalVolumeNames] on API 29+ and
+ *   [android.os.storage.StorageManager.getStorageVolumes] on API 30+ to discover internal,
+ *   removable SD card, and USB OTG volumes.
+ * - Scoped-storage filtering: filters dot-prefixed hidden files and Android system cache directories
+ *   (`/Android/data`, `/Android/obb`) in Kotlin due to storage access framework path virtualization.
  */
 internal class MediaStoreScannerHelper(
     private val context: Context,

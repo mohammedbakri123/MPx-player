@@ -11,19 +11,16 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 /**
- * Migration Phase 1a: the app-level Koin module — the one place the
- * database, repositories, and settings repository are constructed.
+ * Application-level dependency injection module for Koin.
  *
- * Every declaration is a `single` bound to its domain interface, so
- * callers depend on the interface and Koin hands out the same
- * instance everywhere. The factories delegate to the existing
- * `getInstance` singletons where they exist ([MpxDatabase]), so no
- * second copy of the database is created.
+ * Constructs and registers the primary application singletons:
+ * - [MpxDatabase]: Room database instance (version 13).
+ * - [MediaRepository]: backed by [MediaStoreRepository].
+ * - [MediaPersistenceRepository]: backed by [RoomMediaPersistenceRepository].
+ * - [AppSettingsRepository]: backed by [SharedPrefsAppSettingsRepository].
  *
- * Not yet in this module: [com.mpx.player.playback.PlaybackCoordinator]
- * (see [playbackModule]) and the mpv engine — the coordinator builds
- * its engine internally, so the engine gets no Koin registration
- * until Phase 4 splits it apart.
+ * Every repository declaration is registered as a `single` bound to its domain
+ * interface, allowing consumers to depend purely on domain abstractions.
  */
 val appModule = module {
     single { MpxDatabase.getInstance(androidContext()) }

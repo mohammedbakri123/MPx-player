@@ -12,7 +12,21 @@ import java.util.Locale
 
 /**
  * Scanner for video folders, videos in folders, and whole-library video queries
- * backed by MediaStore.
+ * backed by the Android MediaStore content provider.
+ *
+ * Collaborators:
+ * - [Context]: provides [android.content.ContentResolver] for querying MediaStore.
+ * - [MediaStoreScannerHelper]: resolves multi-volume content URIs, storage names, and hidden file settings.
+ * - [getCachedFolderPath]: fallback lambda to resolve directory paths for blank bucket ID rows.
+ *
+ * Invariants:
+ * - Multi-volume support: queries all volume URIs returned by [MediaStoreScannerHelper.getVideoContentUris]
+ *   (internal storage, SD cards, USB OTG).
+ * - Scoped-storage filtering: hidden file and excluded system folder filtering is evaluated in Kotlin
+ *   due to scoped storage virtualization on Android 10+ (API 29+).
+ * - Aggregation: derives [MediaFolder] hierarchies in memory by grouping videos under matching bucket IDs.
+ * - Raw values: models carry unformatted byte counts and millisecond durations; display formatting
+ *   is deferred entirely to UI components.
  */
 internal class VideoMediaScanner(
     private val context: Context,
