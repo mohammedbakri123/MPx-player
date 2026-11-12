@@ -2,6 +2,10 @@
 # release build on demand (manual dispatch), on version-tag pushes, or
 # on pull requests that touch build/proguard/playback/di/manifest paths (D-18, D-19).
 #
+# Instrumented device tests run on an Android emulator in a separate job (CP-4)
+# on demand (workflow_dispatch), scheduled weekly, on version-tag pushes, or
+# on pull requests that touch androidTest or playback engine paths.
+#
 # Runs on GitHub-hosted runners, which have normal internet access, so the
 # mpv AAR and Gradle plugins resolve directly (unlike the maintainer's
 # local setup — see CONTRIBUTING.md for the offline / local-Maven notes).
@@ -24,6 +28,8 @@ on:
     branches: [master]
     tags: ["v*"]
   workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1' # Weekly Monday at 03:00 UTC
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -56,18 +62,20 @@ jobs:
 
   changes:
     # Path-filter check for pull requests: determines whether R8/reflection-sensitive
-    # paths were modified, warranting a minified build run (D-19).
+    # paths were modified, warranting a minified build run (D-19), or whether
+    # androidTest/playback paths were modified, warranting an emulator run (CP-4).
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       should_minify: ${{ steps.check.outputs.should_minify }}
+      should_test_device: ${{ steps.check.outputs.should_test_device }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - id: check
-        name: Check for R8-sensitive path changes
+        name: Check for changed paths
         run: |
           BASE_REF="origin/${{ github.base_ref }}"
           DIFF=$(git diff --name-only "$BASE_REF"...HEAD 2>/dev/null || git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD 2>/dev/null || true)
@@ -79,6 +87,13 @@ jobs:
           else
             echo "No R8-sensitive files changed; skipping minified build."
             echo "should_minify=false" >> "$GITHUB_OUTPUT"
+          fi
+          if echo "$DIFF" | grep -q -E '^(app/src/androidTest/|app/src/main/java/com/mpx/player/playback/)'; then
+            echo "Device test/playback files changed; instrumented test enabled."
+            echo "should_test_device=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No device test/playback files changed; skipping instrumented test."
+            echo "should_test_device=false" >> "$GITHUB_OUTPUT"
           fi
 
   build-minified:
@@ -139,4 +154,58 @@ jobs:
         with:
           name: mpx-minified-apks
           path: app/build/outputs/apk/minified/**/app-*-minified.apk
+          retention-days: 14
+
+  test-instrumented:
+    # Manual dispatch, weekly schedule, version-tag push, or PRs touching
+    # androidTest or playback paths (CP-4).
+    # Runs on an emulator via reactivecircus/android-emulator-runner; separate
+    # from the main build job so slow/flaky emulator runs never block unit tests.
+    needs: [changes]
+    if: |
+      always() && (
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'schedule' ||
+        startsWith(github.ref, 'refs/tags/v') ||
+        (github.event_name == 'pull_request' && needs.changes.outputs.should_test_device == 'true')
+      )
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # NOTE: do not list the obsolete `tools` package
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+
+      - name: Run instrumented tests on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./gradlew --no-daemon connectedDebugAndroidTest
+
+      - name: Upload instrumented test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-test-results
+          path: app/build/reports/androidTests/connected/
           retention-days: 14
