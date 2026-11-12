@@ -576,6 +576,36 @@ class PlaybackQueueTest {
         assertTrue(engine.loadCalls.isEmpty())
     }
 
+    @Test
+    fun `playbackQueue writes directly to PlaybackStateStore without proxy`() = runTest {
+        val store = PlaybackStateStore()
+        val dispatchedEvents = mutableListOf<PlaybackEvent>()
+        store.setEventListener { dispatchedEvents.add(it) }
+
+        val engine = FakePlayerEngine()
+        val resumeManager = PlaybackResumeManager(null, this)
+        resumeManager.awaitPreload()
+
+        val queue = PlaybackQueue(
+            engine = engine,
+            queueStore = FakeQueueStore(),
+            resumeManager = resumeManager,
+            settingsRepository = FakeSettingsRepository(),
+            host = store,
+            scope = this,
+        )
+
+        val items = queueOf("q1", "q2")
+        queue.playQueue(items, startIndex = 0)
+
+        assertEquals("q1", store.state.currentItem?.id)
+        assertEquals(items, store.state.queue)
+        assertEquals(0, store.state.currentIndex)
+        assertTrue(store.state.isPreparing)
+        assertTrue(dispatchedEvents.contains(PlaybackEvent.StartPositionTicker))
+        assertTrue(dispatchedEvents.contains(PlaybackEvent.ArmLoadWatchdog))
+    }
+
 
     /**
      * Fake queue store: in-memory, mirroring the real store's

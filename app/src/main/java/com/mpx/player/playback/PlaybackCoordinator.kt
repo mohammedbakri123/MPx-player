@@ -140,7 +140,7 @@ interface BackgroundService {
  */
 class PlaybackCoordinator(
     private val database: MpxDatabase,
-    internal val persistenceRepository: MediaPersistenceRepository,
+    private val persistenceRepository: MediaPersistenceRepository,
     private val resumeManager: PlaybackResumeManager,
     private val settingsRepository: AppSettingsRepository,
     private val engine: PlayerEngine,
@@ -158,15 +158,23 @@ class PlaybackCoordinator(
     subtitleManager: SubtitleManager? = null,
     playbackQueue: PlaybackQueue? = null,
     engineEventTranslator: EngineEventTranslator? = null,
-) : PlaybackStateSource, StreamPlayer, SubtitleHost, QueueHost, EngineEventHost, SleepTimerHost, PositionSink {
+    stateStore: PlaybackStateStore? = null,
+) : PlaybackStateSource, StreamPlayer, SleepTimerHost, PositionSink {
 
-    internal val positionTracker = PositionTracker(
+    val stateStore: PlaybackStateStore = stateStore ?: PlaybackStateStore(
+        initialDecoderMode = initialDecoderMode,
+        strings = strings,
+    )
+    private val _playbackState: PlaybackStateStore get() = this.stateStore
+    override val playbackState: StateFlow<PlaybackState> = this.stateStore.playbackState
+
+    private val positionTracker = PositionTracker(
         engine = engine,
         resumeManager = resumeManager,
         scope = scope,
         sink = this,
     )
-    internal val sleepTimer = SleepTimer(
+    private val sleepTimer = SleepTimer(
         scope = scope,
         clock = clock,
         host = this,
@@ -208,20 +216,15 @@ class PlaybackCoordinator(
         }
     }
 
-    private val _playbackState = MutableStateFlow(
-        PlaybackState(decoderMode = initialDecoderMode)
-    )
-    override val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
-
     private var activeSurface: Surface? = null
 
     /**
      * External subtitle handling (R-5).
-     * Injected via constructor or constructed with this coordinator as [SubtitleHost].
+     * Injected via constructor or constructed with stateStore as [SubtitleHost].
      */
     internal val subtitleManager: SubtitleManager = subtitleManager ?: SubtitleManager(
         engine = engine,
-        host = this,
+        host = this.stateStore,
         scope = scope,
         fileAccess = subtitleFileAccess ?: error("subtitleFileAccess required when subtitleManager is not injected"),
         ioDispatcher = ioDispatcher,
@@ -229,20 +232,20 @@ class PlaybackCoordinator(
 
     /**
      * Playback queue handling (R-5).
-     * Injected via constructor or constructed with this coordinator as [QueueHost].
+     * Injected via constructor or constructed with stateStore as [QueueHost].
      */
     internal val playbackQueue: PlaybackQueue = playbackQueue ?: PlaybackQueue(
         engine = engine,
         queueStore = queueStore ?: error("queueStore required when playbackQueue is not injected"),
         resumeManager = resumeManager,
         settingsRepository = settingsRepository,
-        host = this,
+        host = this.stateStore,
         scope = scope,
     )
 
     /**
      * Engine event translation (R-5).
-     * Injected via constructor or constructed with this coordinator as [EngineEventHost].
+     * Injected via constructor or constructed with stateStore as [EngineEventHost].
      */
     internal val engineEventTranslator: EngineEventTranslator = engineEventTranslator ?: EngineEventTranslator(
         engine = engine,
@@ -250,12 +253,13 @@ class PlaybackCoordinator(
         subtitleManager = this.subtitleManager,
         resumeManager = resumeManager,
         settingsRepository = settingsRepository,
-        host = this,
+        host = this.stateStore,
         scope = scope,
         ioDispatcher = ioDispatcher,
     )
 
     init {
+        this.stateStore.setEventListener { handlePlaybackEvent(it) }
         engine.setListener(this.engineEventTranslator)
         engine.setQueueSource(
             queue = { this.playbackQueue.items },
@@ -305,271 +309,95 @@ class PlaybackCoordinator(
         })
     }
 
-    // SubtitleHost implementation: the queue/state effects
-    // SubtitleManager asks for. The commit body is the queue/state half
-    // of the old commitSubtitleAdd — the restore half moved into
-    // SubtitleManager with the decision logic.
+    private fun handlePlaybackEvent(event: PlaybackEvent) {
+        when (event) {
+            is PlaybackEvent.StartPositionTicker -> startTicker()
+            is PlaybackEvent.StopPositionTicker -> stopTicker()
+            is PlaybackEvent.RefreshPosition -> updatePosition()
+            is PlaybackEvent.RefreshPositionAndTracks -> {
+                updatePosition()
+                updateTracksState()
+            }
+            is PlaybackEvent.RefreshTracksState -> updateTracksState()
+            is PlaybackEvent.FlushPosition -> updatePosition(forceSave = true)
+            is PlaybackEvent.ArmLoadWatchdog -> armPreparingWatchdog()
+            is PlaybackEvent.CancelLoadWatchdog -> cancelPreparingWatchdog()
+            is PlaybackEvent.StartBackgroundService -> backgroundService.start()
+            is PlaybackEvent.RecordHistory -> {
+                scope.launch(ioDispatcher) {
+                    try {
+                        persistenceRepository.recordHistory(
+                            PlaybackHistoryItem(
+                                mediaUri = event.item.uri,
+                                mediaId = event.item.id,
+                                title = event.item.title,
+                                subtitle = event.item.subtitle,
+                                isVideo = event.item.isVideo,
+                                lastPlayedAt = System.currentTimeMillis(),
+                                playbackPositionMs = event.positionMs,
+                                durationMs = event.item.durationMs,
+                            )
+                        )
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+            is PlaybackEvent.RecordPauseHistory -> {
+                scope.launch(ioDispatcher) {
+                    try {
+                        persistenceRepository.recordHistory(
+                            PlaybackHistoryItem(
+                                mediaUri = event.item.uri,
+                                mediaId = event.item.id,
+                                title = event.item.title,
+                                subtitle = event.item.subtitle,
+                                isVideo = event.item.isVideo,
+                                lastPlayedAt = System.currentTimeMillis(),
+                                playbackPositionMs = event.positionMs,
+                                durationMs = event.durationMs,
+                            )
+                        )
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+            is PlaybackEvent.ClearAutoDetectAttempts -> {
+                subtitleManager.clearAutoDetectAttempts()
+            }
+            is PlaybackEvent.MaybeAutoDetectSubtitles -> {
+                subtitleManager.maybeAutoDetectSubtitles()
+            }
+            is PlaybackEvent.CommitSubtitleItem -> {
+                playbackQueue.replaceItem(event.index, event.updatedItem)
+                _playbackState.update { state ->
+                    val withItem = state.copy(currentItem = event.updatedItem, queue = playbackQueue.items)
+                    if (event.notification != null) withItem.copy(userNotification = event.notification) else withItem
+                }
+                playbackQueue.persistQueue(event.index)
+            }
+            is PlaybackEvent.EngineError -> {
+                errorLog("Engine error encountered", event.error)
+            }
+        }
+    }
+
     override val currentItem: PlayableMedia?
         get() = _playbackState.value.currentItem
-    override val liveQueue: List<PlayableMedia>
+    val liveQueue: List<PlayableMedia>
         get() = playbackQueue.items
-    override val subtitleTracks: List<SubtitleTrackInfo>
+    val subtitleTracks: List<SubtitleTrackInfo>
         get() = _playbackState.value.subtitleTracks
-
-    override fun commitSubtitleItem(index: Int, updatedItem: PlayableMedia, notification: String?) {
-        playbackQueue.replaceItem(index, updatedItem)
-        _playbackState.update { state ->
-            val withItem = state.copy(currentItem = updatedItem, queue = playbackQueue.items)
-            if (notification != null) withItem.copy(userNotification = notification) else withItem
-        }
-        // Issue #149: the queue item itself changed (new subtitle list).
-        playbackQueue.persistQueue(index)
-    }
-
-    override fun subtitleLoadedMessage(displayName: String): String =
-        strings.subtitleLoaded(displayName)
-
-    override fun subtitleFailedMessage(displayName: String): String =
-        strings.subtitleFailed(displayName)
-
-    override fun showNotification(message: String) {
-        _playbackState.update { it.copy(userNotification = message) }
-    }
-
-    override fun refreshTracksState() {
-        updateTracksState()
-    }
-
-    // QueueHost implementation: the session/state effects
-    // PlaybackQueue asks for. The queue decides what plays and in
-    // what order; these methods are the only places its decisions
-    // become published state, history, ticker, or watchdog effects.
-    override val state: PlaybackState
+    val state: PlaybackState
         get() = _playbackState.value
 
-    override fun publishSession(
-        items: List<PlayableMedia>,
-        targetIndex: Int,
-        targetItem: PlayableMedia,
-        resumedFromMs: Long?,
-        speed: Float,
-        shuffleEnabled: Boolean,
-        hasPrevious: Boolean,
-        hasNext: Boolean,
-    ) {
-        _playbackState.update {
-            it.copy(
-                currentItem = targetItem,
-                queue = items,
-                currentIndex = targetIndex,
-                hasPrevious = hasPrevious,
-                hasNext = hasNext,
-                resumedFromMs = resumedFromMs,
-                speed = speed,
-                shuffleEnabled = shuffleEnabled,
-                // A fresh video load is preparing until the engine reports READY.
-                isPreparing = targetItem.isVideo,
-                // Issue #260: same reset as onMediaItemTransition — the
-                // transition callback may land after this update, so the
-                // effect must not read the previous video's size here.
-                videoWidth = 0,
-                videoHeight = 0,
-            )
-        }
-    }
+    fun subtitleLoadedMessage(displayName: String): String =
+        strings.subtitleLoaded(displayName)
 
-    override fun publishQueueOrder(
-        items: List<PlayableMedia>,
-        currentIndex: Int,
-        shuffleEnabled: Boolean,
-        hasPrevious: Boolean,
-        hasNext: Boolean,
-    ) {
-        _playbackState.update {
-            it.copy(
-                queue = items,
-                currentIndex = currentIndex,
-                hasPrevious = hasPrevious,
-                hasNext = hasNext,
-                shuffleEnabled = shuffleEnabled,
-            )
-        }
-    }
+    fun subtitleFailedMessage(displayName: String): String =
+        strings.subtitleFailed(displayName)
 
-    override fun publishShuffleEnabled(enabled: Boolean) {
-        _playbackState.update { it.copy(shuffleEnabled = enabled) }
-    }
-
-    override fun publishRepeatMode(mode: RepeatMode) {
-        _playbackState.update { it.copy(repeatMode = mode) }
-    }
-
-    override fun recordHistory(item: PlayableMedia, positionMs: Long) {
-        scope.launch(ioDispatcher) {
-            try {
-                persistenceRepository.recordHistory(
-                    PlaybackHistoryItem(
-                        mediaUri = item.uri,
-                        mediaId = item.id,
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        isVideo = item.isVideo,
-                        lastPlayedAt = System.currentTimeMillis(),
-                        playbackPositionMs = positionMs,
-                        durationMs = item.durationMs,
-                    )
-                )
-            } catch (_: Exception) {
-            }
-        }
-    }
-
-    override fun clearAutoDetectAttempts() {
-        subtitleManager.clearAutoDetectAttempts()
-    }
-
-    override fun refreshPositionAndTracks() {
-        updatePosition()
-        updateTracksState()
-    }
-
-    override fun refreshPosition() {
-        updatePosition()
-    }
-
-    override fun startPositionTicker() {
-        startTicker()
-    }
-
-    override fun armLoadWatchdog() {
-        armPreparingWatchdog()
-    }
-
-    // EngineEventHost implementation: the state/lifecycle effects
-    // EngineEventTranslator asks for. The translator computes the
-    // values (the #187/#223 banner clear, the #330 resume-banner
-    // rule, the #188 decoder fallback note); these methods only
-    // apply the state copy or the effect, verbatim from the old
-    // engineListener bodies.
-    //
-    // Note: recordHistory (in the QueueHost section above) is the
-    // single implementation for both QueueHost and EngineEventHost —
-    // the two interfaces declare the same signature, so one override
-    // serves both. The same holds for refreshPositionAndTracks,
-    // startPositionTicker, and state.
-    override fun publishIsPlaying(isPlaying: Boolean) {
-        _playbackState.update { it.copy(isPlaying = isPlaying) }
-    }
-
-    override fun startBackgroundService() {
-        backgroundService.start()
-    }
-
-    override fun stopPositionTicker() {
-        stopTicker()
-    }
-
-    override fun flushPosition() {
-        updatePosition(forceSave = true)
-    }
-
-    override fun recordPauseHistory(item: PlayableMedia, positionMs: Long, durationMs: Long) {
-        scope.launch(ioDispatcher) {
-            try {
-                persistenceRepository.recordHistory(
-                    PlaybackHistoryItem(
-                        mediaUri = item.uri,
-                        mediaId = item.id,
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        isVideo = item.isVideo,
-                        lastPlayedAt = System.currentTimeMillis(),
-                        playbackPositionMs = positionMs,
-                        durationMs = durationMs,
-                    )
-                )
-            } catch (_: Exception) {
-            }
-        }
-    }
-
-    override fun cancelLoadWatchdog() {
-        cancelPreparingWatchdog()
-    }
-
-    override fun publishEngineState(playbackState: Int, isPreparing: Boolean, userNotification: String?) {
-        _playbackState.update {
-            it.copy(
-                playbackState = playbackState,
-                isPreparing = isPreparing,
-                userNotification = userNotification,
-            )
-        }
-    }
-
-    override fun maybeAutoDetectSubtitles() {
-        subtitleManager.maybeAutoDetectSubtitles()
-    }
-
-    override fun publishTransition(
-        item: PlayableMedia?,
-        index: Int,
-        hasPrevious: Boolean,
-        hasNext: Boolean,
-        resumedFromMs: Long?,
-    ) {
-        _playbackState.update {
-            it.copy(
-                currentItem = item,
-                currentIndex = index,
-                hasPrevious = hasPrevious,
-                hasNext = hasNext,
-                resumedFromMs = resumedFromMs,
-                // Issue #260: the new item's dimensions are not known
-                // yet — drop the previous video's size so the PiP
-                // params are not armed with a stale aspect while it
-                // loads, and so the 0 -> WxH transition always
-                // re-runs the effect even when the new video has the
-                // same dimensions as the old one.
-                videoWidth = 0,
-                videoHeight = 0,
-            )
-        }
-    }
-
-    override fun publishSpeed(speed: Float) {
-        _playbackState.update { it.copy(speed = speed) }
-    }
-
-    override fun publishVideoSize(width: Int, height: Int) {
-        _playbackState.update { it.copy(videoWidth = width, videoHeight = height) }
-    }
-
-    override fun publishDecoderInitialized(decoderName: String, fallbackNote: String?) {
-        _playbackState.update {
-            it.copy(
-                activeDecoderName = decoderName,
-                decoderFallbackNote = fallbackNote,
-            )
-        }
-    }
-
-    override fun publishEngineError(error: Exception) {
-        errorLog("Engine error encountered", error)
-        // An error ends preparing: the banner below replaces the splash.
-        // mpv-only (issue #150): there is no fallback engine any more,
-        // so every error is reported as-is — with the codec name when
-        // libmpv knows it — instead of silently switching engines.
-        _playbackState.update {
-            it.copy(
-                isPreparing = false,
-                userNotification = if (error is MpvPlaybackException && error.codecName != null) {
-                    strings.codecError(error.codecName)
-                } else {
-                    "Playback error: ${error.message}"
-                },
-            )
-        }
+    fun showNotification(message: String) {
+        stateStore.showNotification(message)
     }
 
     /**
@@ -1139,10 +967,14 @@ class PlaybackCoordinator(
             // Intentionally uncancelled in production: the coordinator lives for the
             // process lifetime and outlives individual Activity/Service lifecycles.
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-            val hostProxy = CoordinatorHostProxy()
+            val strings = ProductionStrings(appContext)
+            val stateStore = PlaybackStateStore(
+                initialDecoderMode = initialDecoderMode,
+                strings = strings,
+            )
             val subtitleManager = SubtitleManager(
                 engine = engine,
-                host = hostProxy,
+                host = stateStore,
                 scope = scope,
                 fileAccess = SubtitleManager.productionFileAccess(appContext),
             )
@@ -1151,7 +983,7 @@ class PlaybackCoordinator(
                 queueStore = queueStore,
                 resumeManager = resumeManager,
                 settingsRepository = settingsRepository,
-                host = hostProxy,
+                host = stateStore,
                 scope = scope,
             )
             val engineEventTranslator = EngineEventTranslator(
@@ -1160,26 +992,25 @@ class PlaybackCoordinator(
                 subtitleManager = subtitleManager,
                 resumeManager = resumeManager,
                 settingsRepository = settingsRepository,
-                host = hostProxy,
+                host = stateStore,
                 scope = scope,
             )
-            val coordinator = PlaybackCoordinator(
+            return PlaybackCoordinator(
                 database = database,
                 persistenceRepository = persistenceRepository,
                 resumeManager = resumeManager,
                 settingsRepository = settingsRepository,
                 engine = engine,
                 scope = scope,
-                strings = ProductionStrings(appContext),
+                strings = strings,
                 backgroundService = ProductionBackgroundService(appContext),
                 audioFocusManager = ProductionAudioFocusManager(appContext),
                 initialDecoderMode = initialDecoderMode,
                 subtitleManager = subtitleManager,
                 playbackQueue = playbackQueue,
                 engineEventTranslator = engineEventTranslator,
+                stateStore = stateStore,
             )
-            hostProxy.attach(coordinator)
-            return coordinator
         }
 
         private fun resolveInitialDecoderModeFrom(
@@ -1221,87 +1052,4 @@ private class ProductionBackgroundService(private val context: Context) : Backgr
     }
 }
 
-/**
- * Forwarding host for collaborators constructed in [PlaybackCoordinator.production]
- * before the coordinator instance itself is allocated (R-5).
- * Immediately attached to the coordinator once constructed.
- */
-internal class CoordinatorHostProxy : SubtitleHost, QueueHost, EngineEventHost {
-    private var delegate: PlaybackCoordinator? = null
 
-    fun attach(coordinator: PlaybackCoordinator) {
-        this.delegate = coordinator
-    }
-
-    private val host: PlaybackCoordinator
-        get() = delegate ?: error("CoordinatorHostProxy not attached yet")
-
-    // Shared state
-    override val state: PlaybackState get() = host.state
-
-    // SubtitleHost
-    override val currentItem: PlayableMedia? get() = host.currentItem
-    override val liveQueue: List<PlayableMedia> get() = host.liveQueue
-    override val subtitleTracks: List<SubtitleTrackInfo> get() = host.subtitleTracks
-    override fun commitSubtitleItem(index: Int, updatedItem: PlayableMedia, notification: String?) =
-        host.commitSubtitleItem(index, updatedItem, notification)
-    override fun subtitleLoadedMessage(displayName: String): String =
-        host.subtitleLoadedMessage(displayName)
-    override fun subtitleFailedMessage(displayName: String): String =
-        host.subtitleFailedMessage(displayName)
-    override fun showNotification(message: String) = host.showNotification(message)
-    override fun refreshTracksState() = host.refreshTracksState()
-
-    // QueueHost
-    override fun publishSession(
-        items: List<PlayableMedia>,
-        targetIndex: Int,
-        targetItem: PlayableMedia,
-        resumedFromMs: Long?,
-        speed: Float,
-        shuffleEnabled: Boolean,
-        hasPrevious: Boolean,
-        hasNext: Boolean,
-    ) = host.publishSession(items, targetIndex, targetItem, resumedFromMs, speed, shuffleEnabled, hasPrevious, hasNext)
-
-    override fun publishQueueOrder(
-        items: List<PlayableMedia>,
-        currentIndex: Int,
-        shuffleEnabled: Boolean,
-        hasPrevious: Boolean,
-        hasNext: Boolean,
-    ) = host.publishQueueOrder(items, currentIndex, shuffleEnabled, hasPrevious, hasNext)
-
-    override fun publishShuffleEnabled(enabled: Boolean) = host.publishShuffleEnabled(enabled)
-    override fun publishRepeatMode(mode: RepeatMode) = host.publishRepeatMode(mode)
-    override fun recordHistory(item: PlayableMedia, positionMs: Long) = host.recordHistory(item, positionMs)
-    override fun clearAutoDetectAttempts() = host.clearAutoDetectAttempts()
-    override fun refreshPositionAndTracks() = host.refreshPositionAndTracks()
-    override fun refreshPosition() = host.refreshPosition()
-    override fun startPositionTicker() = host.startPositionTicker()
-    override fun armLoadWatchdog() = host.armLoadWatchdog()
-
-    // EngineEventHost
-    override fun publishIsPlaying(isPlaying: Boolean) = host.publishIsPlaying(isPlaying)
-    override fun startBackgroundService() = host.startBackgroundService()
-    override fun stopPositionTicker() = host.stopPositionTicker()
-    override fun flushPosition() = host.flushPosition()
-    override fun recordPauseHistory(item: PlayableMedia, positionMs: Long, durationMs: Long) =
-        host.recordPauseHistory(item, positionMs, durationMs)
-    override fun cancelLoadWatchdog() = host.cancelLoadWatchdog()
-    override fun publishEngineState(playbackState: Int, isPreparing: Boolean, userNotification: String?) =
-        host.publishEngineState(playbackState, isPreparing, userNotification)
-    override fun maybeAutoDetectSubtitles() = host.maybeAutoDetectSubtitles()
-    override fun publishTransition(
-        item: PlayableMedia?,
-        index: Int,
-        hasPrevious: Boolean,
-        hasNext: Boolean,
-        resumedFromMs: Long?,
-    ) = host.publishTransition(item, index, hasPrevious, hasNext, resumedFromMs)
-    override fun publishSpeed(speed: Float) = host.publishSpeed(speed)
-    override fun publishVideoSize(width: Int, height: Int) = host.publishVideoSize(width, height)
-    override fun publishDecoderInitialized(decoderName: String, fallbackNote: String?) =
-        host.publishDecoderInitialized(decoderName, fallbackNote)
-    override fun publishEngineError(error: Exception) = host.publishEngineError(error)
-}

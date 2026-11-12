@@ -512,6 +512,33 @@ class EngineEventTranslatorTest {
         assertEquals("codec:H.265", f.eventHost.state.userNotification)
     }
 
+    @Test
+    fun `engineEventTranslator writes directly to PlaybackStateStore without proxy`() = runTest {
+        val store = PlaybackStateStore()
+        val dispatchedEvents = mutableListOf<PlaybackEvent>()
+        store.setEventListener { dispatchedEvents.add(it) }
+
+        val fixture = createFixture(this)
+        val translator = EngineEventTranslator(
+            engine = fixture.engine,
+            queue = fixture.queue,
+            subtitleManager = fixture.subtitleManager,
+            resumeManager = fixture.resumeManager,
+            settingsRepository = fixture.settings,
+            host = store,
+            scope = this,
+            ioDispatcher = UnconfinedTestDispatcher(),
+        )
+
+        translator.onPlaybackStateChanged(PlayerEngine.STATE_READY)
+        assertEquals(PlayerEngine.STATE_READY, store.state.playbackState)
+        assertFalse(store.state.isPreparing)
+
+        translator.onIsPlayingChanged(true)
+        assertTrue(store.state.isPlaying)
+        assertTrue(dispatchedEvents.contains(PlaybackEvent.StartPositionTicker))
+    }
+
 
     /**
      * Fake queue store: in-memory, mirroring the real store's

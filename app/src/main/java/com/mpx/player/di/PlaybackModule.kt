@@ -1,18 +1,19 @@
 package com.mpx.player.di
 
+import com.mpx.player.playback.PlaybackController
 import com.mpx.player.playback.PlaybackCoordinator
+import com.mpx.player.playback.PlaybackStateSource
+import com.mpx.player.playback.StreamPlayer
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 /**
- * Migration Phase 1b, rewired in Phase 3 step 5: the playback Koin
- * module.
+ * Migration Phase 1b, rewired in Phase 3 step 5, updated in Phase 8 Step 1.4:
+ * the playback Koin module.
  *
- * Only [PlaybackCoordinator] is registered here, as a `single` built
- * through its [PlaybackCoordinator.production] factory — Koin
- * returns the same process-wide instance the rest of the app
- * already uses, it does not build a second one. [PlaybackService]
- * injects this same single.
+ * Registers [PlaybackCoordinator] as a process-wide `single` built through
+ * [PlaybackCoordinator.production], and binds it to [PlaybackStateSource],
+ * [PlaybackController], and [StreamPlayer] interfaces (CP-2).
  *
  * The mpv engine is deliberately NOT registered. The coordinator
  * builds its engine internally
@@ -38,4 +39,7 @@ val playbackModule = module {
             settingsRepository = get(),
         )
     }
+    single<PlaybackStateSource> { get<PlaybackCoordinator>() }
+    single<PlaybackController> { get<PlaybackCoordinator>() }
+    single<StreamPlayer> { get<PlaybackCoordinator>() }
 }

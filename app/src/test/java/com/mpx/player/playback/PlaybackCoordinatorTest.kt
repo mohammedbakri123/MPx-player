@@ -1036,35 +1036,4 @@ class PlaybackCoordinatorTest {
         assertSame(customTranslator, coordinator.engineEventTranslator)
         assertSame(customTranslator, engine.capturedListener)
     }
-
-    @Test
-    fun `coordinatorHostProxy throws IllegalStateException when accessed before attach`() {
-        val proxy = CoordinatorHostProxy()
-        try {
-            proxy.state
-            org.junit.Assert.fail("Expected IllegalStateException before attach")
-        } catch (e: IllegalStateException) {
-            assertEquals("CoordinatorHostProxy not attached yet", e.message)
-        }
-    }
-
-    @Test
-    fun `coordinatorHostProxy forwards operations to attached coordinator`() = runTest {
-        val f = createFixture(this)
-        val proxy = CoordinatorHostProxy()
-        proxy.attach(f.coordinator)
-
-        assertEquals(f.coordinator.state, proxy.state)
-        assertEquals(f.coordinator.currentItem, proxy.currentItem)
-        assertEquals(f.coordinator.liveQueue, proxy.liveQueue)
-        assertEquals(f.coordinator.subtitleTracks, proxy.subtitleTracks)
-        assertEquals(
-            f.coordinator.subtitleLoadedMessage("sub.srt"),
-            proxy.subtitleLoadedMessage("sub.srt"),
-        )
-        assertEquals(
-            f.coordinator.subtitleFailedMessage("sub.srt"),
-            proxy.subtitleFailedMessage("sub.srt"),
-        )
-    }
 }

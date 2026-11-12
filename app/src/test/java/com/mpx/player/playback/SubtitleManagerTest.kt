@@ -379,6 +379,39 @@ class SubtitleManagerTest {
         assertEquals(listOf("movie.srt"), engine.replaceCalls.single().second.externalSubtitles.map { it.name })
     }
 
+    @Test
+    fun `subtitleManager writes directly to PlaybackStateStore without proxy`() = runTest {
+        val store = PlaybackStateStore()
+        val dispatchedEvents = mutableListOf<PlaybackEvent>()
+        store.setEventListener { dispatchedEvents.add(it) }
+
+        val testVideo = video("v1")
+        store.publishSession(
+            items = listOf(testVideo),
+            targetIndex = 0,
+            targetItem = testVideo,
+            resumedFromMs = null,
+            speed = 1.0f,
+            shuffleEnabled = false,
+            hasPrevious = false,
+            hasNext = false,
+        )
+
+        val manager = SubtitleManager(
+            engine = engine,
+            host = store,
+            scope = this,
+            fileAccess = fileAccess(),
+            ioDispatcher = UnconfinedTestDispatcher(),
+        )
+
+        assertTrue(manager.loadExternalSubtitle("file:///sub.srt", "sub.srt", "application/x-subrip"))
+        val commitEvent = dispatchedEvents.filterIsInstance<PlaybackEvent.CommitSubtitleItem>().singleOrNull()
+        org.junit.Assert.assertNotNull(commitEvent)
+        assertEquals(0, commitEvent?.index)
+        assertEquals("sub.srt", commitEvent?.updatedItem?.externalSubtitles?.singleOrNull()?.name)
+    }
+
 
     /**
      * Fake host: mirrors the real coordinator's commit (the queue item

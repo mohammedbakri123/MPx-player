@@ -1,6 +1,7 @@
 package com.mpx.player.di
 
-import com.mpx.player.playback.PlaybackCoordinator
+import com.mpx.player.playback.PlaybackStateSource
+import com.mpx.player.playback.StreamPlayer
 import com.mpx.player.ui.screens.local.LocalViewModel
 import com.mpx.player.ui.screens.me.MeViewModel
 import com.mpx.player.ui.screens.music.MusicViewModel
@@ -74,12 +75,12 @@ import org.koin.dsl.module
  * construct one directly.
  */
 val viewModelModule = module {
-    viewModel { PlayerViewModel(get<PlaybackCoordinator>(), get(), get()) }
+    viewModel { PlayerViewModel(get<PlaybackStateSource>(), get(), get()) }
     viewModel { (hasPermission: Boolean) ->
         LocalViewModel(get(), get(), get(), hasPermission, savedStateHandle = get())
     }
     viewModel { MusicViewModel(get(), get(), get(), savedStateHandle = get()) }
-    viewModel { NetworkViewModel(get<PlaybackCoordinator>()) }
+    viewModel { NetworkViewModel(get<StreamPlayer>()) }
     viewModel { MeViewModel(get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get()) }
 }
