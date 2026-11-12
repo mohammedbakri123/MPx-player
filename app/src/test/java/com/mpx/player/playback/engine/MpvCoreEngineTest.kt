@@ -82,6 +82,8 @@ class MpvCoreEngineTest {
         var transitionIndex: Int? = null
         var speed: Float? = null
         var videoDecoderInitialized: String? = null
+        var videoWidth: Int? = null
+        var videoHeight: Int? = null
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             this.playbackState = playbackState
@@ -97,6 +99,11 @@ class MpvCoreEngineTest {
 
         override fun onPlaybackParametersChanged(speed: Float) {
             this.speed = speed
+        }
+
+        override fun onVideoSizeChanged(width: Int, height: Int) {
+            this.videoWidth = width
+            this.videoHeight = height
         }
 
         override fun onError(error: Exception) {
@@ -932,5 +939,129 @@ class MpvCoreEngineTest {
 
         fakeHost.settings = AppSettings(subtitleSize = "Small")
         assertEquals("Small", engine.loadSavedSubtitleSettings().subtitleSize)
+    }
+
+    // --- Property tests: dwidth/dheight, demuxer-cache-time, speed (Step 3.3) ---
+
+    @Test
+    fun `demuxer-cache-time property update caches buffered position in milliseconds`() {
+        val engine = createEngine()
+        assertEquals(0L, engine.bufferedPosition)
+
+        fakePort.emitProperty("demuxer-cache-time", 15.25)
+        assertEquals(15250L, engine.bufferedPosition)
+
+        // Negative values coerced to zero
+        fakePort.emitProperty("demuxer-cache-time", -5.0)
+        assertEquals(0L, engine.bufferedPosition)
+    }
+
+    @Test
+    fun `dwidth and dheight property updates notify video size listener and cache dimensions`() {
+        val engine = createEngine()
+        assertEquals(0, engine.videoWidth)
+        assertEquals(0, engine.videoHeight)
+
+        fakePort.emitProperty("dwidth", 1920)
+        fakePort.emitProperty("dheight", 1080)
+
+        assertEquals(1920, engine.videoWidth)
+        assertEquals(1080, engine.videoHeight)
+        assertEquals(1920, fakeListener.videoWidth)
+        assertEquals(1080, fakeListener.videoHeight)
+    }
+
+    @Test
+    fun `dwidth and dheight coerce negative dimensions to zero`() {
+        val engine = createEngine()
+
+        fakePort.emitProperty("dwidth", -100)
+        fakePort.emitProperty("dheight", -200)
+
+        assertEquals(0, engine.videoWidth)
+        assertEquals(0, engine.videoHeight)
+    }
+
+    @Test
+    fun `dwidth and dheight do not re-notify listener when dimensions are unchanged`() {
+        val engine = createEngine()
+
+        fakePort.emitProperty("dwidth", 1280)
+        fakePort.emitProperty("dheight", 720)
+        assertEquals(1280, fakeListener.videoWidth)
+        assertEquals(720, fakeListener.videoHeight)
+
+        // Reset listener recording
+        fakeListener.videoWidth = null
+        fakeListener.videoHeight = null
+
+        // Emit same dimensions
+        fakePort.emitProperty("dwidth", 1280)
+        fakePort.emitProperty("dheight", 720)
+
+        assertNull(fakeListener.videoWidth)
+        assertNull(fakeListener.videoHeight)
+    }
+
+    @Test
+    fun `videoWidth and videoHeight return zero after engine is released`() {
+        val engine = createEngine()
+        fakePort.recordedProperties["dwidth"] = 1920
+        fakePort.recordedProperties["dheight"] = 1080
+
+        assertEquals(1920, engine.videoWidth)
+        assertEquals(1080, engine.videoHeight)
+
+        engine.release()
+
+        assertEquals(0, engine.videoWidth)
+        assertEquals(0, engine.videoHeight)
+    }
+
+    @Test
+    fun `setSpeed writes speed property to port updates cached speed and notifies listener`() {
+        val engine = createEngine()
+
+        engine.setSpeed(1.5f)
+
+        assertEquals(1.5, (fakePort.recordedProperties["speed"] as Number).toDouble(), 0.001)
+        assertEquals(1.5f, engine.cachedSpeed)
+        assertEquals(1.5f, fakeListener.speed)
+    }
+
+    @Test
+    fun `speed property event from port updates cached speed and notifies listener`() {
+        val engine = createEngine()
+
+        fakePort.emitProperty("speed", 0.75)
+
+        assertEquals(0.75f, engine.cachedSpeed)
+        assertEquals(0.75f, fakeListener.speed)
+    }
+
+    @Test
+    fun `speed property event does not re-notify listener when speed is unchanged`() {
+        val engine = createEngine()
+
+        fakePort.emitProperty("speed", 1.25)
+        assertEquals(1.25f, fakeListener.speed)
+
+        fakeListener.speed = null
+        fakePort.emitProperty("speed", 1.25)
+
+        assertNull(fakeListener.speed)
+    }
+
+    @Test
+    fun `setSpeed is ignored after engine is released`() {
+        val engine = createEngine()
+        engine.setSpeed(1.2f)
+        assertEquals(1.2, (fakePort.recordedProperties["speed"] as Number).toDouble(), 0.001)
+
+        engine.release()
+        engine.setSpeed(2.0f)
+
+        // Still 1.2, not updated to 2.0
+        assertEquals(1.2, (fakePort.recordedProperties["speed"] as Number).toDouble(), 0.001)
     }
 }
