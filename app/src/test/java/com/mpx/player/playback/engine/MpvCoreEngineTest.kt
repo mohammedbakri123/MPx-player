@@ -435,6 +435,164 @@ class MpvCoreEngineTest {
         assertTrue(fakeListener.errors.first().message?.contains("MPV player shut down unexpectedly") == true)
     }
 
+    @Test
+    fun `END_FILE with fatal error before FILE_LOADED reports startup error`() {
+        val engine = createEngine()
+        engine.attachSurface(surface)
+        val media = PlayableMedia(id = "item1", uri = "http://localhost/item1.mp4", title = "Item 1")
+        fakeHost.queue.add(media)
+        engine.load(media, 0L)
+
+        // Port emits fatal error before FILE_LOADED arrived (e.g. demuxer cannot open stream)
+        fakePort.emitEvent(MpvPort.MPV_EVENT_END_FILE, MpvPort.EndFile(reason = "error", error = -1L))
+
+        assertEquals(1, fakeListener.errors.size)
+        assertTrue(fakeListener.errors.first().message?.contains("MPV could not play this file") == true)
+        assertFalse(engine.fileLoadedForCurrentItem)
+    }
+
+    @Test
+    fun `stale FILE_LOADED arriving after deliberate stop is dropped`() {
+        val engine = createEngine()
+        engine.attachSurface(surface)
+        val media = PlayableMedia(id = "item1", uri = "http://localhost/item1.mp4", title = "Item 1")
+        fakeHost.queue.add(media)
+        engine.load(media, 0L)
+
+        // User stops playback before FILE_LOADED arrives
+        engine.stop()
+        assertNull(engine.activeMediaUri)
+
+        // Stale FILE_LOADED arrives from mpv
+        fakePort.recordedProperties["path"] = "http://localhost/item1.mp4"
+        fakePort.emitEvent(MpvPort.MPV_EVENT_FILE_LOADED)
+
+        // Dropped: engine must not transition to READY for stopped session
+        assertFalse(engine.fileLoadedForCurrentItem)
+        assertEquals(0, fakeHost.fileLoadedEvents.size)
+        assertNull(fakeListener.playbackState)
+    }
+
+    @Test
+    fun `rapid consecutive loads with out of order FILE_LOADED drops stale completion`() {
+        val engine = createEngine()
+        engine.attachSurface(surface)
+        val media1 = PlayableMedia(id = "item1", uri = "http://localhost/item1.mp4", title = "Item 1")
+        val media2 = PlayableMedia(id = "item2", uri = "http://localhost/item2.mp4", title = "Item 2")
+        fakeHost.queue.addAll(listOf(media1, media2))
+
+        // Rapid load 1 then 2
+        engine.load(media1, 0L)
+        val gen1 = engine.currentLoadGeneration
+        engine.load(media2, 0L)
+        val gen2 = engine.currentLoadGeneration
+        assertTrue(gen2 > gen1)
+
+        // In-flight FILE_LOADED for media 1 arrives late
+        fakePort.recordedProperties["path"] = "http://localhost/item1.mp4"
+        fakePort.emitEvent(MpvPort.MPV_EVENT_FILE_LOADED)
+
+        // Dropped: current item is media2
+        assertFalse(engine.fileLoadedForCurrentItem)
+        assertEquals(0, fakeHost.fileLoadedEvents.size)
+
+        // In-flight FILE_LOADED for media 2 arrives
+        fakePort.recordedProperties["path"] = "http://localhost/item2.mp4"
+        fakePort.emitEvent(MpvPort.MPV_EVENT_FILE_LOADED)
+
+        // Accepted: current item is media2
+        assertTrue(engine.fileLoadedForCurrentItem)
+        assertEquals(1, fakeHost.fileLoadedEvents.size)
+        assertEquals(PlayerEngine.STATE_READY, fakeListener.playbackState)
+    }
+
+    @Test
+    fun `out of order property updates before FILE_LOADED do not prematurely ready engine`() {
+        val engine = createEngine()
+        engine.attachSurface(surface)
+        val media = PlayableMedia(id = "item1", uri = "http://localhost/item1.mp4", title = "Item 1")
+        fakeHost.queue.add(media)
+        engine.load(media, 0L)
+
+        // Pre-FILE_LOADED property changes
+        fakePort.emitProperty("time-pos", 12.0)
+        fakePort.emitProperty("duration", 180.0)
+
+        assertEquals(12000L, engine.cachedPositionMs)
+        assertEquals(180000L, engine.cachedDurationMs)
+        assertFalse(engine.fileLoadedForCurrentItem)
+        assertNull(fakeListener.playbackState)
+
+        // Now FILE_LOADED arrives
+        fakePort.recordedProperties["path"] = "http://localhost/item1.mp4"
+        fakePort.emitEvent(MpvPort.MPV_EVENT_FILE_LOADED)
+
+        assertTrue(engine.fileLoadedForCurrentItem)
+        assertEquals(PlayerEngine.STATE_READY, fakeListener.playbackState)
+    }
+
+    @Test
+    fun `idle-active and pause interleavings reflect playing state accurately`() {
+        val engine = createEngine()
+        engine.attachSurface(surface)
+
+        // Both false -> playing
+        fakePort.emitProperty("pause", false)
+        fakePort.emitProperty("idle-active", false)
+        assertTrue(engine.isPlaying)
+        assertEquals(true, fakeListener.isPlaying)
+
+        // idle-active becomes true (e.g. idle between items) -> not playing
+        fakePort.emitProperty("idle-active", true)
+        assertFalse(engine.isPlaying)
+        assertEquals(false, fakeListener.isPlaying)
+
+        // idle-active becomes false -> playing again
+        fakePort.emitProperty("idle-active", false)
+        assertTrue(engine.isPlaying)
+        assertEquals(true, fakeListener.isPlaying)
+
+        // pause becomes true -> not playing
+        fakePort.emitProperty("pause", true)
+        assertFalse(engine.isPlaying)
+        assertEquals(false, fakeListener.isPlaying)
+    }
+
+    @Test
+    fun `END_FILE with eof-reached true is normal completion without fallback`() {
+        val engine = createEngine(initialDecoderMode = DecoderMode.HW)
+        engine.attachSurface(surface)
+        val media = PlayableMedia(id = "item1", uri = "http://localhost/item1.mp4", title = "Item 1")
+        fakeHost.queue.add(media)
+        engine.load(media, 0L)
+
+        fakePort.recordedProperties["path"] = "http://localhost/item1.mp4"
+        fakePort.emitEvent(MpvPort.MPV_EVENT_FILE_LOADED)
+        fakePort.emitProperty("duration", 100.0)
+        fakePort.emitProperty("time-pos", 100.0)
+        fakePort.recordedProperties["eof-reached"] = true
+
+        // Normal EOF end-file
+        fakePort.emitEvent(MpvPort.MPV_EVENT_END_FILE, MpvPort.EndFile(reason = "eof", error = 0L))
+
+        // Decoder stage remains HW (no fallback triggered)
+        assertEquals(MpvCoreEngine.DecoderStage.HW, engine.currentDecoderStage)
+        assertEquals(0, fakeListener.errors.size)
+    }
+
+    @Test
+    fun `vo property null event restores vo=gpu immediately when surface is attached`() {
+        val engine = createEngine()
+        engine.attachSurface(surface)
+
+        // Simulate mpv nulling VO on reconfig error
+        fakePort.emitProperty("vo", "null")
+
+        // Immediately restored because currentSurface != null
+        assertFalse(engine.voIsNull)
+        assertEquals("gpu", fakePort.recordedProperties["vo"])
+    }
+
     // --- 7. Release lifecycle (D-4, D-8) ---
 
     @Test
