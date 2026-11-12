@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mpx.player.R
 import com.mpx.player.domain.model.MediaFolder
+import com.mpx.player.ui.screens.local.components.formatSize
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxTheme
 import java.util.Locale
@@ -126,20 +127,6 @@ private fun syntheticTreeFolder(path: String): MediaFolder {
         isStorageRemovable = segments.size >= 2 && segments[0] == "storage" &&
             segments[1] != "emulated",
     )
-}
-
-/** Size formatting for synthesized rows (same bands as LocalScreen's formatSize). */
-private fun formatTreeSize(bytes: Long): String {
-    if (bytes <= 0L) return "0 B"
-    val kb = bytes / 1024.0
-    val mb = kb / 1024.0
-    val gb = mb / 1024.0
-    return when {
-        gb >= 1.0 -> String.format(Locale.US, "%.1f GB", gb)
-        mb >= 1.0 -> String.format(Locale.US, "%.1f MB", mb)
-        kb >= 1.0 -> String.format(Locale.US, "%.1f KB", kb)
-        else -> "$bytes B"
-    }
 }
 
 /**
@@ -302,7 +289,7 @@ fun buildFolderTree(folders: List<MediaFolder>, homeLabel: String? = null): List
                 displayFolder.copy(
                     videoCount = children.sumOf { it.folder.videoCount },
                     totalSizeBytes = totalBytes,
-                    totalSizeFormatted = formatTreeSize(totalBytes),
+                    totalSizeFormatted = formatSize(totalBytes),
                     totalDurationMs = children.sumOf { it.folder.totalDurationMs },
                     lastModified = children.maxOfOrNull { it.folder.lastModified } ?: 0L,
                 )
