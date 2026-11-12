@@ -215,16 +215,16 @@ class PlaybackQueueTest {
         val tracks = listOf(
             AudioTrack(
                 id = "a1", title = "Song One", artist = "Singer", album = "Album",
-                durationFormatted = "3:00", durationMs = 180_000L,
+                durationMs = 180_000L,
                 path = "/music/song.mp3", contentUri = "content://media/audio/1",
             ),
             AudioTrack(
                 id = "a2", title = "No Path", artist = "Singer", album = "Album",
-                durationFormatted = "0:00", path = "",
+                path = "",
             ),
             AudioTrack(
                 id = "a3", title = "Song Three", artist = "Singer", album = "Album",
-                durationFormatted = "2:00", durationMs = 120_000L,
+                durationMs = 120_000L,
                 path = "/music/song3.mp3", contentUri = "",
             ),
         )
@@ -248,7 +248,7 @@ class PlaybackQueueTest {
         val tracks = listOf(
             AudioTrack(
                 id = "a1", title = "No Path", artist = "Singer", album = "Album",
-                durationFormatted = "0:00", path = "",
+                path = "",
             ),
         )
 

@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.ui.components.AsyncFolderThumbnail
+import com.mpx.player.ui.screens.local.components.formatSize
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -165,8 +166,9 @@ fun FolderItemRow(
             // No subfolder counts: MediaFolder has no such field and a
             // recursive scan is out of scope.
             val folderDateStr = formatFolderDate(folder.lastModified)
+            val folderSizeStr = if (folder.totalSizeBytes > 0L || folder.videoCount > 0) formatSize(folder.totalSizeBytes) else ""
             val hasSubtitle = (showCount && folder.videoCount > 0) ||
-                (showSize && folder.totalSizeFormatted.isNotBlank()) ||
+                (showSize && folderSizeStr.isNotBlank()) ||
                 (showDate && folderDateStr.isNotBlank())
             if (hasSubtitle) {
                 Spacer(Modifier.height(3.dp))
@@ -183,11 +185,11 @@ fun FolderItemRow(
                             color = MpxTheme.colors.textSecondary,
                             maxLines = 1,
                         )
-                        if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                        if (showSize && folderSizeStr.isNotBlank()) {
                             Spacer(Modifier.width(8.dp))
                         }
                     }
-                    if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                    if (showSize && folderSizeStr.isNotBlank()) {
                         Box(
                             modifier = Modifier
                                 .background(
@@ -197,7 +199,7 @@ fun FolderItemRow(
                                 .padding(horizontal = 5.dp, vertical = 1.dp),
                         ) {
                             Text(
-                                text = folder.totalSizeFormatted,
+                                text = folderSizeStr,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MpxTheme.colors.textSecondary,
                                 maxLines = 1,
@@ -316,8 +318,9 @@ fun FolderItemGridCard(
             // View popup's "Total Videos" field (#156). No subfolder
             // counts (no such field exists).
             val gridDateStr = formatFolderDate(folder.lastModified)
+            val gridFolderSizeStr = if (folder.totalSizeBytes > 0L || folder.videoCount > 0) formatSize(folder.totalSizeBytes) else ""
             val gridHasSubtitle = (showCount && folder.videoCount > 0) ||
-                (showSize && folder.totalSizeFormatted.isNotBlank()) ||
+                (showSize && gridFolderSizeStr.isNotBlank()) ||
                 (showDate && gridDateStr.isNotBlank())
             if (gridHasSubtitle) {
                 Spacer(Modifier.height(2.dp))
@@ -335,11 +338,11 @@ fun FolderItemGridCard(
                             fontSize = 11.sp,
                             maxLines = 1,
                         )
-                        if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                        if (showSize && gridFolderSizeStr.isNotBlank()) {
                             Spacer(Modifier.width(8.dp))
                         }
                     }
-                    if (showSize && folder.totalSizeFormatted.isNotBlank()) {
+                    if (showSize && gridFolderSizeStr.isNotBlank()) {
                         Box(
                             modifier = Modifier
                                 .background(
@@ -349,7 +352,7 @@ fun FolderItemGridCard(
                                 .padding(horizontal = 5.dp, vertical = 1.dp),
                         ) {
                             Text(
-                                text = folder.totalSizeFormatted,
+                                text = gridFolderSizeStr,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MpxTheme.colors.textSecondary,
                                 maxLines = 1,

@@ -286,11 +286,11 @@ class SettingsViewModelTest {
     @Test
     fun `loadBlacklistFolderOptions merges video and audio, dedupes, excludes blacklisted, sorts`() = runTest {
         mediaRepository.videoFolderList = listOf(
-            MediaFolder(id = "1", name = "Movies", path = "/sdcard/Movies", videoCount = 3, totalSizeFormatted = "1 GB"),
-            MediaFolder(id = "2", name = "clips", path = "/sdcard/Clips", videoCount = 1, totalSizeFormatted = "10 MB"),
-            MediaFolder(id = "3", name = "ClipsSub", path = "/sdcard/Clips/Sub", videoCount = 1, totalSizeFormatted = "1 MB"),
-            MediaFolder(id = "4", name = "Zebra", path = "/sdcard/Zebra", videoCount = 2, totalSizeFormatted = "5 MB"),
-            MediaFolder(id = "5", name = "apple", path = "/sdcard/Apple", videoCount = 1, totalSizeFormatted = "1 MB"),
+            MediaFolder(id = "1", name = "Movies", path = "/sdcard/Movies", videoCount = 3),
+            MediaFolder(id = "2", name = "clips", path = "/sdcard/Clips", videoCount = 1),
+            MediaFolder(id = "3", name = "ClipsSub", path = "/sdcard/Clips/Sub", videoCount = 1),
+            MediaFolder(id = "4", name = "Zebra", path = "/sdcard/Zebra", videoCount = 2),
+            MediaFolder(id = "5", name = "apple", path = "/sdcard/Apple", videoCount = 1),
         )
         mediaRepository.audioFolderList = listOf(
             AudioFolder(id = "a1", name = "Music", path = "/sdcard/Music", trackCount = 5),
@@ -327,12 +327,12 @@ class SettingsViewModelTest {
     @Test
     fun `loadDiagnosticsMediaCounts reads volumes and counts, skips without permission`() = runTest {
         mediaRepository.videoFolderList = listOf(
-            MediaFolder(id = "1", name = "Movies", path = "/sdcard/Movies", videoCount = 3, totalSizeFormatted = "1 GB"),
-            MediaFolder(id = "2", name = "Clips", path = "/sdcard/Clips", videoCount = 2, totalSizeFormatted = "5 MB"),
+            MediaFolder(id = "1", name = "Movies", path = "/sdcard/Movies", videoCount = 3),
+            MediaFolder(id = "2", name = "Clips", path = "/sdcard/Clips", videoCount = 2),
         )
         mediaRepository.audioTrackList = listOf(
-            AudioTrack(id = "t1", title = "Song", artist = "A", album = "B", durationFormatted = "1:00", durationMs = 1000L, path = "/sdcard/Music/s.mp3"),
-            AudioTrack(id = "t2", title = "Song 2", artist = "A", album = "B", durationFormatted = "2:00", durationMs = 2000L, path = "/sdcard/Music/s2.mp3"),
+            AudioTrack(id = "t1", title = "Song", artist = "A", album = "B", durationMs = 1000L, path = "/sdcard/Music/s.mp3"),
+            AudioTrack(id = "t2", title = "Song 2", artist = "A", album = "B", durationMs = 2000L, path = "/sdcard/Music/s2.mp3"),
         )
         mediaRepository.audioFolderList = listOf(
             AudioFolder(id = "a1", name = "Music", path = "/sdcard/Music", trackCount = 2),

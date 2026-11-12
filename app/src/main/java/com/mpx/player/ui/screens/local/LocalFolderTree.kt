@@ -120,7 +120,6 @@ private fun syntheticTreeFolder(path: String): MediaFolder {
         name = segments.lastOrNull().orEmpty(),
         path = path,
         videoCount = 0,
-        totalSizeFormatted = "",
         totalSizeBytes = 0L,
         totalDurationMs = 0L,
         lastModified = 0L,
@@ -289,7 +288,6 @@ fun buildFolderTree(folders: List<MediaFolder>, homeLabel: String? = null): List
                 displayFolder.copy(
                     videoCount = children.sumOf { it.folder.videoCount },
                     totalSizeBytes = totalBytes,
-                    totalSizeFormatted = formatSize(totalBytes),
                     totalDurationMs = children.sumOf { it.folder.totalDurationMs },
                     lastModified = children.maxOfOrNull { it.folder.lastModified } ?: 0L,
                 )

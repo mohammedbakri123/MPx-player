@@ -67,12 +67,11 @@ val MediaFolderSaver: Saver<MediaFolder?, List<Any>> = Saver(
                 it.name,
                 it.path,
                 it.videoCount,
-                it.totalSizeFormatted,
+                it.totalSizeBytes,
                 it.isNew,
                 it.lastModified,
                 it.isStorageRemovable,
                 it.totalDurationMs,
-                it.totalSizeBytes,
             )
         }
     },
@@ -82,12 +81,11 @@ val MediaFolderSaver: Saver<MediaFolder?, List<Any>> = Saver(
             name = saved[1] as String,
             path = saved[2] as String,
             videoCount = saved[3] as Int,
-            totalSizeFormatted = saved[4] as String,
+            totalSizeBytes = (saved[4] as? Long) ?: (saved.getOrNull(9) as? Long) ?: 0L,
             isNew = saved[5] as Boolean,
             lastModified = saved[6] as Long,
             isStorageRemovable = saved[7] as Boolean,
             totalDurationMs = saved[8] as Long,
-            totalSizeBytes = saved.getOrNull(9) as? Long ?: 0L,
         )
     },
 )

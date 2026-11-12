@@ -83,7 +83,6 @@ class MusicViewModelTest {
         title = title,
         artist = artist,
         album = album,
-        durationFormatted = "0:01",
         durationMs = 1_000L,
         path = path,
     )
@@ -479,7 +478,6 @@ class MusicViewModelTest {
             title = title,
             artist = artist,
             album = album,
-            durationFormatted = "0:01",
             durationMs = 1_000L,
             path = path,
         )

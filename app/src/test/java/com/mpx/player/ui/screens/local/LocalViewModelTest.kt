@@ -554,7 +554,6 @@ class LocalViewModelTest {
             name = name,
             path = path,
             videoCount = 1,
-            totalSizeFormatted = "1.0 MB",
         )
 
     private fun video(id: String, path: String, bucketId: String = "", title: String = id) =
