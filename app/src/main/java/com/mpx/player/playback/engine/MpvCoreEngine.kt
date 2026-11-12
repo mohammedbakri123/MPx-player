@@ -103,7 +103,8 @@ internal class MpvCoreEngine(
 
     private val appContext: Context = context.applicationContext
 
-    private val surfaceLock = Any()
+    private val surfaceManager = MpvSurfaceManager(port)
+    private val surfaceLock get() = surfaceManager.surfaceLock
 
     // Issue #213/#219: the engine resolves content:// URIs itself, lazily,
     // only for the item it is about to loadfile (see load()). The stored
@@ -121,21 +122,15 @@ internal class MpvCoreEngine(
     internal fun getCurrentQueue(): List<PlayableMedia> = host.getCurrentQueue()
     internal fun getCurrentMediaIndex(): Int = host.getCurrentMediaIndex()
 
-    private var currentSurface: Surface? = null
+    internal val currentSurface: Surface?
+        get() = surfaceManager.currentSurface
 
     /**
-     * Whether libmpv's "vo" is currently "null" (issue #161). MPx's own
-     * writes null it in exactly one place — detachSurface() — but mpv can
-     * also null the VO itself when a reconfigure fails (issue #210: a
-     * resize while paused), so the flag is a hint, not the truth. The
-     * "vo" property observation (see handlePropertyUpdate) keeps it in
-     * sync with mpv's actual state: it is set when mpv reports "null"
-     * and cleared when mpv reports a live VO again. The flag-gated
-     * restores (attach/load/time-pos/surfaceChanged) stay as fast paths;
-     * the observation is the backstop that fires when none of them can.
-     * All readers/writers run under surfaceLock (see attach/detach/load).
+     * Whether libmpv's "vo" is currently "null" (issue #161). Delegated to [MpvSurfaceManager].
      */
-    internal var voIsNull: Boolean = false
+    internal var voIsNull: Boolean
+        get() = surfaceManager.voIsNull
+        set(value) { surfaceManager.voIsNull = value }
 
     internal val isReleased: Boolean
         get() = lifecycleManager.isReleased
@@ -472,71 +467,17 @@ internal class MpvCoreEngine(
                 cachedPositionMs = (sec * 1000).toLong().coerceAtLeast(0L)
                 // Issue #181: vo can go null MID-playback (surface destroy
                 // after a resize) with no later attach/load to restore it —
-                // the file keeps playing with sound but no video, and the
-                // only restores so far (attachSurface, load) never run.
                 // time-pos keeps updating while that happens, so restore
-                // vo=gpu here whenever a surface is attached and vo is
-                // known null. One-shot (voIsNull flips false on restore),
-                // and safe for the same reason as the #161 fix: restoring
-                // a nulled vo cannot tear down a live VO, because there
-                // is none.
-                if (voIsNull) {
-                    synchronized(surfaceLock) {
-                        if (currentSurface != null && voIsNull) {
-                            try {
-                                port.setPropertyString("vo", "gpu")
-                                voIsNull = false
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed restoring vo=gpu on time-pos", e)
-                            }
-                        }
-                    }
+                // vo=gpu here whenever a surface is attached and vo is known null.
+                if (surfaceManager.voIsNull) {
+                    surfaceManager.restoreVoIfNull("time-pos")
                 }
                 // Seek latency: first position update landing within 500 ms of
                 // the seek target after a direct seek command.
                 metricsTracker.recordPositionUpdate(cachedPositionMs)
             }
             "vo" -> {
-                // Issue #210: mpv itself can null the VO — a reconfigure
-                // failure after the android-surface-size set, while paused
-                // — and nothing saw it: the #193 restore is gated on the
-                // voIsNull flag, which only detachSurface() sets, and a
-                // pure resize is a surfaceChanged, not a surfaceDestroyed,
-                // so the flag stayed false and the restore never fired.
-                // Observing "vo" makes mpv's own nulling visible the
-                // moment it happens, in any state (time-pos does not
-                // advance while paused, so the #181 restore is blind
-                // there too). The value is read back under surfaceLock —
-                // not trusted from the event — so a stale "null" event
-                // processed after an attach already restored "gpu" does
-                // nothing, and the read-decide-set is atomic against the
-                // attach/detach/load restores. "vo" changes rarely
-                // (gpu -> null -> gpu), so this adds no event spam.
-                // When mpv reports a live VO again, the flag is cleared
-                // so the flag-gated restores don't fire a gratuitous
-                // vo set later; when it reports null with no surface
-                // attached, the flag is set so the next attach/load
-                // restore fires (black is correct there until then).
-                synchronized(surfaceLock) {
-                    val vo = try {
-                        port.getPropertyString("vo")
-                    } catch (_: Exception) {
-                        null
-                    }
-                    if (vo == "null") {
-                        voIsNull = true
-                        if (currentSurface != null) {
-                            try {
-                                port.setPropertyString("vo", "gpu")
-                                voIsNull = false
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed restoring vo=gpu on vo change", e)
-                            }
-                        }
-                    } else if (vo != null) {
-                        voIsNull = false
-                    }
-                }
+                surfaceManager.onVoPropertyChanged()
             }
             "duration" -> {
                 val sec = port.getPropertyDouble("duration") ?: 0.0
@@ -818,54 +759,10 @@ internal class MpvCoreEngine(
 
     internal fun attachSurface(surface: Surface) {
         if (isReleased) return
-        // Reference-pattern alignment (mpv-android's own BaseMPVView.surfaceCreated):
-        // when a file load is about to run, it attaches the surface, sets
-        // force-window=yes, and issues loadfile WITHOUT touching the "vo"
-        // property — the load itself initialises VO against the attached
-        // surface. It only (re)sets "vo" when no file is pending. MPx
-        // previously set "vo" unconditionally on every attach, forcing a VO
-        // teardown/recreation immediately before the loadfile — a needless
-        // race on the exact path that was hanging with no error. Match the
-        // reference: skip the vo set whenever a load is about to run.
         val queue = getCurrentQueue()
         val willLoad = pendingLoad != null ||
             (mpvInitialized && !isReleased && !fileLoadedForCurrentItem && queue.isNotEmpty())
-        synchronized(surfaceLock) {
-            currentSurface = surface
-            try {
-                port.attachSurface(surface)
-                setRuntimeProperty("force-window", "yes")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error attaching surface", e)
-            }
-            // Issue #181: restore vo=gpu in its own try/catch, so a throwing
-            // native attach cannot skip it. A detach mid-session left vo=null,
-            // and port.attachSurface() binds to the CURRENT vo — with vo=null
-            // there is no VO, so the next loadfile decodes but renders to the
-            // null VO (sound, no video, no error: the phone log shows
-            // "VO: [null]" on every load after the first detach). Restore
-            // vo=gpu even when a load is about to run. The Nov 4 race fix
-            // only forbids a GRATUITOUS vo set when vo is already gpu;
-            // restoring a nulled vo cannot tear down a live VO, because
-            // there is none.
-            if (voIsNull) {
-                try {
-                    port.setPropertyString("vo", "gpu")
-                    voIsNull = false
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed restoring vo=gpu on attach", e)
-                }
-            } else if (willLoad) {
-                // A load is about to run: loadfile itself initialises
-                // VO against the attached surface; do not touch "vo".
-            } else {
-                try {
-                    port.setPropertyString("vo", "gpu")
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed setting vo=gpu on attach", e)
-                }
-            }
-        }
+        surfaceManager.attachSurface(surface, willLoad)
         // Flush a load deferred for lack of surface (see load()). This is the
         // only path by which a video loadfile now runs: with a real surface
         // attached, so VO init cannot fail for want of an ANativeWindow.
@@ -913,32 +810,8 @@ internal class MpvCoreEngine(
      * gpu-context never learned the real surface size.
      */
     internal fun onSurfaceChanged(width: Int, height: Int) {
-        if (!mpvInitialized || isReleased || width <= 0 || height <= 0) return
-        try {
-            port.setPropertyString("android-surface-size", "${width}x${height}")
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed reporting android-surface-size", e)
-        }
-        // Issue #193: restore vo=gpu here too, not only on attach/time-pos.
-        // A surface destroy around a resize (chrome appearing while paused:
-        // 1080x2356 -> 1080x1934, then vo=null a second later) can leave vo
-        // null with no later attach and no time-pos updates — time-pos does
-        // not advance while paused, so the #181 restore never fires. The
-        // framework always calls surfaceChanged after surfaceCreated, so
-        // this is the last restore chance on the re-attach path, and it
-        // fires in the paused state. Same guard as the #181 restore: only
-        // when a surface is attached and vo is known null; restoring a
-        // nulled vo cannot tear down a live VO, because there is none.
-        synchronized(surfaceLock) {
-            if (currentSurface != null && voIsNull) {
-                try {
-                    port.setPropertyString("vo", "gpu")
-                    voIsNull = false
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed restoring vo=gpu on surfaceChanged", e)
-                }
-            }
-        }
+        if (!mpvInitialized || isReleased) return
+        surfaceManager.onSurfaceChanged(width, height)
     }
 
 
@@ -947,37 +820,9 @@ internal class MpvCoreEngine(
      * Set vo=null and detach the surface before returning so that libmpv terminates its
      * native rendering window handle before surfaceDestroyed returns.
      * Background audio continues playing with vo=null.
-     *
-     * What destroys the surface (issue #161): the ONLY caller of this barrier
-     * besides release() is PlayerScreen's SurfaceHolder.Callback.surfaceDestroyed
-     * (via PlaybackCoordinator.detachSurface()); the AndroidView has no key() and no
-     * conditional, so the SurfaceView stays in composition while the player is
-     * open. surfaceDestroyed is a framework callback — the surface is torn down
-     * when the view leaves the window / the window is hidden — and the phone log
-     * shows it firing between loads mid-session (vo=null, then an immediate
-     * re-attach + reload with VO still null). The exact framework trigger on
-     * this device at EOF/seek/replay is not visible in code; what matters is
-     * that a detach can happen at any point mid-session, so attachSurface()
-     * must restore vo=gpu whenever vo is null instead of assuming vo survived.
      */
     internal fun detachSurface() {
-        synchronized(surfaceLock) {
-            currentSurface = null
-            // Issue #193: record vo as null BEFORE the native calls. The
-            // flag was set last, so if mpv.detachSurface() threw, vo was
-            // already null while voIsNull stayed false — and the attach
-            // (willLoad branch) and load() restores both trust the flag and
-            // skip, leaving a later load to decode into the null VO.
-            // Setting the flag first makes every restore site see the truth.
-            voIsNull = true
-            try {
-                port.setPropertyString("vo", "null")
-                port.setPropertyString("force-window", "no")
-                port.detachSurface()
-            } catch (e: Exception) {
-                Log.w(TAG, "Error in detachSurface barrier", e)
-            }
-        }
+        surfaceManager.detachSurface()
     }
 
 
@@ -1046,7 +891,7 @@ internal class MpvCoreEngine(
         // is deferred, not fired: attachSurface() flushes it the moment a
         // real surface exists. Audio loads are never deferred (no video
         // output is needed, so a missing surface cannot fail them).
-        val hasSurface = synchronized(surfaceLock) { currentSurface != null }
+        val hasSurface = surfaceManager.hasSurface
         if (targetItem.isVideo && !hasSurface) {
             pendingLoad = Triple(items, targetIndex, resumeMs)
             mainHandler.post {
@@ -1134,16 +979,7 @@ internal class MpvCoreEngine(
         // here (video loads without one were deferred above), so restoring
         // vo=gpu before loadfile is safe. Audio-only loads take this branch
         // too; the set is a no-op for them when vo is already gpu.
-        synchronized(surfaceLock) {
-            if (currentSurface != null && voIsNull) {
-                try {
-                    port.setPropertyString("vo", "gpu")
-                    voIsNull = false
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed restoring vo=gpu before loadfile", e)
-                }
-            }
-        }
+        surfaceManager.restoreVoIfNull("before loadfile")
 
         try {
             port.command("playlist-clear")
@@ -1455,7 +1291,7 @@ internal class MpvCoreEngine(
 
 
     internal fun getLoadStage(): MpvLoadStage {
-        val surfaceAttached = synchronized(surfaceLock) { currentSurface != null }
+        val surfaceAttached = surfaceManager.hasSurface
         return MpvLoadStage(
             initialized = mpvInitialized && pendingInitError == null,
             surfaceAttached = surfaceAttached,
