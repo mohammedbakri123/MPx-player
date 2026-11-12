@@ -723,8 +723,30 @@ class MpvCoreEngineTest {
         engine.seekTo(1000L)
         engine.setSpeed(1.5f)
         engine.stop()
+        engine.release() // Double-release safety
 
         assertEquals(0, fakePort.recordedCommands.count { it.firstOrNull() == "seek" || it.firstOrNull() == "stop" })
+    }
+
+    @Test
+    fun `getPlaybackMetrics returns tracked metrics through tracker`() {
+        val engine = createEngine()
+        engine.attachSurface(surface)
+        val media = PlayableMedia(id = "1", uri = "http://localhost/1.mp4", title = "1")
+        fakeHost.queue.add(media)
+        engine.load(media, 0L)
+
+        fakePort.recordedProperties["path"] = "http://localhost/1.mp4"
+        fakePort.recordedProperties["hwdec-current"] = "mediacodec"
+        fakePort.recordedProperties["video-codec"] = "h264"
+        fakePort.emitEvent(MpvPort.MPV_EVENT_FILE_LOADED)
+        fakePort.emitEvent(MpvPort.MPV_EVENT_VIDEO_RECONFIG)
+
+        val metrics = engine.getPlaybackMetrics()
+        assertNotNull(metrics.lastTimeToReadyMs)
+        assertNotNull(metrics.lastTimeToFirstFrameMs)
+        assertEquals(0, metrics.decoderFallbackCount)
+        assertEquals(0, metrics.hardErrorCount)
     }
 
     @Test

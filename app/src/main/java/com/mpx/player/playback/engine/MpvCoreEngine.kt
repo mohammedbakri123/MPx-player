@@ -3,7 +3,6 @@ package com.mpx.player.playback.engine
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
 import androidx.annotation.VisibleForTesting
@@ -15,9 +14,6 @@ import com.mpx.player.playback.MpvLoadStage
 import com.mpx.player.playback.MpvLogFile
 import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlayableMedia
-import com.mpx.player.playback.subtitleMpvOptions
-import java.io.File
-import java.io.FileOutputStream
 
 /**
  * Phase 4 step 1: the core mpv engine, extracted from [MpvPlayerEngine].
@@ -141,11 +137,11 @@ internal class MpvCoreEngine(
      */
     internal var voIsNull: Boolean = false
 
-    @Volatile
-    internal var isReleased: Boolean = false
+    internal val isReleased: Boolean
+        get() = lifecycleManager.isReleased
 
-    @Volatile
-    internal var mpvInitialized: Boolean = false
+    internal val mpvInitialized: Boolean
+        get() = lifecycleManager.mpvInitialized
 
     @Volatile
     internal var currentDecoderStage: DecoderStage = DecoderStage.HW
@@ -233,11 +229,6 @@ internal class MpvCoreEngine(
     /** Last error/warning log lines from libmpv (capped); surfaced when a file fails to load. */
     private val lastErrorLogs: ArrayDeque<String> = ArrayDeque()
 
-    /** mpv options libmpv rejected (setOptionString returns non-zero). Previously every
-     * setOptionString result was ignored, so a rejected vo/gpu-context/hwdec/ao option
-     * was completely invisible — the phone banner now names them (see END_FILE detail). */
-    private val rejectedOptions: ArrayDeque<String> = ArrayDeque()
-
     /** A video load deferred because no surface exists yet (see load()). Flushed by
      * attachSurface(); audio loads are never deferred (no video output needed). */
     @Volatile
@@ -275,29 +266,14 @@ internal class MpvCoreEngine(
     @Volatile
     private var lastMpvEvent: String = "none"
 
-    private val metricsLock = Any()
-    private val eventLock = Any()
+    private val metricsTracker = MpvMetricsTracker()
 
-    private var loadStartMs: Long = 0L
+    internal val firstFrameRecorded: Boolean
+        get() = metricsTracker.firstFrameRecorded
 
-    internal var firstFrameRecorded: Boolean = false
-
-    private var lastTimeToReadyMs: Long? = null
-
-    private var lastTimeToFirstFrameMs: Long? = null
-
-    private var lastSeekLatencyMs: Long? = null
-
-    private var seekStartMs: Long? = null
-
-    private var seekTargetMs: Long? = null
-
-    private var decoderFallbackCount: Int = 0
-
-    private var hardErrorCount: Int = 0
-
-    /** Init failure captured instead of thrown, so the manager can report it instead of crashing. */
-    internal var pendingInitError: Exception? = null
+    internal var pendingInitError: Exception?
+        get() = lifecycleManager.pendingInitError
+        set(value) { lifecycleManager.pendingInitError = value }
 
     private val eventObserver = object : MpvPort.EventObserver {
         override fun eventProperty(property: String) {
@@ -332,206 +308,40 @@ internal class MpvCoreEngine(
         }
     }
 
+    private val lifecycleManager = MpvLifecycleManager(
+        appContext = appContext,
+        port = port,
+        host = host,
+        eventObserver = eventObserver,
+        logObserver = logObserver,
+    )
+
+    private val eventLock get() = lifecycleManager.eventLock
 
     init {
-        // Init failure must NOT throw out of the constructor: previously a
-        // throw here made the manager report a confusing error while the
-        // setting still said MPV. Capture it and report it via the listener.
-        try {
-            initializeMpv(initialDecoderMode)
-        } catch (e: Exception) {
-            Log.e(TAG, "MPV init failed", e)
-            pendingInitError = e
-            lastMpvEvent = "init-failed"
-        } catch (e: Throwable) {
-            Log.e(TAG, "MPV init failed (native)", e)
-            pendingInitError = Exception("MPV native init failed: ${e.message}", e)
-            lastMpvEvent = "init-failed"
-        }
-    }
-
-
-    /**
-     * Checked setOptionString: the wrapper returns 0 on success and a negative
-     * MPV_ERROR_* code on failure, and never throws — so the old code, which
-     * ignored every return value, could never tell a rejected option from an
-     * applied one. Rejections are logged and kept for the phone error banner.
-     */
-    private fun setOption(key: String, value: String) {
-        val rc = try {
-            port.setOptionString(key, value)
-        } catch (e: Exception) {
-            Log.w(TAG, "setOption $key failed", e)
-            return
-        }
-        if (rc != 0) {
-            val msg = "mpv option rejected: $key=$value (rc=$rc)"
-            Log.w(TAG, msg)
-            synchronized(rejectedOptions) {
-                rejectedOptions.addLast(msg)
-                while (rejectedOptions.size > 5) rejectedOptions.removeFirst()
-            }
-        }
-    }
-
-
-    /**
-     * Runtime property set for use AFTER mpv.init(). mpv_set_option_string is
-     * pre-init only and returns MPV_ERROR_OPTION_CHANGE_UNAVAILABLE (-13)
-     * after init — that silently broke post-init force-window flips and live
-     * subtitle styling. Runtime changes must go through the property API.
-     */
-    internal fun setRuntimeProperty(key: String, value: String) {
-        try {
-            port.setPropertyString(key, value)
-        } catch (e: Exception) {
-            Log.w(TAG, "setProperty $key failed", e)
-        }
-    }
-
-
-    private fun rejectedOptionsText(): String =
-        synchronized(rejectedOptions) {
-            if (rejectedOptions.isEmpty()) "" else "; rejected options: " + rejectedOptions.joinToString(", ")
-        }
-
-
-    private fun initializeMpv(mode: DecoderMode) {
-        val configDir = File(appContext.filesDir, "mpv").apply { mkdirs() }
-        val cacheDir = File(appContext.cacheDir, "mpv_cache").apply { mkdirs() }
-
-        // Configure bundled subfont.ttf and network certificates
-        setupSubtitleFontAndCertificates(appContext, configDir)
-
-        // Issue #432: sync the picked mpv config folder before mpv
-        // reads its config — mpv.conf / input.conf / fonts / scripts
-        // from the user's folder land in configDir. A missing file
-        // leaves the current local one alone, and the sync never
-        // deletes, so subfont.ttf / cacert.pem above are untouched.
-        val savedSettings = loadSavedSubtitleSettings()
-        MpvConfigSync.sync(appContext, configDir, savedSettings.mpvConfStorageUri)
-
-        port.create(appContext)
-
-        // Set configuration options before init()
-        setOption("config", "yes")
-        // Issue #430: Lua scripts (mpv default is on). OFF sets
-        // load-scripts=no pre-init so scripts in config-dir/scripts/
-        // never load; ON sets nothing — zero behaviour change for
-        // existing users.
-        if (!savedSettings.enableLuaScripts) setOption("load-scripts", "no")
-        setOption("config-dir", configDir.absolutePath)
-        setOption("gpu-shader-cache-dir", cacheDir.absolutePath)
-        setOption("icc-cache-dir", cacheDir.absolutePath)
-        setOption("vo", "gpu")
-        setOption("gpu-context", "android")
-        setOption("opengl-es", "yes")
-        setOption("ao", "audiotrack,opensles")
-        // Issue #181: audio device underruns during heavy software decode
-        // (HEVC software fallback on this device starves the audio thread
-        // after restarts/seeks). mpv's default audio buffer is 0.2s; 0.5s
-        // gives the audio output 2.5x the slack. Trade-off is slightly
-        // higher audio latency after seeks/pauses, negligible for a player.
-        setOption("audio-buffer", "0.5")
-        // Issue #103: keep-open=yes pauses on EOF so the last frame stays visible
-        // and eof-reached signals to PlaybackCoordinator. PlaybackCoordinator owns queue
-        // transitions; mpv holds only the active item.
-        setOption("keep-open", "yes")
-        setOption("ytdl", "no")
-
-        // ROOT-CAUSE FIX (mpv "keeps loading forever", issue #96): mpv quits
-        // when there is no file to play unless idle is set (manual default:
-        // no). mpv-android's own BaseMPVView sets idle=once for exactly this
-        // reason ("need to idle at least once for playFile() logic to work"),
-        // and libmpv's core thread runs mp_play_files() right after init,
-        // which breaks out immediately on an empty playlist when idle < yes
-        // and then shuts the core down. MPx never set idle at all, so the
-        // core died at app start (the engine is constructed in
-        // MainActivity.onStart, long before the first tap) and every later
-        // loadfile went to a dead core: no events, no error, spinner
-        // forever. MPx uses "yes", not upstream's "once", because this
-        // engine is a long-lived singleton: "once" would let the core quit
-        // after the first queue finishes and break the NEXT session. Set
-        // pre-init (upstream sets it post-init, but between init() and the
-        // post-init block MPx loads subtitle settings, a window in which
-        // the core could already quit).
-        setOption("idle", "yes")
-
-        // Subtitle configuration: use bundled subfont.ttf fallback font.
-        // mpv on Android has no fontconfig; libass uses subfont.ttf from config-dir.
-        setOption("sub-font-provider", "auto")
-        setOption("sub-font", subtitleMpvOptions(savedSettings)["sub-font"] ?: "sans-serif")
-        setOption("sub-visibility", "yes")
-        setOption("sub-fix-timing", "yes")
-        setOption("sub-auto", "fuzzy")
-
-        val cacertFile = File(configDir, "cacert.pem").takeIf { it.exists() }
-            ?: File(appContext.filesDir, "cacert.pem").takeIf { it.exists() }
-        if (cacertFile != null) {
-            setOption("tls-ca-file", cacertFile.absolutePath)
-        }
-
-        // Hardware decoding mode, as a pre-init OPTION (not a property: the old
-        // code called setPropertyString("hwdec") here, before mpv_initialize(),
-        // which libmpv silently drops — the value only took effect later via
-        // load()'s post-init property set). Record the stage for the fallback chain.
-        decoderMode = mode
-        currentDecoderStage = when (mode) {
+        decoderMode = initialDecoderMode
+        currentDecoderStage = when (initialDecoderMode) {
             DecoderMode.HW -> DecoderStage.HW
             DecoderMode.HW_PLUS -> DecoderStage.HW_PLUS
             DecoderMode.SW -> DecoderStage.SW
         }
-        setOption("hwdec", host.hwdecValueFor(mode))
-
-        port.init()
-        mpvInitialized = true
-
-        // Post-init options must use the property API: setOptionString after
-        // init() returns -13. force-window stays NO here on purpose (mpv-android's
-        // own BaseMPVView carries the comment "could mess up VO init before
-        // surfaceCreated() is called"): forcing a window with no surface yet
-        // makes the first loadfile attempt VO init with no ANativeWindow, which
-        // aborts the file before the player screen's SurfaceView even exists.
-        // attachSurface() flips it to yes once a real surface is attached.
-        setRuntimeProperty("force-window", "no")
-
-        // Phase 4 step 3: subtitle style now lives in
-        // MpvSubtitleRenderer, playback tweaks in MpvEngineConfig
-        // (step 4) — applied here, at the original point, through
-        // Host.applyPostInitSettings.
-        host.applyPostInitSettings(this)
-
-        // Observe critical playback and decoder properties
-        port.observeProperty("time-pos", MpvPort.PropertyFormat.DOUBLE)
-        port.observeProperty("duration", MpvPort.PropertyFormat.DOUBLE)
-        port.observeProperty("demuxer-cache-time", MpvPort.PropertyFormat.DOUBLE)
-        port.observeProperty("pause", MpvPort.PropertyFormat.FLAG)
-        port.observeProperty("idle-active", MpvPort.PropertyFormat.FLAG)
-        port.observeProperty("eof-reached", MpvPort.PropertyFormat.FLAG)
-        port.observeProperty("speed", MpvPort.PropertyFormat.DOUBLE)
-        port.observeProperty("hwdec-current", MpvPort.PropertyFormat.STRING)
-        port.observeProperty("video-codec", MpvPort.PropertyFormat.STRING)
-        // Issue #210: observe "vo" so mpv nulling the VO itself (a
-        // reconfigure failure after the android-surface-size set, while
-        // paused) is seen at all — no other restore site can fire then,
-        // because time-pos does not advance while paused and a pure
-        // resize is a surfaceChanged, not a surfaceDestroyed, so the
-        // voIsNull flag is never set on that path. "vo" changes rarely
-        // (gpu -> null -> gpu), so this adds no event spam; the branch
-        // reads the value back and only acts when it is actually "null".
-        port.observeProperty("vo", MpvPort.PropertyFormat.STRING)
-        // Issue #260: observe the display size so the PiP aspect ratio
-        // refreshes the moment the dimensions become known — they are
-        // still 0 at item-change time, when the PlayerScreen effect arms
-        // the params with the 16:9 fallback. dwidth/dheight change
-        // rarely (0 -> WxH at load, 0 on unload), so this adds no spam.
-        port.observeProperty("dwidth", MpvPort.PropertyFormat.INT64)
-        port.observeProperty("dheight", MpvPort.PropertyFormat.INT64)
-        port.observeProperty("track-list", MpvPort.PropertyFormat.NONE)
-
-        port.addObserver(eventObserver)
-        port.addLogObserver(logObserver)
+        lifecycleManager.initialize(
+            initialDecoderMode = initialDecoderMode,
+            loadSavedSettings = { loadSavedSubtitleSettings() },
+            applyPostInit = { host.applyPostInitSettings(this) },
+            onInitFailed = { lastMpvEvent = "init-failed" }
+        )
     }
+
+    internal fun setRuntimeProperty(key: String, value: String) {
+        lifecycleManager.setRuntimeProperty(key, value)
+    }
+
+    private fun setOption(key: String, value: String) {
+        lifecycleManager.setOption(key, value)
+    }
+
+    private fun rejectedOptionsText(): String = lifecycleManager.rejectedOptionsText()
 
 
     internal fun loadSavedSubtitleSettings(): AppSettings {
@@ -540,52 +350,6 @@ internal class MpvCoreEngine(
         } catch (e: Exception) {
             Log.w(TAG, "Failed loading saved subtitle settings, using defaults", e)
             AppSettings()
-        }
-    }
-
-
-    /**
-     * Subtitle fallback font and TLS certificates configuration:
-     * mpv's libass on Android is compiled without Fontconfig. libass relies on the bundled
-     * fallback font `subfont.ttf` (Droid Sans Fallback, covering Latin, Arabic, CJK, Cyrillic,
-     * Greek, Hebrew, etc.) placed in mpv's config directory (configDir) and filesDir.
-     * Without subfont.ttf, any unmatched font query (such as "sans-serif") fails with
-     * `fontselect: failed to find any fallback with glyph 0x0`, rendering subtitles invisible.
-     * We ensure subfont.ttf and cacert.pem are copied from assets to configDir and filesDir.
-     */
-    private fun setupSubtitleFontAndCertificates(context: Context, configDir: File) {
-        copyAssetIfDifferent(context, "subfont.ttf", File(configDir, "subfont.ttf"))
-        copyAssetIfDifferent(context, "subfont.ttf", File(context.filesDir, "subfont.ttf"))
-
-        copyAssetIfDifferent(context, "cacert.pem", File(configDir, "cacert.pem"))
-        copyAssetIfDifferent(context, "cacert.pem", File(context.filesDir, "cacert.pem"))
-
-        // Clean up any stale fonts.conf from earlier broken fontconfig attempts
-        val fontsConf = File(configDir, "fonts.conf")
-        if (fontsConf.exists()) {
-            fontsConf.delete()
-        }
-
-        val subfontConfig = File(configDir, "subfont.ttf")
-        Log.i(TAG, "Subtitle assets verified: subfont.ttf exists=${subfontConfig.exists()} " +
-                "(${subfontConfig.length()} bytes) at ${subfontConfig.absolutePath}")
-    }
-
-
-    private fun copyAssetIfDifferent(context: Context, assetName: String, destFile: File) {
-        try {
-            destFile.parentFile?.mkdirs()
-            val assetLength = context.assets.open(assetName).use { it.available().toLong() }
-            if (!destFile.exists() || destFile.length() == 0L || (assetLength > 0L && destFile.length() != assetLength)) {
-                context.assets.open(assetName).use { input ->
-                    FileOutputStream(destFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                Log.d(TAG, "Copied asset $assetName to ${destFile.absolutePath} (${destFile.length()} bytes)")
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed copying asset $assetName to ${destFile.absolutePath}", e)
         }
     }
 
@@ -626,7 +390,7 @@ internal class MpvCoreEngine(
         val codec = port.getPropertyString("video-codec") ?: activeVideoCodec.ifBlank { "unknown" }
         when (currentDecoderStage) {
             DecoderStage.HW -> {
-                synchronized(metricsLock) { decoderFallbackCount++ }
+                metricsTracker.recordDecoderFallback()
                 Log.w(TAG, "HW mediacodec failed for $codec ($reason). Stepping down to HW+ (mediacodec-copy)...")
                 currentDecoderStage = DecoderStage.HW_PLUS
                 try {
@@ -637,7 +401,7 @@ internal class MpvCoreEngine(
                 }
             }
             DecoderStage.HW_PLUS -> {
-                synchronized(metricsLock) { decoderFallbackCount++ }
+                metricsTracker.recordDecoderFallback()
                 Log.w(TAG, "HW+ mediacodec-copy failed for $codec ($reason). Stepping down to SW (hwdec=no)...")
                 currentDecoderStage = DecoderStage.SW
                 try {
@@ -648,7 +412,7 @@ internal class MpvCoreEngine(
                 }
             }
             DecoderStage.SW -> {
-                synchronized(metricsLock) { hardErrorCount++ }
+                metricsTracker.recordHardError()
                 Log.e(TAG, "SW decoding failed for codec $codec ($reason). Escalating to hard engine fallback.")
                 val exception = MpvPlaybackException(
                     message = "MPV playback failed for codec '$codec' after exhausting HW, HW+, and SW decoders: $reason",
@@ -730,18 +494,7 @@ internal class MpvCoreEngine(
                 }
                 // Seek latency: first position update landing within 500 ms of
                 // the seek target after a direct seek command.
-                synchronized(metricsLock) {
-                    val start = seekStartMs
-                    val target = seekTargetMs
-                    if (start != null && target != null &&
-                        kotlin.math.abs(cachedPositionMs - target) <= 500L
-                    ) {
-                        lastSeekLatencyMs = SystemClock.elapsedRealtime() - start
-                        logMetrics("seek", "seek_ms=$lastSeekLatencyMs target_ms=$target")
-                        seekStartMs = null
-                        seekTargetMs = null
-                    }
-                }
+                metricsTracker.recordPositionUpdate(cachedPositionMs)
             }
             "vo" -> {
                 // Issue #210: mpv itself can null the VO — a reconfigure
@@ -928,7 +681,7 @@ internal class MpvCoreEngine(
                 // the splash (release() sets isReleased first, so normal
                 // teardown never reaches here).
                 lastMpvEvent = "SHUTDOWN"
-                synchronized(metricsLock) { hardErrorCount++ }
+                metricsTracker.recordHardError()
                 mainHandler.post {
                     engineListener?.onError(
                         MpvPlaybackException("MPV player shut down unexpectedly${rejectedOptionsText()}")
@@ -972,12 +725,7 @@ internal class MpvCoreEngine(
                 fallbackReloadPending = false
                 lastMpvEvent = "FILE_LOADED"
                 cachedPlaybackState = PlayerEngine.STATE_READY
-                synchronized(metricsLock) {
-                    if (loadStartMs != 0L && lastTimeToReadyMs == null) {
-                        lastTimeToReadyMs = SystemClock.elapsedRealtime() - loadStartMs
-                        logMetrics("ready", "ready_ms=$lastTimeToReadyMs")
-                    }
-                }
+                metricsTracker.recordReady()
                 // Apply a seek that arrived before the file loaded (resume or
                 // scrub during prepare) instead of dropping it.
                 pendingSeekMs?.let { target ->
@@ -1005,13 +753,7 @@ internal class MpvCoreEngine(
                 // First video reconfig after a load is the first presented video
                 // frame — the honest "first frame" signal on the mpv path.
                 lastMpvEvent = "VIDEO_RECONFIG"
-                synchronized(metricsLock) {
-                    if (loadStartMs != 0L && !firstFrameRecorded) {
-                        firstFrameRecorded = true
-                        lastTimeToFirstFrameMs = SystemClock.elapsedRealtime() - loadStartMs
-                        logMetrics("first_frame", "first_frame_ms=$lastTimeToFirstFrameMs")
-                    }
-                }
+                metricsTracker.recordFirstFrame()
                 notifyDecoderChanged()
             }
             MpvPort.MPV_EVENT_END_FILE -> {
@@ -1042,7 +784,7 @@ internal class MpvCoreEngine(
                         errCode?.let { "error=$it" },
                         lastLog,
                     ).joinToString("; ").ifBlank { "unknown libmpv error" } + rejectedOptionsText()
-                    synchronized(metricsLock) { hardErrorCount++ }
+                    metricsTracker.recordHardError()
                     mainHandler.post {
                         engineListener?.onError(
                             MpvPlaybackException("MPV could not play this file ($detail)")
@@ -1287,14 +1029,9 @@ internal class MpvCoreEngine(
         lastMpvEvent = "none"
         val gen = ++loadGeneration
         currentLoadGeneration = gen
-        synchronized(metricsLock) {
-            // Tap time for tap-to-first-frame: load() is called at tap time
-            // even when the actual loadfile is deferred for lack of surface.
-            loadStartMs = SystemClock.elapsedRealtime()
-            firstFrameRecorded = false
-            lastTimeToReadyMs = null
-            lastTimeToFirstFrameMs = null
-        }
+        // Tap time for tap-to-first-frame: load() is called at tap time
+        // even when the actual loadfile is deferred for lack of surface.
+        metricsTracker.recordLoadStarted()
 
         val targetIndex = startIndex.coerceIn(0, items.lastIndex)
         val targetItem = items[targetIndex]
@@ -1443,7 +1180,7 @@ internal class MpvCoreEngine(
             Log.e(TAG, "Error loading media items in MPV", e)
             lastMpvEvent = "loadfile-failed"
             loadIssued = false
-            synchronized(metricsLock) { hardErrorCount++ }
+            metricsTracker.recordHardError()
             mainHandler.post {
                 engineListener?.onError(
                     MpvPlaybackException("MPV could not load this file: ${e.message}${rejectedOptionsText()}")
@@ -1505,10 +1242,7 @@ internal class MpvCoreEngine(
             cachedPositionMs = target
             return
         }
-        synchronized(metricsLock) {
-            seekStartMs = SystemClock.elapsedRealtime()
-            seekTargetMs = target
-        }
+        metricsTracker.recordSeekStarted(target)
         try {
             port.command("seek", (target / 1000.0).toString(), "absolute+exact")
             cachedPositionMs = target
@@ -1594,31 +1328,21 @@ internal class MpvCoreEngine(
      */
     @VisibleForTesting
     internal fun release() {
-        pendingLoad = null
-        pendingSeekMs = null
-        // Issue #246: the engine is dead; no stale play intent survives it.
-        playRequested = false
-        activeMediaId = null
-        activeMediaUri = null
-        fileLoadedForCurrentItem = false
-        loadIssued = false
-        loadGeneration++
-        currentLoadGeneration = 0L
-        isReleased = true
-        mainHandler.removeCallbacksAndMessages(null)
-        detachSurface()
-        synchronized(eventLock) {
-            try {
-                port.removeObserver(eventObserver)
-                port.removeLogObserver(logObserver)
-                port.destroy()
-            } catch (e: Exception) {
-                Log.w(TAG, "Error releasing MPV", e)
-            }
+        if (isReleased) return
+        lifecycleManager.release {
+            pendingLoad = null
+            pendingSeekMs = null
+            // Issue #246: the engine is dead; no stale play intent survives it.
+            playRequested = false
+            activeMediaId = null
+            activeMediaUri = null
+            fileLoadedForCurrentItem = false
+            loadIssued = false
+            loadGeneration++
+            currentLoadGeneration = 0L
+            mainHandler.removeCallbacksAndMessages(null)
+            detachSurface()
         }
-        // Issue #306: the log observer is gone, so no more appends can arrive —
-        // flush any lines still buffered in MpvLogFile and close its writer.
-        MpvLogFile.close()
     }
 
 
@@ -1741,19 +1465,5 @@ internal class MpvCoreEngine(
     }
 
 
-    internal fun getPlaybackMetrics(): EnginePlaybackMetrics =
-        synchronized(metricsLock) {
-            EnginePlaybackMetrics(
-                lastTimeToReadyMs = lastTimeToReadyMs,
-                lastTimeToFirstFrameMs = lastTimeToFirstFrameMs,
-                lastSeekLatencyMs = lastSeekLatencyMs,
-                decoderFallbackCount = decoderFallbackCount,
-                hardErrorCount = hardErrorCount,
-            )
-        }
-
-
-    private fun logMetrics(tag: String, detail: String) {
-        Log.i("MpxMetrics", "$tag $detail")
-    }
+    internal fun getPlaybackMetrics(): EnginePlaybackMetrics = metricsTracker.getPlaybackMetrics()
 }
