@@ -1,11 +1,13 @@
 package com.mpx.player.playback.engine
 
+import android.net.Uri
 import android.util.Log
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.ExternalSubtitle
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.SubtitleTrackInfo
 import com.mpx.player.playback.subtitleMpvOptions
+import com.mpx.player.util.SubtitleUtils
 import java.io.File
 
 /**
@@ -183,6 +185,12 @@ internal class MpvSubtitleRenderer(
     @Volatile
     private var pendingSubtitleConfirmation: PendingSubtitleConfirmation? = null
 
+    // Issue #470 step 3: absolute paths of UTF-8 temp copies created
+    // when mpv rejects the sub-codepage set. Deleted in
+    // cleanupForStopOrRelease (and when a subtitle is replaced), so
+    // one temp file per legacy subtitle never outlives its item.
+    private val transcodedTempFiles = mutableSetOf<String>()
+
 
     private data class PendingSubtitleConfirmation(val mediaId: String)
 
@@ -228,13 +236,102 @@ internal class MpvSubtitleRenderer(
      * subtitles) is set explicitly; otherwise the codepage is reset to
      * mpv's default ("auto") so a previous file's cp1256 cannot leak
      * into the next file. Must run immediately before the sub-add —
-     * mpv decodes the file when it is loaded. If mpv rejects the set
-     * (sub-codepage is not runtime-changeable in this build), it fails
-     * silently through setRuntimeProperty and the file decodes exactly
-     * as today — the fix degrades to no-op, never to a crash.
+     * mpv decodes the file when it is loaded.
+     *
+     * Issue #470 step 2: returns whether the set actually took effect,
+     * verified by reading the property back — setRuntimeProperty
+     * swallows failures, so without the read-back a rejected set is
+     * invisible (which is why the v0.4.54 regression shipped looking
+     * green). The caller transcodes to a UTF-8 copy when this returns
+     * false for a detected codepage.
      */
-    private fun applySubtitleCodepage(codepage: String?) {
-        core.setRuntimeProperty("sub-codepage", codepage ?: "auto")
+    private fun applySubtitleCodepage(codepage: String?, name: String): Boolean {
+        val target = codepage ?: "auto"
+        core.setRuntimeProperty("sub-codepage", target)
+        val actual = try {
+            core.port.getPropertyString("sub-codepage")
+        } catch (e: Exception) {
+            Log.w(TAG, "sub-codepage read-back failed for $name", e)
+            null
+        }
+        val ok = actual == target
+        if (ok) {
+            Log.i(TAG, "sub-codepage set to $target for $name")
+        } else {
+            Log.w(TAG, "sub-codepage set to $target rejected for $name (reads back as $actual)")
+        }
+        return ok
+    }
+
+    /**
+     * Issue #470: resolve the codepage for a subtitle and return the
+     * URI to sub-add. A subtitle picked before v0.4.54 was persisted
+     * WITHOUT a codepage, so a null stored value is detected fresh
+     * from the RAW uri instead of defaulting to "auto" (which garbles
+     * Windows-1256 Arabic). The detected codepage is applied and
+     * verified by read-back; if mpv rejects the set, the file is
+     * transcoded to a UTF-8 copy and the copy's file:// URI is
+     * returned instead (mpv always handles UTF-8, and the copy needs
+     * no codepage, so it is reset to "auto" first). The resolved fd
+     * is closed when transcoding, since mpv never received it.
+     * Always returns a URI to sub-add (the resolved one on any
+     * failure) — never throws, never breaks a load.
+     */
+    private fun uriToSubAdd(
+        rawUri: String?,
+        resolvedUri: String,
+        name: String,
+        storedCodepage: String?,
+    ): String {
+        val codepage = storedCodepage
+            ?: rawUri?.let { SubtitleUtils.codepageFor(core.context, it, null) }
+        val setOk = applySubtitleCodepage(codepage, name)
+        if (codepage != null && !setOk) {
+            val tempPath = rawUri?.let { transcodeToUtf8IfNeeded(it, name, codepage) }
+            if (tempPath != null) {
+                applySubtitleCodepage(null, name)
+                core.fdOpener.closeFds(listOf(resolvedUri))
+                return "file://$tempPath"
+            }
+            // Transcode failed — fall through and sub-add the
+            // original; the (rejected) codepage attempt was already
+            // made, so this is no worse than before.
+        }
+        return resolvedUri
+    }
+
+    /**
+     * Issue #470 step 3: transcode a detected Windows-1256 subtitle to
+     * a UTF-8 copy in the app cache and return the copy's path, for
+     * when mpv rejects the sub-codepage set. Returns null when there is
+     * nothing to transcode (no detected codepage, or the file is
+     * already UTF-8) or on any failure — the caller then sub-adds the
+     * original. The copy is tracked in [transcodedTempFiles] and deleted
+     * on stop/release.
+     */
+    private fun transcodeToUtf8IfNeeded(rawUri: String?, name: String, codepage: String?): String? {
+        if (codepage == null || rawUri == null) return null
+        val path = SubtitleUtils.transcodeSubtitleToUtf8(core.context, rawUri, name) ?: return null
+        transcodedTempFiles.add(path)
+        Log.i(TAG, "Transcoded $name to UTF-8 copy at $path (sub-codepage set was rejected)")
+        return path
+    }
+
+    /**
+     * Issue #470 step 3: delete every UTF-8 temp copy created by
+     * [transcodeToUtf8IfNeeded]. Best-effort — a failed delete is
+     * logged, never thrown.
+     */
+    private fun deleteTranscodedTempFiles() {
+        if (transcodedTempFiles.isEmpty()) return
+        for (path in transcodedTempFiles) {
+            try {
+                if (!File(path).delete()) Log.w(TAG, "Could not delete transcoded subtitle temp file $path")
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not delete transcoded subtitle temp file $path", e)
+            }
+        }
+        transcodedTempFiles.clear()
     }
 
 
@@ -368,22 +465,27 @@ internal class MpvSubtitleRenderer(
                         continue
                     }
                     try {
-                        // Issue #441: decode this file with its
-                        // detected codepage, right before mpv
-                        // loads it.
-                        applySubtitleCodepage(sub.codepage)
+                        // Issue #470: the PendingSubtitle already
+                        // carries a load-time-detected codepage (set
+                        // at queue time); resolve it against the raw
+                        // uri and sub-add the URI it returns (a UTF-8
+                        // temp copy when mpv rejects the codepage
+                        // set, else the resolved URI).
+                        val subAddUri = uriToSubAdd(sub.rawUri, sub.uri, sub.title ?: sub.uri, sub.codepage)
                         if (sub.title != null) {
-                            core.port.command("sub-add", sub.uri, sub.flag, sub.title)
+                            core.port.command("sub-add", subAddUri, sub.flag, sub.title)
                         } else {
-                            core.port.command("sub-add", sub.uri, sub.flag)
+                            core.port.command("sub-add", subAddUri, sub.flag)
                         }
                         issuedAny = true
                         // Issue #372: remember the last external
                         // subtitle issued — each "select" sub-add
                         // selects that track, so the last one is
                         // the pick. The legacy subtitleUri (title
-                        // null) has no identity to remember.
-                        if (sub.title != null) lastIssuedExternal = sub
+                        // null) has no identity to remember. The URI
+                        // stored is the one actually handed to mpv
+                        // (the temp copy when transcoded).
+                        if (sub.title != null) lastIssuedExternal = sub.copy(uri = subAddUri)
                     } catch (e: Exception) {
                         Log.w(TAG, "Failed adding pending subtitle ${sub.uri}", e)
                         // Issue #332: the remaining queued entries
@@ -680,14 +782,19 @@ internal class MpvSubtitleRenderer(
                     continue
                 }
                 try {
-                    // Issue #441: decode this file with its detected
-                    // codepage, right before mpv loads it.
-                    applySubtitleCodepage(rawExt.codepage)
-                    core.port.command("sub-add", resolvedExt.uri, "select", rawExt.name)
+                    // Issue #470: resolve the codepage at load time
+                    // (a subtitle picked before v0.4.54 has none
+                    // stored) and sub-add the URI it returns — a
+                    // UTF-8 temp copy when mpv rejects the codepage
+                    // set, else the resolved URI.
+                    val subAddUri = uriToSubAdd(rawExt.uri, resolvedExt.uri, rawExt.name, rawExt.codepage)
+                    core.port.command("sub-add", subAddUri, "select", rawExt.name)
                     issuedAny = true
                     // Issue #372: each "select" sub-add selects that
-                    // track, so the last issued one is the pick.
-                    lastIssued = rawExt to resolvedExt
+                    // track, so the last issued one is the pick. The
+                    // URI stored is the one actually handed to mpv
+                    // (the temp copy when transcoded).
+                    lastIssued = rawExt to resolvedExt.copy(uri = subAddUri)
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed adding external subtitle ${rawExt.name}", e)
                     // Issue #332: the remaining resolved entries were
@@ -745,8 +852,23 @@ internal class MpvSubtitleRenderer(
             resolved.subtitleUri?.let { subUri ->
                 subs.add(PendingSubtitle(uri = subUri, flag = "select"))
             }
-            resolved.externalSubtitles.forEach { ext ->
-                subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name, codepage = ext.codepage))
+            // Issue #470: resolveExternalSubtitles maps in order, so
+            // zipping the raw list with the resolved list pairs each
+            // raw uri with its resolved uri. Detect the codepage here
+            // at queue time (a subtitle picked before v0.4.54 has
+            // none stored) and keep the raw uri — the resolved fd uri
+            // cannot be opened for detection/transcoding at
+            // FILE_LOADED dispatch time.
+            media.externalSubtitles.zip(resolved.externalSubtitles).forEach { (rawExt, ext) ->
+                subs.add(
+                    PendingSubtitle(
+                        uri = ext.uri,
+                        flag = "select",
+                        title = ext.name,
+                        codepage = SubtitleUtils.codepageFor(core.context, rawExt.uri, rawExt.codepage),
+                        rawUri = rawExt.uri,
+                    )
+                )
             }
             // Issue #332: close the previous pending subtitles'
             // descriptors before overwriting — they were never
@@ -789,6 +911,9 @@ internal class MpvSubtitleRenderer(
         rememberedExternalPick = null
         pendingSubtitleConfirmation = null
         core.mainHandler.removeCallbacks(subtitleConfirmationTimeout)
+        // Issue #470 step 3: the item stopped, so no temp copy is
+        // in use any more — delete every UTF-8 copy created for it.
+        deleteTranscodedTempFiles()
     }
 }
 
@@ -807,6 +932,12 @@ internal data class PendingSubtitle(
     // ("cp1256" for Windows-1256 Arabic subtitles); null means
     // mpv's default. Copied from the ExternalSubtitle it came from.
     val codepage: String? = null,
+    // Issue #470: the RAW uri before fd resolution. The queued
+    // subtitle's `uri` is the resolved fd uri, which ContentResolver
+    // cannot open for detection/transcoding — the raw uri is what
+    // detect + transcode read from at FILE_LOADED dispatch time.
+    // Null for the legacy single subtitleUri (no raw uri kept).
+    val rawUri: String? = null,
 )
 
 internal data class PendingSubtitles(

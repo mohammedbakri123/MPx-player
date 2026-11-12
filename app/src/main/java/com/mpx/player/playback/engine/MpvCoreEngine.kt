@@ -46,7 +46,10 @@ import com.mpx.player.playback.PlayableMedia
  *   from re-starting playback after a concurrent [stop].
  */
 internal class MpvCoreEngine(
-    private val context: Context,
+    // Issue #470: internal (not private) so MpvSubtitleRenderer can
+    // run load-time codepage detection + UTF-8 transcoding through
+    // ContentResolver — the renderer has no Context of its own.
+    internal val context: Context,
     initialDecoderMode: DecoderMode = DecoderMode.HW,
     private val host: Host,
     internal val port: MpvPort = RealMpvPort(),
@@ -961,7 +964,21 @@ internal class MpvCoreEngine(
             // is skipped whenever pendingSubtitles != null; the track
             // was loaded but never shown (notably on a restored queue
             // after process death).
-            subs.add(PendingSubtitle(uri = ext.uri, flag = "select", title = ext.name))
+            // Issue #470: detect the codepage here at load time, not
+            // just at pick time — a subtitle picked before v0.4.54 was
+            // persisted WITHOUT a codepage, so without this the
+            // FILE_LOADED dispatch would set "auto" and garble it.
+            // The raw uri is kept too: the resolved fd uri cannot be
+            // opened for detection/transcoding at dispatch time.
+            subs.add(
+                PendingSubtitle(
+                    uri = ext.uri,
+                    flag = "select",
+                    title = ext.name,
+                    codepage = com.mpx.player.util.SubtitleUtils.codepageFor(context, ext.uri, ext.codepage),
+                    rawUri = ext.uri,
+                )
+            )
         }
         // Issue #332: the previous pending subtitles were never dispatched
         // (their file never reached FILE_LOADED) — their descriptors are
