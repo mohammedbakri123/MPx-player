@@ -5,44 +5,54 @@ import android.net.Uri
 import android.view.Surface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mpx.player.domain.model.CustomPlaylist
+import com.mpx.player.domain.model.FavouriteItem
+import com.mpx.player.domain.model.PlaylistItem
+import com.mpx.player.domain.repository.MediaPersistenceRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
+import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackController
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.PlaybackStateSource
 import com.mpx.player.playback.engine.TrackType
+import com.mpx.player.ui.screens.local.CreatePlaylistOutcome
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Migration Phase 2a: the player screen's state, moved out of
  * [PlayerScreen]'s Compose `remember` blocks so it has one owner
  * and can be tested with fakes.
  *
- * Owns only the testable, non-UI state the screen held before:
- * playback-state collection, settings load / reload-on-resume,
- * queue restore on first entry, the rotation override, and the
- * keep-screen-on decision. Compose-only concerns stay in the
- * screen: gestures, the SurfaceView, dialogs, and layout.
+ * Owns testable state: playback-state collection, settings load /
+ * reload-on-resume, queue restore on first entry, rotation override,
+ * keep-screen-on decision, custom-playlists flow, isFavourite state,
+ * and playlist-dialog flags (following Local and Music VM patterns).
  *
- * Dependencies arrive through the constructor, on interfaces only
- * ([PlaybackStateSource], [AppSettingsRepository]), so a test can
- * pass fakes. Transport actions, subtitles, favourites, and
- * playlists still go through `PlaybackCoordinator` directly from the
- * screen — they move behind interfaces in later phases, not here.
- * No behaviour change: every value below is computed exactly the
- * way the screen computed it before.
+ * Dependencies arrive through the constructor on interfaces
+ * ([PlaybackStateSource], [AppSettingsRepository], [MediaPersistenceRepository]),
+ * so a test can pass fakes.
  */
 class PlayerViewModel(
     private val playback: PlaybackStateSource,
     private val settingsRepository: AppSettingsRepository,
+    private val persistenceRepository: MediaPersistenceRepository? = null,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel(), PlaybackController {
 
     /** Playback state, collected by the screen exactly as before. */
@@ -216,6 +226,131 @@ class PlayerViewModel(
         SharingStarted.Eagerly,
         resolveKeepScreenOn(playbackState.value, _isInPipMode.value),
     )
+
+    // -- Persistence flows & playlist dialog state (audit §6) ----------------
+
+    val customPlaylists: StateFlow<List<CustomPlaylist>> =
+        persistenceRepository?.observePlaylists()
+            ?.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+            ?: MutableStateFlow(emptyList())
+
+    val isFavourite: StateFlow<Boolean> = playbackState
+        .map { it.currentItem?.uri.orEmpty() }
+        .distinctUntilChanged()
+        .flatMapLatest { uri ->
+            if (uri.isNotBlank() && persistenceRepository != null) {
+                persistenceRepository.observeIsFavourite(uri)
+            } else {
+                flowOf(false)
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun toggleFavourite() {
+        val item = playbackState.value.currentItem ?: return
+        val repo = persistenceRepository ?: return
+        viewModelScope.launch(ioDispatcher) {
+            repo.toggleFavourite(
+                FavouriteItem(
+                    mediaUri = item.uri,
+                    mediaId = item.id,
+                    title = item.title,
+                    subtitle = item.subtitle,
+                    isVideo = item.isVideo,
+                    durationMs = item.durationMs,
+                )
+            )
+        }
+    }
+
+    private val _showAddToPlaylistDialog = MutableStateFlow(false)
+    val showAddToPlaylistDialog: StateFlow<Boolean> = _showAddToPlaylistDialog.asStateFlow()
+
+    private val _showCreatePlaylistDialog = MutableStateFlow(false)
+    val showCreatePlaylistDialog: StateFlow<Boolean> = _showCreatePlaylistDialog.asStateFlow()
+
+    private val _pendingMediaForPlaylistAdd = MutableStateFlow<PlayableMedia?>(null)
+    val pendingMediaForPlaylistAdd: StateFlow<PlayableMedia?> = _pendingMediaForPlaylistAdd.asStateFlow()
+
+    fun showAddToPlaylist(media: PlayableMedia) {
+        _pendingMediaForPlaylistAdd.value = media
+        _showAddToPlaylistDialog.value = true
+    }
+
+    fun dismissAddToPlaylist() {
+        _showAddToPlaylistDialog.value = false
+        _pendingMediaForPlaylistAdd.value = null
+    }
+
+    fun openCreatePlaylist() {
+        _showAddToPlaylistDialog.value = false
+        _showCreatePlaylistDialog.value = true
+    }
+
+    fun dismissCreatePlaylist() {
+        _showCreatePlaylistDialog.value = false
+        if (_pendingMediaForPlaylistAdd.value != null) {
+            _showAddToPlaylistDialog.value = true
+        }
+    }
+
+    suspend fun addPendingToPlaylist(playlistId: Long): Boolean = withContext(ioDispatcher) {
+        val media = _pendingMediaForPlaylistAdd.value ?: return@withContext false
+        val repo = persistenceRepository ?: return@withContext false
+        val rowId = repo.addItemToPlaylist(
+            PlaylistItem(
+                playlistId = playlistId,
+                mediaUri = media.uri,
+                mediaId = media.id,
+                title = media.title,
+                subtitle = media.subtitle,
+                isVideo = media.isVideo,
+                durationMs = media.durationMs,
+            )
+        )
+        _showAddToPlaylistDialog.value = false
+        _pendingMediaForPlaylistAdd.value = null
+        rowId != -1L
+    }
+
+    suspend fun createPlaylistAndAddPending(
+        name: String,
+        isVideo: Boolean,
+    ): CreatePlaylistOutcome = withContext(ioDispatcher) {
+        val media = _pendingMediaForPlaylistAdd.value
+        val repo = persistenceRepository ?: return@withContext CreatePlaylistOutcome.Failed
+        try {
+            val newId = repo.createPlaylist(name, isVideoPlaylist = isVideo)
+            if (media != null) {
+                val rowId = repo.addItemToPlaylist(
+                    PlaylistItem(
+                        playlistId = newId,
+                        mediaUri = media.uri,
+                        mediaId = media.id,
+                        title = media.title,
+                        subtitle = media.subtitle,
+                        isVideo = media.isVideo,
+                        durationMs = media.durationMs,
+                    )
+                )
+                _showCreatePlaylistDialog.value = false
+                _pendingMediaForPlaylistAdd.value = null
+                if (rowId != -1L) {
+                    CreatePlaylistOutcome.Added(name, added = 1, total = 1)
+                } else {
+                    CreatePlaylistOutcome.Added(name, added = 0, total = 1)
+                }
+            } else {
+                _showCreatePlaylistDialog.value = false
+                CreatePlaylistOutcome.Created(name)
+            }
+        } catch (_: Exception) {
+            _showCreatePlaylistDialog.value = false
+            if (media != null) {
+                _showAddToPlaylistDialog.value = true
+            }
+            CreatePlaylistOutcome.Failed
+        }
+    }
 }
 
 /** Pure rotation resolution, kept testable through the ViewModel's flows. */

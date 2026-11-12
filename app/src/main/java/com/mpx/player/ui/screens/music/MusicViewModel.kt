@@ -1,5 +1,6 @@
 package com.mpx.player.ui.screens.music
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mpx.player.domain.model.AudioAlbum
@@ -17,12 +18,15 @@ import com.mpx.player.domain.repository.MediaRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlayableMedia
+import com.mpx.player.ui.screens.local.AddToPlaylistResult
+import com.mpx.player.ui.screens.local.CreatePlaylistOutcome
 import com.mpx.player.ui.screens.local.MediaSortComparator
 import com.mpx.player.ui.screens.local.SortField
 import com.mpx.player.ui.screens.local.ViewMode
 import com.mpx.player.ui.screens.local.isPathBlacklisted
 import java.io.File
 import java.util.Locale
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,42 +44,41 @@ import kotlinx.coroutines.withContext
 // the screen's local HISTORY_PAGE_SIZE.
 private const val HISTORY_PAGE_SIZE = 100
 
+// SavedStateHandle keys for search and history limit states (audit §6).
+// Namespaced (`music.*`) so they cannot collide with navigation arguments
+// carried in the same handle.
+private const val KEY_SEARCH_QUERY = "music.searchQuery"
+private const val KEY_IS_SEARCHING = "music.isSearching"
+private const val KEY_HISTORY_LIMIT = "music.historyLimit"
+
 /**
- * Migration Phase 2c: the music screen's state, moved out of
- * [MusicScreen]'s Compose `remember` blocks so it has one owner
- * and can be tested with fakes.
+ * Migration Phase 2c & Audit Phase 5.3: the music screen's state,
+ * moved out of [MusicScreen]'s Compose `remember` blocks so it has one
+ * owner and can be tested with fakes.
  *
- * Owns the testable, non-UI state the screen held before: audio
- * library loading (with the folder-blacklist filter, issue #300),
- * settings load / reload-on-resume, view mode and sort state, search
- * filtering and sorting for all five tabs, the five multi-select
- * selections and their track resolution, and the favourites / history
- * / custom-playlist flows from the persistence repository. The thin
- * persistence pass-throughs at the bottom exist only so the screen's
- * dialogs no longer construct a repository themselves.
+ * Owns the testable, non-UI state: audio library loading (with the
+ * folder-blacklist filter, issue #300), settings load / reload-on-resume,
+ * view mode and sort state, search filtering and sorting for all five tabs,
+ * the five multi-select selections and their track resolution, favourites /
+ * history / custom-playlist flows from the persistence repository, and the
+ * pending add-to-playlist dialog state (following LocalViewModel's pattern).
  *
- * Dependencies arrive through the constructor, on interfaces only
- * ([MediaRepository], [MediaPersistenceRepository],
- * [AppSettingsRepository]), so a test can pass fakes. Playback still
- * goes through `PlaybackCoordinator` directly from the screen — it has no
- * interface yet, and moves behind one in a later phase (same split as
- * Phase 2a's PlayerViewModel). No behaviour change: every value below
- * is computed exactly the way the screen computed it before.
+ * Search query, searching open state, and history limit are backed by
+ * [SavedStateHandle] so they survive dock-tab navigation pops (#255, #326)
+ * without shadowing in Compose `rememberSaveable`.
  *
  * Deliberately NOT owned here (they stay in the screen):
- * - The selected inner tab, the search query / open state, and the
- *   history page limit: all three are `rememberSaveable` in the screen
- *   because `navigateToTab` pops this destination with saveState, which
- *   clears this ViewModel on every dock-tab switch (issues #255, #256,
- *   #326). The screen mirrors the query, the open state, and the limit
- *   into [setSearchQuery], [setSearching], and [setHistoryLimit]; the
- *   filtering and paging logic still lives here.
- * - Dialog / popup / menu visibility and the snackbar: Compose-only.
+ * - The selected inner tab: `rememberSaveable` in the screen because
+ *   dock-tab navigation pops the back-stack-entry saved state; a VM flow
+ *   survives too long (stale tab after leaving Music).
+ * - Dialog / popup / menu visibility (except playlist dialogs) and snackbar.
  */
 class MusicViewModel(
     private val mediaRepository: MediaRepository,
     private val persistence: MediaPersistenceRepository,
     private val settingsRepository: AppSettingsRepository,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
 
     // -- Settings ---------------------------------------------------------
@@ -233,22 +236,31 @@ class MusicViewModel(
         refreshLibrary(hasPermission)
     }
 
-    // -- Search ---------------------------------------------------------------
+    // -- Search & history paging state ----------------------------------------
+    //
+    // Backed by SavedStateHandle so they survive dock-tab switches
+    // (#255, #326) and process death.
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    private val _searchQuery: StateFlow<String> =
+        savedStateHandle.getStateFlow(KEY_SEARCH_QUERY, "")
+    val searchQuery: StateFlow<String> = _searchQuery
 
-    /** The screen mirrors its rememberSaveable query here (see class doc). */
     fun setSearchQuery(query: String) {
-        _searchQuery.value = query
+        savedStateHandle[KEY_SEARCH_QUERY] = query
     }
 
-    private val _isSearching = MutableStateFlow(false)
-    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+    private val _isSearching: StateFlow<Boolean> =
+        savedStateHandle.getStateFlow(KEY_IS_SEARCHING, false)
+    val isSearching: StateFlow<Boolean> = _isSearching
 
-    /** The screen mirrors its rememberSaveable open state here (see class doc). */
     fun setSearching(searching: Boolean) {
-        _isSearching.value = searching
+        savedStateHandle[KEY_IS_SEARCHING] = searching
+    }
+
+    /** Clears query and closes the search field in the SavedStateHandle. */
+    fun resetSearch() {
+        savedStateHandle[KEY_IS_SEARCHING] = false
+        savedStateHandle[KEY_SEARCH_QUERY] = ""
     }
 
     // -- Persistence flows -----------------------------------------------------
@@ -258,18 +270,16 @@ class MusicViewModel(
 
     // #265: the dialog list is paged (HISTORY_PAGE_SIZE rows at a time)
     // and the counts show the real total, from observeHistoryCount() —
-    // the same count query the screen read before. The limit is
-    // rememberSaveable in the screen so rotation does not drop rows
-    // the user already loaded in the dialog; the screen mirrors it
-    // here via [setHistoryLimit].
+    // the same count query the screen read before.
     val historyTotal: StateFlow<Int> = persistence.observeHistoryCount()
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    private val _historyLimit = MutableStateFlow(HISTORY_PAGE_SIZE)
-    val historyLimit: StateFlow<Int> = _historyLimit.asStateFlow()
+    private val _historyLimit: StateFlow<Int> =
+        savedStateHandle.getStateFlow(KEY_HISTORY_LIMIT, HISTORY_PAGE_SIZE)
+    val historyLimit: StateFlow<Int> = _historyLimit
 
     fun setHistoryLimit(limit: Int) {
-        _historyLimit.value = limit
+        savedStateHandle[KEY_HISTORY_LIMIT] = limit
     }
 
     val history: StateFlow<List<PlaybackHistoryItem>> =
@@ -773,6 +783,124 @@ class MusicViewModel(
 
     suspend fun renamePlaylist(playlistId: Long, newName: String) =
         persistence.renamePlaylist(playlistId, newName)
+
+    // -- Add to playlist (#185, #310, audit §6) -------------------------------
+    //
+    // The pending audio tracks and the two dialog flags live here,
+    // matching LocalViewModel's pattern.
+
+    private val _tracksForPlaylistAdd = MutableStateFlow<List<AudioTrack>>(emptyList())
+    /** Tracks queued for "Add to playlist" (single track or multi-select). */
+    val tracksForPlaylistAdd: StateFlow<List<AudioTrack>> = _tracksForPlaylistAdd.asStateFlow()
+
+    private val _showAddToPlaylistDialog = MutableStateFlow(false)
+    val showAddToPlaylistDialog: StateFlow<Boolean> = _showAddToPlaylistDialog.asStateFlow()
+
+    private val _showCreatePlaylistDialog = MutableStateFlow(false)
+    val showCreatePlaylistDialog: StateFlow<Boolean> = _showCreatePlaylistDialog.asStateFlow()
+
+    /** Opens the add-to-playlist dialog for these tracks. */
+    fun showAddToPlaylist(tracks: List<AudioTrack>) {
+        _tracksForPlaylistAdd.value = tracks
+        _showAddToPlaylistDialog.value = true
+    }
+
+    /** Convenience overload for a single track. */
+    fun showAddToPlaylist(track: AudioTrack) {
+        showAddToPlaylist(listOf(track))
+    }
+
+    /** Dismisses the add-to-playlist dialog, dropping pending tracks. */
+    fun dismissAddToPlaylist() {
+        _showAddToPlaylistDialog.value = false
+        _tracksForPlaylistAdd.value = emptyList()
+    }
+
+    /**
+     * Opens the create-playlist dialog from the add dialog (#310:
+     * keeps pending tracks so confirm can add them).
+     */
+    fun openCreatePlaylist() {
+        _showAddToPlaylistDialog.value = false
+        _showCreatePlaylistDialog.value = true
+    }
+
+    /**
+     * Dismisses the create-playlist dialog (#310: puts the add dialog
+     * back if tracks were pending).
+     */
+    fun dismissCreatePlaylist() {
+        _showCreatePlaylistDialog.value = false
+        if (_tracksForPlaylistAdd.value.isNotEmpty()) _showAddToPlaylistDialog.value = true
+    }
+
+    /**
+     * Adds pending tracks to an existing playlist (#230: counts real adds).
+     * On completion, drops pending tracks and clears all selections.
+     */
+    suspend fun addPendingToPlaylist(playlistId: Long): AddToPlaylistResult =
+        withContext(ioDispatcher) {
+            val tracks = _tracksForPlaylistAdd.value
+            var addedCount = 0
+            tracks.forEach { track ->
+                val rowId = persistence.addItemToPlaylist(
+                    PlaylistItem(
+                        playlistId = playlistId,
+                        mediaUri = track.path,
+                        mediaId = track.id,
+                        title = track.title,
+                        subtitle = "${track.artist} • ${track.album}",
+                        isVideo = false,
+                        durationMs = track.durationMs,
+                    )
+                )
+                if (rowId != -1L) addedCount++
+            }
+            _showAddToPlaylistDialog.value = false
+            _tracksForPlaylistAdd.value = emptyList()
+            clearAllSelections()
+            AddToPlaylistResult(added = addedCount, total = tracks.size)
+        }
+
+    /**
+     * Creates a playlist and adds pending tracks to it (#310).
+     */
+    suspend fun createPlaylistAndAddPending(
+        name: String,
+        isVideo: Boolean = false,
+    ): CreatePlaylistOutcome = withContext(ioDispatcher) {
+        val tracks = _tracksForPlaylistAdd.value
+        try {
+            val newId = persistence.createPlaylist(name, isVideoPlaylist = isVideo)
+            var addedCount = 0
+            tracks.forEach { track ->
+                val rowId = persistence.addItemToPlaylist(
+                    PlaylistItem(
+                        playlistId = newId,
+                        mediaUri = track.path,
+                        mediaId = track.id,
+                        title = track.title,
+                        subtitle = "${track.artist} • ${track.album}",
+                        isVideo = false,
+                        durationMs = track.durationMs,
+                    )
+                )
+                if (rowId != -1L) addedCount++
+            }
+            _showCreatePlaylistDialog.value = false
+            _tracksForPlaylistAdd.value = emptyList()
+            clearAllSelections()
+            if (tracks.isEmpty()) {
+                CreatePlaylistOutcome.Created(name)
+            } else {
+                CreatePlaylistOutcome.Added(name, added = addedCount, total = tracks.size)
+            }
+        } catch (_: Exception) {
+            _showCreatePlaylistDialog.value = false
+            if (tracks.isNotEmpty()) _showAddToPlaylistDialog.value = true
+            CreatePlaylistOutcome.Failed
+        }
+    }
 }
 
 // -- Pure helpers, moved verbatim from the screen -----------------------------------
