@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -258,26 +259,31 @@ class PlayerViewModelTest {
     @Test
     fun `isFavourite reflects persistence repository and updates on toggle`() = runTest {
         setTestMainDispatcher()
-        val viewModel = createViewModel()
+        // toggleFavourite() launches fire-and-forget on ioDispatcher,
+        // which defaults to the real Dispatchers.IO pool — asserting
+        // repo state right after the call races that launch. Give the
+        // VM the test dispatcher so the toggle lands deterministically.
+        val viewModel = PlayerViewModel(
+            playback,
+            settingsRepo,
+            persistence,
+            ioDispatcher = UnconfinedTestDispatcher(testScheduler),
+        )
         val v1 = video("v1")
         playback.emit(PlaybackState(currentItem = v1, isPlaying = true))
 
         assertFalse(viewModel.isFavourite.value)
 
         viewModel.toggleFavourite()
+        runCurrent()
         assertTrue(persistence.isFavourite(v1.uri))
+        assertTrue(viewModel.isFavourite.value)
 
-        // Trigger isFavourite flow reflection
-        persistence.toggleFavourite(
-            com.mpx.player.domain.model.FavouriteItem(
-                mediaUri = v1.uri,
-                mediaId = v1.id,
-                title = v1.title,
-                subtitle = v1.subtitle,
-                isVideo = v1.isVideo,
-            )
-        )
+        // Toggling again removes it, and the flow reflects the removal.
+        viewModel.toggleFavourite()
+        runCurrent()
         assertFalse(persistence.isFavourite(v1.uri))
+        assertFalse(viewModel.isFavourite.value)
     }
 
     @Test
