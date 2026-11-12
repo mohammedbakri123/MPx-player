@@ -17,12 +17,7 @@ class SubtitleUtilsTest {
     @Before
     fun setUp() {
         testContext = object : ContextWrapper(null) {
-            // Context.getString() is final and delegates to getResources(),
-            // so the Unsupported path (which formats R.string.* via
-            // getString) is intercepted here. The wrapper's null base
-            // would NPE there; TestResources answers with the formatted
-            // argument so the reason stays meaningful.
-            override fun getResources(): Resources = TestResources()
+            override fun getResources(): Resources = Resources.getSystem()
         }
     }
 

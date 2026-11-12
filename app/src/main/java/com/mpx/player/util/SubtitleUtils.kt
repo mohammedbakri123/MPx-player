@@ -159,16 +159,25 @@ object SubtitleUtils {
             }
         }
 
-        // Honest error for unsupported formats
+        // Honest error for unsupported formats. The getString() lookups
+        // fall back to plain messages when the resource lookup returns
+        // null — which happens in host JVM unit tests, where unmocked
+        // framework methods return default values
+        // (unitTests.isReturnDefaultValues = true) instead of throwing.
+        // Context.getString() is final and the stub returns null without
+        // delegating to getResources(), so no fake Resources can
+        // intercept it; the fallback keeps this function total instead.
         val extension = if (fileName.contains('.')) {
             ".${fileName.substringAfterLast('.')}"
         } else {
             context.getString(com.mpx.player.R.string.subtitle_unknown_format)
+                ?: "unknown format"
         }
 
         return SubtitleValidationResult.Unsupported(
             fileName = fileName,
-            reason = context.getString(com.mpx.player.R.string.subtitle_unsupported_format, extension),
+            reason = context.getString(com.mpx.player.R.string.subtitle_unsupported_format, extension)
+                ?: "Unsupported subtitle format ($extension)",
         )
     }
 
