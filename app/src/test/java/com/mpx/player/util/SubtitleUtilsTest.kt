@@ -18,6 +18,13 @@ class SubtitleUtilsTest {
     fun setUp() {
         testContext = object : ContextWrapper(null) {
             override fun getResources(): Resources = Resources.getSystem()
+
+            // The Unsupported path formats R.string.subtitle_unsupported_format
+            // (and R.string.subtitle_unknown_format for extensionless files)
+            // via getString(). The wrapper's null base would NPE there;
+            // answer with the formatted argument so the reason stays meaningful.
+            override fun getString(resId: Int, vararg formatArgs: Any?): String =
+                if (formatArgs.isNotEmpty()) "Unsupported format: ${formatArgs[0]}" else "unsupported"
         }
     }
 
