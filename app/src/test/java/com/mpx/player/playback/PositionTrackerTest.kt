@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -99,11 +100,11 @@ class PositionTrackerTest {
 
         sink.currentItem = PlayableMedia(id = "item-1", uri = "uri-1", title = "Title")
 
-        // < 1500ms -> should not save
+        // < 1500ms -> should not save (getResumePosition returns null when nothing was saved)
         engine.currentPosition = 1200L
         engine.duration = 60_000L
         tracker.updatePosition()
-        assertEquals(0L, resumeManager.getResumePosition("item-1", "uri-1"))
+        assertNull(resumeManager.getResumePosition("item-1", "uri-1"))
 
         // > 1500ms and not near end -> saves
         engine.currentPosition = 5000L
