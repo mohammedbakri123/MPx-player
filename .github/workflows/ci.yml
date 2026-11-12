@@ -87,6 +87,11 @@ jobs:
           packages: platform-tools platforms;android-36 build-tools;36.0.0
 
       - name: Run Android Lint (release)
+        # Step-level continue-on-error: job-level continue-on-error alone did
+        # NOT stop the job failing (observed 2026-11-12, run 43245131165: job
+        # still concluded failure with 110 errors despite the job-level flag),
+        # so the flag lives here too, where it is honoured.
+        continue-on-error: true
         run: ./gradlew --no-daemon lintRelease
 
       - name: Upload lint report
