@@ -351,6 +351,29 @@ class MpvSubtitleRendererTest {
     }
 
     @Test
+    fun `subtitle confirmation times out when track never appears in track list`() {
+        core.activeMediaUri = "http://example.com/video.mp4"
+        core.activeMediaId = "m1"
+        core.pendingSubtitles = PendingSubtitles(
+            mediaUri = "http://example.com/video.mp4",
+            mediaId = "m1",
+            subtitles = listOf(
+                PendingSubtitle(
+                    uri = "http://example.com/sub.srt",
+                    flag = "select",
+                    title = "English.srt",
+                ),
+            ),
+        )
+        renderer.onFileLoaded()
+
+        // Track never appears; simulate timeout
+        directHandler.runDelayedTasks()
+
+        assertEquals(listOf("m1" to false), fakeListener.externalSubtitleConfirmations)
+    }
+
+    @Test
     fun `onTrackListChanged is blocked when a different external track is selected`() {
         core.activeMediaUri = "http://example.com/video.mp4"
         core.activeMediaId = "m1"
