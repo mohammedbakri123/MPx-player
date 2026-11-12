@@ -2,6 +2,7 @@ package com.mpx.player.playback.engine
 
 import android.util.Log
 import com.mpx.player.playback.AudioTrackInfo
+import com.mpx.player.playback.ChapterInfo
 import com.mpx.player.playback.MediaAudioTrackInfo
 import com.mpx.player.playback.MediaInfo
 import com.mpx.player.playback.MediaVideoTrackInfo
@@ -251,6 +252,31 @@ internal class MpvTrackSelection(
             }
         }
         return subtitleList
+    }
+
+    /**
+     * Chapter markers for the current video (issue #178), read from
+     * mpv's chapter-list: `chapter-list/count`, then per chapter
+     * `chapter-list/<i>/time` (seconds, double) and
+     * `chapter-list/<i>/title`. Sorted by time; a chapter with no
+     * title gets an empty title, and one with no/invalid time is
+     * skipped. Empty when the file has no chapters. Never throws —
+     * a failed read returns an empty list.
+     */
+    fun getChapters(): List<ChapterInfo> {
+        return try {
+            val count = port.getPropertyInt("chapter-list/count") ?: 0
+            val chapters = mutableListOf<ChapterInfo>()
+            for (i in 0 until count) {
+                val timeSec = port.getPropertyDouble("chapter-list/$i/time") ?: continue
+                if (timeSec < 0.0 || !timeSec.isFinite()) continue
+                val title = port.getPropertyString("chapter-list/$i/title") ?: ""
+                chapters.add(ChapterInfo(title = title, timeMs = (timeSec * 1000.0).toLong()))
+            }
+            chapters.sortedBy { it.timeMs }
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     /**

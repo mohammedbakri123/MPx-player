@@ -6,12 +6,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -178,19 +180,57 @@ fun PlayerBottomChrome(
                             textAlign = TextAlign.Start,
                         )
 
-                        Slider(
-                            value = sliderProgress,
-                            onValueChange = onSliderChange,
-                            onValueChangeFinished = onSliderChangeFinished,
+                        // Issue #178: chapter markers on the seek bar.
+                        // The Slider is wrapped in a Box so chapter ticks
+                        // can overlay its track. The Material3 track
+                        // spans thumbRadius (10.dp) in from each edge,
+                        // so the tick overlay uses the same horizontal
+                        // inset — a tick at fraction f then sits exactly
+                        // on the track at f. Ticks are visual only (no
+                        // touch handling): the Slider already seeks on
+                        // tap, so tapping near a tick seeks there.
+                        // Chapters at 0 or past the end carry no marker.
+                        Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(horizontal = 6.dp),
-                            colors = SliderDefaults.colors(
-                                thumbColor = MpxTheme.colors.primary,
-                                activeTrackColor = MpxTheme.colors.primary,
-                                inactiveTrackColor = MpxTheme.colors.textPrimary.copy(alpha = 0.3f),
-                            ),
-                        )
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Slider(
+                                value = sliderProgress,
+                                onValueChange = onSliderChange,
+                                onValueChangeFinished = onSliderChangeFinished,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = MpxTheme.colors.primary,
+                                    activeTrackColor = MpxTheme.colors.primary,
+                                    inactiveTrackColor = MpxTheme.colors.textPrimary.copy(alpha = 0.3f),
+                                ),
+                            )
+                            if (state.chapters.isNotEmpty() && currentDuration > 0L) {
+                                BoxWithConstraints(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                                ) {
+                                    val trackWidth = maxWidth
+                                    state.chapters.forEach { chapter ->
+                                        val fraction = chapter.timeMs.toFloat() / currentDuration.toFloat()
+                                        if (fraction > 0f && fraction < 1f) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterStart)
+                                                    .offset(x = trackWidth * fraction - 1.dp)
+                                                    .width(2.dp)
+                                                    .height(12.dp)
+                                                    .background(
+                                                        color = MpxTheme.colors.textPrimary.copy(alpha = 0.9f),
+                                                        shape = RoundedCornerShape(1.dp),
+                                                    ),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         Text(
                             text = formatTimeMs(currentDuration),

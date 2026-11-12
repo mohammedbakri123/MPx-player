@@ -29,6 +29,7 @@ class PositionTrackerTest {
         var publishedAudioIndex: Int = -1
         var publishedSubtitleTracks: List<SubtitleTrackInfo> = emptyList()
         var publishedSubtitleIndex: Int = -1
+        var publishedChapters: List<ChapterInfo> = emptyList()
         var tracksPublishCount: Int = 0
 
         override fun updatePositionState(
@@ -55,11 +56,13 @@ class PositionTrackerTest {
             selectedAudioTrackIndex: Int,
             subtitleTracks: List<SubtitleTrackInfo>,
             selectedSubtitleTrackIndex: Int,
+            chapters: List<ChapterInfo>,
         ) {
             publishedAudioTracks = audioTracks
             publishedAudioIndex = selectedAudioTrackIndex
             publishedSubtitleTracks = subtitleTracks
             publishedSubtitleIndex = selectedSubtitleTrackIndex
+            publishedChapters = chapters
             tracksPublishCount++
         }
     }

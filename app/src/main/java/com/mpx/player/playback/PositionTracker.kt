@@ -31,13 +31,15 @@ interface PositionSink {
     )
 
     /**
-     * Publishes refreshed audio and subtitle tracks.
+     * Publishes refreshed audio and subtitle tracks, plus chapter
+     * markers (issue #178).
      */
     fun updateTracksState(
         audioTracks: List<AudioTrackInfo>,
         selectedAudioTrackIndex: Int,
         subtitleTracks: List<SubtitleTrackInfo>,
         selectedSubtitleTrackIndex: Int,
+        chapters: List<ChapterInfo> = emptyList(),
     )
 }
 
@@ -142,6 +144,10 @@ class PositionTracker(
             selectedAudioTrackIndex = selectedAudioIdx,
             subtitleTracks = subtitleList,
             selectedSubtitleTrackIndex = selectedSubtitleIdx,
+            // Issue #178: chapter markers refresh with the tracks —
+            // same FILE_LOADED / track-list-change trigger, empty when
+            // the file has no chapters.
+            chapters = engine.getChapters(),
         )
     }
 }

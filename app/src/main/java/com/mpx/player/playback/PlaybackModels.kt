@@ -101,6 +101,16 @@ data class SubtitleTrackInfo(
     val isDefault: Boolean = false,
 )
 
+/** A chapter marker in the current video (issue #178). [timeMs] is the
+ * chapter start in milliseconds; [title] is mpv's chapter title
+ * ("" when the file has none). Read from mpv's chapter-list on
+ * FILE_LOADED / track-list change; empty when the file has no
+ * chapters. Rendered as ticks on the seek bar. */
+data class ChapterInfo(
+    val title: String,
+    val timeMs: Long,
+)
+
 /** Video stream technical information for [MediaInfo] (issue #468). */
 data class MediaVideoTrackInfo(
     val codec: String? = null,
@@ -197,6 +207,9 @@ data class PlaybackState(
     val selectedAudioTrackIndex: Int = -1,
     val subtitleTracks: List<SubtitleTrackInfo> = emptyList(),
     val selectedSubtitleTrackIndex: Int = -1, // -1 means subtitles off
+    /** Chapter markers for the current video (issue #178), read from
+     * mpv's chapter-list. Empty when the file has no chapters. */
+    val chapters: List<ChapterInfo> = emptyList(),
     val isLocked: Boolean = false,
     val resumedFromMs: Long? = null,
     val isBackgroundPlaying: Boolean = false,
