@@ -74,7 +74,7 @@ import org.koin.dsl.module
  * construct one directly.
  */
 val viewModelModule = module {
-    viewModel { PlayerViewModel(get<PlaybackCoordinator>(), get()) }
+    viewModel { PlayerViewModel(get<PlaybackCoordinator>(), get(), get()) }
     viewModel { (hasPermission: Boolean) ->
         LocalViewModel(get(), get(), get(), hasPermission, savedStateHandle = get())
     }

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.view.Surface
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.fakes.FakeMediaPersistenceRepository
 import com.mpx.player.fakes.FakeSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
@@ -12,6 +13,7 @@ import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.PlaybackStateSource
 import com.mpx.player.playback.engine.TrackType
+import com.mpx.player.ui.screens.local.CreatePlaylistOutcome
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,7 @@ class PlayerViewModelTest {
 
     private lateinit var playback: FakePlaybackStateSource
     private lateinit var settingsRepo: FakeSettingsRepository
+    private lateinit var persistence: FakeMediaPersistenceRepository
 
     @Before
     fun setUp() {
@@ -51,6 +54,7 @@ class PlayerViewModelTest {
                 screenOrientation = "landscape",
             ),
         )
+        persistence = FakeMediaPersistenceRepository()
     }
 
     @After
@@ -58,7 +62,7 @@ class PlayerViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel() = PlayerViewModel(playback, settingsRepo)
+    private fun createViewModel() = PlayerViewModel(playback, settingsRepo, persistence)
 
     /** viewModelScope runs on Dispatchers.Main; the unconfined test
      * dispatcher executes the ViewModel's collectors eagerly, so
@@ -249,6 +253,88 @@ class PlayerViewModelTest {
         assertFalse(viewModel.keepScreenOn.value)
         viewModel.setPipMode(false)
         assertTrue(viewModel.keepScreenOn.value)
+    }
+
+    @Test
+    fun `isFavourite reflects persistence repository and updates on toggle`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val v1 = video("v1")
+        playback.emit(PlaybackState(currentItem = v1, isPlaying = true))
+
+        assertFalse(viewModel.isFavourite.value)
+
+        viewModel.toggleFavourite()
+        assertTrue(persistence.isFavourite(v1.uri))
+
+        // Trigger isFavourite flow reflection
+        persistence.toggleFavourite(
+            com.mpx.player.domain.model.FavouriteItem(
+                mediaUri = v1.uri,
+                mediaId = v1.id,
+                title = v1.title,
+                subtitle = v1.subtitle,
+                isVideo = v1.isVideo,
+            )
+        )
+        assertFalse(persistence.isFavourite(v1.uri))
+    }
+
+    @Test
+    fun `showAddToPlaylist, dismiss, and addPendingToPlaylist manage pending media`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val v1 = video("v1")
+
+        viewModel.showAddToPlaylist(v1)
+        assertTrue(viewModel.showAddToPlaylistDialog.value)
+        assertEquals(v1, viewModel.pendingMediaForPlaylistAdd.value)
+
+        val plId = persistence.createPlaylist("Watchlist", isVideoPlaylist = true)
+        val added = viewModel.addPendingToPlaylist(plId)
+
+        assertTrue(added)
+        assertFalse(viewModel.showAddToPlaylistDialog.value)
+        assertEquals(null, viewModel.pendingMediaForPlaylistAdd.value)
+        assertEquals(listOf(v1.uri), persistence.getPlaylistItems(plId).map { it.mediaUri })
+    }
+
+    @Test
+    fun `createPlaylistAndAddPending creates playlist and adds pending media`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val v1 = video("v1")
+
+        viewModel.showAddToPlaylist(v1)
+        val outcome = viewModel.createPlaylistAndAddPending("Favorites", isVideo = true)
+
+        assertEquals(CreatePlaylistOutcome.Added("Favorites", added = 1, total = 1), outcome)
+        val pl = persistence.getPlaylists().first { it.name == "Favorites" }
+        assertTrue(pl.isVideoPlaylist)
+        assertEquals(listOf(v1.uri), persistence.getPlaylistItems(pl.id).map { it.mediaUri })
+    }
+
+    @Test
+    fun `openCreatePlaylist and dismissCreatePlaylist manage dialog flags`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val v1 = video("v1")
+
+        viewModel.showAddToPlaylist(v1)
+        assertTrue(viewModel.showAddToPlaylistDialog.value)
+
+        viewModel.openCreatePlaylist()
+        assertFalse(viewModel.showAddToPlaylistDialog.value)
+        assertTrue(viewModel.showCreatePlaylistDialog.value)
+
+        // Dismissing create with pending tracks returns to add dialog (#310)
+        viewModel.dismissCreatePlaylist()
+        assertFalse(viewModel.showCreatePlaylistDialog.value)
+        assertTrue(viewModel.showAddToPlaylistDialog.value)
+
+        viewModel.dismissAddToPlaylist()
+        assertFalse(viewModel.showAddToPlaylistDialog.value)
+        assertEquals(null, viewModel.pendingMediaForPlaylistAdd.value)
     }
 
     private fun video(id: String) = PlayableMedia(
