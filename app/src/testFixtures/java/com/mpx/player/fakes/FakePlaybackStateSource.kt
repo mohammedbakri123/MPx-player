@@ -28,6 +28,8 @@ class FakePlaybackStateSource(
     var pauseCalls = 0
     var togglePlayPauseCalls = 0
     val seekCalls = mutableListOf<Long>()
+    val skipForwardCalls = mutableListOf<Long>()
+    val skipBackwardCalls = mutableListOf<Long>()
     val speedCalls = mutableListOf<Float>()
     val aspectRatioCalls = mutableListOf<AspectRatioMode>()
     val videoZoomCalls = mutableListOf<Float>()
@@ -35,6 +37,26 @@ class FakePlaybackStateSource(
     var lockedCalls = 0
     var skipNextCalls = 0
     var skipPreviousCalls = 0
+
+    val shuffleEnabledCalls = mutableListOf<Boolean>()
+    var cycleRepeatModeCalls = 0
+    val decoderModeCalls = mutableListOf<DecoderMode>()
+    val sleepTimerCalls = mutableListOf<Int>()
+    var cancelSleepTimerCalls = 0
+    var clearResumedNotificationCalls = 0
+    var clearDecoderFallbackNoteCalls = 0
+    var clearUserNotificationCalls = 0
+    val selectTrackCalls = mutableListOf<Pair<TrackType, String?>>()
+    val selectAudioTrackCalls = mutableListOf<Pair<Int, Int>>()
+    val selectSubtitleTrackCalls = mutableListOf<Pair<Int?, Int?>>()
+    val loadExternalSubtitleCalls = mutableListOf<Triple<Uri, String, String>>()
+    val appliedSubtitleSettings = mutableListOf<AppSettings>()
+    val appliedPlaybackTweaks = mutableListOf<AppSettings>()
+    val videoBackgroundActiveCalls = mutableListOf<Boolean>()
+    val backgroundPlayingCalls = mutableListOf<Boolean>()
+    val attachedSurfaces = mutableListOf<Surface>()
+    var detachSurfaceCalls = 0
+    val surfaceChangedCalls = mutableListOf<Pair<Int, Int>>()
 
     override fun restorePersistedQueueIfEmpty(): Boolean {
         restoreCalls++
@@ -45,34 +67,43 @@ class FakePlaybackStateSource(
     override fun pause() { pauseCalls++ }
     override fun togglePlayPause() { togglePlayPauseCalls++ }
     override fun seekTo(positionMs: Long) { seekCalls.add(positionMs) }
-    override fun skipForward(deltaMs: Long) { seekCalls.add(deltaMs) }
-    override fun skipBackward(deltaMs: Long) { seekCalls.add(-deltaMs) }
+    override fun skipForward(deltaMs: Long) {
+        skipForwardCalls.add(deltaMs)
+        seekCalls.add(deltaMs)
+    }
+    override fun skipBackward(deltaMs: Long) {
+        skipBackwardCalls.add(deltaMs)
+        seekCalls.add(-deltaMs)
+    }
     override fun skipNext() { skipNextCalls++ }
     override fun skipPrevious() { skipPreviousCalls++ }
     override fun setSpeed(speed: Float) { speedCalls.add(speed) }
     override fun setAspectRatio(mode: AspectRatioMode) { aspectRatioCalls.add(mode) }
     override fun setVideoZoom(zoom: Float) { videoZoomCalls.add(zoom) }
-    override fun setShuffleEnabled(enabled: Boolean) {}
-    override fun cycleRepeatMode() {}
-    override fun setDecoderMode(mode: DecoderMode) {}
+    override fun setShuffleEnabled(enabled: Boolean) { shuffleEnabledCalls.add(enabled) }
+    override fun cycleRepeatMode() { cycleRepeatModeCalls++ }
+    override fun setDecoderMode(mode: DecoderMode) { decoderModeCalls.add(mode) }
     override fun setLocked(locked: Boolean) { lockedCalls++ }
-    override fun setSleepTimer(minutes: Int) {}
-    override fun cancelSleepTimer() {}
-    override fun clearResumedNotification() {}
-    override fun clearDecoderFallbackNote() {}
-    override fun clearUserNotification() {}
+    override fun setSleepTimer(minutes: Int) { sleepTimerCalls.add(minutes) }
+    override fun cancelSleepTimer() { cancelSleepTimerCalls++ }
+    override fun clearResumedNotification() { clearResumedNotificationCalls++ }
+    override fun clearDecoderFallbackNote() { clearDecoderFallbackNoteCalls++ }
+    override fun clearUserNotification() { clearUserNotificationCalls++ }
     override fun stop() { stopCalls++ }
-    override fun attachSurface(surface: Surface) {}
-    override fun detachSurface() {}
-    override fun surfaceChanged(width: Int, height: Int) {}
-    override fun applySubtitleSettings(settings: AppSettings) {}
-    override fun applyPlaybackTweaks(settings: AppSettings) {}
-    override fun setVideoBackgroundActive(active: Boolean) {}
-    override fun setBackgroundPlaying(active: Boolean) {}
-    override fun selectTrack(type: TrackType, id: String?) {}
-    override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) {}
-    override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {}
-    override fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean = true
+    override fun attachSurface(surface: Surface) { attachedSurfaces.add(surface) }
+    override fun detachSurface() { detachSurfaceCalls++ }
+    override fun surfaceChanged(width: Int, height: Int) { surfaceChangedCalls.add(width to height) }
+    override fun applySubtitleSettings(settings: AppSettings) { appliedSubtitleSettings.add(settings) }
+    override fun applyPlaybackTweaks(settings: AppSettings) { appliedPlaybackTweaks.add(settings) }
+    override fun setVideoBackgroundActive(active: Boolean) { videoBackgroundActiveCalls.add(active) }
+    override fun setBackgroundPlaying(active: Boolean) { backgroundPlayingCalls.add(active) }
+    override fun selectTrack(type: TrackType, id: String?) { selectTrackCalls.add(type to id) }
+    override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) { selectAudioTrackCalls.add(groupIndex to trackIndex) }
+    override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) { selectSubtitleTrackCalls.add(groupIndex to trackIndex) }
+    override fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean {
+        loadExternalSubtitleCalls.add(Triple(uri, displayName, mimeType))
+        return true
+    }
 
     override val videoWidth: Int = 1920
     override val videoHeight: Int = 1080

@@ -254,6 +254,39 @@ class MeViewModelTest {
         assertEquals(listOf(playlistItem(12, 1, "Song B")), viewModel.playlistItems.value)
     }
 
+    @Test
+    fun `renamePlaylist and removeItemFromPlaylist when no playlist is selected handle missing selection safely`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val playlist = CustomPlaylist(id = 1, name = "Mix")
+        persistence.playlists.value = listOf(playlist)
+        persistence.playlistItems[1] = mutableListOf(playlistItem(11, 1, "Song A"))
+
+        // No playlist selected
+        assertEquals(null, viewModel.selectedPlaylist.value)
+        viewModel.renamePlaylist(1, "Updated Mix")
+        assertEquals(null, viewModel.selectedPlaylist.value)
+        assertEquals("Updated Mix", persistence.playlists.value.first().name)
+
+        viewModel.removeItemFromPlaylist(11)
+        assertTrue(viewModel.playlistItems.value.isEmpty())
+        assertTrue(persistence.playlistItems[1]?.isEmpty() == true)
+    }
+
+    @Test
+    fun `createPlaylist throws when persistence repository fails`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        persistence.createPlaylistError = IllegalStateException("Disk write error")
+
+        try {
+            viewModel.createPlaylist("FailPlaylist", isVideoPlaylist = true)
+            org.junit.Assert.fail("Expected IllegalStateException")
+        } catch (e: IllegalStateException) {
+            assertEquals("Disk write error", e.message)
+        }
+    }
+
     // Fixed timestamps: the models default addedAt / lastPlayedAt to
     // System.currentTimeMillis(), so two helper calls would build
     // unequal instances and every list-equality assert would fail.

@@ -6,6 +6,7 @@ import android.view.Surface
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.fakes.FakeMediaPersistenceRepository
+import com.mpx.player.fakes.FakePlaybackStateSource
 import com.mpx.player.fakes.FakeSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
@@ -343,6 +344,179 @@ class PlayerViewModelTest {
         assertEquals(null, viewModel.pendingMediaForPlaylistAdd.value)
     }
 
+    @Test
+    fun `skipForward and skipBackward delegate delta to playback`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        viewModel.skipForward(10_000L)
+        assertEquals(listOf(10_000L), playback.skipForwardCalls)
+        assertEquals(listOf(10_000L), playback.seekCalls)
+
+        viewModel.skipBackward(5_000L)
+        assertEquals(listOf(5_000L), playback.skipBackwardCalls)
+        assertEquals(listOf(10_000L, -5_000L), playback.seekCalls)
+    }
+
+    @Test
+    fun `skipNext and skipPrevious delegate to playback`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        viewModel.skipNext()
+        assertEquals(1, playback.skipNextCalls)
+
+        viewModel.skipPrevious()
+        assertEquals(1, playback.skipPreviousCalls)
+    }
+
+    @Test
+    fun `shuffle, repeat, decoder, locked, and sleep timer actions delegate to playback`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        viewModel.setShuffleEnabled(true)
+        assertEquals(listOf(true), playback.shuffleEnabledCalls)
+
+        viewModel.cycleRepeatMode()
+        assertEquals(1, playback.cycleRepeatModeCalls)
+
+        viewModel.setDecoderMode(DecoderMode.SW)
+        assertEquals(listOf(DecoderMode.SW), playback.decoderModeCalls)
+
+        viewModel.setLocked(true)
+        assertEquals(1, playback.lockedCalls)
+
+        viewModel.setSleepTimer(45)
+        assertEquals(listOf(45), playback.sleepTimerCalls)
+
+        viewModel.cancelSleepTimer()
+        assertEquals(1, playback.cancelSleepTimerCalls)
+    }
+
+    @Test
+    fun `notification clearing actions delegate to playback`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        viewModel.clearResumedNotification()
+        assertEquals(1, playback.clearResumedNotificationCalls)
+
+        viewModel.clearDecoderFallbackNote()
+        assertEquals(1, playback.clearDecoderFallbackNoteCalls)
+
+        viewModel.clearUserNotification()
+        assertEquals(1, playback.clearUserNotificationCalls)
+    }
+
+    @Test
+    fun `track selection and subtitle loading delegate to playback`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        viewModel.selectTrack(TrackType.AUDIO, "aid_2")
+        assertEquals(listOf(TrackType.AUDIO to "aid_2"), playback.selectTrackCalls)
+
+        viewModel.selectAudioTrack(1, 2)
+        assertEquals(listOf(1 to 2), playback.selectAudioTrackCalls)
+
+        viewModel.selectSubtitleTrack(0, 1)
+        assertEquals(listOf(0 to 1), playback.selectSubtitleTrackCalls)
+
+        val uri = Uri.parse("file:///storage/emulated/0/subs.srt")
+        val loaded = viewModel.loadExternalSubtitle(uri, "subs.srt", "text/plain")
+        assertTrue(loaded)
+        assertEquals(listOf(Triple(uri, "subs.srt", "text/plain")), playback.loadExternalSubtitleCalls)
+    }
+
+    @Test
+    fun `subtitle settings, playback tweaks, and background active delegate to playback`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        val subtitleSettings = AppSettings(subtitleSize = "Large", subtitleTextColor = "White")
+        viewModel.applySubtitleSettings(subtitleSettings)
+        assertEquals(listOf(subtitleSettings), playback.appliedSubtitleSettings)
+
+        val tweakSettings = AppSettings(audioDelayMs = 200)
+        viewModel.applyPlaybackTweaks(tweakSettings)
+        assertEquals(listOf(tweakSettings), playback.appliedPlaybackTweaks)
+
+        viewModel.setVideoBackgroundActive(true)
+        assertEquals(listOf(true), playback.videoBackgroundActiveCalls)
+
+        viewModel.setBackgroundPlaying(true)
+        assertEquals(listOf(true), playback.backgroundPlayingCalls)
+    }
+
+    @Test
+    fun `surfaceChanged delegates dimensions to playback`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        viewModel.surfaceChanged(1280, 720)
+        assertEquals(listOf(1280 to 720), playback.surfaceChangedCalls)
+    }
+
+    @Test
+    fun `loadSettingsNow reads settingsRepository directly`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        settingsRepo.stored = settingsRepo.stored.copy(defaultPlaybackSpeed = 1.75f)
+
+        val current = viewModel.loadSettingsNow()
+        assertEquals(1.75f, current.defaultPlaybackSpeed)
+    }
+
+    @Test
+    fun `addPendingToPlaylist returns false when pending media or repository is missing`() = runTest {
+        setTestMainDispatcher()
+        val viewModelWithoutRepo = PlayerViewModel(playback, settingsRepo, persistenceRepository = null)
+        val v1 = video("v1")
+
+        // No pending media set
+        assertFalse(viewModelWithoutRepo.addPendingToPlaylist(1L))
+
+        // Pending media set, but repository is null
+        viewModelWithoutRepo.showAddToPlaylist(v1)
+        assertFalse(viewModelWithoutRepo.addPendingToPlaylist(1L))
+    }
+
+    @Test
+    fun `createPlaylistAndAddPending fails gracefully when repository is null or throws`() = runTest {
+        setTestMainDispatcher()
+        val v1 = video("v1")
+
+        // 1. Repository is null
+        val viewModelWithoutRepo = PlayerViewModel(playback, settingsRepo, persistenceRepository = null)
+        viewModelWithoutRepo.showAddToPlaylist(v1)
+        val outcomeNullRepo = viewModelWithoutRepo.createPlaylistAndAddPending("Test", isVideo = true)
+        assertEquals(CreatePlaylistOutcome.Failed, outcomeNullRepo)
+
+        // 2. Repository throws exception
+        val viewModelWithRepo = createViewModel()
+        viewModelWithRepo.showAddToPlaylist(v1)
+        persistence.createPlaylistError = RuntimeException("Database disk full")
+
+        val outcomeError = viewModelWithRepo.createPlaylistAndAddPending("Test", isVideo = true)
+        assertEquals(CreatePlaylistOutcome.Failed, outcomeError)
+        // Dialog should reopen with pending media preserved for retry (#310)
+        assertFalse(viewModelWithRepo.showCreatePlaylistDialog.value)
+        assertTrue(viewModelWithRepo.showAddToPlaylistDialog.value)
+        assertEquals(v1, viewModelWithRepo.pendingMediaForPlaylistAdd.value)
+    }
+
+    @Test
+    fun `createPlaylistAndAddPending creates playlist without pending media`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        val outcome = viewModel.createPlaylistAndAddPending("Solo Playlist", isVideo = true)
+        assertEquals(CreatePlaylistOutcome.Created("Solo Playlist"), outcome)
+        assertFalse(viewModel.showCreatePlaylistDialog.value)
+        assertEquals(listOf("Solo Playlist"), persistence.getPlaylists().map { it.name })
+    }
+
     private fun video(id: String) = PlayableMedia(
         id = id,
         title = "Video $id",
@@ -356,71 +530,5 @@ class PlayerViewModelTest {
         uri = "content://audio/$id",
         isVideo = false,
     )
-
-    /** Fake playback source: records restore and transport calls, lets the test
-     * drive state emissions. */
-    private class FakePlaybackStateSource(
-        initialState: PlaybackState = PlaybackState(),
-    ) : PlaybackStateSource {
-        private val _playbackState = MutableStateFlow(initialState)
-        override val playbackState: StateFlow<PlaybackState> =
-            _playbackState.asStateFlow()
-
-        var restoreCalls = 0
-            private set
-        var playCalls = 0
-        var pauseCalls = 0
-        var togglePlayPauseCalls = 0
-        val seekCalls = mutableListOf<Long>()
-        val speedCalls = mutableListOf<Float>()
-        val aspectRatioCalls = mutableListOf<AspectRatioMode>()
-        val videoZoomCalls = mutableListOf<Float>()
-        var stopCalls = 0
-
-        override fun restorePersistedQueueIfEmpty(): Boolean {
-            restoreCalls++
-            return true
-        }
-
-        override fun play() { playCalls++ }
-        override fun pause() { pauseCalls++ }
-        override fun togglePlayPause() { togglePlayPauseCalls++ }
-        override fun seekTo(positionMs: Long) { seekCalls.add(positionMs) }
-        override fun skipForward(deltaMs: Long) { seekCalls.add(deltaMs) }
-        override fun skipBackward(deltaMs: Long) { seekCalls.add(-deltaMs) }
-        override fun skipNext() {}
-        override fun skipPrevious() {}
-        override fun setSpeed(speed: Float) { speedCalls.add(speed) }
-        override fun setAspectRatio(mode: AspectRatioMode) { aspectRatioCalls.add(mode) }
-        override fun setVideoZoom(zoom: Float) { videoZoomCalls.add(zoom) }
-        override fun setShuffleEnabled(enabled: Boolean) {}
-        override fun cycleRepeatMode() {}
-        override fun setDecoderMode(mode: DecoderMode) {}
-        override fun setLocked(locked: Boolean) {}
-        override fun setSleepTimer(minutes: Int) {}
-        override fun cancelSleepTimer() {}
-        override fun clearResumedNotification() {}
-        override fun clearDecoderFallbackNote() {}
-        override fun clearUserNotification() {}
-        override fun stop() { stopCalls++ }
-        override fun attachSurface(surface: Surface) {}
-        override fun detachSurface() {}
-        override fun surfaceChanged(width: Int, height: Int) {}
-        override fun applySubtitleSettings(settings: AppSettings) {}
-        override fun applyPlaybackTweaks(settings: AppSettings) {}
-        override fun setVideoBackgroundActive(active: Boolean) {}
-        override fun setBackgroundPlaying(active: Boolean) {}
-        override fun selectTrack(type: TrackType, id: String?) {}
-        override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) {}
-        override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {}
-        override fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean = true
-
-        override val videoWidth: Int = 1920
-        override val videoHeight: Int = 1080
-
-        fun emit(state: PlaybackState) {
-            _playbackState.value = state
-        }
-    }
 
 }

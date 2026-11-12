@@ -19,6 +19,7 @@ import com.mpx.player.fakes.FakeMediaPersistenceRepository
 import com.mpx.player.fakes.FakeSettingsRepository
 import com.mpx.player.ui.screens.local.AddToPlaylistResult
 import com.mpx.player.ui.screens.local.CreatePlaylistOutcome
+import com.mpx.player.ui.screens.local.SortField
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -367,6 +368,72 @@ class MusicViewModelTest {
         viewModel.dismissAddToPlaylist()
         assertFalse(viewModel.showAddToPlaylistDialog.value)
         assertTrue(viewModel.tracksForPlaylistAdd.value.isEmpty())
+    }
+
+    @Test
+    fun `createPlaylistAndAddPending returns Failed and restores add dialog when persistence repository throws`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val t1 = track("1", "T1", "A1", "Alb1", "/storage/1.mp3")
+
+        viewModel.showAddToPlaylist(t1)
+        viewModel.openCreatePlaylist()
+        assertTrue(viewModel.showCreatePlaylistDialog.value)
+
+        // Simulate repository error
+        persistence.createPlaylistError = RuntimeException("I/O failure")
+
+        val outcome = viewModel.createPlaylistAndAddPending("Favorites", isVideo = false)
+
+        assertEquals(CreatePlaylistOutcome.Failed, outcome)
+        assertFalse(viewModel.showCreatePlaylistDialog.value)
+        assertTrue(viewModel.showAddToPlaylistDialog.value)
+        assertEquals(listOf(t1), viewModel.tracksForPlaylistAdd.value)
+    }
+
+    @Test
+    fun `addPendingToPlaylist handles insertion failure or duplicate item correctly`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val t1 = track("1", "T1", "A1", "Alb1", "/storage/1.mp3")
+        val t2 = track("2", "T2", "A2", "Alb2", "/storage/2.mp3")
+
+        val plId = persistence.createPlaylist("Rock", isVideoPlaylist = false)
+        // Pre-add t1 to cause duplicate rejection
+        persistence.addItemToPlaylist(
+            PlaylistItem(
+                playlistId = plId,
+                mediaUri = t1.path,
+                mediaId = t1.id,
+                title = t1.title,
+                isVideo = false,
+                durationMs = t1.durationMs,
+            )
+        )
+
+        viewModel.showAddToPlaylist(listOf(t1, t2))
+        val result = viewModel.addPendingToPlaylist(plId)
+
+        assertEquals(AddToPlaylistResult(added = 1, total = 2), result)
+        assertFalse(viewModel.showAddToPlaylistDialog.value)
+        assertTrue(viewModel.tracksForPlaylistAdd.value.isEmpty())
+    }
+
+    @Test
+    fun `corrupt sort field and all tabs hidden recover to defaults`() = runTest {
+        setTestMainDispatcher()
+        settingsRepo.stored = AppSettings(
+            musicPrimarySortField = "CORRUPT_SORT_FIELD",
+            showMusicTracksTab = false,
+            showMusicPlaylistsTab = false,
+            showMusicAlbumsTab = false,
+            showMusicArtistsTab = false,
+            showMusicFoldersTab = false,
+        )
+        val viewModel = createViewModel()
+
+        assertEquals(SortField.NAME, viewModel.sortField.value)
+        assertEquals(listOf(MusicTab.TRACKS), viewModel.visibleTabs.value)
     }
 
     /** Fake media repository: canned library lists the test controls. */
