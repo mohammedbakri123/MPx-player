@@ -41,12 +41,13 @@ import org.koin.dsl.module
  * `ioDispatcher` parameter sits between it and `hasPermission` and
  * keeps its default here.
  *
- * Phase 2c registers [com.mpx.player.ui.screens.music.MusicViewModel].
+ * Phase 2c & Audit Phase 5.3 registers [com.mpx.player.ui.screens.music.MusicViewModel].
  * Its constructor takes interfaces only
  * ([com.mpx.player.domain.repository.MediaRepository],
  * [com.mpx.player.domain.repository.MediaPersistenceRepository],
- * [com.mpx.player.domain.settings.AppSettingsRepository]); all three
- * resolve from [appModule] singles.
+ * [com.mpx.player.domain.settings.AppSettingsRepository]) resolved from
+ * [appModule] singles, plus named `savedStateHandle = get()` so search
+ * and history paging states survive dock-tab switches (#255, #326).
  *
  * Phase 2d adds [NetworkViewModel] the same way: its constructor
  * takes [com.mpx.player.playback.StreamPlayer], resolved from the
@@ -77,7 +78,7 @@ val viewModelModule = module {
     viewModel { (hasPermission: Boolean) ->
         LocalViewModel(get(), get(), get(), hasPermission, savedStateHandle = get())
     }
-    viewModel { MusicViewModel(get(), get(), get()) }
+    viewModel { MusicViewModel(get(), get(), get(), savedStateHandle = get()) }
     viewModel { NetworkViewModel(get<PlaybackCoordinator>()) }
     viewModel { MeViewModel(get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get()) }

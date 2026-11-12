@@ -1,5 +1,6 @@
 package com.mpx.player.ui.screens.music
 
+import androidx.lifecycle.SavedStateHandle
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioFolder
@@ -16,6 +17,8 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.fakes.FakeMediaPersistenceRepository
 import com.mpx.player.fakes.FakeSettingsRepository
+import com.mpx.player.ui.screens.local.AddToPlaylistResult
+import com.mpx.player.ui.screens.local.CreatePlaylistOutcome
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -58,7 +61,9 @@ class MusicViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel() = MusicViewModel(media, persistence, settingsRepo)
+    private fun createViewModel(
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    ) = MusicViewModel(media, persistence, settingsRepo, savedStateHandle = savedStateHandle)
 
     /** viewModelScope runs on Dispatchers.Main; the unconfined test
      * dispatcher executes the ViewModel's collectors eagerly, so
@@ -264,6 +269,104 @@ class MusicViewModelTest {
         assertEquals("GRID", settingsRepo.stored.musicViewMode)
         assertEquals("GRID", settingsRepo.stored.localViewMode)
         assertEquals(com.mpx.player.ui.screens.local.ViewMode.GRID, viewModel.viewMode.value)
+    }
+
+    @Test
+    fun `search and history state restores from SavedStateHandle verifying pop behaviour`() = runTest {
+        setTestMainDispatcher()
+        // Issue #255 & #326: SavedStateHandle retains search and history paging
+        // state when navigating away or switching tabs
+        val handle = SavedStateHandle(
+            mapOf(
+                "music.searchQuery" to "beethoven",
+                "music.isSearching" to true,
+                "music.historyLimit" to 200,
+            ),
+        )
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        assertEquals("beethoven", viewModel.searchQuery.value)
+        assertTrue(viewModel.isSearching.value)
+        assertEquals(200, viewModel.historyLimit.value)
+
+        // Writes go back through the handle
+        viewModel.setSearchQuery("bach")
+        assertEquals("bach", viewModel.searchQuery.value)
+        assertEquals("bach", handle.get<String>("music.searchQuery"))
+
+        viewModel.setSearching(false)
+        assertFalse(viewModel.isSearching.value)
+        assertEquals(false, handle.get<Boolean>("music.isSearching"))
+
+        viewModel.setHistoryLimit(300)
+        assertEquals(300, viewModel.historyLimit.value)
+        assertEquals(300, handle.get<Int>("music.historyLimit"))
+
+        viewModel.resetSearch()
+        assertEquals("", viewModel.searchQuery.value)
+        assertFalse(viewModel.isSearching.value)
+        assertEquals("", handle.get<String>("music.searchQuery"))
+        assertEquals(false, handle.get<Boolean>("music.isSearching"))
+    }
+
+    @Test
+    fun `showAddToPlaylist, dismiss, and addPendingToPlaylist manage pending audio tracks`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val t1 = track("1", "T1", "A1", "Alb1", "/storage/1.mp3")
+        val t2 = track("2", "T2", "A2", "Alb2", "/storage/2.mp3")
+
+        viewModel.showAddToPlaylist(listOf(t1, t2))
+        assertTrue(viewModel.showAddToPlaylistDialog.value)
+        assertEquals(listOf(t1, t2), viewModel.tracksForPlaylistAdd.value)
+
+        val plId = persistence.createPlaylist("Classical", isVideoPlaylist = false)
+        val result = viewModel.addPendingToPlaylist(plId)
+
+        assertEquals(AddToPlaylistResult(added = 2, total = 2), result)
+        assertFalse(viewModel.showAddToPlaylistDialog.value)
+        assertTrue(viewModel.tracksForPlaylistAdd.value.isEmpty())
+
+        val items = persistence.getPlaylistItems(plId)
+        assertEquals(listOf("/storage/1.mp3", "/storage/2.mp3"), items.map { it.mediaUri })
+    }
+
+    @Test
+    fun `createPlaylistAndAddPending creates audio playlist and adds pending tracks`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val t1 = track("1", "T1", "A1", "Alb1", "/storage/1.mp3")
+
+        viewModel.showAddToPlaylist(t1)
+        val outcome = viewModel.createPlaylistAndAddPending("New List", isVideo = false)
+
+        assertEquals(CreatePlaylistOutcome.Added("New List", added = 1, total = 1), outcome)
+        val pl = persistence.getPlaylists().first { it.name == "New List" }
+        assertFalse(pl.isVideoPlaylist)
+        assertEquals(listOf("/storage/1.mp3"), persistence.getPlaylistItems(pl.id).map { it.mediaUri })
+    }
+
+    @Test
+    fun `openCreatePlaylist and dismissCreatePlaylist manage dialog flags`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val t1 = track("1", "T1", "A1", "Alb1", "/storage/1.mp3")
+
+        viewModel.showAddToPlaylist(t1)
+        assertTrue(viewModel.showAddToPlaylistDialog.value)
+
+        viewModel.openCreatePlaylist()
+        assertFalse(viewModel.showAddToPlaylistDialog.value)
+        assertTrue(viewModel.showCreatePlaylistDialog.value)
+
+        // Dismissing create with pending tracks returns to add dialog (#310)
+        viewModel.dismissCreatePlaylist()
+        assertFalse(viewModel.showCreatePlaylistDialog.value)
+        assertTrue(viewModel.showAddToPlaylistDialog.value)
+
+        viewModel.dismissAddToPlaylist()
+        assertFalse(viewModel.showAddToPlaylistDialog.value)
+        assertTrue(viewModel.tracksForPlaylistAdd.value.isEmpty())
     }
 
     /** Fake media repository: canned library lists the test controls. */
