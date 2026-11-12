@@ -1,13 +1,19 @@
 package com.mpx.player.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.mpx.player.domain.model.PlaybackHistoryItem
 
 /**
  * Room entity representing an entry in playback history.
  */
-@Entity(tableName = "playback_history")
+@Entity(
+    tableName = "playback_history",
+    indices = [
+        Index("lastPlayedAt"),
+    ],
+)
 data class PlaybackHistoryEntity(
     @PrimaryKey
     val mediaUri: String,

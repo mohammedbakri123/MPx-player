@@ -1,6 +1,7 @@
 package com.mpx.player.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.mpx.player.domain.model.PlaybackResumePosition
 
@@ -12,7 +13,12 @@ import com.mpx.player.domain.model.PlaybackResumePosition
  * row id, which repeats across storage volumes. The PK stays a String, so
  * only the values written changed; no migration was needed.
  */
-@Entity(tableName = "playback_resume")
+@Entity(
+    tableName = "playback_resume",
+    indices = [
+        Index("lastUpdated"),
+    ],
+)
 data class PlaybackResumeEntity(
     @PrimaryKey
     val mediaId: String,
