@@ -126,6 +126,8 @@ data class AppSettings(
     // Renamed from downloadAutoUpdateCheck in #434 — the downloader
     // is gone; the check belongs to the #414 self-update.
     val appUpdateAutoCheck: Boolean = false,
+    // Floating island redesign: toggle to show/hide the player quick action strip
+    val showPlayerStripMenu: Boolean = true,
 ) {
     /**
      * Total number of currently visible music tabs.

@@ -153,6 +153,10 @@
     <string name="list_show_thumbnails">إظهار الصور المصغرة</string>
 
     <string name="player_resume_playback">استئناف التشغيل</string>
+    <string name="player_show_strip_menu">إظهار شريط الإجراءات</string>
+    <string name="player_show_strip_menu_desc">إظهار شريط الإجراءات السريعة العائم أسفل العنوان</string>
+    <string name="player_cd_expand">توسيع الإجراءات</string>
+    <string name="player_cd_collapse">طي الإجراءات</string>
     <string name="player_background_play">التشغيل في الخلفية</string>
     <string name="player_background_play_desc">يستمر تشغيل الصوت عند مغادرة التطبيق أو إيقاف تشغيل الشاشة. بالنسبة لمقاطع الفيديو، يستمر تشغيل الصوت فقط بينما يتوقف عرض الفيديو مؤقتاً.</string>
     <string name="player_menu_background_play">التشغيل في الخلفية (صوت فقط للفيديو)</string>

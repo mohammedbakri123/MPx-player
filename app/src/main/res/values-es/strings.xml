@@ -153,6 +153,10 @@
     <string name="list_show_thumbnails">Mostrar miniaturas</string>
 
     <string name="player_resume_playback">Reanudar reproducción</string>
+    <string name="player_show_strip_menu">Mostrar barra de acciones</string>
+    <string name="player_show_strip_menu_desc">Mostrar la barra flotante de acciones rápidas debajo del encabezado</string>
+    <string name="player_cd_expand">Expandir acciones</string>
+    <string name="player_cd_collapse">Contraer acciones</string>
     <string name="player_background_play">Reproducción en segundo plano</string>
     <string name="player_background_play_desc">Mantiene el audio sonando cuando la app pasa a segundo plano o se apaga la pantalla. En los vídeos, el audio continúa de verdad mientras la imagen se pausa.</string>
     <string name="player_menu_background_play">Reproducción en segundo plano (solo audio en vídeo)</string>

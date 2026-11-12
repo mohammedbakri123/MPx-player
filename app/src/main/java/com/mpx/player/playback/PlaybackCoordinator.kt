@@ -452,6 +452,10 @@ class PlaybackCoordinator(
         engine.applyPlaybackTweaks(settings)
     }
 
+    override fun setSubtitleMarginY(margin: Int) {
+        engine.setSubtitleMarginY(margin)
+    }
+
     /**
      * Live video-zoom for the pinch gesture (#172): applies immediately
      * without persisting; the caller saves the final zoom to settings

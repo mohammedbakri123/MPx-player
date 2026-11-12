@@ -442,6 +442,9 @@ class PlayerViewModelTest {
         viewModel.applyPlaybackTweaks(tweakSettings)
         assertEquals(listOf(tweakSettings), playback.appliedPlaybackTweaks)
 
+        viewModel.setSubtitleMarginY(115)
+        assertEquals(listOf(115), playback.setSubtitleMarginYCalls)
+
         viewModel.setVideoBackgroundActive(true)
         assertEquals(listOf(true), playback.videoBackgroundActiveCalls)
 

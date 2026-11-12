@@ -126,6 +126,7 @@ class PlayerViewModel(
     override fun surfaceChanged(width: Int, height: Int) = playback.surfaceChanged(width, height)
     override fun applySubtitleSettings(settings: AppSettings) = playback.applySubtitleSettings(settings)
     override fun applyPlaybackTweaks(settings: AppSettings) = playback.applyPlaybackTweaks(settings)
+    override fun setSubtitleMarginY(margin: Int) = playback.setSubtitleMarginY(margin)
     override fun setVideoBackgroundActive(active: Boolean) = playback.setVideoBackgroundActive(active)
     override fun setBackgroundPlaying(active: Boolean) = playback.setBackgroundPlaying(active)
     override fun selectTrack(type: TrackType, id: String?) = playback.selectTrack(type, id)

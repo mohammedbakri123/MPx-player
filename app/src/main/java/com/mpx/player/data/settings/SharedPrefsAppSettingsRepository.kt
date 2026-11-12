@@ -130,6 +130,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             inputConf = prefs.getString("input_conf", "") ?: "",
             enableLuaScripts = prefs.getBoolean("enable_lua_scripts", true),
             appUpdateAutoCheck = prefs.getBoolean("app_update_auto_check", false),
+            showPlayerStripMenu = prefs.getBoolean("show_player_strip_menu", true),
         )
 
         // Issue #257: one-time migration of the legacy "sensor"
@@ -242,6 +243,7 @@ class SharedPrefsAppSettingsRepository(context: Context) : AppSettingsRepository
             .putString("input_conf", settings.inputConf)
             .putBoolean("enable_lua_scripts", settings.enableLuaScripts)
             .putBoolean("app_update_auto_check", settings.appUpdateAutoCheck)
+            .putBoolean("show_player_strip_menu", settings.showPlayerStripMenu)
         // Issue #191: commit = true writes synchronously (layout saves
         // only — see the interface KDoc). apply() only queues the disk
         // write, and a swipe-away right after a layout change could kill

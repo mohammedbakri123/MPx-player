@@ -153,6 +153,10 @@
     <string name="list_show_thumbnails">थंबनेल दिखाएँ</string>
 
     <string name="player_resume_playback">प्लेबैक फिर से शुरू करें</string>
+    <string name="player_show_strip_menu">एक्शन स्ट्रिप दिखाएं</string>
+    <string name="player_show_strip_menu_desc">हेडर के नीचे फ्लोटिंग त्वरित एक्शन स्ट्रिप दिखाएं</string>
+    <string name="player_cd_expand">एक्शन विस्तृत करें</string>
+    <string name="player_cd_collapse">एक्शन संक्षिप्त करें</string>
     <string name="player_background_play">बैकग्राउंड प्ले</string>
     <string name="player_background_play_desc">ऐप बैकग्राउंड में जाने या स्क्रीन बंद होने पर भी ऑडियो चलता रहता है। वीडियो के लिए, वीडियो रेंडरिंग रुकने पर भी ऑडियो प्लेबैक ईमानदारी से जारी रहता है।</string>
     <string name="player_menu_background_play">बैकग्राउंड प्ले (वीडियो के लिए केवल ऑडियो)</string>

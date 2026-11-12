@@ -153,6 +153,10 @@
     <string name="list_show_thumbnails">Показывать миниатюры</string>
 
     <string name="player_resume_playback">Продолжить воспроизведение</string>
+    <string name="player_show_strip_menu">Показывать панель действий</string>
+    <string name="player_show_strip_menu_desc">Показывать плавающую панель быстрых действий под заголовком</string>
+    <string name="player_cd_expand">Развернуть действия</string>
+    <string name="player_cd_collapse">Свернуть действия</string>
     <string name="player_background_play">Фоновое воспроизведение</string>
     <string name="player_background_play_desc">Звук продолжает играть, когда приложение свёрнуто или экран выключен. Для видео звук честно продолжает играть, а отрисовка видео приостанавливается.</string>
     <string name="player_menu_background_play">Фоновое воспроизведение (для видео — только звук)</string>

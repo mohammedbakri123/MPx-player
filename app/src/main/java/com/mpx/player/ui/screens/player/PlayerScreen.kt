@@ -11,8 +11,15 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,9 +38,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -291,8 +301,23 @@ fun PlayerScreen(
             !gestureState.showBrightnessIndicator && !gestureState.showVolumeIndicator &&
             !gestureState.showZoomIndicator && !topBarActionsListState.isScrollInProgress
         ) {
-            delay(3000)
+            delay(3500)
             controlsVisible = false
+        }
+    }
+
+    // Dynamic subtitle margin in landscape to avoid covering subtitles with floating transport dock
+    LaunchedEffect(controlsVisible, isLandscapeOrientation, currentSettings.subtitleBottomPadding) {
+        if (isLandscapeOrientation) {
+            val margin = if (controlsVisible) 115 else 35
+            viewModel.setSubtitleMarginY(margin)
+        } else {
+            val normalMargin = when (currentSettings.subtitleBottomPadding.lowercase()) {
+                "small" -> 25
+                "large" -> 100
+                else -> 50
+            }
+            viewModel.setSubtitleMarginY(normalMargin)
         }
     }
 
@@ -374,49 +399,93 @@ fun PlayerScreen(
             currentDuration = currentDuration,
             gestureState = gestureState,
             viewModel = viewModel,
+            isLandscapeOrientation = isLandscapeOrientation,
         )
 
-        // Full Controls Overlay
-        AnimatedVisibility(
-            visible = controlsVisible && !isInPipMode && !state.isPreparing,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                PlayerTopChrome(
-                    onClose = onClose,
-                    state = state,
-                    currentSettings = currentSettings,
-                    isFavourite = isFavourite,
-                    topBarActionsListState = topBarActionsListState,
-                    onOpenSheet = { playbackSheetPage = it },
-                    onToggleFavourite = { viewModel.toggleFavourite() },
-                    onEnterPip = enterPip,
-                    onToggleBackgroundPlay = toggleBackgroundPlay,
-                    onAddToPlaylist = { state.currentItem?.let { viewModel.showAddToPlaylist(it) } },
-                    viewModel = viewModel,
-                )
+        val density = LocalDensity.current
+        val slide30dpPx = with(density) { 30.dp.roundToPx() }
+        val islandsVisible = controlsVisible && !isInPipMode && !state.isPreparing && !state.isLocked
 
-                PlayerBottomChrome(
-                    displayedCurrentTime = displayedCurrentTime,
-                    currentDuration = currentDuration,
-                    sliderProgress = sliderProgress,
-                    onSliderChange = {
-                        isScrubbingSlider = true
-                        scrubFraction = it
-                    },
-                    onSliderChangeFinished = {
-                        val target = (scrubFraction * currentDuration).toLong()
-                        viewModel.seekTo(target)
-                        isScrubbingSlider = false
-                    },
-                    state = state,
-                    isLandscapeOrientation = isLandscapeOrientation,
-                    onOpenSleepSheet = { playbackSheetPage = PlaybackSheetPage.SleepTimer },
-                    viewModel = viewModel,
-                )
-            }
+        // Top Floating Islands: Header pills + Strip menu
+        AnimatedVisibility(
+            visible = islandsVisible,
+            enter = slideInVertically(
+                initialOffsetY = { -slide30dpPx },
+                animationSpec = tween(durationMillis = 180, easing = LinearOutSlowInEasing),
+            ) + fadeIn(
+                animationSpec = tween(durationMillis = 180, easing = LinearOutSlowInEasing),
+            ) + scaleIn(
+                initialScale = 0.96f,
+                animationSpec = tween(durationMillis = 180, easing = LinearOutSlowInEasing),
+            ),
+            exit = slideOutVertically(
+                targetOffsetY = { -slide30dpPx },
+                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            ) + fadeOut(
+                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            ) + scaleOut(
+                targetScale = 0.96f,
+                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            ),
+            modifier = Modifier.align(Alignment.TopCenter),
+        ) {
+            PlayerTopChrome(
+                onClose = onClose,
+                state = state,
+                currentSettings = currentSettings,
+                isFavourite = isFavourite,
+                isLandscapeOrientation = isLandscapeOrientation,
+                topBarActionsListState = topBarActionsListState,
+                onOpenSheet = { playbackSheetPage = it },
+                onToggleFavourite = { viewModel.toggleFavourite() },
+                onEnterPip = enterPip,
+                onToggleBackgroundPlay = toggleBackgroundPlay,
+                onAddToPlaylist = { state.currentItem?.let { viewModel.showAddToPlaylist(it) } },
+                viewModel = viewModel,
+            )
+        }
+
+        // Bottom Floating Island: Transport Dock
+        AnimatedVisibility(
+            visible = islandsVisible,
+            enter = slideInVertically(
+                initialOffsetY = { slide30dpPx },
+                animationSpec = tween(durationMillis = 180, easing = LinearOutSlowInEasing),
+            ) + fadeIn(
+                animationSpec = tween(durationMillis = 180, easing = LinearOutSlowInEasing),
+            ) + scaleIn(
+                initialScale = 0.96f,
+                animationSpec = tween(durationMillis = 180, easing = LinearOutSlowInEasing),
+            ),
+            exit = slideOutVertically(
+                targetOffsetY = { slide30dpPx },
+                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            ) + fadeOut(
+                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            ) + scaleOut(
+                targetScale = 0.96f,
+                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            ),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            PlayerBottomChrome(
+                displayedCurrentTime = displayedCurrentTime,
+                currentDuration = currentDuration,
+                sliderProgress = sliderProgress,
+                onSliderChange = {
+                    isScrubbingSlider = true
+                    scrubFraction = it
+                },
+                onSliderChangeFinished = {
+                    val target = (scrubFraction * currentDuration).toLong()
+                    viewModel.seekTo(target)
+                    isScrubbingSlider = false
+                },
+                state = state,
+                isLandscapeOrientation = isLandscapeOrientation,
+                onOpenSleepSheet = { playbackSheetPage = PlaybackSheetPage.SleepTimer },
+                viewModel = viewModel,
+            )
         }
     }
 

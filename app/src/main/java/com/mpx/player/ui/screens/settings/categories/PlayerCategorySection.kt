@@ -27,6 +27,15 @@ fun PlayerCategorySection(
         ToggleRow(stringResource(R.string.player_resume_playback), settings.resumePlayback) {
             onUpdate(settings.copy(resumePlayback = it))
         }
+        ToggleRow(stringResource(R.string.player_show_strip_menu), settings.showPlayerStripMenu) {
+            onUpdate(settings.copy(showPlayerStripMenu = it))
+        }
+        Text(
+            stringResource(R.string.player_show_strip_menu_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MpxTheme.colors.textSecondary,
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+        )
         ToggleRow(stringResource(R.string.player_background_play), settings.backgroundPlay) { enabled ->
             onUpdate(settings.copy(backgroundPlay = enabled))
             if (!enabled) {
