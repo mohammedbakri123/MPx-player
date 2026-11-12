@@ -34,7 +34,9 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.AudioFolder
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.MpxTouchTarget
 
 /**
  * The shared audio folder tiles (#185): the Folders tab's rows and grid
@@ -69,13 +71,13 @@ fun AudioFolderRow(
                 else Color.Transparent
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = MpxSpaceL, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Rounded icon tile with selected check.
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(MpxTouchTarget)
                 .clip(MpxShapes.small)
                 .background(MpxTheme.colors.surfaceVariant),
             contentAlignment = Alignment.Center,

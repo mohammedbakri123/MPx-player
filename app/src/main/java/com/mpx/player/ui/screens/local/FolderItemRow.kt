@@ -39,6 +39,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSpaceL
 
 private fun formatFolderDate(epochMillis: Long): String {
     if (epochMillis <= 0L) return ""
@@ -73,7 +74,7 @@ fun FolderItemRow(
                 else Color.Transparent
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = MpxSpaceL, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Real MediaStore folder thumbnail with honest vector fallback and caching.

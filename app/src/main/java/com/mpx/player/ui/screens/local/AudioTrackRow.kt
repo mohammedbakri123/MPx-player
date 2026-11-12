@@ -38,8 +38,11 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.ui.components.AsyncAudioTrackThumbnail
+import com.mpx.player.ui.theme.MpxIconSize
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.MpxTouchTarget
 
 /**
  * The shared audio track tiles (#185): the Tracks tab's rows and grid
@@ -76,13 +79,13 @@ fun AudioTrackRow(
                 else Color.Transparent
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = MpxSpaceL, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Square cover thumb with duration badge and selected check.
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(MpxTouchTarget)
                 .clip(MpxShapes.small)
                 .background(MpxTheme.colors.surfaceVariant),
             contentAlignment = Alignment.Center,
@@ -90,7 +93,7 @@ fun AudioTrackRow(
             AsyncAudioTrackThumbnail(
                 track = track,
                 modifier = Modifier.fillMaxSize(),
-                iconSize = 24.dp,
+                iconSize = MpxIconSize,
                 showThumbnails = showThumbnails,
             )
 
@@ -175,7 +178,7 @@ fun AudioTrackRow(
             Spacer(Modifier.width(8.dp))
             IconButton(
                 onClick = onOptionsClick,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(MpxTouchTarget),
             ) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,

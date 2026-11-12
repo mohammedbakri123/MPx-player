@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceS
+import com.mpx.player.ui.theme.MpxSpaceXxs
 
 /**
  * M2.5 chip + badge atoms (#106). Selection is blue, sparingly;
@@ -60,7 +61,7 @@ fun MpxBadge(
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = MpxSpaceS, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = MpxSpaceS, vertical = MpxSpaceXxs),
             style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
         )
     }

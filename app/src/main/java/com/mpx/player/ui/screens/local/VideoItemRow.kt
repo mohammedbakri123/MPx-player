@@ -43,7 +43,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxIconSize
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSpaceL
+import com.mpx.player.ui.theme.MpxSpaceM
+import com.mpx.player.ui.theme.MpxSpaceS
+import com.mpx.player.ui.theme.MpxTouchTarget
 
 private fun formatVideoDate(epochSeconds: Long): String {
     if (epochSeconds <= 0L) return ""
@@ -81,13 +86,13 @@ fun VideoItemRow(
                 else Color.Transparent
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = MpxSpaceL, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Video thumbnail with duration overlay
         Box(
             modifier = Modifier
-                .size(width = 68.dp, height = 48.dp)
+                .size(width = 68.dp, height = MpxTouchTarget)
                 .clip(MpxShapes.small)
                 .background(MpxTheme.colors.surfaceVariant),
             contentAlignment = Alignment.Center,
@@ -95,7 +100,7 @@ fun VideoItemRow(
             AsyncVideoThumbnail(
                 video = video,
                 modifier = Modifier.fillMaxSize(),
-                iconSize = 24.dp,
+                iconSize = MpxIconSize,
                 showThumbnails = showThumbnails,
             )
 
