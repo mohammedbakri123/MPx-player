@@ -469,6 +469,10 @@ class MpvSubtitleRendererTest {
             ),
         )
 
+        // In production, SubtitleManager commits the updated item to PlaybackQueue on ISSUED.
+        // Update the host queue to reflect the committed item before the repeat call.
+        fakeCoreHost.queue[0] = updatedMedia
+
         // Calling replaceMediaItem again with the same media returns ALREADY_ADDED
         val repeatResult = renderer.replaceMediaItem(0, updatedMedia)
         assertEquals(ReplaceMediaItemResult.ALREADY_ADDED, repeatResult)
