@@ -8,7 +8,6 @@ import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.domain.model.AudioArtist
 import com.mpx.player.domain.model.AudioFolder
 import com.mpx.player.domain.model.AudioTrack
-import com.mpx.player.ui.screens.local.components.formatDuration
 import java.io.File
 import java.util.Locale
 
@@ -123,7 +122,6 @@ internal class AudioMediaScanner(
                                 title = title,
                                 artist = artist,
                                 album = album,
-                                durationFormatted = formatDuration(durationMs),
                                 durationMs = durationMs,
                                 path = effectivePath,
                                 contentUri = contentUri,

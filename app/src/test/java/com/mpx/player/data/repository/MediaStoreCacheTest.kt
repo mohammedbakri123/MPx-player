@@ -13,7 +13,6 @@ class MediaStoreCacheTest {
         name = "Folder $id",
         path = path,
         videoCount = 1,
-        totalSizeFormatted = "1 MB",
     )
 
     private fun createVideo(id: String, path: String, bucketId: String) = VideoFile(

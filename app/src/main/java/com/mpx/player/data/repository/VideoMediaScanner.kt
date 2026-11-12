@@ -7,8 +7,6 @@ import android.provider.MediaStore
 import com.mpx.player.R
 import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.domain.model.VideoFile
-import com.mpx.player.ui.screens.local.components.formatDuration
-import com.mpx.player.ui.screens.local.components.formatSize
 import java.io.File
 import java.util.Locale
 
@@ -228,7 +226,6 @@ internal class VideoMediaScanner(
                 name = acc.name,
                 path = acc.path,
                 videoCount = acc.count,
-                totalSizeFormatted = formatSize(acc.totalSizeBytes),
                 totalSizeBytes = acc.totalSizeBytes,
                 totalDurationMs = acc.totalDurationMs,
                 isNew = acc.isNew,
@@ -342,12 +339,9 @@ internal class VideoMediaScanner(
                                     contentUri = contentUri,
                                     durationMs = durationMs,
                                     sizeBytes = sizeBytes,
-                                    sizeFormatted = formatSize(sizeBytes),
                                     dateModified = dateModified,
                                     bucketId = bucketId,
                                     folderName = folderName,
-                                    formattedDuration = formatDuration(durationMs),
-                                    formattedSize = formatSize(sizeBytes),
                                     isRemovable = helper.isRemovablePath(path),
                                     isNew = dateAdded > sevenDaysAgoSec || dateModified > sevenDaysAgoSec,
                                     heightPx = heightPx,
@@ -502,8 +496,6 @@ internal class VideoMediaScanner(
                                 dateModified = dateModified,
                                 bucketId = bucketId,
                                 folderName = folderName,
-                                formattedDuration = formatDuration(durationMs),
-                                formattedSize = formatSize(size),
                                 isRemovable = isRemovable,
                                 isNew = isRecent,
                                 heightPx = heightPx,

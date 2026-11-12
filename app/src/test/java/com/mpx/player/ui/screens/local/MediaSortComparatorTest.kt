@@ -73,8 +73,8 @@ class MediaSortComparatorTest {
 
     @Test
     fun `folderComparator sorts by NAME, COUNT, and SIZE`() {
-        val f1 = MediaFolder(id = "1", name = "Videos", path = "/v", videoCount = 10, totalSizeFormatted = "1.0 MB", totalSizeBytes = 1000L)
-        val f2 = MediaFolder(id = "2", name = "Camera", path = "/c", videoCount = 50, totalSizeFormatted = "500 KB", totalSizeBytes = 500L)
+        val f1 = MediaFolder(id = "1", name = "Videos", path = "/v", videoCount = 10, totalSizeBytes = 1000L)
+        val f2 = MediaFolder(id = "2", name = "Camera", path = "/c", videoCount = 50, totalSizeBytes = 500L)
         val list = listOf(f1, f2)
 
         val byName = list.sortedWith(MediaSortComparator.folderComparator(SortField.NAME, reverse = false))
@@ -91,8 +91,8 @@ class MediaSortComparatorTest {
 
     @Test
     fun `audioTrackComparator sorts by track details`() {
-        val t1 = AudioTrack(id = "1", title = "Song B", artist = "Artist Z", album = "Album 1", durationFormatted = "0:02", path = "/1.mp3", durationMs = 2000L)
-        val t2 = AudioTrack(id = "2", title = "Song A", artist = "Artist A", album = "Album 2", durationFormatted = "0:01", path = "/2.mp3", durationMs = 1000L)
+        val t1 = AudioTrack(id = "1", title = "Song B", artist = "Artist Z", album = "Album 1", path = "/1.mp3", durationMs = 2000L)
+        val t2 = AudioTrack(id = "2", title = "Song A", artist = "Artist A", album = "Album 2", path = "/2.mp3", durationMs = 1000L)
         val list = listOf(t1, t2)
 
         val byName = list.sortedWith(MediaSortComparator.audioTrackComparator(SortField.NAME, SortField.NAME, reverse = false))

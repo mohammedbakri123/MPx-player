@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.AudioTrack
 import com.mpx.player.ui.components.AsyncAudioTrackThumbnail
+import com.mpx.player.ui.screens.local.components.formatDuration
 import com.mpx.player.ui.theme.MpxIconSize
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceL
@@ -117,10 +118,10 @@ fun AudioTrackRow(
 
             // #315: durationMs 0 means unknown (MediaStore reports 0 for it,
             // and a genuinely 0-length file has nothing worth showing) —
-            // no badge, not "0:00". durationFormatted is "0:00" for 0 ms.
-            if (showDuration && track.durationMs > 0 && track.durationFormatted.isNotBlank()) {
+            // no badge, not "0:00". durationMs is 0 for unknown duration.
+            if (showDuration && track.durationMs > 0) {
                 VideoDurationBadge(
-                    duration = track.durationFormatted,
+                    duration = formatDuration(track.durationMs),
                     modifier = Modifier.align(Alignment.BottomEnd),
                 )
             }
@@ -235,9 +236,9 @@ fun AudioTrackGridCard(
                 )
 
                 // #315: durationMs 0 means unknown — no badge, not "0:00".
-                if (showDuration && track.durationMs > 0 && track.durationFormatted.isNotBlank()) {
+                if (showDuration && track.durationMs > 0) {
                     VideoDurationBadge(
-                        duration = track.durationFormatted,
+                        duration = formatDuration(track.durationMs),
                         modifier = Modifier.align(Alignment.BottomEnd),
                     )
                 }

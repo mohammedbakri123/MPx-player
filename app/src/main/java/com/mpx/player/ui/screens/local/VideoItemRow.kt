@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.ui.components.AsyncVideoThumbnail
+import com.mpx.player.ui.screens.local.components.formatDuration
+import com.mpx.player.ui.screens.local.components.formatSize
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -124,10 +126,10 @@ fun VideoItemRow(
 
             // #315: durationMs 0 means unknown (MediaStore reports 0 for it,
             // and a genuinely 0-length file has nothing worth showing) —
-            // no badge, not "0:00". formattedDuration is "0:00" for 0 ms.
-            if (showDuration && video.durationMs > 0 && video.formattedDuration.isNotBlank()) {
+            // no badge, not "0:00". durationMs is 0 for unknown duration.
+            if (showDuration && video.durationMs > 0) {
                 VideoDurationBadge(
-                    duration = video.formattedDuration,
+                    duration = formatDuration(video.durationMs),
                     modifier = Modifier.align(Alignment.BottomEnd),
                 )
             }
@@ -172,8 +174,8 @@ fun VideoItemRow(
             }
 
             val metaParts = mutableListOf<String>()
-            if (showSize && video.formattedSize.isNotBlank()) {
-                metaParts.add(video.formattedSize)
+            if (showSize) {
+                metaParts.add(formatSize(video.sizeBytes))
             }
             if (showDate) {
                 val dateStr = formatVideoDate(video.dateModified)
@@ -279,9 +281,9 @@ fun VideoItemGridCard(
                 )
 
                 // #315: durationMs 0 means unknown — no badge, not "0:00".
-                if (showDuration && video.durationMs > 0 && video.formattedDuration.isNotBlank()) {
+                if (showDuration && video.durationMs > 0) {
                     VideoDurationBadge(
-                        duration = video.formattedDuration,
+                        duration = formatDuration(video.durationMs),
                         modifier = Modifier.align(Alignment.BottomEnd),
                     )
                 }
@@ -336,8 +338,8 @@ fun VideoItemGridCard(
             )
 
             val metaParts = mutableListOf<String>()
-            if (showSize && video.formattedSize.isNotBlank()) {
-                metaParts.add(video.formattedSize)
+            if (showSize) {
+                metaParts.add(formatSize(video.sizeBytes))
             }
             if (showDate) {
                 val dateStr = formatVideoDate(video.dateModified)

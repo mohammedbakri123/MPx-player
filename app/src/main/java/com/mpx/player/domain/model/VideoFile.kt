@@ -16,12 +16,9 @@ data class VideoFile(
     val contentUri: String = "",
     val durationMs: Long = 0L,
     val sizeBytes: Long = 0L,
-    val sizeFormatted: String = "",
     val dateModified: Long = 0L,
     val bucketId: String = "",
     val folderName: String = "",
-    val formattedDuration: String = "",
-    val formattedSize: String = "",
     val isRemovable: Boolean = false,
     val isNew: Boolean = false,
     // From MediaStore WIDTH/HEIGHT. Frame rate has no MediaStore column, so

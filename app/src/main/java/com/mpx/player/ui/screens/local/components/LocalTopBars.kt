@@ -162,7 +162,7 @@ fun LocalFolderTopBar(
                     )
                     val count = filteredFolderVideos.size
                     val sizeStr = if (folderSearchQuery.isBlank()) {
-                        folder.totalSizeFormatted
+                        formatSize(folder.totalSizeBytes)
                     } else {
                         formatSize(filteredFolderVideos.sumOf { it.sizeBytes })
                     }

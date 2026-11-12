@@ -8,7 +8,6 @@ data class AudioTrack(
     val title: String,
     val artist: String,
     val album: String,
-    val durationFormatted: String,
     val durationMs: Long = 0L,
     val path: String = "",
     // Local playback fix: same as VideoFile.contentUri — the MediaStore
