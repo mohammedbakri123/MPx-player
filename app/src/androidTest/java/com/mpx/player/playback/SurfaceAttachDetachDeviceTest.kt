@@ -2,8 +2,6 @@ package com.mpx.player.playback
 
 import android.content.Context
 import android.graphics.SurfaceTexture
-import android.os.Handler
-import android.os.Looper
 import android.view.Surface
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -11,6 +9,7 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.engine.FakeMpvPort
 import com.mpx.player.playback.engine.MpvCoreEngine
 import com.mpx.player.playback.engine.PlayerEngine
+import com.mpx.player.playback.engine.RealEngineHandler
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -42,7 +41,8 @@ class SurfaceAttachDetachDeviceTest {
     private lateinit var realSurface: Surface
     private lateinit var testHost: DeviceTestHost
     private lateinit var testListener: DeviceTestListener
-    private val mainHandler = Handler(Looper.getMainLooper())
+    // Phase 6 audit: MpvCoreEngine takes an EngineHandler, not a raw Handler.
+    private val mainHandler = RealEngineHandler()
 
     private class DeviceTestHost : MpvCoreEngine.Host {
         var queue = mutableListOf<PlayableMedia>()
