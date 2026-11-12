@@ -107,7 +107,7 @@ Native calls to `libmpv` are decoupled behind the `MpvPort` interface (`playback
 ### Engine Subsystems
 
 - **`MpvPlayerEngine` (538 lines):** Facade implementing `PlayerEngine`. Delegates native commands and queries to internal engine collaborators. Retains presentation-specific aspect-ratio and video-zoom conversions (`setAspectRatio`, `setVideoZoom`).
-- **`MpvCoreEngine` (1,305 lines):** Core mpv lifecycle manager. Handles engine initialization, `loadfile` dispatch, position/duration tracking, playback state caching, property observation, and hardware decoder fallback chains (`attemptDecoderFallback`).
+- **`MpvCoreEngine` (1,307 lines):** Core mpv lifecycle manager. Handles engine initialization, `loadfile` dispatch, position/duration tracking, playback state caching, property observation, and hardware decoder fallback chains (`attemptDecoderFallback`).
 - **`MpvSurfaceManager` (160 lines):** Manages Android `Surface` attachment and libmpv video output (VO) recovery under `surfaceLock`. Restores `vo=gpu` upon surface creation, surface change, or playback resumption. Correctly suppresses redundant VO restoration during load preparation (`willLoad = true`) unless `voIsNull = true`.
 - **`MpvTrackSelection` (254 lines):** Reads `track-list` and controls audio, video, and subtitle track selection (`aid`, `vid`, `sid`) via `MpvPort`. Interacts with `MpvSubtitleRenderer` to clear external subtitle pick reservations when embedded tracks or "Off" are selected.
 - **`MpvSubtitleRenderer` (832 lines):** Manages subtitle styling options (`applySubtitleSettings`), codepage selection (`applySubtitleCodepage`), pending subtitle queueing during media loading, reapplication of remembered external subtitle picks, and asynchronous sub-add outcome confirmation with a 5000 ms timeout.
@@ -177,7 +177,7 @@ Dependencies are configured across three Koin modules in `app/src/main/java/com/
 | `PlaybackQueue` | `app/src/main/java/com/mpx/player/playback/PlaybackQueue.kt` | 596 |
 | `SubtitleManager` | `app/src/main/java/com/mpx/player/playback/SubtitleManager.kt` | 424 |
 | `EngineEventTranslator` | `app/src/main/java/com/mpx/player/playback/EngineEventTranslator.kt` | 363 |
-| `MpvCoreEngine` | `app/src/main/java/com/mpx/player/playback/engine/MpvCoreEngine.kt` | 1,305 |
+| `MpvCoreEngine` | `app/src/main/java/com/mpx/player/playback/engine/MpvCoreEngine.kt` | 1,307 |
 | `MpvSurfaceManager` | `app/src/main/java/com/mpx/player/playback/engine/MpvSurfaceManager.kt` | 160 |
 | `MpvTrackSelection` | `app/src/main/java/com/mpx/player/playback/engine/MpvTrackSelection.kt` | 254 |
 | `MpvSubtitleRenderer` | `app/src/main/java/com/mpx/player/playback/engine/MpvSubtitleRenderer.kt` | 832 |
