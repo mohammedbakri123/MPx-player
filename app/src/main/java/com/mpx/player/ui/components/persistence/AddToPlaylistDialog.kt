@@ -36,8 +36,12 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.CustomPlaylist
 import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxIconSize
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSpaceM
+import com.mpx.player.ui.theme.MpxSpaceS
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.MpxTouchTarget
 
 /**
  * Dialog to add a media track to an existing custom playlist or create a new one.
@@ -78,17 +82,17 @@ fun AddToPlaylistDialog(
                         .fillMaxWidth()
                         .clip(MpxShapes.small)
                         .clickable { onCreateNewPlaylist() }
-                        .heightIn(min = 48.dp)
-                        .padding(vertical = 10.dp, horizontal = 8.dp),
+                        .heightIn(min = MpxTouchTarget)
+                        .padding(vertical = 10.dp, horizontal = MpxSpaceS),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                         contentDescription = null,
                         tint = MpxTheme.colors.primary,
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(MpxIconSize),
                     )
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(MpxSpaceM))
                     Text(
                         text = stringResource(R.string.playlist_create_new_action),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -123,7 +127,8 @@ fun AddToPlaylistDialog(
                                     .fillMaxWidth()
                                     .clip(MpxShapes.small)
                                     .clickable { onSelectPlaylist(pl) }
-                                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                                    .heightIn(min = MpxTouchTarget)
+                                    .padding(vertical = 10.dp, horizontal = MpxSpaceS),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Icon(
@@ -132,7 +137,7 @@ fun AddToPlaylistDialog(
                                     tint = MpxTheme.colors.textSecondary,
                                     modifier = Modifier.size(20.dp),
                                 )
-                                Spacer(Modifier.width(12.dp))
+                                Spacer(Modifier.width(MpxSpaceM))
                                 Column {
                                     Text(
                                         text = pl.name,

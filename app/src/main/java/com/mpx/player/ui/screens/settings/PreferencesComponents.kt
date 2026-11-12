@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,9 +26,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxIconSize
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
+import com.mpx.player.ui.theme.MpxSpaceXl
+import com.mpx.player.ui.theme.MpxSpaceXxl
+import com.mpx.player.ui.theme.MpxSpaceXxs
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.MpxTouchTarget
 
 /**
  * Shared Preferences-page atoms (#158, mpvEx parity). The pattern follows
@@ -44,7 +50,7 @@ fun PreferenceSectionHeader(
 ) {
     Text(
         text = text,
-        modifier = modifier.padding(horizontal = 32.dp, vertical = 16.dp),
+        modifier = modifier.padding(horizontal = MpxSpaceXxl, vertical = MpxSpaceL),
         style = MaterialTheme.typography.labelLarge,
         color = MpxTheme.colors.primary,
     )
@@ -59,7 +65,7 @@ fun PreferenceCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = MpxSpaceL),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceRaised),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -84,6 +90,7 @@ fun PreferenceRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = MpxTouchTarget)
             .clickable(onClick = onClick)
             .padding(horizontal = MpxSpaceL, vertical = MpxSpaceM),
         verticalAlignment = Alignment.CenterVertically,
@@ -92,7 +99,7 @@ fun PreferenceRow(
             icon,
             contentDescription = null,
             tint = MpxTheme.colors.primary,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(MpxIconSize),
         )
         Spacer(modifier = Modifier.size(MpxSpaceM))
         Column(modifier = Modifier.weight(1f)) {
@@ -104,7 +111,7 @@ fun PreferenceRow(
                 overflow = TextOverflow.Ellipsis,
             )
             if (subtitle != null) {
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(MpxSpaceXxs))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -123,7 +130,7 @@ fun PreferenceRow(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MpxTheme.colors.textMuted,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(MpxIconSize),
             )
         }
     }

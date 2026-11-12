@@ -34,8 +34,11 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.model.AudioAlbum
 import com.mpx.player.ui.components.AsyncAlbumThumbnail
+import com.mpx.player.ui.theme.MpxIconSize
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.MpxTouchTarget
 
 /**
  * The shared audio album tiles (#185): the Albums tab's rows and grid
@@ -66,13 +69,13 @@ fun AudioAlbumRow(
                 else Color.Transparent
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = MpxSpaceL, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Square cover thumb with selected check.
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(MpxTouchTarget)
                 .clip(MpxShapes.small)
                 .background(MpxTheme.colors.surfaceVariant),
             contentAlignment = Alignment.Center,
@@ -80,7 +83,7 @@ fun AudioAlbumRow(
             AsyncAlbumThumbnail(
                 album = album,
                 modifier = Modifier.fillMaxSize(),
-                iconSize = 24.dp,
+                iconSize = MpxIconSize,
                 showThumbnails = showThumbnails,
             )
 
@@ -165,7 +168,7 @@ fun AudioAlbumGridCard(
                 AsyncAlbumThumbnail(
                     album = album,
                     modifier = Modifier.fillMaxSize(),
-                    iconSize = 48.dp,
+                    iconSize = MpxTouchTarget,
                     showThumbnails = showThumbnails,
                 )
 

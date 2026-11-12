@@ -35,6 +35,10 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import com.mpx.player.R
+import com.mpx.player.ui.theme.MpxIconSize
+import com.mpx.player.ui.theme.MpxSpaceM
+import com.mpx.player.ui.theme.MpxSpaceXs
+import com.mpx.player.ui.theme.MpxSpaceXxs
 
 /**
  * M2.5 bar atoms (#106), dock restyled mpvEx-style (#157). The dock is a
@@ -63,7 +67,7 @@ fun RowScope.MpxDockTab(
             Icon(
                 icon,
                 contentDescription = label,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(MpxIconSize),
             )
         },
         label = {
@@ -159,13 +163,13 @@ fun MpxMiniPlayerStrip(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(2.dp)
+                .height(MpxSpaceXxs)
                 .background(MpxTheme.colors.primary.copy(alpha = 0.25f)),
         ) {
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth(progress.coerceIn(0f, 1f))
-                    .height(2.dp)
+                    .height(MpxSpaceXxs)
                     .background(MpxTheme.colors.primary),
             )
         }
@@ -221,14 +225,14 @@ fun MpxCompactTopBar(
             .background(MpxTheme.colors.black)
             .statusBarsPadding()
             .height(56.dp)
-            .padding(start = 4.dp, end = 4.dp),
+            .padding(horizontal = MpxSpaceXs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         navigationIcon()
         Box(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp),
+                .padding(start = MpxSpaceM),
             contentAlignment = Alignment.CenterStart,
         ) {
             title()

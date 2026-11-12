@@ -23,8 +23,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
+import com.mpx.player.ui.theme.MpxSpaceXxs
+import com.mpx.player.ui.theme.MpxTouchTarget
 
 /**
  * M2.5 tile atoms (#106). Data-free: callers pass strings and a
@@ -44,13 +47,13 @@ fun MpxFolderTile(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = MpxSpaceL, vertical = MpxSpaceS),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
             shape = MpxShapes.small,
             color = MpxTheme.colors.surfaceRaised,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(MpxTouchTarget),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(icon, contentDescription = null, tint = MpxTheme.colors.primary)
@@ -65,7 +68,7 @@ fun MpxFolderTile(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(MpxSpaceXxs))
             Text(
                 text = countText,
                 style = MaterialTheme.typography.bodySmall,

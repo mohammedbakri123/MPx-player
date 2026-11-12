@@ -18,6 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.MpxSpaceM
+import com.mpx.player.ui.theme.MpxSpaceS
+import com.mpx.player.ui.theme.MpxSpaceXl
+import com.mpx.player.ui.theme.MpxTouchTarget
 
 /**
  * M2.5 button atoms (#106). Tokens only, no screen logic.
@@ -36,7 +40,7 @@ fun MpxPrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = 48.dp),
+        modifier = modifier.defaultMinSize(minHeight = MpxTouchTarget),
         shape = MpxShapes.large,
         colors = ButtonDefaults.buttonColors(
             containerColor = MpxTheme.colors.primary,
@@ -44,11 +48,11 @@ fun MpxPrimaryButton(
             disabledContainerColor = MpxTheme.colors.primaryVariant,
             disabledContentColor = MpxTheme.colors.textMuted,
         ),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(horizontal = MpxSpaceXl, vertical = MpxSpaceM),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null)
-            Spacer(modifier = Modifier.size(8.dp))
+            Spacer(modifier = Modifier.size(MpxSpaceS))
         }
         Text(text)
     }
@@ -65,7 +69,7 @@ fun MpxSecondaryButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = 48.dp),
+        modifier = modifier.defaultMinSize(minHeight = MpxTouchTarget),
         shape = MpxShapes.large,
         border = ButtonDefaults.outlinedButtonBorder.copy(
             brush = androidx.compose.ui.graphics.SolidColor(MpxTheme.colors.border),
@@ -74,11 +78,11 @@ fun MpxSecondaryButton(
             contentColor = MpxTheme.colors.textSecondary,
             disabledContentColor = MpxTheme.colors.textMuted,
         ),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(horizontal = MpxSpaceXl, vertical = MpxSpaceM),
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null)
-            Spacer(modifier = Modifier.size(8.dp))
+            Spacer(modifier = Modifier.size(MpxSpaceS))
         }
         Text(text)
     }
@@ -94,7 +98,7 @@ fun MpxTextButton(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = 48.dp),
+        modifier = modifier.defaultMinSize(minHeight = MpxTouchTarget),
         colors = ButtonDefaults.textButtonColors(
             contentColor = MpxTheme.colors.primary,
             disabledContentColor = MpxTheme.colors.textMuted,
@@ -114,7 +118,7 @@ fun MpxPillFab(
 ) {
     ExtendedFloatingActionButton(
         onClick = onClick,
-        modifier = modifier.height(48.dp),
+        modifier = modifier.height(MpxTouchTarget),
         shape = MpxShapes.extraLarge,
         containerColor = MpxTheme.colors.primary,
         contentColor = MpxTheme.colors.textPrimary,
