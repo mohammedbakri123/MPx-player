@@ -1,12 +1,18 @@
 package com.mpx.player.ui.screens.player
 
 import android.content.pm.ActivityInfo
+import android.net.Uri
+import android.view.Surface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
+import com.mpx.player.playback.AspectRatioMode
+import com.mpx.player.playback.DecoderMode
+import com.mpx.player.playback.PlaybackController
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.PlaybackStateSource
+import com.mpx.player.playback.engine.TrackType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,7 +43,7 @@ import kotlinx.coroutines.launch
 class PlayerViewModel(
     private val playback: PlaybackStateSource,
     private val settingsRepository: AppSettingsRepository,
-) : ViewModel() {
+) : ViewModel(), PlaybackController {
 
     /** Playback state, collected by the screen exactly as before. */
     val playbackState: StateFlow<PlaybackState> = playback.playbackState
@@ -81,6 +87,45 @@ class PlayerViewModel(
         if (playback.playbackState.value.queue.isNotEmpty()) return false
         return playback.restorePersistedQueueIfEmpty()
     }
+
+    // -- Playback and transport controls (R-3, R-10) ---------------------
+
+    override fun play() = playback.play()
+    override fun pause() = playback.pause()
+    override fun togglePlayPause() = playback.togglePlayPause()
+    override fun seekTo(positionMs: Long) = playback.seekTo(positionMs)
+    override fun skipForward(deltaMs: Long) = playback.skipForward(deltaMs)
+    override fun skipBackward(deltaMs: Long) = playback.skipBackward(deltaMs)
+    override fun skipNext() = playback.skipNext()
+    override fun skipPrevious() = playback.skipPrevious()
+    override fun setSpeed(speed: Float) = playback.setSpeed(speed)
+    override fun setAspectRatio(mode: AspectRatioMode) = playback.setAspectRatio(mode)
+    override fun setVideoZoom(zoom: Float) = playback.setVideoZoom(zoom)
+    override fun setShuffleEnabled(enabled: Boolean) = playback.setShuffleEnabled(enabled)
+    override fun cycleRepeatMode() = playback.cycleRepeatMode()
+    override fun setDecoderMode(mode: DecoderMode) = playback.setDecoderMode(mode)
+    override fun setLocked(locked: Boolean) = playback.setLocked(locked)
+    override fun setSleepTimer(minutes: Int) = playback.setSleepTimer(minutes)
+    override fun cancelSleepTimer() = playback.cancelSleepTimer()
+    override fun clearResumedNotification() = playback.clearResumedNotification()
+    override fun clearDecoderFallbackNote() = playback.clearDecoderFallbackNote()
+    override fun clearUserNotification() = playback.clearUserNotification()
+    override fun stop() = playback.stop()
+    override fun attachSurface(surface: Surface) = playback.attachSurface(surface)
+    override fun detachSurface() = playback.detachSurface()
+    override fun surfaceChanged(width: Int, height: Int) = playback.surfaceChanged(width, height)
+    override fun applySubtitleSettings(settings: AppSettings) = playback.applySubtitleSettings(settings)
+    override fun applyPlaybackTweaks(settings: AppSettings) = playback.applyPlaybackTweaks(settings)
+    override fun setVideoBackgroundActive(active: Boolean) = playback.setVideoBackgroundActive(active)
+    override fun setBackgroundPlaying(active: Boolean) = playback.setBackgroundPlaying(active)
+    override fun selectTrack(type: TrackType, id: String?) = playback.selectTrack(type, id)
+    override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) = playback.selectAudioTrack(groupIndex, trackIndex)
+    override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) = playback.selectSubtitleTrack(groupIndex, trackIndex)
+    override fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean =
+        playback.loadExternalSubtitle(uri, displayName, mimeType)
+
+    override val videoWidth: Int get() = playback.videoWidth
+    override val videoHeight: Int get() = playback.videoHeight
 
     // -- Rotation (issue #363) -------------------------------------------
     //

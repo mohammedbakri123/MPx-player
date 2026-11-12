@@ -1,12 +1,17 @@
 package com.mpx.player.ui.screens.player
 
 import android.content.pm.ActivityInfo
+import android.net.Uri
+import android.view.Surface
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.fakes.FakeSettingsRepository
+import com.mpx.player.playback.AspectRatioMode
+import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.playback.PlaybackStateSource
+import com.mpx.player.playback.engine.TrackType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -109,6 +114,39 @@ class PlayerViewModelTest {
         )
         assertFalse(viewModel.restoreQueueIfEmpty())
         assertEquals(1, playback.restoreCalls)
+    }
+
+    @Test
+    fun `transport commands delegate to playback seam`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        viewModel.play()
+        assertEquals(1, playback.playCalls)
+
+        viewModel.pause()
+        assertEquals(1, playback.pauseCalls)
+
+        viewModel.togglePlayPause()
+        assertEquals(1, playback.togglePlayPauseCalls)
+
+        viewModel.seekTo(15_000L)
+        assertEquals(listOf(15_000L), playback.seekCalls)
+
+        viewModel.setSpeed(1.5f)
+        assertEquals(listOf(1.5f), playback.speedCalls)
+
+        viewModel.setAspectRatio(AspectRatioMode.ZOOM)
+        assertEquals(listOf(AspectRatioMode.ZOOM), playback.aspectRatioCalls)
+
+        viewModel.setVideoZoom(1.75f)
+        assertEquals(listOf(1.75f), playback.videoZoomCalls)
+
+        viewModel.stop()
+        assertEquals(1, playback.stopCalls)
+
+        assertEquals(1920, viewModel.videoWidth)
+        assertEquals(1080, viewModel.videoHeight)
     }
 
     @Test
@@ -227,7 +265,7 @@ class PlayerViewModelTest {
         isVideo = false,
     )
 
-    /** Fake playback source: records restore calls, lets the test
+    /** Fake playback source: records restore and transport calls, lets the test
      * drive state emissions. */
     private class FakePlaybackStateSource(
         initialState: PlaybackState = PlaybackState(),
@@ -238,11 +276,55 @@ class PlayerViewModelTest {
 
         var restoreCalls = 0
             private set
+        var playCalls = 0
+        var pauseCalls = 0
+        var togglePlayPauseCalls = 0
+        val seekCalls = mutableListOf<Long>()
+        val speedCalls = mutableListOf<Float>()
+        val aspectRatioCalls = mutableListOf<AspectRatioMode>()
+        val videoZoomCalls = mutableListOf<Float>()
+        var stopCalls = 0
 
         override fun restorePersistedQueueIfEmpty(): Boolean {
             restoreCalls++
             return true
         }
+
+        override fun play() { playCalls++ }
+        override fun pause() { pauseCalls++ }
+        override fun togglePlayPause() { togglePlayPauseCalls++ }
+        override fun seekTo(positionMs: Long) { seekCalls.add(positionMs) }
+        override fun skipForward(deltaMs: Long) { seekCalls.add(deltaMs) }
+        override fun skipBackward(deltaMs: Long) { seekCalls.add(-deltaMs) }
+        override fun skipNext() {}
+        override fun skipPrevious() {}
+        override fun setSpeed(speed: Float) { speedCalls.add(speed) }
+        override fun setAspectRatio(mode: AspectRatioMode) { aspectRatioCalls.add(mode) }
+        override fun setVideoZoom(zoom: Float) { videoZoomCalls.add(zoom) }
+        override fun setShuffleEnabled(enabled: Boolean) {}
+        override fun cycleRepeatMode() {}
+        override fun setDecoderMode(mode: DecoderMode) {}
+        override fun setLocked(locked: Boolean) {}
+        override fun setSleepTimer(minutes: Int) {}
+        override fun cancelSleepTimer() {}
+        override fun clearResumedNotification() {}
+        override fun clearDecoderFallbackNote() {}
+        override fun clearUserNotification() {}
+        override fun stop() { stopCalls++ }
+        override fun attachSurface(surface: Surface) {}
+        override fun detachSurface() {}
+        override fun surfaceChanged(width: Int, height: Int) {}
+        override fun applySubtitleSettings(settings: AppSettings) {}
+        override fun applyPlaybackTweaks(settings: AppSettings) {}
+        override fun setVideoBackgroundActive(active: Boolean) {}
+        override fun setBackgroundPlaying(active: Boolean) {}
+        override fun selectTrack(type: TrackType, id: String?) {}
+        override fun selectAudioTrack(groupIndex: Int, trackIndex: Int) {}
+        override fun selectSubtitleTrack(groupIndex: Int?, trackIndex: Int?) {}
+        override fun loadExternalSubtitle(uri: Uri, displayName: String, mimeType: String): Boolean = true
+
+        override val videoWidth: Int = 1920
+        override val videoHeight: Int = 1080
 
         fun emit(state: PlaybackState) {
             _playbackState.value = state

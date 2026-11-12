@@ -302,7 +302,7 @@ class MpvPlayerEngine(
      * Owned by [MpvEngineConfig] (Phase 4 step 4); this is the facade
      * delegation the coordinator calls.
      */
-    fun applyPlaybackTweaks(settings: AppSettings) {
+    override fun applyPlaybackTweaks(settings: AppSettings) {
         config.applyPlaybackTweaks(settings)
     }
 
@@ -311,7 +311,7 @@ class MpvPlayerEngine(
      * as [applyPlaybackTweaks], without persisting — the caller saves the
      * final zoom to settings when the gesture ends.
      */
-    fun setVideoZoom(zoom: Float) {
+    override fun setVideoZoom(zoom: Float) {
         if (!mpvInitialized || isReleased) return
         try {
             setRuntimeProperty("video-zoom", MpvEngineConfig.mpvVideoZoom(zoom).toString())
@@ -340,7 +340,7 @@ class MpvPlayerEngine(
      * native size via video-unscaled. Every branch sets video-unscaled
      * explicitly, so leaving ORIGINAL re-enables scaling.
      */
-    fun setAspectRatio(mode: AspectRatioMode) {
+    override fun setAspectRatio(mode: AspectRatioMode) {
         try {
             val wasZoom = currentAspectRatio == AspectRatioMode.ZOOM
             if (mode == AspectRatioMode.ZOOM && !wasZoom) {

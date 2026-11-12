@@ -1,6 +1,8 @@
 package com.mpx.player.fakes
 
 import android.view.Surface
+import com.mpx.player.domain.settings.AppSettings
+import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
@@ -28,6 +30,9 @@ class FakePlayerEngine : PlayerEngine {
     val selectSubtitleCalls = mutableListOf<Pair<Int?, Int?>>()
     val decoderModeCalls = mutableListOf<DecoderMode>()
     val surfaceChangedCalls = mutableListOf<Pair<Int, Int>>()
+    val appliedPlaybackTweaks = mutableListOf<AppSettings>()
+    val videoZoomCalls = mutableListOf<Float>()
+    val aspectRatioCalls = mutableListOf<AspectRatioMode>()
 
     var replaceResult: ReplaceMediaItemResult = ReplaceMediaItemResult.ISSUED
     var audioTracksToReturn: List<AudioTrackInfo> = emptyList()
@@ -146,4 +151,16 @@ class FakePlayerEngine : PlayerEngine {
 
     override fun getAudioTracks(): List<AudioTrackInfo> = audioTracksToReturn
     override fun getSubtitleTracks(): List<SubtitleTrackInfo> = subtitleTracksToReturn
+
+    override fun applyPlaybackTweaks(settings: AppSettings) {
+        appliedPlaybackTweaks.add(settings)
+    }
+
+    override fun setVideoZoom(zoom: Float) {
+        videoZoomCalls.add(zoom)
+    }
+
+    override fun setAspectRatio(mode: AspectRatioMode) {
+        aspectRatioCalls.add(mode)
+    }
 }

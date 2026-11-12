@@ -137,6 +137,7 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.MpxMediaCodecSelector
+import com.mpx.player.playback.PlaybackController
 import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.playback.PlaybackService
 import com.mpx.player.playback.PlaybackState
@@ -484,7 +485,7 @@ fun PlayerScreen(
         onDispose {
             val activityInPip = activity?.isInPictureInPictureMode == true
             if (!activityInPip && !viewModel.loadSettingsNow().backgroundPlay) {
-                playbackCoordinator.stop()
+                viewModel.stop()
             }
         }
     }
@@ -508,7 +509,7 @@ fun PlayerScreen(
                     // success/failure banner is now shown by
                     // PlaybackCoordinator once the sub-add outcome is
                     // actually known (track in track-list, or timeout).
-                    playbackCoordinator.loadExternalSubtitle(
+                    viewModel.loadExternalSubtitle(
                         uri = validation.uri,
                         displayName = validation.displayName,
                         mimeType = validation.mimeType,
@@ -586,8 +587,8 @@ fun PlayerScreen(
                 activity,
                 currentSettings,
                 state.isPlaying,
-                playbackCoordinator.videoWidth,
-                playbackCoordinator.videoHeight,
+                viewModel.videoWidth,
+                viewModel.videoHeight,
                 true,
             )
             if (!entered) {
@@ -638,8 +639,8 @@ fun PlayerScreen(
         viewModel.updateSettings(updated)
         if (!nextBackgroundPlay) {
             PlaybackService.stop(context)
-            playbackCoordinator.setVideoBackgroundActive(false)
-            playbackCoordinator.setBackgroundPlaying(false)
+            viewModel.setVideoBackgroundActive(false)
+            viewModel.setBackgroundPlaying(false)
         }
         val note = if (nextBackgroundPlay) {
             if (state.currentItem?.isVideo == true) {
@@ -834,7 +835,7 @@ fun PlayerScreen(
     fun resumeAfterSeekDrag() {
         if (wasPlayingBeforeSeekDrag) {
             wasPlayingBeforeSeekDrag = false
-            playbackCoordinator.play()
+            viewModel.play()
         }
     }
 
@@ -870,7 +871,7 @@ fun PlayerScreen(
                         // resumeAfterSeekDrag restores it on release.
                         if (state.isPlaying) {
                             wasPlayingBeforeSeekDrag = true
-                            playbackCoordinator.pause()
+                            viewModel.pause()
                         }
                         seekStartMs = state.currentPositionMs
                     }
@@ -1039,13 +1040,13 @@ fun PlayerScreen(
                             // identity (issue #227).
                             val previousSpeed = state.speed
                             val heldItemUri = state.currentItem?.uri
-                            playbackCoordinator.setSpeed(2f)
+                            viewModel.setSpeed(2f)
                             isLongPress2x = true
                             try {
                                 waitForUpOrCancellation()
                             } finally {
                                 if (state.currentItem?.uri == heldItemUri) {
-                                    playbackCoordinator.setSpeed(previousSpeed)
+                                    viewModel.setSpeed(previousSpeed)
                                 }
                                 isLongPress2x = false
                             }
@@ -1067,7 +1068,7 @@ fun PlayerScreen(
                                     val twoThirds = size.width * (2f / 3f)
                                     when {
                                         secondDown.position.x < oneThird -> {
-                                            playbackCoordinator.skipBackward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
+                                            viewModel.skipBackward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
                                             sideSeekDirection = SideSeekDirection.BACKWARD
                                             hideBrightnessJob?.cancel()
                                             showBrightnessIndicator = false
@@ -1080,7 +1081,7 @@ fun PlayerScreen(
                                             }
                                         }
                                         secondDown.position.x > twoThirds -> {
-                                            playbackCoordinator.skipForward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
+                                            viewModel.skipForward(viewModel.settings.value.doubleTapSeekSeconds * 1000L)
                                             sideSeekDirection = SideSeekDirection.FORWARD
                                             hideBrightnessJob?.cancel()
                                             showBrightnessIndicator = false
@@ -1093,7 +1094,7 @@ fun PlayerScreen(
                                             }
                                         }
                                         else -> {
-                                            playbackCoordinator.togglePlayPause()
+                                            viewModel.togglePlayPause()
                                             if (sideSeekDirection != null) {
                                                 hideSideSeekJob?.cancel()
                                                 sideSeekDirection = null
@@ -1177,7 +1178,7 @@ fun PlayerScreen(
                                     val newZoom = (pinchStartZoom * (distance / pinchStartDistance)).coerceIn(0.5f, 2.0f)
                                     if (newZoom != pinchCurrentZoom) {
                                         pinchCurrentZoom = newZoom
-                                        playbackCoordinator.setVideoZoom(newZoom)
+                                        viewModel.setVideoZoom(newZoom)
                                         zoomDisplayText = formatMultiplier(newZoom)
                                     }
                                 }
@@ -1221,7 +1222,7 @@ fun PlayerScreen(
                         when (currentDragMode) {
                             DragGestureMode.HORIZONTAL_SEEK -> {
                                 if (isDraggingSeek) {
-                                    playbackCoordinator.seekTo(seekTargetMs)
+                                    viewModel.seekTo(seekTargetMs)
                                     isDraggingSeek = false
                                     // Issue #259: seek first, then resume —
                                     // play() must see the post-seek state, and
@@ -1279,17 +1280,17 @@ fun PlayerScreen(
                 SurfaceView(ctx).apply {
                     holder.addCallback(object : SurfaceHolder.Callback {
                         override fun surfaceCreated(holder: SurfaceHolder) {
-                            playbackCoordinator.attachSurface(holder.surface)
+                            viewModel.attachSurface(holder.surface)
                         }
 
                         override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-                            playbackCoordinator.surfaceChanged(width, height)
+                            viewModel.surfaceChanged(width, height)
                         }
 
                         override fun surfaceDestroyed(holder: SurfaceHolder) {
                             // SYNCHRONOUS barrier:
                             // Set vo=null and detach before surfaceDestroyed returns.
-                            playbackCoordinator.detachSurface()
+                            viewModel.detachSurface()
                         }
                     })
                 }
@@ -1298,8 +1299,8 @@ fun PlayerScreen(
                 // Push subtitle style changes to a running mpv engine (issue #75),
                 // plus audio delay + video zoom (issue #153).
                 if (lastMpvSubtitleSettings[0] != currentSettings) {
-                    playbackCoordinator.applySubtitleSettings(currentSettings)
-                    playbackCoordinator.applyPlaybackTweaks(currentSettings)
+                    viewModel.applySubtitleSettings(currentSettings)
+                    viewModel.applyPlaybackTweaks(currentSettings)
                     lastMpvSubtitleSettings[0] = currentSettings
                 }
             },
@@ -1643,13 +1644,13 @@ fun PlayerScreen(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable {
-                                playbackCoordinator.seekTo(0L)
-                                playbackCoordinator.clearResumedNotification()
+                                viewModel.seekTo(0L)
+                                viewModel.clearResumedNotification()
                             },
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(
-                            onClick = { playbackCoordinator.clearResumedNotification() },
+                            onClick = { viewModel.clearResumedNotification() },
                             modifier = Modifier.size(32.dp),
                         ) {
                             Icon(
@@ -1690,7 +1691,7 @@ fun PlayerScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(
-                            onClick = { playbackCoordinator.clearDecoderFallbackNote() },
+                            onClick = { viewModel.clearDecoderFallbackNote() },
                             modifier = Modifier.size(32.dp),
                         ) {
                             Icon(
@@ -1731,7 +1732,7 @@ fun PlayerScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(
-                            onClick = { playbackCoordinator.clearUserNotification() },
+                            onClick = { viewModel.clearUserNotification() },
                             modifier = Modifier.size(32.dp),
                         ) {
                             Icon(
@@ -1759,7 +1760,7 @@ fun PlayerScreen(
                     .padding(start = 24.dp),
             ) {
                 IconButton(
-                    onClick = { playbackCoordinator.setLocked(false) },
+                    onClick = { viewModel.setLocked(false) },
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
@@ -1853,7 +1854,7 @@ fun PlayerScreen(
                                 onEnterPip = enterPip,
                                 onToggleBackgroundPlay = toggleBackgroundPlay,
                                 onAddToPlaylist = { showAddToPlaylistDialog = true },
-                                playbackCoordinator = playbackCoordinator,
+                                playbackController = viewModel,
                             )
 
                             // Decoder Pill Badge: configured mode + real active codec
@@ -1882,7 +1883,7 @@ fun PlayerScreen(
                                             DecoderMode.HW_PLUS -> DecoderMode.SW
                                             DecoderMode.SW -> DecoderMode.HW
                                         }
-                                        playbackCoordinator.setDecoderMode(nextDecoder)
+                                        viewModel.setDecoderMode(nextDecoder)
                                         viewModel.updateSettings(viewModel.loadSettingsNow().copy(decoderMode = nextDecoder.label))
                                         Toast.makeText(context, context.getString(R.string.player_toast_decoder, context.getString(nextDecoder.titleRes)), Toast.LENGTH_SHORT).show()
                                     },
@@ -1958,7 +1959,7 @@ fun PlayerScreen(
                                 },
                                 onValueChangeFinished = {
                                     val target = (scrubFraction * currentDuration).toLong()
-                                    playbackCoordinator.seekTo(target)
+                                    viewModel.seekTo(target)
                                     isScrubbingSlider = false
                                 },
                                 modifier = Modifier
@@ -1997,7 +1998,7 @@ fun PlayerScreen(
                             // MX-faithful transparent button (issue #94): no
                             // glass fill, no border — white icon on the scrim.
                             IconButton(
-                                onClick = { playbackCoordinator.setLocked(true) },
+                                onClick = { viewModel.setLocked(true) },
                                 modifier = Modifier
                                     .size(50.dp),
                             ) {
@@ -2011,7 +2012,7 @@ fun PlayerScreen(
 
                             // Previous Track
                             IconButton(
-                                onClick = { playbackCoordinator.skipPrevious() },
+                                onClick = { viewModel.skipPrevious() },
                                 enabled = state.hasPrevious,
                                 modifier = Modifier
                                     .size(50.dp),
@@ -2028,7 +2029,7 @@ fun PlayerScreen(
                             // MX-faithful: transparent play/pause, larger white
                             // icon instead of a filled hero circle.
                             IconButton(
-                                onClick = { playbackCoordinator.togglePlayPause() },
+                                onClick = { viewModel.togglePlayPause() },
                                 modifier = Modifier
                                     .size(50.dp),
                             ) {
@@ -2042,7 +2043,7 @@ fun PlayerScreen(
 
                             // Next Track
                             IconButton(
-                                onClick = { playbackCoordinator.skipNext() },
+                                onClick = { viewModel.skipNext() },
                                 enabled = state.hasNext,
                                 modifier = Modifier
                                     .size(50.dp),
@@ -2139,7 +2140,7 @@ fun PlayerScreen(
                                             contentAlignment = Alignment.Center,
                                             modifier = Modifier
                                                 .clickable {
-                                                    playbackCoordinator.cancelSleepTimer()
+                                                    viewModel.cancelSleepTimer()
                                                     Toast.makeText(
                                                         context,
                                                         context.getString(R.string.player_sleep_timer_canceled_toast),
@@ -2206,7 +2207,7 @@ fun PlayerScreen(
             onSettingsChanged = { updated ->
                 viewModel.updateSettings(updated)
             },
-            playbackCoordinator = playbackCoordinator,
+            playbackController = viewModel,
             subtitleLauncher = subtitleLauncher,
             isFavourite = isFavourite,
             onToggleFavourite = toggleFavourite,
@@ -2334,7 +2335,7 @@ private fun PlayerTopBarActions(
     onEnterPip: () -> Unit,
     onToggleBackgroundPlay: () -> Unit,
     onAddToPlaylist: () -> Unit,
-    playbackCoordinator: PlaybackCoordinator,
+    playbackController: PlaybackController,
 ) {
     val layoutIds = remember(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds) {
         parsePlayerMenuLayout(currentSettings.playerMenuLayout, currentSettings.hiddenPlayerMenuIds)
@@ -2356,7 +2357,7 @@ private fun PlayerTopBarActions(
                 onEnterPip = onEnterPip,
                 onToggleBackgroundPlay = onToggleBackgroundPlay,
                 onAddToPlaylist = onAddToPlaylist,
-                playbackCoordinator = playbackCoordinator,
+                playbackController = playbackController,
             )
         }
     }
@@ -2380,7 +2381,7 @@ private fun PlayerTopBarActionItem(
     onEnterPip: () -> Unit,
     onToggleBackgroundPlay: () -> Unit,
     onAddToPlaylist: () -> Unit,
-    playbackCoordinator: PlaybackCoordinator,
+    playbackController: PlaybackController,
 ) {
     val context = LocalContext.current
     when (id) {
@@ -2408,13 +2409,13 @@ private fun PlayerTopBarActionItem(
             icon = Icons.Filled.Shuffle,
             contentDescription = stringResource(R.string.player_cd_shuffle),
             active = state.shuffleEnabled,
-            onClick = { playbackCoordinator.setShuffleEnabled(!state.shuffleEnabled) },
+            onClick = { playbackController.setShuffleEnabled(!state.shuffleEnabled) },
         )
         "repeat" -> PlayerTopBarActionButton(
             icon = if (state.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
             contentDescription = stringResource(R.string.playback_sheet_repeat),
             active = state.repeatMode != RepeatMode.OFF,
-            onClick = { playbackCoordinator.cycleRepeatMode() },
+            onClick = { playbackController.cycleRepeatMode() },
         )
         // Issue #225: PiP is video-only — hide the entry for audio
         // items (the enterPip lambda also refuses them, so an audio
@@ -2445,7 +2446,7 @@ private fun PlayerTopBarActionItem(
                 // Same cycle the #167 top-bar pill did.
                 val modes = AspectRatioMode.values()
                 val next = modes[(modes.indexOf(state.aspectRatio) + 1) % modes.size]
-                playbackCoordinator.setAspectRatio(next)
+                playbackController.setAspectRatio(next)
                 Toast.makeText(
                     context,
                     context.getString(R.string.player_menu_aspect, context.getString(next.labelRes)),

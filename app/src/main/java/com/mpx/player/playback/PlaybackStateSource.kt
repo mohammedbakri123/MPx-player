@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
  * PlaybackManager with the coordinator, which implements this same
  * interface, so the ViewModel did not change.
  */
-interface PlaybackStateSource {
+interface PlaybackStateSource : PlaybackController {
     /** Current playback state; the same flow [PlaybackCoordinator] exposes. */
     val playbackState: StateFlow<PlaybackState>
 
