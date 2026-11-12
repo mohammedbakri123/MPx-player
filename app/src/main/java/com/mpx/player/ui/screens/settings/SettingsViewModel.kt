@@ -7,6 +7,7 @@ import com.mpx.player.domain.repository.MediaRepository
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.ui.screens.local.isPathBlacklisted
+import com.mpx.player.update.AppUpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +16,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** Issue #414: manual update check state for About page. */
+enum class UpdateCheckStatus { IDLE, CHECKING, UP_TO_DATE, AVAILABLE, FAILED }
 
 /**
  * Migration Phase 2e (Settings follow-up): the settings screens'
@@ -424,6 +429,56 @@ class SettingsViewModel(
             audioArtists = audioArtists,
             playlists = playlists,
         )
+    }
+
+    // -- App update check (#414, D-13) ---------------------------------------
+    //
+    // Hoisted out of the About category LazyColumn item into the ViewModel
+    // so in-flight check state and available release information survive
+    // scrolling and category switching.
+
+    private val _updateStatus = MutableStateFlow(UpdateCheckStatus.IDLE)
+    val updateStatus: StateFlow<UpdateCheckStatus> = _updateStatus.asStateFlow()
+
+    private val _availableRelease = MutableStateFlow<AppUpdateChecker.Release?>(null)
+    val availableRelease: StateFlow<AppUpdateChecker.Release?> = _availableRelease.asStateFlow()
+
+    private val _showUpdateDialog = MutableStateFlow(false)
+    val showUpdateDialog: StateFlow<Boolean> = _showUpdateDialog.asStateFlow()
+
+    fun dismissUpdateDialog() {
+        _showUpdateDialog.value = false
+    }
+
+    fun showUpdateDialog() {
+        if (_availableRelease.value != null) {
+            _showUpdateDialog.value = true
+        }
+    }
+
+    fun checkForUpdate(
+        checker: suspend () -> AppUpdateChecker.CheckResult = { AppUpdateChecker.checkForUpdate() },
+        onResult: ((AppUpdateChecker.CheckResult) -> Unit)? = null,
+    ) {
+        if (_updateStatus.value == UpdateCheckStatus.CHECKING) return
+        _updateStatus.value = UpdateCheckStatus.CHECKING
+        viewModelScope.launch {
+            val result = checker()
+            when (result) {
+                is AppUpdateChecker.CheckResult.UpToDate -> {
+                    _updateStatus.value = UpdateCheckStatus.UP_TO_DATE
+                }
+                is AppUpdateChecker.CheckResult.Available -> {
+                    _availableRelease.value = result.release
+                    _updateStatus.value = UpdateCheckStatus.AVAILABLE
+                    _showUpdateDialog.value = true
+                }
+                AppUpdateChecker.CheckResult.Failed -> {
+                    _updateStatus.value = UpdateCheckStatus.FAILED
+                }
+            }
+            onResult?.invoke(result)
+        }
     }
 }
 

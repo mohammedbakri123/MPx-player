@@ -17,6 +17,7 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.fakes.FakeMediaPersistenceRepository
 import com.mpx.player.fakes.FakeSettingsRepository
+import com.mpx.player.update.AppUpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -415,6 +416,64 @@ class SettingsViewModelTest {
         val viewModel = createViewModel()
 
         assertEquals(listOf(2, 7, 1, 1), viewModel.loadRecordCounts())
+    }
+
+    @Test
+    fun `checkForUpdate updates status to UP_TO_DATE when no update`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        assertEquals(UpdateCheckStatus.IDLE, viewModel.updateStatus.value)
+
+        var resultReceived: AppUpdateChecker.CheckResult? = null
+        viewModel.checkForUpdate(
+            checker = { AppUpdateChecker.CheckResult.UpToDate("v0.4.58") },
+            onResult = { resultReceived = it },
+        )
+
+        assertEquals(UpdateCheckStatus.UP_TO_DATE, viewModel.updateStatus.value)
+        assertEquals(AppUpdateChecker.CheckResult.UpToDate("v0.4.58"), resultReceived)
+        assertFalse(viewModel.showUpdateDialog.value)
+    }
+
+    @Test
+    fun `checkForUpdate updates status to AVAILABLE and opens dialog`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+        val release = AppUpdateChecker.Release(
+            tag = "v0.4.59",
+            name = "v0.4.59",
+            publishedAt = "2026-11-12",
+            apkUrl = "https://example.com/apk",
+            apkName = "mpx-arm64.apk",
+            apkSize = 1024L,
+        )
+
+        viewModel.checkForUpdate(
+            checker = { AppUpdateChecker.CheckResult.Available(release) },
+        )
+
+        assertEquals(UpdateCheckStatus.AVAILABLE, viewModel.updateStatus.value)
+        assertEquals(release, viewModel.availableRelease.value)
+        assertTrue(viewModel.showUpdateDialog.value)
+
+        viewModel.dismissUpdateDialog()
+        assertFalse(viewModel.showUpdateDialog.value)
+
+        viewModel.showUpdateDialog()
+        assertTrue(viewModel.showUpdateDialog.value)
+    }
+
+    @Test
+    fun `checkForUpdate updates status to FAILED on error`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        viewModel.checkForUpdate(
+            checker = { AppUpdateChecker.CheckResult.Failed },
+        )
+
+        assertEquals(UpdateCheckStatus.FAILED, viewModel.updateStatus.value)
+        assertFalse(viewModel.showUpdateDialog.value)
     }
 
 
