@@ -5,6 +5,7 @@ import androidx.annotation.VisibleForTesting
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
+import com.mpx.player.playback.ChapterInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.MediaInfo
@@ -303,6 +304,13 @@ interface PlayerEngine {
 
     fun getAudioTracks(): List<AudioTrackInfo>
     fun getSubtitleTracks(): List<SubtitleTrackInfo>
+
+    /**
+     * Chapter markers for the current video (issue #178), read from
+     * mpv's chapter-list. Empty when the file has no chapters. Default
+     * empty so engines without chapter support keep compiling.
+     */
+    fun getChapters(): List<ChapterInfo> = emptyList()
 
     /**
      * Applies audio delay and video zoom tweaks from settings (issue #153, R-3).

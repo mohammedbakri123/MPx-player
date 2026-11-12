@@ -890,6 +890,7 @@ class PlaybackCoordinator(
         selectedAudioTrackIndex: Int,
         subtitleTracks: List<SubtitleTrackInfo>,
         selectedSubtitleTrackIndex: Int,
+        chapters: List<ChapterInfo>,
     ) {
         _playbackState.update {
             it.copy(
@@ -897,6 +898,7 @@ class PlaybackCoordinator(
                 selectedAudioTrackIndex = selectedAudioTrackIndex,
                 subtitleTracks = subtitleTracks,
                 selectedSubtitleTrackIndex = selectedSubtitleTrackIndex,
+                chapters = chapters,
             )
         }
     }

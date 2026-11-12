@@ -9,6 +9,7 @@ import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.AspectRatioMode
 import com.mpx.player.playback.AudioTrackInfo
+import com.mpx.player.playback.ChapterInfo
 import com.mpx.player.playback.DecoderMode
 import com.mpx.player.playback.EnginePlaybackMetrics
 import com.mpx.player.playback.MediaInfo
@@ -545,6 +546,8 @@ class MpvPlayerEngine(
 
 
     override fun getSubtitleTracks(): List<SubtitleTrackInfo> = tracks.getSubtitleTracks()
+
+    override fun getChapters(): List<ChapterInfo> = tracks.getChapters()
 
     override fun getMediaInfo(): MediaInfo? {
         if (!mpvInitialized || isReleased) return null
