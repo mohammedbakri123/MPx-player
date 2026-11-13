@@ -207,11 +207,24 @@ fun PlayerTopChrome(
         // 2. Small gap directly below header pills
         Spacer(Modifier.height(8.dp))
 
-        // 3. Strip Menu: floating strip under the header (controlled by settings toggle)
+        // 3. Strip Menu: floating strip under the header (controlled by settings toggle).
+        // In portrait it stays centered (80% / 95% expanded). In landscape
+        // it aligns to the LEFT edge — same edge inset as the header —
+        // instead of floating centered on screen. The strip Box is a
+        // direct child of the centered Column, so align(Start) overrides
+        // the Column's centering for this child only; the start padding
+        // puts its left edge at the header's inset. Expanding in
+        // landscape grows to the right from that left edge.
         if (currentSettings.showPlayerStripMenu) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth(stripWidthFraction),
+                modifier = if (isLandscapeOrientation) {
+                    Modifier
+                        .align(Alignment.Start)
+                        .padding(start = edgeInset)
+                        .fillMaxWidth(stripWidthFraction)
+                } else {
+                    Modifier.fillMaxWidth(stripWidthFraction)
+                },
                 contentAlignment = Alignment.Center,
             ) {
                 Row(
