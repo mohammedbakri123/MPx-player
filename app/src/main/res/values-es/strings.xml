@@ -254,6 +254,7 @@
     <string name="me_status_banner">Cuadrícula de herramientas de Yo: funciones reales conectadas a Local, Música, Listas, Favoritos, Historial y Transmisión en red. Marcadores honestos para la incidencia 32.</string>
     <string name="section_tools">HERRAMIENTAS</string>
     <string name="section_preferences">PREFERENCIAS</string>
+    <string name="section_collection">COLECCIÓN</string>
     <string name="section_about_legal">ACERCA DE Y LEGAL</string>
 
     <!-- Me Screen Tools -->

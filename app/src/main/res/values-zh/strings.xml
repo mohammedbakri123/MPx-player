@@ -254,6 +254,7 @@
     <string name="me_status_banner">“我的”工具网格：已接入本地、音乐、播放列表、收藏、历史记录、网络串流等真实功能。Issue 32 的占位功能已如实标注。</string>
     <string name="section_tools">工具</string>
     <string name="section_preferences">偏好设置</string>
+    <string name="section_collection">合集</string>
     <string name="section_about_legal">关于与法律</string>
 
     <!-- Me Screen Tools -->

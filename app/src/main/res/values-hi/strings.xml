@@ -254,6 +254,7 @@
     <string name="me_status_banner">Me टूल्स ग्रिड: लोकल, संगीत, प्लेलिस्ट, पसंदीदा, इतिहास, नेटवर्क स्ट्रीम से जुड़ी असली सुविधाएँ। Issue 32 के लिए प्लेसहोल्डर ईमानदारी से चिह्नित हैं।</string>
     <string name="section_tools">टूल्स</string>
     <string name="section_preferences">प्राथमिकताएँ</string>
+    <string name="section_collection">संग्रह</string>
     <string name="section_about_legal">के बारे में और कानूनी</string>
 
     <!-- Me Screen Tools -->

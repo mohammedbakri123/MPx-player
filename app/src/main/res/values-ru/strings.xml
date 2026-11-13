@@ -254,6 +254,7 @@
     <string name="me_status_banner">Сетка инструментов «Я»: реальные функции, связанные с локальными файлами, музыкой, плейлистами, избранным, историей, сетевым потоком. Заполнители честно помечены для задачи 32.</string>
     <string name="section_tools">ИНСТРУМЕНТЫ</string>
     <string name="section_preferences">НАСТРОЙКИ</string>
+    <string name="section_collection">КОЛЛЕКЦИЯ</string>
     <string name="section_about_legal">О ПРОГРАММЕ И ПРАВОВАЯ ИНФОРМАЦИЯ</string>
 
     <!-- Me Screen Tools -->

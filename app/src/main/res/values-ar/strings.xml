@@ -254,6 +254,7 @@
     <string name="me_status_banner">شبكة أدوات \'أنا\': ميزات حقيقية متصلة بالمحلي، الموسيقى، قوائم التشغيل، المفضلة، السجل، البث الشبكي. تم تمييز العناصر النائبة بصدق للمسألة 32.</string>
     <string name="section_tools">الأدوات</string>
     <string name="section_preferences">التفضيلات</string>
+    <string name="section_collection">المجموعات</string>
     <string name="section_about_legal">حول ومعلومات قانونية</string>
 
     <!-- Me Screen Tools -->

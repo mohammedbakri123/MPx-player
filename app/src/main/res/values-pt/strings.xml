@@ -254,6 +254,7 @@
     <string name="me_status_banner">Grade de ferramentas Eu: recursos reais conectados a Local, Música, Playlists, Favoritos, Histórico, Transmissão de rede. Marcadores honestos para a Issue 32.</string>
     <string name="section_tools">FERRAMENTAS</string>
     <string name="section_preferences">PREFERÊNCIAS</string>
+    <string name="section_collection">COLEÇÃO</string>
     <string name="section_about_legal">SOBRE E LEGAL</string>
 
     <!-- Me Screen Tools -->

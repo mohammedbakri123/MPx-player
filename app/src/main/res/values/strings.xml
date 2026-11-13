@@ -255,6 +255,7 @@
     <string name="me_status_banner">Me tools grid: real features wired to Local, Music, Playlists, Favourites, History, Network Stream. Placeholders honestly marked for Issue 32.</string>
     <string name="section_tools">TOOLS</string>
     <string name="section_preferences">PREFERENCES</string>
+    <string name="section_collection">COLLECTION</string>
     <string name="section_about_legal">ABOUT &amp; LEGAL</string>
 
     <!-- Me Screen Tools -->

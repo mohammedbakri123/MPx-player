@@ -254,6 +254,7 @@
     <string name="me_status_banner">Grille d’outils Moi : vraies fonctions reliées à Local, Musique, Listes, Favoris, Historique, Flux réseau. Marqueurs honnêtes pour l’incidence 32.</string>
     <string name="section_tools">OUTILS</string>
     <string name="section_preferences">PRÉFÉRENCES</string>
+    <string name="section_collection">COLLECTION</string>
     <string name="section_about_legal">À PROPOS ET MENTIONS LÉGALES</string>
 
     <!-- Me Screen Tools -->
