@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.playback.DecoderMode
-import com.mpx.player.playback.MpxMediaCodecSelector
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.ui.screens.player.PlaybackSheetPage
 import com.mpx.player.ui.screens.player.PlayerViewModel
@@ -144,13 +143,15 @@ fun PlayerTopChrome(
                 }
             }
 
-            // Pill 3: Decoder pill (video only, keeps tap-to-cycle decoder behaviour)
+            // Pill 3: Decoder pill (video only, keeps tap-to-cycle decoder behaviour).
+            // Small content-sized island: decoder mode letters only (HW / HW+ / SW),
+            // no codec name. The content must NOT use fillMaxSize — a
+            // content-sized pill in a Row whose child fills max size expands to
+            // all remaining Row width, squeezing the title pill to zero and
+            // pushing the three-dots pill off-screen (that is why the decoder
+            // pill took the whole header and the title vanished). Size to the
+            // text instead; the title pill (weight 1f) then keeps its space.
             if (state.currentItem?.isVideo == true) {
-                val decoderPillText = state.activeDecoderName?.let { name ->
-                    val codec = MpxMediaCodecSelector.shortCodecLabel(name)
-                    if (codec != null) "${state.decoderMode.label} • $codec" else state.decoderMode.label
-                } ?: state.decoderMode.label
-
                 FloatingIsland(
                     shape = RoundedCornerShape(24.dp),
                     modifier = Modifier
@@ -172,12 +173,11 @@ fun PlayerTopChrome(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
                             .padding(horizontal = 14.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = decoderPillText,
+                            text = state.decoderMode.label,
                             color = MpxTheme.colors.textPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
