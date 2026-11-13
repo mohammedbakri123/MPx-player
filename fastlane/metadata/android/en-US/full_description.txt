@@ -1,0 +1,15 @@
+MPx Player is a free, open-source media player for Android, built
+in native Kotlin with Jetpack Compose and powered by mpv for
+playback.
+
+No ads. No tracking. Your files stay on your device.
+
+Features:
+- Local video and music, folders, playlists, history and favourites
+- Wide codec support via mpv, including files other players refuse
+- External subtitles (.srt, .ass, .ssa, .vtt) that stay selected
+- Media Information: codec, resolution, FPS, bitrate, audio and
+  subtitle tracks, from the player or by long-pressing a video
+- Picture-in-Picture, double-tap to skip, resume where you left off
+- Play a video straight from a pasted URL
+- True-black dark theme + light theme, translated into 9 languages
