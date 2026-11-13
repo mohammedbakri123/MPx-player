@@ -268,14 +268,21 @@ internal class MpvSubtitleRenderer(
      * URI to sub-add. A subtitle picked before v0.4.54 was persisted
      * WITHOUT a codepage, so a null stored value is detected fresh
      * from the RAW uri instead of defaulting to "auto" (which garbles
-     * Windows-1256 Arabic). The detected codepage is applied and
-     * verified by read-back; if mpv rejects the set, the file is
-     * transcoded to a UTF-8 copy and the copy's file:// URI is
-     * returned instead (mpv always handles UTF-8, and the copy needs
-     * no codepage, so it is reset to "auto" first). The resolved fd
-     * is closed when transcoding, since mpv never received it.
-     * Always returns a URI to sub-add (the resolved one on any
-     * failure) — never throws, never breaks a load.
+     * Windows-1256 Arabic).
+     *
+     * Follow-up: for Windows-1256, mpv's sub-codepage is unreliable
+     * in this libmpv build — the property set verifies by read-back,
+     * yet the subtitle still renders as mojibake (the Antipasto .srt
+     * proves it: detected cp1256, set verified, still garbled). The
+     * read-back proves the property was SET, not that mpv USES it to
+     * decode the subtitle. So a detected cp1256 subtitle is ALWAYS
+     * transcoded to a UTF-8 copy and the copy is sub-added instead
+     * (mpv always handles UTF-8, and the copy needs no codepage, so
+     * it is reset to "auto" first). The resolved fd is closed when
+     * transcoding, since mpv never received it. For any other
+     * codepage the old path remains: apply and verify, transcode only
+     * if the set is rejected. Always returns a URI to sub-add (the
+     * resolved one on any failure) — never throws, never breaks a load.
      */
     private fun uriToSubAdd(
         rawUri: String?,
@@ -285,6 +292,20 @@ internal class MpvSubtitleRenderer(
     ): String {
         val codepage = storedCodepage
             ?: rawUri?.let { SubtitleUtils.codepageFor(core.context, it, null) }
+        // Issue #470 follow-up: always transcode Windows-1256. The
+        // sub-codepage set verifies by read-back but mpv still renders
+        // the subtitle as mojibake, so the set alone cannot be trusted
+        // for this encoding. mpv always handles UTF-8, so the copy is
+        // the guaranteed path. Only if transcoding fails do we fall
+        // back to the sub-codepage attempt below.
+        if (codepage == "cp1256") {
+            val tempPath = rawUri?.let { transcodeToUtf8IfNeeded(it, name, codepage) }
+            if (tempPath != null) {
+                applySubtitleCodepage(null, name)
+                core.fdOpener.closeFds(listOf(resolvedUri))
+                return "file://$tempPath"
+            }
+        }
         val setOk = applySubtitleCodepage(codepage, name)
         if (codepage != null && !setOk) {
             val tempPath = rawUri?.let { transcodeToUtf8IfNeeded(it, name, codepage) }
