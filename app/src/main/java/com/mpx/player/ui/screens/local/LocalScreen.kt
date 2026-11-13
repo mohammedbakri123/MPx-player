@@ -98,6 +98,10 @@ fun LocalScreen(
     onOpenPlayer: () -> Unit,
     onOpenSettings: () -> Unit,
     playbackCoordinator: PlaybackCoordinator? = null,
+    // File-list Media Information (mpvEx-style): opens the info page
+    // for a video file before playback. Defaults to a no-op for other
+    // callers.
+    onOpenFileMediaInfo: (String) -> Unit = {},
     // Issue #245: reports whether the whole-page search is open so
     // MainActivity can turn the tab-swipe detector off while it is —
     // a swipe mid-search used to switch tabs and destroy the typed
@@ -282,6 +286,22 @@ fun LocalScreen(
                 LocalSelectionTopBar(
                     selectionCount = selectionCount,
                     onClearSelection = actions::clearSelection,
+                    // File-list Media Information (mpvEx-style): the
+                    // Info icon is only shown when exactly one video
+                    // is selected. Open the info page for that video
+                    // (search page / folder / file view all resolve
+                    // through selectedVideosInView), then clear the
+                    // selection like mpvEx does after launching it.
+                    onShowMediaInfo = {
+                        val selected = viewModel.selectedVideosInView(
+                            currentFolder,
+                            showSearchPage,
+                        )
+                        if (selected.size == 1) {
+                            onOpenFileMediaInfo(selected.first().path)
+                            viewModel.clearSelection()
+                        }
+                    },
                 )
             } else if (showSearchPage) {
                 // #142: the search page draws its own header (back + field).

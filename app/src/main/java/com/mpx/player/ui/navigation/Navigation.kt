@@ -29,6 +29,14 @@ sealed class Screen(val route: String) {
     // editor, config folder picker, Lua toggle, XML backup/restore).
     data object AdvancedSettings : Screen("advanced_settings")
     data object AboutBeta : Screen("about_beta")
+    // File-list Media Information (mpvEx-style): long-press a video ->
+    // Info icon -> info page BEFORE playback. Carries the video file
+    // path as a URL-encoded route argument (paths contain slashes, so
+    // they must be encoded into a single segment).
+    data object FileMediaInfo : Screen("file_media_info/{filePath}") {
+        fun createRoute(filePath: String): String =
+            "file_media_info/${android.net.Uri.encode(filePath)}"
+    }
 }
 
 data class BottomNavItem(
