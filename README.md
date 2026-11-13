@@ -10,12 +10,12 @@ No ads. No tracking. Your files stay on your device.
 
 ## Download
 
-**Latest: [v0.4.60](https://github.com/mohammedbakri123/MPx-player/releases/tag/v0.4.60)**
+**Latest: [v0.4.62](https://github.com/mohammedbakri123/MPx-player/releases/tag/v0.4.62)**
 
-Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx-player/releases/latest), then open it on your phone. Android will ask once to allow installs from your browser — that's normal for apps installed outside the Play Store.
+Download the APK from [Releases](https://github.com/mohammedbakri123/MPx-player/releases/latest) — `arm64` for most modern phones, `armv7` for older 32-bit phones — then open it on your phone. Android will ask once to allow installs from your browser — that's normal for apps installed outside the Play Store.
 
 - Requires Android 7.0+ (API 24)
-- Current APK is ~27 MB (minified arm64)
+- Current APK is ~21 MB (minified arm64), ~20 MB (minified armv7)
 
 > This is an active project under development. Releases are verified by green builds. If something breaks on your device, please report it — see [Community](#community) below.
 
@@ -25,6 +25,7 @@ Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx
 - Local video and music, folders, playlists, history and favourites
 - Wide codec support via mpv, including files other players refuse
 - External subtitles — pick a `.srt` / `.ass` / `.ssa` / `.vtt` file while a video plays, and it stays selected
+- Media Information — codec, resolution, FPS, bitrate, audio and subtitle tracks, from the player sheet or by long-pressing a video in the list (Info icon)
 - Picture-in-Picture, double-tap to skip, resume where you left off
 
 **Network**
@@ -38,7 +39,7 @@ Download the `arm64` APK from [Releases](https://github.com/mohammedbakri123/MPx
 
 Real phone screenshots are coming — the ones in this repo's history were early desktop mockups, not the current app.
 
-If you try v0.4.60, a screenshot of the player or Library in [Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) would help a lot.
+If you try v0.4.62, a screenshot of the player or Library in [Discussions](https://github.com/mohammedbakri123/MPx-player/discussions) would help a lot.
 
 ## Community
 
