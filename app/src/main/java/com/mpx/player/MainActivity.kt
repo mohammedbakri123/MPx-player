@@ -634,7 +634,7 @@ fun MpxApp(
     // showing.
     var pendingUpdate by remember { mutableStateOf<AppUpdateChecker.Release?>(null) }
     LaunchedEffect(Unit) {
-        if (settingsRepository.load().appUpdateAutoCheck) {
+        if (BuildConfig.SELF_UPDATE_ENABLED && settingsRepository.load().appUpdateAutoCheck) {
             when (val result = AppUpdateChecker.checkForUpdate()) {
                 is AppUpdateChecker.CheckResult.Available -> pendingUpdate = result.release
                 else -> { /* Up to date or failed: stay silent. */ }

@@ -58,7 +58,11 @@ jobs:
           packages: platform-tools platforms;android-36 build-tools;36.0.0
 
       - name: Build debug + run unit tests
-        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest
+        # Flavors (2026-11-13, F-Droid prep): `testDebugUnitTest` is
+        # ambiguous once the github/fdroid flavors exist — Gradle
+        # refuses it ("Candidates are: testFdroidDebugUnitTest,
+        # testGithubDebugUnitTest"). Run both per-flavor tasks.
+        run: ./gradlew --no-daemon assembleDebug testGithubDebugUnitTest testFdroidDebugUnitTest
 
   lint:
     # Release lint checks on CI (Step 6.3). Kept separate from local offline
@@ -180,7 +184,10 @@ jobs:
             echo "Error: dexdump not found in Android SDK"
             exit 1
           fi
-          for apk in app/build/outputs/apk/minified/app-*-minified.apk; do
+          # Flavors (2026-11-13, F-Droid prep): minified APKs now live
+          # under a flavor dir (github/minified, fdroid/minified), so
+          # the old apk/minified/ glob matches nothing. Check both.
+          for apk in app/build/outputs/apk/*/minified/app-*-minified.apk; do
             test -f "$apk" || { echo "Error: Expected minified APK missing: $apk"; exit 1; }
             echo "Checking kept classes in $apk..."
             mpv_count=$("$DEXDUMP" "$apk" | grep -c "Class descriptor.*Lis/xyz/mpv/" || true)
@@ -195,7 +202,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mpx-minified-apks
-          path: app/build/outputs/apk/minified/**/app-*-minified.apk
+          path: app/build/outputs/apk/**/app-*-minified.apk
           retention-days: 14
 
   test-instrumented:

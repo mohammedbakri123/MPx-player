@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mpx.player.BuildConfig
 import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.ui.screens.settings.AppUpdateDialog
@@ -73,58 +74,60 @@ fun AboutCategorySection(
                 )
             }
         }
-        Spacer(Modifier.height(16.dp))
-        PreferenceRow(
-            title = stringResource(R.string.app_update_check_title),
-            subtitle = when (updateStatus) {
-                UpdateCheckStatus.IDLE -> stringResource(
-                    R.string.app_update_current_version,
-                    AppUpdateChecker.currentVersion(),
-                )
-                UpdateCheckStatus.CHECKING -> stringResource(R.string.app_update_checking)
-                UpdateCheckStatus.UP_TO_DATE -> stringResource(R.string.app_update_up_to_date)
-                UpdateCheckStatus.AVAILABLE -> stringResource(
-                    R.string.app_update_available,
-                    availableRelease?.tag.orEmpty(),
-                )
-                UpdateCheckStatus.FAILED -> stringResource(R.string.app_update_check_failed)
-            },
-            icon = Icons.Filled.Update,
-            onClick = {
-                if (updateStatus == UpdateCheckStatus.CHECKING) return@PreferenceRow
-                viewModel.checkForUpdate { result ->
-                    when (result) {
-                        is AppUpdateChecker.CheckResult.UpToDate -> {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.app_update_up_to_date),
-                                Toast.LENGTH_SHORT,
-                            ).show()
-                        }
-                        is AppUpdateChecker.CheckResult.Available -> {
-                            // Dialog visibility is managed in ViewModel
-                        }
-                        AppUpdateChecker.CheckResult.Failed -> {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.app_update_check_failed),
-                                Toast.LENGTH_SHORT,
-                            ).show()
+        if (BuildConfig.SELF_UPDATE_ENABLED) {
+            Spacer(Modifier.height(16.dp))
+            PreferenceRow(
+                title = stringResource(R.string.app_update_check_title),
+                subtitle = when (updateStatus) {
+                    UpdateCheckStatus.IDLE -> stringResource(
+                        R.string.app_update_current_version,
+                        AppUpdateChecker.currentVersion(),
+                    )
+                    UpdateCheckStatus.CHECKING -> stringResource(R.string.app_update_checking)
+                    UpdateCheckStatus.UP_TO_DATE -> stringResource(R.string.app_update_up_to_date)
+                    UpdateCheckStatus.AVAILABLE -> stringResource(
+                        R.string.app_update_available,
+                        availableRelease?.tag.orEmpty(),
+                    )
+                    UpdateCheckStatus.FAILED -> stringResource(R.string.app_update_check_failed)
+                },
+                icon = Icons.Filled.Update,
+                onClick = {
+                    if (updateStatus == UpdateCheckStatus.CHECKING) return@PreferenceRow
+                    viewModel.checkForUpdate { result ->
+                        when (result) {
+                            is AppUpdateChecker.CheckResult.UpToDate -> {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.app_update_up_to_date),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
+                            is AppUpdateChecker.CheckResult.Available -> {
+                                // Dialog visibility is managed in ViewModel
+                            }
+                            AppUpdateChecker.CheckResult.Failed -> {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.app_update_check_failed),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         }
                     }
+                },
+            )
+            if (showUpdateDialog) {
+                availableRelease?.let { release ->
+                    AppUpdateDialog(
+                        release = release,
+                        onDismiss = { viewModel.dismissUpdateDialog() },
+                    )
                 }
-            },
-        )
-        if (showUpdateDialog) {
-            availableRelease?.let { release ->
-                AppUpdateDialog(
-                    release = release,
-                    onDismiss = { viewModel.dismissUpdateDialog() },
-                )
             }
-        }
-        ToggleRow(stringResource(R.string.app_update_auto_check), settings.appUpdateAutoCheck) {
-            onUpdate(settings.copy(appUpdateAutoCheck = it))
+            ToggleRow(stringResource(R.string.app_update_auto_check), settings.appUpdateAutoCheck) {
+                onUpdate(settings.copy(appUpdateAutoCheck = it))
+            }
         }
     }
 }
