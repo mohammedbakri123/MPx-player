@@ -8,7 +8,7 @@ It is kept honest: every section describes the code on `master` now. If a sectio
 
 ## 1. Stack
 
-- **Application Structure:** Single-module native Kotlin Android app, package `com.mpx.player` (`app/src/main/java/com/mpx/player/`, 203 Kotlin files).
+- **Application Structure:** Single-module native Kotlin Android app, package `com.mpx.player` (`app/src/main/java/com/mpx/player/`, 207 Kotlin files).
 - **UI & Presentation:** Jetpack Compose, Material 3 (`androidx.compose.material3`, with custom OLED true-black theme tokens; no experimental Expressive APIs are used), single-activity architecture (`MainActivity`), Compose Navigation (`ui/navigation/Navigation.kt`).
 - **Playback Engine:** Native `libmpv` via `mpv-android-lib` 0.1.12. There is no ExoPlayer or Media3 in the application.
 - **Persistence:** Room 2.8.5 (schema version 13, database `mpx_player.db` with indices on timestamp and query columns) for history, favorites, resume points, and playlists; `SharedPreferences` (`SharedPrefsAppSettingsRepository`) for user settings.
@@ -44,7 +44,7 @@ Data (Room DAOs, MediaStore scanners + cache, SharedPreferences)  ←  Domain (m
   - `MediaStoreRepository`: Thin facade coordinating `VideoMediaScanner`, `AudioMediaScanner`, `PlaylistMediaScanner`, `MediaStoreScannerHelper`, and `MediaStoreCache`.
   - `RoomMediaPersistenceRepository`: Manages SQLite persistence via `MpxDatabase` (Room v13).
   - `SharedPrefsAppSettingsRepository`: Handles persistent preferences.
-- **Supporting Packages** — `network/` (stream URL parsing, shared link extraction), `update/` (`AppUpdateChecker` for in-app release checks against GitHub), and `util/` (`ThumbnailLoader`, `SubtitleSiblingFinder`, `SubtitleUtils`, `FuzzySearch`, `LocaleHelper`, `MediaPermissions`, `PipUtils`).
+- **Supporting Packages** — `network/` (stream URL parsing, shared link extraction), `update/` (`AppUpdateChecker` for in-app release checks against GitHub), and `util/` (`ThumbnailLoader`, `SubtitleSiblingFinder`, `SubtitleUtils`, `FileMediaInfoReader`, `FuzzySearch`, `LocaleHelper`, `MediaPermissions`, `PipUtils`).
 - **Entry Points** — `MpxApplication` starts Koin modules (`appModule`, `playbackModule`, `viewModelModule`) and applies the stored night mode at process startup. `MainActivity` sets up Compose navigation, handles activity-result contracts, and receives required dependencies from Koin.
 
 ---
@@ -61,7 +61,7 @@ Data (Room DAOs, MediaStore scanners + cache, SharedPreferences)  ←  Domain (m
 
 ### PlaybackCoordinator
 
-`PlaybackCoordinator` (1,055 lines) manages session coordination and implements `PlaybackStateSource`, `StreamPlayer`, `SleepTimerHost`, and `PositionSink`:
+`PlaybackCoordinator` (1,063 lines) manages session coordination and implements `PlaybackStateSource`, `StreamPlayer`, `SleepTimerHost`, and `PositionSink`:
 - Exposes `playbackState` directly via delegation to `PlaybackStateStore`.
 - Handles high-level transport controls (`play`, `pause`, `seekTo`, `setSpeed`, `stop`).
 - Manages the 20-second preparing watchdog timer to detect stuck media loads.
@@ -106,11 +106,11 @@ Native calls to `libmpv` are decoupled behind the `MpvPort` interface (`playback
 
 ### Engine Subsystems
 
-- **`MpvPlayerEngine` (538 lines):** Facade implementing `PlayerEngine`. Delegates native commands and queries to internal engine collaborators. Retains presentation-specific aspect-ratio and video-zoom conversions (`setAspectRatio`, `setVideoZoom`).
-- **`MpvCoreEngine` (1,307 lines):** Core mpv lifecycle manager. Handles engine initialization, `loadfile` dispatch, position/duration tracking, playback state caching, property observation, and hardware decoder fallback chains (`attemptDecoderFallback`).
-- **`MpvSurfaceManager` (160 lines):** Manages Android `Surface` attachment and libmpv video output (VO) recovery under `surfaceLock`. Restores `vo=gpu` upon surface creation, surface change, or playback resumption. Correctly suppresses redundant VO restoration during load preparation (`willLoad = true`) unless `voIsNull = true`.
-- **`MpvTrackSelection` (254 lines):** Reads `track-list` and controls audio, video, and subtitle track selection (`aid`, `vid`, `sid`) via `MpvPort`. Interacts with `MpvSubtitleRenderer` to clear external subtitle pick reservations when embedded tracks or "Off" are selected.
-- **`MpvSubtitleRenderer` (832 lines):** Manages subtitle styling options (`applySubtitleSettings`), codepage selection (`applySubtitleCodepage`), pending subtitle queueing during media loading, reapplication of remembered external subtitle picks, and asynchronous sub-add outcome confirmation with a 5000 ms timeout.
+- **`MpvPlayerEngine` (560 lines):** Facade implementing `PlayerEngine`. Delegates native commands and queries to internal engine collaborators. Retains presentation-specific aspect-ratio and video-zoom conversions (`setAspectRatio`, `setVideoZoom`). Also delegates `getMediaInfo()` (player Media Information page) and `getChapters()` (chapter markers on the seek bar) to `MpvTrackSelection`.
+- **`MpvCoreEngine` (1,324 lines):** Core mpv lifecycle manager. Handles engine initialization, `loadfile` dispatch, position/duration tracking, playback state caching, property observation, and hardware decoder fallback chains (`attemptDecoderFallback`).
+- **`MpvSurfaceManager` (173 lines):** Manages Android `Surface` attachment and libmpv video output (VO) recovery under `surfaceLock`. Restores `vo=gpu` upon surface creation, surface change, or playback resumption. Correctly suppresses redundant VO restoration during load preparation (`willLoad = true`) unless `voIsNull = true`.
+- **`MpvTrackSelection` (373 lines):** Reads `track-list` and controls audio, video, and subtitle track selection (`aid`, `vid`, `sid`) via `MpvPort`. Interacts with `MpvSubtitleRenderer` to clear external subtitle pick reservations when embedded tracks or "Off" are selected. Also exposes `getMediaInfo()` (video/audio/subtitle technical info for the player Media Information page) and `getChapters()` (chapter list for the seek-bar markers).
+- **`MpvSubtitleRenderer` (968 lines):** Manages subtitle styling options (`applySubtitleSettings`), codepage selection (`applySubtitleCodepage`), pending subtitle queueing during media loading, reapplication of remembered external subtitle picks, and asynchronous sub-add outcome confirmation with a 5000 ms timeout. Windows-1256 subtitles are always transcoded to a UTF-8 copy before sub-add (`uriToSubAdd`): mpv accepts the `sub-codepage` property set (verified by read-back) yet ignores it when decoding in this libmpv build, so the transcode — not the property — is the guaranteed path. The `sub-codepage` attempt remains only as a fallback when transcoding fails.
 - **`MpvEngineConfig` (206 lines):** Maps user settings to mpv runtime options (audio delay, hardware decoding modes, and logarithmic video zoom mappings).
 - **`MpvLifecycleManager` (218 lines) & `MpvMetricsTracker` (110 lines):** Handles MPV option configuration, initialization error capture, playback metrics, and dropped frame tracking.
 
@@ -168,34 +168,40 @@ Dependencies are configured across three Koin modules in `app/src/main/java/com/
 
 ## 7. Current Line Counts
 
-*Measured directly via `wc -l` on `master` (6a22004d):*
+*Measured directly via `wc -l` on `master` (a0c878ab, v0.4.62):*
 
 | Component / File | Path | Lines |
 |---|---|---|
-| `PlaybackCoordinator` | `app/src/main/java/com/mpx/player/playback/PlaybackCoordinator.kt` | 1,055 |
+| `PlaybackCoordinator` | `app/src/main/java/com/mpx/player/playback/PlaybackCoordinator.kt` | 1,063 |
 | `PlaybackStateStore` | `app/src/main/java/com/mpx/player/playback/PlaybackStateStore.kt` | 292 |
 | `PlaybackQueue` | `app/src/main/java/com/mpx/player/playback/PlaybackQueue.kt` | 596 |
 | `SubtitleManager` | `app/src/main/java/com/mpx/player/playback/SubtitleManager.kt` | 424 |
 | `EngineEventTranslator` | `app/src/main/java/com/mpx/player/playback/EngineEventTranslator.kt` | 363 |
-| `MpvCoreEngine` | `app/src/main/java/com/mpx/player/playback/engine/MpvCoreEngine.kt` | 1,307 |
-| `MpvSurfaceManager` | `app/src/main/java/com/mpx/player/playback/engine/MpvSurfaceManager.kt` | 160 |
-| `MpvTrackSelection` | `app/src/main/java/com/mpx/player/playback/engine/MpvTrackSelection.kt` | 254 |
-| `MpvSubtitleRenderer` | `app/src/main/java/com/mpx/player/playback/engine/MpvSubtitleRenderer.kt` | 832 |
+| `MpvCoreEngine` | `app/src/main/java/com/mpx/player/playback/engine/MpvCoreEngine.kt` | 1,324 |
+| `MpvSurfaceManager` | `app/src/main/java/com/mpx/player/playback/engine/MpvSurfaceManager.kt` | 173 |
+| `MpvTrackSelection` | `app/src/main/java/com/mpx/player/playback/engine/MpvTrackSelection.kt` | 373 |
+| `MpvSubtitleRenderer` | `app/src/main/java/com/mpx/player/playback/engine/MpvSubtitleRenderer.kt` | 968 |
 | `MpvEngineConfig` | `app/src/main/java/com/mpx/player/playback/engine/MpvEngineConfig.kt` | 206 |
-| `MpvPlayerEngine` | `app/src/main/java/com/mpx/player/playback/engine/MpvPlayerEngine.kt` | 538 |
-| `MediaStoreRepository` | `app/src/main/java/com/mpx/player/data/repository/MediaStoreRepository.kt` | 127 |
-| `VideoMediaScanner` | `app/src/main/java/com/mpx/player/data/repository/VideoMediaScanner.kt` | 533 |
-| `AudioMediaScanner` | `app/src/main/java/com/mpx/player/data/repository/AudioMediaScanner.kt` | 214 |
-| `PlaylistMediaScanner` | `app/src/main/java/com/mpx/player/data/repository/PlaylistMediaScanner.kt` | 204 |
-| `MediaStoreScannerHelper` | `app/src/main/java/com/mpx/player/data/repository/MediaStoreScannerHelper.kt` | 218 |
-| `MediaStoreCache` | `app/src/main/java/com/mpx/player/data/repository/MediaStoreCache.kt` | 60 |
+| `MpvPlayerEngine` | `app/src/main/java/com/mpx/player/playback/engine/MpvPlayerEngine.kt` | 560 |
+| `MediaStoreRepository` | `app/src/main/java/com/mpx/player/data/repository/MediaStoreRepository.kt` | 133 |
+| `VideoMediaScanner` | `app/src/main/java/com/mpx/player/data/repository/VideoMediaScanner.kt` | 547 |
+| `AudioMediaScanner` | `app/src/main/java/com/mpx/player/data/repository/AudioMediaScanner.kt` | 226 |
+| `PlaylistMediaScanner` | `app/src/main/java/com/mpx/player/data/repository/PlaylistMediaScanner.kt` | 216 |
+| `MediaStoreScannerHelper` | `app/src/main/java/com/mpx/player/data/repository/MediaStoreScannerHelper.kt` | 229 |
+| `MediaStoreCache` | `app/src/main/java/com/mpx/player/data/repository/MediaStoreCache.kt` | 65 |
 | `RoomMediaPersistenceRepository` | `app/src/main/java/com/mpx/player/data/repository/RoomMediaPersistenceRepository.kt` | 277 |
-| `PlaybackModule` | `app/src/main/java/com/mpx/player/di/PlaybackModule.kt` | 45 |
-| `AppModule` | `app/src/main/java/com/mpx/player/di/AppModule.kt` | 38 |
+| `PlaybackModule` | `app/src/main/java/com/mpx/player/di/PlaybackModule.kt` | 39 |
+| `AppModule` | `app/src/main/java/com/mpx/player/di/AppModule.kt` | 35 |
 | `ViewModelModule` | `app/src/main/java/com/mpx/player/di/ViewModelModule.kt` | 86 |
-| `PlayerScreen` | `app/src/main/java/com/mpx/player/ui/screens/player/PlayerScreen.kt` | 470 |
+| `PlayerScreen` | `app/src/main/java/com/mpx/player/ui/screens/player/PlayerScreen.kt` | 540 |
+| `PlayerTopChrome` | `app/src/main/java/com/mpx/player/ui/screens/player/components/PlayerTopChrome.kt` | 275 |
+| `FloatingIsland` | `app/src/main/java/com/mpx/player/ui/screens/player/components/FloatingIsland.kt` | 74 |
+| `PlaybackSheetMediaInfoPage` | `app/src/main/java/com/mpx/player/ui/screens/player/components/playbacksheet/PlaybackSheetMediaInfoPage.kt` | 335 |
 | `MusicScreen` | `app/src/main/java/com/mpx/player/ui/screens/music/MusicScreen.kt` | 627 |
-| `LocalScreen` | `app/src/main/java/com/mpx/player/ui/screens/local/LocalScreen.kt` | 531 |
+| `LocalScreen` | `app/src/main/java/com/mpx/player/ui/screens/local/LocalScreen.kt` | 551 |
+| `FileMediaInfoScreen` | `app/src/main/java/com/mpx/player/ui/screens/local/FileMediaInfoScreen.kt` | 117 |
+| `FileMediaInfoReader` | `app/src/main/java/com/mpx/player/util/FileMediaInfoReader.kt` | 184 |
+| `MeScreen` | `app/src/main/java/com/mpx/player/ui/screens/me/MeScreen.kt` | 534 |
 | `SettingsScreen` | `app/src/main/java/com/mpx/player/ui/screens/settings/SettingsScreen.kt` | 380 |
 
 ---
@@ -241,7 +247,7 @@ Continuous Integration (`.github/workflows/ci.yml`) runs on GitHub Actions:
 | I want to… | Start from | Invariants & Notes |
 |---|---|---|
 | Add or modify a setting | `domain/settings/AppSettings.kt`, `data/settings/SharedPrefsAppSettingsRepository.kt`, `ui/screens/settings/SettingsViewModel.kt` | Add string resources across all 9 supported locales in `app/src/main/res/values-*/strings.xml`. |
-| Change subtitle selection or codepage | `playback/SubtitleManager.kt` and `playback/engine/MpvSubtitleRenderer.kt` | Encoding detection applies `sub-codepage` before issuing `sub-add`. Subtitle confirmation timeout is 5000 ms. |
+| Change subtitle selection or codepage | `playback/SubtitleManager.kt` and `playback/engine/MpvSubtitleRenderer.kt` | Detection runs at load time from the raw URI, not only at pick time. Windows-1256 is always transcoded to a UTF-8 copy before sub-add — mpv accepts the `sub-codepage` set yet ignores it when decoding, so the transcode is the guaranteed path and the property set is only a fallback. Subtitle confirmation timeout is 5000 ms. |
 | Modify queue behavior (shuffle, repeat, next/previous) | `playback/PlaybackQueue.kt` | `PlaybackQueue` is the sole source of truth for queue items. Persists state via `QueueStore`. |
 | Handle engine events or decoder fallbacks | `playback/EngineEventTranslator.kt` and `playback/PlaybackStateStore.kt` | Translator maps raw engine callbacks to typed `PlaybackEvent`s; `PlaybackCoordinator` applies side-effects. |
 | Change video surface or display output | `playback/engine/MpvSurfaceManager.kt` | All surface mutations must acquire `surfaceLock`. VO restoration to `gpu` is suppressed when `willLoad = true` unless `voIsNull = true`. |
