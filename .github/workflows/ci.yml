@@ -58,7 +58,11 @@ jobs:
           packages: platform-tools platforms;android-36 build-tools;36.0.0
 
       - name: Build debug + run unit tests
-        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest
+        # Flavors (2026-11-13, F-Droid prep): `testDebugUnitTest` is
+        # ambiguous once the github/fdroid flavors exist — Gradle
+        # refuses it ("Candidates are: testFdroidDebugUnitTest,
+        # testGithubDebugUnitTest"). Run both per-flavor tasks.
+        run: ./gradlew --no-daemon assembleDebug testGithubDebugUnitTest testFdroidDebugUnitTest
 
   lint:
     # Release lint checks on CI (Step 6.3). Kept separate from local offline
