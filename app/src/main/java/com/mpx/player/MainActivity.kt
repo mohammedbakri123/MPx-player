@@ -60,10 +60,12 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.mpx.player.domain.settings.AppSettingsRepository
 import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.playback.PlaybackService
@@ -73,6 +75,7 @@ import com.mpx.player.ui.navigation.Screen
 import com.mpx.player.ui.navigation.navigationTabs
 import com.mpx.player.ui.screens.about.AboutBetaScreen
 import com.mpx.player.ui.ActivityResultHandler
+import com.mpx.player.ui.screens.local.FileMediaInfoScreen
 import com.mpx.player.ui.screens.local.LocalScreen
 import com.mpx.player.ui.screens.me.HistoryScreen
 import com.mpx.player.ui.screens.me.MeScreen
@@ -652,6 +655,7 @@ fun MpxApp(
                 Screen.AboutBeta.route,
                 Screen.History.route,
                 Screen.Playlists.route,
+                Screen.FileMediaInfo.route,
             )
             AnimatedVisibility(
                 visible = showDock,
@@ -770,6 +774,11 @@ fun MpxApp(
                     permissionResultHandler = localPermissionHandler,
                     onOpenPlayer = { navController.navigate(Screen.Player.route) },
                     onOpenSettings = { navController.navigate(Screen.Settings.route) },
+                    // File-list Media Information (mpvEx-style): the
+                    // path is URL-encoded into the route by createRoute.
+                    onOpenFileMediaInfo = { path ->
+                        navController.navigate(Screen.FileMediaInfo.createRoute(path))
+                    },
                     playbackCoordinator = playbackCoordinator,
                     // Issue #245: while the search page is open the
                     // tab-swipe detector above is off, so a swipe
@@ -858,6 +867,20 @@ fun MpxApp(
             }
             composable(Screen.AboutBeta.route) {
                 AboutBetaScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+            // File-list Media Information (mpvEx-style): the path
+            // argument arrives URL-decoded by the navigation library.
+            composable(
+                route = Screen.FileMediaInfo.route,
+                arguments = listOf(
+                    navArgument("filePath") { type = NavType.StringType },
+                ),
+            ) { backStackEntry ->
+                val filePath = backStackEntry.arguments?.getString("filePath") ?: ""
+                FileMediaInfoScreen(
+                    filePath = filePath,
                     onNavigateBack = { navController.popBackStack() },
                 )
             }

@@ -1162,4 +1162,5 @@
     <string name="media_info_status_embedded">مدمج</string>
     <string name="media_info_unknown">غير معروف</string>
     <string name="media_info_no_media">لم يتم تحميل أي وسائط</string>
+    <string name="media_info_cd">معلومات الوسائط</string>
 </resources>

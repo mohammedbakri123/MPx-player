@@ -43,6 +43,20 @@ internal fun PlaybackSheetMediaInfoPage(
         return
     }
 
+    MediaInfoContent(mediaInfo)
+}
+
+/**
+ * Shared Media Information content: the General / Video / Audio /
+ * Subtitles sections for a [MediaInfo]. Used by the playback sheet
+ * page (issue #468, mpv track-list) AND the standalone file-list
+ * screen (MediaExtractor, before playback) — both render exactly the
+ * same sections/rows. Null or fully empty info shows "No media loaded".
+ */
+@Composable
+internal fun MediaInfoContent(
+    mediaInfo: MediaInfo?,
+) {
     val info = mediaInfo
     if (info == null) {
         Box(

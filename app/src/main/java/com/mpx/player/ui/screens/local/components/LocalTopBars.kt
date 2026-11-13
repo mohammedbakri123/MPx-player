@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
@@ -74,6 +75,11 @@ fun LocalSelectionTopBar(
     selectionCount: Int,
     onClearSelection: () -> Unit,
     modifier: Modifier = Modifier,
+    // File-list Media Information (mpvEx-style): the Info icon opens
+    // the info page for the single selected video. Shown only when
+    // exactly one video is selected, like mpvEx's isSingleSelection
+    // guard; hidden for multi-select (info is a single-item action).
+    onShowMediaInfo: () -> Unit = {},
 ) {
     MpxCompactTopBar(
         modifier = modifier,
@@ -95,6 +101,17 @@ fun LocalSelectionTopBar(
                 ),
                 color = MpxTheme.colors.textPrimary,
             )
+        },
+        actions = {
+            if (selectionCount == 1) {
+                IconButton(onClick = onShowMediaInfo) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = stringResource(R.string.media_info_cd),
+                        tint = MpxTheme.colors.textPrimary,
+                    )
+                }
+            }
         },
     )
 }
