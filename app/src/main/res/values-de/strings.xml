@@ -254,6 +254,7 @@
     <string name="me_status_banner">Ich-Werkzeugraster: echte Funktionen, verbunden mit Lokal, Musik, Wiedergabelisten, Favoriten, Verlauf, Netzwerk-Stream. Platzhalter für Issue 32 ehrlich markiert.</string>
     <string name="section_tools">WERKZEUGE</string>
     <string name="section_preferences">EINSTELLUNGEN</string>
+    <string name="section_collection">SAMMLUNG</string>
     <string name="section_about_legal">ÜBER &amp; RECHTLICHES</string>
 
     <!-- Me Screen Tools -->
