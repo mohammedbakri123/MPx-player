@@ -1,0 +1,13 @@
+# Changelog
+
+All notable changes to MPx Player will be documented in this file.
+
+## Unreleased
+
+## v0.4.62
+
+- Decoder pill is now a small island with only the mode letters (HW / HW+ / SW), and the video title is back
+- Windows-1256 Arabic subtitles now render correctly (transcoded to UTF-8)
+- Strip menu aligns to the left edge in landscape
+- Media Information from the file list: long-press a video, tap the Info icon
+- Me page: Tools section removed, new Collection section (History, Favourites, Playlists)

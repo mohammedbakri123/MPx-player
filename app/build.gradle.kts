@@ -71,6 +71,18 @@ android {
         // are packaged, and AGP rejects abiFilters when splits are set.
     }
 
+    flavorDimensions += "store"
+    productFlavors {
+        create("github") {
+            dimension = "store"
+            buildConfigField("boolean", "SELF_UPDATE_ENABLED", "true")
+        }
+        create("fdroid") {
+            dimension = "store"
+            buildConfigField("boolean", "SELF_UPDATE_ENABLED", "false")
+        }
+    }
+
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
