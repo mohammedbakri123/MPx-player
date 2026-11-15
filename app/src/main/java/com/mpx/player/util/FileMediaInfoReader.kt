@@ -1,7 +1,10 @@
 package com.mpx.player.util
 
+import android.content.Context
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import android.net.Uri
+import android.provider.OpenableColumns
 import com.mpx.player.playback.MediaAudioTrackInfo
 import com.mpx.player.playback.MediaInfo
 import com.mpx.player.playback.MediaVideoTrackInfo
@@ -26,17 +29,43 @@ object FileMediaInfoReader {
 
     /**
      * Build the [MediaInfo] for the file at [path], or null when it
-     * cannot be read. [path] must be a plain filesystem path
-     * (VideoFile.path); anything else returns null — never guessed.
+     * cannot be read. [path] is either a plain filesystem path
+     * (VideoFile.path) or a content:// URI — the latter happens when
+     * MediaStore DATA is blank under scoped storage and VideoFile.path
+     * falls back to the content URI (Talha, 2026-11-15: the page showed
+     * "No media loaded" for exactly those files). A plain path is
+     * opened directly; a content URI is opened through the
+     * [Context]'s ContentResolver, so MediaExtractor can read it.
      */
-    fun readMediaInfo(path: String): MediaInfo? {
-        if (path.isBlank() || !path.startsWith("/")) return null
-        val file = File(path)
-        if (!file.isFile) return null
+    fun readMediaInfo(context: Context, path: String): MediaInfo? {
+        if (path.isBlank()) return null
+        val isContentUri = path.startsWith("content://")
+        if (!isContentUri && !path.startsWith("/")) return null
+
+        val file = if (isContentUri) null else File(path)
+        if (!isContentUri && (file == null || !file.isFile)) return null
+
+        // General-section metadata: for a plain path it comes from
+        // the File; for a content URI it comes from the ContentResolver
+        // (DISPLAY_NAME / SIZE) — the File route cannot open it.
+        val displayName: String?
+        val sizeBytes: Long?
+        if (isContentUri) {
+            val (name, size) = queryDisplayNameAndSize(context, Uri.parse(path))
+            displayName = name
+            sizeBytes = size
+        } else {
+            displayName = file!!.name
+            sizeBytes = file.length().takeIf { it > 0L }
+        }
 
         val extractor = MediaExtractor()
         try {
-            extractor.setDataSource(path)
+            if (isContentUri) {
+                extractor.setDataSource(context, Uri.parse(path), null)
+            } else {
+                extractor.setDataSource(path)
+            }
             if (extractor.trackCount <= 0) return null
 
             var videoTrack: MediaVideoTrackInfo? = null
@@ -110,14 +139,14 @@ object FileMediaInfoReader {
                 return null
             }
 
-            val extension = file.name.substringAfterLast('.', "")
-                .lowercase().takeIf { it.isNotEmpty() }
-            val size = file.length().takeIf { it > 0L }
+            val extension = displayName?.substringAfterLast('.', "")
+                ?.lowercase()
+                ?.takeIf { it.isNotEmpty() }
 
             return MediaInfo(
-                title = file.name,
+                title = displayName,
                 format = extension,
-                fileSize = size,
+                fileSize = sizeBytes,
                 durationMs = maxDurationMs,
                 videoTrack = videoTrack,
                 audioTracks = audioTracks,
@@ -127,6 +156,42 @@ object FileMediaInfoReader {
             return null
         } finally {
             extractor.release()
+        }
+    }
+
+    /**
+     * DISPLAY_NAME and SIZE for a content URI, via the ContentResolver.
+     * Returns (null, null) when the query fails or the columns are
+     * missing — the caller then shows "Unknown" for those rows, but the
+     * track sections still render.
+     */
+    private fun queryDisplayNameAndSize(
+        context: Context,
+        uri: Uri,
+    ): Pair<String?, Long?> {
+        return try {
+            context.contentResolver.query(
+                uri,
+                arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE),
+                null, null, null,
+            )?.use { cursor ->
+                if (!cursor.moveToFirst()) return null to null
+                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                val name = if (nameIndex >= 0) cursor.getString(nameIndex) else null
+                val size = if (sizeIndex >= 0) {
+                    try {
+                        cursor.getLong(sizeIndex).takeIf { it > 0L }
+                    } catch (_: Exception) {
+                        null
+                    }
+                } else {
+                    null
+                }
+                name to size
+            } ?: (null to null)
+        } catch (_: Exception) {
+            null to null
         }
     }
 
