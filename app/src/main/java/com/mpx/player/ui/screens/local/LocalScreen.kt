@@ -49,6 +49,7 @@ import com.mpx.player.ui.screens.local.components.LocalSelectionTopBar
 import com.mpx.player.ui.screens.local.components.LocalStatusStrip
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.util.FileMediaInfoReader
 import com.mpx.player.util.MediaPermissions
 import java.io.File
 import kotlinx.coroutines.launch
@@ -286,19 +287,21 @@ fun LocalScreen(
                 LocalSelectionTopBar(
                     selectionCount = selectionCount,
                     onClearSelection = actions::clearSelection,
+                    showMediaInfo = selectedVideoIds.size == 1 && selectedFolderIds.isEmpty(),
                     // File-list Media Information (mpvEx-style): the
                     // Info icon is only shown when exactly one video
-                    // is selected. Open the info page for that video
-                    // (search page / folder / file view all resolve
-                    // through selectedVideosInView), then clear the
-                    // selection like mpvEx does after launching it.
+                    // is selected. Pass contentUri first (falling back
+                    // to path): on Android 10 scoped storage is active
+                    // without FUSE path redirection while MediaStore
+                    // DATA is still non-blank, so raw filesystem paths
+                    // fail with EACCES whereas content:// succeeds.
                     onShowMediaInfo = {
                         val selected = viewModel.selectedVideosInView(
                             currentFolder,
                             showSearchPage,
                         )
                         if (selected.size == 1) {
-                            onOpenFileMediaInfo(selected.first().path)
+                            onOpenFileMediaInfo(FileMediaInfoReader.preferredSourceFor(selected.first()))
                             viewModel.clearSelection()
                         }
                     },

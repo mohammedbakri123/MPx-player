@@ -78,7 +78,8 @@ fun LocalSelectionTopBar(
     // File-list Media Information (mpvEx-style): the Info icon opens
     // the info page for the single selected video. Shown only when
     // exactly one video is selected, like mpvEx's isSingleSelection
-    // guard; hidden for multi-select (info is a single-item action).
+    // guard; hidden for multi-select or folder selection.
+    showMediaInfo: Boolean = selectionCount == 1,
     onShowMediaInfo: () -> Unit = {},
 ) {
     MpxCompactTopBar(
@@ -103,7 +104,7 @@ fun LocalSelectionTopBar(
             )
         },
         actions = {
-            if (selectionCount == 1) {
+            if (showMediaInfo) {
                 IconButton(onClick = onShowMediaInfo) {
                     Icon(
                         imageVector = Icons.Filled.Info,
