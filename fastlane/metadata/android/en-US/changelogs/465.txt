@@ -1,0 +1,1 @@
+Player seek gestures: fixed unpredictable position jumps, accidental seeks from palm/edge touches, double-tap misfires, and stuck pause state after cancelled drags.
