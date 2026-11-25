@@ -17,9 +17,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.theme.MpxTheme
+
+/**
+ * Consumes remaining pointer events on the [PointerEventPass.Main] pass after
+ * child controls (sliders, buttons) run, preventing missed taps or drags on
+ * floating chrome pills from leaking through to the root video gesture detector.
+ */
+internal fun Modifier.consumeUnconsumedPointerEvents(): Modifier = this.pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Main)
+            event.changes.forEach { it.consume() }
+        }
+    }
+}
 
 /**
  * Shared island material for floating pills/islands in PlayerScreen.
@@ -40,10 +56,12 @@ fun FloatingIsland(
     borderWidth: Dp = 1.dp,
     elevation: Dp = 8.dp,
     contentAlignment: Alignment = Alignment.Center,
+    consumeTouches: Boolean = true,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
-        modifier = modifier
+        modifier = (if (consumeTouches) Modifier.consumeUnconsumedPointerEvents() else Modifier)
+            .then(modifier)
             .shadow(elevation = elevation, shape = shape, clip = false)
             .border(width = borderWidth, color = borderColor, shape = shape)
             .clip(shape),

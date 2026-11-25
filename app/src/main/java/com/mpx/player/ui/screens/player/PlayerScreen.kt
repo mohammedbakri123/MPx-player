@@ -373,8 +373,6 @@ fun PlayerScreen(
             .playerGestureDetector(
                 isLocked = state.isLocked,
                 currentDuration = currentDuration,
-                state = state,
-                currentSettings = currentSettings,
                 gestureState = gestureState,
                 viewModel = viewModel,
                 scope = scope,
@@ -405,6 +403,12 @@ fun PlayerScreen(
         val density = LocalDensity.current
         val slide30dpPx = with(density) { 30.dp.roundToPx() }
         val islandsVisible = controlsVisible && !isInPipMode && !state.isPreparing && !state.isLocked
+
+        LaunchedEffect(islandsVisible) {
+            if (!islandsVisible && isScrubbingSlider) {
+                isScrubbingSlider = false
+            }
+        }
 
         // Top Floating Islands: Header pills + Strip menu
         AnimatedVisibility(

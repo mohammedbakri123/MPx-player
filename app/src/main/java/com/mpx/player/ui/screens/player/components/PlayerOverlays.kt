@@ -376,7 +376,16 @@ fun BoxScope.PlayerOverlays(
 
     if (!isInPipMode) gestureState.sideSeekDirection?.let { direction ->
         val isBackward = direction == SideSeekDirection.BACKWARD
-        val seekSeconds = viewModel.settings.value.doubleTapSeekSeconds
+        val seekSeconds = if (gestureState.sideSeekDeltaMs != 0L) {
+            (kotlin.math.abs(gestureState.sideSeekDeltaMs) / 1000L).toInt()
+        } else {
+            viewModel.settings.value.doubleTapSeekSeconds
+        }
+        val displayPositionMs = if (currentDuration > 0L && gestureState.sideSeekDeltaMs != 0L) {
+            gestureState.sideSeekTargetMs
+        } else {
+            state.currentPositionMs
+        }
         Box(
             modifier = Modifier
                 .align(if (isBackward) Alignment.CenterStart else Alignment.CenterEnd)
@@ -410,9 +419,9 @@ fun BoxScope.PlayerOverlays(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = if (currentDuration > 0) {
-                        "${formatTimeMs(state.currentPositionMs)} / ${formatTimeMs(currentDuration)}"
+                        "${formatTimeMs(displayPositionMs)} / ${formatTimeMs(currentDuration)}"
                     } else {
-                        formatTimeMs(state.currentPositionMs)
+                        formatTimeMs(displayPositionMs)
                     },
                     color = MpxTheme.colors.textPrimary.copy(alpha = 0.8f),
                     fontSize = 12.sp,
@@ -425,7 +434,8 @@ fun BoxScope.PlayerOverlays(
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 128.dp, start = 16.dp, end = 16.dp),
+                .padding(top = 128.dp, start = 16.dp, end = 16.dp)
+                .consumeUnconsumedPointerEvents(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
