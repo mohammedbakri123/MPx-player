@@ -197,6 +197,7 @@ fun PlayerTopBarActionButton(
 ) {
     FloatingIsland(
         shape = CircleShape,
+        consumeTouches = false,
         modifier = Modifier
             .size(40.dp)
             .clickable(onClick = onClick),
