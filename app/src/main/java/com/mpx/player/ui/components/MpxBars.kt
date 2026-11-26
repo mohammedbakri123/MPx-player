@@ -5,15 +5,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -22,6 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -115,6 +121,72 @@ fun MpxBottomBar(
         tonalElevation = 0.dp,
         windowInsets = WindowInsets(0, 0, 0, 0),
         content = content,
+    )
+}
+
+/**
+ * Android TV navigation rail: replaces the bottom dock on Leanback / TV
+ * screens so D-pad navigation moves cleanly between tabs on the start edge.
+ */
+@Composable
+fun MpxNavigationRail(
+    modifier: Modifier = Modifier,
+    header: (@Composable ColumnScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    NavigationRail(
+        modifier = modifier
+            .fillMaxHeight()
+            .width(88.dp),
+        containerColor = MpxTheme.colors.surfaceRaised,
+        contentColor = MpxTheme.colors.textPrimary,
+        windowInsets = WindowInsets(0, 0, 0, 0),
+        header = header,
+    ) {
+        Spacer(Modifier.height(16.dp))
+        content()
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+/** One tab item inside [MpxNavigationRail], with D-pad focus highlight. */
+@Composable
+fun MpxRailTab(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    NavigationRailItem(
+        selected = selected,
+        onClick = onClick,
+        modifier = modifier
+            .padding(vertical = 4.dp)
+            .mpxFocusHighlight(MpxShapes.medium),
+        icon = {
+            Icon(
+                icon,
+                contentDescription = label,
+                modifier = Modifier.size(MpxIconSize),
+            )
+        },
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        alwaysShowLabel = true,
+        colors = NavigationRailItemDefaults.colors(
+            selectedIconColor = MpxTheme.colors.primary,
+            unselectedIconColor = MpxTheme.colors.textMuted,
+            selectedTextColor = MpxTheme.colors.primary,
+            unselectedTextColor = MpxTheme.colors.textMuted,
+            indicatorColor = MpxTheme.colors.primary.copy(alpha = 0.15f),
+        ),
     )
 }
 
