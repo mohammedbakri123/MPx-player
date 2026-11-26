@@ -21,7 +21,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.input.pointer.pointerInput
@@ -91,9 +95,13 @@ import com.mpx.player.ui.screens.settings.AppUpdateDialog
 import com.mpx.player.update.AppUpdateChecker
 import com.mpx.player.util.LocaleHelper
 import com.mpx.player.util.PipUtils
+import com.mpx.player.util.TvUtils
 import java.util.Locale
 import com.mpx.player.ui.components.MpxBottomBar
 import com.mpx.player.ui.components.MpxDockTab
+import com.mpx.player.ui.components.MpxNavigationRail
+import com.mpx.player.ui.components.MpxRailTab
+import com.mpx.player.ui.theme.LocalIsTv
 import com.mpx.player.ui.theme.MpxEasingStandard
 import com.mpx.player.ui.theme.MpxMotionStandard
 
@@ -298,11 +306,15 @@ class MainActivity : ComponentActivity() {
                     setLayoutDirection(targetLocale)
                 }
             }
+            val isTv = remember(this, configEpoch) {
+                TvUtils.isTelevisionDevice(this)
+            }
 
             CompositionLocalProvider(
                 LocalContext provides localizedContext,
                 LocalConfiguration provides localizedConfig,
                 LocalLayoutDirection provides layoutDirection,
+                LocalIsTv provides isTv,
             ) {
                 MpxTheme(theme = currentTheme, palette = currentPalette, themeColor = currentThemeColor) {
                     MpxApp(
@@ -642,57 +654,95 @@ fun MpxApp(
         }
     }
 
-    Scaffold(
-        bottomBar = {
-            // Hide bottom navigation in PiP mode or on full-screen routes
-            // (Player, Settings, AboutBeta, History, Playlists). mpvEx-style
-            // (#157): the bar slides in/out over 300ms instead of popping.
-            val showDock = !isInPipMode && currentDestination?.route !in listOf(
-                Screen.Player.route,
-                Screen.Settings.route,
-                Screen.OverlaySettings.route,
-                Screen.AdvancedSettings.route,
-                Screen.AboutBeta.route,
-                Screen.History.route,
-                Screen.Playlists.route,
-                Screen.FileMediaInfo.route,
-            )
+    val isTv = LocalIsTv.current
+    val showDock = !isInPipMode && currentDestination?.route !in listOf(
+        Screen.Player.route,
+        Screen.Settings.route,
+        Screen.OverlaySettings.route,
+        Screen.AdvancedSettings.route,
+        Screen.AboutBeta.route,
+        Screen.History.route,
+        Screen.Playlists.route,
+        Screen.FileMediaInfo.route,
+    )
+
+    Row(modifier = Modifier.fillMaxSize()) {
+        if (isTv) {
             AnimatedVisibility(
                 visible = showDock,
-                enter = slideInVertically(
+                enter = slideInHorizontally(
                     animationSpec = tween(300, easing = MpxEasingStandard),
-                ) { it },
-                exit = slideOutVertically(
+                ) { -it },
+                exit = slideOutHorizontally(
                     animationSpec = tween(300, easing = MpxEasingStandard),
-                ) { it },
+                ) { -it },
             ) {
-                Column {
-                    // Real Media3 persistent MiniPlayer bar
-                    MiniPlayer(
-                        playbackCoordinator = playbackCoordinator,
-                        onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                MpxNavigationRail {
+                    navigationTabs.forEach { tab ->
+                        val selected = currentDestination?.hierarchy?.any {
+                            it.route == tab.route
+                        } == true
+                        MpxRailTab(
+                            label = stringResource(tab.labelRes),
+                            icon = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                            selected = selected,
+                            onClick = { navigateToTab(tab.route) },
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    MpxRailTab(
+                        label = stringResource(R.string.settings_title),
+                        icon = Icons.Outlined.Settings,
+                        selected = false,
+                        onClick = { navController.navigate(Screen.Settings.route) },
                     )
-                    // #157 dock: mpvEx-style NavigationBar (28dp rounded top
-                    // corners, accent pill on the selected tab), same four
-                    // tabs, tap-only. The selected tab is persisted
-                    // (AppSettings.lastTabRoute) so the app reopens on it.
-                    MpxBottomBar {
-                        navigationTabs.forEach { tab ->
-                            val selected = currentDestination?.hierarchy?.any {
-                                it.route == tab.route
-                            } == true
-                            MpxDockTab(
-                                label = stringResource(tab.labelRes),
-                                icon = if (selected) tab.selectedIcon else tab.unselectedIcon,
-                                selected = selected,
-                                onClick = { navigateToTab(tab.route) },
-                            )
+                }
+            }
+        }
+
+        Scaffold(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            bottomBar = {
+                AnimatedVisibility(
+                    visible = showDock,
+                    enter = slideInVertically(
+                        animationSpec = tween(300, easing = MpxEasingStandard),
+                    ) { it },
+                    exit = slideOutVertically(
+                        animationSpec = tween(300, easing = MpxEasingStandard),
+                    ) { it },
+                ) {
+                    Column {
+                        // Real Media3 persistent MiniPlayer bar
+                        MiniPlayer(
+                            playbackCoordinator = playbackCoordinator,
+                            onOpenPlayer = { navController.navigate(Screen.Player.route) },
+                        )
+                        if (!isTv) {
+                            // #157 dock: mpvEx-style NavigationBar (28dp rounded top
+                            // corners, accent pill on the selected tab), same four
+                            // tabs, tap-only. The selected tab is persisted
+                            // (AppSettings.lastTabRoute) so the app reopens on it.
+                            MpxBottomBar {
+                                navigationTabs.forEach { tab ->
+                                    val selected = currentDestination?.hierarchy?.any {
+                                        it.route == tab.route
+                                    } == true
+                                    MpxDockTab(
+                                        label = stringResource(tab.labelRes),
+                                        icon = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                                        selected = selected,
+                                        onClick = { navigateToTab(tab.route) },
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
-        },
-    ) { padding ->
+            },
+        ) { padding ->
         // #157: reopen on the last dock tab (persisted on every tab tap).
         val tabOrder = navigationTabs.map { it.route }
         val startTabRoute = remember {
@@ -737,27 +787,33 @@ fun MpxApp(
                 // PlayerScreen pads its own top/bottom overlays.
                 .padding(if (currentDestination?.route == Screen.Player.route) PaddingValues(0.dp) else padding)
                 .fillMaxSize()
-                .pointerInput(tabOrder, currentDestination?.route, isLocalSearchOpen) {
-                    var totalDrag = 0f
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { _, dragAmount ->
-                            totalDrag += dragAmount
-                        },
-                        onDragEnd = {
-                            val currentIndex = tabOrder.indexOf(currentDestination?.route)
-                            if (currentIndex >= 0 && !isLocalSearchOpen) {
-                                when {
-                                    totalDrag < -swipeThresholdPx && currentIndex < tabOrder.lastIndex ->
-                                        navigateToTab(tabOrder[currentIndex + 1])
-                                    totalDrag > swipeThresholdPx && currentIndex > 0 ->
-                                        navigateToTab(tabOrder[currentIndex - 1])
-                                }
-                            }
-                            totalDrag = 0f
-                        },
-                        onDragCancel = { totalDrag = 0f },
-                    )
-                },
+                .then(
+                    if (isTv) {
+                        Modifier
+                    } else {
+                        Modifier.pointerInput(tabOrder, currentDestination?.route, isLocalSearchOpen) {
+                            var totalDrag = 0f
+                            detectHorizontalDragGestures(
+                                onHorizontalDrag = { _, dragAmount ->
+                                    totalDrag += dragAmount
+                                },
+                                onDragEnd = {
+                                    val currentIndex = tabOrder.indexOf(currentDestination?.route)
+                                    if (currentIndex >= 0 && !isLocalSearchOpen) {
+                                        when {
+                                            totalDrag < -swipeThresholdPx && currentIndex < tabOrder.lastIndex ->
+                                                navigateToTab(tabOrder[currentIndex + 1])
+                                            totalDrag > swipeThresholdPx && currentIndex > 0 ->
+                                                navigateToTab(tabOrder[currentIndex - 1])
+                                        }
+                                    }
+                                    totalDrag = 0f
+                                },
+                                onDragCancel = { totalDrag = 0f },
+                            )
+                        }
+                    },
+                ),
         ) {
             NavHost(
                 navController = navController,
@@ -907,6 +963,7 @@ fun MpxApp(
         }
         } // closes the #176 swipe Box around the NavHost
     }
+    } // closes the TV navigation Row
 
     // Issue #418: the automatic update dialog, above the Scaffold.
     pendingUpdate?.let { release ->
