@@ -28,6 +28,7 @@ import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
 import com.mpx.player.ui.theme.MpxSpaceXxs
 import com.mpx.player.ui.theme.MpxTouchTarget
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * M2.5 tile atoms (#106). Data-free: callers pass strings and a
@@ -46,6 +47,7 @@ fun MpxFolderTile(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(onClick = onClick)
             .padding(horizontal = MpxSpaceL, vertical = MpxSpaceS),
         verticalAlignment = Alignment.CenterVertically,
@@ -92,7 +94,9 @@ fun MpxVideoTile(
     thumbnail: @Composable () -> Unit,
 ) {
     Column(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier
+            .mpxFocusHighlight(MpxShapes.medium)
+            .clickable(onClick = onClick),
     ) {
         Box(
             modifier = Modifier

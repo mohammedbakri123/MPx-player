@@ -28,6 +28,7 @@ import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
 import com.mpx.player.ui.theme.MpxSpaceXxs
 import com.mpx.player.ui.theme.MpxTouchTarget
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * M2.5 card + row atoms (#106). Tonal black surfaces, no decorative
@@ -43,7 +44,7 @@ fun MpxCard(
     if (onClick != null) {
         Card(
             onClick = onClick,
-            modifier = modifier,
+            modifier = modifier.mpxFocusHighlight(MpxShapes.medium),
             shape = MpxShapes.medium,
             colors = CardDefaults.cardColors(containerColor = MpxTheme.colors.surfaceRaised),
         ) { content() }
@@ -87,6 +88,7 @@ fun MpxListRow(
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MpxTouchTarget)
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(onClick = onClick)
             .padding(horizontal = MpxSpaceL, vertical = MpxSpaceM),
         verticalAlignment = Alignment.CenterVertically,
