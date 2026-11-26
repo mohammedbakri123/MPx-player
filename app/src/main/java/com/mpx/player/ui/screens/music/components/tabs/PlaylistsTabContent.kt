@@ -43,9 +43,11 @@ import com.mpx.player.domain.model.Playlist
 import com.mpx.player.ui.screens.local.AudioPlaylistGridCard
 import com.mpx.player.ui.screens.local.AudioPlaylistRow
 import com.mpx.player.ui.screens.local.ViewMode
+import com.mpx.player.ui.theme.LocalIsTv
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 @Composable
 fun PlaylistsTabContent(
@@ -109,10 +111,11 @@ fun PlaylistsTabContent(
         }
     } else {
         val gridState = rememberLazyGridState()
+        val isTv = LocalIsTv.current
         Box(modifier = Modifier.fillMaxSize()) {
             LazyVerticalGrid(
                 state = gridState,
-                columns = GridCells.Fixed(2),
+                columns = GridCells.Fixed(if (isTv) 4 else 2),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -163,6 +166,7 @@ private fun NewPlaylistActionRow(onCreatePlaylist: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable { onCreatePlaylist() }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -188,7 +192,11 @@ private fun NewPlaylistActionRow(onCreatePlaylist: () -> Unit) {
 @Composable
 private fun FavouritesActionRow(favouritesCount: Int, onFavouritesClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { onFavouritesClick() }.padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
+            .clickable { onFavouritesClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(modifier = Modifier.size(46.dp).clip(MpxShapes.small).background(MpxTheme.colors.primary.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
@@ -206,7 +214,11 @@ private fun FavouritesActionRow(favouritesCount: Int, onFavouritesClick: () -> U
 @Composable
 private fun HistoryActionRow(historyCount: Int, onHistoryClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { onHistoryClick() }.padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
+            .clickable { onHistoryClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(modifier = Modifier.size(46.dp).clip(MpxShapes.small).background(MpxTheme.colors.primary.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {

@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material3.Button
@@ -26,12 +29,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -97,11 +105,26 @@ fun NetworkScreen(
             onValueChange = viewModel::onUrlChange,
             placeholder = { Text("https://example.com/video.mp4", fontSize = 13.sp) },
             trailingIcon = {
-                IconButton(onClick = { pasteClipboard() }) {
+                IconButton(
+                    onClick = { pasteClipboard() },
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
+                ) {
                     Icon(Icons.Filled.ContentPaste, stringResource(R.string.action_paste), tint = MaterialTheme.colorScheme.primary)
                 }
             },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Uri,
+                imeAction = ImeAction.Go,
+            ),
+            keyboardActions = KeyboardActions(
+                onGo = {
+                    if (uiState.canPlay) {
+                        viewModel.playUrl()
+                        onOpenPlayer()
+                    }
+                },
+            ),
             isError = uiState.isPageUrl,
             supportingText = {
                 if (uiState.isPageUrl) {
@@ -125,6 +148,11 @@ fun NetworkScreen(
                     onOpenPlayer()
                 },
                 enabled = uiState.canPlay,
+                modifier = Modifier.mpxFocusHighlight(
+                    shape = MpxShapes.large,
+                    showBackgroundTint = false,
+                    focusedColor = Color.White,
+                ),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
                 Text(stringResource(R.string.dialog_network_play))

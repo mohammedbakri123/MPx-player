@@ -49,6 +49,7 @@ import com.mpx.player.ui.screens.local.components.LocalSelectionTopBar
 import com.mpx.player.ui.screens.local.components.LocalStatusStrip
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import com.mpx.player.util.FileMediaInfoReader
 import com.mpx.player.util.MediaPermissions
 import java.io.File
@@ -388,6 +389,11 @@ fun LocalScreen(
                     containerColor = MpxTheme.colors.primary,
                     contentColor = Color.White,
                     shape = MpxShapes.large,
+                    modifier = Modifier.mpxFocusHighlight(
+                        shape = MpxShapes.large,
+                        showBackgroundTint = false,
+                        focusedColor = Color.White,
+                    ),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.PlayArrow,

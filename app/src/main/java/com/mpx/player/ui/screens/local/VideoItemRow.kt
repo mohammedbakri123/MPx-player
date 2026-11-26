@@ -51,6 +51,7 @@ import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
 import com.mpx.player.ui.theme.MpxTouchTarget
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 private fun formatVideoDate(epochSeconds: Long): String {
     if (epochSeconds <= 0L) return ""
@@ -87,6 +88,7 @@ fun VideoItemRow(
                 if (isSelected) MpxTheme.colors.primary.copy(alpha = 0.12f)
                 else Color.Transparent
             )
+            .mpxFocusHighlight(MpxShapes.small)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = MpxSpaceL, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -223,7 +225,12 @@ fun VideoItemRow(
         // the actions then).
         if (!isSelected) {
             Spacer(Modifier.width(8.dp))
-            IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
+            IconButton(
+                onClick = onToggleFavourite,
+                modifier = Modifier
+                    .size(40.dp)
+                    .mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = stringResource(R.string.music_menu_toggle_favourite),
@@ -254,6 +261,7 @@ fun VideoItemGridCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.large)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = MpxShapes.large,
         // #144: a selected card tints with the identity-blue accent.
@@ -384,7 +392,12 @@ fun VideoItemGridCard(
                 // multi-select action bar owns the actions while selecting.
                 // #155: the 3-dot menu is gone; the heart stays.
                 if (!isSelected) {
-                    IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
+                    IconButton(
+                        onClick = onToggleFavourite,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(
                             imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = stringResource(R.string.music_menu_toggle_favourite),

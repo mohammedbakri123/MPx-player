@@ -16,7 +16,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * One action in the multi-select action bar (#144): icon over an 11sp
@@ -32,6 +34,7 @@ fun MultiSelectAction(
 ) {
     Column(
         modifier = modifier
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(onClick = onClick)
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

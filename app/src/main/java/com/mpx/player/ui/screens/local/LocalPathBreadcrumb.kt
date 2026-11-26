@@ -20,6 +20,7 @@ import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceS
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * One level of the Local path visualizer (#146). [onClick] is null for the
@@ -72,6 +73,7 @@ fun LocalPathBreadcrumb(
                 Box(
                     modifier = Modifier
                         .clip(MpxShapes.small)
+                        .mpxFocusHighlight(MpxShapes.small)
                         .clickable(onClick = onClick)
                         .padding(horizontal = 6.dp, vertical = 14.dp),
                     contentAlignment = Alignment.Center,

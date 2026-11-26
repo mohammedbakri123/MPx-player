@@ -44,6 +44,7 @@ import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxTheme
 import com.mpx.player.ui.theme.MpxTouchTarget
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * The shared audio track tiles (#185): the Tracks tab's rows and grid
@@ -79,6 +80,7 @@ fun AudioTrackRow(
                 if (isSelected) MpxTheme.colors.primary.copy(alpha = 0.12f)
                 else Color.Transparent
             )
+            .mpxFocusHighlight(MpxShapes.small)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = MpxSpaceL, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -162,7 +164,9 @@ fun AudioTrackRow(
             Spacer(Modifier.width(8.dp))
             IconButton(
                 onClick = onToggleFavourite,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier
+                    .size(40.dp)
+                    .mpxFocusHighlight(CircleShape),
             ) {
                 Icon(
                     imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
@@ -179,7 +183,9 @@ fun AudioTrackRow(
             Spacer(Modifier.width(8.dp))
             IconButton(
                 onClick = onOptionsClick,
-                modifier = Modifier.size(MpxTouchTarget),
+                modifier = Modifier
+                    .size(MpxTouchTarget)
+                    .mpxFocusHighlight(CircleShape),
             ) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
@@ -209,6 +215,7 @@ fun AudioTrackGridCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.large)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = MpxShapes.large,
         // #144: a selected card tints with the identity-blue accent.
@@ -292,7 +299,12 @@ fun AudioTrackGridCard(
                 // #144: the options button hides on a selected card — the
                 // multi-select action bar owns the actions while selecting.
                 if (!isSelected) {
-                    IconButton(onClick = onToggleFavourite, modifier = Modifier.size(40.dp)) {
+                    IconButton(
+                        onClick = onToggleFavourite,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(
                             imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = stringResource(R.string.music_menu_toggle_favourite),
@@ -302,7 +314,12 @@ fun AudioTrackGridCard(
                     }
                 }
                 if (!isSelected && onOptionsClick != null) {
-                    IconButton(onClick = onOptionsClick, modifier = Modifier.size(40.dp)) {
+                    IconButton(
+                        onClick = onOptionsClick,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
                             contentDescription = stringResource(R.string.music_cd_track_options, track.title),

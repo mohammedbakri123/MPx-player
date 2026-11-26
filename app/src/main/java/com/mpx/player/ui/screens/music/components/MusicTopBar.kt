@@ -2,6 +2,7 @@ package com.mpx.player.ui.screens.music.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Close
@@ -34,6 +35,7 @@ import com.mpx.player.ui.components.MpxCompactTopBar
 import com.mpx.player.ui.screens.local.ViewMode
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,7 +46,10 @@ fun MusicSelectionTopBar(
     // #185: selection top bar — count + close. Back exits too.
     MpxCompactTopBar(
         navigationIcon = {
-            IconButton(onClick = onClearSelection) {
+            IconButton(
+                onClick = onClearSelection,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = stringResource(R.string.cd_exit_selection),
@@ -130,7 +135,10 @@ fun MusicTopBar(
                 // #326: while searching only Close + Shuffle stay —
                 // the field needs the width, and shuffle-the-matches
                 // is the action that matters mid-search.
-                IconButton(onClick = onCloseSearch) {
+                IconButton(
+                    onClick = onCloseSearch,
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = stringResource(R.string.cd_close_search),
@@ -140,6 +148,7 @@ fun MusicTopBar(
                 IconButton(
                     onClick = onShuffle,
                     enabled = canShuffle,
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Shuffle,
@@ -148,14 +157,20 @@ fun MusicTopBar(
                     )
                 }
             } else {
-                IconButton(onClick = onToggleViewMode) {
+                IconButton(
+                    onClick = onToggleViewMode,
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
+                ) {
                     Icon(
                         imageVector = if (viewMode == ViewMode.LIST) Icons.Filled.GridView else Icons.AutoMirrored.Filled.ViewList,
                         contentDescription = stringResource(R.string.cd_toggle_view),
                         tint = MpxTheme.colors.textPrimary,
                     )
                 }
-                IconButton(onClick = onEqualizerClick) {
+                IconButton(
+                    onClick = onEqualizerClick,
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Equalizer,
                         contentDescription = stringResource(R.string.music_cd_equalizer),
@@ -165,7 +180,10 @@ fun MusicTopBar(
                 // #326: search and shuffle as quiet icon buttons, in
                 // the Local folder-view order (search, then the play
                 // action) before the overflow menu
-                IconButton(onClick = onOpenSearch) {
+                IconButton(
+                    onClick = onOpenSearch,
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Search,
                         contentDescription = stringResource(R.string.cd_search),
@@ -175,6 +193,7 @@ fun MusicTopBar(
                 IconButton(
                     onClick = onShuffle,
                     enabled = canShuffle,
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Shuffle,
@@ -184,7 +203,10 @@ fun MusicTopBar(
                 }
                 var menuExpanded by remember { mutableStateOf(false) }
                 Box {
-                    IconButton(onClick = { menuExpanded = true }) {
+                    IconButton(
+                        onClick = { menuExpanded = true },
+                        modifier = Modifier.mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
                             contentDescription = stringResource(R.string.action_more),

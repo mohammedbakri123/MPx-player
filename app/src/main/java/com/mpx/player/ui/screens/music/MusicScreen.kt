@@ -69,7 +69,9 @@ import com.mpx.player.ui.screens.music.components.tabs.FoldersTabContent
 import com.mpx.player.ui.screens.music.components.tabs.PlaylistsTabContent
 import com.mpx.player.ui.screens.music.components.tabs.TracksTabContent
 import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import com.mpx.player.util.MediaPermissions
 import com.mpx.player.util.PipUtils
 import kotlinx.coroutines.launch
@@ -363,6 +365,7 @@ fun MusicScreen(
                     Tab(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
+                        modifier = Modifier.mpxFocusHighlight(MpxShapes.small),
                         text = {
                             Text(
                                 text = stringResource(tab.titleRes),

@@ -15,11 +15,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 @Composable
 fun EmptyStateView(
@@ -66,7 +69,14 @@ fun EmptyStateView(
             )
             if (actionLabel != null && onActionClick != null) {
                 Spacer(Modifier.height(20.dp))
-                Button(onClick = onActionClick) {
+                Button(
+                    onClick = onActionClick,
+                    modifier = Modifier.mpxFocusHighlight(
+                        shape = MpxShapes.large,
+                        showBackgroundTint = false,
+                        focusedColor = Color.White,
+                    ),
+                ) {
                     Text(actionLabel)
                 }
             }

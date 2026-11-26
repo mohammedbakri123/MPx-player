@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.mpx.player.domain.model.SettingCategory
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxIconSize
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceXl
@@ -34,6 +35,7 @@ import com.mpx.player.ui.theme.MpxSpaceXxl
 import com.mpx.player.ui.theme.MpxSpaceXxs
 import com.mpx.player.ui.theme.MpxTheme
 import com.mpx.player.ui.theme.MpxTouchTarget
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * Shared Preferences-page atoms (#158, mpvEx parity). The pattern follows
@@ -91,6 +93,7 @@ fun PreferenceRow(
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MpxTouchTarget)
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(onClick = onClick)
             .padding(horizontal = MpxSpaceL, vertical = MpxSpaceM),
         verticalAlignment = Alignment.CenterVertically,

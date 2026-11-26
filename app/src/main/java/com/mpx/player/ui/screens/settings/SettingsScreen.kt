@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
@@ -69,6 +70,7 @@ import com.mpx.player.ui.screens.settings.categories.TabsCategorySection
 import com.mpx.player.ui.screens.settings.components.DevDiagnosticsData
 import com.mpx.player.ui.screens.settings.components.SettingsCategoryList
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import com.mpx.player.util.LocaleHelper
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -258,9 +260,12 @@ fun SettingsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (!viewModel.handleBack()) onNavigateBack()
-                    }) {
+                    IconButton(
+                        onClick = {
+                            if (!viewModel.handleBack()) onNavigateBack()
+                        },
+                        modifier = Modifier.mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back), tint = MpxTheme.colors.textPrimary)
                     }
                 },
