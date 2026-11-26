@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -60,6 +61,7 @@ import com.mpx.player.util.PipUtils
 import com.mpx.player.ui.components.MpxSecondaryButton
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * Real, complete settings screen for Picture-in-Picture (PiP) and floating pop-up play.
@@ -107,7 +109,10 @@ fun OverlaySettingsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
@@ -528,6 +533,7 @@ private fun SettingsToggleRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -549,7 +555,7 @@ private fun SettingsToggleRow(
         Spacer(Modifier.width(12.dp))
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = null,
             enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MpxTheme.colors.primary,
@@ -570,13 +576,14 @@ private fun SettingsRadioRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
             selected = selected,
-            onClick = onClick,
+            onClick = null,
             enabled = enabled,
             colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
         )

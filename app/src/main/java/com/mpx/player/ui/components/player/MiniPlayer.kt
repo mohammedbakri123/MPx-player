@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Close
@@ -63,6 +64,7 @@ import com.mpx.player.ui.components.AsyncVideoThumbnail
 import com.mpx.player.util.ThumbnailLoader
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import java.util.Locale
 
 fun formatTimeMs(millis: Long): String {
@@ -139,6 +141,7 @@ fun MiniPlayer(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
+                .mpxFocusHighlight(MpxShapes.small)
                 .clickable { onOpenPlayer() },
             color = MpxTheme.colors.black,
             tonalElevation = 0.dp,
@@ -243,7 +246,9 @@ fun MiniPlayer(
                     IconButton(
                         onClick = { playbackCoordinator.skipPrevious() },
                         enabled = state.hasPrevious,
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .mpxFocusHighlight(CircleShape),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.SkipPrevious,
@@ -255,7 +260,9 @@ fun MiniPlayer(
 
                     IconButton(
                         onClick = { playbackCoordinator.togglePlayPause() },
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier
+                            .size(40.dp)
+                            .mpxFocusHighlight(CircleShape),
                     ) {
                         Icon(
                             imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -268,7 +275,9 @@ fun MiniPlayer(
                     IconButton(
                         onClick = { playbackCoordinator.skipNext() },
                         enabled = state.hasNext,
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .mpxFocusHighlight(CircleShape),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.SkipNext,
@@ -281,7 +290,9 @@ fun MiniPlayer(
                     // Queue button (issue #73): opens the real current queue.
                     IconButton(
                         onClick = { showQueue = true },
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier
+                            .size(32.dp)
+                            .mpxFocusHighlight(CircleShape),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.QueueMusic,
@@ -293,7 +304,9 @@ fun MiniPlayer(
 
                     IconButton(
                         onClick = { playbackCoordinator.stop() },
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier
+                            .size(32.dp)
+                            .mpxFocusHighlight(CircleShape),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Close,
@@ -341,6 +354,7 @@ private fun QueueDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .mpxFocusHighlight(MpxShapes.small)
                                 .clickable { onSelect(index) }
                                 .padding(vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -388,7 +402,10 @@ private fun QueueDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.mpxFocusHighlight(MpxShapes.medium),
+            ) {
                 Text(text = stringResource(R.string.action_close))
             }
         },

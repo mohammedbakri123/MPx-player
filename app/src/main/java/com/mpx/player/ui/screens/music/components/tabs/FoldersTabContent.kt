@@ -20,6 +20,7 @@ import com.mpx.player.domain.model.AudioFolder
 import com.mpx.player.ui.screens.local.AudioFolderGridCard
 import com.mpx.player.ui.screens.local.AudioFolderRow
 import com.mpx.player.ui.screens.local.ViewMode
+import com.mpx.player.ui.theme.LocalIsTv
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxTheme
 
@@ -73,10 +74,11 @@ fun FoldersTabContent(
         }
     } else {
         val gridState = rememberLazyGridState()
+        val isTv = LocalIsTv.current
         Box(modifier = Modifier.fillMaxSize()) {
             LazyVerticalGrid(
                 state = gridState,
-                columns = GridCells.Fixed(2),
+                columns = GridCells.Fixed(if (isTv) 4 else 2),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),

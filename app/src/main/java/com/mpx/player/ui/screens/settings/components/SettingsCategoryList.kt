@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -27,6 +28,7 @@ import com.mpx.player.ui.screens.settings.PreferenceCard
 import com.mpx.player.ui.screens.settings.PreferenceCategoryCard
 import com.mpx.player.ui.screens.settings.PreferenceSectionHeader
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 @Composable
 fun SettingsCategoryList(
@@ -46,6 +48,7 @@ fun SettingsCategoryList(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .mpxFocusHighlight(RoundedCornerShape(28.dp))
                         .clickable { onOpenSearch() }
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,

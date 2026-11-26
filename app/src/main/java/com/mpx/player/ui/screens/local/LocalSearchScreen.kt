@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -50,6 +51,7 @@ import com.mpx.player.ui.components.MpxBadge
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import com.mpx.player.util.fuzzySearch
 
 /**
@@ -144,7 +146,10 @@ fun LocalSearchScreen(
                 .padding(start = 4.dp, top = 8.dp, end = 16.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.action_back),
@@ -173,7 +178,10 @@ fun LocalSearchScreen(
                 },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
-                        IconButton(onClick = { onQueryChange("") }) {
+                        IconButton(
+                            onClick = { onQueryChange("") },
+                            modifier = Modifier.mpxFocusHighlight(CircleShape),
+                        ) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = stringResource(R.string.cd_close_search),
@@ -329,7 +337,12 @@ fun LocalSearchScreen(
                             onClick = { onVideoClick(matchedVideos.first()) },
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
-                                .padding(end = 16.dp, bottom = 16.dp),
+                                .padding(end = 16.dp, bottom = 16.dp)
+                                .mpxFocusHighlight(
+                                    shape = MpxShapes.large,
+                                    showBackgroundTint = false,
+                                    focusedColor = Color.White,
+                                ),
                             containerColor = MpxTheme.colors.primary,
                             // #148: the icon sits on the primary
                             // background, so it uses White, not

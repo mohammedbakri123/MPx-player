@@ -22,6 +22,7 @@ import com.mpx.player.domain.model.FavouriteItem
 import com.mpx.player.ui.screens.local.AudioTrackGridCard
 import com.mpx.player.ui.screens.local.AudioTrackRow
 import com.mpx.player.ui.screens.local.ViewMode
+import com.mpx.player.ui.theme.LocalIsTv
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxTheme
 
@@ -84,10 +85,11 @@ fun TracksTabContent(
         }
     } else {
         val gridState = rememberLazyGridState()
+        val isTv = LocalIsTv.current
         Box(modifier = Modifier.fillMaxSize()) {
             LazyVerticalGrid(
                 state = gridState,
-                columns = GridCells.Fixed(2),
+                columns = GridCells.Fixed(if (isTv) 4 else 2),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),

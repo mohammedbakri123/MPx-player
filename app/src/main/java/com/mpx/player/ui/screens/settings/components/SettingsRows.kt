@@ -18,7 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 @Composable
 fun ToggleRow(
@@ -30,6 +32,7 @@ fun ToggleRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(enabled = enabled) { onChange(!checked) }
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -42,7 +45,7 @@ fun ToggleRow(
         )
         Switch(
             checked = checked,
-            onCheckedChange = onChange,
+            onCheckedChange = null,
             enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MpxTheme.colors.primary,
@@ -62,13 +65,14 @@ fun ChoiceRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
             selected = selected,
-            onClick = onClick,
+            onClick = null,
             enabled = enabled,
             colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
         )
@@ -91,13 +95,14 @@ fun ChoiceRowWithSubtitle(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(onClick = onClick)
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
             selected = selected,
-            onClick = onClick,
+            onClick = null,
             colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
         )
         Spacer(Modifier.width(8.dp))

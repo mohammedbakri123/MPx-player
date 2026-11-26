@@ -67,7 +67,9 @@ import com.mpx.player.R
 import com.mpx.player.ui.components.MpxFilterChip
 import com.mpx.player.ui.components.MpxSlider
 import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * The Local "Sort & View Options" popup (#156, mpvEx-style). It replaces
@@ -445,6 +447,7 @@ fun LocalSortPopup(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .mpxFocusHighlight(MpxShapes.small)
                             .clickable { fieldsExpanded = !fieldsExpanded }
                             .padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -542,6 +545,7 @@ fun LocalSortPopup(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .mpxFocusHighlight(MpxShapes.small)
                             .clickable {
                                 onDismiss()
                                 onOpenFullSortDialog()
@@ -578,12 +582,18 @@ fun LocalSortPopup(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.mpxFocusHighlight(MpxShapes.medium),
+            ) {
                 Text(stringResource(R.string.action_done))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.mpxFocusHighlight(MpxShapes.medium),
+            ) {
                 Text(stringResource(R.string.action_cancel))
             }
         },
@@ -609,6 +619,11 @@ private fun SortTile(
                 .background(
                     if (selected) MpxTheme.colors.primary
                     else MpxTheme.colors.surfaceElevated,
+                )
+                .mpxFocusHighlight(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    focusedColor = if (selected) Color.White else MpxTheme.colors.primary,
+                    showBackgroundTint = !selected,
                 )
                 .clickable(
                     onClick = onClick,
@@ -660,6 +675,7 @@ private fun ModeTile(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+            .mpxFocusHighlight(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
             .clickable(enabled = enabled) { onClick() }
             .padding(8.dp),
     ) {

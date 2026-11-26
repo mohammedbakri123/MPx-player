@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -30,6 +31,7 @@ import com.mpx.player.domain.model.MediaFolder
 import com.mpx.player.ui.screens.local.components.formatSize
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import java.util.Locale
 
 /**
@@ -419,7 +421,9 @@ fun LocalFolderTree(
                     if (row.hasChildren) {
                         IconButton(
                             onClick = { onToggleExpand(row.folder) },
-                            modifier = Modifier.size(treeExpanderSize),
+                            modifier = Modifier
+                                .size(treeExpanderSize)
+                                .mpxFocusHighlight(CircleShape),
                         ) {
                             Icon(
                                 imageVector = if (row.expanded) Icons.Filled.KeyboardArrowDown

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -60,6 +61,7 @@ import com.mpx.player.playback.PlayableMedia
 import com.mpx.player.playback.PlaybackCoordinator
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -140,7 +142,10 @@ fun HistoryScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
@@ -150,21 +155,24 @@ fun HistoryScreen(
                 },
                 actions = {
                     if (history.isNotEmpty()) {
-                        TextButton(onClick = {
-                            scope.launch {
-                                viewModel.clearHistory()
-                                // Issue #353: clearing history must also
-                                // forget every saved resume position, or
-                                // videos keep offering to resume from the
-                                // old position (and the "Resumed from"
-                                // banner still appears). The resume
-                                // manager's clearAll() clears the
-                                // in-memory map, the throttle state, and
-                                // the Room table.
-                                playbackCoordinator.clearResumePositions()
-                                snackbarHostState.showSnackbar(context.getString(R.string.snackbar_cleared_history))
-                            }
-                        }) {
+                        TextButton(
+                            onClick = {
+                                scope.launch {
+                                    viewModel.clearHistory()
+                                    // Issue #353: clearing history must also
+                                    // forget every saved resume position, or
+                                    // videos keep offering to resume from the
+                                    // old position (and the "Resumed from"
+                                    // banner still appears). The resume
+                                    // manager's clearAll() clears the
+                                    // in-memory map, the throttle state, and
+                                    // the Room table.
+                                    playbackCoordinator.clearResumePositions()
+                                    snackbarHostState.showSnackbar(context.getString(R.string.snackbar_cleared_history))
+                                }
+                            },
+                            modifier = Modifier.mpxFocusHighlight(MpxShapes.medium),
+                        ) {
                             Text(
                                 stringResource(R.string.action_clear_all),
                                 color = MpxTheme.colors.textSecondary.copy(alpha = 0.7f),
@@ -224,6 +232,7 @@ fun HistoryScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .mpxFocusHighlight(MpxShapes.small)
                             .clickable {
                                 playbackCoordinator.playQueue(
                                     listOf(

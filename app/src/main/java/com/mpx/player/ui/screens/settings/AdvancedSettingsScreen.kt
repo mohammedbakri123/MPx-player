@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
@@ -60,9 +61,11 @@ import com.mpx.player.data.settings.SettingsBackup
 import com.mpx.player.playback.engine.MpvConfigSync
 import com.mpx.player.ui.ActivityResultHandler
 import com.mpx.player.ui.components.MpxDialog
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -218,7 +221,10 @@ fun AdvancedSettingsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             stringResource(R.string.action_back),
@@ -270,6 +276,7 @@ fun AdvancedSettingsScreen(
                             IconButton(
                                 onClick = { update(settings.copy(mpvConfStorageUri = "")) },
                                 enabled = settings.mpvConfStorageUri.isNotBlank(),
+                                modifier = Modifier.mpxFocusHighlight(CircleShape),
                             ) {
                                 Icon(
                                     Icons.Filled.Clear,
@@ -417,7 +424,11 @@ private fun AdvancedToggleRow(
     onChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { onChange(!checked) }.padding(horizontal = MpxSpaceL, vertical = MpxSpaceM),
+        modifier = Modifier
+            .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
+            .clickable { onChange(!checked) }
+            .padding(horizontal = MpxSpaceL, vertical = MpxSpaceM),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -435,7 +446,7 @@ private fun AdvancedToggleRow(
         }
         Switch(
             checked = checked,
-            onCheckedChange = onChange,
+            onCheckedChange = null,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MpxTheme.colors.primary,
                 checkedTrackColor = MpxTheme.colors.primary.copy(alpha = 0.4f),

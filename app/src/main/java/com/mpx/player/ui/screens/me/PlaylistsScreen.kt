@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
@@ -54,6 +55,7 @@ import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.components.persistence.PlaylistDetailsDialog
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -104,7 +106,10 @@ fun PlaylistsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
@@ -113,7 +118,10 @@ fun PlaylistsScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { showCreatePlaylistDialog = true }) {
+                    TextButton(
+                        onClick = { showCreatePlaylistDialog = true },
+                        modifier = Modifier.mpxFocusHighlight(MpxShapes.medium),
+                    ) {
                         Text(
                             stringResource(R.string.playlists_btn_new),
                             color = MpxTheme.colors.primary,
@@ -151,6 +159,7 @@ fun PlaylistsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .mpxFocusHighlight(MpxShapes.small)
                             .clickable {
                                 // #269: clear the old list at once, so the
                                 // dialog never shows the previous playlist's

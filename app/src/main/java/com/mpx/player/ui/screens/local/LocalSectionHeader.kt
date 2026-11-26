@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.components.MpxBadge
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * Local's shared section header (#107): uppercase muted label, count
@@ -56,6 +58,7 @@ fun LocalSectionHeader(
         }
         Row(
             modifier = Modifier
+                .mpxFocusHighlight(MpxShapes.small)
                 .clickable(onClick = onSortClick)
                 .padding(horizontal = 6.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,

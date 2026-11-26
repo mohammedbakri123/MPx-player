@@ -2,6 +2,7 @@ package com.mpx.player.ui.screens.local.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -28,6 +29,7 @@ import com.mpx.player.domain.model.VideoFile
 import com.mpx.player.ui.components.MpxCompactTopBar
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import java.util.Locale
 
 /**
@@ -85,7 +87,10 @@ fun LocalSelectionTopBar(
     MpxCompactTopBar(
         modifier = modifier,
         navigationIcon = {
-            IconButton(onClick = onClearSelection) {
+            IconButton(
+                onClick = onClearSelection,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = stringResource(R.string.cd_exit_selection),
@@ -105,7 +110,10 @@ fun LocalSelectionTopBar(
         },
         actions = {
             if (showMediaInfo) {
-                IconButton(onClick = onShowMediaInfo) {
+                IconButton(
+                    onClick = onShowMediaInfo,
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = stringResource(R.string.media_info_cd),
@@ -134,7 +142,10 @@ fun LocalFolderTopBar(
     MpxCompactTopBar(
         modifier = modifier,
         navigationIcon = {
-            IconButton(onClick = onBackToParent) {
+            IconButton(
+                onClick = onBackToParent,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.action_back_to_folders),
@@ -200,7 +211,10 @@ fun LocalFolderTopBar(
         },
         actions = {
             if (isFolderSearching) {
-                IconButton(onClick = onCloseFolderSearching) {
+                IconButton(
+                    onClick = onCloseFolderSearching,
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = stringResource(R.string.cd_close_search),
@@ -209,7 +223,10 @@ fun LocalFolderTopBar(
                 }
             }
 
-            IconButton(onClick = onOpenSortPopup) {
+            IconButton(
+                onClick = onOpenSortPopup,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Tune,
                     contentDescription = stringResource(R.string.cd_layout_options),
@@ -217,7 +234,10 @@ fun LocalFolderTopBar(
                 )
             }
 
-            IconButton(onClick = onStartFolderSearching) {
+            IconButton(
+                onClick = onStartFolderSearching,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Search,
                     contentDescription = stringResource(R.string.cd_search),
@@ -225,7 +245,10 @@ fun LocalFolderTopBar(
                 )
             }
 
-            IconButton(onClick = onPlayAll) {
+            IconButton(
+                onClick = onPlayAll,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.PlayArrow,
                     contentDescription = stringResource(R.string.folder_menu_play_all),
@@ -255,14 +278,20 @@ fun LocalRootTopBar(
             )
         },
         actions = {
-            IconButton(onClick = onOpenSortPopup) {
+            IconButton(
+                onClick = onOpenSortPopup,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Tune,
                     contentDescription = stringResource(R.string.cd_layout_options),
                     tint = MpxTheme.colors.textPrimary,
                 )
             }
-            IconButton(onClick = onOpenSearchPage) {
+            IconButton(
+                onClick = onOpenSearchPage,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Search,
                     contentDescription = stringResource(R.string.cd_search),

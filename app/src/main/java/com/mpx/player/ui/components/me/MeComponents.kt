@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.domain.model.MeTool
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 @Composable
 fun ToolGridItem(
@@ -41,6 +42,7 @@ fun ToolGridItem(
     Column(
         modifier = modifier
             .clip(MpxShapes.small)
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable { onClick() }
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -111,6 +113,7 @@ fun PreferenceRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,

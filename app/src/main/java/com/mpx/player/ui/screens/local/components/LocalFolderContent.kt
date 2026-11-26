@@ -37,6 +37,7 @@ import com.mpx.player.ui.screens.local.PathSegment
 import com.mpx.player.ui.screens.local.VideoItemGridCard
 import com.mpx.player.ui.screens.local.VideoItemRow
 import com.mpx.player.ui.screens.local.ViewMode
+import com.mpx.player.ui.theme.LocalIsTv
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxTheme
 
@@ -165,9 +166,13 @@ fun LocalFolderContent(
                 }
             } else {
                 Box(modifier = Modifier.fillMaxSize()) {
+                    val isTv = LocalIsTv.current
                     LazyVerticalGrid(
                         state = videoGridState,
-                        columns = GridCells.Fixed(appSettings.videoGridColumns.coerceIn(1, 4)),
+                        columns = GridCells.Fixed(
+                            if (isTv) appSettings.videoGridColumns.coerceIn(3, 4)
+                            else appSettings.videoGridColumns.coerceIn(1, 4),
+                        ),
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 80.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),

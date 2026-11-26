@@ -37,6 +37,7 @@ import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceL
 import com.mpx.player.ui.theme.MpxTheme
 import com.mpx.player.ui.theme.MpxTouchTarget
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * The shared audio folder tiles (#185): the Folders tab's rows and grid
@@ -70,6 +71,7 @@ fun AudioFolderRow(
                 if (isSelected) MpxTheme.colors.primary.copy(alpha = 0.12f)
                 else Color.Transparent
             )
+            .mpxFocusHighlight(MpxShapes.small)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = MpxSpaceL, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -164,6 +166,7 @@ fun AudioFolderGridCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.large)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = MpxShapes.large,
         // #144: a selected card tints with the identity-blue accent.
