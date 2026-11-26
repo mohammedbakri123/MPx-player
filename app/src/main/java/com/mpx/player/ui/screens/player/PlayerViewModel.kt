@@ -155,33 +155,43 @@ class PlayerViewModel(
     /** "landscape" / "portrait" while the user has toggled, null otherwise. */
     val rotationOverride: StateFlow<String?> = _rotationOverride.asStateFlow()
 
+    private val _isTelevision = MutableStateFlow(false)
+
+    /** Reports whether the host window is an Android TV / Leanback display. */
+    fun setTelevisionMode(isTv: Boolean) {
+        _isTelevision.value = isTv
+    }
+
     /** Effective orientation the transport toggle shows (override,
-     * else the persisted setting; Auto means portrait). */
+     * else the persisted setting; Auto means portrait, TV is always landscape). */
     val isLandscapeOrientation: StateFlow<Boolean> = combine(
         _rotationOverride,
         _settings,
-    ) { override, settings ->
-        resolveIsLandscape(override, settings)
+        _isTelevision,
+    ) { override, settings, isTv ->
+        resolveIsLandscape(override, settings, isTv)
     }.stateIn(
         viewModelScope,
         SharingStarted.Eagerly,
-        resolveIsLandscape(_rotationOverride.value, _settings.value),
+        resolveIsLandscape(_rotationOverride.value, _settings.value, _isTelevision.value),
     )
 
     /** Activity orientation the screen applies via `requestedOrientation`. */
     val targetOrientation: StateFlow<Int> = combine(
         _rotationOverride,
         _settings,
-    ) { override, settings ->
-        resolveTargetOrientation(override, settings)
+        _isTelevision,
+    ) { override, settings, isTv ->
+        resolveTargetOrientation(override, settings, isTv)
     }.stateIn(
         viewModelScope,
         SharingStarted.Eagerly,
-        resolveTargetOrientation(_rotationOverride.value, _settings.value),
+        resolveTargetOrientation(_rotationOverride.value, _settings.value, _isTelevision.value),
     )
 
     /** The transport row's rotation button: portrait <-> landscape. */
     fun toggleRotation() {
+        if (_isTelevision.value) return
         _rotationOverride.value =
             if (isLandscapeOrientation.value) "portrait" else "landscape"
     }
@@ -358,13 +368,18 @@ class PlayerViewModel(
 }
 
 /** Pure rotation resolution, kept testable through the ViewModel's flows. */
-private fun resolveIsLandscape(override: String?, settings: AppSettings): Boolean =
-    override?.equals("landscape", ignoreCase = true) == true ||
-        (override == null && !settings.autoScreenRotation &&
-            settings.screenOrientation.equals("landscape", ignoreCase = true))
+private fun resolveIsLandscape(override: String?, settings: AppSettings, isTv: Boolean): Boolean =
+    if (isTv) {
+        true
+    } else {
+        override?.equals("landscape", ignoreCase = true) == true ||
+            (override == null && !settings.autoScreenRotation &&
+                settings.screenOrientation.equals("landscape", ignoreCase = true))
+    }
 
-private fun resolveTargetOrientation(override: String?, settings: AppSettings): Int =
+private fun resolveTargetOrientation(override: String?, settings: AppSettings, isTv: Boolean): Int =
     when {
+        isTv -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         override.equals("landscape", ignoreCase = true) ->
             ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         override.equals("portrait", ignoreCase = true) ->

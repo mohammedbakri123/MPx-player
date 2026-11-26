@@ -48,6 +48,7 @@ import com.mpx.player.playback.PlaybackState
 import com.mpx.player.ui.screens.player.PlaybackSheetPage
 import com.mpx.player.ui.screens.player.PlayerViewModel
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * Top chrome overlay for [com.mpx.player.ui.screens.player.PlayerScreen].
@@ -107,7 +108,9 @@ fun PlayerTopChrome(
             ) {
                 IconButton(
                     onClick = onClose,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .mpxFocusHighlight(CircleShape),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -156,6 +159,7 @@ fun PlayerTopChrome(
                     shape = RoundedCornerShape(24.dp),
                     modifier = Modifier
                         .height(48.dp)
+                        .mpxFocusHighlight(RoundedCornerShape(24.dp))
                         .clickable {
                             val nextDecoder = when (state.decoderMode) {
                                 DecoderMode.HW -> DecoderMode.HW_PLUS
@@ -193,7 +197,9 @@ fun PlayerTopChrome(
             ) {
                 IconButton(
                     onClick = { onOpenSheet(PlaybackSheetPage.Main) },
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .mpxFocusHighlight(CircleShape),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.MoreVert,
@@ -253,6 +259,7 @@ fun PlayerTopChrome(
                         shape = CircleShape,
                         modifier = Modifier
                             .size(40.dp)
+                            .mpxFocusHighlight(CircleShape)
                             .clickable { isStripExpanded = !isStripExpanded },
                     ) {
                         Icon(

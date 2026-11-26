@@ -24,6 +24,7 @@ import com.mpx.player.ui.screens.player.state.getScreenBrightness
 import com.mpx.player.ui.screens.player.state.isInEdgeExclusionZone
 import com.mpx.player.ui.screens.player.state.isValidDoubleTapPair
 import com.mpx.player.ui.screens.player.state.resolvePlayerTapZone
+import com.mpx.player.ui.screens.player.state.triggerSideSeek
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -449,48 +450,14 @@ private fun performSideSeek(
     direction: SideSeekDirection,
     chained: Boolean,
     env: GestureEnv,
-) {
-    val viewModel = env.viewModel
-    val gestureState = env.gestureState
-    val seekSeconds = viewModel.settings.value.doubleTapSeekSeconds
-    val stepDeltaMs = seekSeconds * 1000L * if (direction == SideSeekDirection.BACKWARD) -1L else 1L
-    val liveState = viewModel.playbackState.value
-    val liveDuration = if (liveState.durationMs > 0L) liveState.durationMs else env.currentDuration
-    val isSameSideChain = chained && gestureState.sideSeekDirection == direction
-
-    val targetMs = if (liveDuration > 0L) {
-        val baseMs = if (isSameSideChain) gestureState.sideSeekTargetMs else liveState.currentPositionMs
-        (baseMs + stepDeltaMs).coerceIn(0L, liveDuration)
-    } else {
-        0L
-    }
-
-    if (liveDuration > 0L) {
-        viewModel.seekTo(targetMs)
-    } else if (direction == SideSeekDirection.BACKWARD) {
-        viewModel.skipBackward(seekSeconds * 1000L)
-    } else {
-        viewModel.skipForward(seekSeconds * 1000L)
-    }
-
-    gestureState.recordSideSeek(
-        direction = direction,
-        stepDeltaMs = stepDeltaMs,
-        targetMs = targetMs,
-        isChained = isSameSideChain,
-    )
-    gestureState.hideBrightnessJob?.cancel()
-    gestureState.showBrightnessIndicator = false
-    gestureState.hideVolumeJob?.cancel()
-    gestureState.showVolumeIndicator = false
-    gestureState.hideSideSeekJob?.cancel()
-    if (env.scope.isActive) {
-        gestureState.hideSideSeekJob = env.scope.launch {
-            delay(1000)
-            gestureState.clearSideSeek()
-        }
-    }
-}
+) = triggerSideSeek(
+    direction = direction,
+    chained = chained,
+    fallbackDurationMs = env.currentDuration,
+    gestureState = env.gestureState,
+    viewModel = env.viewModel,
+    scope = env.scope,
+)
 
 private suspend fun AwaitPointerEventScope.runChainedSideSeek(
     initialZone: PlayerTapZone,

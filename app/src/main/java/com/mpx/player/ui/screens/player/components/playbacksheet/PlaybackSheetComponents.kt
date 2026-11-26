@@ -28,7 +28,9 @@ import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.domain.settings.AppSettings
 import com.mpx.player.ui.components.StepperRow
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -58,7 +60,11 @@ internal fun PlaybackSheetRow(
     iconTint: Color = MpxTheme.colors.primary,
 ) {
     val rowModifier = if (onClick != null) {
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp)
+        Modifier
+            .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp)
     } else {
         Modifier.fillMaxWidth().padding(vertical = 12.dp)
     }
@@ -120,12 +126,16 @@ internal fun PlaybackSheetRadioRow(
     onClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .mpxFocusHighlight(MpxShapes.small)
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
             selected = selected,
-            onClick = onClick,
+            onClick = null,
             colors = RadioButtonDefaults.colors(selectedColor = MpxTheme.colors.primary),
         )
         Spacer(Modifier.width(8.dp))

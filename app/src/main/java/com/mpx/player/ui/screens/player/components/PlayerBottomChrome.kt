@@ -1,6 +1,7 @@
 package com.mpx.player.ui.screens.player.components
 
 import android.graphics.Bitmap
+import android.view.KeyEvent as AndroidKeyEvent
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,7 +43,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
@@ -61,8 +65,12 @@ import com.mpx.player.R
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.ui.components.player.formatTimeMs
 import com.mpx.player.ui.screens.player.PlayerViewModel
+import com.mpx.player.ui.screens.player.state.SideSeekDirection
 import com.mpx.player.ui.screens.player.util.computePreviewPopupOffsetPx
+import com.mpx.player.ui.theme.LocalIsTv
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -90,8 +98,11 @@ fun PlayerBottomChrome(
     modifier: Modifier = Modifier,
     isScrubbingSlider: Boolean = false,
     seekPreviewBitmap: Bitmap? = null,
+    playPauseFocusRequester: FocusRequester? = null,
+    onDpadSeek: ((SideSeekDirection) -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val isTv = LocalIsTv.current
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
     var dockLeftInRootPx by remember { mutableFloatStateOf(0f) }
@@ -171,6 +182,7 @@ fun PlayerBottomChrome(
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
+                        .mpxFocusHighlight(RoundedCornerShape(16.dp))
                         .clickable { onOpenSleepSheet() },
                     backgroundColor = MpxTheme.colors.primaryVariant.copy(alpha = 0.85f),
                 ) {
@@ -195,6 +207,7 @@ fun PlayerBottomChrome(
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
+                                .mpxFocusHighlight(CircleShape)
                                 .clickable {
                                     viewModel.cancelSleepTimer()
                                     Toast.makeText(
@@ -268,6 +281,31 @@ fun PlayerBottomChrome(
                                 onValueChangeFinished = onSliderChangeFinished,
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .mpxFocusHighlight(MpxShapes.large)
+                                    .then(
+                                        if (onDpadSeek != null) {
+                                            Modifier.onPreviewKeyEvent { keyEvent ->
+                                                val native = keyEvent.nativeKeyEvent
+                                                when (native.keyCode) {
+                                                    AndroidKeyEvent.KEYCODE_DPAD_LEFT -> {
+                                                        if (native.action == AndroidKeyEvent.ACTION_DOWN) {
+                                                            onDpadSeek(SideSeekDirection.BACKWARD)
+                                                        }
+                                                        true
+                                                    }
+                                                    AndroidKeyEvent.KEYCODE_DPAD_RIGHT -> {
+                                                        if (native.action == AndroidKeyEvent.ACTION_DOWN) {
+                                                            onDpadSeek(SideSeekDirection.FORWARD)
+                                                        }
+                                                        true
+                                                    }
+                                                    else -> false
+                                                }
+                                            }
+                                        } else {
+                                            Modifier
+                                        },
+                                    )
                                     .onGloballyPositioned { coords ->
                                         sliderLeftInRootPx = coords.positionInRoot().x
                                         sliderWidthPx = coords.size.width.toFloat()
@@ -324,7 +362,9 @@ fun PlayerBottomChrome(
                     ) {
                         IconButton(
                             onClick = { viewModel.setLocked(true) },
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier
+                                .size(48.dp)
+                                .mpxFocusHighlight(CircleShape),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.LockOpen,
@@ -337,7 +377,9 @@ fun PlayerBottomChrome(
                         IconButton(
                             onClick = { viewModel.skipPrevious() },
                             enabled = state.hasPrevious,
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier
+                                .size(48.dp)
+                                .mpxFocusHighlight(CircleShape),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipPrevious,
@@ -351,9 +393,17 @@ fun PlayerBottomChrome(
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
+                                .then(
+                                    if (playPauseFocusRequester != null) {
+                                        Modifier.focusRequester(playPauseFocusRequester)
+                                    } else {
+                                        Modifier
+                                    },
+                                )
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.12f))
                                 .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+                                .mpxFocusHighlight(CircleShape)
                                 .clickable { viewModel.togglePlayPause() },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -368,7 +418,9 @@ fun PlayerBottomChrome(
                         IconButton(
                             onClick = { viewModel.skipNext() },
                             enabled = state.hasNext,
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier
+                                .size(48.dp)
+                                .mpxFocusHighlight(CircleShape),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.SkipNext,
@@ -378,16 +430,20 @@ fun PlayerBottomChrome(
                             )
                         }
 
-                        IconButton(
-                            onClick = { viewModel.toggleRotation() },
-                            modifier = Modifier.size(48.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.ScreenRotation,
-                                contentDescription = stringResource(R.string.playback_sheet_rotation),
-                                tint = if (isLandscapeOrientation) MpxTheme.colors.primary else MpxTheme.colors.textPrimary,
-                                modifier = Modifier.size(26.dp),
-                            )
+                        if (!isTv) {
+                            IconButton(
+                                onClick = { viewModel.toggleRotation() },
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .mpxFocusHighlight(CircleShape),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ScreenRotation,
+                                    contentDescription = stringResource(R.string.playback_sheet_rotation),
+                                    tint = if (isLandscapeOrientation) MpxTheme.colors.primary else MpxTheme.colors.textPrimary,
+                                    modifier = Modifier.size(26.dp),
+                                )
+                            }
                         }
                     }
                 }

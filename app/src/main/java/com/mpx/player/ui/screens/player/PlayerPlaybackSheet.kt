@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -43,6 +44,7 @@ import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetSu
 import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetSubtitleTracksPage
 import com.mpx.player.ui.screens.player.components.playbacksheet.PlaybackSheetZoomPage
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * Playback sheet (issue #153): one MpxBottomSheet replacing the Player Menu
@@ -156,7 +158,10 @@ fun PlayerPlaybackSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (sheetState.page != PlaybackSheetPage.Main) {
-                    IconButton(onClick = { sheetState.onPageChange(PlaybackSheetPage.Main) }) {
+                    IconButton(
+                        onClick = { sheetState.onPageChange(PlaybackSheetPage.Main) },
+                        modifier = Modifier.mpxFocusHighlight(CircleShape),
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
@@ -171,7 +176,10 @@ fun PlayerPlaybackSheet(
                     color = MpxTheme.colors.textPrimary,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = dismiss) {
+                IconButton(
+                    onClick = dismiss,
+                    modifier = Modifier.mpxFocusHighlight(CircleShape),
+                ) {
                     Icon(
                         Icons.Filled.Close,
                         contentDescription = stringResource(R.string.action_close),

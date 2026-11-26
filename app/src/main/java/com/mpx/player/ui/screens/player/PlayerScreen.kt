@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
+import android.view.KeyEvent as AndroidKeyEvent
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -21,6 +22,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -40,6 +42,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -61,13 +66,19 @@ import com.mpx.player.ui.screens.player.components.PlayerTopChrome
 import com.mpx.player.ui.screens.player.components.PlayerTutorialOverlay
 import com.mpx.player.ui.screens.player.components.PlayerVideoSurface
 import com.mpx.player.ui.screens.player.components.playerGestureDetector
+import com.mpx.player.ui.screens.player.state.PlayerKeyCommand
+import com.mpx.player.ui.screens.player.state.SideSeekDirection
 import com.mpx.player.ui.screens.player.state.rememberPlayerGestureState
+import com.mpx.player.ui.screens.player.state.resolvePlayerKeyCommand
+import com.mpx.player.ui.screens.player.state.triggerSideSeek
 import com.mpx.player.ui.screens.player.util.SeekThumbnailProvider
+import com.mpx.player.ui.theme.LocalIsTv
 import com.mpx.player.ui.theme.MpxTheme
 import com.mpx.player.util.PipUtils
 import com.mpx.player.util.SubtitleUtils
 import com.mpx.player.util.SubtitleValidationResult
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.yield
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -81,9 +92,14 @@ fun PlayerScreen(
     isInPipMode: Boolean = false,
 ) {
     val context = LocalContext.current
+    val isTv = LocalIsTv.current
     val viewModel: PlayerViewModel = koinViewModel()
     val activity = LocalView.current.context as? Activity
     val currentSettings by viewModel.settings.collectAsState()
+
+    LaunchedEffect(isTv) {
+        viewModel.setTelevisionMode(isTv)
+    }
 
     // Plain holder (not state) so pushing options does not schedule recompositions (§6)
     val lastMpvSubtitleSettings = remember { arrayOfNulls<AppSettings>(1) }
@@ -118,10 +134,14 @@ fun PlayerScreen(
     val isLandscapeOrientation by viewModel.isLandscapeOrientation.collectAsState()
     val targetOrientation by viewModel.targetOrientation.collectAsState()
 
-    DisposableEffect(targetOrientation, activity) {
-        activity?.requestedOrientation = targetOrientation
+    DisposableEffect(targetOrientation, activity, isTv) {
+        if (!isTv) {
+            activity?.requestedOrientation = targetOrientation
+        }
         onDispose {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            if (!isTv) {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
         }
     }
 
@@ -190,9 +210,9 @@ fun PlayerScreen(
     var showTutorial by remember { mutableStateOf(false) }
     var tutorialStep by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isTv) {
         val settings = viewModel.loadSettingsNow()
-        if (!settings.playerTutorialSeen && settings.gesturesEnabled) {
+        if (!isTv && !settings.playerTutorialSeen && settings.gesturesEnabled) {
             showTutorial = true
         }
     }
@@ -284,6 +304,33 @@ fun PlayerScreen(
     )
 
     val topBarActionsListState = rememberLazyListState()
+    val rootFocusRequester = remember { FocusRequester() }
+    val playPauseFocusRequester = remember { FocusRequester() }
+    val unlockFocusRequester = remember { FocusRequester() }
+    var keyInteractionEpoch by remember { mutableIntStateOf(0) }
+    var focusControlsRequested by remember { mutableStateOf(false) }
+
+    LaunchedEffect(controlsVisible, state.isLocked, playbackSheetPage, showTutorial, isTv) {
+        if (playbackSheetPage != null || showTutorial) return@LaunchedEffect
+        if (!controlsVisible) {
+            focusControlsRequested = false
+            try {
+                rootFocusRequester.requestFocus()
+            } catch (_: IllegalStateException) {
+            }
+        } else if (isTv || focusControlsRequested) {
+            focusControlsRequested = false
+            yield()
+            try {
+                if (state.isLocked) {
+                    unlockFocusRequester.requestFocus()
+                } else {
+                    playPauseFocusRequester.requestFocus()
+                }
+            } catch (_: IllegalStateException) {
+            }
+        }
+    }
 
     // Auto-hide controls timer: key set MUST be preserved (§6)
     LaunchedEffect(
@@ -296,6 +343,7 @@ fun PlayerScreen(
         gestureState.showVolumeIndicator,
         gestureState.showZoomIndicator,
         topBarActionsListState.isScrollInProgress,
+        keyInteractionEpoch,
     ) {
         if (controlsVisible && state.isPlaying && playbackSheetPage == null &&
             !isScrubbingSlider && !gestureState.isDraggingSeek &&
@@ -405,6 +453,111 @@ fun PlayerScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MpxTheme.colors.black)
+            .focusRequester(rootFocusRequester)
+            .focusable()
+            .onPreviewKeyEvent { keyEvent ->
+                val native = keyEvent.nativeKeyEvent
+                val isSheetOrDialogOpen = playbackSheetPage != null ||
+                    showAddToPlaylistDialog ||
+                    showCreatePlaylistDialog ||
+                    subtitleErrorDialogText != null
+                val command = resolvePlayerKeyCommand(
+                    keyCode = native.keyCode,
+                    isKeyDown = native.action == AndroidKeyEvent.ACTION_DOWN,
+                    repeatCount = native.repeatCount,
+                    controlsVisible = controlsVisible,
+                    isLocked = state.isLocked,
+                    isSheetOrDialogOpen = isSheetOrDialogOpen,
+                    isTutorialOpen = showTutorial,
+                )
+                if (controlsVisible && native.action == AndroidKeyEvent.ACTION_DOWN) {
+                    keyInteractionEpoch++
+                }
+                when (command) {
+                    PlayerKeyCommand.PASS_THROUGH -> false
+                    PlayerKeyCommand.CONSUME_NO_OP -> true
+                    PlayerKeyCommand.TOGGLE_PLAY_PAUSE -> {
+                        viewModel.togglePlayPause()
+                        true
+                    }
+                    PlayerKeyCommand.TOGGLE_PLAY_PAUSE_AND_SHOW_CONTROLS -> {
+                        viewModel.togglePlayPause()
+                        focusControlsRequested = true
+                        controlsVisible = true
+                        keyInteractionEpoch++
+                        true
+                    }
+                    PlayerKeyCommand.PLAY -> {
+                        viewModel.play()
+                        true
+                    }
+                    PlayerKeyCommand.PAUSE -> {
+                        viewModel.pause()
+                        true
+                    }
+                    PlayerKeyCommand.STOP_AND_CLOSE -> {
+                        viewModel.stop()
+                        onClose()
+                        true
+                    }
+                    PlayerKeyCommand.SKIP_NEXT -> {
+                        viewModel.skipNext()
+                        true
+                    }
+                    PlayerKeyCommand.SKIP_PREVIOUS -> {
+                        viewModel.skipPrevious()
+                        true
+                    }
+                    PlayerKeyCommand.SEEK_FORWARD -> {
+                        triggerSideSeek(
+                            direction = SideSeekDirection.FORWARD,
+                            chained = gestureState.sideSeekDirection == SideSeekDirection.FORWARD,
+                            fallbackDurationMs = currentDuration,
+                            gestureState = gestureState,
+                            viewModel = viewModel,
+                            scope = scope,
+                        )
+                        true
+                    }
+                    PlayerKeyCommand.SEEK_BACKWARD -> {
+                        triggerSideSeek(
+                            direction = SideSeekDirection.BACKWARD,
+                            chained = gestureState.sideSeekDirection == SideSeekDirection.BACKWARD,
+                            fallbackDurationMs = currentDuration,
+                            gestureState = gestureState,
+                            viewModel = viewModel,
+                            scope = scope,
+                        )
+                        true
+                    }
+                    PlayerKeyCommand.SHOW_CONTROLS -> {
+                        focusControlsRequested = true
+                        controlsVisible = true
+                        keyInteractionEpoch++
+                        true
+                    }
+                    PlayerKeyCommand.OPEN_PLAYBACK_MENU -> {
+                        playbackSheetPage = PlaybackSheetPage.Main
+                        true
+                    }
+                    PlayerKeyCommand.OPEN_SUBTITLES -> {
+                        playbackSheetPage = PlaybackSheetPage.SubtitleTracks
+                        true
+                    }
+                    PlayerKeyCommand.OPEN_AUDIO_TRACKS -> {
+                        playbackSheetPage = PlaybackSheetPage.AudioTracks
+                        true
+                    }
+                    PlayerKeyCommand.ADVANCE_TUTORIAL -> {
+                        if (tutorialStep >= 3) dismissTutorial() else tutorialStep += 1
+                        true
+                    }
+                    PlayerKeyCommand.DISMISS_TUTORIAL -> {
+                        dismissTutorial()
+                        true
+                    }
+                }
+            }
             .playerGestureDetector(
                 isLocked = state.isLocked,
                 currentDuration = currentDuration,
@@ -434,6 +587,7 @@ fun PlayerScreen(
             viewModel = viewModel,
             isLandscapeOrientation = isLandscapeOrientation,
             seekPreviewBitmap = seekPreviewBitmap,
+            unlockFocusRequester = unlockFocusRequester,
         )
 
         val density = LocalDensity.current
@@ -529,6 +683,18 @@ fun PlayerScreen(
                 viewModel = viewModel,
                 isScrubbingSlider = isScrubbingSlider,
                 seekPreviewBitmap = seekPreviewBitmap,
+                playPauseFocusRequester = playPauseFocusRequester,
+                onDpadSeek = { direction ->
+                    keyInteractionEpoch++
+                    triggerSideSeek(
+                        direction = direction,
+                        chained = gestureState.sideSeekDirection == direction,
+                        fallbackDurationMs = currentDuration,
+                        gestureState = gestureState,
+                        viewModel = viewModel,
+                        scope = scope,
+                    )
+                },
             )
         }
     }

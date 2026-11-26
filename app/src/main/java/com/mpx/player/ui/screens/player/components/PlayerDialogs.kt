@@ -20,7 +20,9 @@ import com.mpx.player.ui.components.persistence.CreatePlaylistDialog
 import com.mpx.player.ui.screens.local.CreatePlaylistOutcome
 import com.mpx.player.ui.screens.player.PlayerViewModel
 import com.mpx.player.ui.theme.MpxHairline
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -61,7 +63,10 @@ fun PlayerDialogs(
                 )
             },
             confirmButton = {
-                TextButton(onClick = onDismissSubtitleError) {
+                TextButton(
+                    onClick = onDismissSubtitleError,
+                    modifier = Modifier.mpxFocusHighlight(MpxShapes.medium),
+                ) {
                     Text(stringResource(R.string.action_ok), color = MpxTheme.colors.primary)
                 }
             },

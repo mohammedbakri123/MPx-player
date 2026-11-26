@@ -45,6 +45,7 @@ import com.mpx.player.ui.screens.player.PlaybackSheetPage
 import com.mpx.player.ui.screens.settings.parsePlayerMenuLayout
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * MX top-bar actions (issue #177): the user's chosen actions from
@@ -200,6 +201,7 @@ fun PlayerTopBarActionButton(
         consumeTouches = false,
         modifier = Modifier
             .size(40.dp)
+            .mpxFocusHighlight(CircleShape)
             .clickable(onClick = onClick),
     ) {
         Icon(
