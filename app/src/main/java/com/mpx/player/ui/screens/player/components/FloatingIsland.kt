@@ -18,21 +18,40 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.theme.MpxTheme
 
 /**
- * Consumes remaining pointer events on the [PointerEventPass.Main] pass after
+ * Consumes remaining pointer downs on the [PointerEventPass.Main] pass after
  * child controls (sliders, buttons) run, preventing missed taps or drags on
  * floating chrome pills from leaking through to the root video gesture detector.
+ *
+ * Only tracks pointers whose initial `DOWN` was not claimed by a child control:
+ * consuming pre-slop `MOVE` events belonging to a child `Slider` would abort
+ * its drag-slop detector on [PointerEventPass.Final].
  */
 internal fun Modifier.consumeUnconsumedPointerEvents(): Modifier = this.pointerInput(Unit) {
+    val claimedEmptyIds = HashSet<PointerId>()
     awaitPointerEventScope {
         while (true) {
             val event = awaitPointerEvent(PointerEventPass.Main)
-            event.changes.forEach { it.consume() }
+            event.changes.forEach { change ->
+                if (change.changedToDown() && !change.isConsumed) {
+                    claimedEmptyIds.add(change.id)
+                    change.consume()
+                } else if (change.id in claimedEmptyIds) {
+                    if (!change.isConsumed) {
+                        change.consume()
+                    }
+                    if (!change.pressed) {
+                        claimedEmptyIds.remove(change.id)
+                    }
+                }
+            }
         }
     }
 }
