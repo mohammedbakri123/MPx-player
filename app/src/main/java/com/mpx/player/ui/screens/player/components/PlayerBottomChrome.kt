@@ -1,5 +1,6 @@
 package com.mpx.player.ui.screens.player.components
 
+import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,23 +35,36 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
 import com.mpx.player.playback.PlaybackState
 import com.mpx.player.ui.components.player.formatTimeMs
 import com.mpx.player.ui.screens.player.PlayerViewModel
+import com.mpx.player.ui.screens.player.util.computePreviewPopupOffsetPx
 import com.mpx.player.ui.theme.MpxTheme
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * Bottom transport dock for [com.mpx.player.ui.screens.player.PlayerScreen].
@@ -74,8 +88,18 @@ fun PlayerBottomChrome(
     onOpenSleepSheet: () -> Unit,
     viewModel: PlayerViewModel,
     modifier: Modifier = Modifier,
+    isScrubbingSlider: Boolean = false,
+    seekPreviewBitmap: Bitmap? = null,
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    var dockLeftInRootPx by remember { mutableFloatStateOf(0f) }
+    var dockWidthPx by remember { mutableFloatStateOf(0f) }
+    var sliderLeftInRootPx by remember { mutableFloatStateOf(0f) }
+    var sliderWidthPx by remember { mutableFloatStateOf(0f) }
+    var previewCardWidthPx by remember { mutableFloatStateOf(0f) }
+
     val dockModifier = if (isLandscapeOrientation) {
         Modifier.width(580.dp)
     } else {
@@ -94,6 +118,44 @@ fun PlayerBottomChrome(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            if (isScrubbingSlider && currentDuration > 0L) {
+                val effectiveFraction = if (layoutDirection == LayoutDirection.Rtl) {
+                    1f - sliderProgress.coerceIn(0f, 1f)
+                } else {
+                    sliderProgress.coerceIn(0f, 1f)
+                }
+                val thumbInsetPx = with(density) { 10.dp.toPx() }
+                val trackSpanPx = (sliderWidthPx - 2f * thumbInsetPx).coerceAtLeast(1f)
+                val thumbCenterX = if (sliderWidthPx > 0f && dockWidthPx > 0f) {
+                    (sliderLeftInRootPx - dockLeftInRootPx) + thumbInsetPx + effectiveFraction * trackSpanPx
+                } else {
+                    dockWidthPx * effectiveFraction
+                }
+                val previewOffsetXPx = computePreviewPopupOffsetPx(
+                    thumbCenterX = thumbCenterX,
+                    cardWidthPx = previewCardWidthPx,
+                    containerWidthPx = dockWidthPx,
+                )
+                val activeChapterTitle = state.chapters
+                    .lastOrNull { it.timeMs <= displayedCurrentTime }
+                    ?.title
+                    ?.takeIf { it.isNotBlank() }
+
+                Box(modifier = dockModifier) {
+                    SeekPreviewCard(
+                        targetTimeMs = displayedCurrentTime,
+                        previewBitmap = seekPreviewBitmap,
+                        chapterTitle = activeChapterTitle,
+                        videoWidth = state.videoWidth,
+                        videoHeight = state.videoHeight,
+                        modifier = Modifier
+                            .onSizeChanged { previewCardWidthPx = it.width.toFloat() }
+                            .offset { IntOffset(x = previewOffsetXPx.roundToInt(), y = 0) },
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+            }
+
             // Sleep Timer active chip near dock
             if (state.sleepTimerRemainingSeconds != null) {
                 val remaining = state.sleepTimerRemainingSeconds ?: 0L
@@ -163,6 +225,10 @@ fun PlayerBottomChrome(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .onGloballyPositioned { coords ->
+                            dockLeftInRootPx = coords.positionInRoot().x
+                            dockWidthPx = coords.size.width.toFloat()
+                        }
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
                     // Top row: current time, slider, total time
@@ -200,7 +266,12 @@ fun PlayerBottomChrome(
                                 value = sliderProgress,
                                 onValueChange = onSliderChange,
                                 onValueChangeFinished = onSliderChangeFinished,
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .onGloballyPositioned { coords ->
+                                        sliderLeftInRootPx = coords.positionInRoot().x
+                                        sliderWidthPx = coords.size.width.toFloat()
+                                    },
                                 colors = SliderDefaults.colors(
                                     thumbColor = MpxTheme.colors.primary,
                                     activeTrackColor = MpxTheme.colors.primary,

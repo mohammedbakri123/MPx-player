@@ -4,6 +4,11 @@ All notable changes to MPx Player will be documented in this file.
 
 ## Unreleased
 
+## v0.4.66
+
+- Fixed progress bar slider dragging to seek — `FloatingIsland` now only claims unconsumed `DOWN` pointers so `Slider` pre-slop `MOVE` events are never stolen before drag starts (#499)
+- Added YouTube / MX Player style seek preview thumbnails when scrubbing the progress bar (floating card above the slider thumb) and during horizontal swipe-seek gestures (#500)
+
 ## v0.4.65
 
 - Player seek gestures: fixed unpredictable position jumps when scrubbing mid-video — gesture detector was reading stale state captured at `currentDuration` change instead of live position, causing seeks to snap back to 00:00 or resume offset

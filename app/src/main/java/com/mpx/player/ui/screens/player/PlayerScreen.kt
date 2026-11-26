@@ -62,6 +62,7 @@ import com.mpx.player.ui.screens.player.components.PlayerTutorialOverlay
 import com.mpx.player.ui.screens.player.components.PlayerVideoSurface
 import com.mpx.player.ui.screens.player.components.playerGestureDetector
 import com.mpx.player.ui.screens.player.state.rememberPlayerGestureState
+import com.mpx.player.ui.screens.player.util.SeekThumbnailProvider
 import com.mpx.player.ui.theme.MpxTheme
 import com.mpx.player.util.PipUtils
 import com.mpx.player.util.SubtitleUtils
@@ -366,6 +367,40 @@ fun PlayerScreen(
         0f
     }
 
+    val activeItem = state.currentItem
+    val thumbnailProvider = remember(activeItem?.uri, activeItem?.filePath, activeItem?.isVideo) {
+        SeekThumbnailProvider(
+            context = context,
+            uri = activeItem?.uri.orEmpty(),
+            filePath = activeItem?.filePath,
+            isVideo = activeItem?.isVideo == true,
+            scope = scope,
+        )
+    }
+    DisposableEffect(thumbnailProvider) {
+        onDispose { thumbnailProvider.close() }
+    }
+    val seekPreviewBitmap by thumbnailProvider.previewBitmap.collectAsState()
+    val activePreviewTargetMs = when {
+        isScrubbingSlider && currentDuration > 0L ->
+            (scrubFraction * currentDuration).toLong().coerceIn(0L, currentDuration)
+        gestureState.isDraggingSeek && currentDuration > 0L ->
+            gestureState.seekTargetMs.coerceIn(0L, currentDuration)
+        else -> null
+    }
+    LaunchedEffect(thumbnailProvider, activePreviewTargetMs, currentDuration, state.videoWidth, state.videoHeight) {
+        if (activePreviewTargetMs != null && currentDuration > 0L) {
+            thumbnailProvider.requestPreview(
+                positionMs = activePreviewTargetMs,
+                durationMs = currentDuration,
+                videoWidth = state.videoWidth,
+                videoHeight = state.videoHeight,
+            )
+        } else {
+            thumbnailProvider.clearPreview()
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -398,6 +433,7 @@ fun PlayerScreen(
             gestureState = gestureState,
             viewModel = viewModel,
             isLandscapeOrientation = isLandscapeOrientation,
+            seekPreviewBitmap = seekPreviewBitmap,
         )
 
         val density = LocalDensity.current
@@ -481,14 +517,18 @@ fun PlayerScreen(
                     scrubFraction = it
                 },
                 onSliderChangeFinished = {
-                    val target = (scrubFraction * currentDuration).toLong()
-                    viewModel.seekTo(target)
+                    if (currentDuration > 0L) {
+                        val target = (scrubFraction * currentDuration).toLong()
+                        viewModel.seekTo(target)
+                    }
                     isScrubbingSlider = false
                 },
                 state = state,
                 isLandscapeOrientation = isLandscapeOrientation,
                 onOpenSleepSheet = { playbackSheetPage = PlaybackSheetPage.SleepTimer },
                 viewModel = viewModel,
+                isScrubbingSlider = isScrubbingSlider,
+                seekPreviewBitmap = seekPreviewBitmap,
             )
         }
     }

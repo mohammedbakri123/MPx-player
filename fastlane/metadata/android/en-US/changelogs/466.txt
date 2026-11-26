@@ -1,0 +1,1 @@
+Fixed progress bar drag-to-seek and added YouTube/MX Player style seek preview thumbnails while scrubbing the progress bar or swiping horizontally.
