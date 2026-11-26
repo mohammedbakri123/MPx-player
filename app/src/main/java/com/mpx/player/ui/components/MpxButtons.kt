@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.theme.MpxShapes
@@ -22,6 +23,7 @@ import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceS
 import com.mpx.player.ui.theme.MpxSpaceXl
 import com.mpx.player.ui.theme.MpxTouchTarget
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * M2.5 button atoms (#106). Tokens only, no screen logic.
@@ -40,7 +42,13 @@ fun MpxPrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = MpxTouchTarget),
+        modifier = modifier
+            .defaultMinSize(minHeight = MpxTouchTarget)
+            .mpxFocusHighlight(
+                shape = MpxShapes.large,
+                showBackgroundTint = false,
+                focusedColor = Color.White,
+            ),
         shape = MpxShapes.large,
         colors = ButtonDefaults.buttonColors(
             containerColor = MpxTheme.colors.primary,
@@ -69,7 +77,9 @@ fun MpxSecondaryButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = MpxTouchTarget),
+        modifier = modifier
+            .defaultMinSize(minHeight = MpxTouchTarget)
+            .mpxFocusHighlight(shape = MpxShapes.large),
         shape = MpxShapes.large,
         border = ButtonDefaults.outlinedButtonBorder.copy(
             brush = androidx.compose.ui.graphics.SolidColor(MpxTheme.colors.border),
@@ -98,7 +108,9 @@ fun MpxTextButton(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = MpxTouchTarget),
+        modifier = modifier
+            .defaultMinSize(minHeight = MpxTouchTarget)
+            .mpxFocusHighlight(shape = MpxShapes.medium),
         colors = ButtonDefaults.textButtonColors(
             contentColor = MpxTheme.colors.primary,
             disabledContentColor = MpxTheme.colors.textMuted,
@@ -118,7 +130,13 @@ fun MpxPillFab(
 ) {
     ExtendedFloatingActionButton(
         onClick = onClick,
-        modifier = modifier.height(MpxTouchTarget),
+        modifier = modifier
+            .height(MpxTouchTarget)
+            .mpxFocusHighlight(
+                shape = MpxShapes.extraLarge,
+                showBackgroundTint = false,
+                focusedColor = Color.White,
+            ),
         shape = MpxShapes.extraLarge,
         containerColor = MpxTheme.colors.primary,
         contentColor = MpxTheme.colors.textPrimary,

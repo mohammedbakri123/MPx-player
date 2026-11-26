@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,9 +37,11 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import com.mpx.player.R
 import com.mpx.player.ui.theme.MpxIconSize
+import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceM
 import com.mpx.player.ui.theme.MpxSpaceXs
 import com.mpx.player.ui.theme.MpxSpaceXxs
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * M2.5 bar atoms (#106), dock restyled mpvEx-style (#157). The dock is a
@@ -59,10 +62,12 @@ fun RowScope.MpxDockTab(
     icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     NavigationBarItem(
         selected = selected,
         onClick = onClick,
+        modifier = modifier.mpxFocusHighlight(MpxShapes.medium),
         icon = {
             Icon(
                 icon,
@@ -133,6 +138,7 @@ fun MpxMiniPlayerStrip(
         modifier = modifier
             .fillMaxWidth()
             .background(MpxTheme.colors.black)
+            .mpxFocusHighlight(MpxShapes.small)
             .clickable(onClick = onClick),
     ) {
         Row(
@@ -152,7 +158,10 @@ fun MpxMiniPlayerStrip(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            IconButton(onClick = onPlayPause) {
+            IconButton(
+                onClick = onPlayPause,
+                modifier = Modifier.mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(
                     if (isPlaying) pauseIcon else playIcon,
                     contentDescription = stringResource(if (isPlaying) R.string.cd_pause else R.string.cd_play),

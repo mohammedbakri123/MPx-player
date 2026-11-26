@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxSpaceS
 import com.mpx.player.ui.theme.MpxSpaceXxs
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * M2.5 chip + badge atoms (#106). Selection is blue, sparingly;
@@ -29,7 +30,7 @@ fun MpxFilterChip(
         selected = selected,
         onClick = onClick,
         label = { Text(label) },
-        modifier = modifier,
+        modifier = modifier.mpxFocusHighlight(MpxShapes.small, showBackgroundTint = false),
         shape = MpxShapes.small,
         colors = FilterChipDefaults.filterChipColors(
             containerColor = MpxTheme.colors.surfaceVariant,
