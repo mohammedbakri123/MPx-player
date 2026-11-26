@@ -4,6 +4,12 @@ All notable changes to MPx Player will be documented in this file.
 
 ## Unreleased
 
+## v0.4.67
+
+- Added Android TV support: Leanback launcher entry, `touchscreen` `required="false"`, and 320×180dp TV banner
+- Added TV device detection (`TvUtils`, `LocalIsTv`), `MpxNavigationRail` start-edge navigation on TV, and crisp D-pad focus highlights (`mpxFocusHighlight`) across library, network, playback sheet, dialogs, and settings screens
+- Fixed TV player orientation so playback stays landscape with TV transport chrome, and added full D-pad & hardware media-key player controls (`PlayerKeyHandler`)
+
 ## v0.4.66
 
 - Fixed progress bar slider dragging to seek — `FloatingIsland` now only claims unconsumed `DOWN` pointers so `Slider` pre-slop `MOVE` events are never stolen before drag starts (#499)
