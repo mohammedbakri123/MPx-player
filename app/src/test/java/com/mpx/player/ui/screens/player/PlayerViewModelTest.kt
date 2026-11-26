@@ -225,6 +225,27 @@ class PlayerViewModelTest {
     }
 
     @Test
+    fun `television mode stays landscape with unspecified requested orientation`() = runTest {
+        setTestMainDispatcher()
+        val viewModel = createViewModel()
+
+        viewModel.setTelevisionMode(true)
+        assertTrue(viewModel.isLandscapeOrientation.value)
+        assertEquals(
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED,
+            viewModel.targetOrientation.value,
+        )
+
+        // Rotation toggle is a no-op on TV.
+        viewModel.toggleRotation()
+        assertTrue(viewModel.isLandscapeOrientation.value)
+        assertEquals(
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED,
+            viewModel.targetOrientation.value,
+        )
+    }
+
+    @Test
     fun `keepScreenOn is on only for a playing or loading video outside PiP`() = runTest {
         setTestMainDispatcher()
         val viewModel = createViewModel()

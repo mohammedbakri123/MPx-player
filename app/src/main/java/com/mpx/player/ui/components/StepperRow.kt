@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
@@ -22,6 +23,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mpx.player.R
+import com.mpx.player.ui.theme.MpxShapes
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * A labelled − / value / + stepper row, used by the subtitle timing
@@ -55,7 +58,12 @@ fun StepperRow(
             modifier = Modifier.weight(1f),
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onMinus, modifier = Modifier.size(32.dp)) {
+            IconButton(
+                onClick = onMinus,
+                modifier = Modifier
+                    .size(32.dp)
+                    .mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(Icons.Filled.Remove, contentDescription = minusContentDescription)
             }
             Text(
@@ -64,12 +72,20 @@ fun StepperRow(
                 color = MpxTheme.colors.textPrimary,
                 fontSize = 14.sp,
             )
-            IconButton(onClick = onPlus, modifier = Modifier.size(32.dp)) {
+            IconButton(
+                onClick = onPlus,
+                modifier = Modifier
+                    .size(32.dp)
+                    .mpxFocusHighlight(CircleShape),
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = plusContentDescription)
             }
             if (onReset != null) {
                 Spacer(Modifier.width(2.dp))
-                TextButton(onClick = onReset) {
+                TextButton(
+                    onClick = onReset,
+                    modifier = Modifier.mpxFocusHighlight(MpxShapes.medium),
+                ) {
                     Text(stringResource(R.string.subtitle_timing_reset), fontSize = 12.sp)
                 }
             }

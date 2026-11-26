@@ -50,6 +50,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -70,6 +72,7 @@ import com.mpx.player.ui.screens.player.state.PlayerGestureState
 import com.mpx.player.ui.screens.player.state.SideSeekDirection
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -166,6 +169,7 @@ fun BoxScope.PlayerOverlays(
     viewModel: PlayerViewModel,
     isLandscapeOrientation: Boolean = false,
     seekPreviewBitmap: Bitmap? = null,
+    unlockFocusRequester: FocusRequester? = null,
 ) {
     val currentMedia = state.currentItem
 
@@ -482,15 +486,19 @@ fun BoxScope.PlayerOverlays(
                             color = MpxTheme.colors.primary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable {
-                                viewModel.seekTo(0L)
-                                viewModel.clearResumedNotification()
-                            },
+                            modifier = Modifier
+                                .mpxFocusHighlight(MpxShapes.small)
+                                .clickable {
+                                    viewModel.seekTo(0L)
+                                    viewModel.clearResumedNotification()
+                                },
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(
                             onClick = { viewModel.clearResumedNotification() },
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier
+                                .size(32.dp)
+                                .mpxFocusHighlight(CircleShape),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
@@ -530,7 +538,9 @@ fun BoxScope.PlayerOverlays(
                         Spacer(Modifier.width(8.dp))
                         IconButton(
                             onClick = { viewModel.clearDecoderFallbackNote() },
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier
+                                .size(32.dp)
+                                .mpxFocusHighlight(CircleShape),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
@@ -570,7 +580,9 @@ fun BoxScope.PlayerOverlays(
                         Spacer(Modifier.width(8.dp))
                         IconButton(
                             onClick = { viewModel.clearUserNotification() },
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier
+                                .size(32.dp)
+                                .mpxFocusHighlight(CircleShape),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
@@ -608,6 +620,14 @@ fun BoxScope.PlayerOverlays(
                 shape = CircleShape,
                 modifier = Modifier
                     .size(52.dp)
+                    .then(
+                        if (unlockFocusRequester != null) {
+                            Modifier.focusRequester(unlockFocusRequester)
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .mpxFocusHighlight(CircleShape)
                     .clickable { viewModel.setLocked(false) },
             ) {
                 Icon(

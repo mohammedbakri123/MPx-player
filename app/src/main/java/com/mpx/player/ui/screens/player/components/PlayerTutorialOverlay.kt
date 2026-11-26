@@ -1,5 +1,6 @@
 package com.mpx.player.ui.screens.player.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,6 +42,7 @@ import com.mpx.player.R
 import com.mpx.player.ui.theme.MpxHairline
 import com.mpx.player.ui.theme.MpxShapes
 import com.mpx.player.ui.theme.MpxTheme
+import com.mpx.player.ui.theme.mpxFocusHighlight
 
 /**
  * First-run gesture tutorial overlay (#151). One overlay, four tappable
@@ -61,6 +63,7 @@ fun PlayerTutorialOverlay(
     val lastStep = 3
     val isLast = step >= lastStep
     val advance = { if (isLast) onDismiss() else onStepChange(step + 1) }
+    BackHandler(onBack = onDismiss)
 
     val titleRes = when (step) {
         0 -> R.string.player_tutorial_step_double_tap_title
@@ -107,7 +110,12 @@ fun PlayerTutorialOverlay(
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                 )
-                IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .mpxFocusHighlight(CircleShape),
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = stringResource(R.string.player_tutorial_skip),
@@ -212,10 +220,16 @@ fun PlayerTutorialOverlay(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onDismiss) {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.mpxFocusHighlight(MpxShapes.medium),
+                ) {
                     Text(stringResource(R.string.player_tutorial_skip), color = MpxTheme.colors.textSecondary)
                 }
-                TextButton(onClick = advance) {
+                TextButton(
+                    onClick = advance,
+                    modifier = Modifier.mpxFocusHighlight(MpxShapes.medium),
+                ) {
                     Text(
                         stringResource(if (isLast) R.string.player_tutorial_got_it else R.string.player_tutorial_next),
                         color = MpxTheme.colors.primary,
