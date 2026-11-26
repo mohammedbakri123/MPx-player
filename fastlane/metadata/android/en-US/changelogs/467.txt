@@ -1,0 +1,1 @@
+Added Android TV support: Leanback launcher entry and banner, NavigationRail layout, D-pad focus highlights across screens, TV landscape player handling, and D-pad / media-key playback controls.
