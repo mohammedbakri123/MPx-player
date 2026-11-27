@@ -249,7 +249,11 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew --no-daemon connectedDebugAndroidTest
+          # Flavors (2026-11-13, F-Droid prep): `connectedDebugAndroidTest`
+          # is ambiguous once the github/fdroid flavors exist — Gradle
+          # refuses it ("Candidates are: connectedFdroidDebugAndroidTest,
+          # connectedGithubDebugAndroidTest"). Run both per-flavor tasks.
+          script: ./gradlew --no-daemon connectedGithubDebugAndroidTest connectedFdroidDebugAndroidTest
 
       - name: Upload instrumented test results
         if: always()
